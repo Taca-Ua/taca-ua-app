@@ -112,6 +112,7 @@ services:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - DATABASE_URL=postgres://user:password@postgres:5432/taca_ua
       - PYTHONUNBUFFERED=1
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
     depends_on:
       - kafka
       - postgres
