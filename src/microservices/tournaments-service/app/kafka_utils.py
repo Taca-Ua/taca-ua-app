@@ -1,15 +1,15 @@
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
-import asyncio
 import os
 import json
 
-KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
+KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+
 
 async def consume():
     consumer = AIOKafkaConsumer(
-        'tournaments-topic',
+        "tournaments-topic",
         bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
-        group_id="tournaments-service-group"
+        group_id="tournaments-service-group",
     )
     try:
         await consumer.start()
@@ -21,12 +21,11 @@ async def consume():
     except Exception as e:
         print(f"Kafka consumer error: {e}")
 
+
 async def produce(topic, message):
-    producer = AIOKafkaProducer(
-        bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS
-    )
+    producer = AIOKafkaProducer(bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS)
     await producer.start()
     try:
-        await producer.send_and_wait(topic, json.dumps(message).encode('utf-8'))
+        await producer.send_and_wait(topic, json.dumps(message).encode("utf-8"))
     finally:
         await producer.stop()
