@@ -81,12 +81,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: '${{ matrix.frontend.path }}/package-lock.json'
+
+      - name: Cache node modules for ${{ matrix.frontend.name }}
+        uses: actions/cache@v4
+        with:
+          path: ${{ matrix.frontend.path }}/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles(format('{0}/package-lock.json', matrix.frontend.path)) }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
       - name: Install dependencies for ${{ matrix.frontend.name }}
         working-directory: ${{ matrix.frontend.path }}
-        run: npm ci
+        run: npm install
 
       - name: Lint ${{ matrix.frontend.name }}
         working-directory: ${{ matrix.frontend.path }}
