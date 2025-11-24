@@ -42,31 +42,6 @@ The project includes a `.pre-commit-config.yaml` file with the following hooks:
 - **black**: Python code formatter
 - **isort**: Python import sorter
 
-## Configuration File
-
-The `.pre-commit-config.yaml` configuration:
-
-```yaml
-repos:
-  - repo: https://github.com/compilerla/conventional-pre-commit
-    rev: v3.4.0
-    hooks:
-      - id: conventional-pre-commit
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.4.6
-    hooks:
-      - id: ruff
-        args: [--fix]
-  - repo: https://github.com/psf/black
-    rev: 24.4.0
-    hooks:
-      - id: black
-  - repo: https://github.com/PyCQA/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
-```
-
 ## Usage
 
 ### Automatic Execution
@@ -141,12 +116,6 @@ You can exclude files from hooks by adding them to the hook configuration or usi
 - **Commit Standards**: Conventional commits improve project history and enable automated changelog generation
 - **Early Detection**: Catch issues before they reach the repository
 - **Team Consistency**: All team members follow the same code standards
-
-## Next Steps
-
-1. All team members should run `pre-commit install` after cloning the repository
-2. Consider adding additional hooks for specific needs (e.g., security scanners, documentation linters)
-3. Review and adjust hook configurations based on team preferences
 
 ---
 
