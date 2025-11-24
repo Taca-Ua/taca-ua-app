@@ -71,6 +71,34 @@ services:
     ports:
       - "8080:8080"
 
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    volumes:
+      - ./src/configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  loki:
+    image: grafana/loki:2.8.2
+    volumes:
+      - ./src/configs/loki/loki-config.yaml:/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+
+  grafana:
+    image: grafana/grafana:10.0.0
+    volumes:
+      - ./src/configs/grafana/provisioning:/etc/grafana/provisioning
+      - ./src/configs/grafana/dashboards:/var/lib/grafana/dashboards
+    ports:
+      - "3002:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+      - loki
+
 # APIs
   competition-api:
     build: ./src/apis/competiotion-api
@@ -82,6 +110,7 @@ services:
     depends_on:
       - kafka
       - postgres
+      - loki
       
   public-api:
     build: ./src/apis/public-api
@@ -91,6 +120,7 @@ services:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
     depends_on:
       - kafka
+      - loki
 
 # Microservices
   matches-service:
@@ -99,6 +129,7 @@ services:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
     depends_on:
       - kafka
+      - loki
 
   modalities-service:
     build: ./src/microservices/modalities-service
@@ -106,6 +137,7 @@ services:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
     depends_on:
       - kafka
+      - loki
 
   ranking-service:
     build: ./src/microservices/ranking-service
@@ -113,6 +145,7 @@ services:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
     depends_on:
       - kafka
+      - loki
 
   read-model-updater:
     build: ./src/microservices/read-model-updater
@@ -120,6 +153,7 @@ services:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
     depends_on:
       - kafka
+      - loki
 
   tournaments-service:
     build: ./src/microservices/tournaments-service
@@ -127,6 +161,7 @@ services:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
     depends_on:
       - kafka
+      - loki
 
 # Frontend Services
   admin-panel:

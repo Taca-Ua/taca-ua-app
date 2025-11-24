@@ -1,0 +1,35 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'competition-api'
+    static_configs:
+      - targets: ['competition-api:8000']
+
+  - job_name: 'public-api'
+    static_configs:
+      - targets: ['public-api:8000']
+
+  - job_name: 'matches-service'
+    static_configs:
+      - targets: ['matches-service:8000']
+
+  - job_name: 'modalities-service'
+    static_configs:
+      - targets: ['modalities-service:8000']
+
+  - job_name: 'ranking-service'
+    static_configs:
+      - targets: ['ranking-service:8000']
+
+  - job_name: 'read-model-updater'
+    static_configs:
+      - targets: ['read-model-updater:8000']
+
+  - job_name: 'tournaments-service'
+    static_configs:
+      - targets: ['tournaments-service:8000']
