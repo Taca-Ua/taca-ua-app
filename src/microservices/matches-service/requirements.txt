@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+aiokafka
+psycopg2-binary
+sqlalchemy
+prometheus-fastapi-instrumentator
+python-logging-loki
