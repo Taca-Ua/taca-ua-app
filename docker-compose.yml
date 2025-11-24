@@ -1,0 +1,181 @@
+services:
+# Infrastructure Services
+  nginx:
+    image: nginx:1.25-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./src/configs/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - competition-api
+      - public-api
+      - admin-panel
+      - public-website
+      - grafana
+      - keycloak
+      - minio
+      - prometheus
+      - loki
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.4.0
+    depends_on:
+      - kafka
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:29092
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: taca_ua
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:22.0.0
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_HTTP_RELATIVE_PATH: /keycloak
+      KC_PROXY_HEADERS: xforwarded
+
+# Observability
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    volumes:
+      - ./src/configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  loki:
+    image: grafana/loki:2.8.2
+    volumes:
+      - ./src/configs/loki/loki-config.yaml:/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
+
+  grafana:
+    image: grafana/grafana:10.0.0
+    volumes:
+      - ./src/configs/grafana/provisioning:/etc/grafana/provisioning
+      - ./src/configs/grafana/dashboards:/var/lib/grafana/dashboards
+    ports:
+      - "3002:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+      - loki
+
+# APIs
+  competition-api:
+    build: ./src/apis/competiotion-api
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - DATABASE_URL=postgres://user:password@postgres:5432/taca_ua
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+    depends_on:
+      - kafka
+      - postgres
+      - loki
+
+  public-api:
+    build: ./src/apis/public-api
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    depends_on:
+      - kafka
+      - loki
+
+# Microservices
+  matches-service:
+    build: ./src/microservices/matches-service
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    depends_on:
+      - kafka
+      - loki
+
+  modalities-service:
+    build: ./src/microservices/modalities-service
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    depends_on:
+      - kafka
+      - loki
+
+  ranking-service:
+    build: ./src/microservices/ranking-service
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    depends_on:
+      - kafka
+      - loki
+
+  read-model-updater:
+    build: ./src/microservices/read-model-updater
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    depends_on:
+      - kafka
+      - loki
+
+  tournaments-service:
+    build: ./src/microservices/tournaments-service
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    depends_on:
+      - kafka
+      - loki
+
+# Frontend Services
+  admin-panel:
+    build: ./src/frontend/admin-panel
+    volumes:
+      - ./src/frontend/admin-panel:/app
+      - /app/node_modules
+
+  public-website:
+    build: ./src/frontend/public-website
+    volumes:
+      - ./src/frontend/public-website:/app
+      - /app/node_modules
+
+
+volumes:
+  postgres_data:
+  minio_data:

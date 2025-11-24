@@ -1,0 +1,224 @@
+services:
+# Infrastructure Services
+  nginx:
+    image: nginx:1.25-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./src/configs/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - competition-api
+      - public-api
+      - admin-panel
+      - public-website
+      - grafana
+      - keycloak
+      - minio
+      - prometheus
+      - loki
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.4.0
+    depends_on:
+      - kafka
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:29092
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: taca_ua
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:22.0.0
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_HTTP_RELATIVE_PATH: /keycloak
+      KC_PROXY_HEADERS: xforwarded
+
+# Observability
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    volumes:
+      - ./src/configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  loki:
+    image: grafana/loki:2.8.2
+    volumes:
+      - ./src/configs/loki/loki-config.yaml:/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
+
+  grafana:
+    image: grafana/grafana:10.0.0
+    volumes:
+      - ./src/configs/grafana/provisioning:/etc/grafana/provisioning
+      - ./src/configs/grafana/dashboards:/var/lib/grafana/dashboards
+    ports:
+      - "3002:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+      - loki
+
+# APIs
+  competition-api:
+    build:
+      context: ./src/apis/competiotion-api
+      dockerfile: Dockerfile
+    volumes:
+      - ./src/apis/competiotion-api:/app
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - DATABASE_URL=postgres://user:password@postgres:5432/taca_ua
+      - PYTHONUNBUFFERED=1
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+    depends_on:
+      - kafka
+      - postgres
+      - loki
+
+  public-api:
+    build:
+      context: ./src/apis/public-api
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./src/apis/public-api:/app
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - kafka
+      - loki
+
+# Microservices
+  matches-service:
+    build:
+      context: ./src/microservices/matches-service
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./src/microservices/matches-service:/app
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - kafka
+      - loki
+
+  modalities-service:
+    build:
+      context: ./src/microservices/modalities-service
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./src/microservices/modalities-service:/app
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - kafka
+      - loki
+
+  ranking-service:
+    build:
+      context: ./src/microservices/ranking-service
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./src/microservices/ranking-service:/app
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - kafka
+      - loki
+
+  read-model-updater:
+    build:
+      context: ./src/microservices/read-model-updater
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./src/microservices/read-model-updater:/app
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - kafka
+      - loki
+
+  tournaments-service:
+    build:
+      context: ./src/microservices/tournaments-service
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./src/microservices/tournaments-service:/app
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - kafka
+      - loki
+
+# Frontend Services
+  admin-panel:
+    build:
+      context: ./src/frontend/admin-panel
+      dockerfile: Dockerfile
+    volumes:
+      - ./src/frontend/admin-panel:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+
+  public-website:
+    build:
+      context: ./src/frontend/public-website
+      dockerfile: Dockerfile
+    volumes:
+      - ./src/frontend/public-website:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+
+
+volumes:
+  postgres_data:
+  minio_data:
