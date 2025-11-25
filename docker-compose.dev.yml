@@ -126,6 +126,7 @@ services:
       context: .
       dockerfile: src/microservices/matches-service/Dockerfile.dev
     volumes:
+      - ./src/shared:/tmp/taca-messaging
       - ./src/microservices/matches-service:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -142,6 +143,7 @@ services:
       context: .
       dockerfile: src/microservices/modalities-service/Dockerfile.dev
     volumes:
+      - ./src/shared:/tmp/taca-messaging
       - ./src/microservices/modalities-service:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -158,6 +160,7 @@ services:
       context: .
       dockerfile: src/microservices/ranking-service/Dockerfile.dev
     volumes:
+      - ./src/shared:/tmp/taca-messaging
       - ./src/microservices/ranking-service:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -174,6 +177,7 @@ services:
       context: .
       dockerfile: src/microservices/read-model-updater/Dockerfile.dev
     volumes:
+      - ./src/shared:/tmp/taca-messaging
       - ./src/microservices/read-model-updater:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -190,6 +194,7 @@ services:
       context: .
       dockerfile: src/microservices/tournaments-service/Dockerfile.dev
     volumes:
+      - ./src/shared:/tmp/taca-messaging
       - ./src/microservices/tournaments-service:/app
     environment:
       - RABBITMQ_HOST=rabbitmq

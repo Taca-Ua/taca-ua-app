@@ -4,11 +4,11 @@ WORKDIR /app
 
 # Install messaging package
 COPY src/shared /tmp/taca-messaging
-RUN pip install --no-cache-dir /tmp/taca-messaging && rm -rf /tmp/taca-messaging
+RUN pip install --no-cache-dir -e /tmp/taca-messaging
 
 COPY src/microservices/read-model-updater/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/microservices/read-model-updater .
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/tmp/taca-messaging", "--reload-dir", "/app"]
