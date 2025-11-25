@@ -6,7 +6,7 @@ import logging_loki
 from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
 
-from .kafka_utils import consume, produce
+from .rabbitmq_utils import consume, produce
 
 # Logging setup
 handler = logging_loki.LokiHandler(
@@ -41,6 +41,6 @@ def read_root():
 
 @app.post("/send-event")
 async def send_event(msg: str):
-    await produce("test-topic", msg)
+    await produce("test-queue", {"message": msg})
     logger.info(f"Event sent: {msg}")
     return {"status": "sent"}
