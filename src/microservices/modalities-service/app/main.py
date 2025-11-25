@@ -6,7 +6,7 @@ import logging_loki
 from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
 
-from .kafka_utils import consume
+from .rabbitmq_utils import consume
 
 # Logging setup
 handler = logging_loki.LokiHandler(

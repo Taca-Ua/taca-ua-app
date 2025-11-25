@@ -17,31 +17,14 @@ services:
       - prometheus
       - loki
 
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.4.0
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
     environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-
-  kafka:
-    image: confluentinc/cp-kafka:7.4.0
-    depends_on:
-      - zookeeper
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-
-  schema-registry:
-    image: confluentinc/cp-schema-registry:7.4.0
-    depends_on:
-      - kafka
-    environment:
-      SCHEMA_REGISTRY_HOST_NAME: schema-registry
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:29092
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
 
   postgres:
     image: postgres:15-alpine
@@ -105,61 +88,82 @@ services:
   competition-api:
     build: ./src/apis/competiotion-api
     environment:
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER:-guest}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - DATABASE_URL=postgres://user:password@postgres:5432/taca_ua
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
     depends_on:
-      - kafka
+      - rabbitmq
       - postgres
       - loki
 
   public-api:
     build: ./src/apis/public-api
     environment:
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER:-guest}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
     depends_on:
-      - kafka
+      - rabbitmq
       - loki
 
 # Microservices
   matches-service:
     build: ./src/microservices/matches-service
     environment:
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER:-guest}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
     depends_on:
-      - kafka
+      - rabbitmq
       - loki
 
   modalities-service:
     build: ./src/microservices/modalities-service
     environment:
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER:-guest}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
     depends_on:
-      - kafka
+      - rabbitmq
       - loki
 
   ranking-service:
     build: ./src/microservices/ranking-service
     environment:
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER:-guest}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
     depends_on:
-      - kafka
+      - rabbitmq
       - loki
 
   read-model-updater:
     build: ./src/microservices/read-model-updater
     environment:
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER:-guest}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
     depends_on:
-      - kafka
+      - rabbitmq
       - loki
 
   tournaments-service:
     build: ./src/microservices/tournaments-service
     environment:
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER:-guest}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
     depends_on:
-      - kafka
+      - rabbitmq
       - loki
 
 # Frontend Services

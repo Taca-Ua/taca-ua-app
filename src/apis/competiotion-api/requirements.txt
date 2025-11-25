@@ -1,6 +1,6 @@
 Django==5.2.8
 djangorestframework==3.16.1
-kafka-python==2.3.0
+aio-pika==9.4.0
 psycopg2-binary==2.9.11
 django-prometheus==2.4.1
 python-logging-loki==0.3.1
