@@ -1,0 +1,249 @@
+import inspect
+import json
+import os
+from functools import wraps
+from typing import Callable, Dict
+
+import aio_pika
+from aio_pika import ExchangeType, Message, connect_robust
+from aio_pika.abc import AbstractIncomingMessage, AbstractRobustConnection
+
+
+class RabbitMQService:
+    """
+    RabbitMQ service for managing connections, publishing, and consuming events.
+    Provides a decorator-based pattern similar to FastAPI for event handlers.
+    """
+
+    def __init__(
+        self,
+        host: str = None,
+        port: int = None,
+        user: str = None,
+        password: str = None,
+        exchange_name: str = "events",
+    ):
+        self.host = host or os.getenv("RABBITMQ_HOST", "localhost")
+        self.port = port or int(os.getenv("RABBITMQ_PORT", "5672"))
+        self.user = user or os.getenv("RABBITMQ_USER", "guest")
+        self.password = password or os.getenv("RABBITMQ_PASSWORD", "guest")
+        self.exchange_name = exchange_name
+
+        self.connection: AbstractRobustConnection | None = None
+        self.channel = None
+        self.exchange = None
+
+        # Store event handlers: {event_name: [handler_func1, handler_func2, ...]}
+        self.event_handlers: Dict[str, list[Callable]] = {}
+
+    async def connect(self):
+        """Establish connection to RabbitMQ."""
+        if self.connection is None or self.connection.is_closed:
+            self.connection = await connect_robust(
+                host=self.host,
+                port=self.port,
+                login=self.user,
+                password=self.password,
+            )
+            self.channel = await self.connection.channel()
+            await self.channel.set_qos(prefetch_count=10)
+
+            # Declare exchange for pub/sub pattern
+            self.exchange = await self.channel.declare_exchange(
+                self.exchange_name,
+                ExchangeType.TOPIC,
+                durable=True,
+            )
+        return self.connection
+
+    async def disconnect(self):
+        """Close the RabbitMQ connection."""
+        if self.connection and not self.connection.is_closed:
+            await self.connection.close()
+            self.connection = None
+            self.channel = None
+            self.exchange = None
+
+    def event_handler(self, event_name: str):
+        """
+        Decorator to register an event handler function.
+
+        Usage:
+            @rabbitmq_service.event_handler('match.created')
+            async def process_match_created(data: dict):
+                print(f"Match created: {data}")
+
+        Args:
+            event_name: The event name/routing key to listen for (supports wildcards like 'match.*')
+        """
+
+        def decorator(func: Callable):
+            # Register the handler
+            if event_name not in self.event_handlers:
+                self.event_handlers[event_name] = []
+            self.event_handlers[event_name].append(func)
+
+            @wraps(func)
+            async def wrapper(*args, **kwargs):
+                return await func(*args, **kwargs)
+
+            return wrapper
+
+        return decorator
+
+    async def _process_message(
+        self,
+        message: AbstractIncomingMessage,
+        handler: Callable,
+    ):
+        """Internal method to process incoming messages."""
+        async with message.process():
+            try:
+                body = message.body.decode("utf-8")
+                data = json.loads(body)
+
+                # Check if handler is async or sync
+                if inspect.iscoroutinefunction(handler):
+                    await handler(data)
+                else:
+                    handler(data)
+
+                print(
+                    f"[OK] Processed event '{message.routing_key}' with handler '{handler.__name__}'"
+                )
+            except json.JSONDecodeError as e:
+                print(f"[✗] Failed to decode message: {e}")
+            except Exception as e:
+                print(
+                    f"[✗] Error processing message with handler '{handler.__name__}': {e}"
+                )
+
+    async def start_consuming(self, queue_name: str = None):
+        """
+        Start consuming events for all registered event handlers.
+
+        Args:
+            queue_name: Optional queue name. If None, generates one based on service name.
+        """
+        await self.connect()
+
+        if not self.event_handlers:
+            print(
+                "[!] No event handlers registered. Use @event_handler decorator to register handlers."
+            )
+            return
+
+        # Use a unique queue name if not provided
+        if queue_name is None:
+            queue_name = f"service-events-{os.getpid()}"
+
+        # Declare queue
+        queue = await self.channel.declare_queue(
+            queue_name,
+            durable=True,
+            auto_delete=False,
+        )
+
+        # Bind queue to exchange for each registered event pattern
+        for event_pattern in self.event_handlers.keys():
+            await queue.bind(self.exchange, routing_key=event_pattern)
+            print(f"[OK] Bound queue '{queue_name}' to event pattern '{event_pattern}'")
+
+        # Set up consumer
+        async def on_message(message: AbstractIncomingMessage):
+            routing_key = message.routing_key
+
+            # Find matching handlers
+            for event_pattern, handlers in self.event_handlers.items():
+                # Simple pattern matching (can be enhanced with fnmatch for wildcards)
+                if self._matches_pattern(routing_key, event_pattern):
+                    for handler in handlers:
+                        await self._process_message(message, handler)
+                    break
+
+        await queue.consume(on_message)
+        print(f"[OK] Started consuming events from queue: {queue_name}")
+
+    def _matches_pattern(self, routing_key: str, pattern: str) -> bool:
+        """
+        Check if routing key matches the event pattern.
+        Supports RabbitMQ topic patterns: * (one word), # (zero or more words)
+        """
+        if pattern == routing_key:
+            return True
+
+        pattern_parts = pattern.split(".")
+        key_parts = routing_key.split(".")
+
+        if len(pattern_parts) != len(key_parts):
+            # Check for # wildcard
+            if "#" in pattern_parts:
+                # Simple implementation: if pattern has #, accept any key with same prefix
+                for i, part in enumerate(pattern_parts):
+                    if part == "#":
+                        return True
+                    if i >= len(key_parts) or (part != "*" and part != key_parts[i]):
+                        return False
+                return True
+            return False
+
+        for pattern_part, key_part in zip(pattern_parts, key_parts):
+            if pattern_part == "*":
+                continue
+            if pattern_part != key_part:
+                return False
+
+        return True
+
+    async def publish_event(self, event_name: str, data: dict):
+        """
+        Publish an event to the exchange.
+
+        Args:
+            event_name: The event name/routing key
+            data: Dictionary containing event data
+        """
+        await self.connect()
+
+        message = Message(
+            body=json.dumps(data).encode("utf-8"),
+            delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
+            content_type="application/json",
+        )
+
+        await self.exchange.publish(
+            message,
+            routing_key=event_name,
+        )
+        print(f"[OK] Published event '{event_name}'")
+
+    async def publish_to_queue(self, queue_name: str, data: dict):
+        """
+        Publish a message directly to a queue (legacy method).
+
+        Args:
+            queue_name: Name of the queue
+            data: Dictionary to send as JSON
+        """
+        await self.connect()
+
+        queue = await self.channel.declare_queue(queue_name, durable=True)
+
+        message = Message(
+            body=json.dumps(data).encode("utf-8"),
+            delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
+            content_type="application/json",
+        )
+
+        await self.channel.default_exchange.publish(
+            message,
+            routing_key=queue.name,
+        )
+        print(f"[OK] Published message to queue '{queue_name}'")
+
+
+# Global instance for easy import
+rabbitmq_service = RabbitMQService()
+
+# Convenience decorator for the global instance
+event_handler = rabbitmq_service.event_handler

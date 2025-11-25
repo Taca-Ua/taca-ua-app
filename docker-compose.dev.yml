@@ -87,8 +87,8 @@ services:
 # APIs
   competition-api:
     build:
-      context: ./src/apis/competiotion-api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: src/apis/competiotion-api/Dockerfile
     volumes:
       - ./src/apis/competiotion-api:/app
     environment:
@@ -106,8 +106,8 @@ services:
 
   public-api:
     build:
-      context: ./src/apis/public-api
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: src/apis/public-api/Dockerfile.dev
     volumes:
       - ./src/apis/public-api:/app
     environment:
@@ -123,8 +123,8 @@ services:
 # Microservices
   matches-service:
     build:
-      context: ./src/microservices/matches-service
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: src/microservices/matches-service/Dockerfile.dev
     volumes:
       - ./src/microservices/matches-service:/app
     environment:
@@ -139,8 +139,8 @@ services:
 
   modalities-service:
     build:
-      context: ./src/microservices/modalities-service
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: src/microservices/modalities-service/Dockerfile.dev
     volumes:
       - ./src/microservices/modalities-service:/app
     environment:
@@ -155,8 +155,8 @@ services:
 
   ranking-service:
     build:
-      context: ./src/microservices/ranking-service
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: src/microservices/ranking-service/Dockerfile.dev
     volumes:
       - ./src/microservices/ranking-service:/app
     environment:
@@ -171,8 +171,8 @@ services:
 
   read-model-updater:
     build:
-      context: ./src/microservices/read-model-updater
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: src/microservices/read-model-updater/Dockerfile.dev
     volumes:
       - ./src/microservices/read-model-updater:/app
     environment:
@@ -187,8 +187,8 @@ services:
 
   tournaments-service:
     build:
-      context: ./src/microservices/tournaments-service
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: src/microservices/tournaments-service/Dockerfile.dev
     volumes:
       - ./src/microservices/tournaments-service:/app
     environment:
@@ -204,8 +204,8 @@ services:
 # Frontend Services
   admin-panel:
     build:
-      context: ./src/frontend/admin-panel
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: src/frontend/admin-panel/Dockerfile
     volumes:
       - ./src/frontend/admin-panel:/app
       - /app/node_modules
@@ -214,8 +214,8 @@ services:
 
   public-website:
     build:
-      context: ./src/frontend/public-website
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: src/frontend/public-website/Dockerfile
     volumes:
       - ./src/frontend/public-website:/app
       - /app/node_modules

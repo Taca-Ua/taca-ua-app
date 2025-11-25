@@ -5,8 +5,7 @@ from contextlib import asynccontextmanager
 import logging_loki
 from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
-
-from .rabbitmq_utils import consume, produce
+from taca_messaging import rabbitmq_service
 
 # Logging setup
 handler = logging_loki.LokiHandler(
@@ -21,11 +20,12 @@ logger.setLevel(logging.INFO)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Start Kafka consumer in background
-    asyncio.create_task(consume())
+    # Start RabbitMQ event consumer
+    asyncio.create_task(rabbitmq_service.start_consuming(queue_name="public-api-queue"))
     logger.info("Public API started")
     yield
-    # Shutdown logic if needed
+    # Disconnect from RabbitMQ on shutdown
+    await rabbitmq_service.disconnect()
     logger.info("Public API stopped")
 
 
@@ -41,6 +41,6 @@ def read_root():
 
 @app.post("/send-event")
 async def send_event(msg: str):
-    await produce("test-queue", {"message": msg})
+    await rabbitmq_service.publish_to_queue("test-queue", {"message": msg})
     logger.info(f"Event sent: {msg}")
     return {"status": "sent"}
