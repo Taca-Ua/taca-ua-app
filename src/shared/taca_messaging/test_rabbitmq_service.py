@@ -100,6 +100,12 @@ class TestPatternMatching:
 
         # Hash in the middle
         assert service._matches_pattern("match.created.v1", "match.#.v1") is True
+        assert service._matches_pattern("match.v1", "match.#.v1") is True
+        assert (
+            service._matches_pattern("match.created.updated.v1", "match.#.v1") is True
+        )
+        assert service._matches_pattern("match.v1.extra", "match.#.v1") is False
+        assert service._matches_pattern("match.created", "match.#.v1") is False
 
     def test_combined_wildcards(self, service):
         """Test combinations of wildcards."""

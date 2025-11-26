@@ -2,6 +2,7 @@ import inspect
 import json
 import logging
 import os
+import re
 from typing import Callable, Dict, Optional
 
 import aio_pika
@@ -159,36 +160,34 @@ class RabbitMQService:
                 f"Bound queue '{queue_name}' to event pattern '{event_pattern}'"
             )
 
-        # Set up consumer
-        async def on_message(message: AbstractIncomingMessage):
-            routing_key = message.routing_key
-            processed = False
-
-            # Find all matching handlers
-            try:
-                for event_pattern, handlers in self.event_handlers.items():
-                    if self._matches_pattern(routing_key, event_pattern):
-                        for handler in handlers:
-                            await self._process_message(message, handler)
-                            processed = True
-
-                # Acknowledge message once after all handlers have processed it
-                if processed:
-                    await message.ack()
-                else:
-                    self.logger.warning(
-                        f"No handlers matched routing key: {routing_key}"
-                    )
-                    await message.ack()  # Ack anyway to prevent requeue
-            except json.JSONDecodeError as e:
-                self.logger.error(f"Failed to decode message: {e}")
-                await message.reject(requeue=False)  # Reject malformed messages
-            except Exception as e:
-                self.logger.error(f"Error processing message: {e}")
-                await message.reject(requeue=True)  # Requeue for retry
-
-        await queue.consume(on_message)
+        # Start consuming using the extracted handler to reduce complexity
+        await queue.consume(self._on_message)
         self.logger.info(f"Started consuming events from queue: {queue_name}")
+
+    async def _on_message(self, message: AbstractIncomingMessage):
+        routing_key = message.routing_key
+        processed = False
+
+        # Find all matching handlers
+        try:
+            for event_pattern, handlers in self.event_handlers.items():
+                if self._matches_pattern(routing_key, event_pattern):
+                    for handler in handlers:
+                        await self._process_message(message, handler)
+                        processed = True
+
+            # Acknowledge message once after all handlers have processed it
+            if processed:
+                await message.ack()
+            else:
+                self.logger.warning(f"No handlers matched routing key: {routing_key}")
+                await message.ack()  # Ack anyway to prevent requeue
+        except json.JSONDecodeError as e:
+            self.logger.error(f"Failed to decode message: {e}")
+            await message.reject(requeue=False)  # Reject malformed messages
+        except Exception as e:
+            self.logger.error(f"Error processing message: {e}")
+            await message.reject(requeue=True)  # Requeue for retry
 
     def _matches_pattern(self, routing_key: str, pattern: str) -> bool:
         """
@@ -198,30 +197,17 @@ class RabbitMQService:
         if pattern == routing_key:
             return True
 
-        pattern_parts = pattern.split(".")
-        key_parts = routing_key.split(".")
+        regex_pattern = (
+            pattern.replace("#.", "#")
+            .replace(".#", "#")
+            .replace(".", r"\.")
+            .replace("*", r"[^\.]+")
+            .replace("#", r"(.+)?")
+        )
 
-        # Handle # wildcard (zero or more words)
-        if "#" in pattern_parts:
-            return self._match_with_hash(pattern_parts, key_parts)
+        print(regex_pattern)
 
-        # Handle * wildcard (exactly one word)
-        if len(pattern_parts) != len(key_parts):
-            return False
-
-        return all(p == "*" or p == k for p, k in zip(pattern_parts, key_parts))
-
-    def _match_with_hash(self, pattern_parts: list[str], key_parts: list[str]) -> bool:
-        """Helper to match patterns containing # wildcard."""
-        for i, part in enumerate(pattern_parts):
-            if part == "#":
-                # # matches zero or more words, so it's valid anywhere
-                return True
-            if i >= len(key_parts) or (part != "*" and part != key_parts[i]):
-                return False
-        # If we've matched all pattern parts and there are no more key parts,
-        # or if the pattern is shorter but all parts matched, it's valid
-        return len(pattern_parts) <= len(key_parts)
+        return re.fullmatch(regex_pattern, routing_key) is not None
 
     async def publish_event(self, event_name: str, data: dict):
         """
