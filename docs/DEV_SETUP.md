@@ -15,7 +15,7 @@ This allows all microservices to import from `taca_messaging` directly.
 ### 2. Verify Installation
 
 ```bash
-python -c "from taca_messaging import rabbitmq_service; print('OK Package installed successfully')"
+python -c "from taca_messaging import rabbitmq_service; print('Package installed successfully')"
 ```
 
 ## Package Structure
@@ -34,7 +34,7 @@ src/shared/
 ## How It Works
 
 ```python
-from taca_messaging import rabbitmq_service  # Clean, proper import
+from taca_messaging.rabbitmq_service import RabbitMQService  # Clean, proper import
 ```
 
 ## Docker Build Context
@@ -66,7 +66,7 @@ This ensures the `taca_messaging` package is available when the service starts.
 ### Import the Service
 
 ```python
-from taca_messaging import rabbitmq_service, event_handler
+from taca_messaging.rabbitmq_service import RabbitMQService
 ```
 
 ## Troubleshooting
