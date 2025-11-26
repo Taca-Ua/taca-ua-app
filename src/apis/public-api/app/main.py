@@ -43,6 +43,6 @@ def read_root():
 
 @app.post("/send-event")
 async def send_event(msg: str):
-    await rabbitmq_service.publish_to_queue("test-queue", {"message": msg})
+    await rabbitmq_service.publish_event("test-queue", {"message": msg})
     logger.info(f"Event sent: {msg}")
     return {"status": "sent"}

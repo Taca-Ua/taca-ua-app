@@ -1,8 +1,9 @@
 import inspect
 import json
+import logging
 import os
 from functools import wraps
-from typing import Callable, Dict
+from typing import Callable, Dict, Optional
 
 import aio_pika
 from aio_pika import ExchangeType, Message, connect_robust
@@ -37,6 +38,7 @@ class RabbitMQService:
         user: str = None,
         password: str = None,
         exchange_name: str = "events",
+        logger: Optional[logging.Logger] = None,
     ):
         if not service_name:
             raise ValueError("service_name is required")
@@ -47,6 +49,7 @@ class RabbitMQService:
         self.user = user or os.getenv("RABBITMQ_USER", "guest")
         self.password = password or os.getenv("RABBITMQ_PASSWORD", "guest")
         self.exchange_name = exchange_name
+        self.logger = logger or logging.getLogger(__name__)
 
         self.connection: AbstractRobustConnection | None = None
         self.channel = None
@@ -116,26 +119,28 @@ class RabbitMQService:
         handler: Callable,
     ):
         """Internal method to process incoming messages."""
-        async with message.process():
-            try:
-                body = message.body.decode("utf-8")
-                data = json.loads(body)
+        try:
+            body = message.body.decode("utf-8")
+            data = json.loads(body)
 
-                # Check if handler is async or sync
-                if inspect.iscoroutinefunction(handler):
-                    await handler(data)
-                else:
-                    handler(data)
+            # Check if handler is async or sync
+            if inspect.iscoroutinefunction(handler):
+                await handler(data)
+            else:
+                handler(data)
 
-                print(
-                    f"[OK] Processed event '{message.routing_key}' with handler '{handler.__name__}'"
-                )
-            except json.JSONDecodeError as e:
-                print(f"[✗] Failed to decode message: {e}")
-            except Exception as e:
-                print(
-                    f"[✗] Error processing message with handler '{handler.__name__}': {e}"
-                )
+            self.logger.info(
+                f"Processed event '{message.routing_key}' with handler '{handler.__name__}'"
+            )
+            await message.ack()
+        except json.JSONDecodeError as e:
+            self.logger.error(f"Failed to decode message: {e}")
+            await message.reject(requeue=False)  # Reject malformed messages
+        except Exception as e:
+            self.logger.error(
+                f"Error processing message with handler '{handler.__name__}': {e}"
+            )
+            await message.reject(requeue=True)  # Requeue for retry
 
     async def start_consuming(self):
         """
@@ -148,8 +153,8 @@ class RabbitMQService:
         await self.connect()
 
         if not self.event_handlers:
-            print(
-                "[!] No event handlers registered. Use @event_handler decorator to register handlers."
+            self.logger.warning(
+                "No event handlers registered. Use @event_handler decorator to register handlers."
             )
             return
 
@@ -166,7 +171,9 @@ class RabbitMQService:
         # Bind queue to exchange for each registered event pattern
         for event_pattern in self.event_handlers.keys():
             await queue.bind(self.exchange, routing_key=event_pattern)
-            print(f"[OK] Bound queue '{queue_name}' to event pattern '{event_pattern}'")
+            self.logger.info(
+                f"Bound queue '{queue_name}' to event pattern '{event_pattern}'"
+            )
 
         # Set up consumer
         async def on_message(message: AbstractIncomingMessage):
@@ -180,7 +187,7 @@ class RabbitMQService:
                     break
 
         await queue.consume(on_message)
-        print(f"[OK] Started consuming events from queue: {queue_name}")
+        self.logger.info(f"Started consuming events from queue: {queue_name}")
 
     def _matches_pattern(self, routing_key: str, pattern: str) -> bool:
         """
@@ -233,4 +240,4 @@ class RabbitMQService:
             message,
             routing_key=event_name,
         )
-        print(f"[OK] Published event '{event_name}'")
+        self.logger.info(f"Published event '{event_name}'")
