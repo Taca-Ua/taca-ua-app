@@ -1,135 +1,260 @@
-# Shared Messaging Module
+# RabbitMQ Messaging Service
 
-This directory contains shared utilities for messaging with RabbitMQ across all services in the taca-ua-app project.
+A simple, decorator-based RabbitMQ service for event-driven microservices with intelligent load balancing.
 
-## Structure
+## Key Features
+
+- **Service-based queue architecture** - Each service has its own queue
+- **Cross-service broadcasting** - Same event delivered to all interested services
+- **Intra-service load balancing** - Multiple instances of same service share the workload
+- **Decorator-based handlers** - FastAPI-like `@event_handler` decorator pattern
+- **Topic-based routing** - Support for wildcard patterns (`*` and `#`)
+- **Persistent messages** - Messages survive broker restarts
+
+## Architecture
 
 ```
-src/shared/
-├── __init__.py
-└── messaging/
-    ├── __init__.py
-    └── rabbitmq_service.py
+Publisher (any service)
+    └─> Topic Exchange ("events")
+        ├─> Queue: "matches-service.events"
+        │   └─> matches-service instance 1 ⎤
+        │   └─> matches-service instance 2 ⎦ Load balanced
+        │
+        └─> Queue: "ranking-service.events"
+            └─> ranking-service instance 1 ⎤
+            └─> ranking-service instance 2 ⎦ Load balanced
 ```
 
-## RabbitMQService
+**Behavior:**
+- ✅ Multiple **different services** → All receive the same event
+- ✅ Multiple **instances of same service** → Load balanced (only one instance handles each event)
 
-A robust RabbitMQ service for managing connections, publishing, and consuming events with a decorator-based pattern similar to FastAPI.
+## Installation
 
-### Features
+This package is located in `src/shared/taca_messaging`.
 
-- **Event-driven architecture**: Publish/Subscribe pattern using RabbitMQ topic exchanges
-- **Decorator-based handlers**: Register event handlers using `@event_handler` decorator
-- **Wildcard support**: Use `*` and `#` patterns for flexible event routing
-- **Connection management**: Automatic reconnection and connection pooling
-- **Async/Sync handlers**: Support for both async and synchronous event handlers
+## Quick Start
 
-### Usage
+### 1. Create Service Instance
 
-#### Basic Setup in a Service
+Each service must create its own `RabbitMQService` instance with a unique `service_name`:
 
 ```python
-import asyncio
-import sys
-from pathlib import Path
-from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from taca_messaging.rabbitmq_service import RabbitMQService
 
-# Add shared module to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "shared"))
-from messaging import rabbitmq_service, event_handler
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Start RabbitMQ event consumer
-    asyncio.create_task(rabbitmq_service.start_consuming(queue_name="my-service-queue"))
-    logger.info("Service started")
-    yield
-    # Disconnect from RabbitMQ on shutdown
-    await rabbitmq_service.disconnect()
-    logger.info("Service stopped")
-
-app = FastAPI(lifespan=lifespan)
+# All instances of "matches-service" will share the same queue
+rabbitmq = RabbitMQService(service_name="matches-service")
 ```
 
-#### Registering Event Handlers
+### 2. Define Event Handlers
 
 ```python
-from messaging import event_handler
-
-# Handle specific events
-@event_handler('match.created')
-async def process_match_created(data: dict):
-    """Handle match.created events."""
-    print(f"Processing match created: {data}")
+@rabbitmq.event_handler('match.created')
+async def handle_match_created(data: dict):
+    print(f"Match created: {data}")
     match_id = data.get('match_id')
     # Your business logic here
 
-@event_handler('match.updated')
-async def process_match_updated(data: dict):
-    """Handle match.updated events."""
-    print(f"Match {data.get('match_id')} was updated")
-
-# Use wildcards to handle multiple events
-@event_handler('match.*')
-async def log_all_match_events(data: dict):
-    """Log all match-related events."""
-    print(f"[AUDIT] Match event occurred: {data}")
-
-# Synchronous handlers are also supported
-@event_handler('user.notification')
-def send_notification(data: dict):
-    """Send a notification (synchronous example)."""
-    print(f"Sending notification: {data.get('message')}")
+@rabbitmq.event_handler('match.*')  # Wildcard: all match events
+async def log_match_events(data: dict):
+    print(f"[AUDIT] Match event: {data}")
 ```
 
-#### Publishing Events
+### 3. Start Consuming Events
 
 ```python
-from messaging import rabbitmq_service
+import asyncio
 
-# Publish an event (pub/sub pattern)
-await rabbitmq_service.publish_event(
+async def main():
+    await rabbitmq.start_consuming()
+    await asyncio.Future()  # Run forever
+
+asyncio.run(main())
+```
+
+### 4. Publish Events
+
+```python
+# Any service can publish events
+publisher = RabbitMQService(service_name="api-service")
+
+await publisher.publish_event(
     'match.created',
-    {
-        'match_id': 123,
-        'team1': 'Team A',
-        'team2': 'Team B',
-        'scheduled_time': '2025-11-25T18:00:00Z'
-    }
-)
-
-# Publish directly to a queue (legacy method)
-await rabbitmq_service.publish_to_queue(
-    'specific-queue',
-    {'message': 'Direct queue message'}
+    {'match_id': 123, 'status': 'scheduled'}
 )
 ```
 
-### Event Routing Patterns
+## Configuration
 
-The service supports RabbitMQ topic patterns:
+Environment variables:
 
-- **Exact match**: `match.created` - matches only `match.created`
-- **Single word wildcard** (`*`): `match.*` - matches `match.created`, `match.updated`, etc.
-- **Multiple words wildcard** (`#`): `match.#` - matches `match.created`, `match.team.updated`, etc.
+- `RABBITMQ_HOST` - RabbitMQ server host (default: `localhost`)
+- `RABBITMQ_PORT` - RabbitMQ server port (default: `5672`)
+- `RABBITMQ_USER` - Username (default: `guest`)
+- `RABBITMQ_PASSWORD` - Password (default: `guest`)
 
-### Configuration
+## Event Patterns
 
-The service reads configuration from environment variables:
+Supports RabbitMQ topic patterns:
 
-- `RABBITMQ_HOST` - RabbitMQ host (default: `localhost`)
-- `RABBITMQ_PORT` - RabbitMQ port (default: `5672`)
-- `RABBITMQ_USER` - RabbitMQ username (default: `guest`)
-- `RABBITMQ_PASSWORD` - RabbitMQ password (default: `guest`)
+| Pattern | Matches | Example |
+|---------|---------|---------|
+| `match.created` | Exact match | `match.created` only |
+| `match.*` | One word | `match.created`, `match.updated` |
+| `match.#` | Zero or more words | `match.created`, `match.team.updated` |
 
-### Services Using This Module
+```python
+@rabbitmq.event_handler('match.*')
+async def handle_any_match_event(data: dict):
+    # Handles: match.created, match.updated, match.deleted
+    pass
+```
 
-All microservices and APIs in the project use this shared module:
+## Integration with FastAPI
 
-- `src/apis/public-api/` - Uses queue: `public-api-queue`
-- `src/microservices/matches-service/` - Uses queue: `matches-service-queue`
-- `src/microservices/modalities-service/` - Uses queue: `modalities-queue`
-- `src/microservices/ranking-service/` - Uses queue: `ranking-queue`
-- `src/microservices/read-model-updater/` - Uses queue: `read-model-queue`
-- `src/microservices/tournaments-service/` - Uses queue: `tournaments-queue`
+```python
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from taca_messaging.rabbitmq_service import RabbitMQService
+
+rabbitmq = RabbitMQService(service_name="matches-service")
+
+# Register event handlers
+@rabbitmq.event_handler('match.created')
+async def handle_match_created(data: dict):
+    print(f"Match created: {data}")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Start consuming events
+    await rabbitmq.start_consuming()
+    yield
+    # Shutdown: Disconnect
+    await rabbitmq.disconnect()
+
+app = FastAPI(lifespan=lifespan)
+
+# Publish events from your endpoints
+@app.post("/matches")
+async def create_match(match_data: dict):
+    # ... create match logic ...
+
+    await rabbitmq.publish_event('match.created', {
+        'match_id': match_data['id'],
+        'teams': match_data['teams']
+    })
+
+    return {"status": "created"}
+```
+
+## Example: Multiple Services
+
+```python
+# Service 1: Matches Service
+matches_rabbitmq = RabbitMQService(service_name="matches-service")
+
+@matches_rabbitmq.event_handler("match.created")
+async def matches_handler(data: dict):
+    print(f"[matches-service] Processing: {data}")
+
+# Service 2: Ranking Service
+ranking_rabbitmq = RabbitMQService(service_name="ranking-service")
+
+@ranking_rabbitmq.event_handler("match.created")
+async def ranking_handler(data: dict):
+    print(f"[ranking-service] Updating rankings: {data}")
+
+# Start both
+await matches_rabbitmq.start_consuming()
+await ranking_rabbitmq.start_consuming()
+
+# Publish event
+publisher = RabbitMQService(service_name="api")
+await publisher.publish_event("match.created", {"match_id": 123})
+
+# Result: BOTH services receive the event!
+# [matches-service] Processing: {'match_id': 123}
+# [ranking-service] Updating rankings: {'match_id': 123}
+```
+
+## Load Balancing Behavior
+
+### Scenario 1: Same Service, Multiple Instances
+```python
+# Instance 1 of matches-service
+rabbitmq1 = RabbitMQService(service_name="matches-service")
+await rabbitmq1.start_consuming()
+
+# Instance 2 of matches-service (same service_name)
+rabbitmq2 = RabbitMQService(service_name="matches-service")
+await rabbitmq2.start_consuming()
+
+# Publish 10 events
+for i in range(10):
+    await publisher.publish_event("match.created", {"id": i})
+
+# Result: Events are load-balanced between instance 1 and 2
+# Only ONE instance handles each event
+```
+
+### Scenario 2: Different Services
+```python
+# Matches service
+matches = RabbitMQService(service_name="matches-service")
+await matches.start_consuming()
+
+# Ranking service (different service_name)
+ranking = RabbitMQService(service_name="ranking-service")
+await ranking.start_consuming()
+
+# Publish 1 event
+await publisher.publish_event("match.created", {"id": 1})
+
+# Result: BOTH services receive the event
+# No load balancing between different services
+```
+
+## Best Practices
+
+1. **Use descriptive service names**: `"matches-service"`, `"ranking-service"`, `"notifications-service"`
+2. **Use dotted event names**: `"match.created"`, `"tournament.started"`, `"user.registered"`
+3. **Handle errors gracefully**: Wrap handler logic in try-except
+4. **Keep handlers fast**: For slow operations, dispatch to background tasks
+5. **Use wildcards sparingly**: Prefer specific event names for clarity
+
+## API Reference
+
+### `RabbitMQService(service_name, host=None, port=None, user=None, password=None, exchange_name="events")`
+
+Create a new RabbitMQ service instance.
+
+**Parameters:**
+- `service_name` (str, required): Unique name for this service
+- `host` (str): RabbitMQ host
+- `port` (int): RabbitMQ port
+- `user` (str): Username
+- `password` (str): Password
+- `exchange_name` (str): Exchange name (default: `"events"`)
+
+### `@rabbitmq.event_handler(event_pattern)`
+
+Decorator to register an event handler.
+
+**Parameters:**
+- `event_pattern` (str): Event name or pattern (supports `*` and `#` wildcards)
+
+### `await rabbitmq.publish_event(event_name, data)`
+
+Publish an event to the exchange.
+
+**Parameters:**
+- `event_name` (str): Event routing key
+- `data` (dict): Event payload (must be JSON-serializable)
+
+### `await rabbitmq.start_consuming()`
+
+Start consuming events. Blocks until stopped.
+
+### `await rabbitmq.disconnect()`
+
+Close the RabbitMQ connection.

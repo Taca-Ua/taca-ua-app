@@ -12,17 +12,36 @@ from aio_pika.abc import AbstractIncomingMessage, AbstractRobustConnection
 class RabbitMQService:
     """
     RabbitMQ service for managing connections, publishing, and consuming events.
-    Provides a decorator-based pattern similar to FastAPI for event handlers.
+
+    Architecture:
+    - Uses topic exchange for pub/sub pattern
+    - Each service has its own queue (named by service_name)
+    - Multiple instances of the same service share the same queue (load balancing)
+    - Different services get the same event (no load balancing across services)
+
+    Usage:
+        rabbitmq = RabbitMQService(service_name="matches-service")
+
+        @rabbitmq.event_handler('match.created')
+        async def handle_match_created(data: dict):
+            print(f"Match created: {data}")
+
+        await rabbitmq.publish_event('match.created', {'id': 123})
     """
 
     def __init__(
         self,
+        service_name: str,
         host: str = None,
         port: int = None,
         user: str = None,
         password: str = None,
         exchange_name: str = "events",
     ):
+        if not service_name:
+            raise ValueError("service_name is required")
+
+        self.service_name = service_name
         self.host = host or os.getenv("RABBITMQ_HOST", "localhost")
         self.port = port or int(os.getenv("RABBITMQ_PORT", "5672"))
         self.user = user or os.getenv("RABBITMQ_USER", "guest")
@@ -118,12 +137,13 @@ class RabbitMQService:
                     f"[✗] Error processing message with handler '{handler.__name__}': {e}"
                 )
 
-    async def start_consuming(self, queue_name: str = None):
+    async def start_consuming(self):
         """
         Start consuming events for all registered event handlers.
 
-        Args:
-            queue_name: Optional queue name. If None, generates one based on service name.
+        Uses service_name as the queue name, ensuring:
+        - Multiple instances of the same service share the queue (load balancing)
+        - Different services have different queues (both receive events)
         """
         await self.connect()
 
@@ -133,11 +153,10 @@ class RabbitMQService:
             )
             return
 
-        # Use a unique queue name if not provided
-        if queue_name is None:
-            queue_name = f"service-events-{os.getpid()}"
+        # Queue name based on service name (same for all instances of this service)
+        queue_name = f"{self.service_name}.events"
 
-        # Declare queue
+        # Declare queue (shared by all instances of this service)
         queue = await self.channel.declare_queue(
             queue_name,
             durable=True,
@@ -155,7 +174,6 @@ class RabbitMQService:
 
             # Find matching handlers
             for event_pattern, handlers in self.event_handlers.items():
-                # Simple pattern matching (can be enhanced with fnmatch for wildcards)
                 if self._matches_pattern(routing_key, event_pattern):
                     for handler in handlers:
                         await self._process_message(message, handler)
@@ -175,32 +193,32 @@ class RabbitMQService:
         pattern_parts = pattern.split(".")
         key_parts = routing_key.split(".")
 
+        # Handle # wildcard (zero or more words)
+        if "#" in pattern_parts:
+            return self._match_with_hash(pattern_parts, key_parts)
+
+        # Handle * wildcard (exactly one word)
         if len(pattern_parts) != len(key_parts):
-            # Check for # wildcard
-            if "#" in pattern_parts:
-                # Simple implementation: if pattern has #, accept any key with same prefix
-                for i, part in enumerate(pattern_parts):
-                    if part == "#":
-                        return True
-                    if i >= len(key_parts) or (part != "*" and part != key_parts[i]):
-                        return False
-                return True
             return False
 
-        for pattern_part, key_part in zip(pattern_parts, key_parts):
-            if pattern_part == "*":
-                continue
-            if pattern_part != key_part:
-                return False
+        return all(p == "*" or p == k for p, k in zip(pattern_parts, key_parts))
 
+    def _match_with_hash(self, pattern_parts: list[str], key_parts: list[str]) -> bool:
+        """Helper to match patterns containing # wildcard."""
+        for i, part in enumerate(pattern_parts):
+            if part == "#":
+                return True
+            if i >= len(key_parts) or (part != "*" and part != key_parts[i]):
+                return False
         return True
 
     async def publish_event(self, event_name: str, data: dict):
         """
         Publish an event to the exchange.
+        All services listening to this event pattern will receive it.
 
         Args:
-            event_name: The event name/routing key
+            event_name: The event name/routing key (e.g., 'match.created')
             data: Dictionary containing event data
         """
         await self.connect()
@@ -216,34 +234,3 @@ class RabbitMQService:
             routing_key=event_name,
         )
         print(f"[OK] Published event '{event_name}'")
-
-    async def publish_to_queue(self, queue_name: str, data: dict):
-        """
-        Publish a message directly to a queue (legacy method).
-
-        Args:
-            queue_name: Name of the queue
-            data: Dictionary to send as JSON
-        """
-        await self.connect()
-
-        queue = await self.channel.declare_queue(queue_name, durable=True)
-
-        message = Message(
-            body=json.dumps(data).encode("utf-8"),
-            delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
-            content_type="application/json",
-        )
-
-        await self.channel.default_exchange.publish(
-            message,
-            routing_key=queue.name,
-        )
-        print(f"[OK] Published message to queue '{queue_name}'")
-
-
-# Global instance for easy import
-rabbitmq_service = RabbitMQService()
-
-# Convenience decorator for the global instance
-event_handler = rabbitmq_service.event_handler
