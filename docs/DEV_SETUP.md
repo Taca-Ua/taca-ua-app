@@ -24,7 +24,6 @@ python -c "from taca_messaging import rabbitmq_service; print('Package installed
 src/shared/
 ├── setup.py              # Package setup configuration
 ├── pyproject.toml        # Modern Python packaging config
-├── INSTALL.md           # Installation instructions
 ├── README.md            # Package documentation
 └── taca_messaging/      # Main package directory
     ├── __init__.py
@@ -109,6 +108,6 @@ services:
 ## Next Steps
 
 1. **Install the package**: `pip install -e src/shared`
-2. **Read the docs**: Check `src/shared/README.md` for API details
-3. **See examples**: Look at `src/microservices/matches-service/app/example_usage.py`
+2. **Read the docs**: Check `src/shared/taca_messaging/README.md` for API details
+3. **See examples**: Look at `src/shared/taca_messaging/example_usage.py`
 4. **Start coding**: Import `from taca_messaging import ...` in your services
