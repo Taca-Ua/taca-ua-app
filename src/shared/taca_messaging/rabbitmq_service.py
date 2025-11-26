@@ -2,7 +2,6 @@ import inspect
 import json
 import logging
 import os
-from functools import wraps
 from typing import Callable, Dict, Optional
 
 import aio_pika
@@ -104,12 +103,7 @@ class RabbitMQService:
             if event_name not in self.event_handlers:
                 self.event_handlers[event_name] = []
             self.event_handlers[event_name].append(func)
-
-            @wraps(func)
-            async def wrapper(*args, **kwargs):
-                return await func(*args, **kwargs)
-
-            return wrapper
+            return func
 
         return decorator
 
@@ -119,28 +113,18 @@ class RabbitMQService:
         handler: Callable,
     ):
         """Internal method to process incoming messages."""
-        try:
-            body = message.body.decode("utf-8")
-            data = json.loads(body)
+        body = message.body.decode("utf-8")
+        data = json.loads(body)
 
-            # Check if handler is async or sync
-            if inspect.iscoroutinefunction(handler):
-                await handler(data)
-            else:
-                handler(data)
+        # Check if handler is async or sync
+        if inspect.iscoroutinefunction(handler):
+            await handler(data)
+        else:
+            handler(data)
 
-            self.logger.info(
-                f"Processed event '{message.routing_key}' with handler '{handler.__name__}'"
-            )
-            await message.ack()
-        except json.JSONDecodeError as e:
-            self.logger.error(f"Failed to decode message: {e}")
-            await message.reject(requeue=False)  # Reject malformed messages
-        except Exception as e:
-            self.logger.error(
-                f"Error processing message with handler '{handler.__name__}': {e}"
-            )
-            await message.reject(requeue=True)  # Requeue for retry
+        self.logger.info(
+            f"Processed event '{message.routing_key}' with handler '{handler.__name__}'"
+        )
 
     async def start_consuming(self):
         """
@@ -178,13 +162,30 @@ class RabbitMQService:
         # Set up consumer
         async def on_message(message: AbstractIncomingMessage):
             routing_key = message.routing_key
+            processed = False
 
-            # Find matching handlers
-            for event_pattern, handlers in self.event_handlers.items():
-                if self._matches_pattern(routing_key, event_pattern):
-                    for handler in handlers:
-                        await self._process_message(message, handler)
-                    break
+            # Find all matching handlers
+            try:
+                for event_pattern, handlers in self.event_handlers.items():
+                    if self._matches_pattern(routing_key, event_pattern):
+                        for handler in handlers:
+                            await self._process_message(message, handler)
+                            processed = True
+
+                # Acknowledge message once after all handlers have processed it
+                if processed:
+                    await message.ack()
+                else:
+                    self.logger.warning(
+                        f"No handlers matched routing key: {routing_key}"
+                    )
+                    await message.ack()  # Ack anyway to prevent requeue
+            except json.JSONDecodeError as e:
+                self.logger.error(f"Failed to decode message: {e}")
+                await message.reject(requeue=False)  # Reject malformed messages
+            except Exception as e:
+                self.logger.error(f"Error processing message: {e}")
+                await message.reject(requeue=True)  # Requeue for retry
 
         await queue.consume(on_message)
         self.logger.info(f"Started consuming events from queue: {queue_name}")
@@ -214,10 +215,13 @@ class RabbitMQService:
         """Helper to match patterns containing # wildcard."""
         for i, part in enumerate(pattern_parts):
             if part == "#":
+                # # matches zero or more words, so it's valid anywhere
                 return True
             if i >= len(key_parts) or (part != "*" and part != key_parts[i]):
                 return False
-        return True
+        # If we've matched all pattern parts and there are no more key parts,
+        # or if the pattern is shorter but all parts matched, it's valid
+        return len(pattern_parts) <= len(key_parts)
 
     async def publish_event(self, event_name: str, data: dict):
         """
