@@ -109,6 +109,6 @@ services:
 ## Next Steps
 
 1. **Install the package**: `pip install -e src/shared`
-2. **Read the docs**: Check `src/shared/README.md` for API details
+2. **Read the docs**: Check `src/shared/taca_messaging/README.md` for API details
 3. **See examples**: Look at `src/microservices/matches-service/app/example_usage.py`
 4. **Start coding**: Import `from taca_messaging import ...` in your services
