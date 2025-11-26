@@ -57,6 +57,7 @@ jobs:
       - name: Install dependencies for ${{ matrix.service.name }}
         run: |
           python -m pip install --upgrade pip
+          pip install src/shared/
           pip install -r ${{ matrix.service.path }}/requirements.txt
 
       - name: Check Python syntax for ${{ matrix.service.name }}
@@ -138,7 +139,7 @@ jobs:
       - name: Build Docker image for ${{ matrix.service.name }}
         uses: docker/build-push-action@v5
         with:
-          context: ${{ matrix.service.path }}
+          context: .
           file: ${{ matrix.service.path }}/Dockerfile
           push: false
           tags: ${{ matrix.service.name }}:test
