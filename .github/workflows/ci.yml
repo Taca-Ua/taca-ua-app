@@ -146,6 +146,30 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  python-tests:
+    name: Run Python Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: 'src/shared/requirements-dev.txt'
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r src/shared/requirements-dev.txt
+          pip install src/shared/
+
+      - name: Run tests with coverage
+        run: |
+          pytest --cov=src/shared/taca_messaging --cov-report=xml src/shared/taca_messaging/tests/
+
   all-checks-passed:
     name: All Checks Passed
     runs-on: ubuntu-latest
@@ -154,6 +178,7 @@ jobs:
       - build-python-services
       - build-frontend
       - docker-build
+      - python-tests
     if: always()
     steps:
       - name: Check if all jobs succeeded
@@ -161,7 +186,8 @@ jobs:
           if [[ "${{ needs.check-pr-status.result }}" != "success" ]] || \
              [[ "${{ needs.build-python-services.result }}" != "success" ]] || \
              [[ "${{ needs.build-frontend.result }}" != "success" ]] || \
-             [[ "${{ needs.docker-build.result }}" != "success" ]]; then
+             [[ "${{ needs.docker-build.result }}" != "success" ]] || \
+             [[ "${{ needs.python-tests.result }}" != "success" ]]; then
             echo "::error::One or more CI checks failed"
             exit 1
           fi

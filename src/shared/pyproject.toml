@@ -19,6 +19,7 @@ dependencies = [
 dev = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
 ]
 
 [tool.setuptools.packages.find]
@@ -27,3 +28,25 @@ include = ["taca_messaging*"]
 
 [tool.setuptools.package-data]
 taca_messaging = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["taca_messaging"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+asyncio_mode = "auto"
+addopts = "-v --tb=short --strict-markers"
+
+[tool.coverage.run]
+source = ["taca_messaging"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/example_usage.py"
+]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
