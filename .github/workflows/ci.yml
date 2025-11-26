@@ -168,7 +168,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          pytest --cov=src/shared/taca_messaging --cov-report=xml src/shared/taca_messaging/tests/
+          pytest
 
   all-checks-passed:
     name: All Checks Passed
