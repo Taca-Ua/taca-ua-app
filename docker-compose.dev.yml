@@ -88,10 +88,12 @@ services:
   competition-api:
     build:
       context: .
-      dockerfile: src/apis/competiotion-api/Dockerfile
+      dockerfile: src/apis/competiotion-api/Dockerfile.dev
     volumes:
+      - ./src/shared:/tmp/taca-messaging
       - ./src/apis/competiotion-api:/app
     environment:
+      - DJANGO_AUTORELOAD_EXTRA_DIRS=/tmp/taca-messaging
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
@@ -109,6 +111,7 @@ services:
       context: .
       dockerfile: src/apis/public-api/Dockerfile.dev
     volumes:
+      - ./src/shared:/tmp/taca-messaging
       - ./src/apis/public-api:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
