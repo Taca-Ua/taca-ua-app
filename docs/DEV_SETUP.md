@@ -24,7 +24,6 @@ python -c "from taca_messaging import rabbitmq_service; print('Package installed
 src/shared/
 ├── setup.py              # Package setup configuration
 ├── pyproject.toml        # Modern Python packaging config
-├── INSTALL.md           # Installation instructions
 ├── README.md            # Package documentation
 └── taca_messaging/      # Main package directory
     ├── __init__.py
