@@ -2,9 +2,13 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
+# Install messaging package
+COPY src/shared /tmp/taca-messaging
+RUN pip install --no-cache-dir /tmp/taca-messaging && rm -rf /tmp/taca-messaging
+
+COPY src/apis/public-api/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY src/apis/public-api .
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

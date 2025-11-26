@@ -87,11 +87,13 @@ services:
 # APIs
   competition-api:
     build:
-      context: ./src/apis/competiotion-api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: src/apis/competiotion-api/Dockerfile.dev
     volumes:
+      - ./src/shared:/tmp/taca-messaging
       - ./src/apis/competiotion-api:/app
     environment:
+      - DJANGO_AUTORELOAD_EXTRA_DIRS=/tmp/taca-messaging
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
@@ -106,9 +108,10 @@ services:
 
   public-api:
     build:
-      context: ./src/apis/public-api
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: src/apis/public-api/Dockerfile.dev
     volumes:
+      - ./src/shared:/tmp/taca-messaging
       - ./src/apis/public-api:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -123,9 +126,10 @@ services:
 # Microservices
   matches-service:
     build:
-      context: ./src/microservices/matches-service
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: src/microservices/matches-service/Dockerfile.dev
     volumes:
+      - ./src/shared:/tmp/taca-messaging
       - ./src/microservices/matches-service:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -139,9 +143,10 @@ services:
 
   modalities-service:
     build:
-      context: ./src/microservices/modalities-service
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: src/microservices/modalities-service/Dockerfile.dev
     volumes:
+      - ./src/shared:/tmp/taca-messaging
       - ./src/microservices/modalities-service:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -155,9 +160,10 @@ services:
 
   ranking-service:
     build:
-      context: ./src/microservices/ranking-service
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: src/microservices/ranking-service/Dockerfile.dev
     volumes:
+      - ./src/shared:/tmp/taca-messaging
       - ./src/microservices/ranking-service:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -171,9 +177,10 @@ services:
 
   read-model-updater:
     build:
-      context: ./src/microservices/read-model-updater
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: src/microservices/read-model-updater/Dockerfile.dev
     volumes:
+      - ./src/shared:/tmp/taca-messaging
       - ./src/microservices/read-model-updater:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -187,9 +194,10 @@ services:
 
   tournaments-service:
     build:
-      context: ./src/microservices/tournaments-service
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: src/microservices/tournaments-service/Dockerfile.dev
     volumes:
+      - ./src/shared:/tmp/taca-messaging
       - ./src/microservices/tournaments-service:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -204,8 +212,8 @@ services:
 # Frontend Services
   admin-panel:
     build:
-      context: ./src/frontend/admin-panel
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: src/frontend/admin-panel/Dockerfile
     volumes:
       - ./src/frontend/admin-panel:/app
       - /app/node_modules
@@ -214,8 +222,8 @@ services:
 
   public-website:
     build:
-      context: ./src/frontend/public-website
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: src/frontend/public-website/Dockerfile
     volumes:
       - ./src/frontend/public-website:/app
       - /app/node_modules

@@ -1,12 +1,10 @@
-import asyncio
 import logging
 from contextlib import asynccontextmanager
 
 import logging_loki
 from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
-
-from .rabbitmq_utils import consume
+from taca_messaging.rabbitmq_service import RabbitMQService
 
 # Logging setup
 handler = logging_loki.LokiHandler(
@@ -18,17 +16,23 @@ logger = logging.getLogger("modalities-service")
 logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 
+# Register event handlers
+rabbitmq_service = RabbitMQService(service_name="modalities-service")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    asyncio.create_task(consume())
+    # Startup: Start RabbitMQ consumer
+    await rabbitmq_service.start_consuming()
     logger.info("Modalities Service started")
     yield
+    # Shutdown: Disconnect RabbitMQ
+    await rabbitmq_service.disconnect()
     logger.info("Modalities Service stopped")
 
 
 app = FastAPI(lifespan=lifespan)
-Instrumentator().instrument(app).expose(app)
+Instrumentator().instrument(app).expose(app)  # Prometheus metrics endpoint
 
 
 @app.get("/")
