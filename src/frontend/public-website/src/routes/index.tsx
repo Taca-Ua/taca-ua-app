@@ -5,10 +5,26 @@ import NotFound from '../pages/NotFound';
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <Home />,
+    element: <Home />
+  },
+  {
+    path: '/classificacaogeral',
+    element: <Home />
+  },
+  {
+    path: '/classificacaomodalidade',
+    element: <Home />
+  },
+  {
+    path: '/calendario',
+    element: <Home />
+  },
+  {
+    path: '/regulamentos',
+    element: <Home />
   },
   {
     path: '*',
-    element: <NotFound />,
+    element: <NotFound />
   },
 ]);
