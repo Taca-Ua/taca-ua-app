@@ -11,7 +11,7 @@ function Home() {
         className="relative flex items-center justify-center bg-cover bg-center"
         style={{ 
           minHeight: 'calc(100vh - 4rem)',
-          backgroundImage: 'url(/ab204667-c021-499c-b1f9-db300bfd877c.webp)',
+          backgroundImage: 'url(/images/ab204667-c021-499c-b1f9-db300bfd877c.webp)',
         }}
       >
         {/* Overlay for blur/darkness effect */}
@@ -74,14 +74,32 @@ function Home() {
         </svg>
       </div>
 
-      {/* Sponsors Section - Coming Soon */}
+      {/* Sponsors Section */}
       <section className="py-16 px-4 md:px-8 lg:px-16 bg-teal-700">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-4xl md:text-5xl font-bold text-center mb-12 text-white">
             Patrocinadores
           </h2>
-          <div className="text-center text-white text-xl">
-            {/* Sponsors will be added here */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center justify-items-center">
+            {/* Glicínias Plaza */}
+            <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
+              <span className="text-gray-800 font-bold text-lg text-center">Glicínias Plaza</span>
+            </div>
+            
+            {/* Câmara Municipal de Aveiro */}
+            <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
+              <span className="text-gray-800 font-bold text-lg text-center">Câmara Municipal de Aveiro</span>
+            </div>
+            
+            {/* Universidade de Aveiro */}
+            <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
+              <span className="text-gray-800 font-bold text-lg text-center">Universidade de Aveiro</span>
+            </div>
+            
+            {/* IPDJ */}
+            <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
+              <span className="text-gray-800 font-bold text-lg text-center">IPDJ</span>
+            </div>
           </div>
         </div>
       </section>
