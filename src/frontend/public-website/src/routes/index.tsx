@@ -4,6 +4,7 @@ import NotFound from '../pages/NotFound';
 import Geral from '../pages/classificacao/Geral';
 import Modalidade from '../pages/classificacao/Modalidade';
 import TorneioDetail from '../pages/classificacao/TorneioDetail';
+import Regulamentos from '../pages/Regulamentos';
 
 export const router = createBrowserRouter([
   {
@@ -28,7 +29,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/regulamentos',
-    element: <Home />
+    element: <Regulamentos />
   },
   {
     path: '*',
