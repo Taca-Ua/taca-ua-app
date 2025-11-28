@@ -3,7 +3,7 @@ import Footer from '../components/Footer';
 
 function Home() {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
       
       {/* Hero Section with Background Image */}
