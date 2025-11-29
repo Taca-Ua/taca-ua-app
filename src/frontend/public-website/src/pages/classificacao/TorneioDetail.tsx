@@ -33,7 +33,6 @@ function TorneioDet() {
     { id: '204', name: 'Torneio 204', modality: 'Voleibol', epoca: '23/24' },
   ];
 
-  // Find the specific tournament by ID
   const tournament = allTournaments.find((t) => t.id === id) || {
     id: id,
     name: `Torneio ${id}`,

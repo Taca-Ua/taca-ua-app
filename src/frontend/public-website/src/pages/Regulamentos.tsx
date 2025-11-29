@@ -56,7 +56,6 @@ function Regulamentos() {
     },
   ];
 
-  // Filter regulamentos based on epoca and search query
   const filteredRegulamentos = allRegulamentos.filter((reg) => {
     const matchesEpoca = reg.epoca === selectedEpoca;
     const matchesSearch = reg.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -72,10 +71,8 @@ function Regulamentos() {
     setShowModal(true);
     setCheckingPdf(true);
 
-    // Check if PDF exists by trying to fetch it
     fetch(regulamento.pdfUrl)
       .then((response) => {
-        // Check if response is successful and content type is PDF
         const contentType = response.headers.get('content-type');
         const isPdf = contentType?.includes('pdf') || contentType?.includes('application/pdf');
         setPdfExists(response.ok && response.status === 200 && !!isPdf);

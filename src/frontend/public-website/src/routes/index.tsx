@@ -5,6 +5,7 @@ import Geral from '../pages/classificacao/Geral';
 import Modalidade from '../pages/classificacao/Modalidade';
 import TorneioDetail from '../pages/classificacao/TorneioDetail';
 import Regulamentos from '../pages/Regulamentos';
+import Calendario from '../pages/Calendario';
 
 export const router = createBrowserRouter([
   {
@@ -25,7 +26,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/calendario',
-    element: <Home />
+    element: <Calendario />
   },
   {
     path: '/regulamentos',
