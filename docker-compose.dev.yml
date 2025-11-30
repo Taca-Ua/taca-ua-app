@@ -41,7 +41,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-user}"]
-      interval: 1m30s
+      interval: 10s
       timeout: 30s
       retries: 5
       start_period: 30s
