@@ -39,6 +39,12 @@ services:
       POSTGRES_DB: taca_ua
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-user}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
 
   redis:
     image: redis:7-alpine
@@ -112,7 +118,7 @@ services:
       loki:
         condition: service_started
       postgres:
-        condition: service_started
+        condition: service_healthy
 
   public-api:
     build:
@@ -132,6 +138,8 @@ services:
         condition: service_healthy
       loki:
         condition: service_started
+      postgres:
+        condition: service_healthy
 
 # Microservices
   matches-service:
@@ -152,6 +160,9 @@ services:
         condition: service_healthy
       loki:
         condition: service_started
+      postgres:
+        condition: service_healthy
+
   modalities-service:
     build:
       context: .
@@ -170,6 +181,8 @@ services:
         condition: service_healthy
       loki:
         condition: service_started
+      postgres:
+        condition: service_healthy
 
   ranking-service:
     build:
@@ -189,6 +202,9 @@ services:
         condition: service_healthy
       loki:
         condition: service_started
+      postgres:
+        condition: service_healthy
+
   read-model-updater:
     build:
       context: .
@@ -207,6 +223,8 @@ services:
         condition: service_healthy
       loki:
         condition: service_started
+      postgres:
+        condition: service_healthy
 
   tournaments-service:
     build:
@@ -226,6 +244,8 @@ services:
         condition: service_healthy
       loki:
         condition: service_started
+      postgres:
+        condition: service_healthy
 
 # Frontend Services
   admin-panel:
