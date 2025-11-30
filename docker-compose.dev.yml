@@ -133,6 +133,7 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
+      - DATABASE_URL=${DATABASE_URL}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -155,6 +156,7 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
+      - DATABASE_URL=${DATABASE_URL}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -176,6 +178,7 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
+      - DATABASE_URL=${DATABASE_URL}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -197,6 +200,7 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
+      - DATABASE_URL=${DATABASE_URL}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -218,6 +222,7 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
+      - DATABASE_URL=${DATABASE_URL}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -239,6 +244,7 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
+      - DATABASE_URL=${DATABASE_URL}
     depends_on:
       rabbitmq:
         condition: service_healthy
