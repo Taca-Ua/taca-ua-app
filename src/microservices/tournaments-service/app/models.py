@@ -5,7 +5,7 @@ Schema: tournaments
 
 import enum
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, Text
 from sqlalchemy.dialects.postgresql import UUID
@@ -35,7 +35,9 @@ class Tournament(Base):
     name = Column(Text, nullable=False)
     type = Column(Enum(TournamentType), nullable=False)
     season = Column(Integer, nullable=False)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    created_at = Column(
+        DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
+    )
 
     def __repr__(self):
         return f"<Tournament {self.id} - {self.name} ({self.season})>"

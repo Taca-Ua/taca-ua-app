@@ -4,7 +4,7 @@ Schema: ranking
 """
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import Column, DateTime, Integer
 from sqlalchemy.dialects.postgresql import UUID
@@ -32,7 +32,10 @@ class TeamRanking(Base):
     goals_against = Column(Integer, nullable=False, default=0)
     points = Column(Integer, nullable=False, default=0)
     last_updated = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime,
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )
 
     def __repr__(self):

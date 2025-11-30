@@ -5,7 +5,7 @@ Schema: matches
 
 import enum
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, Text
 from sqlalchemy.dialects.postgresql import UUID
@@ -38,9 +38,14 @@ class Game(Base):
     scheduled_at = Column(DateTime, nullable=False)
     location = Column(Text)
     state = Column(Enum(GameState), nullable=False, default=GameState.SCHEDULED)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    created_at = Column(
+        DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
+    )
     updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime,
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )
 
     def __repr__(self):
@@ -63,7 +68,9 @@ class Result(Base):
     team_a_score = Column(Integer, nullable=False)
     team_b_score = Column(Integer, nullable=False)
     submitted_by = Column(UUID(as_uuid=True), nullable=False)
-    submitted_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    submitted_at = Column(
+        DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
+    )
 
     def __repr__(self):
         return f"<Result {self.id} - Game {self.game_id}: {self.team_a_score}-{self.team_b_score}>"
