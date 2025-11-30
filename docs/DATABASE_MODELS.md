@@ -167,7 +167,7 @@ public-api/
 Todos os serviços leem a URL da base de dados da variável de ambiente:
 
 ```bash
-DATABASE_URL=postgresql://user:password@localhost:5432/tacaua
+DATABASE_URL=postgresql://user:password@localhost:5432/taca_ua  # pragma: allowlist secret
 ```
 
 Ou edite no ficheiro `.env` na raiz do projeto.

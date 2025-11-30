@@ -1,6 +1,6 @@
-# Alembic Database Migrations for Matches Service
+# Alembic Database Migrations
 
-This directory contains the Alembic configuration and migration scripts for the matches service database.
+This document provides instructions on how to manage database schema migrations using Alembic in this project.
 
 ## Prerequisites
 
@@ -13,7 +13,7 @@ alembic==1.11.1
 
 The database URL is read from the `DATABASE_URL` environment variable. Default:
 ```
-postgresql://user:password@postgres:5432/matches_db  # pragma: allowlist secret
+postgresql://user:password@postgres:5432/taca_ua  # pragma: allowlist secret
 ```
 
 ## Common Commands
@@ -61,21 +61,6 @@ alembic history
 ### Show pending migrations
 ```bash
 alembic history --verbose
-```
-
-## Running Migrations in Docker
-
-To run migrations inside the Docker container:
-
-```bash
-docker-compose exec matches-service alembic upgrade head
-```
-
-Or add a migration step to your Dockerfile/docker-compose:
-
-```dockerfile
-# In Dockerfile or as a command
-CMD alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
 ## Migration Files
