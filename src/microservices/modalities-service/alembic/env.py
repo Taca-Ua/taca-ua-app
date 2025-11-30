@@ -18,9 +18,8 @@ config = context.config
 
 # Get database URL from environment variable or use default
 database_url = os.getenv("DATABASE_URL")
-# Fix postgres:// to postgresql:// for SQLAlchemy 2.x compatibility
-if database_url.startswith("postgres://"):
-    database_url = database_url.replace("postgres://", "postgresql://", 1)
+if database_url is None:
+    raise ValueError("DATABASE_URL environment variable is not set")
 config.set_main_option("sqlalchemy.url", database_url)
 print(f"Using database URL: {database_url}")
 
