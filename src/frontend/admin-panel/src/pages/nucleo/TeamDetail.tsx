@@ -53,7 +53,6 @@ const modalities = [
 const TeamDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [team, setTeam] = useState<Team | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [editedName, setEditedName] = useState('');
@@ -61,20 +60,13 @@ const TeamDetail = () => {
   const [editedDescription, setEditedDescription] = useState('');
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
 
-  // Use useMemo to find team based on id
   const initialTeam = useMemo(() => {
     const foundTeam = mockTeams.find((t) => t.id === Number(id));
     return foundTeam || null;
   }, [id]);
 
-  // Initialize team state when initialTeam is available
-  useEffect(() => {
-    if (initialTeam) {
-      setTeam(initialTeam);
-    }
-  }, [initialTeam]);
+  const [team, setTeam] = useState<Team | null>(initialTeam);
 
-  // Navigate away if team is not found
   useEffect(() => {
     if (!initialTeam) {
       navigate('/nucleo/equipas');

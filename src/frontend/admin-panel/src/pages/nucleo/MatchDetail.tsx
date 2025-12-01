@@ -140,25 +140,20 @@ const MatchDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedTeam1Members, setSelectedTeam1Members] = useState<number[]>([]);
-  const [selectedTeam2Members, setSelectedTeam2Members] = useState<number[]>([]);
   const [editingTeam, setEditingTeam] = useState<'team1' | 'team2'>('team1');
 
-  // Use useMemo to compute match from mockMatches based on id
   const match = useMemo(() => {
     const foundMatch = mockMatches.find((m) => m.id === Number(id));
     return foundMatch || null;
   }, [id]);
 
-  // Initialize selected members when match changes
-  useEffect(() => {
-    if (match) {
-      setSelectedTeam1Members(match.team1Members);
-      setSelectedTeam2Members(match.team2Members);
-    }
-  }, [match]);
+  const [selectedTeam1Members, setSelectedTeam1Members] = useState<number[]>(() =>
+    match ? match.team1Members : []
+  );
+  const [selectedTeam2Members, setSelectedTeam2Members] = useState<number[]>(() =>
+    match ? match.team2Members : []
+  );
 
-  // Navigate away if match is not found
   useEffect(() => {
     if (!match) {
       navigate('/nucleo/jogos');
@@ -169,14 +164,12 @@ const MatchDetail = () => {
     return null;
   }
 
-  // Only show team1 members (your team)
   const matchMembers = mockMembers.filter((member) => 
     selectedTeam1Members.includes(member.id)
   );
 
   const handleSaveTeamMembers = () => {
     if (match) {
-      // Close modal - in production, this would make an API call to save the changes
       setIsEditModalOpen(false);
       // TODO: Make an API call to save the changes
     }
