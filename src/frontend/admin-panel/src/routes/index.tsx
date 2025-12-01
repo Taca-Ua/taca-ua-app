@@ -1,5 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import DashboardNucleo from '../pages/nucleo/DashboardNucleo';
+import Membros from '../pages/nucleo/Membros';
+import MemberDetail from '../pages/nucleo/MemberDetail';
 import NotFound from '../pages/NotFound';
 import Login from '../pages/Login';
 import LoginGeral from '../pages/geral/LoginGeral';
@@ -25,6 +27,14 @@ export const router = createBrowserRouter([
   {
     path: '/nucleo/dashboard',
     element: <DashboardNucleo />,
+  },
+  {
+    path: '/nucleo/membros',
+    element: <Membros />,
+  },
+  {
+    path: '/nucleo/membros/:id',
+    element: <MemberDetail />,
   },
   {
     path: '/dashboard',
