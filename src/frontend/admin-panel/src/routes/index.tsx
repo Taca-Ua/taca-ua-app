@@ -2,6 +2,8 @@ import { createBrowserRouter } from 'react-router-dom';
 import DashboardNucleo from '../pages/nucleo/DashboardNucleo';
 import Membros from '../pages/nucleo/Membros';
 import MemberDetail from '../pages/nucleo/MemberDetail';
+import Equipas from '../pages/nucleo/Equipas';
+import TeamDetail from '../pages/nucleo/TeamDetail';
 import NotFound from '../pages/NotFound';
 import Login from '../pages/Login';
 import LoginGeral from '../pages/geral/LoginGeral';
@@ -37,8 +39,12 @@ export const router = createBrowserRouter([
     element: <MemberDetail />,
   },
   {
-    path: '/dashboard',
-    element: <DashboardNucleo />,
+    path: '/nucleo/equipas',
+    element: <Equipas />,
+  },
+  {
+    path: '/nucleo/equipas/:id',
+    element: <TeamDetail />,
   },
   {
     path: '*',
