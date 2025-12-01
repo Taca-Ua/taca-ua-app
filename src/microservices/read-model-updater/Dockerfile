@@ -3,7 +3,7 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Install messaging package
-COPY src/shared /tmp/taca-messaging
+COPY src/shared/rabbitmq-service /tmp/taca-messaging
 RUN pip install --no-cache-dir /tmp/taca-messaging && rm -rf /tmp/taca-messaging
 
 COPY src/microservices/read-model-updater/requirements.txt .
