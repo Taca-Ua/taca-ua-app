@@ -84,7 +84,7 @@ function Navbar() {
 
           {/* Admin Button - Desktop Only */}
           <a
-            href="/admin"
+            href="/admin/"
             className="hidden md:block bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded-md font-medium transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg"
           >
             Página Admin
@@ -138,7 +138,7 @@ function Navbar() {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Regulamentos
-                </Link>
+                </Link>                
               </div>
             )}
           </div>

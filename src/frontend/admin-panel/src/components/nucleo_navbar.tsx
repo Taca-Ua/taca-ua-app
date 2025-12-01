@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 
-export default function Sidebar() {
+export default function NucleoSidebar() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -41,7 +41,7 @@ export default function Sidebar() {
               {/* HEADER */}
               <div className="flex items-center justify-between mb-8">
                 <Link
-                  to="/"
+                  to="/nucleo/dashboard"
                   className="text-xl font-bold text-teal-600 transition-all duration-300 ease-in-out hover:text-teal-700 group"
                 >
                   <span className="inline-block transition-all duration-300 group-hover:scale-110 group-hover:-rotate-6">T</span>
@@ -71,53 +71,29 @@ export default function Sidebar() {
               {/* NAV */}
               <nav className="space-y-5 flex-1">
 
-              {/* Links*/}
+              {/* Links for Nucleo Admin */}
               <Link
-                to="/administradores"
+                to="/nucleo/membros"
                 className="block text-gray-700 hover:text-teal-600 font-medium transition"
                 onClick={() => setIsOpen(false)}
               >
-                Administradores
+                Membros
               </Link>
 
               <Link
-                to="/modalidades"
+                to="/nucleo/equipas"
                 className="block text-gray-700 hover:text-teal-600 font-medium transition"
                 onClick={() => setIsOpen(false)}
               >
-                Modalidades
+                Equipas
               </Link>
 
               <Link
-                to="/nucleo"
+                to="/nucleo/jogos"
                 className="block text-gray-700 hover:text-teal-600 font-medium transition"
                 onClick={() => setIsOpen(false)}
               >
-                Núcleo
-              </Link>
-
-              <Link
-                to="/torneios"
-                className="block text-gray-700 hover:text-teal-600 font-medium transition"
-                onClick={() => setIsOpen(false)}
-              >
-                Torneios
-              </Link>
-
-              <Link
-                to="/regulamentos"
-                className="block text-gray-700 hover:text-teal-600 font-medium transition"
-                onClick={() => setIsOpen(false)}
-              >
-                Regulamentos
-              </Link>
-
-              <Link
-                to="/socios"
-                className="block text-gray-700 hover:text-teal-600 font-medium transition"
-                onClick={() => setIsOpen(false)}
-              >
-                Sócios
+                Jogos
               </Link>
 
               {/* 📌 Final seccion */}

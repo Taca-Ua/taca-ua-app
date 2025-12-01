@@ -7,7 +7,7 @@ function NotFound() {
         <h1 className="text-6xl font-bold mb-4">404</h1>
         <p className="text-xl mb-4">Page not found</p>
         <Link to="/" className="text-blue-500 hover:underline">
-          Go back to dashboard
+          Go back to login page
         </Link>
       </div>
     </div>
