@@ -12,5 +12,9 @@ export default defineConfig({
     watch: {
       usePolling: true,
     },
+    hmr: {
+      clientPort: 80,
+      path: '/admin/',
+    },
   },
 })
