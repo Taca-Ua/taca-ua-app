@@ -40,6 +40,11 @@ function Footer() {
                   Regulamentos
                 </Link>
               </li>
+              <li>
+                <a href="/admin/" className="text-gray-300 hover:text-teal-400 transition-colors">
+                  Admin Login
+                </a>
+              </li>
             </ul>
           </div>
 
