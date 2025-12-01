@@ -6,6 +6,8 @@ from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
 from taca_messaging.rabbitmq_service import RabbitMQService
 
+from .routes import all_routers
+
 # Logging setup
 handler = logging_loki.LokiHandler(
     url="http://loki:3100/loki/api/v1/push",
@@ -31,8 +33,22 @@ async def lifespan(app: FastAPI):
     logger.info("Public API stopped")
 
 
-app = FastAPI(lifespan=lifespan)
-Instrumentator().instrument(app).expose(app)  # Prometheus metrics endpoint
+app = FastAPI(
+    title="Public Data API",
+    description="Public read-only API for TACA competition data - no authentication required",
+    version="1.0.0",
+    lifespan=lifespan,
+    docs_url="/api/public/docs",
+    redoc_url="/api/public/redoc",
+    openapi_url="/api/public/openapi.json",
+)
+
+# Include all routers
+for router in all_routers:
+    app.include_router(router)
+
+# Prometheus metrics endpoint
+Instrumentator().instrument(app).expose(app)
 
 
 @app.get("/")
