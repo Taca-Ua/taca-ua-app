@@ -67,11 +67,16 @@ const TeamDetail = () => {
     return foundTeam || null;
   }, [id]);
 
-  // Initialize team state on mount or when initialTeam changes
+  // Initialize team state when initialTeam is available
   useEffect(() => {
     if (initialTeam) {
       setTeam(initialTeam);
-    } else {
+    }
+  }, [initialTeam]);
+
+  // Navigate away if team is not found
+  useEffect(() => {
+    if (!initialTeam) {
       navigate('/nucleo/equipas');
     }
   }, [initialTeam, navigate]);

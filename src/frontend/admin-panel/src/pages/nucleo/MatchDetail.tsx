@@ -155,7 +155,12 @@ const MatchDetail = () => {
     if (match) {
       setSelectedTeam1Members(match.team1Members);
       setSelectedTeam2Members(match.team2Members);
-    } else {
+    }
+  }, [match]);
+
+  // Navigate away if match is not found
+  useEffect(() => {
+    if (!match) {
       navigate('/nucleo/jogos');
     }
   }, [match, navigate]);
