@@ -159,13 +159,13 @@ jobs:
         with:
           python-version: '3.11'
           cache: 'pip'
-          cache-dependency-path: 'src/shared/requirements-dev.txt'
+          cache-dependency-path: 'src/shared/taca-messaging/requirements-dev.txt'
 
       - name: Install test dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r src/shared/requirements-dev.txt
-          pip install src/shared/
+          pip install -r src/shared/taca-messaging/requirements-dev.txt
+          pip install src/shared/taca-messaging/
 
       - name: Run tests with coverage
         run: |
