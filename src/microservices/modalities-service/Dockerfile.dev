@@ -2,13 +2,14 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install messaging package
-COPY src/shared /tmp/taca-messaging
-RUN pip install --no-cache-dir -e /tmp/taca-messaging
-
 COPY src/microservices/modalities-service/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Install messaging package
+COPY src/shared/taca-messaging /tmp/taca-messaging
+RUN pip install --no-cache-dir -e /tmp/taca-messaging
+
 COPY src/microservices/modalities-service .
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/tmp/taca-messaging", "--reload-dir", "/app"]
+# Run migrations and start the service in dev mode
+CMD alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /tmp/taca-messaging --reload-dir /app

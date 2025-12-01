@@ -39,6 +39,14 @@ services:
       POSTGRES_DB: taca_ua
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-user}"]
+      interval: 10s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
 
   redis:
     image: redis:7-alpine
@@ -95,7 +103,7 @@ services:
       context: .
       dockerfile: src/apis/competiotion-api/Dockerfile.dev
     volumes:
-      - ./src/shared:/tmp/taca-messaging
+      - ./src/shared:/tmp
       - ./src/apis/competiotion-api:/app
     environment:
       - DJANGO_AUTORELOAD_EXTRA_DIRS=/tmp/taca-messaging
@@ -112,14 +120,14 @@ services:
       loki:
         condition: service_started
       postgres:
-        condition: service_started
+        condition: service_healthy
 
   public-api:
     build:
       context: .
       dockerfile: src/apis/public-api/Dockerfile.dev
     volumes:
-      - ./src/shared:/tmp/taca-messaging
+      - ./src/shared:/tmp
       - ./src/apis/public-api:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -127,11 +135,14 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
+      - DATABASE_URL=${DATABASE_URL}
     depends_on:
       rabbitmq:
         condition: service_healthy
       loki:
         condition: service_started
+      postgres:
+        condition: service_healthy
 
 # Microservices
   matches-service:
@@ -139,7 +150,7 @@ services:
       context: .
       dockerfile: src/microservices/matches-service/Dockerfile.dev
     volumes:
-      - ./src/shared:/tmp/taca-messaging
+      - ./src/shared:/tmp
       - ./src/microservices/matches-service:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -147,17 +158,21 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
+      - DATABASE_URL=${DATABASE_URL}
     depends_on:
       rabbitmq:
         condition: service_healthy
       loki:
         condition: service_started
+      postgres:
+        condition: service_healthy
+
   modalities-service:
     build:
       context: .
       dockerfile: src/microservices/modalities-service/Dockerfile.dev
     volumes:
-      - ./src/shared:/tmp/taca-messaging
+      - ./src/shared:/tmp
       - ./src/microservices/modalities-service:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -165,18 +180,21 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
+      - DATABASE_URL=${DATABASE_URL}
     depends_on:
       rabbitmq:
         condition: service_healthy
       loki:
         condition: service_started
+      postgres:
+        condition: service_healthy
 
   ranking-service:
     build:
       context: .
       dockerfile: src/microservices/ranking-service/Dockerfile.dev
     volumes:
-      - ./src/shared:/tmp/taca-messaging
+      - ./src/shared:/tmp
       - ./src/microservices/ranking-service:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -184,17 +202,21 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
+      - DATABASE_URL=${DATABASE_URL}
     depends_on:
       rabbitmq:
         condition: service_healthy
       loki:
         condition: service_started
+      postgres:
+        condition: service_healthy
+
   read-model-updater:
     build:
       context: .
       dockerfile: src/microservices/read-model-updater/Dockerfile.dev
     volumes:
-      - ./src/shared:/tmp/taca-messaging
+      - ./src/shared:/tmp
       - ./src/microservices/read-model-updater:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -202,18 +224,21 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
+      - DATABASE_URL=${DATABASE_URL}
     depends_on:
       rabbitmq:
         condition: service_healthy
       loki:
         condition: service_started
+      postgres:
+        condition: service_healthy
 
   tournaments-service:
     build:
       context: .
       dockerfile: src/microservices/tournaments-service/Dockerfile.dev
     volumes:
-      - ./src/shared:/tmp/taca-messaging
+      - ./src/shared:/tmp
       - ./src/microservices/tournaments-service:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -221,11 +246,14 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
+      - DATABASE_URL=${DATABASE_URL}
     depends_on:
       rabbitmq:
         condition: service_healthy
       loki:
         condition: service_started
+      postgres:
+        condition: service_healthy
 
 # Frontend Services
   admin-panel:

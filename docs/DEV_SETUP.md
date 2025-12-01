@@ -7,7 +7,7 @@
 From the project root, install the `taca-messaging` package in editable mode:
 
 ```bash
-pip install src/shared
+pip install src/shared/rabbitmq-service
 ```
 
 This allows all microservices to import from `taca_messaging` directly.
@@ -22,12 +22,15 @@ python -c "from taca_messaging import rabbitmq_service; print('Package installed
 
 ```
 src/shared/
-├── setup.py              # Package setup configuration
-├── pyproject.toml        # Modern Python packaging config
-├── README.md            # Package documentation
-└── taca_messaging/      # Main package directory
-    ├── __init__.py
-    └── rabbitmq_service.py
+├── rabbitmq-service/         # RabbitMQ messaging package
+│   ├── setup.py              # Package setup configuration
+│   ├── pyproject.toml        # Modern Python packaging config
+│   ├── README.md            # Package documentation
+│   └── taca_messaging/      # Main package directory
+│       ├── __init__.py
+│       └── rabbitmq_service.py
+└── read-model-shared/       # Read model shared package
+    └── ...
 ```
 
 ## How It Works
@@ -42,8 +45,8 @@ All Dockerfiles now copy and install the shared package:
 
 ```dockerfile
 # Install messaging package
-COPY ../../../shared /tmp/taca-messaging
-RUN pip install --no-cache-dir /tmp/taca-messaging && rm -rf /tmp/taca-messaging
+COPY src/shared/rabbitmq-service/rabbitmq-service /tmp/taca-messaging
+RUN pip install --no-cache-dir -e /tmp/taca-messaging
 
 # Then install service requirements
 COPY src/microservices/matches-service/requirements.txt .
@@ -56,8 +59,8 @@ This ensures the `taca_messaging` package is available when the service starts.
 
 ### Adding New Modules
 
-1. Create new Python file in `src/shared/taca_messaging/`
-2. Export from `src/shared/taca_messaging/__init__.py`
+1. Create new Python file in `src/shared/rabbitmq-service/taca_messaging/`
+2. Export from `src/shared/rabbitmq-service/taca_messaging/__init__.py`
 3. Use in services: `from taca_messaging import your_new_module`
 
 ## Usage in Services
@@ -74,7 +77,7 @@ from taca_messaging.rabbitmq_service import RabbitMQService
 
 **Solution**: Install the package in editable mode:
 ```bash
-pip install src/shared
+pip install src/shared/rabbitmq-service
 ```
 
 ### Changes Not Reflected
@@ -107,7 +110,7 @@ services:
 
 ## Next Steps
 
-1. **Install the package**: `pip install -e src/shared`
-2. **Read the docs**: Check `src/shared/taca_messaging/README.md` for API details
+1. **Install the package**: `pip install -e src/shared/rabbitmq-service`
+2. **Read the docs**: Check `src/shared/rabbitmq-service/taca_messaging/README.md` for API details
 3. **See examples**: Look at `src/shared/taca_messaging/example_usage.py`
 4. **Start coding**: Import `from taca_messaging import ...` in your services

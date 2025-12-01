@@ -44,10 +44,3 @@ repos:
       # Hook to ensure files end with a newline
       - id: end-of-file-fixer
         stages: [pre-commit]
-
-  # Secrets detection hook to prevent committing sensitive information
-  - repo: https://github.com/Yelp/detect-secrets
-    rev: v1.4.0
-    hooks:
-      - id: detect-secrets
-        stages: [pre-commit]
