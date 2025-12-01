@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
 from taca_messaging.rabbitmq_service import RabbitMQService
 
-from .routes import router
+from .routes import all_routers
 
 # Logging setup
 handler = logging_loki.LokiHandler(
@@ -43,8 +43,9 @@ app = FastAPI(
     openapi_url="/api/public/openapi.json",
 )
 
-# Include routes
-app.include_router(router)
+# Include all routers
+for router in all_routers:
+    app.include_router(router)
 
 # Prometheus metrics endpoint
 Instrumentator().instrument(app).expose(app)
