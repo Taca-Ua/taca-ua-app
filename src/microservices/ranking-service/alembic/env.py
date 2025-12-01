@@ -17,8 +17,10 @@ from app.models import Base
 config = context.config
 
 # Get database URL from environment variable or use default
-database_url = os.getenv("DATABASE_URL")
-if database_url is None:
+database_url = os.getenv(
+    "DATABASE_URL", "postgresql://user:password@localhost:5432/taca_ua"
+)
+if database_url is None or database_url == "":
     raise ValueError("DATABASE_URL environment variable is not set")
 config.set_main_option("sqlalchemy.url", database_url)
 
@@ -84,6 +86,16 @@ def run_migrations_online() -> None:
             target_metadata=target_metadata,
             version_table_schema="ranking",
             include_schemas=True,
+            include_name=lambda name, type_, parent_names: (
+                # Only include objects in the 'ranking' schema
+                type_ == "schema"
+                and name == "ranking"
+            )
+            or (
+                # For tables, only include those in the 'ranking' schema
+                type_ == "table"
+                and parent_names.get("schema_name") == "ranking"
+            ),
         )
 
         with context.begin_transaction():
