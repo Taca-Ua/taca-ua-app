@@ -160,13 +160,9 @@ const MatchDetail = () => {
     return null;
   }
 
-  // Combine all team members for the match - use current state values
-  const allMatchMembers = [
-    ...selectedTeam1Members,
-    ...selectedTeam2Members
-  ];
+  // Only show team1 members (your team)
   const matchMembers = mockMembers.filter((member) => 
-    allMatchMembers.includes(member.id)
+    selectedTeam1Members.includes(member.id)
   );
 
   const handleSaveTeamMembers = () => {
@@ -306,7 +302,7 @@ const MatchDetail = () => {
 
             {/* Right Column - Team Members */}
             <div className="bg-white rounded-lg shadow-md p-8">
-              <h2 className="text-xl font-bold text-gray-800 mb-6">Membros da Equipa</h2>
+              <h2 className="text-xl font-bold text-gray-800 mb-6">Membros de {match.team1}</h2>
 
               <div className="space-y-3 max-h-[600px] overflow-y-auto">
                 {matchMembers.length > 0 ? (
@@ -328,18 +324,12 @@ const MatchDetail = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
             <button
               className="px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
               onClick={() => handleOpenEditModal('team1')}
             >
-              Editar {match.team1}
-            </button>
-            <button
-              className="px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
-              onClick={() => handleOpenEditModal('team2')}
-            >
-              Editar {match.team2}
+              Editar Equipa de Jogo
             </button>
             <button
               className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-md font-medium transition-colors"
