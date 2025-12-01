@@ -4,6 +4,8 @@ import Membros from '../pages/nucleo/Membros';
 import MemberDetail from '../pages/nucleo/MemberDetail';
 import Equipas from '../pages/nucleo/Equipas';
 import TeamDetail from '../pages/nucleo/TeamDetail';
+import Jogos from '../pages/nucleo/Jogos';
+import MatchDetail from '../pages/nucleo/MatchDetail';
 import NotFound from '../pages/NotFound';
 import Login from '../pages/Login';
 import LoginGeral from '../pages/geral/LoginGeral';
@@ -45,6 +47,14 @@ export const router = createBrowserRouter([
   {
     path: '/nucleo/equipas/:id',
     element: <TeamDetail />,
+  },
+  {
+    path: '/nucleo/jogos',
+    element: <Jogos />,
+  },
+  {
+    path: '/nucleo/jogos/:id',
+    element: <MatchDetail />,
   },
   {
     path: '*',
