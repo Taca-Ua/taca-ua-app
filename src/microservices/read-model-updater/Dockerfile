@@ -9,6 +9,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/shared/rabbitmq-service /tmp/taca-messaging
 RUN pip install --no-cache-dir /tmp/taca-messaging && rm -rf /tmp/taca-messaging
 
+# Install shared modules package
+COPY src/shared/read-model-shared /tmp/read-model-shared
+RUN pip install --no-cache-dir /tmp/read-model-shared && rm -rf /tmp/read-model-shared
+
 COPY src/microservices/read-model-updater .
 
 # Run migrations and start the service
