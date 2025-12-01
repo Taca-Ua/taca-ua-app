@@ -13,7 +13,12 @@ alembic==1.11.1
 
 The database URL is read from the `DATABASE_URL` environment variable. Default:
 ```
-postgresql://user:password@postgres:5432/taca_ua  # pragma: allowlist secret
+postgresql://user:password@localhost:5432/taca_ua
+```
+
+In order to create and apply migrations, ensure that an instance of the database is accessible and the connection string is correct.
+```bash
+docker run -d --name taca-ua-db -e POSTGRES_USER=user -e POSTGRES_PASSWORD=password -e POSTGRES_DB=taca_ua -p 5432:5432 postgres:15-alpine
 ```
 
 ## Common Commands
