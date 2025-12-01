@@ -39,6 +39,8 @@ services:
       POSTGRES_DB: taca_ua
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-user}"]
       interval: 10s
@@ -101,7 +103,7 @@ services:
       context: .
       dockerfile: src/apis/competiotion-api/Dockerfile.dev
     volumes:
-      - ./src/shared:/tmp/taca-messaging
+      - ./src/shared:/tmp
       - ./src/apis/competiotion-api:/app
     environment:
       - DJANGO_AUTORELOAD_EXTRA_DIRS=/tmp/taca-messaging
@@ -125,7 +127,7 @@ services:
       context: .
       dockerfile: src/apis/public-api/Dockerfile.dev
     volumes:
-      - ./src/shared:/tmp/taca-messaging
+      - ./src/shared:/tmp
       - ./src/apis/public-api:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -148,7 +150,7 @@ services:
       context: .
       dockerfile: src/microservices/matches-service/Dockerfile.dev
     volumes:
-      - ./src/shared:/tmp/taca-messaging
+      - ./src/shared:/tmp
       - ./src/microservices/matches-service:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -170,7 +172,7 @@ services:
       context: .
       dockerfile: src/microservices/modalities-service/Dockerfile.dev
     volumes:
-      - ./src/shared:/tmp/taca-messaging
+      - ./src/shared:/tmp
       - ./src/microservices/modalities-service:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -192,7 +194,7 @@ services:
       context: .
       dockerfile: src/microservices/ranking-service/Dockerfile.dev
     volumes:
-      - ./src/shared:/tmp/taca-messaging
+      - ./src/shared:/tmp
       - ./src/microservices/ranking-service:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -214,7 +216,7 @@ services:
       context: .
       dockerfile: src/microservices/read-model-updater/Dockerfile.dev
     volumes:
-      - ./src/shared:/tmp/taca-messaging
+      - ./src/shared:/tmp
       - ./src/microservices/read-model-updater:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -236,7 +238,7 @@ services:
       context: .
       dockerfile: src/microservices/tournaments-service/Dockerfile.dev
     volumes:
-      - ./src/shared:/tmp/taca-messaging
+      - ./src/shared:/tmp
       - ./src/microservices/tournaments-service:/app
     environment:
       - RABBITMQ_HOST=rabbitmq

@@ -6,7 +6,7 @@ COPY src/apis/public-api/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Install messaging package
-COPY src/shared/rabbitmq-service /tmp/taca-messaging
+COPY src/shared/taca-messaging /tmp/taca-messaging
 RUN pip install --no-cache-dir /tmp/taca-messaging && rm -rf /tmp/taca-messaging
 
 # Install shared modules package
