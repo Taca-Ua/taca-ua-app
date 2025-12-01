@@ -16,4 +16,4 @@ RUN pip install --no-cache-dir /tmp/read-model-shared && rm -rf /tmp/read-model-
 COPY src/apis/public-api .
 
 # Run migrations and start the service
-CMD uvicorn app.main:app --host 0.0.0.0 --port 8000
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
