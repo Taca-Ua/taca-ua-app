@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import NucleoSidebar from '../../components/nucleo_navbar';
 
@@ -15,6 +15,41 @@ interface Member {
   name: string;
 }
 
+// Mock data for teams (should match Equipas.tsx)
+const mockTeams: Team[] = [
+  { id: 1, name: 'Equipa 1', modality: 'Futebol', description: 'Equipa principal de futebol', members: [1, 2, 3, 4, 5, 6, 7, 8, 9] },
+  { id: 2, name: 'Equipa 2', modality: 'Basquetebol', description: 'Equipa de basquetebol feminino', members: [2, 4, 6] },
+  { id: 3, name: 'Equipa 3', modality: 'Voleibol', description: 'Equipa de voleibol', members: [1, 3, 5] },
+  { id: 4, name: 'Equipa 4', modality: 'Futebol', description: 'Equipa secundária de futebol', members: [7, 8, 9] },
+  { id: 5, name: 'Equipa 5', modality: 'Futsal', description: 'Equipa de futsal', members: [1, 2] },
+  { id: 6, name: 'Equipa 6', modality: 'Andebol', description: 'Equipa de andebol', members: [3, 4] },
+  { id: 7, name: 'Equipa 7', modality: 'Rugby', description: 'Equipa de rugby', members: [5, 6] },
+  { id: 8, name: 'Equipa 8', modality: 'Basquetebol', description: 'Equipa de basquetebol masculino', members: [7, 8] },
+  { id: 9, name: 'Equipa 9', modality: 'Voleibol', description: 'Equipa de voleibol de praia', members: [1, 9] },
+];
+
+// Mock data for available members (should match Membros.tsx)
+const mockMembers: Member[] = [
+  { id: 1, name: 'João Silva' },
+  { id: 2, name: 'Maria Santos' },
+  { id: 3, name: 'Pedro Costa' },
+  { id: 4, name: 'Ana Ferreira' },
+  { id: 5, name: 'Carlos Oliveira' },
+  { id: 6, name: 'Sofia Rodrigues' },
+  { id: 7, name: 'Miguel Alves' },
+  { id: 8, name: 'Inês Pereira' },
+  { id: 9, name: 'Ricardo Martins' },
+];
+
+const modalities = [
+  'Futebol',
+  'Futsal',
+  'Basquetebol',
+  'Voleibol',
+  'Andebol',
+  'Rugby',
+];
+
 const TeamDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -26,49 +61,20 @@ const TeamDetail = () => {
   const [editedDescription, setEditedDescription] = useState('');
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
 
-  // Mock data for teams (should match Equipas.tsx)
-  const mockTeams: Team[] = [
-    { id: 1, name: 'Equipa 1', modality: 'Futebol', description: 'Equipa principal de futebol', members: [1, 2, 3, 4, 5, 6, 7, 8, 9] },
-    { id: 2, name: 'Equipa 2', modality: 'Basquetebol', description: 'Equipa de basquetebol feminino', members: [2, 4, 6] },
-    { id: 3, name: 'Equipa 3', modality: 'Voleibol', description: 'Equipa de voleibol', members: [1, 3, 5] },
-    { id: 4, name: 'Equipa 4', modality: 'Futebol', description: 'Equipa secundária de futebol', members: [7, 8, 9] },
-    { id: 5, name: 'Equipa 5', modality: 'Futsal', description: 'Equipa de futsal', members: [1, 2] },
-    { id: 6, name: 'Equipa 6', modality: 'Andebol', description: 'Equipa de andebol', members: [3, 4] },
-    { id: 7, name: 'Equipa 7', modality: 'Rugby', description: 'Equipa de rugby', members: [5, 6] },
-    { id: 8, name: 'Equipa 8', modality: 'Basquetebol', description: 'Equipa de basquetebol masculino', members: [7, 8] },
-    { id: 9, name: 'Equipa 9', modality: 'Voleibol', description: 'Equipa de voleibol de praia', members: [1, 9] },
-  ];
-
-  // Mock data for available members (should match Membros.tsx)
-  const mockMembers: Member[] = [
-    { id: 1, name: 'João Silva' },
-    { id: 2, name: 'Maria Santos' },
-    { id: 3, name: 'Pedro Costa' },
-    { id: 4, name: 'Ana Ferreira' },
-    { id: 5, name: 'Carlos Oliveira' },
-    { id: 6, name: 'Sofia Rodrigues' },
-    { id: 7, name: 'Miguel Alves' },
-    { id: 8, name: 'Inês Pereira' },
-    { id: 9, name: 'Ricardo Martins' },
-  ];
-
-  const modalities = [
-    'Futebol',
-    'Futsal',
-    'Basquetebol',
-    'Voleibol',
-    'Andebol',
-    'Rugby',
-  ];
-
-  useEffect(() => {
+  // Use useMemo to find team based on id
+  const initialTeam = useMemo(() => {
     const foundTeam = mockTeams.find((t) => t.id === Number(id));
-    if (foundTeam) {
-      setTeam(foundTeam);
+    return foundTeam || null;
+  }, [id]);
+
+  // Initialize team state on mount or when initialTeam changes
+  useEffect(() => {
+    if (initialTeam) {
+      setTeam(initialTeam);
     } else {
       navigate('/nucleo/equipas');
     }
-  }, [id, navigate]);
+  }, [initialTeam, navigate]);
 
   if (!team) {
     return null;

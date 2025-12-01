@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import NucleoSidebar from '../../components/nucleo_navbar';
 
@@ -19,17 +19,8 @@ interface Member {
   name: string;
 }
 
-const MatchDetail = () => {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const [match, setMatch] = useState<Match | null>(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedTeam1Members, setSelectedTeam1Members] = useState<number[]>([]);
-  const [selectedTeam2Members, setSelectedTeam2Members] = useState<number[]>([]);
-  const [editingTeam, setEditingTeam] = useState<'team1' | 'team2'>('team1');
-
-  // Mock data for matches
-  const mockMatches: Match[] = [
+// Mock data moved outside component to prevent re-creation on each render
+const mockMatches: Match[] = [
     {
       id: 1,
       team1: 'Equipa 1',
@@ -131,30 +122,43 @@ const MatchDetail = () => {
     },
   ];
 
-  // Mock data for members
-  const mockMembers: Member[] = [
-    { id: 1, name: 'Membro 1' },
-    { id: 2, name: 'Membro 2' },
-    { id: 3, name: 'Membro 3' },
-    { id: 4, name: 'Membro 4' },
-    { id: 5, name: 'Membro 5' },
-    { id: 6, name: 'Membro 6' },
-    { id: 7, name: 'Membro 7' },
-    { id: 8, name: 'Membro 8' },
-    { id: 9, name: 'Membro 9' },
-    { id: 10, name: 'Membro 10' },
-  ];
+// Mock data for members
+const mockMembers: Member[] = [
+  { id: 1, name: 'Membro 1' },
+  { id: 2, name: 'Membro 2' },
+  { id: 3, name: 'Membro 3' },
+  { id: 4, name: 'Membro 4' },
+  { id: 5, name: 'Membro 5' },
+  { id: 6, name: 'Membro 6' },
+  { id: 7, name: 'Membro 7' },
+  { id: 8, name: 'Membro 8' },
+  { id: 9, name: 'Membro 9' },
+  { id: 10, name: 'Membro 10' },
+];
 
-  useEffect(() => {
+const MatchDetail = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedTeam1Members, setSelectedTeam1Members] = useState<number[]>([]);
+  const [selectedTeam2Members, setSelectedTeam2Members] = useState<number[]>([]);
+  const [editingTeam, setEditingTeam] = useState<'team1' | 'team2'>('team1');
+
+  // Use useMemo to compute match from mockMatches based on id
+  const match = useMemo(() => {
     const foundMatch = mockMatches.find((m) => m.id === Number(id));
-    if (foundMatch) {
-      setMatch(foundMatch);
-      setSelectedTeam1Members(foundMatch.team1Members);
-      setSelectedTeam2Members(foundMatch.team2Members);
+    return foundMatch || null;
+  }, [id]);
+
+  // Initialize selected members when match changes
+  useEffect(() => {
+    if (match) {
+      setSelectedTeam1Members(match.team1Members);
+      setSelectedTeam2Members(match.team2Members);
     } else {
       navigate('/nucleo/jogos');
     }
-  }, [id, navigate]);
+  }, [match, navigate]);
 
   if (!match) {
     return null;
@@ -167,14 +171,9 @@ const MatchDetail = () => {
 
   const handleSaveTeamMembers = () => {
     if (match) {
-      // Update the match with new team members
-      setMatch({
-        ...match,
-        team1Members: selectedTeam1Members,
-        team2Members: selectedTeam2Members,
-      });
+      // Close modal - in production, this would make an API call to save the changes
       setIsEditModalOpen(false);
-      // Here you would also make an API call to save the changes
+      // TODO: Make an API call to save the changes
     }
   };
 
@@ -377,7 +376,6 @@ const MatchDetail = () => {
               <button
                 onClick={() => {
                   setIsEditModalOpen(false);
-                  // Reset selections to original values
                   if (match) {
                     setSelectedTeam1Members(match.team1Members);
                     setSelectedTeam2Members(match.team2Members);

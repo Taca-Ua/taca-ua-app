@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import NucleoSidebar from '../../components/nucleo_navbar';
 
 interface Member {
@@ -27,22 +27,23 @@ function MemberDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [member, setMember] = useState<Member | null>(null);
   const [editedName, setEditedName] = useState('');
   const [editedNmec, setEditedNmec] = useState('');
   const [editedContact, setEditedContact] = useState('');
   const [identifierType, setIdentifierType] = useState<'contact' | 'nmec'>('nmec');
 
-  useEffect(() => {
-    // TODO: Replace with API call
+  // Use useMemo to find member based on id
+  const member = useMemo(() => {
     const foundMember = mockMembers.find(m => m.id === parseInt(id || '0'));
-    if (foundMember) {
-      setMember(foundMember);
-    } else {
-      // Redirect to members page if member not found
+    return foundMember || null;
+  }, [id]);
+
+  // Redirect if member not found
+  useEffect(() => {
+    if (!member) {
       navigate('/nucleo/membros');
     }
-  }, [id, navigate]);
+  }, [member, navigate]);
 
   if (!member) {
     return null;
@@ -63,18 +64,19 @@ function MemberDetail() {
     if (member.role === 'jogador' && !editedNmec.trim()) return;
     if (member.role === 'tecnico' && !((identifierType === 'contact' && editedContact.trim()) || (identifierType === 'nmec' && editedNmec.trim()))) return;
 
-    const updatedMember: Member = {
-      ...member,
-      name: editedName,
-      ...(member.role === 'jogador' 
-        ? { nmec: editedNmec, contact: undefined } 
-        : (identifierType === 'contact' ? { contact: editedContact, nmec: undefined } : { nmec: editedNmec, contact: undefined })
-      ),
-    };
-    
     // TODO: API call to update member
-    setMember(updatedMember);
+    // const updatedMember: Member = {
+    //   ...member,
+    //   name: editedName,
+    //   ...(member.role === 'jogador' 
+    //     ? { nmec: editedNmec, contact: undefined } 
+    //     : (identifierType === 'contact' ? { contact: editedContact, nmec: undefined } : { nmec: editedNmec, contact: undefined })
+    //   ),
+    // };
+    // await updateMember(member.id, updatedMember);
+    
     setIsModalOpen(false);
+    // In production, navigate or refresh after successful update
   };
 
   const handleDelete = () => {
