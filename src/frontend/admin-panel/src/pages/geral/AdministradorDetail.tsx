@@ -1,7 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useMemo } from 'react';
-import Sidebar from '../../components/geral_navbar'; // o NucleoSidebar si estás en vista núcleo
-
+import Sidebar from '../../components/geral_navbar';
 interface Admin {
   id: number;
   name: string;
