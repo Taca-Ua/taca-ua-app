@@ -10,11 +10,6 @@ import NotFound from '../pages/NotFound';
 import Login from '../pages/Login';
 import LoginGeral from '../pages/geral/LoginGeral';
 import LoginNucleo from '../pages/nucleo/LoginNucleo';
-import DashboardGeral from '../pages/geral/DashboardGeral';
-import Modalities from '../pages/geral/Modalidades';
-import ModalityDetails from '../pages/geral/ModalityDetails';
-import Administradores from '../pages/geral/Administradores';
-import AdminDetail from '../pages/geral/AdministradorDetail';
 
 export const router = createBrowserRouter([
   {
@@ -36,22 +31,6 @@ export const router = createBrowserRouter([
   {
     path: '/login/nucleo',
     element: <LoginNucleo />,
-  },
-  {
-    path: '/geral/administradores',
-    element: <Administradores />,
-  },
-  {
-    path: '/geral/administradores/:id',
-    element: <AdminDetail />,
-  },
-  {
-    path: '/geral/modalidades',
-    element: <Modalities />,
-  },
-  {
-    path: '/geral/modalidades/:id',
-    element: <ModalityDetails />,
   },
   {
     path: '/nucleo/dashboard',

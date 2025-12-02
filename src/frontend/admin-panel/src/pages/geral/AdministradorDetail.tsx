@@ -1,41 +1,31 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useMemo } from 'react';
-import Sidebar from '../../components/geral_navbar';
+import Sidebar from '../../components/geral_navbar'; // o NucleoSidebar si estás en vista núcleo
+
 interface Admin {
   id: number;
-  username: string;
-  name?: string;
-  email: string;
+  name: string;
   role: 'geral' | 'nucleo';
+  nmec: string;
   nucleoName?: string;
 }
 
 const mockAdmins: Admin[] = [
-  { id: 1, username: 'AdminG1', role: 'geral',email: 'admin1@ua.pt', name: 'admin geral 1' },
-  { id: 2, username: 'AdminG2', role: 'geral',email: 'admin2@ua.pt', name: 'admin geral 2' },
-  { id: 3, username: 'AdminG3', role: 'geral',email: 'admin3@ua.pt', name: 'admin geral 3' },
-  { id: 4, username: 'AdminG4', role: 'geral',email: 'admin4@ua.pt', name: 'admin geral 4' },
-  { id: 5, username: 'AdminG5', role: 'geral',email: 'admin5@ua.pt', name: 'admin geral 5'},
-  { id: 6, username: 'AdminN1', role: 'nucleo',email: 'admin6@ua.pt', name: 'admin nucleo 1', nucleoName: 'Núcleo A' },
-  { id: 7, username: 'AdminN2', role: 'nucleo',email: 'admin7@ua.pt', name: 'admin nucleo 2' , nucleoName: 'Núcleo B' },
+  { id: 1, name: 'AdminG 1', role: 'geral', nmec: '12345' },
+  { id: 2, name: 'AdminG 2', role: 'geral', nmec: '23456' },
+  { id: 3, name: 'AdminG 3', role: 'geral', nmec: '34567' },
+  { id: 4, name: 'AdminG 4', role: 'geral', nmec: '45678' },
+  { id: 5, name: 'AdminG 5', role: 'geral', nmec: '56789' },
+  { id: 6, name: 'AdminN 1', role: 'nucleo', nmec: '67890', nucleoName: 'Núcleo A' },
+  { id: 7, name: 'AdminN 2', role: 'nucleo', nmec: '78901', nucleoName: 'Núcleo B' },
 ];
-
-  // TODO: Replace with real NUCLEOS from API
-  const nucleos = [
-    'NEI',
-    'NECIB',
-    'NEG',
-    'NEMAT',
-    'NECM',
-    'NEGEO',
-  ];
 
 function AdminDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editedUserName, setEditedUserName] = useState('');
-  const [editedEmail, setEditedEmail] = useState('');
+  const [editedName, setEditedName] = useState('');
+  const [editedNmec, setEditedNmec] = useState('');
   const [editedNucleo, setEditedNucleo] = useState('');
 
   const member = useMemo(() => {
@@ -49,14 +39,14 @@ function AdminDetail() {
   if (!member) return null;
 
   const handleEdit = () => {
-    setEditedUserName(member.username);
-    setEditedEmail(member.email);
+    setEditedName(member.name);
+    setEditedNmec(member.nmec);
     setEditedNucleo(member.nucleoName || '');
     setIsModalOpen(true);
   };
 
   const handleSave = () => {
-    if (!editedUserName.trim() || !editedEmail.trim()) return;
+    if (!editedName.trim() || !editedNmec.trim()) return;
     if (member.role === 'nucleo' && !editedNucleo.trim()) return;
 
     // TODO: API call to update member
@@ -76,20 +66,15 @@ function AdminDetail() {
       <div className="p-8 max-w-3xl mx-auto">
         <div className="bg-white rounded-lg shadow-md p-8">
           <div className="space-y-6">
-            {/* UserName */}
-            <div>
-              <label className="block text-teal-500 font-medium mb-2">Username</label>
-              <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800">{member.username}</div>
-            </div>
             {/* Name */}
             <div>
               <label className="block text-teal-500 font-medium mb-2">Nome</label>
               <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800">{member.name}</div>
             </div>
-            {/* Email */}
+            {/* NMec */}
             <div>
-              <label className="block text-teal-500 font-medium mb-2">Email</label>
-              <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800">{member.email}</div>
+              <label className="block text-teal-500 font-medium mb-2">NMEC</label>
+              <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800">{member.nmec}</div>
             </div>
             {/* Type */}
             <div>
@@ -125,23 +110,23 @@ function AdminDetail() {
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Editar Membro</h2>
             <div className="space-y-4">
-            {/* Username */}
+            {/* Name */}
             <div>
-                <label className="block text-gray-700 font-medium mb-2">Username</label>
+                <label className="block text-gray-700 font-medium mb-2">Nome</label>
                 <input
                   type="text"
-                  value={editedUserName}
-                  onChange={(e) => setEditedUserName(e.target.value)}
+                  value={editedName}
+                  onChange={(e) => setEditedName(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
                 />
             </div>
-              {/* Email */}
+              {/* NMec */}
             <div>
-                <label className="block text-gray-700 font-medium mb-2">Email</label>
+                <label className="block text-gray-700 font-medium mb-2">NMEC</label>
                 <input
                   type="text"
-                  value={editedEmail}
-                  onChange={(e) => setEditedEmail(e.target.value)}
+                  value={editedNmec}
+                  onChange={(e) => setEditedNmec(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
                 />
             </div>
@@ -156,23 +141,16 @@ function AdminDetail() {
                 </div>
             </div>
 
-
             {/* Nucleo */}
             {member.role === 'nucleo' && (
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">Núcleo</label>
-                  <select
+                  <input
+                    type="text"
                     value={editedNucleo}
                     onChange={(e) => setEditedNucleo(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
-                  >
-                  <option value="">Selecionar Núcleo</option>
-                  {nucleos.map((nucleos) => (
-                    <option key={nucleos} value={nucleos}>
-                      {nucleos}
-                    </option>
-                  ))}
-                  </select>
+                  />
                 </div>
               )}
             </div>

@@ -4,64 +4,51 @@ import Sidebar from '../../components/geral_navbar';
 
 interface Admin {
   id: number;
-  username: string;
-  name?: string;
-  email: string;
+  name: string;
   role: 'geral' | 'nucleo';
+  nmec: string;
   nucleoName?: string;
 }
 
 function Administradores() {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [memberUserName, setMemberUserName] = useState('');
   const [memberName, setMemberName] = useState('');
   const [memberRole, setMemberRole] = useState<'geral' | 'nucleo'>('geral');
-  const [email, setEmail] = useState('');
+  const [nmec, setNmec] = useState('');
   const [nucleo, setNucleo] = useState('');
 
   // Mock data
   const [members, setMembers] = useState<Admin[]>([
-    { id: 1, username: 'AdminG1', role: 'geral',email: 'admin1@ua.pt', name: 'admin geral 1' },
-    { id: 2, username: 'AdminG2', role: 'geral',email: 'admin2@ua.pt', name: 'admin geral 2' },
-    { id: 3, username: 'AdminG3', role: 'geral',email: 'admin3@ua.pt', name: 'admin geral 3' },
-    { id: 4, username: 'AdminG4', role: 'geral',email: 'admin4@ua.pt', name: 'admin geral 4' },
-    { id: 5, username: 'AdminG5', role: 'geral',email: 'admin5@ua.pt', name: 'admin geral 5'},
-    { id: 6, username: 'AdminN1', role: 'nucleo',email: 'admin6@ua.pt', name: 'admin nucleo 1', nucleoName: 'Núcleo A' },
-    { id: 7, username: 'AdminN2', role: 'nucleo',email: 'admin7@ua.pt', name: 'admin nucleo 2' , nucleoName: 'Núcleo B' },
+    { id: 1, name: 'AdminG 1', role: 'geral', nmec: '12345' },
+    { id: 2, name: 'AdminG 2', role: 'geral', nmec: '23456' },
+    { id: 3, name: 'AdminG 3', role: 'geral', nmec: '34567' },
+    { id: 4, name: 'AdminG 4', role: 'geral', nmec: '45678' },
+    { id: 5, name: 'AdminG 5', role: 'geral', nmec: '56789' },
+    { id: 6, name: 'AdminN 1', role: 'nucleo', nmec: '67890', nucleoName: 'Núcleo A' },
+    { id: 7, name: 'AdminN 2', role: 'nucleo', nmec: '78901', nucleoName: 'Núcleo B' },
   ]);
-
-  // TODO: Replace with real NUCLEOS from API
-  const nucleos = [
-    'NEI',
-    'NECIB',
-    'NEG',
-    'NEMAT',
-    'NECM',
-    'NEGEO',
-  ];
 
   const AdminG = members.filter(m => m.role === 'geral');
   const AdminN = members.filter(m => m.role === 'nucleo');
 
   const handleAddMember = () => {
-    if (!memberUserName.trim()) return;
-    if (!email.trim()) return;
+    if (!memberName.trim()) return;
+    if (!nmec.trim()) return;
     if (memberRole === 'nucleo' && !nucleo.trim()) return;
 
     const newMember: Admin = {
       id: members.length + 1,
-      username: memberUserName,
       name: memberName,
       role: memberRole,
-      email,
+      nmec,
       ...(memberRole === 'nucleo' ? { nucleoName: nucleo } : {}),
     };
 
     setMembers([...members, newMember]);
-    setMemberUserName('');
+    setMemberName('');
     setMemberRole('geral');
-    setEmail('');
+    setNmec('');
     setNucleo('');
     setIsModalOpen(false);
   };
@@ -77,7 +64,7 @@ function Administradores() {
               className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-2 rounded-md font-medium transition-colors flex items-center gap-2"
             >
               <span>+</span>
-              Adicionar Administrador
+              Adicionar Membros
             </button>
           </div>
 
@@ -92,8 +79,8 @@ function Administradores() {
                   className="bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors cursor-pointer"
                 >
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-800 font-medium">{AdminG.username}</span>
-                    <span className="text-gray-600 text-sm">Email: {AdminG.email}</span>
+                    <span className="text-gray-800 font-medium">{AdminG.name}</span>
+                    <span className="text-gray-600 text-sm">NMEC: {AdminG.nmec}</span>
                   </div>
                 </div>
               ))}
@@ -111,9 +98,9 @@ function Administradores() {
                   className="bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors cursor-pointer"
                 >
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-800 font-medium">{AdminN.username}</span>
+                    <span className="text-gray-800 font-medium">{AdminN.name}</span>
                     <span className="text-gray-600 text-sm">
-                      Email: {AdminN.email} | Núcleo: {AdminN.nucleoName}
+                      NMEC: {AdminN.nmec} | Núcleo: {AdminN.nucleoName}
                     </span>
                   </div>
                 </div>
@@ -127,28 +114,13 @@ function Administradores() {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800">Adicionar Administrador</h2>
+            <h2 className="text-2xl font-bold mb-6 text-gray-800">Adicionar Membro</h2>
 
             <div className="space-y-4">
-              {/* Username */}
+              {/* Nombre */}
               <div>
-                <label htmlFor="memberUserName" className="block text-gray-700 font-medium mb-2">
-                  Username <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="memberUserName"
-                  value={memberUserName}
-                  onChange={(e) => setMemberUserName(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  placeholder="Digite o username"
-                />
-              </div>
-
-               {/* Nome */}
-               <div>
                 <label htmlFor="memberName" className="block text-gray-700 font-medium mb-2">
-                  Nome
+                  Nome <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -163,7 +135,7 @@ function Administradores() {
               {/* Role */}
               <div>
                 <label htmlFor="memberRole" className="block text-gray-700 font-medium mb-2">
-                  Tipo <span className="text-red-500">*</span>
+                  Tipo
                 </label>
                 <select
                   id="memberRole"
@@ -176,40 +148,35 @@ function Administradores() {
                 </select>
               </div>
 
-              {/* Email */}
+              {/* NMEC */}
               <div>
-                <label htmlFor="email" className="block text-gray-700 font-medium mb-2">
-                  Email <span className="text-red-500">*</span>
+                <label htmlFor="nmec" className="block text-gray-700 font-medium mb-2">
+                  NMEC <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="nmec"
+                  value={nmec}
+                  onChange={(e) => setNmec(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  placeholder="Digite o email (ex: admin@ua.pt)"
+                  placeholder="Digite o NMEC (ex: 12345)"
                 />
               </div>
 
-              {/* Núcleo */}
+              {/* Núcleo - solo para nucleo */}
               {memberRole === 'nucleo' && (
                 <div>
                   <label htmlFor="nucleo" className="block text-gray-700 font-medium mb-2">
                     Núcleo <span className="text-red-500">*</span>
                   </label>
-                  <select
+                  <input
+                    type="text"
                     id="nucleo"
                     value={nucleo}
                     onChange={(e) => setNucleo(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  >
-                  <option value="">Selecionar Nucleo</option>
-                  {nucleos.map((nucleos) => (
-                    <option key={nucleos} value={nucleos}>
-                      {nucleos}
-                    </option>
-                  ))}
-                  </select>
+                    placeholder="Digite o nome do núcleo"
+                  />
                 </div>
               )}
             </div>
@@ -219,9 +186,9 @@ function Administradores() {
               <button
                 onClick={() => {
                   setIsModalOpen(false);
-                  setMemberUserName('');
+                  setMemberName('');
                   setMemberRole('geral');
-                  setEmail('');
+                  setNmec('');
                   setNucleo('');
                 }}
                 className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
