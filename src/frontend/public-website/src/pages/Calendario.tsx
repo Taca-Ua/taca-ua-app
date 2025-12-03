@@ -1,87 +1,50 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import GameCard from '../components/GameCard';
-
-interface Jogo {
-  id: string;
-  title: string;
-  team1: string;
-  team2: string;
-  modalidade: string;
-  date: string;
-  time?: string;
-  location?: string;
-  description?: string;
-}
+import api from '../api';
+import type { Match, Modality } from '../api/types';
 
 function Calendario() {
-  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
-  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedModalidade, setSelectedModalidade] = useState('Todas');
-  const [selectedNucleo, setSelectedNucleo] = useState('Todos');
+  const today = new Date();
+  const [currentMonth, setCurrentMonth] = useState(today.getMonth());
+  const [currentYear, setCurrentYear] = useState(today.getFullYear());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(today);
+  const [selectedModalidade, setSelectedModalidade] = useState('all');
+  const [selectedNucleo, setSelectedNucleo] = useState('all');
   const [showModal, setShowModal] = useState(false);
-  const [selectedGame, setSelectedGame] = useState<Jogo | null>(null);
+  const [selectedGame, setSelectedGame] = useState<Match | null>(null);
 
-  // Mock data - replace with API call later
-  const allJogos: Jogo[] = [
-    {
-      id: '1',
-      title: 'Jogo 1',
-      team1: 'NEI',
-      team2: 'NEC',
-      modalidade: 'Futsal Masculino A',
-      date: '2026-04-07',
-      time: '14:00',
-      location: 'Pavilhão Gimnodesportivo da UA',
-      description: 'Jogo da primeira fase do torneio de Futsal Masculino categoria A.',
-    },
-    {
-      id: '2',
-      title: 'Jogo 3',
-      team1: 'NEC',
-      team2: 'NET',
-      modalidade: 'Kickbox Masculino A',
-      date: '2026-04-07',
-      time: '16:00',
-      location: 'Pavilhão Gimnodesportivo da UA',
-      description: 'Jogo de Kickbox da categoria Masculino A.',
-    },
-    {
-      id: '3',
-      title: 'Jogo 17',
-      team1: 'NEI',
-      team2: 'NEGeo',
-      modalidade: 'Andebol Misto B',
-      date: '2026-04-07',
-      time: '18:00',
-      location: 'Pavilhão Gimnodesportivo da UA',
-      description: 'Jogo de Andebol da categoria Misto B.',
-    },
-    {
-      id: '4',
-      title: 'Jogo 5',
-      team1: 'NEUAL',
-      team2: 'NEBio',
-      modalidade: 'Futsal Masculino A',
-      date: '2026-04-01',
-      time: '15:00',
-      location: 'Pavilhão Gimnodesportivo da UA',
-      description: 'Jogo da primeira fase do torneio de Futsal Masculino categoria A.',
-    },
-    {
-      id: '5',
-      title: 'Jogo 10',
-      team1: 'NEMat',
-      team2: 'NEI',
-      modalidade: 'Voleibol Feminino',
-      date: '2026-04-17',
-      time: '17:00',
-      location: 'Pavilhão Gimnodesportivo da UA',
-      description: 'Jogo de Voleibol Feminino.',
-    },
-  ];
+  // State for API data
+  const [modalities, setModalities] = useState<Modality[]>([]);
+  const [allMatches, setAllMatches] = useState<Match[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch modalities and matches on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const [modalitiesData, matchesData] = await Promise.all([
+          api.modalities.getModalities(),
+          api.matches.getMatches(),
+        ]);
+
+        setModalities(modalitiesData);
+        setAllMatches(matchesData);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError('Erro ao carregar dados. Por favor, tente novamente.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const monthNames = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -90,17 +53,21 @@ function Calendario() {
 
   const dayNames = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
 
-  const uniqueModalidades = Array.from(new Set(allJogos.map(jogo => {
-    return jogo.modalidade.split(' ')[0];
-  }))).sort();
-
+  // Extract unique teams (nucleos) from matches
   const uniqueNucleos = Array.from(new Set(
-    allJogos.flatMap(jogo => [jogo.team1, jogo.team2])
+    allMatches.flatMap(match => [
+      match.team_home.course_abbreviation,
+      match.team_away.course_abbreviation
+    ])
   )).sort();
 
-  const filteredJogos = allJogos.filter(jogo => {
-    const matchesModalidade = selectedModalidade === 'Todas' || jogo.modalidade.includes(selectedModalidade);
-    const matchesNucleo = selectedNucleo === 'Todos' || jogo.team1 === selectedNucleo || jogo.team2 === selectedNucleo;
+  // Filter matches based on selected filters
+  const filteredMatches = allMatches.filter(match => {
+    const matchesModalidade = selectedModalidade === 'all' ||
+      String(match.modality.id) === selectedModalidade;
+    const matchesNucleo = selectedNucleo === 'all' ||
+      match.team_home.course_abbreviation === selectedNucleo ||
+      match.team_away.course_abbreviation === selectedNucleo;
     return matchesModalidade && matchesNucleo;
   });
 
@@ -115,13 +82,21 @@ function Calendario() {
 
   const hasGames = (day: number) => {
     const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    return filteredJogos.some(jogo => jogo.date === dateStr);
+    return filteredMatches.some(match => {
+      const matchDate = new Date(match.start_time);
+      const matchDateStr = `${matchDate.getFullYear()}-${String(matchDate.getMonth() + 1).padStart(2, '0')}-${String(matchDate.getDate()).padStart(2, '0')}`;
+      return matchDateStr === dateStr;
+    });
   };
 
   const getGamesForDate = () => {
     if (!selectedDate) return [];
     const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
-    return filteredJogos.filter(jogo => jogo.date === dateStr);
+    return filteredMatches.filter(match => {
+      const matchDate = new Date(match.start_time);
+      const matchDateStr = `${matchDate.getFullYear()}-${String(matchDate.getMonth() + 1).padStart(2, '0')}-${String(matchDate.getDate()).padStart(2, '0')}`;
+      return matchDateStr === dateStr;
+    });
   };
 
   const handleDateClick = (day: number) => {
@@ -172,10 +147,34 @@ function Calendario() {
   const calendarDays = generateCalendar();
   const displayedGames = getGamesForDate();
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <Navbar />
+        <main className="flex-grow flex items-center justify-center">
+          <div className="text-xl text-gray-600">Carregando...</div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <Navbar />
+        <main className="flex-grow flex items-center justify-center">
+          <div className="text-xl text-red-600">{error}</div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
-      
+
       <main className="flex-grow py-8 px-4 md:px-8 lg:px-16">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-bold mb-8 text-gray-800">
@@ -197,10 +196,10 @@ function Calendario() {
                       onChange={(e) => setSelectedModalidade(e.target.value)}
                       className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
                     >
-                      <option value="Todas">Selecionar Modalidade</option>
-                      {uniqueModalidades.map((modalidade) => (
-                        <option key={modalidade} value={modalidade}>
-                          {modalidade}
+                      <option value="all">Todas as Modalidades</option>
+                      {modalities.map((modalidade) => (
+                        <option key={modalidade.id} value={modalidade.id}>
+                          {modalidade.name}
                         </option>
                       ))}
                     </select>
@@ -214,7 +213,7 @@ function Calendario() {
                       value={selectedNucleo}
                       onChange={(e) => setSelectedNucleo(e.target.value)}
                       className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white">
-                      <option value="Todos">Selecionar Núcleo</option>
+                      <option value="all">Todos os Núcleos</option>
                       {uniqueNucleos.map((nucleo) => (
                         <option key={nucleo} value={nucleo}>
                           {nucleo}
@@ -273,7 +272,7 @@ function Calendario() {
                       item.day === new Date().getDate() &&
                       currentMonth === new Date().getMonth() &&
                       currentYear === new Date().getFullYear();
-                    
+
                     const isSelected = selectedDate &&
                       item.isCurrentMonth &&
                       item.day === selectedDate.getDate() &&
@@ -318,16 +317,19 @@ function Calendario() {
 
                     {displayedGames.length > 0 ? (
                       <div className="space-y-4">
-                        {displayedGames.map((jogo) => (
+                        {displayedGames.map((match) => (
                           <GameCard
-                            key={jogo.id}
-                            title={jogo.title}
-                            team1={jogo.team1}
-                            team2={jogo.team2}
-                            modalidade={jogo.modalidade}
-                            time={jogo.time}
+                            key={match.id}
+                            title={match.tournament_name}
+                            team1={match.team_home.name}
+                            team2={match.team_away.name}
+                            modalidade={match.modality.name}
+                            time={new Date(match.start_time).toLocaleTimeString('pt-PT', {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
                             onClick={() => {
-                              setSelectedGame(jogo);
+                              setSelectedGame(match);
                               setShowModal(true);
                             }}
                           />
@@ -376,7 +378,7 @@ function Calendario() {
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div>
                 <h2 className="text-2xl font-bold text-gray-800">
-                  {selectedGame.title}
+                  {selectedGame.tournament_name}
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
                   Detalhes do Jogo
@@ -399,18 +401,23 @@ function Calendario() {
                 <div className="flex items-center justify-center gap-8">
                   <div className="text-center">
                     <div className="w-20 h-20 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <span className="text-2xl font-bold text-teal-600">{selectedGame.team1}</span>
+                      <span className="text-2xl font-bold text-teal-600">{selectedGame.team_home.course_abbreviation}</span>
                     </div>
-                    <p className="font-semibold text-gray-800">{selectedGame.team1}</p>
+                    <p className="font-semibold text-gray-800">{selectedGame.team_home.name}</p>
                   </div>
-                  
-                  <div className="text-3xl font-bold text-gray-400">VS</div>
-                  
+
+                  <div className="text-3xl font-bold text-gray-400">
+                    {selectedGame.home_score !== null && selectedGame.away_score !== null
+                      ? `${selectedGame.home_score} - ${selectedGame.away_score}`
+                      : 'VS'
+                    }
+                  </div>
+
                   <div className="text-center">
                     <div className="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <span className="text-2xl font-bold text-indigo-600">{selectedGame.team2}</span>
+                      <span className="text-2xl font-bold text-indigo-600">{selectedGame.team_away.course_abbreviation}</span>
                     </div>
-                    <p className="font-semibold text-gray-800">{selectedGame.team2}</p>
+                    <p className="font-semibold text-gray-800">{selectedGame.team_away.name}</p>
                   </div>
                 </div>
               </div>
@@ -425,7 +432,12 @@ function Calendario() {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Horário</p>
-                    <p className="font-semibold text-gray-800">{selectedGame.time || 'A definir'}</p>
+                    <p className="font-semibold text-gray-800">
+                      {new Date(selectedGame.start_time).toLocaleTimeString('pt-PT', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
                   </div>
                 </div>
 
@@ -438,7 +450,7 @@ function Calendario() {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Local</p>
-                    <p className="font-semibold text-gray-800">{selectedGame.location || 'A definir'}</p>
+                    <p className="font-semibold text-gray-800">{selectedGame.location}</p>
                   </div>
                 </div>
 
@@ -450,18 +462,27 @@ function Calendario() {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Modalidade</p>
-                    <p className="font-semibold text-teal-600">{selectedGame.modalidade}</p>
+                    <p className="font-semibold text-teal-600">{selectedGame.modality.name}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 md:col-span-2">
+                  <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Estado</p>
+                    <p className="font-semibold text-gray-800">
+                      {selectedGame.status === 'scheduled' && 'Agendado'}
+                      {selectedGame.status === 'in_progress' && 'Em Progresso'}
+                      {selectedGame.status === 'finished' && 'Terminado'}
+                      {selectedGame.status === 'cancelled' && 'Cancelado'}
+                    </p>
                   </div>
                 </div>
               </div>
-
-              {/* Description */}
-              {selectedGame.description && (
-                <div className="border-t border-gray-200 pt-4">
-                  <h4 className="font-semibold text-gray-800 mb-2">Descrição</h4>
-                  <p className="text-gray-600">{selectedGame.description}</p>
-                </div>
-              )}
             </div>
 
             {/* Modal Footer */}
