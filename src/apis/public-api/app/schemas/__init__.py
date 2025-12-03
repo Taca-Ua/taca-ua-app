@@ -9,7 +9,14 @@ from .modalities import ModalityPublic
 from .rankings import CourseRanking, GeneralRanking, ModalityRanking, RankingEntry
 from .regulations import RegulationPublic
 from .results import ResultPublic
-from .tournaments import TournamentPublicDetail, TournamentPublicList
+from .seasons import SeasonPublic
+from .teams import TeamPublic
+from .tournaments import (
+    TournamentPublicDetail,
+    TournamentPublicList,
+    TournamentRankingEntry,
+    TournamentRankings,
+)
 
 __all__ = [
     # Calendar
@@ -25,6 +32,8 @@ __all__ = [
     # Tournaments
     "TournamentPublicList",
     "TournamentPublicDetail",
+    "TournamentRankings",
+    "TournamentRankingEntry",
     # Modalities
     "ModalityPublic",
     # Courses
@@ -34,4 +43,8 @@ __all__ = [
     # History
     "HistoricalMatch",
     "HistoricalRanking",
+    # Seasons
+    "SeasonPublic",
+    # Teams
+    "TeamPublic",
 ]
