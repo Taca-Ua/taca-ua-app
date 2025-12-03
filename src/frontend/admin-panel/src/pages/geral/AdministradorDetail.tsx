@@ -166,7 +166,7 @@ function AdminDetail() {
                     onChange={(e) => setEditedNucleo(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
                   >
-                  <option value="">Selecionar Nucleo</option>
+                  <option value="">Selecionar Núcleo</option>
                   {nucleos.map((nucleos) => (
                     <option key={nucleos} value={nucleos}>
                       {nucleos}
