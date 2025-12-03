@@ -445,10 +445,35 @@ Optional:
 
 * `modality_id`
 * `season_id`
+* `status`
 
 ### **4.2 Detalhes de torneio**
 
 `GET /api/public/tournaments/{tournament_id}`
+Optional query params:
+* `include_rankings` (boolean) - Se true, inclui classificações no retorno
+
+Retorna detalhes do torneio incluindo:
+- Informação da modalidade
+- Informação da época
+- Status (draft, active, finished)
+- Data de início
+- Número de equipas
+- Rankings (se `include_rankings=true`)
+
+### **4.3 Classificações de um torneio**
+
+`GET /api/public/tournaments/{tournament_id}/rankings`
+
+Retorna lista ordenada de equipas com:
+- Posição
+- Equipa (id, nome)
+- Curso (id, nome, abreviatura)
+- Pontos
+- Jogos disputados
+- Vitórias
+- Empates
+- Derrotas
 
 ---
 
@@ -468,24 +493,60 @@ Optional:
 
 ---
 
-## 7. Regulamentos (RF5.6)
+## 7. Épocas/Seasons Públicas
 
-### **7.1 Listar regulamentos**
+### **7.1 Listar épocas**
+
+`GET /api/public/seasons`
+
+Retorna lista de épocas com:
+- `id` (UUID)
+- `year` (int)
+- `display_name` (string)
+- `is_active` (boolean)
+
+---
+
+## 8. Equipas Públicas
+
+### **8.1 Listar equipas**
+
+`GET /api/public/teams`
+Optional:
+* `course_id` - Filtrar por curso
+* `modality_id` - Filtrar por modalidade
+
+Retorna lista de equipas com informações do curso, modalidade e número de jogadores.
+
+---
+
+## 9. Regulamentos (RF5.6)
+
+### **9.1 Listar regulamentos**
 
 `GET /api/public/regulations`
 Optional:
 
-* `modality_id`
+* `category` - Filtrar por categoria
 
-### **7.2 Obter ficheiro PDF**
+Retorna lista de regulamentos com:
+- `id` (UUID)
+- `title` (string)
+- `description` (string, opcional)
+- `file_url` (string) - URL para download do PDF
+- `category` (string, opcional)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### **9.2 Obter ficheiro PDF**
 
 `GET /api/public/regulations/{regulation_id}`
 
 ---
 
-## 8. Histórico
+## 10. Histórico
 
-### **8.1 Jogos de épocas anteriores**
+### **10.1 Jogos de épocas anteriores**
 
 `GET /api/public/matches/history`
 Optional:
