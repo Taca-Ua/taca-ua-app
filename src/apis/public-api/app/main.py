@@ -1,11 +1,17 @@
 import asyncio
 import logging
+import sys
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 import logging_loki
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from prometheus_fastapi_instrumentator import Instrumentator
 
+# Add src directory to path for shared module imports
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
+
+from shared.auth import verify_token, verify_token_optional, get_username
 from .rabbitmq_utils import consume, produce
 
 # Logging setup
@@ -40,7 +46,9 @@ def read_root():
 
 
 @app.post("/send-event")
-async def send_event(msg: str):
-    await produce("test-queue", {"message": msg})
-    logger.info(f"Event sent: {msg}")
-    return {"status": "sent"}
+async def send_event(msg: str, current_user: dict = Depends(verify_token)):
+    """Send event - requires authentication. User info is in current_user token."""
+    username = get_username(current_user)
+    await produce("test-queue", {"message": msg, "sent_by": username})
+    logger.info(f"Event sent: {msg} by {username}")
+    return {"status": "sent", "sent_by": username}

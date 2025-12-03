@@ -2,9 +2,13 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
+# copy requirements and app from repo-root paths (build context is repo root)
+COPY src/microservices/matches-service/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+# copy application code
+COPY src/microservices/matches-service/ .
+# copy shared utilities so `import shared` works
+COPY src/shared/ ./shared
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

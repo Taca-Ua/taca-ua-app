@@ -86,7 +86,9 @@ services:
 
 # APIs
   competition-api:
-    build: ./src/apis/competiotion-api
+    build:
+      context: .
+      dockerfile: ./src/apis/competiotion-api/Dockerfile
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
@@ -100,7 +102,9 @@ services:
       - loki
 
   public-api:
-    build: ./src/apis/public-api
+    build:
+      context: .
+      dockerfile: ./src/apis/public-api/Dockerfile
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
@@ -112,7 +116,9 @@ services:
 
 # Microservices
   matches-service:
-    build: ./src/microservices/matches-service
+    build:
+      context: .
+      dockerfile: ./src/microservices/matches-service/Dockerfile
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
@@ -123,7 +129,9 @@ services:
       - loki
 
   modalities-service:
-    build: ./src/microservices/modalities-service
+    build:
+      context: .
+      dockerfile: ./src/microservices/modalities-service/Dockerfile
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
@@ -134,7 +142,9 @@ services:
       - loki
 
   ranking-service:
-    build: ./src/microservices/ranking-service
+    build:
+      context: .
+      dockerfile: ./src/microservices/ranking-service/Dockerfile
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
@@ -145,7 +155,9 @@ services:
       - loki
 
   read-model-updater:
-    build: ./src/microservices/read-model-updater
+    build:
+      context: .
+      dockerfile: ./src/microservices/read-model-updater/Dockerfile
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
@@ -156,7 +168,9 @@ services:
       - loki
 
   tournaments-service:
-    build: ./src/microservices/tournaments-service
+    build:
+      context: .
+      dockerfile: ./src/microservices/tournaments-service/Dockerfile
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
