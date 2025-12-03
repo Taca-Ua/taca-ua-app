@@ -11,6 +11,7 @@ import Login from '../pages/Login';
 import LoginGeral from '../pages/geral/LoginGeral';
 import LoginNucleo from '../pages/nucleo/LoginNucleo';
 import Modalidades from '../pages/geral/Modalidades';
+import ModalidadesDetails from '../pages/geral/ModalidadesDetails';
 
 export const router = createBrowserRouter([
   {
@@ -32,6 +33,10 @@ export const router = createBrowserRouter([
   {
     path: '/geral/modalidades',
     element: <Modalidades />,
+  },
+  {
+    path: '/geral/modalidades/:id',
+    element: <ModalidadesDetails />,
   },
   {
     path: '/nucleo/dashboard',

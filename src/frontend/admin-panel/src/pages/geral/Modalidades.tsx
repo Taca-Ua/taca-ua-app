@@ -18,9 +18,9 @@ const Modalities = () => {
   const [selectedYear, setSelectedYear] = useState('');
   const [newScoringSchema, setNewScoringSchema] = useState('');
 
-  // Mock inicial (luego reemplazar con API)
+  // Initial mock resplace for API data
   const [modalities, setModalities] = useState<Modality[]>([
-    { id: 1, name: 'Futebol', year: '25/26', type: 'coletiva' },
+    { id: 1, name: 'Futebol', year: '25/26', type: 'coletiva',scoring_schema: '{"win":3}' },
     { id: 2, name: 'Basquetebol', year: '25/26', type: 'coletiva' },
     { id: 3, name: 'Voleibol', year: '25/26', type: 'coletiva' },
     { id: 4, name: 'Futsal', year: '25/26', type: 'coletiva' },
@@ -30,7 +30,6 @@ const Modalities = () => {
 
   const [filterYear, setFilterYear] = useState('');
 
-  // Años disponibles
   const years = ['25/26', '24/25', '23/24', '22/23'];
 
   const handleAddModality = () => {
@@ -114,12 +113,13 @@ const Modalities = () => {
                 filteredModalities.map((mod) => (
                   <div
                     key={mod.id}
-                    onClick={() => navigate(`/nucleo/modalidades/${mod.id}`)}
+                    onClick={() => navigate(`/geral/modalidades/${mod.id}`)}
                     className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer transition-colors flex justify-between items-center"
                   >
                     <span className="text-gray-800 font-medium">{mod.name}</span>
-                    <span className="text-teal-600 text-sm font-medium">{mod.year}</span>
-                    <span className="text-teal-600 text-sm font-medium">{mod.type}</span>
+                    <span className="text-teal-600 text-sm font-medium">
+                      Época: {mod.year} | Tipo: {mod.type}
+                    </span>
                   </div>
                 ))
               ) : (
