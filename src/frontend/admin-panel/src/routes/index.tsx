@@ -10,6 +10,7 @@ import NotFound from '../pages/NotFound';
 import Login from '../pages/Login';
 import LoginGeral from '../pages/geral/LoginGeral';
 import LoginNucleo from '../pages/nucleo/LoginNucleo';
+import Modalidades from '../pages/geral/Modalidades';
 
 export const router = createBrowserRouter([
   {
@@ -27,6 +28,10 @@ export const router = createBrowserRouter([
   {
     path: '/login/nucleo',
     element: <LoginNucleo />,
+  },
+  {
+    path: '/geral/modalidades',
+    element: <Modalidades />,
   },
   {
     path: '/nucleo/dashboard',
