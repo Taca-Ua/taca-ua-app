@@ -41,7 +41,10 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "rest_framework",
+    "drf_spectacular",
     "django_prometheus",
+    "admin_api",
 ]
 
 MIDDLEWARE = [
@@ -147,3 +150,18 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# REST Framework settings
+REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# DRF Spectacular settings
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Competition API (Admin API)",
+    "DESCRIPTION": "API for managing TACA competitions - used by administrators",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SCHEMA_PATH_PREFIX": "/api/admin",
+}
