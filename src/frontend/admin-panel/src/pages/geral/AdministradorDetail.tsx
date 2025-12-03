@@ -19,6 +19,16 @@ const mockAdmins: Admin[] = [
   { id: 7, name: 'AdminN 2', role: 'nucleo', nmec: '78901', nucleoName: 'Núcleo B' },
 ];
 
+  // TODO: Replace with real NUCLEOS from API
+  const nucleos = [
+    'NEI',
+    'NECIB',
+    'NEG',
+    'NEMAT',
+    'NECM',
+    'NEGEO',
+  ];
+
 function AdminDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -144,12 +154,18 @@ function AdminDetail() {
             {member.role === 'nucleo' && (
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">Núcleo</label>
-                  <input
-                    type="text"
+                  <select
                     value={editedNucleo}
                     onChange={(e) => setEditedNucleo(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
-                  />
+                  >
+                  <option value="">Selecionar Nucleo</option>
+                  {nucleos.map((nucleos) => (
+                    <option key={nucleos} value={nucleos}>
+                      {nucleos}
+                    </option>
+                  ))}
+                  </select>
                 </div>
               )}
             </div>
