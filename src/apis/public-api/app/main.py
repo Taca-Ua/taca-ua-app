@@ -63,7 +63,7 @@ def read_root():
     return {"Service": "Public API"}
 
 
-@app.post("/send-event")
+@app.post("/api/public/send-event")
 async def send_event(msg: str, current_user: dict = Depends(verify_token)):
     """Send event - requires authentication. User info is in current_user token."""
     username = get_username(current_user)
