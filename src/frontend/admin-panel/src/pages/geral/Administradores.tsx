@@ -29,6 +29,16 @@ function Administradores() {
     { id: 7, name: 'AdminN 2', role: 'nucleo', nmec: '78901', nucleoName: 'Núcleo B' },
   ]);
 
+  // TODO: Replace with real NUCLEOS from API
+  const nucleos = [
+    'NEI',
+    'NECIB',
+    'NEG',
+    'NEMAT',
+    'NECM',
+    'NEGEO',
+  ];
+
   const AdminG = members.filter(m => m.role === 'geral');
   const AdminN = members.filter(m => m.role === 'nucleo');
 
@@ -163,20 +173,25 @@ function Administradores() {
                 />
               </div>
 
-              {/* Núcleo - solo para nucleo */}
+              {/* Núcleo */}
               {memberRole === 'nucleo' && (
                 <div>
                   <label htmlFor="nucleo" className="block text-gray-700 font-medium mb-2">
                     Núcleo <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
+                  <select
                     id="nucleo"
                     value={nucleo}
                     onChange={(e) => setNucleo(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    placeholder="Digite o nome do núcleo"
-                  />
+                  >
+                  <option value="">Selecionar Nucleo</option>
+                  {nucleos.map((nucleos) => (
+                    <option key={nucleos} value={nucleos}>
+                      {nucleos}
+                    </option>
+                  ))}
+                  </select>
                 </div>
               )}
             </div>
