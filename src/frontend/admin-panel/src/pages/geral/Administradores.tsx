@@ -113,7 +113,7 @@ function Administradores() {
                   <div className="flex justify-between items-center">
                     <span className="text-gray-800 font-medium">{AdminN.name}</span>
                     <span className="text-gray-600 text-sm">
-                      NMEC: {AdminN.email} | Núcleo: {AdminN.nucleoName}
+                      Email: {AdminN.email} | Núcleo: {AdminN.nucleoName}
                     </span>
                   </div>
                 </div>
@@ -141,7 +141,7 @@ function Administradores() {
                   value={memberUserName}
                   onChange={(e) => setMemberUserName(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  placeholder="Digite o nome do membro"
+                  placeholder="Digite o username"
                 />
               </div>
 
