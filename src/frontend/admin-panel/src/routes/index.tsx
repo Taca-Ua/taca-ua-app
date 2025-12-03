@@ -11,6 +11,8 @@ import Login from '../pages/Login';
 import LoginGeral from '../pages/geral/LoginGeral';
 import LoginNucleo from '../pages/nucleo/LoginNucleo';
 import DashboardGeral from '../pages/geral/DashboardGeral';
+import Administradores from '../pages/geral/Administradores';
+import AdminDetail from '../pages/geral/AdministradorDetail';
 
 export const router = createBrowserRouter([
   {
@@ -32,6 +34,14 @@ export const router = createBrowserRouter([
   {
     path: '/login/nucleo',
     element: <LoginNucleo />,
+  },
+  {
+    path: '/geral/administradores',
+    element: <Administradores />,
+  },
+  {
+    path: '/geral/administradores/:id',
+    element: <AdminDetail />,
   },
   {
     path: '/nucleo/dashboard',
