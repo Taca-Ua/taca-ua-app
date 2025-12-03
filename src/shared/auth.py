@@ -15,14 +15,15 @@ from authlib.jose import jwt
 
 
 # Configuration
-KEYCLOAK_URL = os.getenv("KEYCLOAK_URL", "http://keycloak:8080")
+KEYCLOAK_URL = os.getenv("KEYCLOAK_URL", "http://keycloak:8080")  # External URL for token issuer
+KEYCLOAK_INTERNAL_URL = os.getenv("KEYCLOAK_INTERNAL_URL", "http://keycloak:8080")  # Internal URL for JWKS fetching
 KEYCLOAK_REALM = os.getenv("KEYCLOAK_REALM", "taca-ua")
 KEYCLOAK_CLIENT_ID = os.getenv("KEYCLOAK_CLIENT_ID", "api-client")
 KEYCLOAK_CLIENT_SECRET = os.getenv("KEYCLOAK_CLIENT_SECRET", "")
 
 # Build Keycloak URLs
 KEYCLOAK_ISSUER = f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}"
-KEYCLOAK_JWKS_URI = f"{KEYCLOAK_ISSUER}/protocol/openid-connect/certs"
+KEYCLOAK_JWKS_URI = f"{KEYCLOAK_INTERNAL_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/certs"
 
 # Security scheme
 security = HTTPBearer()

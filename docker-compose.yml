@@ -125,6 +125,10 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - DATABASE_URL=${DATABASE_URL}
+      - KEYCLOAK_URL=http://localhost/keycloak
+      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/keycloak
+      - KEYCLOAK_REALM=taca-ua
+      - KEYCLOAK_CLIENT_ID=api-client
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -144,6 +148,10 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - DATABASE_URL=${DATABASE_URL}
+      - KEYCLOAK_URL=http://localhost/keycloak
+      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/keycloak
+      - KEYCLOAK_REALM=taca-ua
+      - KEYCLOAK_CLIENT_ID=api-client
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -162,6 +170,10 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - DATABASE_URL=${DATABASE_URL}
+      - KEYCLOAK_URL=http://localhost/keycloak
+      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/keycloak
+      - KEYCLOAK_REALM=taca-ua
+      - KEYCLOAK_CLIENT_ID=api-client
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -180,6 +192,10 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - DATABASE_URL=${DATABASE_URL}
+      - KEYCLOAK_URL=http://localhost/keycloak
+      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/keycloak
+      - KEYCLOAK_REALM=taca-ua
+      - KEYCLOAK_CLIENT_ID=api-client
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -198,6 +214,10 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - DATABASE_URL=${DATABASE_URL}
+      - KEYCLOAK_URL=http://localhost/keycloak
+      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/keycloak
+      - KEYCLOAK_REALM=taca-ua
+      - KEYCLOAK_CLIENT_ID=api-client
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -216,6 +236,10 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - DATABASE_URL=${DATABASE_URL}
+      - KEYCLOAK_URL=http://localhost/keycloak
+      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/keycloak
+      - KEYCLOAK_REALM=taca-ua
+      - KEYCLOAK_CLIENT_ID=api-client
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -245,3 +269,4 @@ services:
 volumes:
   postgres_data:
   minio_data:
+
