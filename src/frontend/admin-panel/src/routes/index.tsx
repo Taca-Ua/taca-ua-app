@@ -10,6 +10,7 @@ import NotFound from '../pages/NotFound';
 import Login from '../pages/Login';
 import LoginGeral from '../pages/geral/LoginGeral';
 import LoginNucleo from '../pages/nucleo/LoginNucleo';
+import DashboardGeral from '../pages/geral/DashboardGeral';
 import Administradores from '../pages/geral/Administradores';
 import AdminDetail from '../pages/geral/AdministradorDetail';
 
@@ -25,6 +26,10 @@ export const router = createBrowserRouter([
   {
     path: '/login/geral',
     element: <LoginGeral />,
+  },
+  {
+    path: '/geral/dashboard',
+    element: <DashboardGeral />,
   },
   {
     path: '/login/nucleo',
