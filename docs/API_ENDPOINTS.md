@@ -381,22 +381,48 @@ Sem autenticação.
 ### **1.1 Jogos por dia**
 
 `GET /api/public/matches`
-Optional:
+Optional query parameters:
 
-* `date`
-* `modality_id`
-* `course_id`
-* `team_id`
-* `status`
-* `limit`, `offset`
+* `date` (string, formato YYYY-MM-DD) - Filtrar por data exata
+* `modality_id` (int) - Filtrar por modalidade
+* `course_id` (int) - Filtrar por curso/núcleo
+* `team_id` (int) - Filtrar por equipa
+* `status` (string) - Filtrar por estado (scheduled, in_progress, finished, cancelled)
+* `limit` (int, default 50) - Número de resultados
+* `offset` (int, default 0) - Pular resultados
+
+Retorna lista de jogos com:
+- `id` (int)
+- `tournament_id` (int)
+- `tournament_name` (string)
+- `team_home` (objeto):
+  - `id` (int)
+  - `name` (string)
+  - `course_abbreviation` (string)
+- `team_away` (objeto):
+  - `id` (int)
+  - `name` (string)
+  - `course_abbreviation` (string)
+- `modality` (objeto):
+  - `id` (int)
+  - `name` (string)
+- `start_time` (datetime)
+- `location` (string)
+- `status` (string)
+- `home_score` (int, opcional)
+- `away_score` (int, opcional)
 
 ### **1.2 Jogos de hoje**
 
 `GET /api/public/matches/today`
 
+Retorna jogos agendados para o dia atual no mesmo formato do endpoint 1.1.
+
 ### **1.3 Detalhes de um jogo**
 
 `GET /api/public/matches/{match_id}`
+
+Retorna detalhes completos de um jogo com os mesmos campos do endpoint 1.1.
 
 ---
 
@@ -418,14 +444,46 @@ Optional:
 ### **3.1 Classificação por modalidade**
 
 `GET /api/public/rankings/modality/{modality_id}`
+Optional query parameters:
+
+* `season_id` (string) - Filtrar por época
+
+Retorna classificação de uma modalidade específica com:
+- `modality` (objeto com id e name)
+- `season` (objeto com id, year, display_name)
+- `rankings` (array de rankings de torneios dessa modalidade)
 
 ### **3.2 Classificação por curso**
 
 `GET /api/public/rankings/course/{course_id}`
+Optional query parameters:
+
+* `season_id` (string) - Filtrar por época
+
+Retorna classificação de um curso específico.
 
 ### **3.3 Classificação geral**
 
 `GET /api/public/rankings/general`
+Optional query parameters:
+
+* `season_id` (string) - Filtrar por época específica (se não fornecido, retorna época ativa)
+
+Retorna classificação geral com:
+- `season` (objeto):
+  - `id` (string)
+  - `year` (int)
+  - `display_name` (string)
+- `rankings` (array de objetos):
+  - `position` (int)
+  - `course_id` (int)
+  - `course_name` (string)
+  - `course_short_code` (string)
+  - `points` (int)
+  - `played` (int) - Jogos disputados
+  - `won` (int) - Vitórias
+  - `drawn` (int) - Empates
+  - `lost` (int) - Derrotas
 
 ### **3.4 Classificações de anos anteriores (RF5.7)**
 
@@ -482,6 +540,12 @@ Retorna lista ordenada de equipas com:
 ### **5.1 Listar modalidades**
 
 `GET /api/public/modalities`
+
+Retorna lista de modalidades disponíveis:
+- `id` (int)
+- `name` (string) - Nome da modalidade (Futebol, Futsal, Andebol, Voleibol)
+- `type` (string) - Tipo (coletiva, individual, mista)
+- `description` (string) - Descrição da modalidade
 
 ---
 
