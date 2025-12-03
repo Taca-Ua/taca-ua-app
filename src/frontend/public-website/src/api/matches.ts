@@ -17,20 +17,20 @@ export const matchesApi = {
    */
   getMatches: async (params?: GetMatchesParams): Promise<Match[]> => {
     const query = params ? buildQueryString(params as Record<string, string | undefined>) : '';
-    return apiCall<Match[]>(`/matches${query}`);
+    return apiCall<Match[]>(`/calendar/matches${query}`);
   },
 
   /**
    * Get matches for a specific date
    */
   getMatchesByDate: async (date: string): Promise<Match[]> => {
-    return apiCall<Match[]>(`/matches?date=${date}`);
+    return apiCall<Match[]>(`/calendar/matches?date=${date}`);
   },
 
   /**
    * Get matches for a date range
    */
   getMatchesByDateRange: async (dateFrom: string, dateTo: string): Promise<Match[]> => {
-    return apiCall<Match[]>(`/matches?date_from=${dateFrom}&date_to=${dateTo}`);
+    return apiCall<Match[]>(`/calendar/matches?date_from=${dateFrom}&date_to=${dateTo}`);
   },
 };
