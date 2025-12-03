@@ -25,6 +25,9 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE:-secret_cookie_change_me}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
       interval: 5s
@@ -42,7 +45,7 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-user}"]
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-user}", "-d", "taca_ua"]
       interval: 10s
       timeout: 30s
       retries: 5
@@ -280,3 +283,4 @@ services:
 volumes:
   postgres_data:
   minio_data:
+  rabbitmq_data:

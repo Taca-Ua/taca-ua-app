@@ -26,11 +26,22 @@ async def list_modalities():
             "type": "coletiva",
             "description": "Futebol de 11",
         },
-        {"id": 2, "name": "Futsal", "type": "coletiva", "description": "Futsal de 5"},
+        {
+            "id": 2,
+            "name": "Futsal",
+            "type": "coletiva",
+            "description": "Futsal de 5",
+        },
         {
             "id": 3,
-            "name": "Ténis",
-            "type": "individual",
-            "description": "Ténis individual",
+            "name": "Andebol",
+            "type": "coletiva",
+            "description": "Andebol de 7",
+        },
+        {
+            "id": 4,
+            "name": "Voleibol",
+            "type": "coletiva",
+            "description": "Voleibol 6x6",
         },
     ]
