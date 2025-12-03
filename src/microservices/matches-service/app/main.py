@@ -12,6 +12,10 @@ from taca_messaging.rabbitmq_service import RabbitMQService
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
 from shared.auth import verify_token, require_role
+<<<<<<< HEAD
+=======
+from .rabbitmq_utils import consume
+>>>>>>> 5b485845f7a2685576922cd49c1b4546fdcb65ab
 
 # Logging setup
 handler = logging_loki.LokiHandler(

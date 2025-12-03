@@ -13,6 +13,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
 from shared.auth import verify_token
 
+<<<<<<< HEAD
+=======
+# Add src directory to path for shared module imports
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
+
+from shared.auth import verify_token
+from .rabbitmq_utils import consume
+>>>>>>> 5b485845f7a2685576922cd49c1b4546fdcb65ab
 
 # Logging setup
 handler = logging_loki.LokiHandler(

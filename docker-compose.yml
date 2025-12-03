@@ -99,7 +99,11 @@ services:
   competition-api:
     build:
       context: .
+<<<<<<< HEAD
       dockerfile: src/apis/competiotion-api/Dockerfile
+=======
+      dockerfile: ./src/apis/competiotion-api/Dockerfile
+>>>>>>> 5b485845f7a2685576922cd49c1b4546fdcb65ab
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
@@ -118,7 +122,11 @@ services:
   public-api:
     build:
       context: .
+<<<<<<< HEAD
       dockerfile: src/apis/public-api/Dockerfile
+=======
+      dockerfile: ./src/apis/public-api/Dockerfile
+>>>>>>> 5b485845f7a2685576922cd49c1b4546fdcb65ab
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
@@ -137,7 +145,11 @@ services:
   matches-service:
     build:
       context: .
+<<<<<<< HEAD
       dockerfile: src/microservices/matches-service/Dockerfile
+=======
+      dockerfile: ./src/microservices/matches-service/Dockerfile
+>>>>>>> 5b485845f7a2685576922cd49c1b4546fdcb65ab
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
@@ -155,7 +167,11 @@ services:
   modalities-service:
     build:
       context: .
+<<<<<<< HEAD
       dockerfile: src/microservices/modalities-service/Dockerfile
+=======
+      dockerfile: ./src/microservices/modalities-service/Dockerfile
+>>>>>>> 5b485845f7a2685576922cd49c1b4546fdcb65ab
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
@@ -173,7 +189,11 @@ services:
   ranking-service:
     build:
       context: .
+<<<<<<< HEAD
       dockerfile: src/microservices/ranking-service/Dockerfile
+=======
+      dockerfile: ./src/microservices/ranking-service/Dockerfile
+>>>>>>> 5b485845f7a2685576922cd49c1b4546fdcb65ab
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
@@ -191,7 +211,11 @@ services:
   read-model-updater:
     build:
       context: .
+<<<<<<< HEAD
       dockerfile: src/microservices/read-model-updater/Dockerfile
+=======
+      dockerfile: ./src/microservices/read-model-updater/Dockerfile
+>>>>>>> 5b485845f7a2685576922cd49c1b4546fdcb65ab
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
@@ -209,7 +233,11 @@ services:
   tournaments-service:
     build:
       context: .
+<<<<<<< HEAD
       dockerfile: src/microservices/tournaments-service/Dockerfile
+=======
+      dockerfile: ./src/microservices/tournaments-service/Dockerfile
+>>>>>>> 5b485845f7a2685576922cd49c1b4546fdcb65ab
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672

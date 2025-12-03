@@ -13,6 +13,14 @@ from .routes import all_routers
 # Add src directory to path for shared module imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
+<<<<<<< HEAD
+=======
+# Add src directory to path for shared module imports
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
+
+from shared.auth import verify_token, verify_token_optional, get_username
+from .rabbitmq_utils import consume, produce
+>>>>>>> 5b485845f7a2685576922cd49c1b4546fdcb65ab
 
 # Logging setup
 handler = logging_loki.LokiHandler(
@@ -66,8 +74,15 @@ def read_root():
 @app.post("/send-event")
 async def send_event(msg: str, current_user: dict = Depends(verify_token)):
     """Send event - requires authentication. User info is in current_user token."""
+<<<<<<< HEAD
     await rabbitmq_service.publish_event("test.event", {"message": msg})
     username = get_username(current_user)
     logger.info(f"Event sent: {msg} by {username}")
     return {"status": "sent", "sent_by": username}
 
+=======
+    username = get_username(current_user)
+    await produce("test-queue", {"message": msg, "sent_by": username})
+    logger.info(f"Event sent: {msg} by {username}")
+    return {"status": "sent", "sent_by": username}
+>>>>>>> 5b485845f7a2685576922cd49c1b4546fdcb65ab
