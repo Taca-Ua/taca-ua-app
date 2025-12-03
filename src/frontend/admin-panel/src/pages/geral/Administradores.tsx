@@ -111,7 +111,7 @@ function Administradores() {
                   className="bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors cursor-pointer"
                 >
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-800 font-medium">{AdminN.name}</span>
+                    <span className="text-gray-800 font-medium">{AdminN.username}</span>
                     <span className="text-gray-600 text-sm">
                       Email: {AdminN.email} | Núcleo: {AdminN.nucleoName}
                     </span>
