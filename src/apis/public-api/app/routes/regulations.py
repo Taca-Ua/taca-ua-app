@@ -16,32 +16,71 @@ router = APIRouter(prefix="/api/public", tags=["Regulations"])
     "/regulations",
     response_model=List[RegulationPublic],
     summary="List regulations",
-    description="Get a list of regulations with optional modality filter",
+    description="Get a list of regulations with optional category filter",
 )
 async def list_regulations(
-    modality_id: Optional[int] = Query(None, description="Filter by modality ID"),
+    category: Optional[str] = Query(None, description="Filter by category"),
 ):
-    """List regulations with optional modality filter"""
-    return [
+    """List regulations with optional category filter
+
+    Returns regulations filtered by category (e.g., 'geral', 'futsal', 'futebol').
+    If no category is provided, returns all regulations.
+    """
+    # Mock regulations database
+    all_regulations = [
         {
             "id": 1,
-            "title": "Regulamento Futebol",
-            "description": "Regras do futebol TACA",
-            "modality_id": 1,
-            "modality_name": "Futebol",
-            "file_url": "http://example.com/reg1.pdf",
+            "title": "Regulamento Geral",
+            "description": "Regulamento geral da Taça UA. Define as regras gerais, pontuação, e normas de conduta para todas as modalidades.",
+            "category": "geral",
+            "file_url": "/api/public/regulations/1/download",
             "created_at": datetime(2025, 1, 15, 10, 0),
+            "updated_at": datetime(2025, 1, 15, 10, 0),
         },
         {
             "id": 2,
             "title": "Regulamento Futsal",
-            "description": "Regras do futsal TACA",
-            "modality_id": 2,
-            "modality_name": "Futsal",
-            "file_url": "http://example.com/reg2.pdf",
+            "description": "Regulamento específico para a modalidade de Futsal. Inclui regras de jogo, composição de equipas, e critérios de desempate.",
+            "category": "futsal",
+            "file_url": "/api/public/regulations/2/download",
             "created_at": datetime(2025, 1, 20, 10, 0),
+            "updated_at": datetime(2025, 1, 20, 10, 0),
+        },
+        {
+            "id": 3,
+            "title": "Regulamento Futebol",
+            "description": "Regulamento específico para a modalidade de Futebol. Define as normas de participação e competição.",
+            "category": "futebol",
+            "file_url": "/api/public/regulations/3/download",
+            "created_at": datetime(2025, 1, 25, 10, 0),
+            "updated_at": datetime(2025, 1, 25, 10, 0),
+        },
+        {
+            "id": 4,
+            "title": "Regulamento Andebol",
+            "description": "Regulamento específico para a modalidade de Andebol. Define as normas de participação e competição.",
+            "category": "andebol",
+            "file_url": "/api/public/regulations/4/download",
+            "created_at": datetime(2025, 2, 1, 10, 0),
+            "updated_at": datetime(2025, 2, 1, 10, 0),
+        },
+        {
+            "id": 5,
+            "title": "Regulamento Minecraft",
+            "description": "Regulamento específico para o torneio de Minecraft. Define as regras do jogo, mapas permitidos, e critérios de vitória.",
+            "category": "minecraft",
+            "file_url": "/api/public/regulations/5/download",
+            "created_at": datetime(2025, 2, 5, 10, 0),
+            "updated_at": datetime(2025, 2, 5, 10, 0),
         },
     ]
+
+    # Apply filter
+    if category:
+        filtered = [r for r in all_regulations if r.get("category") == category.lower()]
+        return filtered
+
+    return all_regulations
 
 
 @router.get(

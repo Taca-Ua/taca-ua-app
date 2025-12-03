@@ -12,7 +12,7 @@ repos:
     rev: v0.4.6
     hooks:
       - id: ruff
-        stages: [pre-commit]
+        stages: [commit]
         args: [--fix]
 
   # Python import sorter
@@ -20,14 +20,14 @@ repos:
     rev: 5.13.2
     hooks:
       - id: isort
-        stages: [pre-commit]
+        stages: [commit]
 
   # Python code formatter
   - repo: https://github.com/psf/black
     rev: 24.4.0
     hooks:
       - id: black
-        stages: [pre-commit]
+        stages: [commit]
 
   # General purpose pre-commit hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -35,12 +35,12 @@ repos:
     hooks:
       # Hook to check for merge conflict markers
       - id: check-merge-conflict
-        stages: [pre-commit]
+        stages: [commit]
 
       # Hook to check for trailing whitespace
       - id: trailing-whitespace
-        stages: [pre-commit]
+        stages: [commit]
 
       # Hook to ensure files end with a newline
       - id: end-of-file-fixer
-        stages: [pre-commit]
+        stages: [commit]

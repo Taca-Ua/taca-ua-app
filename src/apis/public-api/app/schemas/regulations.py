@@ -14,7 +14,7 @@ class RegulationPublic(BaseModel):
     id: int
     title: str
     description: Optional[str] = None
-    modality_id: Optional[int] = None
-    modality_name: Optional[str] = None
+    category: Optional[str] = None
     file_url: str
     created_at: datetime
+    updated_at: datetime

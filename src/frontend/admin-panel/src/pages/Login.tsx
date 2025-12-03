@@ -22,7 +22,7 @@ function Login() {
         <div className="grid grid-cols-2 gap-6 mb-8">
           {/* Admin Geral */}
           <button
-            onClick={() => navigate('/login')}
+            onClick={() => navigate('/login/geral')}
             className="bg-teal-500 hover:bg-teal-600 text-white rounded-lg p-8 transition-all duration-300 transform hover:scale-105 shadow-lg"
           >
             <div className="text-center">

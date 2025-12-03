@@ -117,10 +117,50 @@ async def get_course_ranking(course_id: int):
     summary="Get general ranking",
     description="Get current general ranking across all courses",
 )
-async def get_general_ranking():
-    """Get general ranking"""
+async def get_general_ranking(
+    season_id: Optional[int] = Query(None, description="Filter by season ID")
+):
+    """Get general ranking (optionally for a specific season)
+
+    If `season_id` is provided the endpoint will return the ranking snapshot for that
+    season. For now this returns static example data — the important part is that the
+    response changes depending on `season_id` so the frontend can display different
+    rankings per season.
+    """
+    # Example: historical snapshot for season 1
+    if season_id == 1:
+        return {
+            "season_id": 1,
+            "season_year": 2024,
+            "rankings": [
+                {
+                    "position": 1,
+                    "course_id": 2,
+                    "course_name": "LEI",
+                    "course_short_code": "LEI",
+                    "points": 92,
+                    "played": 30,
+                    "won": 28,
+                    "drawn": 8,
+                    "lost": 2,
+                },
+                {
+                    "position": 2,
+                    "course_id": 1,
+                    "course_name": "MECT",
+                    "course_short_code": "MECT",
+                    "points": 85,
+                    "played": 30,
+                    "won": 26,
+                    "drawn": 7,
+                    "lost": 4,
+                },
+            ],
+        }
+
+    # Default / current season snapshot
     return {
-        "season_id": 2,
+        "season_id": season_id or 2,
         "season_year": 2025,
         "rankings": [
             {
