@@ -77,7 +77,7 @@ function Administradores() {
               className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-2 rounded-md font-medium transition-colors flex items-center gap-2"
             >
               <span>+</span>
-              Adicionar Membros
+              Adicionar Administrador
             </button>
           </div>
 
@@ -127,7 +127,7 @@ function Administradores() {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800">Adicionar Membro</h2>
+            <h2 className="text-2xl font-bold mb-6 text-gray-800">Adicionar Administrador</h2>
 
             <div className="space-y-4">
               {/* Username */}
