@@ -15,6 +15,8 @@ import Administradores from '../pages/geral/Administradores';
 import AdminDetail from '../pages/geral/AdministradorDetail';
 import Modalities from '../pages/geral/Modalidades';
 import ModalityDetails from '../pages/geral/ModalityDetails';
+import Nucleo from '../pages/geral/Nucleos';
+import NucleoDetails from '../pages/geral/NucleoDetails';
 
 export const router = createBrowserRouter([
   {
@@ -52,6 +54,14 @@ export const router = createBrowserRouter([
   {
     path: '/geral/modalidades/:id',
     element: <ModalityDetails />,
+  },
+  {
+    path: '/geral/nucleos',
+    element: <Nucleo />,
+  },
+  {
+    path: '/geral/nucleos/:id',
+    element: <NucleoDetails />,
   },
   {
     path: '/nucleo/dashboard',
