@@ -17,6 +17,9 @@ import Modalities from '../pages/geral/Modalidades';
 import ModalityDetails from '../pages/geral/ModalityDetails';
 import Torneios from '../pages/geral/Torneios';
 import TorneioDetails from '../pages/geral/TorneioDetails';
+import Nucleo from '../pages/geral/Nucleos';
+import NucleoDetails from '../pages/geral/NucleoDetails';
+
 
 export const router = createBrowserRouter([
   {
@@ -54,6 +57,14 @@ export const router = createBrowserRouter([
   {
     path: '/geral/modalidades/:id',
     element: <ModalityDetails />,
+  },
+  {
+    path: '/geral/nucleos',
+    element: <Nucleo />,
+  },
+  {
+    path: '/geral/nucleos/:id',
+    element: <NucleoDetails />,
   },
   {
     path: '/nucleo/dashboard',
