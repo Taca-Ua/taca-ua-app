@@ -106,7 +106,6 @@ const Modalities = () => {
 
           {/* Modalities List */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800">Modalidades</h2>
 
             <div className="space-y-3">
               {filteredModalities.length > 0 ? (
@@ -117,7 +116,7 @@ const Modalities = () => {
                     className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer transition-colors flex justify-between items-center"
                   >
                     <span className="text-gray-800 font-medium">{mod.name}</span>
-                    <span className="text-teal-600 text-sm font-medium">
+                    <span className="text-gray-600 text-sm">
                       Época: {mod.year} | Tipo: {mod.type}
                     </span>
                   </div>
