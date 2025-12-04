@@ -4,7 +4,7 @@ import NucleoSidebar from "../../components/nucleo_navbar";
 import { studentsApi } from '../../api/students';
 import { teamsApi } from '../../api/teams';
 import { matchesApi } from '../../api/matches';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 
 function DashboardNucleo() {
   const navigate = useNavigate();

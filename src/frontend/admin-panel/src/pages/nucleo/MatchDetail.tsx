@@ -7,7 +7,7 @@ import { teamsApi } from '../../api/teams';
 import type { Team } from '../../api/teams';
 import { studentsApi } from '../../api/students';
 import type { Student } from '../../api/students';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 
 const MatchDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -83,7 +83,7 @@ const MatchDetail = () => {
     };
 
     fetchData();
-  }, [id, navigate]);
+  }, [id, navigate, user]);
 
   if (loading) {
     return (
