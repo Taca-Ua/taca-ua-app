@@ -162,6 +162,8 @@ services:
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
       - DATABASE_URL=${DATABASE_URL}
+    ports:
+      - "8001:8000"
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -184,6 +186,8 @@ services:
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
       - DATABASE_URL=${DATABASE_URL}
+    ports:
+      - "8002:8000"
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -206,6 +210,8 @@ services:
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
       - DATABASE_URL=${DATABASE_URL}
+    ports:
+      - "8003:8000"
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -228,6 +234,8 @@ services:
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
       - DATABASE_URL=${DATABASE_URL}
+    ports:
+      - "8004:8000"
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -250,6 +258,8 @@ services:
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
       - DATABASE_URL=${DATABASE_URL}
+    ports:
+      - "8005:8000"
     depends_on:
       rabbitmq:
         condition: service_healthy

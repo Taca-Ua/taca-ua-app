@@ -6,6 +6,8 @@ from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
 from taca_messaging.rabbitmq_service import RabbitMQService
 
+from .routes import router
+
 # Logging setup
 handler = logging_loki.LokiHandler(
     url="http://loki:3100/loki/api/v1/push",
@@ -33,6 +35,9 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 Instrumentator().instrument(app).expose(app)  # Prometheus metrics endpoint
+
+# Include routers
+app.include_router(router)
 
 
 @app.get("/")
