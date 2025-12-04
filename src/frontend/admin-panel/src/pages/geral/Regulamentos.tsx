@@ -69,10 +69,6 @@ const Regulamentos = () => {
     setIsModalOpen(false);
   };
 
-  const deleteRegulation = (id: number) => {
-    if (!confirm("Eliminar regulamento?")) return;
-    setRegulations(regulations.filter(r => r.id !== id));
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
