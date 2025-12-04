@@ -9,16 +9,13 @@ const mockModalities = [
   { id: 3, name: "Andebol" },
 ];
 
-const mockSeasons = [
-  { id: "25/26", name: "Época 2025/2026" },
-  { id: "24/25", name: "Época 2024/2025" }
-];
+const years = ['25/26', '24/25', '23/24', '22/23'];
 
 interface Torneio {
   id: number;
   name: string;
   modality_id: number;
-  season_id: string;
+  year: string;
   rules?: string;
   teams?: number[];
   start_date?: string;
@@ -26,9 +23,9 @@ interface Torneio {
 }
 
 const mockTournaments: Torneio[] = [
-  { id: 1, name: "Torneio Futebol A", modality_id: 1, season_id: "25/26", status: "active" },
-  { id: 2, name: "Torneio Basquete Elite", modality_id: 2, season_id: "25/26", status: "draft" },
-  { id: 3, name: "Torneio Futsal Pro", modality_id: 4, season_id: "24/25", status: "finished" },
+  { id: 1, name: "Torneio Futebol A", modality_id: 1, year: "25/26", teams: [1, 2, 3, 4], status: "active" },
+  { id: 2, name: "Torneio Basquete Elite", modality_id: 2, year: "25/26", teams: [5, 6], status: "draft" },
+  { id: 3, name: "Torneio Futsal Pro", modality_id: 4, year: "24/25", teams: [7, 8, 9], status: "finished" },
 ];
 
 const Torneios = () => {
@@ -41,7 +38,7 @@ const Torneios = () => {
   // Campos de criação
   const [name, setName] = useState('');
   const [modalityId, setModalityId] = useState('');
-  const [seasonId, setSeasonId] = useState('');
+  const [year, setYear] = useState('');
   const [rules, setRules] = useState('');
   const [startDate, setStartDate] = useState('');
   const [teams, setTeams] = useState<number[]>([]);
@@ -71,7 +68,7 @@ const Torneios = () => {
   };
 
   const handleCreate = () => {
-    if (!name.trim() || !modalityId || !seasonId) {
+    if (!name.trim() || !modalityId || !year) {
       alert("Nome, modalidade e época são obrigatórios.");
       return;
     }
@@ -80,7 +77,7 @@ const Torneios = () => {
       id: tournaments.length + 1,
       name,
       modality_id: Number(modalityId),
-      season_id: seasonId,
+      year: year,
       rules: rules || undefined,
       start_date: startDate || undefined,
       teams: teams.length > 0 ? teams : undefined,
@@ -92,7 +89,7 @@ const Torneios = () => {
     // Reset
     setName('');
     setModalityId('');
-    setSeasonId('');
+    setYear('');
     setRules('');
     setStartDate('');
     setTeams([]);
@@ -162,7 +159,7 @@ const Torneios = () => {
             >
               <div className="font-medium">{t.name}</div>
               <div className="text-sm text-teal-600">
-                Modalidade {t.modality_id} | época {t.season_id} | {t.status}
+                Modalidade {t.modality_id} | época {t.year} | {t.status}
               </div>
             </div>
           )) : (
@@ -210,12 +207,12 @@ const Torneios = () => {
                 <label className="font-medium">Época <span className="text-red-500">*</span></label>
                 <select
                   className="border w-full px-4 py-2 rounded-md bg-white"
-                  value={seasonId}
-                  onChange={e => setSeasonId(e.target.value)}
+                  value={year}
+                  onChange={e => setYear(e.target.value)}
                 >
                   <option value="">Selecionar</option>
-                  {mockSeasons.map(s => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
+                  {years.map(s => (
+                    <option key={s} value={s}>{s}</option>
                   ))}
                 </select>
               </div>

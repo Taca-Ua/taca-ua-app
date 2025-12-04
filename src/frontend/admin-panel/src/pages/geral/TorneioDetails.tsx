@@ -6,7 +6,7 @@ interface Torneio {
   id: number;
   name: string;
   modality_id: number;
-  season_id: string;
+  year: string;
   rules?: string;
   teams: number[];
   start_date?: string;
@@ -15,9 +15,9 @@ interface Torneio {
 
 // MOCK MANTENIDO
 const mockTournaments: Torneio[] = [
-  { id: 1, name: "Torneio Futebol A", modality_id: 1, season_id: "25/26", teams: [1, 2, 3, 4], status: "active" },
-  { id: 2, name: "Torneio Basquete Elite", modality_id: 2, season_id: "25/26", teams: [5, 6], status: "draft" },
-  { id: 3, name: "Torneio Futsal Pro", modality_id: 4, season_id: "24/25", teams: [7, 8, 9], status: "finished" },
+  { id: 1, name: "Torneio Futebol A", modality_id: 1, year: "25/26", teams: [1, 2, 3, 4], status: "active" },
+  { id: 2, name: "Torneio Basquete Elite", modality_id: 2, year: "25/26", teams: [5, 6], status: "draft" },
+  { id: 3, name: "Torneio Futsal Pro", modality_id: 4, year: "24/25", teams: [7, 8, 9], status: "finished" },
 ];
 
 const TorneioDetails = () => {
@@ -143,7 +143,7 @@ const TorneioDetails = () => {
 
               <div>
                 <label className="font-medium text-teal-600">Época</label>
-                <div className="bg-gray-100 p-3 rounded-md">{tournament.season_id}</div>
+                <div className="bg-gray-100 p-3 rounded-md">{tournament.year}</div>
               </div>
 
               <div>
