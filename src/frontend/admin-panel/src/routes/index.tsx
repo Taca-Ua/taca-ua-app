@@ -15,6 +15,8 @@ import Administradores from '../pages/geral/Administradores';
 import AdminDetail from '../pages/geral/AdministradorDetail';
 import Modalities from '../pages/geral/Modalidades';
 import ModalityDetails from '../pages/geral/ModalityDetails';
+import Regulamentos from '../pages/geral/Regulamentos';
+import RegulamentoDetails from '../pages/geral/RegulamentoDetails';
 
 export const router = createBrowserRouter([
   {
@@ -52,6 +54,14 @@ export const router = createBrowserRouter([
   {
     path: '/geral/modalidades/:id',
     element: <ModalityDetails />,
+  },
+  {
+    path: '/geral/regulamentos',
+    element: <Regulamentos />,
+  },
+  {
+    path: '/geral/regulamentos/:id',
+    element: <RegulamentoDetails />,
   },
   {
     path: '/nucleo/dashboard',

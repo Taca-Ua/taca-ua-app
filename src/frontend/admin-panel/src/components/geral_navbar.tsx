@@ -105,7 +105,7 @@ export default function Sidebar() {
               </Link>
 
               <Link
-                to="/regulamentos"
+                to="/geral/regulamentos"
                 className="block text-gray-700 hover:text-teal-600 font-medium transition"
                 onClick={() => setIsOpen(false)}
               >
