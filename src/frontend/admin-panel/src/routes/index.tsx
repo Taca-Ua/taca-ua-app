@@ -15,13 +15,14 @@ import Administradores from '../pages/geral/Administradores';
 import AdminDetail from '../pages/geral/AdministradorDetail';
 import Modalities from '../pages/geral/Modalidades';
 import ModalityDetails from '../pages/geral/ModalityDetails';
+
+import ProtectedRoute from '../components/ProtectedRoute';
 import Regulamentos from '../pages/geral/Regulamentos';
 import RegulamentoDetails from '../pages/geral/RegulamentoDetails';
 import Torneios from '../pages/geral/Torneios';
 import TorneioDetails from '../pages/geral/TorneioDetails';
 import Nucleo from '../pages/geral/Nucleos';
 import NucleoDetails from '../pages/geral/NucleoDetails';
-
 
 export const router = createBrowserRouter([
   {
@@ -78,7 +79,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/nucleo/dashboard',
-    element: <DashboardNucleo />,
+    element: <ProtectedRoute><DashboardNucleo /></ProtectedRoute>,
   },
   {
     path: '/geral/torneios',
@@ -90,27 +91,27 @@ export const router = createBrowserRouter([
   },
   {
     path: '/nucleo/membros',
-    element: <Membros />,
+    element: <ProtectedRoute><Membros /></ProtectedRoute>,
   },
   {
     path: '/nucleo/membros/:id',
-    element: <MemberDetail />,
+    element: <ProtectedRoute><MemberDetail /></ProtectedRoute>,
   },
   {
     path: '/nucleo/equipas',
-    element: <Equipas />,
+    element: <ProtectedRoute><Equipas /></ProtectedRoute>,
   },
   {
     path: '/nucleo/equipas/:id',
-    element: <TeamDetail />,
+    element: <ProtectedRoute><TeamDetail /></ProtectedRoute>,
   },
   {
     path: '/nucleo/jogos',
-    element: <Jogos />,
+    element: <ProtectedRoute><Jogos /></ProtectedRoute>,
   },
   {
     path: '/nucleo/jogos/:id',
-    element: <MatchDetail />,
+    element: <ProtectedRoute><MatchDetail /></ProtectedRoute>,
   },
   {
     path: '*',

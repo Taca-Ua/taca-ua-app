@@ -10,6 +10,10 @@ from . import views
 app_name = "admin_api"
 
 urlpatterns = [
+    # Authentication (temporary!)
+    path("auth/login", views.login, name="auth-login"),
+    path("auth/logout", views.logout, name="auth-logout"),
+    path("auth/me", views.me, name="auth-me"),
     # User Management (RF1)
     path(
         "users/nucleo",
@@ -63,7 +67,7 @@ urlpatterns = [
     path("teams/<int:team_id>", views.TeamDetailView.as_view(), name="team-detail"),
     # Student Management (RF4)
     path("students", views.StudentListCreateView.as_view(), name="student-list"),
-    path("students/<int:student_id>", views.student_update, name="student-update"),
+    path("students/<int:student_id>", views.student_detail, name="student-detail"),
     # Match Management (RF7)
     path("matches", views.MatchListCreateView.as_view(), name="match-list"),
     path(

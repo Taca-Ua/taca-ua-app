@@ -14,6 +14,10 @@ class StudentListSerializer(serializers.Serializer):
     student_number = serializers.CharField()
     email = serializers.EmailField(required=False, allow_blank=True)
     is_member = serializers.BooleanField(default=False)
+    member_type = serializers.ChoiceField(
+        choices=[("student", "Estudante"), ("technical_staff", "Equipa Técnica")],
+        default="student",
+    )
 
 
 class StudentCreateSerializer(serializers.Serializer):
@@ -23,6 +27,11 @@ class StudentCreateSerializer(serializers.Serializer):
     student_number = serializers.CharField(required=True)
     email = serializers.EmailField(required=False, allow_blank=True)
     is_member = serializers.BooleanField(required=False, default=False)
+    member_type = serializers.ChoiceField(
+        choices=[("student", "Estudante"), ("technical_staff", "Equipa Técnica")],
+        required=False,
+        default="student",
+    )
 
 
 class StudentUpdateSerializer(serializers.Serializer):
@@ -31,3 +40,7 @@ class StudentUpdateSerializer(serializers.Serializer):
     full_name = serializers.CharField(required=False)
     email = serializers.EmailField(required=False, allow_blank=True)
     is_member = serializers.BooleanField(required=False)
+    member_type = serializers.ChoiceField(
+        choices=[("student", "Estudante"), ("technical_staff", "Equipa Técnica")],
+        required=False,
+    )
