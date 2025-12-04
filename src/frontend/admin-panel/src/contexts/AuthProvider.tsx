@@ -1,25 +1,7 @@
-import { createContext, useState } from 'react';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
-
-interface User {
-  id: number;
-  username: string;
-  email: string;
-  course_id: number;
-  course_abbreviation: string;
-  full_name: string;
-}
-
-interface AuthContextType {
-  user: User | null;
-  token: string | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  login: (username: string, password: string) => Promise<void>;
-  logout: () => void;
-}
-
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { AuthContext } from './AuthContext';
+import type { User } from './AuthContext';
 
 // Initialize state from localStorage to avoid setState in useEffect
 const getInitialToken = () => {
@@ -29,7 +11,7 @@ const getInitialToken = () => {
   return null;
 };
 
-const getInitialUser = () => {
+const getInitialUser = (): User | null => {
   if (typeof window !== 'undefined') {
     const storedUser = localStorage.getItem('auth_user');
     return storedUser ? JSON.parse(storedUser) : null;
