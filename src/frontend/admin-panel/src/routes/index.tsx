@@ -15,6 +15,8 @@ import Administradores from '../pages/geral/Administradores';
 import AdminDetail from '../pages/geral/AdministradorDetail';
 import Modalities from '../pages/geral/Modalidades';
 import ModalityDetails from '../pages/geral/ModalityDetails';
+import Torneios from '../pages/geral/Torneios';
+import TorneioDetails from '../pages/geral/TorneioDetails';
 
 export const router = createBrowserRouter([
   {
@@ -56,6 +58,14 @@ export const router = createBrowserRouter([
   {
     path: '/nucleo/dashboard',
     element: <DashboardNucleo />,
+  },
+  {
+    path: '/geral/torneios',
+    element: <Torneios />,
+  },
+  {
+    path: '/geral/torneios/:id',
+    element: <TorneioDetails />,
   },
   {
     path: '/nucleo/membros',

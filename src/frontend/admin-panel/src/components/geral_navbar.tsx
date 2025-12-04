@@ -97,7 +97,7 @@ export default function Sidebar() {
               </Link>
 
               <Link
-                to="/torneios"
+                to="/geral/torneios"
                 className="block text-gray-700 hover:text-teal-600 font-medium transition"
                 onClick={() => setIsOpen(false)}
               >
