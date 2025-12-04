@@ -17,6 +17,11 @@ import Modalities from '../pages/geral/Modalidades';
 import ModalityDetails from '../pages/geral/ModalityDetails';
 import Regulamentos from '../pages/geral/Regulamentos';
 import RegulamentoDetails from '../pages/geral/RegulamentoDetails';
+import Torneios from '../pages/geral/Torneios';
+import TorneioDetails from '../pages/geral/TorneioDetails';
+import Nucleo from '../pages/geral/Nucleos';
+import NucleoDetails from '../pages/geral/NucleoDetails';
+
 
 export const router = createBrowserRouter([
   {
@@ -64,8 +69,24 @@ export const router = createBrowserRouter([
     element: <RegulamentoDetails />,
   },
   {
+    path: '/geral/nucleos',
+    element: <Nucleo />,
+  },
+  {
+    path: '/geral/nucleos/:id',
+    element: <NucleoDetails />,
+  },
+  {
     path: '/nucleo/dashboard',
     element: <DashboardNucleo />,
+  },
+  {
+    path: '/geral/torneios',
+    element: <Torneios />,
+  },
+  {
+    path: '/geral/torneios/:id',
+    element: <TorneioDetails />,
   },
   {
     path: '/nucleo/membros',
