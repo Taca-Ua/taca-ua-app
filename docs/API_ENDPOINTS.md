@@ -8,6 +8,24 @@
   * **Query params opcionais**
   * **Body (com campos obrigatórios e opcionais)**
 
+## Atualizações Recentes (Dezembro 2025)
+
+**Gestão de Estudantes (RF4):**
+- ✅ Adicionado campo `member_type` para distinguir estudantes ('student') de equipa técnica ('technical_staff')
+- ✅ Adicionado endpoint `DELETE /api/admin/students/{student_id}`
+- ✅ Campo `member_type` disponível em CREATE, UPDATE e GET responses
+
+**Gestão de Equipas (RF4):**
+- ✅ Adicionado parâmetro `?all=true` em `GET /api/admin/teams` para obter equipas de todos os cursos
+
+**Gestão de Jogos (RF7):**
+- ✅ Simplificado formato do endpoint `POST /api/admin/matches/{match_id}/lineup`
+- ✅ Agora aceita array simples de player IDs ao invés de objetos complexos
+
+**Frontend:**
+- ✅ Removidas dependências de variáveis de ambiente (`.env`)
+- ✅ URLs hardcoded: `/api/admin` (admin panel) e `/api/public` (public website)
+
 # 1. COMPETITION API (ADMIN API)
 
 Usada por:
@@ -218,6 +236,7 @@ Optional:
 
 * `modality_id`
 * `course_id` (ignorado — sempre course_id do token)
+* `all` (boolean string: 'true' ou 'false') - retorna equipas de todos os cursos se 'true'
 
 ### **6.2 Criar equipa**
 
@@ -245,9 +264,15 @@ Body:
 
 ## 7. Gestão de Estudantes (RF4)
 
+**Nota:** Estudantes podem ser de dois tipos:
+- `student` - Estudantes jogadores
+- `technical_staff` - Equipa técnica (treinadores, professores, etc.)
+
 ### **7.1 Listar estudantes do curso**
 
 `GET /api/admin/students`
+
+Response inclui campo `member_type` ('student' ou 'technical_staff')
 
 ### **7.2 Criar estudante**
 
@@ -258,6 +283,7 @@ Body:
 * `student_number` (obrigatório)
 * `email` (opcional)
 * `is_member` (opcional; default false)
+* `member_type` (opcional; 'student' ou 'technical_staff'; default 'student')
 
 ### **7.3 Atualizar estudante**
 
@@ -267,6 +293,11 @@ Body:
 * `full_name` (opcional)
 * `email` (opcional)
 * `is_member` (opcional)
+* `member_type` (opcional; 'student' ou 'technical_staff')
+
+### **7.4 Remover estudante**
+
+`DELETE /api/admin/students/{student_id}`
 
 ---
 
@@ -324,7 +355,7 @@ Body:
 Body:
 
 * `team_id` (obrigatório)
-* `players` (lista de `{player_id, jersey_number}`)
+* `players` (lista de player IDs - array de inteiros)
 
 ### **8.6 Adicionar comentários (RF7.3)**
 

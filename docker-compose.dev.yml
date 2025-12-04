@@ -19,6 +19,7 @@ services:
 
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
+    user: "999:999"
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -30,8 +31,8 @@ services:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
-      interval: 5s
-      timeout: 5s
+      interval: 10s
+      timeout: 10s
       retries: 10
 
   postgres:

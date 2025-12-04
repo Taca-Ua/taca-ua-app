@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NucleoSidebar from '../../components/nucleo_navbar';
+import { studentsApi } from '../../api/students';
+import type { Student } from '../../api/students';
 
 interface Member {
   id: number;
@@ -18,47 +20,107 @@ function Membros() {
   const [identifierType, setIdentifierType] = useState<'contact' | 'nmec'>('contact');
   const [contact, setContact] = useState('');
   const [nmec, setNmec] = useState('');
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data - replace with API call later
-  const [members, setMembers] = useState<Member[]>([
-    { id: 1, name: 'Jogador 1', role: 'jogador', nmec: '12345' },
-    { id: 2, name: 'Jogador 2', role: 'jogador', nmec: '23456' },
-    { id: 3, name: 'Jogador 3', role: 'jogador', nmec: '34567' },
-    { id: 4, name: 'Jogador 4', role: 'jogador', nmec: '45678' },
-    { id: 5, name: 'Jogador 5', role: 'jogador', nmec: '56789' },
-    { id: 6, name: 'Tecnico 1', role: 'tecnico', contact: '915678901' },
-    { id: 7, name: 'Tecnico 2', role: 'tecnico', nmec: '67890' },
-    { id: 8, name: 'Tecnico 3', role: 'tecnico', contact: '916789012' },
-    { id: 9, name: 'Tecnico 4', role: 'tecnico', nmec: '78901' },
-  ]);
+  // Fetch students from API
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const students = await studentsApi.getAll();
+
+        // Transform Student[] to Member[]
+        const transformedMembers: Member[] = students.map((student: Student) => ({
+          id: student.id,
+          name: student.full_name,
+          role: student.member_type === 'technical_staff' ? 'tecnico' : 'jogador',
+          nmec: student.student_number,
+        }));
+
+        setMembers(transformedMembers);
+      } catch (err) {
+        console.error('Failed to fetch students:', err);
+        setError('Erro ao carregar membros. Por favor, tente novamente.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudents();
+  }, []);
 
   const jogadores = members.filter(m => m.role === 'jogador');
   const tecnicos = members.filter(m => m.role === 'tecnico');
 
-  const handleAddMember = () => {
+  const handleAddMember = async () => {
     // Validation: Name is required
-    if (!memberName.trim()) return;
-    
-    // Validation: Jogadores must have NMEC, Técnicos must have either contact or NMEC
-    if (memberRole === 'jogador' && !nmec.trim()) return;
-    if (memberRole === 'tecnico' && !((identifierType === 'contact' && contact.trim()) || (identifierType === 'nmec' && nmec.trim()))) return;
+    if (!memberName.trim()) {
+      alert('Por favor, preencha o nome.');
+      return;
+    }
 
-    const newMember: Member = {
-      id: members.length + 1,
-      name: memberName,
-      role: memberRole,
-      ...(memberRole === 'jogador' 
-        ? { nmec } 
-        : (identifierType === 'contact' ? { contact } : { nmec })
-      ),
-    };
-    setMembers([...members, newMember]);
-    setMemberName('');
-    setMemberRole('jogador');
-    setContact('');
-    setNmec('');
-    setIdentifierType('contact');
-    setIsModalOpen(false);
+    // Validation: Need either contact or NMEC depending on role
+    let identifier = '';
+    if (memberRole === 'jogador') {
+      // Jogadores must have NMEC
+      if (!nmec.trim()) {
+        alert('Por favor, preencha o NMEC.');
+        return;
+      }
+      identifier = nmec;
+    } else {
+      // Técnicos can have either contact or NMEC
+      if (identifierType === 'contact') {
+        if (!contact.trim()) {
+          alert('Por favor, preencha o contacto.');
+          return;
+        }
+        identifier = contact;
+      } else {
+        if (!nmec.trim()) {
+          alert('Por favor, preencha o NMEC.');
+          return;
+        }
+        identifier = nmec;
+      }
+    }
+
+    try {
+      const newStudent = await studentsApi.create({
+        full_name: memberName,
+        student_number: identifier, // Use whichever identifier was provided
+        is_member: true,
+        member_type: memberRole === 'jogador' ? 'student' : 'technical_staff',
+        // email is optional, not sending it
+      });
+
+      // Add to local state
+      const newMember: Member = {
+        id: newStudent.id,
+        name: newStudent.full_name,
+        role: memberRole,
+        // Store in the appropriate field for display
+        ...(memberRole === 'jogador' || identifierType === 'nmec'
+          ? { nmec: identifier }
+          : { contact: identifier }
+        ),
+      };
+      setMembers([...members, newMember]);
+
+      // Reset form
+      setMemberName('');
+      setMemberRole('jogador');
+      setContact('');
+      setNmec('');
+      setIdentifierType('contact');
+      setIsModalOpen(false);
+    } catch (err) {
+      console.error('Failed to create student:', err);
+      alert('Erro ao adicionar membro. Por favor, tente novamente.');
+    }
   };
 
   return (
@@ -68,7 +130,7 @@ function Membros() {
         <div className="max-w-7xl mx-auto">
           {/* Header with Add Button */}
           <div className="flex justify-end mb-6">
-            <button 
+            <button
               onClick={() => setIsModalOpen(true)}
               className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-2 rounded-md font-medium transition-colors flex items-center gap-2"
             >
@@ -77,8 +139,25 @@ function Membros() {
             </button>
           </div>
 
-          {/* Jogadores Section */}
-          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          {/* Loading State */}
+          {loading && (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-6">
+              {error}
+            </div>
+          )}
+
+          {/* Content - Only show when not loading */}
+          {!loading && !error && (
+            <>
+              {/* Jogadores Section */}
+              <div className="bg-white rounded-lg shadow-md p-6 mb-8">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Jogadores</h2>
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {jogadores.map((jogador) => (
@@ -98,26 +177,28 @@ function Membros() {
             </div>
           </div>
 
-          {/* Equipa Técnica Section */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800">Equipa Técnica</h2>
-            <div className="space-y-3 max-h-96 overflow-y-auto">
-              {tecnicos.map((tecnico) => (
-                <div
-                  key={tecnico.id}
-                  onClick={() => navigate(`/nucleo/membros/${tecnico.id}`)}
-                  className="bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors cursor-pointer"
-                >
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-800 font-medium">{tecnico.name}</span>
-                    <span className="text-gray-600 text-sm">
-                      {tecnico.contact ? `Tel: ${tecnico.contact}` : `NMEC: ${tecnico.nmec}`}
-                    </span>
-                  </div>
+              {/* Equipa Técnica Section */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-2xl font-bold mb-6 text-gray-800">Equipa Técnica</h2>
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {tecnicos.map((tecnico) => (
+                    <div
+                      key={tecnico.id}
+                      onClick={() => navigate(`/nucleo/membros/${tecnico.id}`)}
+                      className="bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors cursor-pointer"
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-800 font-medium">{tecnico.name}</span>
+                        <span className="text-gray-600 text-sm">
+                          {tecnico.contact ? `Tel: ${tecnico.contact}` : `NMEC: ${tecnico.nmec}`}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -126,7 +207,7 @@ function Membros() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Adicionar Membro</h2>
-            
+
             <div className="space-y-4">
               {/* Name Input */}
               <div>

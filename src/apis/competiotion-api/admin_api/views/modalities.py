@@ -44,9 +44,27 @@ class ModalityListCreateView(APIView):
             },
             {
                 "id": 3,
-                "name": "Ténis",
-                "type": "individual",
+                "name": "Basquetebol",
+                "type": "coletiva",
                 "scoring_schema": {"win": 2, "loss": 0},
+            },
+            {
+                "id": 4,
+                "name": "Voleibol",
+                "type": "coletiva",
+                "scoring_schema": {"win": 2, "loss": 0},
+            },
+            {
+                "id": 5,
+                "name": "Andebol",
+                "type": "coletiva",
+                "scoring_schema": {"win": 2, "loss": 0},
+            },
+            {
+                "id": 6,
+                "name": "Rugby",
+                "type": "coletiva",
+                "scoring_schema": {"win": 4, "loss": 0},
             },
         ]
         return Response(dummy_data)

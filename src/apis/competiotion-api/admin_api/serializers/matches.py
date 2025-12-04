@@ -49,14 +49,16 @@ class PlayerLineupSerializer(serializers.Serializer):
     """Serializer for player in lineup"""
 
     player_id = serializers.IntegerField(required=True)
-    jersey_number = serializers.IntegerField(required=True)
+    jersey_number = serializers.IntegerField(required=False)
 
 
 class MatchLineupSerializer(serializers.Serializer):
     """Serializer for assigning players to match"""
 
     team_id = serializers.IntegerField(required=True)
-    players = PlayerLineupSerializer(many=True, required=True)
+    players = serializers.ListField(
+        child=serializers.IntegerField(), required=True, help_text="List of player IDs"
+    )
 
 
 class MatchCommentSerializer(serializers.Serializer):
