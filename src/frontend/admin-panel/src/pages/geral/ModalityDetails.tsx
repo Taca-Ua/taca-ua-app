@@ -92,7 +92,7 @@ const ModalityDetails = () => {
           {/* Card */}
           <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
 
-            {/* Nombre */}
+            {/* NAME */}
             <div>
               <label className="block text-teal-500 font-medium mb-2">Nome</label>
               <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
@@ -100,7 +100,7 @@ const ModalityDetails = () => {
               </div>
             </div>
 
-            {/* Año */}
+            {/* YEAR */}
             <div>
               <label className="block text-teal-500 font-medium mb-2">Época</label>
               <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
@@ -108,7 +108,7 @@ const ModalityDetails = () => {
               </div>
             </div>
 
-            {/* Tipo */}
+            {/* TYPE */}
             <div>
               <label className="block text-teal-500 font-medium mb-2">Tipo</label>
               <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
@@ -143,7 +143,7 @@ const ModalityDetails = () => {
         </div>
       </div>
 
-      {/* MODAL DE EDICIÓN */}
+      {/* MODAL Edition */}
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
