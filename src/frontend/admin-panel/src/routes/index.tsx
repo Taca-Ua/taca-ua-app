@@ -1,4 +1,25 @@
 import { createBrowserRouter } from 'react-router-dom';
+
+// Common pages
+import Login from '../pages/Login';
+import NotFound from '../pages/NotFound';
+
+// Geral admin pages
+import LoginGeral from '../pages/geral/LoginGeral';
+import DashboardGeral from '../pages/geral/DashboardGeral';
+import Administradores from '../pages/geral/Administradores';
+import AdminDetail from '../pages/geral/AdministradorDetail';
+import Modalities from '../pages/geral/Modalidades';
+import ModalityDetails from '../pages/geral/ModalidadeDetail';
+import Nucleo from '../pages/geral/Nucleos';
+import NucleoDetails from '../pages/geral/NucleoDetails';
+import Regulamentos from '../pages/geral/Regulamentos';
+import RegulamentoDetails from '../pages/geral/RegulamentoDetails';
+import Torneios from '../pages/geral/Torneios';
+import TorneioDetails from '../pages/geral/TorneioDetails';
+
+// Nucleo admin pages
+import LoginNucleo from '../pages/nucleo/LoginNucleo';
 import DashboardNucleo from '../pages/nucleo/DashboardNucleo';
 import Membros from '../pages/nucleo/Membros';
 import MemberDetail from '../pages/nucleo/MemberDetail';
@@ -6,25 +27,14 @@ import Equipas from '../pages/nucleo/Equipas';
 import TeamDetail from '../pages/nucleo/TeamDetail';
 import Jogos from '../pages/nucleo/Jogos';
 import MatchDetail from '../pages/nucleo/MatchDetail';
-import NotFound from '../pages/NotFound';
-import Login from '../pages/Login';
-import LoginGeral from '../pages/geral/LoginGeral';
-import LoginNucleo from '../pages/nucleo/LoginNucleo';
-import DashboardGeral from '../pages/geral/DashboardGeral';
-import Administradores from '../pages/geral/Administradores';
-import AdminDetail from '../pages/geral/AdministradorDetail';
-import Modalities from '../pages/geral/Modalidades';
-import ModalityDetails from '../pages/geral/ModalidadeDetail';
 
+// Components
 import ProtectedRoute from '../components/ProtectedRoute';
-import Regulamentos from '../pages/geral/Regulamentos';
-import RegulamentoDetails from '../pages/geral/RegulamentoDetails';
-import Torneios from '../pages/geral/Torneios';
-import TorneioDetails from '../pages/geral/TorneioDetails';
-import Nucleo from '../pages/geral/Nucleos';
-import NucleoDetails from '../pages/geral/NucleoDetails';
 
 export const router = createBrowserRouter([
+  // ============================================
+  // Authentication Routes
+  // ============================================
   {
     path: '/',
     element: <Login />,
@@ -38,12 +48,16 @@ export const router = createBrowserRouter([
     element: <LoginGeral />,
   },
   {
-    path: '/geral/dashboard',
-    element: <ProtectedRoute requiredRole="geral"><DashboardGeral /></ProtectedRoute>,
-  },
-  {
     path: '/login/nucleo',
     element: <LoginNucleo />,
+  },
+
+  // ============================================
+  // Geral Admin Routes
+  // ============================================
+  {
+    path: '/geral/dashboard',
+    element: <ProtectedRoute requiredRole="geral"><DashboardGeral /></ProtectedRoute>,
   },
   {
     path: '/geral/administradores',
@@ -62,14 +76,6 @@ export const router = createBrowserRouter([
     element: <ProtectedRoute requiredRole="geral"><ModalityDetails /></ProtectedRoute>,
   },
   {
-    path: '/geral/regulamentos',
-    element: <ProtectedRoute requiredRole="geral"><Regulamentos /></ProtectedRoute>,
-  },
-  {
-    path: '/geral/regulamentos/:id',
-    element: <ProtectedRoute requiredRole="geral"><RegulamentoDetails /></ProtectedRoute>,
-  },
-  {
     path: '/geral/nucleos',
     element: <ProtectedRoute requiredRole="geral"><Nucleo /></ProtectedRoute>,
   },
@@ -78,8 +84,12 @@ export const router = createBrowserRouter([
     element: <ProtectedRoute requiredRole="geral"><NucleoDetails /></ProtectedRoute>,
   },
   {
-    path: '/nucleo/dashboard',
-    element: <ProtectedRoute requiredRole="nucleo"><DashboardNucleo /></ProtectedRoute>,
+    path: '/geral/regulamentos',
+    element: <ProtectedRoute requiredRole="geral"><Regulamentos /></ProtectedRoute>,
+  },
+  {
+    path: '/geral/regulamentos/:id',
+    element: <ProtectedRoute requiredRole="geral"><RegulamentoDetails /></ProtectedRoute>,
   },
   {
     path: '/geral/torneios',
@@ -88,6 +98,14 @@ export const router = createBrowserRouter([
   {
     path: '/geral/torneios/:id',
     element: <ProtectedRoute requiredRole="geral"><TorneioDetails /></ProtectedRoute>,
+  },
+
+  // ============================================
+  // Nucleo Admin Routes
+  // ============================================
+  {
+    path: '/nucleo/dashboard',
+    element: <ProtectedRoute requiredRole="nucleo"><DashboardNucleo /></ProtectedRoute>,
   },
   {
     path: '/nucleo/membros',
@@ -113,6 +131,10 @@ export const router = createBrowserRouter([
     path: '/nucleo/jogos/:id',
     element: <ProtectedRoute requiredRole="nucleo"><MatchDetail /></ProtectedRoute>,
   },
+
+  // ============================================
+  // Fallback Route
+  // ============================================
   {
     path: '*',
     element: <NotFound />,
