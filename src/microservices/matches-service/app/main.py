@@ -1,25 +1,11 @@
-import logging
 from contextlib import asynccontextmanager
 
-import logging_loki
 from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
-from taca_messaging.rabbitmq_service import RabbitMQService
 
+from .events import rabbitmq_service
+from .logger import logger
 from .routes import router
-
-# Logging setup
-handler = logging_loki.LokiHandler(
-    url="http://loki:3100/loki/api/v1/push",
-    tags={"application": "matches-service", "job": "matches-service"},
-    version="1",
-)
-logger = logging.getLogger("matches-service")
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
-
-# Register event handlers
-rabbitmq_service = RabbitMQService(service_name="matches-service")
 
 
 @asynccontextmanager
