@@ -1,75 +1,100 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
-
-interface Modality {
-  id: number;
-  name: string;
-  year: string;
-  type: 'coletiva' | 'individual' | 'mista';
-  scoring_schema?: string;
-}
+import { modalitiesApi, type Modality } from '../../api/modalities';
 
 const Modalities = () => {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newModalityName, setNewModalityName] = useState('');
-  const [modalityType, setModalityType] = useState('');
+  const [modalityType, setModalityType] = useState<'coletiva' | 'individual' | 'mista' | ''>('');
   const [selectedYear, setSelectedYear] = useState('');
   const [newScoringSchema, setNewScoringSchema] = useState('');
+  const [newDescription, setNewDescription] = useState('');
 
-  // Initial mock resplace for API data
-  const [modalities, setModalities] = useState<Modality[]>([
-    { id: 1, name: 'Futebol', year: '25/26', type: 'coletiva',scoring_schema: '{"win":3}' },
-    { id: 2, name: 'Basquetebol', year: '25/26', type: 'coletiva' },
-    { id: 3, name: 'Voleibol', year: '25/26', type: 'coletiva' },
-    { id: 4, name: 'Futsal', year: '25/26', type: 'coletiva' },
-    { id: 5, name: 'Andebol', year: '25/26', type: 'coletiva' },
-    { id: 6, name: 'Rugby', year: '24/25', type: 'coletiva' },
-  ]);
+  const [modalities, setModalities] = useState<Modality[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const [filterYear, setFilterYear] = useState('');
 
+  // Fetch modalities on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const data = await modalitiesApi.getAll();
+        setModalities(data);
+        setError('');
+      } catch (err) {
+        console.error('Failed to fetch modalities:', err);
+        setError('Erro ao carregar modalidades');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   const years = ['25/26', '24/25', '23/24', '22/23'];
 
-  const handleAddModality = () => {
+  const handleAddModality = async () => {
     if (!newModalityName.trim()) {
-      alert('Por favor, preencha o nome da modalidade.');
+      setError('Por favor, preencha o nome da modalidade.');
       return;
     }
 
     if (!selectedYear) {
-      alert('Por favor, selecione uma época.');
+      setError('Por favor, selecione uma época.');
       return;
     }
 
     if (!modalityType) {
-      alert('Por favor, selecione o tipo.');
+      setError('Por favor, selecione o tipo.');
       return;
     }
 
-    const newModality: Modality = {
-      id: modalities.length + 1,
-      name: newModalityName,
-      year: selectedYear,
-      type: modalityType as 'coletiva' | 'individual' | 'mista',
-      scoring_schema: newScoringSchema || undefined,
-    };
+    try {
+      const newModality = await modalitiesApi.create({
+        name: newModalityName,
+        year: selectedYear,
+        type: modalityType,
+        scoring_schema: newScoringSchema || undefined,
+        description: newDescription || undefined,
+      });
 
-    setModalities([...modalities, newModality]);
+      setModalities([...modalities, newModality]);
+      setError('');
 
-    // Reset
-    setNewModalityName('');
-    setModalityType('');
-    setSelectedYear('');
-    setNewScoringSchema('');
-    setIsModalOpen(false);
+      // Reset
+      setNewModalityName('');
+      setModalityType('');
+      setSelectedYear('');
+      setNewScoringSchema('');
+      setNewDescription('');
+      setIsModalOpen(false);
+    } catch (err) {
+      console.error('Failed to create modality:', err);
+      setError('Erro ao criar modalidade');
+    }
   };
 
   // Filtrado por época
   const filteredModalities = filterYear
     ? modalities.filter((m) => m.year === filterYear)
     : modalities;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Sidebar />
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -137,6 +162,12 @@ const Modalities = () => {
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Adicionar Modalidade</h2>
 
+            {error && (
+              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
+                {error}
+              </div>
+            )}
+
             <div className="space-y-4">
               {/* Name */}
               <div>
@@ -159,7 +190,7 @@ const Modalities = () => {
                 </label>
                 <select
                   value={modalityType}
-                  onChange={(e) => setModalityType(e.target.value)}
+                  onChange={(e) => setModalityType(e.target.value as 'coletiva' | 'individual' | 'mista' | '')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <option value="">Selecionar Tipo</option>
@@ -186,6 +217,19 @@ const Modalities = () => {
                 </select>
               </div>
 
+              {/* Description */}
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">
+                  Descrição
+                </label>
+                <textarea
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 min-h-[80px]"
+                  placeholder="Digite a descrição da modalidade"
+                />
+              </div>
+
               {/* Scoring Schema (JSON) */}
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
@@ -209,6 +253,8 @@ const Modalities = () => {
                   setModalityType('');
                   setSelectedYear('');
                   setNewScoringSchema('');
+                  setNewDescription('');
+                  setError('');
                 }}
                 className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
               >

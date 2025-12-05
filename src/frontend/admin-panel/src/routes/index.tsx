@@ -14,7 +14,7 @@ import DashboardGeral from '../pages/geral/DashboardGeral';
 import Administradores from '../pages/geral/Administradores';
 import AdminDetail from '../pages/geral/AdministradorDetail';
 import Modalities from '../pages/geral/Modalidades';
-import ModalityDetails from '../pages/geral/ModalityDetails';
+import ModalityDetails from '../pages/geral/ModalidadeDetail';
 
 import ProtectedRoute from '../components/ProtectedRoute';
 import Regulamentos from '../pages/geral/Regulamentos';
