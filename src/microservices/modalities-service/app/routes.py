@@ -6,7 +6,17 @@ Handles modalities, teams, and students.
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, BackgroundTasks
+
+from .events import (
+    publish_modality_created,
+    publish_modality_updated,
+    publish_modality_deleted,
+    publish_student_created,
+    publish_team_created,
+    publish_team_updated,
+    publish_team_deleted,
+)
 
 router = APIRouter()
 
@@ -14,8 +24,11 @@ router = APIRouter()
 @router.post("/modalities", status_code=201)
 def create_modality(
     modality_data: dict,
+    background_tasks: BackgroundTasks,
 ):
     """Create a new modality."""
+
+    background_tasks.add_task(publish_modality_created, modality_data)
     return None  # Placeholder for actual implementation
 
 
@@ -23,16 +36,22 @@ def create_modality(
 def update_modality(
     modality_id: UUID,
     modality_data: dict,
+    background_tasks: BackgroundTasks,
 ):
     """Update a modality."""
+
+    background_tasks.add_task(publish_modality_updated, modality_data, {})
     return None  # Placeholder for actual implementation
 
 
 @router.delete("/modalities/{modality_id}", status_code=204)
 def delete_modality(
     modality_id: UUID,
+    background_tasks: BackgroundTasks,
 ):
     """Delete a modality."""
+
+    background_tasks.add_task(publish_modality_deleted, modality_id)
     return None  # Placeholder for actual implementation
 
 
@@ -57,8 +76,11 @@ def list_modalities(
 @router.post("/teams", status_code=201)
 def create_team(
     team_data: dict,
+    background_tasks: BackgroundTasks,
 ):
     """Create a new team."""
+
+    background_tasks.add_task(publish_team_created, team_data)
     return None  # Placeholder for actual implementation
 
 
@@ -66,16 +88,22 @@ def create_team(
 def update_team(
     team_id: UUID,
     team_data: dict,
+    background_tasks: BackgroundTasks,
 ):
     """Update a team."""
+
+    background_tasks.add_task(publish_team_updated, team_data, {})
     return None  # Placeholder for actual implementation
 
 
 @router.delete("/teams/{team_id}", status_code=204)
 def delete_team(
     team_id: UUID,
+    background_tasks: BackgroundTasks,
 ):
     """Delete a team."""
+
+    background_tasks.add_task(publish_team_deleted, team_id)
     return None  # Placeholder for actual implementation
 
 
@@ -102,8 +130,11 @@ def list_teams(
 @router.post("/students", status_code=201)
 def create_student(
     student_data: dict,
+    background_tasks: BackgroundTasks,
 ):
     """Create a new student."""
+
+    background_tasks.add_task(publish_student_created, student_data)
     return None  # Placeholder for actual implementation
 
 
