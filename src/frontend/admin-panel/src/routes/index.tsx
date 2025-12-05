@@ -39,7 +39,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/geral/dashboard',
-    element: <DashboardGeral />,
+    element: <ProtectedRoute requiredRole="geral"><DashboardGeral /></ProtectedRoute>,
   },
   {
     path: '/login/nucleo',
@@ -47,71 +47,71 @@ export const router = createBrowserRouter([
   },
   {
     path: '/geral/administradores',
-    element: <Administradores />,
+    element: <ProtectedRoute requiredRole="geral"><Administradores /></ProtectedRoute>,
   },
   {
     path: '/geral/administradores/:id',
-    element: <AdminDetail />,
+    element: <ProtectedRoute requiredRole="geral"><AdminDetail /></ProtectedRoute>,
   },
   {
     path: '/geral/modalidades',
-    element: <Modalities />,
+    element: <ProtectedRoute requiredRole="geral"><Modalities /></ProtectedRoute>,
   },
   {
     path: '/geral/modalidades/:id',
-    element: <ModalityDetails />,
+    element: <ProtectedRoute requiredRole="geral"><ModalityDetails /></ProtectedRoute>,
   },
   {
     path: '/geral/regulamentos',
-    element: <Regulamentos />,
+    element: <ProtectedRoute requiredRole="geral"><Regulamentos /></ProtectedRoute>,
   },
   {
     path: '/geral/regulamentos/:id',
-    element: <RegulamentoDetails />,
+    element: <ProtectedRoute requiredRole="geral"><RegulamentoDetails /></ProtectedRoute>,
   },
   {
     path: '/geral/nucleos',
-    element: <Nucleo />,
+    element: <ProtectedRoute requiredRole="geral"><Nucleo /></ProtectedRoute>,
   },
   {
     path: '/geral/nucleos/:id',
-    element: <NucleoDetails />,
+    element: <ProtectedRoute requiredRole="geral"><NucleoDetails /></ProtectedRoute>,
   },
   {
     path: '/nucleo/dashboard',
-    element: <ProtectedRoute><DashboardNucleo /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="nucleo"><DashboardNucleo /></ProtectedRoute>,
   },
   {
     path: '/geral/torneios',
-    element: <Torneios />,
+    element: <ProtectedRoute requiredRole="geral"><Torneios /></ProtectedRoute>,
   },
   {
     path: '/geral/torneios/:id',
-    element: <TorneioDetails />,
+    element: <ProtectedRoute requiredRole="geral"><TorneioDetails /></ProtectedRoute>,
   },
   {
     path: '/nucleo/membros',
-    element: <ProtectedRoute><Membros /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="nucleo"><Membros /></ProtectedRoute>,
   },
   {
     path: '/nucleo/membros/:id',
-    element: <ProtectedRoute><MemberDetail /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="nucleo"><MemberDetail /></ProtectedRoute>,
   },
   {
     path: '/nucleo/equipas',
-    element: <ProtectedRoute><Equipas /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="nucleo"><Equipas /></ProtectedRoute>,
   },
   {
     path: '/nucleo/equipas/:id',
-    element: <ProtectedRoute><TeamDetail /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="nucleo"><TeamDetail /></ProtectedRoute>,
   },
   {
     path: '/nucleo/jogos',
-    element: <ProtectedRoute><Jogos /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="nucleo"><Jogos /></ProtectedRoute>,
   },
   {
     path: '/nucleo/jogos/:id',
-    element: <ProtectedRoute><MatchDetail /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="nucleo"><MatchDetail /></ProtectedRoute>,
   },
   {
     path: '*',

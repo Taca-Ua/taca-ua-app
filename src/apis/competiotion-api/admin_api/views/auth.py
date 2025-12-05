@@ -15,8 +15,9 @@ from ..serializers import (
     UserInfoSerializer,
 )
 
-# Mock database of nucleo admins
+# Mock database of nucleo admins and geral admins
 MOCK_USERS = {
+    # Nucleo admins (course-specific)
     "admin_mect": {
         "id": 1,
         "username": "admin_mect",
@@ -25,6 +26,7 @@ MOCK_USERS = {
         "course_id": 1,
         "course_abbreviation": "MECT",
         "full_name": "João Silva",
+        "role": "nucleo",
     },
     "admin_lei": {
         "id": 2,
@@ -34,6 +36,7 @@ MOCK_USERS = {
         "course_id": 2,
         "course_abbreviation": "LEI",
         "full_name": "Maria Santos",
+        "role": "nucleo",
     },
     "admin_leci": {
         "id": 3,
@@ -43,6 +46,7 @@ MOCK_USERS = {
         "course_id": 3,
         "course_abbreviation": "LECI",
         "full_name": "Pedro Oliveira",
+        "role": "nucleo",
     },
     "admin_biomed": {
         "id": 4,
@@ -52,6 +56,7 @@ MOCK_USERS = {
         "course_id": 4,
         "course_abbreviation": "BIOMED",
         "full_name": "Ana Costa",
+        "role": "nucleo",
     },
     "admin_mmat": {
         "id": 5,
@@ -61,6 +66,28 @@ MOCK_USERS = {
         "course_id": 5,
         "course_abbreviation": "MMAT",
         "full_name": "Carlos Ferreira",
+        "role": "nucleo",
+    },
+    # Geral admins (global access)
+    "admin_geral": {
+        "id": 100,
+        "username": "admin_geral",
+        "password": "password123",
+        "email": "geral@taca.ua.pt",
+        "course_id": None,
+        "course_abbreviation": None,
+        "full_name": "Administrador Geral",
+        "role": "geral",
+    },
+    "admin_taca": {
+        "id": 101,
+        "username": "admin_taca",
+        "password": "password123",
+        "email": "admin@taca.ua.pt",
+        "course_id": None,
+        "course_abbreviation": None,
+        "full_name": "Admin TACA",
+        "role": "geral",
     },
 }
 
