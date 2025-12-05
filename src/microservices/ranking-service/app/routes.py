@@ -5,7 +5,8 @@ API routes for Ranking Service.
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, BackgroundTasks
+from .events import publish_rankings_updated
 
 router = APIRouter()
 
@@ -14,8 +15,16 @@ router = APIRouter()
 def recalculate_modality_ranking(
     modality_id: UUID,
     request_data: dict,
+    background_tasks: BackgroundTasks,
 ):
     """Recalculate ranking for a modality."""
+
+    background_tasks.add_task(
+        publish_rankings_updated,
+        season_id=None,
+        scope="modality",
+        entity_id=modality_id,
+    )
     return None  # Placeholder for actual implementation
 
 
@@ -23,16 +32,26 @@ def recalculate_modality_ranking(
 def recalculate_course_ranking(
     course_id: UUID,
     request_data: dict,
+    background_tasks: BackgroundTasks,
 ):
     """Recalculate ranking for a course."""
+
+    background_tasks.add_task(
+        publish_rankings_updated, season_id=None, scope="course", entity_id=course_id
+    )
     return None  # Placeholder for actual implementation
 
 
 @router.post("/rankings/general/recalculate")
 def recalculate_general_ranking(
     request_data: dict,
+    background_tasks: BackgroundTasks,
 ):
     """Recalculate general ranking across all courses."""
+
+    background_tasks.add_task(
+        publish_rankings_updated, season_id=None, scope="general", entity_id=None
+    )
     return None  # Placeholder for actual implementation
 
 
