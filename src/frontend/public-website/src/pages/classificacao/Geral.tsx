@@ -43,7 +43,7 @@ function ClassificacaoGeral() {
       setError(null);
 
       try {
-        const data = await api.rankings.getGeneralRanking(String(selectedSeasonId));
+        const data = await api.rankings.getGeneralRanking(selectedSeasonId as number);
         setRankingData(data);
       } catch (err) {
         console.error('Failed to load rankings:', err);

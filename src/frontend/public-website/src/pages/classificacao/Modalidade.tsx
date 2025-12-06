@@ -56,13 +56,13 @@ function ClassificacaoModalidade() {
       setError(null);
 
       try {
-        const params: { season_id: string; modality_id?: string } = {
-          season_id: String(selectedSeasonId),
+        const params: { season_id: number | string; modality_id?: number | string } = {
+          season_id: selectedSeasonId,
         };
 
         // Only add modality_id filter if not "all"
         if (selectedModalityId && selectedModalityId !== 'all') {
-          params.modality_id = String(selectedModalityId);
+          params.modality_id = selectedModalityId;
         }
 
         const data = await api.tournaments.getTournaments(params);

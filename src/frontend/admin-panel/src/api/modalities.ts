@@ -4,25 +4,19 @@ export interface Modality {
   id: number;
   name: string;
   type: 'coletiva' | 'individual' | 'mista';
-  year: string;
-  description?: string;
-  scoring_schema?: string;
+  scoring_schema?: Record<string, number> | null;
 }
 
 export interface ModalityCreate {
   name: string;
   type: 'coletiva' | 'individual' | 'mista';
-  year: string;
-  description?: string;
-  scoring_schema?: string;
+  scoring_schema?: Record<string, number> | null;
 }
 
 export interface ModalityUpdate {
   name?: string;
   type?: 'coletiva' | 'individual' | 'mista';
-  year?: string;
-  description?: string;
-  scoring_schema?: string;
+  scoring_schema?: Record<string, number> | null;
 }
 
 export const modalitiesApi = {

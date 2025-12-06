@@ -8,15 +8,11 @@ const Modalities = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newModalityName, setNewModalityName] = useState('');
   const [modalityType, setModalityType] = useState<'coletiva' | 'individual' | 'mista' | ''>('');
-  const [selectedYear, setSelectedYear] = useState('');
   const [newScoringSchema, setNewScoringSchema] = useState('');
-  const [newDescription, setNewDescription] = useState('');
 
   const [modalities, setModalities] = useState<Modality[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  const [filterYear, setFilterYear] = useState('');
 
   // Fetch modalities on mount
   useEffect(() => {
@@ -37,16 +33,9 @@ const Modalities = () => {
     fetchData();
   }, []);
 
-  const years = ['25/26', '24/25', '23/24', '22/23'];
-
   const handleAddModality = async () => {
     if (!newModalityName.trim()) {
       setError('Por favor, preencha o nome da modalidade.');
-      return;
-    }
-
-    if (!selectedYear) {
-      setError('Por favor, selecione uma época.');
       return;
     }
 
@@ -56,12 +45,20 @@ const Modalities = () => {
     }
 
     try {
+      let scoringSchema: Record<string, number> | null = null;
+      if (newScoringSchema.trim()) {
+        try {
+          scoringSchema = JSON.parse(newScoringSchema);
+        } catch {
+          setError('Scoring schema inválido. Use formato JSON válido.');
+          return;
+        }
+      }
+
       const newModality = await modalitiesApi.create({
         name: newModalityName,
-        year: selectedYear,
         type: modalityType,
-        scoring_schema: newScoringSchema || undefined,
-        description: newDescription || undefined,
+        scoring_schema: scoringSchema,
       });
 
       setModalities([...modalities, newModality]);
@@ -70,20 +67,13 @@ const Modalities = () => {
       // Reset
       setNewModalityName('');
       setModalityType('');
-      setSelectedYear('');
       setNewScoringSchema('');
-      setNewDescription('');
       setIsModalOpen(false);
     } catch (err) {
       console.error('Failed to create modality:', err);
       setError('Erro ao criar modalidade');
     }
   };
-
-  // Filtrado por época
-  const filteredModalities = filterYear
-    ? modalities.filter((m) => m.year === filterYear)
-    : modalities;
 
   if (loading) {
     return (
@@ -114,41 +104,25 @@ const Modalities = () => {
             </button>
           </div>
 
-          {/* Year Filter */}
-          <div className="mb-6">
-            <label className="block text-gray-700 font-medium mb-2">Época</label>
-            <select
-              value={filterYear}
-              onChange={(e) => setFilterYear(e.target.value)}
-              className="w-64 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-            >
-              <option value="">Selecionar Época</option>
-              {years.map((y) => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
-          </div>
-
           {/* Modalities List */}
           <div className="bg-white rounded-lg shadow-md p-6">
-
             <div className="space-y-3">
-              {filteredModalities.length > 0 ? (
-                filteredModalities.map((mod) => (
+              {modalities.length > 0 ? (
+                modalities.map((mod) => (
                   <div
                     key={mod.id}
                     onClick={() => navigate(`/geral/modalidades/${mod.id}`)}
                     className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer transition-colors flex justify-between items-center"
                   >
                     <span className="text-gray-800 font-medium">{mod.name}</span>
-                    <span className="text-gray-600 text-sm">
-                      Época: {mod.year} | Tipo: {mod.type}
+                    <span className="text-gray-600 text-sm capitalize">
+                      Tipo: {mod.type}
                     </span>
                   </div>
                 ))
               ) : (
                 <p className="text-gray-500 text-center py-8">
-                  Nenhuma modalidade encontrada para esta época.
+                  Nenhuma modalidade encontrada.
                 </p>
               )}
             </div>
@@ -200,36 +174,6 @@ const Modalities = () => {
                 </select>
               </div>
 
-              {/* Year */}
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">
-                  Época <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                  <option value="">Selecionar Época</option>
-                  {years.map((y) => (
-                    <option key={y} value={y}>{y}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">
-                  Descrição
-                </label>
-                <textarea
-                  value={newDescription}
-                  onChange={(e) => setNewDescription(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 min-h-[80px]"
-                  placeholder="Digite a descrição da modalidade"
-                />
-              </div>
-
               {/* Scoring Schema (JSON) */}
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
@@ -251,9 +195,7 @@ const Modalities = () => {
                   setIsModalOpen(false);
                   setNewModalityName('');
                   setModalityType('');
-                  setSelectedYear('');
                   setNewScoringSchema('');
-                  setNewDescription('');
                   setError('');
                 }}
                 className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"

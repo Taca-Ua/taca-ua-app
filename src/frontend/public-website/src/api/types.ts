@@ -13,10 +13,10 @@ export interface Season {
 }
 
 export interface Modality {
-  id: string;
+  id: number;
   name: string;
   type: string;
-  description?: string;
+  scoring_schema?: Record<string, number>;
 }
 
 export interface Team {
@@ -74,14 +74,14 @@ export interface TournamentRankingEntry {
 }
 
 export interface TournamentPublicDetail {
-  id: string;
+  id: number;
   name: string;
   modality: {
-    id: string;
+    id: number;
     name: string;
   };
   season: {
-    id: string;
+    id: number;
     year: number;
   };
   status: string;
@@ -93,11 +93,11 @@ export interface TournamentPublicDetail {
 
 export interface ModalityRanking {
   modality: {
-    id: string;
+    id: number;
     name: string;
   };
   season: {
-    id: string;
+    id: number;
     year: number;
   };
   rankings: TournamentRankingEntry[];
@@ -148,7 +148,7 @@ export interface Regulation {
 
 export interface HistoricalWinner {
   season: {
-    id: string;
+    id: number;
     year: number;
   };
   course: {

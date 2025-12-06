@@ -13,11 +13,7 @@ function ModalidadeDetail() {
 
   const [editedName, setEditedName] = useState('');
   const [editedType, setEditedType] = useState<'coletiva' | 'individual' | 'mista' | ''>('');
-  const [editedYear, setEditedYear] = useState('');
-  const [editedDescription, setEditedDescription] = useState('');
   const [editedScoringSchema, setEditedScoringSchema] = useState('');
-
-  const years = ['25/26', '24/25', '23/24', '22/23'];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -44,9 +40,7 @@ function ModalidadeDetail() {
     if (!modality) return;
     setEditedName(modality.name);
     setEditedType(modality.type);
-    setEditedYear(modality.year);
-    setEditedDescription(modality.description || '');
-    setEditedScoringSchema(modality.scoring_schema || '');
+    setEditedScoringSchema(modality.scoring_schema ? JSON.stringify(modality.scoring_schema, null, 2) : '');
     setError('');
     setIsModalOpen(true);
   };
@@ -60,18 +54,22 @@ function ModalidadeDetail() {
       setError('Tipo é obrigatório');
       return;
     }
-    if (!editedYear) {
-      setError('Época é obrigatória');
-      return;
-    }
 
     try {
+      let scoringSchema: Record<string, number> | null = null;
+      if (editedScoringSchema.trim()) {
+        try {
+          scoringSchema = JSON.parse(editedScoringSchema);
+        } catch {
+          setError('Scoring schema inválido. Use formato JSON válido.');
+          return;
+        }
+      }
+
       const updatedModality = await modalitiesApi.update(Number(id), {
         name: editedName,
         type: editedType as 'coletiva' | 'individual' | 'mista',
-        year: editedYear,
-        description: editedDescription || undefined,
-        scoring_schema: editedScoringSchema || undefined,
+        scoring_schema: scoringSchema,
       });
       setModality(updatedModality);
       setError('');
@@ -123,24 +121,12 @@ function ModalidadeDetail() {
               <label className="block text-teal-500 font-medium mb-2">Tipo</label>
               <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800 capitalize">{modality.type}</div>
             </div>
-            {/* Year */}
-            <div>
-              <label className="block text-teal-500 font-medium mb-2">Época</label>
-              <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800">{modality.year}</div>
-            </div>
-            {/* Description */}
-            {modality.description && (
-              <div>
-                <label className="block text-teal-500 font-medium mb-2">Descrição</label>
-                <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800">{modality.description}</div>
-              </div>
-            )}
             {/* Scoring Schema */}
             {modality.scoring_schema && (
               <div>
                 <label className="block text-teal-500 font-medium mb-2">Scoring Schema</label>
                 <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800 font-mono text-sm">
-                  {modality.scoring_schema}
+                  {JSON.stringify(modality.scoring_schema, null, 2)}
                 </div>
               </div>
             )}
@@ -199,35 +185,6 @@ function ModalidadeDetail() {
                   <option value="individual">Individual</option>
                   <option value="mista">Mista</option>
                 </select>
-              </div>
-              {/* Year */}
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">
-                  Época <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={editedYear}
-                  onChange={(e) => setEditedYear(e.target.value)}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
-                >
-                  <option value="">Selecionar Época</option>
-                  {years.map((y) => (
-                    <option key={y} value={y}>
-                      {y}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {/* Description */}
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">Descrição</label>
-                <textarea
-                  value={editedDescription}
-                  onChange={(e) => setEditedDescription(e.target.value)}
-                  placeholder="Digite a descrição"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 min-h-[80px]"
-                />
               </div>
               {/* Scoring Schema */}
               <div>
