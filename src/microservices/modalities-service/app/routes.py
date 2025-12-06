@@ -329,28 +329,76 @@ def list_teams(
 
 @router.post("/students", response_model=schemas.StudentResponse, status_code=201)
 def create_student(
-    student_data: dict,
+    student_data: schemas.StudentCreate,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db_session),
 ):
     """Create a new student."""
+    # Check if student_number already exists
+    existing = (
+        db.query(Student)
+        .filter(Student.student_number == student_data.student_number)
+        .first()
+    )
+    if existing:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Student with number {student_data.student_number} already exists",
+        )
+
+    student = Student(
+        course_id=student_data.course_id,
+        full_name=student_data.full_name,
+        student_number=student_data.student_number,
+        email=student_data.email,
+        is_member=student_data.is_member or False,
+        created_by=student_data.created_by,
+    )
+
+    db.add(student)
+    db.commit()
+    db.refresh(student)
 
     background_tasks.add_task(publish_student_created, student_data)
-    return None  # Placeholder for actual implementation
+    return student
 
 
 @router.put("/students/{student_id}", response_model=schemas.StudentResponse)
 def update_student(
-    student_id: UUID, student_data: dict, db: Session = Depends(get_db_session)
+    student_id: UUID,
+    student_data: schemas.StudentUpdate,
+    db: Session = Depends(get_db_session),
 ):
     """Update a student."""
-    return None  # Placeholder for actual implementation
+    student = db.query(Student).filter(Student.id == student_id).first()
+
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    if student_data.full_name is not None:
+        student.full_name = student_data.full_name
+    if student_data.email is not None:
+        student.email = student_data.email
+    if student_data.is_member is not None:
+        student.is_member = student_data.is_member
+
+    student.updated_at = datetime.now(timezone.utc)
+
+    db.commit()
+    db.refresh(student)
+
+    return student
 
 
 @router.get("/students/{student_id}", response_model=schemas.StudentResponse)
 def get_student(student_id: UUID, db: Session = Depends(get_db_session)):
     """Get a student by ID."""
-    return None  # Placeholder for actual implementation
+    student = db.query(Student).filter(Student.id == student_id).first()
+
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    return student
 
 
 @router.get("/students")
@@ -363,4 +411,24 @@ def list_students(
     db: Session = Depends(get_db_session),
 ):
     """List students with optional filters."""
-    return None  # Placeholder for actual implementation
+    query = db.query(Student)
+
+    if course_id:
+        query = query.filter(Student.course_id == course_id)
+    if is_member is not None:
+        query = query.filter(Student.is_member == is_member)
+    if search:
+        query = query.filter(
+            (Student.full_name.ilike(f"%{search}%"))
+            | (Student.student_number.ilike(f"%{search}%"))
+        )
+
+    total = query.count()
+    students = query.offset(offset).limit(limit).all()
+
+    return {
+        "students": students,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
