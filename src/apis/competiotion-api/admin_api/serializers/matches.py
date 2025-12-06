@@ -14,7 +14,9 @@ class MatchListSerializer(serializers.Serializer):
     team_away_id = serializers.IntegerField()
     location = serializers.CharField()
     start_time = serializers.DateTimeField()
-    status = serializers.ChoiceField(choices=["scheduled", "finished"], read_only=True)
+    status = serializers.ChoiceField(
+        choices=["scheduled", "in_progress", "finished", "cancelled"], read_only=True
+    )
     home_score = serializers.IntegerField(required=False, allow_null=True)
     away_score = serializers.IntegerField(required=False, allow_null=True)
 
@@ -36,6 +38,11 @@ class MatchUpdateSerializer(serializers.Serializer):
     start_time = serializers.DateTimeField(required=False)
     team_home_id = serializers.IntegerField(required=False)
     team_away_id = serializers.IntegerField(required=False)
+    status = serializers.ChoiceField(
+        choices=["scheduled", "in_progress", "finished", "cancelled"], required=False
+    )
+    home_score = serializers.IntegerField(required=False, allow_null=True)
+    away_score = serializers.IntegerField(required=False, allow_null=True)
 
 
 class MatchResultSerializer(serializers.Serializer):

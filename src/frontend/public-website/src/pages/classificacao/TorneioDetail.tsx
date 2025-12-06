@@ -64,7 +64,7 @@ function TorneioDet() {
                 <div className="flex items-center gap-3 mt-2">
                   <p className="text-xl text-teal-600">{tournament.modality.name}</p>
                   <span className="text-gray-400">•</span>
-                  <p className="text-xl text-gray-600">Época {tournament.season.display_name}</p>
+                  <p className="text-xl text-gray-600">Época {tournament.season.year}</p>
                   <span className="text-gray-400">•</span>
                   <p className="text-sm text-gray-500 capitalize">{tournament.status}</p>
                 </div>
