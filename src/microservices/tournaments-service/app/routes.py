@@ -5,7 +5,14 @@ API routes for Tournaments Service.
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, BackgroundTasks, Query
+
+from .events import (
+    publish_tournament_created,
+    publish_tournament_deleted,
+    publish_tournament_finished,
+    publish_tournament_updated,
+)
 
 router = APIRouter()
 
@@ -13,10 +20,13 @@ router = APIRouter()
 @router.post("/tournaments", status_code=201)
 async def create_tournament(
     tournament_data: dict,
+    background_tasks: BackgroundTasks,
 ):
     """
     Create a new tournament.
     """
+
+    background_tasks.add_task(publish_tournament_created, tournament_data)
     return None  # Placeholder for actual implementation
 
 
@@ -24,10 +34,15 @@ async def create_tournament(
 async def update_tournament(
     tournament_id: UUID,
     tournament_data: dict,
+    background_tasks: BackgroundTasks,
 ):
     """
     Update a tournament.
     """
+
+    background_tasks.add_task(
+        publish_tournament_updated, tournament_id, tournament_data
+    )
     return None  # Placeholder for actual implementation
 
 
@@ -35,10 +50,12 @@ async def update_tournament(
 async def add_teams_to_tournament(
     tournament_id: UUID,
     teams_data: dict,
+    background_tasks: BackgroundTasks,
 ):
     """
     Add teams to a tournament.
     """
+    background_tasks.add_task(publish_tournament_updated, tournament_id, teams_data)
     return None  # Placeholder for actual implementation
 
 
@@ -46,10 +63,12 @@ async def add_teams_to_tournament(
 async def remove_teams_from_tournament(
     tournament_id: UUID,
     teams_data: dict,
+    background_tasks: BackgroundTasks,
 ):
     """
     Remove teams from a tournament.
     """
+    background_tasks.add_task(publish_tournament_updated, tournament_id, teams_data)
     return None  # Placeholder for actual implementation
 
 
@@ -57,10 +76,12 @@ async def remove_teams_from_tournament(
 async def finish_tournament(
     tournament_id: UUID,
     finish_data: dict,
+    background_tasks: BackgroundTasks,
 ):
     """
     Finish a tournament.
     """
+    background_tasks.add_task(publish_tournament_finished, tournament_id, finish_data)
     return None  # Placeholder for actual implementation
 
 
@@ -91,8 +112,10 @@ def list_tournaments(
 @router.delete("/tournaments/{tournament_id}", status_code=204)
 async def delete_tournament(
     tournament_id: UUID,
+    background_tasks: BackgroundTasks,
 ):
     """
     Delete a tournament.
     """
+    background_tasks.add_task(publish_tournament_deleted, tournament_id)
     return None  # Placeholder for actual implementations
