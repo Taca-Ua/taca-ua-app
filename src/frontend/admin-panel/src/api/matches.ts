@@ -25,6 +25,9 @@ export interface MatchUpdate {
   team_away_id?: number;
   location?: string;
   start_time?: string;
+  status?: 'scheduled' | 'in_progress' | 'finished' | 'cancelled';
+  home_score?: number | null;
+  away_score?: number | null;
 }
 
 export interface MatchResult {
@@ -46,12 +49,20 @@ export const matchesApi = {
     return apiClient.get<Match[]>('/matches');
   },
 
+  async getById(matchId: number): Promise<Match> {
+    return apiClient.get<Match>(`/matches/${matchId}`);
+  },
+
   async create(data: MatchCreate): Promise<Match> {
     return apiClient.post<Match>('/matches', data);
   },
 
   async update(matchId: number, data: MatchUpdate): Promise<Match> {
     return apiClient.put<Match>(`/matches/${matchId}`, data);
+  },
+
+  async delete(matchId: number): Promise<void> {
+    return apiClient.delete(`/matches/${matchId}`);
   },
 
   async submitResult(matchId: number, data: MatchResult): Promise<Match> {

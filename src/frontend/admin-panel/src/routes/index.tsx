@@ -17,6 +17,7 @@ import Regulamentos from '../pages/geral/Regulamentos';
 import RegulamentoDetails from '../pages/geral/RegulamentoDetails';
 import Torneios from '../pages/geral/Torneios';
 import TorneioDetails from '../pages/geral/TorneioDetails';
+import JogoDetails from '../pages/geral/JogoDetails';
 
 // Nucleo admin pages
 import LoginNucleo from '../pages/nucleo/LoginNucleo';
@@ -98,6 +99,10 @@ export const router = createBrowserRouter([
   {
     path: '/geral/torneios/:id',
     element: <ProtectedRoute requiredRole="geral"><TorneioDetails /></ProtectedRoute>,
+  },
+  {
+    path: '/geral/jogos/:id',
+    element: <ProtectedRoute requiredRole="geral"><JogoDetails /></ProtectedRoute>,
   },
 
   // ============================================

@@ -52,11 +52,6 @@ class MatchListCreateView(APIView):
             {"id": 6, "course_id": 2, "name": "LEI Futsal", "modality_id": 2},
         ]
 
-        # Get team IDs for this nucleo
-        nucleo_team_ids = [
-            team["id"] for team in teams if team["course_id"] == user["course_id"]
-        ]
-
         # Mock database of all matches
         all_matches = [
             # Futebol matches
@@ -142,6 +137,16 @@ class MatchListCreateView(APIView):
             },
         ]
 
+        # If user is geral admin (role "geral"), return all matches
+        # If user is nucleo admin, filter by their teams
+        if user.get("role") == "geral":
+            return Response(all_matches)
+
+        # Get team IDs for this nucleo
+        nucleo_team_ids = [
+            team["id"] for team in teams if team["course_id"] == user["course_id"]
+        ]
+
         # Filter matches where either home or away team belongs to this nucleo
         filtered_matches = [
             match
@@ -166,31 +171,146 @@ class MatchListCreateView(APIView):
 
 
 @extend_schema_view(
+    get=extend_schema(
+        responses=MatchListSerializer,
+        description="Get a specific match by ID",
+        tags=["Match Management"],
+    ),
     put=extend_schema(
         request=MatchUpdateSerializer,
         responses=MatchListSerializer,
         description="Update a match",
         tags=["Match Management"],
     ),
+    delete=extend_schema(
+        responses={204: None},
+        description="Delete a match",
+        tags=["Match Management"],
+    ),
 )
 class MatchDetailView(APIView):
-    def put(self, request, match_id):
-        serializer = MatchUpdateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        dummy_response = {
-            "id": match_id,
+    # Mock database of all matches (same as in MatchListCreateView)
+    MOCK_MATCHES = [
+        {
+            "id": 1,
             "tournament_id": 1,
-            "team_home_id": serializer.validated_data.get("team_home_id", 1),
-            "team_away_id": serializer.validated_data.get("team_away_id", 2),
-            "location": serializer.validated_data.get("location", "Campo 1"),
-            "start_time": serializer.validated_data.get(
-                "start_time", "2025-02-10T15:00:00Z"
-            ),
+            "team_home_id": 1,
+            "team_away_id": 2,
+            "location": "Campo 1 - Complexo Desportivo UA",
+            "start_time": "2025-12-10T15:00:00Z",
             "status": "scheduled",
             "home_score": None,
             "away_score": None,
-        }
-        return Response(dummy_response)
+        },
+        {
+            "id": 2,
+            "tournament_id": 1,
+            "team_home_id": 1,
+            "team_away_id": 5,
+            "location": "Campo 2 - Complexo Desportivo UA",
+            "start_time": "2025-12-05T16:00:00Z",
+            "status": "finished",
+            "home_score": 3,
+            "away_score": 1,
+        },
+        {
+            "id": 3,
+            "tournament_id": 2,
+            "team_home_id": 3,
+            "team_away_id": 6,
+            "location": "Pavilhão A - UA",
+            "start_time": "2025-12-12T18:00:00Z",
+            "status": "scheduled",
+            "home_score": None,
+            "away_score": None,
+        },
+        {
+            "id": 4,
+            "tournament_id": 2,
+            "team_home_id": 6,
+            "team_away_id": 3,
+            "start_time": "2025-12-01T17:30:00Z",
+            "location": "Pavilhão B - UA",
+            "status": "finished",
+            "home_score": 2,
+            "away_score": 2,
+        },
+        {
+            "id": 5,
+            "tournament_id": 3,
+            "team_home_id": 4,
+            "team_away_id": 2,
+            "location": "Campo 3 - Complexo Desportivo UA",
+            "start_time": "2025-12-20T14:00:00Z",
+            "status": "scheduled",
+            "home_score": None,
+            "away_score": None,
+        },
+        {
+            "id": 6,
+            "tournament_id": 1,
+            "team_home_id": 2,
+            "team_away_id": 5,
+            "location": "Campo 1 - Complexo Desportivo UA",
+            "start_time": "2025-12-18T16:00:00Z",
+            "status": "scheduled",
+            "home_score": None,
+            "away_score": None,
+        },
+        {
+            "id": 7,
+            "tournament_id": 1,
+            "team_home_id": 5,
+            "team_away_id": 1,
+            "location": "Campo 2 - Complexo Desportivo UA",
+            "start_time": "2025-12-25T15:00:00Z",
+            "status": "scheduled",
+            "home_score": None,
+            "away_score": None,
+        },
+    ]
+
+    def get(self, request, match_id):
+        # Find match by ID
+        match = next((m for m in self.MOCK_MATCHES if m["id"] == match_id), None)
+        if not match:
+            return Response(
+                {"error": "Match not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        return Response(match)
+
+    def put(self, request, match_id):
+        # Find match by ID
+        match = next((m for m in self.MOCK_MATCHES if m["id"] == match_id), None)
+        if not match:
+            return Response(
+                {"error": "Match not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = MatchUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Update match with provided fields
+        updated_match = {**match}
+        for field, value in serializer.validated_data.items():
+            updated_match[field] = value
+
+        return Response(updated_match)
+
+    def delete(self, request, match_id):
+        # Find match by ID
+        match = next((m for m in self.MOCK_MATCHES if m["id"] == match_id), None)
+        if not match:
+            return Response(
+                {"error": "Match not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # In a real implementation, we would delete from database
+        # For now, just return success
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema(
