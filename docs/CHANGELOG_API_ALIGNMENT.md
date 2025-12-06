@@ -364,25 +364,6 @@ docker compose -f docker-compose.dev.yml restart public-website
 2. **Épocas:** Apenas UMA época pode estar ativa. Iniciar nova época termina automaticamente a anterior
 3. **Terminar Época:** Ação irreversível - época não pode ser reaberta
 
----
-
-## 10. Testes Necessários
-
-- [ ] Verificar classificação geral mostra dados
-- [ ] Verificar classificação por modalidade funciona
-- [ ] Verificar criação de modalidades no admin
-- [ ] Verificar gestão de épocas no dashboard
-- [ ] Verificar todos os endpoints públicos retornam IDs como números
-- [ ] Verificar frontend público não quebra com novos tipos
-
----
-
-## 11. Próximos Passos
-
-1. Atualizar microserviços para usar nova estrutura de modalidades
-2. Migração de dados existentes (se aplicável)
-3. Atualizar testes unitários e de integração
-4. Documentar schemas OpenAPI/Swagger
 
 ---
 
