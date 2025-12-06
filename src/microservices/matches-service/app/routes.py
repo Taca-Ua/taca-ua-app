@@ -17,7 +17,7 @@ from .events import (
     publish_match_finished,
     publish_match_updated,
 )
-from .models import Match, MatchStatus, Lineup, Comment
+from .models import Comment, Lineup, Match, MatchStatus
 
 router = APIRouter()
 
@@ -83,7 +83,7 @@ def update_match(
     db.commit()
     db.refresh(match)
 
-    background_tasks.add_task(publish_match_updated, match, {})
+    background_tasks.add_task(publish_match_updated, match, "Match details updated")
     return match
 
 
@@ -157,7 +157,7 @@ def assign_lineup(
 
     db.commit()
 
-    background_tasks.add_task(publish_match_updated, match, {})
+    background_tasks.add_task(publish_match_updated, match, "Lineup assigned")
     return {
         "message": "Lineup assigned successfully",
         "player_count": len(lineup_data.players),

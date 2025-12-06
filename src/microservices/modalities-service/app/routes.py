@@ -51,7 +51,7 @@ def create_modality(
     db.commit()
     db.refresh(modality)
 
-    background_tasks.add_task(publish_modality_created, modality_data)
+    background_tasks.add_task(publish_modality_created, modality)
     return modality
 
 
@@ -85,7 +85,7 @@ def update_modality(
     db.commit()
     db.refresh(modality)
 
-    background_tasks.add_task(publish_modality_updated, modality_data, {})
+    background_tasks.add_task(publish_modality_updated, modality, {})
     return modality
 
 
@@ -213,7 +213,7 @@ def create_team(
     db.commit()
     db.refresh(team)
 
-    background_tasks.add_task(publish_team_created, team_data)
+    background_tasks.add_task(publish_team_created, team)
     return team
 
 
@@ -262,7 +262,15 @@ def update_team(
     db.commit()
     db.refresh(team)
 
-    background_tasks.add_task(publish_team_updated, team_data, {})
+    background_tasks.add_task(
+        publish_team_updated,
+        team,
+        {
+            "name": team_data.name,
+            "players_added": team_data.players_add,
+            "players_removed": team_data.players_remove,
+        },
+    )
     return team
 
 
@@ -359,7 +367,7 @@ def create_student(
     db.commit()
     db.refresh(student)
 
-    background_tasks.add_task(publish_student_created, student_data)
+    background_tasks.add_task(publish_student_created, student)
     return student
 
 

@@ -2,58 +2,64 @@
 Event handling for Matches Service.
 """
 
+from datetime import datetime, timezone
+
 from taca_messaging.rabbitmq_service import RabbitMQService
 
 from .logger import logger
+from .models import Match
 
 rabbitmq_service = RabbitMQService(service_name="matches-service")
 
 
-class FakeMatch:
-    """Temporary placeholder for Match object when None is provided."""
-
-    def __init__(self, _id):
-        self.id = _id
-
-
 # Event Publishers
-async def publish_match_created(match):
+async def publish_match_created(match: Match):
     """Publish MatchCreated event."""
     if not rabbitmq_service:
         return
 
-    if match is None:
-        match = FakeMatch(_id="unknown")
-
-    event_data = {}
+    event_data = {
+        "match_id": str(match.id),
+        "tournament_id": str(match.tournament_id),
+        "team_home_id": str(match.team_home_id),
+        "team_away_id": str(match.team_away_id),
+        "start_time": match.start_time.isoformat(),
+        "created_at": match.created_at.isoformat(),
+    }
 
     await rabbitmq_service.publish_event("match.created", event_data)
     logger.info(f"Published match.created event for match {match.id}")
 
 
-async def publish_match_updated(match, changes):
+async def publish_match_updated(match: Match, changes):
     """Publish MatchUpdated event."""
     if not rabbitmq_service:
         return
 
-    if match is None:
-        match = FakeMatch(_id="unknown")
-
-    event_data = {}
+    event_data = {
+        "match_id": str(match.id),
+        "changes": changes,
+        "updated_at": match.updated_at.isoformat() if match.updated_at else None,
+    }
 
     await rabbitmq_service.publish_event("match.updated", event_data)
     logger.info(f"Published match.updated event for match {match.id}")
 
 
-async def publish_match_finished(match):
+async def publish_match_finished(match: Match):
     """Publish MatchFinished event."""
     if not rabbitmq_service:
         return
 
-    if match is None:
-        match = FakeMatch(_id="unknown")
-
-    event_data = {}
+    event_data = {
+        "match_id": str(match.id),
+        "tournament_id": str(match.tournament_id),
+        "team_home_id": str(match.team_home_id),
+        "team_away_id": str(match.team_away_id),
+        "home_score": match.home_score,
+        "away_score": match.away_score,
+        "finished_at": datetime.now(timezone.utc).isoformat(),
+    }
 
     await rabbitmq_service.publish_event("match.finished", event_data)
     logger.info(f"Published match.finished event for match {match.id}")
@@ -64,7 +70,11 @@ async def publish_match_cancelled(match_id, reason):
     if not rabbitmq_service:
         return
 
-    event_data = {}
+    event_data = {
+        "match_id": str(match_id),
+        "reason": reason,
+        "cancelled_at": datetime.now(timezone.utc).isoformat(),
+    }
 
     await rabbitmq_service.publish_event("match.cancelled", event_data)
     logger.info(f"Published match.cancelled event for match {match_id}")

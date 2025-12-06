@@ -2,6 +2,9 @@
 Event handling for Ranking Service.
 """
 
+from datetime import datetime, timezone
+from uuid import UUID
+
 from taca_messaging import RabbitMQService
 
 from .logger import logger
@@ -10,12 +13,17 @@ rabbitmq_service = RabbitMQService(service_name="ranking-service")
 
 
 # Event Publishers
-async def publish_rankings_updated(season_id, scope, entity_id=None):
+async def publish_rankings_updated(season_id: UUID, scope, entity_id: UUID = None):
     """Publish RankingsUpdated event."""
     if not rabbitmq_service:
         return
 
-    event_data = {}
+    event_data = {
+        "season_id": str(season_id),
+        "scope": scope,  # "modality", "course", "general"
+        "entity_id": str(entity_id) if entity_id else None,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
 
     await rabbitmq_service.publish_event("rankings.updated", event_data)
     logger.info(f"Published rankings.updated event for scope {scope}")

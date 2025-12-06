@@ -3,6 +3,7 @@ Event handling for Tournaments Service.
 Publishes and consumes events via RabbitMQ.
 """
 
+from datetime import datetime
 from typing import Any, Dict
 from uuid import UUID
 
@@ -15,11 +16,6 @@ from .models import Tournament
 rabbitmq_service = RabbitMQService(service_name="tournaments-service")
 
 
-class FakeObject:
-    def __init__(self, _id):
-        self.id = _id
-
-
 # Event Publishers
 async def publish_tournament_created(tournament: Tournament):
     """Publish TournamentCreated event."""
@@ -27,10 +23,13 @@ async def publish_tournament_created(tournament: Tournament):
         logger.warning("RabbitMQ service not initialized")
         return
 
-    if not tournament:
-        tournament = FakeObject("unknown")
-
-    event_data = {}
+    event_data = {
+        "tournament_id": str(tournament.id),
+        "modality_id": str(tournament.modality_id),
+        "season_id": str(tournament.season_id),
+        "name": tournament.name,
+        "created_at": tournament.created_at.isoformat(),
+    }
 
     await rabbitmq_service.publish_event("tournament.created", event_data)
     logger.info(f"Published tournament.created event for tournament {tournament.id}")
@@ -42,10 +41,13 @@ async def publish_tournament_updated(tournament: Tournament, changes: Dict[str, 
         logger.warning("RabbitMQ service not initialized")
         return
 
-    if not tournament:
-        tournament = FakeObject("unknown")
-
-    event_data = {}
+    event_data = {
+        "tournament_id": str(tournament.id),
+        "changes": changes,
+        "updated_at": (
+            tournament.updated_at.isoformat() if tournament.updated_at else None
+        ),
+    }
 
     await rabbitmq_service.publish_event("tournament.updated", event_data)
     logger.info(f"Published tournament.updated event for tournament {tournament.id}")
@@ -57,10 +59,14 @@ async def publish_tournament_finished(tournament: Tournament):
         logger.warning("RabbitMQ service not initialized")
         return
 
-    if not tournament:
-        tournament = FakeObject("unknown")
-
-    event_data = {}
+    event_data = {
+        "tournament_id": str(tournament.id),
+        "modality_id": str(tournament.modality_id),
+        "season_id": str(tournament.season_id),
+        "finished_at": (
+            tournament.finished_at.isoformat() if tournament.finished_at else None
+        ),
+    }
 
     await rabbitmq_service.publish_event("tournament.finished", event_data)
     logger.info(f"Published tournament.finished event for tournament {tournament.id}")
@@ -72,7 +78,12 @@ async def publish_tournament_deleted(tournament_id: UUID):
         logger.warning("RabbitMQ service not initialized")
         return
 
-    event_data = {}
+    from datetime import timezone
+
+    event_data = {
+        "tournament_id": str(tournament_id),
+        "deleted_at": datetime.now(timezone.utc).isoformat(),
+    }
 
     await rabbitmq_service.publish_event("tournament.deleted", event_data)
     logger.info(f"Published tournament.deleted event for tournament {tournament_id}")
