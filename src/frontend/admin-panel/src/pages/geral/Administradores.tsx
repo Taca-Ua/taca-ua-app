@@ -1,77 +1,114 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
-
-interface Admin {
-  id: number;
-  username: string;
-  name?: string;
-  email: string;
-  role: 'geral' | 'nucleo';
-  nucleoName?: string;
-}
+import { administratorsApi, type Administrator } from '../../api/administrators';
+import { coursesApi, type Course } from '../../api/courses';
 
 function Administradores() {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [memberUserName, setMemberUserName] = useState('');
   const [memberName, setMemberName] = useState('');
+  const [memberPassword, setMemberPassword] = useState('');
   const [memberRole, setMemberRole] = useState<'geral' | 'nucleo'>('geral');
   const [email, setEmail] = useState('');
-  const [nucleo, setNucleo] = useState('');
+  const [courseId, setCourseId] = useState<number | ''>('');
 
-  // Mock data
-  const [members, setMembers] = useState<Admin[]>([
-    { id: 1, username: 'AdminG1', role: 'geral',email: 'admin1@ua.pt', name: 'admin geral 1' },
-    { id: 2, username: 'AdminG2', role: 'geral',email: 'admin2@ua.pt', name: 'admin geral 2' },
-    { id: 3, username: 'AdminG3', role: 'geral',email: 'admin3@ua.pt', name: 'admin geral 3' },
-    { id: 4, username: 'AdminG4', role: 'geral',email: 'admin4@ua.pt', name: 'admin geral 4' },
-    { id: 5, username: 'AdminG5', role: 'geral',email: 'admin5@ua.pt', name: 'admin geral 5'},
-    { id: 6, username: 'AdminN1', role: 'nucleo',email: 'admin6@ua.pt', name: 'admin nucleo 1', nucleoName: 'Núcleo A' },
-    { id: 7, username: 'AdminN2', role: 'nucleo',email: 'admin7@ua.pt', name: 'admin nucleo 2' , nucleoName: 'Núcleo B' },
-  ]);
+  const [members, setMembers] = useState<Administrator[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  // TODO: Replace with real NUCLEOS from API
-  const nucleos = [
-    'NEI',
-    'NECIB',
-    'NEG',
-    'NEMAT',
-    'NECM',
-    'NEGEO',
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [adminsData, coursesData] = await Promise.all([
+          administratorsApi.getAll(),
+          coursesApi.getAll(),
+        ]);
+        setMembers(adminsData);
+        setCourses(coursesData);
+        setError('');
+      } catch (err) {
+        console.error('Failed to fetch data:', err);
+        setError('Erro ao carregar dados');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const AdminG = members.filter(m => m.role === 'geral');
   const AdminN = members.filter(m => m.role === 'nucleo');
 
-  const handleAddMember = () => {
-    if (!memberUserName.trim()) return;
-    if (!email.trim()) return;
-    if (memberRole === 'nucleo' && !nucleo.trim()) return;
+  const handleAddMember = async () => {
+    if (!memberUserName.trim()) {
+      setError('Username é obrigatório');
+      return;
+    }
+    if (!memberName.trim()) {
+      setError('Nome é obrigatório');
+      return;
+    }
+    if (!email.trim()) {
+      setError('Email é obrigatório');
+      return;
+    }
+    if (!memberPassword.trim()) {
+      setError('Password é obrigatória');
+      return;
+    }
+    if (memberRole === 'nucleo' && !courseId) {
+      setError('Núcleo é obrigatório para administrador de núcleo');
+      return;
+    }
 
-    const newMember: Admin = {
-      id: members.length + 1,
-      username: memberUserName,
-      name: memberName,
-      role: memberRole,
-      email,
-      ...(memberRole === 'nucleo' ? { nucleoName: nucleo } : {}),
-    };
+    try {
+      const newAdmin = await administratorsApi.create({
+        username: memberUserName,
+        password: memberPassword,
+        full_name: memberName,
+        email,
+        role: memberRole,
+        course_id: memberRole === 'nucleo' ? Number(courseId) : undefined,
+      });
 
-    setMembers([...members, newMember]);
-    setMemberUserName('');
-    setMemberRole('geral');
-    setEmail('');
-    setNucleo('');
-    setIsModalOpen(false);
+      setMembers([...members, newAdmin]);
+      setMemberUserName('');
+      setMemberName('');
+      setMemberPassword('');
+      setMemberRole('geral');
+      setEmail('');
+      setCourseId('');
+      setError('');
+      setIsModalOpen(false);
+    } catch (err) {
+      console.error('Failed to create administrator:', err);
+      setError('Erro ao criar administrador');
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Sidebar />
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Sidebar />
       <div className="p-8">
         <div className="max-w-7xl mx-auto">
-          <div className="flex justify-end mb-6">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold text-gray-800">Administradores</h1>
             <button
               onClick={() => setIsModalOpen(true)}
               className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-2 rounded-md font-medium transition-colors flex items-center gap-2"
@@ -113,7 +150,7 @@ function Administradores() {
                   <div className="flex justify-between items-center">
                     <span className="text-gray-800 font-medium">{AdminN.username}</span>
                     <span className="text-gray-600 text-sm">
-                      Email: {AdminN.email} | Núcleo: {AdminN.nucleoName}
+                      Email: {AdminN.email} | Núcleo: {AdminN.course_abbreviation || 'N/A'}
                     </span>
                   </div>
                 </div>
@@ -148,7 +185,7 @@ function Administradores() {
                {/* Nome */}
                <div>
                 <label htmlFor="memberName" className="block text-gray-700 font-medium mb-2">
-                  Nome
+                  Nome <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -156,7 +193,22 @@ function Administradores() {
                   value={memberName}
                   onChange={(e) => setMemberName(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  placeholder="Digite o nome do membro"
+                  placeholder="Digite o nome completo"
+                />
+              </div>
+
+              {/* Password */}
+              <div>
+                <label htmlFor="memberPassword" className="block text-gray-700 font-medium mb-2">
+                  Password <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  id="memberPassword"
+                  value={memberPassword}
+                  onChange={(e) => setMemberPassword(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  placeholder="Digite a password"
                 />
               </div>
 
@@ -194,25 +246,32 @@ function Administradores() {
               {/* Núcleo */}
               {memberRole === 'nucleo' && (
                 <div>
-                  <label htmlFor="nucleo" className="block text-gray-700 font-medium mb-2">
+                  <label htmlFor="courseId" className="block text-gray-700 font-medium mb-2">
                     Núcleo <span className="text-red-500">*</span>
                   </label>
                   <select
-                    id="nucleo"
-                    value={nucleo}
-                    onChange={(e) => setNucleo(e.target.value)}
+                    id="courseId"
+                    value={courseId}
+                    onChange={(e) => setCourseId(e.target.value ? Number(e.target.value) : '')}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                   >
-                  <option value="">Selecionar Nucleo</option>
-                  {nucleos.map((nucleos) => (
-                    <option key={nucleos} value={nucleos}>
-                      {nucleos}
-                    </option>
-                  ))}
+                    <option value="">Selecionar Curso</option>
+                    {courses.map((course) => (
+                      <option key={course.id} value={course.id}>
+                        {course.abbreviation} - {course.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               )}
             </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                {error}
+              </div>
+            )}
 
             {/* Botones */}
             <div className="flex gap-4 mt-6">
@@ -220,9 +279,12 @@ function Administradores() {
                 onClick={() => {
                   setIsModalOpen(false);
                   setMemberUserName('');
+                  setMemberName('');
+                  setMemberPassword('');
                   setMemberRole('geral');
                   setEmail('');
-                  setNucleo('');
+                  setCourseId('');
+                  setError('');
                 }}
                 className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
               >

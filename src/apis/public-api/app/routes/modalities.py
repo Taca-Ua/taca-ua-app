@@ -24,24 +24,24 @@ async def list_modalities():
             "id": 1,
             "name": "Futebol",
             "type": "coletiva",
-            "description": "Futebol de 11",
+            "scoring_schema": {"win": 3, "draw": 1, "loss": 0},
         },
         {
             "id": 2,
             "name": "Futsal",
             "type": "coletiva",
-            "description": "Futsal de 5",
+            "scoring_schema": {"win": 3, "draw": 1, "loss": 0},
         },
         {
             "id": 3,
             "name": "Andebol",
             "type": "coletiva",
-            "description": "Andebol de 7",
+            "scoring_schema": {"win": 2, "loss": 0},
         },
         {
             "id": 4,
             "name": "Voleibol",
             "type": "coletiva",
-            "description": "Voleibol 6x6",
+            "scoring_schema": {"win": 2, "loss": 0},
         },
     ]

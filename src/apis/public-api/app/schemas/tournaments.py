@@ -20,7 +20,6 @@ class SeasonInfo(BaseModel):
 
     id: int
     year: int
-    display_name: str
 
 
 class TournamentPublicList(BaseModel):

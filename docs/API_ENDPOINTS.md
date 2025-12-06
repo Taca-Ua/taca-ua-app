@@ -10,6 +10,14 @@
 
 ## Atualizações Recentes (Dezembro 2025)
 
+**Alinhamento de APIs (6 Dezembro 2025):**
+- ✅ **Regulamentos**: Admin e Public APIs totalmente alinhados (`id`, `title`, `description`, `modality_id`, `file_url`, `created_at`)
+- ✅ **Modalidades**: Removido campo `description`, adicionado `scoring_schema` (tipo: dict/JSON) em ambas APIs
+- ✅ **Épocas/Seasons**: Removidos campos `display_name` e `is_active`, agora usa `status` enum (`draft`, `active`, `finished`)
+- ✅ **Torneios**: Public API usa objetos aninhados (modality, season) para melhor experiência do consumidor; Admin API usa IDs
+- ✅ **Frontend Public**: Todos os tipos TypeScript atualizados (IDs number, status enum, sem display_name)
+- ✅ **Frontend Admin**: Modalidades simplificadas (sem year/description), scoring_schema como JSON object
+
 **Gestão de Estudantes (RF4):**
 - ✅ Adicionado campo `member_type` para distinguir estudantes ('student') de equipa técnica ('technical_staff')
 - ✅ Adicionado endpoint `DELETE /api/admin/students/{student_id}`
@@ -377,6 +385,15 @@ Retorna PDF (stream).
 
 `GET /api/admin/seasons`
 
+Response:
+```json
+{
+  "id": 1,
+  "year": 2025,
+  "status": "active"  // draft | active | finished
+}
+```
+
 ### **9.2 Criar época**
 
 `POST /api/admin/seasons`
@@ -384,13 +401,19 @@ Body:
 
 * `year` (obrigatório)
 
+Response: Nova época criada com `status: "draft"`
+
 ### **9.3 Iniciar época**
 
 `POST /api/admin/seasons/{season_id}/start`
 
+**Nota:** Só pode existir uma época ativa de cada vez. Ao iniciar uma época, qualquer época ativa anterior é automaticamente terminada.
+
 ### **9.4 Terminar época**
 
 `POST /api/admin/seasons/{season_id}/finish`
+
+**Nota:** A época passará ao estado `finished` e não pode ser reaberta.
 
 ---
 
@@ -576,7 +599,7 @@ Retorna lista de modalidades disponíveis:
 - `id` (int)
 - `name` (string) - Nome da modalidade (Futebol, Futsal, Andebol, Voleibol)
 - `type` (string) - Tipo (coletiva, individual, mista)
-- `description` (string) - Descrição da modalidade
+- `scoring_schema` (dict, opcional) - Sistema de pontuação, ex: `{"win": 3, "draw": 1, "loss": 0}`
 
 ---
 
@@ -595,10 +618,9 @@ Retorna lista de modalidades disponíveis:
 `GET /api/public/seasons`
 
 Retorna lista de épocas com:
-- `id` (UUID)
+- `id` (int)
 - `year` (int)
-- `display_name` (string)
-- `is_active` (boolean)
+- `status` (string) - Estado da época: `draft`, `active`, ou `finished`
 
 ---
 

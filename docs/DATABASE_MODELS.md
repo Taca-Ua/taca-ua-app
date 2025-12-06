@@ -2,6 +2,14 @@
 
 Este documento descreve a estrutura de base de dados do projeto Taca UA, implementada com SQLAlchemy e Alembic.
 
+## Atualizações Recentes (6 Dezembro 2025)
+
+**Alterações na Estrutura de Dados:**
+- ✅ **Modalidades**: Campo `description` removido, adicionado `type` (coletiva/individual/mista) e `scoring_schema` (JSONB)
+- ✅ **Épocas/Seasons**: Adicionado campo `status` enum (`draft`, `active`, `finished`). Removidos campos `display_name` e `is_active`
+- ✅ **Competition API (Django)**: Épocas geridas diretamente com endpoints start/finish
+- ✅ **IDs**: Todos os IDs nas APIs públicas são integers, não UUIDs
+
 ## Arquitetura
 
 O sistema utiliza uma **única base de dados PostgreSQL** com **múltiplos schemas** para separação lógica entre microserviços:
@@ -74,16 +82,13 @@ Jornadas dentro de uma fase:
 #### `modalities.modality`
 - `id` (uuid)
 - `name` (text) - Nome da modalidade
-- `description` (text)
+- `type` (enum) - Tipo: `coletiva`, `individual`, `mista`
+- `scoring_schema` (jsonb) - Sistema de pontuação, ex: `{"win": 3, "draw": 1, "loss": 0}`
 
-#### `modalities.rule`
-Regras de pontuação por modalidade:
-- `id` (uuid)
-- `modality_id` (uuid) - FK para `modalities.modality`
-- `points_for_win` (int) - Pontos por vitória
-- `points_for_draw` (int) - Pontos por empate
-- `points_for_loss` (int) - Pontos por derrota
-- `scoring_formula` (jsonb) - Fórmula customizada
+**Nota:** Campo `description` foi removido. Use `scoring_schema` para definir regras de pontuação.
+
+#### `modalities.rule` (Deprecated)
+**NOTA:** Esta tabela está deprecated. Utilize o campo `scoring_schema` na tabela `modalities.modality`.
 
 ---
 

@@ -3,10 +3,11 @@ import { useAuth } from '../hooks/useAuth';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  requiredRole?: 'nucleo' | 'geral';
 }
 
-const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { isAuthenticated, isLoading } = useAuth();
+const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -20,7 +21,16 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login/nucleo" replace />;
+    // Redirect to appropriate login page based on required role
+    const loginPath = requiredRole === 'geral' ? '/login/geral' : '/login/nucleo';
+    return <Navigate to={loginPath} replace />;
+  }
+
+  // Check if user has required role
+  if (requiredRole && user && 'role' in user && user.role !== requiredRole) {
+    // Redirect to appropriate dashboard
+    const dashboardPath = user.role === 'geral' ? '/geral/dashboard' : '/nucleo/dashboard';
+    return <Navigate to={dashboardPath} replace />;
   }
 
   return <>{children}</>;

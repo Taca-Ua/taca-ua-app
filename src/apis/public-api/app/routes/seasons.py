@@ -21,21 +21,18 @@ async def list_seasons():
     """List all available seasons"""
     return [
         {
-            "id": 3,
-            "year": 2025,
-            "display_name": "25/26",
-            "is_active": True,
+            "id": 1,
+            "year": 2023,
+            "status": "finished",
         },
         {
             "id": 2,
             "year": 2024,
-            "display_name": "24/25",
-            "is_active": False,
+            "status": "active",
         },
         {
-            "id": 1,
-            "year": 2023,
-            "display_name": "23/24",
-            "is_active": False,
+            "id": 3,
+            "year": 2025,
+            "status": "draft",
         },
     ]

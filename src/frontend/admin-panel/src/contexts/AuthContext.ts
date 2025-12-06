@@ -4,9 +4,10 @@ export interface User {
   id: number;
   username: string;
   email: string;
-  course_id: number;
-  course_abbreviation: string;
+  course_id: number | null;
+  course_abbreviation: string | null;
   full_name: string;
+  role: 'nucleo' | 'geral';
 }
 
 export interface AuthContextType {

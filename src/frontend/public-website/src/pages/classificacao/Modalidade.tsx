@@ -8,8 +8,8 @@ import type { Season, Modality, TournamentPublicDetail } from '../../api/types';
 function ClassificacaoModalidade() {
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [modalities, setModalities] = useState<Modality[]>([]);
-  const [selectedSeasonId, setSelectedSeasonId] = useState<string | number>('');
-  const [selectedModalityId, setSelectedModalityId] = useState<string | number>('');
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string>('');
+  const [selectedModalityId, setSelectedModalityId] = useState<string>('');
   const [tournaments, setTournaments] = useState<TournamentPublicDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,11 +27,11 @@ function ClassificacaoModalidade() {
         setModalities(modalitiesData);
 
         // Set active season as default
-        const activeSeason = seasonsData.find(s => s.is_active);
+        const activeSeason = seasonsData.find(s => s.status === 'active');
         if (activeSeason) {
-          setSelectedSeasonId(activeSeason.id);
+          setSelectedSeasonId(String(activeSeason.id));
         } else if (seasonsData.length > 0) {
-          setSelectedSeasonId(seasonsData[0].id);
+          setSelectedSeasonId(String(seasonsData[0].id));
         }
 
         // Set first modality as default
@@ -56,13 +56,13 @@ function ClassificacaoModalidade() {
       setError(null);
 
       try {
-        const params: { season_id: string; modality_id?: string } = {
-          season_id: String(selectedSeasonId),
+        const params: { season_id: number | string; modality_id?: number | string } = {
+          season_id: Number(selectedSeasonId),
         };
 
         // Only add modality_id filter if not "all"
         if (selectedModalityId && selectedModalityId !== 'all') {
-          params.modality_id = String(selectedModalityId);
+          params.modality_id = Number(selectedModalityId);
         }
 
         const data = await api.tournaments.getTournaments(params);
@@ -79,7 +79,7 @@ function ClassificacaoModalidade() {
   }, [selectedSeasonId, selectedModalityId]);
 
   // Get display names
-  const selectedSeasonDisplayName = seasons.find(s => String(s.id) === String(selectedSeasonId))?.display_name || '';
+  const selectedSeasonDisplayName = seasons.find(s => String(s.id) === String(selectedSeasonId))?.year?.toString() || '';
   const selectedModalityName = selectedModalityId === 'all'
     ? 'Todas as Modalidades'
     : modalities.find(m => String(m.id) === String(selectedModalityId))?.name || '';
@@ -113,7 +113,7 @@ function ClassificacaoModalidade() {
               >
                 {seasons.map((season) => (
                   <option key={season.id} value={season.id}>
-                    {season.display_name}
+                    Época {season.year}
                   </option>
                 ))}
               </select>
@@ -159,10 +159,10 @@ function ClassificacaoModalidade() {
                 tournaments.map((tournament) => (
                   <TournamentCard
                     key={tournament.id}
-                    id={tournament.id}
+                    id={String(tournament.id)}
                     name={tournament.name}
                     modality={tournament.modality.name}
-                    epoca={tournament.season.display_name}
+                    epoca={`${tournament.season.year}`}
                     icon="🏆"
                   />
                 ))

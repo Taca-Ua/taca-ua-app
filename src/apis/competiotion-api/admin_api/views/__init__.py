@@ -22,13 +22,21 @@ from .tournaments import (
     TournamentListCreateView,
     tournament_finish,
 )
-from .users import NucleoAdminDetailView, NucleoAdminListCreateView
+from .users import (
+    AdministratorDetailView,
+    AdministratorListCreateView,
+    NucleoAdminDetailView,
+    NucleoAdminListCreateView,
+)
 
 __all__ = [
     # Authentication
     "login",
     "logout",
     "me",
+    # Administrators
+    "AdministratorListCreateView",
+    "AdministratorDetailView",
     # Users
     "NucleoAdminListCreateView",
     "NucleoAdminDetailView",

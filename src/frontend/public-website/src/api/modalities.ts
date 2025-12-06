@@ -12,7 +12,7 @@ export const modalitiesApi = {
   /**
    * Get a specific modality by ID
    */
-  getModality: async (modalityId: string): Promise<Modality> => {
+  getModality: async (modalityId: number): Promise<Modality> => {
     return apiCall<Modality>(`/modalities/${modalityId}`);
   },
 };
