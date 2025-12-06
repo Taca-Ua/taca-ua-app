@@ -12,6 +12,7 @@ class RegulationListSerializer(serializers.Serializer):
     title = serializers.CharField()
     description = serializers.CharField(required=False, allow_blank=True)
     modality_id = serializers.IntegerField(required=False, allow_null=True)
+    season_id = serializers.IntegerField(required=False, allow_null=True)
     file_url = serializers.URLField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
 
@@ -22,6 +23,7 @@ class RegulationCreateSerializer(serializers.Serializer):
     file = serializers.FileField(required=True)
     title = serializers.CharField(required=True)
     modality_id = serializers.IntegerField(required=False, allow_null=True)
+    season_id = serializers.IntegerField(required=False, allow_null=True)
     description = serializers.CharField(required=False, allow_blank=True)
 
 
@@ -31,3 +33,4 @@ class RegulationUpdateSerializer(serializers.Serializer):
     title = serializers.CharField(required=False)
     description = serializers.CharField(required=False, allow_blank=True)
     modality_id = serializers.IntegerField(required=False, allow_null=True)
+    season_id = serializers.IntegerField(required=False, allow_null=True)

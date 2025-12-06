@@ -35,6 +35,7 @@ class RegulationListCreateView(APIView):
                 "title": "Regulamento Futebol",
                 "description": "Regras do futebol TACA",
                 "modality_id": 1,
+                "season_id": 1,
                 "file_url": "http://example.com/reg1.pdf",
                 "created_at": "2025-01-15T10:00:00Z",
             },
@@ -43,6 +44,7 @@ class RegulationListCreateView(APIView):
                 "title": "Regulamento Futsal",
                 "description": "Regras do futsal TACA",
                 "modality_id": 2,
+                "season_id": 1,
                 "file_url": "http://example.com/reg2.pdf",
                 "created_at": "2025-01-20T10:00:00Z",
             },
@@ -57,6 +59,7 @@ class RegulationListCreateView(APIView):
             "title": serializer.validated_data.get("title"),
             "description": serializer.validated_data.get("description", ""),
             "modality_id": serializer.validated_data.get("modality_id"),
+            "season_id": serializer.validated_data.get("season_id"),
             "file_url": "http://example.com/reg3.pdf",
             "created_at": "2025-12-01T12:00:00Z",
         }
@@ -64,6 +67,11 @@ class RegulationListCreateView(APIView):
 
 
 @extend_schema_view(
+    get=extend_schema(
+        responses=RegulationListSerializer,
+        description="Get a single regulation by ID",
+        tags=["Regulation Management"],
+    ),
     put=extend_schema(
         request=RegulationUpdateSerializer,
         responses=RegulationListSerializer,
@@ -77,6 +85,40 @@ class RegulationListCreateView(APIView):
     ),
 )
 class RegulationDetailView(APIView):
+    def get(self, request, regulation_id):
+        # Mock data for testing - find the regulation by ID
+        all_regulations = [
+            {
+                "id": 1,
+                "title": "Regulamento Futebol",
+                "description": "Regras do futebol TACA",
+                "modality_id": 1,
+                "season_id": 1,
+                "file_url": "http://example.com/reg1.pdf",
+                "created_at": "2025-01-15T10:00:00Z",
+            },
+            {
+                "id": 2,
+                "title": "Regulamento Futsal",
+                "description": "Regras do futsal TACA",
+                "modality_id": 2,
+                "season_id": 1,
+                "file_url": "http://example.com/reg2.pdf",
+                "created_at": "2025-01-20T10:00:00Z",
+            },
+        ]
+
+        regulation = next(
+            (r for r in all_regulations if r["id"] == regulation_id), None
+        )
+
+        if regulation is None:
+            return Response(
+                {"error": "Regulation not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        return Response(regulation)
+
     def put(self, request, regulation_id):
         serializer = RegulationUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -87,6 +129,7 @@ class RegulationDetailView(APIView):
             ),
             "description": serializer.validated_data.get("description", ""),
             "modality_id": serializer.validated_data.get("modality_id"),
+            "season_id": serializer.validated_data.get("season_id"),
             "file_url": f"http://example.com/reg{regulation_id}.pdf",
             "created_at": "2025-12-01T12:00:00Z",
         }
