@@ -2,48 +2,47 @@
 Event handling for Modalities Service.
 """
 
+from datetime import datetime, timezone
 import logging
 from typing import Any, Dict
 from uuid import UUID
 
 from taca_messaging import RabbitMQService
 
+from .models import Modality, Team, Student
+
 logger = logging.getLogger("modalities-service")
 
 rabbitmq_service = RabbitMQService(service_name="modalities-service")
 
 
-class FakeObject:
-    """Temporary placeholder for Modality object when None is provided."""
-
-    def __init__(self, _id):
-        self.id = _id
-
-
 # Event Publishers
-async def publish_modality_created(modality):
+async def publish_modality_created(modality: Modality):
     """Publish ModalityCreated event."""
     if not rabbitmq_service:
         return
 
-    if modality is None:
-        modality = FakeObject(_id="unknown")
-
-    event_data = {}
+    event_data = {
+        "modality_id": str(modality.id),
+        "name": modality.name,
+        "type": modality.type.value,
+        "created_at": modality.created_at.isoformat(),
+    }
 
     await rabbitmq_service.publish_event("modality.created", event_data)
     logger.info(f"Published modality.created event for modality {modality.id}")
 
 
-async def publish_modality_updated(modality, changes: Dict[str, Any]):
+async def publish_modality_updated(modality: Modality, changes: Dict[str, Any]):
     """Publish ModalityUpdated event."""
     if not rabbitmq_service:
         return
 
-    if modality is None:
-        modality = FakeObject(_id="unknown")
-
-    event_data = {}
+    event_data = {
+        "modality_id": str(modality.id),
+        "changes": changes,
+        "updated_at": modality.updated_at.isoformat() if modality.updated_at else None,
+    }
 
     await rabbitmq_service.publish_event("modality.updated", event_data)
     logger.info(f"Published modality.updated event for modality {modality.id}")
@@ -54,35 +53,43 @@ async def publish_modality_deleted(modality_id: UUID):
     if not rabbitmq_service:
         return
 
-    event_data = {}
+    event_data = {
+        "modality_id": str(modality_id),
+        "deleted_at": datetime.now(timezone.utc).isoformat(),
+    }
 
     await rabbitmq_service.publish_event("modality.deleted", event_data)
     logger.info(f"Published modality.deleted event for modality {modality_id}")
 
 
-async def publish_team_created(team):
+async def publish_team_created(team: Team):
     """Publish TeamCreated event."""
     if not rabbitmq_service:
         return
 
-    if team is None:
-        team = FakeObject(_id="unknown")
-
-    event_data = {}
+    event_data = {
+        "team_id": str(team.id),
+        "modality_id": str(team.modality_id),
+        "course_id": str(team.course_id),
+        "name": team.name,
+        "players": [str(p) for p in (team.players or [])],
+        "created_at": team.created_at.isoformat(),
+    }
 
     await rabbitmq_service.publish_event("team.created", event_data)
     logger.info(f"Published team.created event for team {team.id}")
 
 
-async def publish_team_updated(team, changes: Dict[str, Any]):
+async def publish_team_updated(team: Team, changes: Dict[str, Any]):
     """Publish TeamUpdated event."""
     if not rabbitmq_service:
         return
 
-    if team is None:
-        team = FakeObject(_id="unknown")
-
-    event_data = {}
+    event_data = {
+        "team_id": str(team.id),
+        "changes": changes,
+        "updated_at": team.updated_at.isoformat() if team.updated_at else None,
+    }
 
     await rabbitmq_service.publish_event("team.updated", event_data)
     logger.info(f"Published team.updated event for team {team.id}")
@@ -93,24 +100,27 @@ async def publish_team_deleted(team_id: UUID):
     if not rabbitmq_service:
         return
 
-    if team_id is None:
-        team_id = "unknown"
-
-    event_data = {}
+    event_data = {
+        "team_id": str(team_id),
+        "deleted_at": datetime.now(timezone.utc).isoformat(),
+    }
 
     await rabbitmq_service.publish_event("team.deleted", event_data)
     logger.info(f"Published team.deleted event for team {team_id}")
 
 
-async def publish_student_created(student):
+async def publish_student_created(student: Student):
     """Publish StudentCreated event."""
     if not rabbitmq_service:
         return
 
-    if student is None:
-        student = FakeObject(_id="unknown")
-
-    event_data = {}
+    event_data = {
+        "student_id": str(student.id),
+        "course_id": str(student.course_id),
+        "full_name": student.full_name,
+        "student_number": student.student_number,
+        "created_at": student.created_at.isoformat(),
+    }
 
     await rabbitmq_service.publish_event("student.created", event_data)
     logger.info(f"Published student.created event for student {student.id}")

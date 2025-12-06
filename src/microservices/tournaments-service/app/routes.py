@@ -127,7 +127,7 @@ async def add_teams_to_tournament(
 
     db.commit()
 
-    background_tasks.add_task(publish_tournament_updated, tournament_id, teams_data)
+    background_tasks.add_task(publish_tournament_updated, tournament, teams_data)
     return {"message": "Teams added successfully", "team_count": len(new_teams)}
 
 
@@ -160,7 +160,7 @@ async def remove_teams_from_tournament(
 
     db.commit()
 
-    background_tasks.add_task(publish_tournament_updated, tournament_id, teams_data)
+    background_tasks.add_task(publish_tournament_updated, tournament, teams_data)
     return None
 
 

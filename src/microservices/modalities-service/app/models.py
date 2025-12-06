@@ -93,8 +93,5 @@ class Student(Base):
         DateTime, nullable=True, onupdate=lambda: datetime.now(timezone.utc)
     )
 
-    # def __repr__(self):
-    #     return f"<Student {self.id} - {self.full_name} ({self.student_number})>"
-
     def __repr__(self):
-        return f"<Rule {self.id} - Modality {self.modality_id}>"
+        return f"<Student {self.id} - {self.full_name} ({self.student_number})>"
