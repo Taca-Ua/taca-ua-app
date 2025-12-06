@@ -5,7 +5,11 @@ API routes for Ranking Service.
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Query, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, Depends, Query
+from sqlalchemy.orm import Session
+
+from . import schemas
+from .database import get_db_session
 from .events import publish_rankings_updated
 
 router = APIRouter()
@@ -14,8 +18,9 @@ router = APIRouter()
 @router.post("/rankings/modality/{modality_id}/recalculate")
 def recalculate_modality_ranking(
     modality_id: UUID,
-    request_data: dict,
+    request_data: schemas.RecalculateRequest,
     background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db_session),
 ):
     """Recalculate ranking for a modality."""
 
@@ -31,8 +36,9 @@ def recalculate_modality_ranking(
 @router.post("/rankings/course/{course_id}/recalculate")
 def recalculate_course_ranking(
     course_id: UUID,
-    request_data: dict,
+    request_data: schemas.RecalculateRequest,
     background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db_session),
 ):
     """Recalculate ranking for a course."""
 
@@ -44,8 +50,9 @@ def recalculate_course_ranking(
 
 @router.post("/rankings/general/recalculate")
 def recalculate_general_ranking(
-    request_data: dict,
+    request_data: schemas.RecalculateRequest,
     background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db_session),
 ):
     """Recalculate general ranking across all courses."""
 
@@ -59,6 +66,7 @@ def recalculate_general_ranking(
 def get_modality_ranking(
     modality_id: UUID,
     season_id: Optional[UUID] = Query(None),
+    db: Session = Depends(get_db_session),
 ):
     """Get ranking for a modality."""
     return None  # Placeholder for actual implementation
@@ -68,6 +76,7 @@ def get_modality_ranking(
 def get_course_ranking(
     course_id: UUID,
     season_id: Optional[UUID] = Query(None),
+    db: Session = Depends(get_db_session),
 ):
     """Get ranking for a course."""
     return None  # Placeholder for actual implementation
@@ -76,6 +85,7 @@ def get_course_ranking(
 @router.get("/rankings/general")
 def get_general_ranking(
     season_id: Optional[UUID] = Query(None),
+    db: Session = Depends(get_db_session),
 ):
     """Get general ranking across all courses."""
     return None  # Placeholder for actual implementation
@@ -87,6 +97,7 @@ def get_ranking_history(
     course_id: Optional[UUID] = Query(None),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db_session),
 ):
     """Get historical rankings."""
     return None  # Placeholder for actual implementation
