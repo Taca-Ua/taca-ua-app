@@ -3,7 +3,7 @@ Event handling for Tournaments Service.
 Publishes and consumes events via RabbitMQ.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict
 from uuid import UUID
 
@@ -77,8 +77,6 @@ async def publish_tournament_deleted(tournament_id: UUID):
     if not rabbitmq_service:
         logger.warning("RabbitMQ service not initialized")
         return
-
-    from datetime import timezone
 
     event_data = {
         "tournament_id": str(tournament_id),

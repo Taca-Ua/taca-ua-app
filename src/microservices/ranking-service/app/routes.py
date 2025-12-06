@@ -35,7 +35,7 @@ def recalculate_modality_ranking(
         scope="modality",
         entity_id=modality_id,
     )
-    return None  # Placeholder for actual implementation
+    return None
 
 
 @router.post("/rankings/course/{course_id}/recalculate")
@@ -53,7 +53,7 @@ def recalculate_course_ranking(
     background_tasks.add_task(
         publish_rankings_updated, season_id=None, scope="course", entity_id=course_id
     )
-    return None  # Placeholder for actual implementation
+    return None
 
 
 @router.post("/rankings/general/recalculate")
@@ -70,7 +70,7 @@ def recalculate_general_ranking(
     background_tasks.add_task(
         publish_rankings_updated, season_id=None, scope="general", entity_id=None
     )
-    return None  # Placeholder for actual implementation
+    return None
 
 
 @router.get("/rankings/modality/{modality_id}")
@@ -129,7 +129,6 @@ def get_course_ranking(
         "modality_breakdown": ranking.modality_breakdown,
         "last_updated": ranking.last_updated.isoformat(),
     }
-    return None  # Placeholder for actual implementation
 
 
 @router.get("/rankings/general")
@@ -157,7 +156,6 @@ def get_general_ranking(
         ],
         "total": len(rankings),
     }
-    return None  # Placeholder for actual implementation
 
 
 @router.get("/rankings/history")

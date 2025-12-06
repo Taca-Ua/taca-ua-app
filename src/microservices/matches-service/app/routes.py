@@ -284,7 +284,7 @@ def list_matches(
 @router.get("/matches/{match_id}/sheet")
 def generate_match_sheet(
     match_id: UUID,
-    format: str = Query("pdf", regex="^(pdf|json)$"),
+    format: str = Query("pdf", pattern="^(pdf|json)$"),
     db: Session = Depends(get_db_session),
 ):
     """Generate match sheet (PDF or JSON)."""
