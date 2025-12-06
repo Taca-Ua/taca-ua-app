@@ -30,7 +30,7 @@ function LoginGeral() {
           localStorage.removeItem('auth_user');
         }
       }
-    } catch (err) {
+    } catch {
       setError('Credenciais inválidas. Por favor, tente novamente.');
     } finally {
       setIsLoading(false);

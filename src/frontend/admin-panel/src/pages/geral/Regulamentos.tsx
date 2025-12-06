@@ -75,9 +75,13 @@ const Regulamentos = () => {
       setDescription("");
       setFile(null);
       setIsUploadModalOpen(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to upload regulation:', err);
-      setError(err.message || 'Erro ao fazer upload do regulamento');
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Erro ao fazer upload do regulamento');
+      }
     }
   };
 
@@ -100,9 +104,13 @@ const Regulamentos = () => {
       setIsViewModalOpen(false);
       setSelectedRegulation(null);
       alert('Regulamento eliminado com sucesso!');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to delete regulation:', err);
-      setError(err.message || 'Erro ao eliminar regulamento');
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Erro ao eliminar regulamento');
+      }
     }
   };
 

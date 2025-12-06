@@ -35,10 +35,6 @@ const TorneioDetails = () => {
   const [matchLocation, setMatchLocation] = useState('');
   const [matchStartTime, setMatchStartTime] = useState('');
 
-  useEffect(() => {
-    fetchData();
-  }, [id]);
-
   const fetchData = async () => {
     if (!id) return;
 
@@ -64,6 +60,10 @@ const TorneioDetails = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchData();
+  }, [id]);
 
   const openEdit = () => {
     if (!tournament) return;

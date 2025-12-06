@@ -26,10 +26,6 @@ const JogoDetails = () => {
   // Delete confirmation
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  useEffect(() => {
-    fetchData();
-  }, [id]);
-
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -54,13 +50,22 @@ const JogoDetails = () => {
       setEditScoreHome(matchData.home_score?.toString() || '');
       setEditScoreAway(matchData.away_score?.toString() || '');
 
-    } catch (err: any) {
-      setError(err.message || 'Erro ao carregar dados do jogo');
-      console.error(err);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+        console.error(err);
+      } else {
+        setError('Erro ao carregar dados do jogo');
+        console.error(err);
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchData();
+  }, [id]);
 
   const getTeamName = (teamId: number) => {
     const team = allTeams.find(t => t.id === teamId);
@@ -94,9 +99,14 @@ const JogoDetails = () => {
       setMatch(updatedMatch);
       setIsEditing(false);
       alert('Jogo atualizado com sucesso!');
-    } catch (err: any) {
-      setError(err.message || 'Erro ao atualizar jogo');
-      console.error(err);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+        console.error(err);
+      } else {
+        setError('Erro ao atualizar jogo');
+        console.error(err);
+      }
     }
   };
 
@@ -108,9 +118,14 @@ const JogoDetails = () => {
       await matchesApi.delete(match.id);
       alert('Jogo eliminado com sucesso!');
       navigate('/geral/torneios/' + match.tournament_id);
-    } catch (err: any) {
-      setError(err.message || 'Erro ao eliminar jogo');
-      console.error(err);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+        console.error(err);
+      } else {
+        setError('Erro ao eliminar jogo');
+        console.error(err);
+      }
     }
   };
 
@@ -261,7 +276,7 @@ const JogoDetails = () => {
                 <select
                   className="border w-full px-4 py-2 rounded-md bg-white"
                   value={editStatus}
-                  onChange={e => setEditStatus(e.target.value as any)}
+                  onChange={e => setEditStatus(e.target.value as 'scheduled' | 'in_progress' | 'finished' | 'cancelled')}
                 >
                   <option value="scheduled">Agendado</option>
                   <option value="in_progress">Em Curso</option>
