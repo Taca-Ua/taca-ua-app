@@ -21,7 +21,7 @@ from .events import (
     publish_team_deleted,
     publish_team_updated,
 )
-from .models import Modality, ModalityType, Team
+from .models import Modality, ModalityType, Student, Team
 
 router = APIRouter()
 
@@ -160,44 +160,142 @@ def list_modalities(
 
 @router.post("/teams", response_model=schemas.TeamResponse, status_code=201)
 def create_team(
-    team_data: dict,
+    team_data: schemas.TeamCreate,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db_session),
 ):
     """Create a new team."""
+    # Verify modality exists and type allows teams
+    modality = db.query(Modality).filter(Modality.id == team_data.modality_id).first()
+    if not modality:
+        raise HTTPException(status_code=404, detail="Modality not found")
+
+    if modality.type == ModalityType.INDIVIDUAL:
+        raise HTTPException(
+            status_code=422,
+            detail="Cannot create team for individual modality",
+        )
+
+    # Generate team name if not provided
+    if not team_data.name:
+        # Simple auto-generation logic
+        team_count = (
+            db.query(Team)
+            .filter(
+                Team.modality_id == team_data.modality_id,
+                Team.course_id == team_data.course_id,
+            )
+            .count()
+        )
+        team_data.name = f"Team {team_count + 1}"
+
+    # Verify players belong to the same course
+    if team_data.players:
+        students = db.query(Student).filter(Student.id.in_(team_data.players)).all()
+        if len(students) != len(team_data.players):
+            raise HTTPException(status_code=404, detail="One or more players not found")
+
+        if any(s.course_id != team_data.course_id for s in students):
+            raise HTTPException(
+                status_code=422,
+                detail="All players must belong to the same course",
+            )
+
+    team = Team(
+        modality_id=team_data.modality_id,
+        course_id=team_data.course_id,
+        name=team_data.name,
+        players=team_data.players,
+        created_by=team_data.created_by,
+    )
+
+    db.add(team)
+    db.commit()
+    db.refresh(team)
 
     background_tasks.add_task(publish_team_created, team_data)
-    return None  # Placeholder for actual implementation
+    return team
 
 
 @router.put("/teams/{team_id}", response_model=schemas.TeamResponse)
 def update_team(
     team_id: UUID,
-    team_data: dict,
+    team_data: schemas.TeamUpdate,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db_session),
 ):
     """Update a team."""
+    team = db.query(Team).filter(Team.id == team_id).first()
+
+    if not team:
+        raise HTTPException(status_code=404, detail="Team not found")
+
+    # TODO: Check if team is in active tournament
+
+    if team_data.name is not None:
+        team.name = team_data.name
+
+    current_players = team.players or []
+
+    if team_data.players_add:
+        # Verify players exist and belong to same course
+        students = db.query(Student).filter(Student.id.in_(team_data.players_add)).all()
+        if len(students) != len(team_data.players_add):
+            raise HTTPException(status_code=404, detail="One or more players not found")
+
+        if any(s.course_id != team.course_id for s in students):
+            raise HTTPException(
+                status_code=422,
+                detail="All players must belong to the same course",
+            )
+
+        current_players = list(set(current_players + team_data.players_add))
+
+    if team_data.players_remove:
+        current_players = [
+            p for p in current_players if p not in team_data.players_remove
+        ]
+
+    team.players = current_players
+    team.updated_at = datetime.now(timezone.utc)
+
+    db.commit()
+    db.refresh(team)
 
     background_tasks.add_task(publish_team_updated, team_data, {})
-    return None  # Placeholder for actual implementation
+    return team
 
 
 @router.delete("/teams/{team_id}", status_code=204)
 def delete_team(
     team_id: UUID,
     background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db_session),
 ):
     """Delete a team."""
+    team = db.query(Team).filter(Team.id == team_id).first()
+
+    if not team:
+        raise HTTPException(status_code=404, detail="Team not found")
+
+    # TODO: Check if team is in active tournament
+
+    db.delete(team)
+    db.commit()
 
     background_tasks.add_task(publish_team_deleted, team_id)
-    return None  # Placeholder for actual implementation
+    return None
 
 
 @router.get("/teams/{team_id}", response_model=schemas.TeamResponse)
 def get_team(team_id: UUID, db: Session = Depends(get_db_session)):
     """Get a team by ID."""
-    return None  # Placeholder for actual implementation
+    team = db.query(Team).filter(Team.id == team_id).first()
+
+    if not team:
+        raise HTTPException(status_code=404, detail="Team not found")
+
+    return team
 
 
 @router.get("/teams")
@@ -210,7 +308,23 @@ def list_teams(
     db: Session = Depends(get_db_session),
 ):
     """List teams with optional filters."""
-    return None  # Placeholder for actual implementation
+    query = db.query(Team)
+
+    if modality_id:
+        query = query.filter(Team.modality_id == modality_id)
+    if course_id:
+        query = query.filter(Team.course_id == course_id)
+    # tournament_id filter would require checking tournament-team associations
+
+    total = query.count()
+    teams = query.offset(offset).limit(limit).all()
+
+    return {
+        "teams": teams,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
 
 
 @router.post("/students", response_model=schemas.StudentResponse, status_code=201)
