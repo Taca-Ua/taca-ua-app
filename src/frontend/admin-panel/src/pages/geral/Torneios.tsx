@@ -119,7 +119,7 @@ const Torneios = () => {
     return modality ? modality.name : `Modalidade ${modalityId}`;
   };
 
-  // Get unique years from tournaments and modalities
+  // Get unique years from tournaments
   const availableYears = useMemo(() => {
     const yearSet = new Set<string>();
 
@@ -130,13 +130,6 @@ const Torneios = () => {
       }
     });
 
-    // Add years from modalities
-    modalities.forEach(m => {
-      if (m.year) {
-        yearSet.add(m.year);
-      }
-    });
-
     // Convert to array and sort (newest first)
     return Array.from(yearSet).sort((a, b) => {
       // Extract first year from format "XX/YY"
@@ -144,7 +137,7 @@ const Torneios = () => {
       const yearB = parseInt(b.split('/')[0]);
       return yearB - yearA;
     });
-  }, [tournaments, modalities]);
+  }, [tournaments]);
 
   return (
     <div className="min-h-screen bg-gray-50">
