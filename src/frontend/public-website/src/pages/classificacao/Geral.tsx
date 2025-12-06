@@ -19,7 +19,7 @@ function ClassificacaoGeral() {
         setSeasons(seasonsData);
 
         // Set active season as default
-        const activeSeason = seasonsData.find(s => s.is_active);
+        const activeSeason = seasonsData.find(s => s.status === 'active');
         if (activeSeason) {
           setSelectedSeasonId(activeSeason.id);
         } else if (seasonsData.length > 0) {
@@ -58,7 +58,7 @@ function ClassificacaoGeral() {
 
   const rankings = rankingData?.rankings || [];
 
-  const selectedSeasonDisplayName = seasons.find(s => String(s.id) === String(selectedSeasonId))?.display_name || (rankingData ? `Época ${rankingData.season_year}` : '');
+  const selectedSeasonDisplayName = seasons.find(s => String(s.id) === String(selectedSeasonId))?.year?.toString() || (rankingData ? `${rankingData.season_year}` : '');
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -86,7 +86,7 @@ function ClassificacaoGeral() {
             >
               {seasons.map((season) => (
                 <option key={season.id} value={season.id}>
-                  {season.display_name}
+                  Época {season.year}
                 </option>
               ))}
             </select>

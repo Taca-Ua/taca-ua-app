@@ -7,10 +7,9 @@ export interface Course {
 }
 
 export interface Season {
-  id: string;
+  id: number;
   year: number;
-  display_name: string;
-  is_active: boolean;
+  status: 'draft' | 'active' | 'finished';
 }
 
 export interface Modality {
@@ -84,7 +83,6 @@ export interface TournamentPublicDetail {
   season: {
     id: string;
     year: number;
-    display_name: string;
   };
   status: string;
   rules?: string;
@@ -101,7 +99,6 @@ export interface ModalityRanking {
   season: {
     id: string;
     year: number;
-    display_name: string;
   };
   rankings: TournamentRankingEntry[];
 }
@@ -153,7 +150,6 @@ export interface HistoricalWinner {
   season: {
     id: string;
     year: number;
-    display_name: string;
   };
   course: {
     id: string;

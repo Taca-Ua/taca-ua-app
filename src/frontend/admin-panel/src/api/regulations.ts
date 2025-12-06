@@ -5,7 +5,6 @@ export interface Regulation {
   title: string;
   description?: string;
   modality_id?: number;
-  season_id?: number;
   file_url: string;
   created_at: string;
 }
@@ -14,7 +13,6 @@ export interface RegulationCreate {
   file: File;
   title: string;
   modality_id?: number;
-  season_id?: number;
   description?: string;
 }
 
@@ -22,7 +20,6 @@ export interface RegulationUpdate {
   title?: string;
   description?: string;
   modality_id?: number;
-  season_id?: number;
 }
 
 export const regulationsApi = {
@@ -40,9 +37,6 @@ export const regulationsApi = {
     formData.append('title', data.title);
     if (data.modality_id) {
       formData.append('modality_id', data.modality_id.toString());
-    }
-    if (data.season_id) {
-      formData.append('season_id', data.season_id.toString());
     }
     if (data.description) {
       formData.append('description', data.description);

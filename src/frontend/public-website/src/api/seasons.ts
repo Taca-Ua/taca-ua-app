@@ -14,6 +14,6 @@ export const seasonsApi = {
    */
   getActiveSeason: async (): Promise<Season | null> => {
     const seasons = await apiCall<Season[]>('/seasons');
-    return seasons.find(s => s.is_active) || null;
+    return seasons.find(s => s.status === 'active') || null;
   },
 };

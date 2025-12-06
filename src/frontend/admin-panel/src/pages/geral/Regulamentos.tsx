@@ -2,16 +2,13 @@ import { useState, useEffect } from "react";
 import Sidebar from "../../components/geral_navbar";
 import { regulationsApi, type Regulation, type RegulationCreate } from '../../api/regulations';
 import { modalitiesApi, type Modality } from '../../api/modalities';
-import { seasonsApi, type Season } from '../../api/seasons';
 
 const Regulamentos = () => {
   const [regulations, setRegulations] = useState<Regulation[]>([]);
   const [modalities, setModalities] = useState<Modality[]>([]);
-  const [seasons, setSeasons] = useState<Season[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filterModality, setFilterModality] = useState("");
-  const [filterSeason, setFilterSeason] = useState("");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedRegulation, setSelectedRegulation] = useState<Regulation | null>(null);
@@ -19,7 +16,6 @@ const Regulamentos = () => {
   // Campos Upload
   const [title, setTitle] = useState("");
   const [modalityId, setModalityId] = useState("");
-  const [seasonId, setSeasonId] = useState("");
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
 
@@ -30,14 +26,12 @@ const Regulamentos = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [regulationsData, modalitiesData, seasonsData] = await Promise.all([
+      const [regulationsData, modalitiesData] = await Promise.all([
         regulationsApi.getAll(),
         modalitiesApi.getAll(),
-        seasonsApi.getAll(),
       ]);
       setRegulations(regulationsData);
       setModalities(modalitiesData);
-      setSeasons(seasonsData);
       setError('');
     } catch (err) {
       console.error('Failed to fetch data:', err);
@@ -48,20 +42,13 @@ const Regulamentos = () => {
   };
 
   const filtered = regulations.filter(r =>
-    (!filterModality || String(r.modality_id) === filterModality) &&
-    (!filterSeason || String(r.season_id) === filterSeason)
+    (!filterModality || String(r.modality_id) === filterModality)
   );
 
   const getModalityName = (modalityId?: number) => {
     if (!modalityId) return "—";
     const modality = modalities.find(m => m.id === modalityId);
     return modality ? modality.name : `Modalidade ${modalityId}`;
-  };
-
-  const getSeasonYear = (seasonId?: number) => {
-    if (!seasonId) return "—";
-    const season = seasons.find(s => s.id === seasonId);
-    return season ? season.year.toString() : `Season ${seasonId}`;
   };
 
   const handleUpload = async () => {
@@ -76,7 +63,6 @@ const Regulamentos = () => {
         file,
         title,
         modality_id: modalityId ? Number(modalityId) : undefined,
-        season_id: seasonId ? Number(seasonId) : undefined,
         description: description || undefined,
       };
 
@@ -86,7 +72,6 @@ const Regulamentos = () => {
       // reset
       setTitle("");
       setModalityId("");
-      setSeasonId("");
       setDescription("");
       setFile(null);
       setIsUploadModalOpen(false);
@@ -158,19 +143,6 @@ const Regulamentos = () => {
               ))}
             </select>
           </div>
-          <div>
-            <label className="block mb-1 font-medium text-gray-700">Época</label>
-            <select
-              className="border px-3 py-2 rounded-md bg-white"
-              value={filterSeason}
-              onChange={e => setFilterSeason(e.target.value)}
-            >
-              <option value="">Todas</option>
-              {seasons.map(s => (
-                <option key={s.id} value={s.id}>{s.year}</option>
-              ))}
-            </select>
-          </div>
         </div>
 
         {/* Lista */}
@@ -238,20 +210,6 @@ const Regulamentos = () => {
               </div>
 
               <div>
-                <label className="font-medium">Época</label>
-                <select
-                  className="border px-3 py-2 rounded-md w-full bg-white"
-                  value={seasonId}
-                  onChange={e => setSeasonId(e.target.value)}
-                >
-                  <option value="">Selecionar época</option>
-                  {seasons.map(s => (
-                    <option key={s.id} value={s.id}>{s.year}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
                 <label className="font-medium">Descrição</label>
                 <textarea
                   className="border px-3 py-2 rounded-md w-full"
@@ -311,11 +269,6 @@ const Regulamentos = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-500 mb-1">Modalidade</label>
                 <p className="text-lg text-gray-900">{getModalityName(selectedRegulation.modality_id)}</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-500 mb-1">Época</label>
-                <p className="text-lg text-gray-900">{getSeasonYear(selectedRegulation.season_id)}</p>
               </div>
 
               {selectedRegulation.description && (

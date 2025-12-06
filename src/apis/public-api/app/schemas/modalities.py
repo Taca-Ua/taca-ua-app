@@ -13,4 +13,4 @@ class ModalityPublic(BaseModel):
     id: int
     name: str
     type: str  # coletiva, individual, mista
-    description: Optional[str] = None
+    scoring_schema: Optional[dict] = None

@@ -27,7 +27,7 @@ function ClassificacaoModalidade() {
         setModalities(modalitiesData);
 
         // Set active season as default
-        const activeSeason = seasonsData.find(s => s.is_active);
+        const activeSeason = seasonsData.find(s => s.status === 'active');
         if (activeSeason) {
           setSelectedSeasonId(activeSeason.id);
         } else if (seasonsData.length > 0) {
@@ -79,7 +79,7 @@ function ClassificacaoModalidade() {
   }, [selectedSeasonId, selectedModalityId]);
 
   // Get display names
-  const selectedSeasonDisplayName = seasons.find(s => String(s.id) === String(selectedSeasonId))?.display_name || '';
+  const selectedSeasonDisplayName = seasons.find(s => String(s.id) === String(selectedSeasonId))?.year?.toString() || '';
   const selectedModalityName = selectedModalityId === 'all'
     ? 'Todas as Modalidades'
     : modalities.find(m => String(m.id) === String(selectedModalityId))?.name || '';
@@ -113,7 +113,7 @@ function ClassificacaoModalidade() {
               >
                 {seasons.map((season) => (
                   <option key={season.id} value={season.id}>
-                    {season.display_name}
+                    Época {season.year}
                   </option>
                 ))}
               </select>
@@ -162,7 +162,7 @@ function ClassificacaoModalidade() {
                     id={tournament.id}
                     name={tournament.name}
                     modality={tournament.modality.name}
-                    epoca={tournament.season.display_name}
+                    epoca={`${tournament.season.year}`}
                     icon="🏆"
                   />
                 ))

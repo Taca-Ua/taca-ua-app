@@ -10,4 +10,12 @@ export const seasonsApi = {
   async getAll(): Promise<Season[]> {
     return apiClient.get<Season[]>('/seasons');
   },
+
+  async start(seasonId: number): Promise<Season> {
+    return apiClient.post<Season>(`/seasons/${seasonId}/start`, {});
+  },
+
+  async finish(seasonId: number): Promise<Season> {
+    return apiClient.post<Season>(`/seasons/${seasonId}/finish`, {});
+  },
 };
