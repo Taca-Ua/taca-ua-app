@@ -21,6 +21,12 @@ In order to create and apply migrations, ensure that an instance of the database
 docker run -d --name taca-ua-db -e POSTGRES_USER=user -e POSTGRES_PASSWORD=password -e POSTGRES_DB=taca_ua -p 5432:5432 postgres:15-alpine
 ```
 
+Update the db
+```bash
+cd src/microservices/<service-name>
+alembic upgrade head
+```
+
 ## Common Commands
 
 ### Create a new migration (auto-generate from models)

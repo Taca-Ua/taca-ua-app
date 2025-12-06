@@ -7,70 +7,93 @@ import enum
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, Text
+from sqlalchemy import JSON, Boolean, Column, DateTime, Enum, ForeignKey, Integer, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
 
-class GameState(enum.Enum):
-    """Enum for game states"""
+class MatchStatus(enum.Enum):
+    """Enum for match status"""
 
     SCHEDULED = "scheduled"
+    IN_PROGRESS = "in_progress"
     FINISHED = "finished"
-    CANCELED = "canceled"
+    CANCELLED = "cancelled"
 
 
-class Game(Base):
+class Match(Base):
     """
-    Represents a game/match in a tournament.
+    Represents a match/game in a tournament.
     """
 
-    __tablename__ = "game"
+    __tablename__ = "match"
     __table_args__ = {"schema": "matches"}
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     tournament_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    modality_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    team_a_id = Column(UUID(as_uuid=True), nullable=False)
-    team_b_id = Column(UUID(as_uuid=True), nullable=False)
-    scheduled_at = Column(DateTime, nullable=False)
-    location = Column(Text)
-    state = Column(Enum(GameState), nullable=False, default=GameState.SCHEDULED)
+    team_home_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    team_away_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    location = Column(Text, nullable=False)
+    start_time = Column(DateTime, nullable=False)
+    status = Column(Enum(MatchStatus), nullable=False, default=MatchStatus.SCHEDULED)
+    home_score = Column(Integer, nullable=True)
+    away_score = Column(Integer, nullable=True)
+    additional_details = Column(JSON, nullable=True)
+    created_by = Column(UUID(as_uuid=True), nullable=False)
     created_at = Column(
         DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
     )
     updated_at = Column(
-        DateTime,
-        nullable=False,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        DateTime, nullable=True, onupdate=lambda: datetime.now(timezone.utc)
     )
 
     def __repr__(self):
-        return f"<Game {self.id} - {self.state.value}>"
+        return f"<Match {self.id} - {self.status.value}>"
 
 
-class Result(Base):
+class Lineup(Base):
     """
-    Stores the result of a game.
-    Separated from Game to allow historical editing and auditing.
+    Stores lineup/roster information for a match.
     """
 
-    __tablename__ = "result"
+    __tablename__ = "lineup"
     __table_args__ = {"schema": "matches"}
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    game_id = Column(
-        UUID(as_uuid=True), ForeignKey("matches.game.id"), nullable=False, index=True
+    match_id = Column(
+        UUID(as_uuid=True), ForeignKey("matches.match.id"), nullable=False, index=True
     )
-    team_a_score = Column(Integer, nullable=False)
-    team_b_score = Column(Integer, nullable=False)
-    submitted_by = Column(UUID(as_uuid=True), nullable=False)
-    submitted_at = Column(
+    team_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    player_id = Column(UUID(as_uuid=True), nullable=False)
+    jersey_number = Column(Integer, nullable=False)
+    is_starter = Column(Boolean, nullable=False, default=True)
+    created_at = Column(
         DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
     )
 
     def __repr__(self):
-        return f"<Result {self.id} - Game {self.game_id}: {self.team_a_score}-{self.team_b_score}>"
+        return f"<Lineup {self.id} - Match {self.match_id}, Player {self.player_id}>"
+
+
+class Comment(Base):
+    """
+    Stores comments for a match.
+    """
+
+    __tablename__ = "comment"
+    __table_args__ = {"schema": "matches"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    match_id = Column(
+        UUID(as_uuid=True), ForeignKey("matches.match.id"), nullable=False, index=True
+    )
+    message = Column(Text, nullable=False)
+    author_id = Column(UUID(as_uuid=True), nullable=False)
+    created_at = Column(
+        DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
+    )
+
+    def __repr__(self):
+        return f"<Comment {self.id} - Match {self.match_id}>"
