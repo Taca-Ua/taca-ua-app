@@ -3,10 +3,11 @@ API routes for Modalities Service.
 Handles modalities, teams, and students.
 """
 
+from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from . import schemas
@@ -20,33 +21,72 @@ from .events import (
     publish_team_deleted,
     publish_team_updated,
 )
+from .models import Modality, ModalityType, Team
 
 router = APIRouter()
 
 
 @router.post("/modalities", response_model=schemas.ModalityResponse, status_code=201)
 def create_modality(
-    modality_data: dict,
+    modality_data: schemas.ModalityCreate,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db_session),
 ):
     """Create a new modality."""
+    try:
+        modality_type = ModalityType(modality_data.type)
+    except ValueError:
+        raise HTTPException(
+            status_code=400, detail=f"Invalid modality type: {modality_data.type}"
+        )
+
+    modality = Modality(
+        name=modality_data.name,
+        type=modality_type,
+        scoring_schema=modality_data.scoring_schema,
+        created_by=modality_data.created_by,
+    )
+
+    db.add(modality)
+    db.commit()
+    db.refresh(modality)
 
     background_tasks.add_task(publish_modality_created, modality_data)
-    return None  # Placeholder for actual implementation
+    return modality
 
 
 @router.put("/modalities/{modality_id}", response_model=schemas.ModalityResponse)
 def update_modality(
     modality_id: UUID,
-    modality_data: dict,
+    modality_data: schemas.ModalityUpdate,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db_session),
 ):
     """Update a modality."""
+    modality = db.query(Modality).filter(Modality.id == modality_id).first()
+
+    if not modality:
+        raise HTTPException(status_code=404, detail="Modality not found")
+
+    if modality_data.name is not None:
+        modality.name = modality_data.name
+    if modality_data.type is not None:
+        try:
+            modality.type = ModalityType(modality_data.type)
+        except ValueError:
+            raise HTTPException(
+                status_code=400, detail=f"Invalid modality type: {modality_data.type}"
+            )
+    if modality_data.scoring_schema is not None:
+        modality.scoring_schema = modality_data.scoring_schema
+
+    modality.updated_at = datetime.now(timezone.utc)
+
+    db.commit()
+    db.refresh(modality)
 
     background_tasks.add_task(publish_modality_updated, modality_data, {})
-    return None  # Placeholder for actual implementation
+    return modality
 
 
 @router.delete("/modalities/{modality_id}", status_code=204)
@@ -57,14 +97,35 @@ def delete_modality(
 ):
     """Delete a modality."""
 
+    modality = db.query(Modality).filter(Modality.id == modality_id).first()
+
+    if not modality:
+        raise HTTPException(status_code=404, detail="Modality not found")
+
+    # Check if there are teams or tournaments associated
+    team_count = db.query(Team).filter(Team.modality_id == modality_id).count()
+    if team_count > 0:
+        raise HTTPException(
+            status_code=409,
+            detail="Cannot delete modality with associated teams",
+        )
+
+    db.delete(modality)
+    db.commit()
+
     background_tasks.add_task(publish_modality_deleted, modality_id)
-    return None  # Placeholder for actual implementation
+    return None
 
 
 @router.get("/modalities/{modality_id}", response_model=schemas.ModalityResponse)
 def get_modality(modality_id: UUID, db: Session = Depends(get_db_session)):
     """Get a modality by ID."""
-    return None  # Placeholder for actual implementation
+    modality = db.query(Modality).filter(Modality.id == modality_id).first()
+
+    if not modality:
+        raise HTTPException(status_code=404, detail="Modality not found")
+
+    return modality
 
 
 @router.get("/modalities")
@@ -75,7 +136,26 @@ def list_modalities(
     db: Session = Depends(get_db_session),
 ):
     """List modalities with optional filters."""
-    return None  # Placeholder for actual implementation
+    query = db.query(Modality)
+
+    if type:
+        try:
+            modality_type = ModalityType(type)
+            query = query.filter(Modality.type == modality_type)
+        except ValueError:
+            raise HTTPException(
+                status_code=400, detail=f"Invalid modality type: {type}"
+            )
+
+    total = query.count()
+    modalities = query.offset(offset).limit(limit).all()
+
+    return {
+        "modalities": modalities,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
 
 
 @router.post("/teams", response_model=schemas.TeamResponse, status_code=201)
