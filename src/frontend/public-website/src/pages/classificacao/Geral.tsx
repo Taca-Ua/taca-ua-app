@@ -6,7 +6,7 @@ import type { Season, GeneralRankingResponse } from '../../api/types';
 
 function ClassificacaoGeral() {
   const [seasons, setSeasons] = useState<Season[]>([]);
-  const [selectedSeasonId, setSelectedSeasonId] = useState<string | number>('');
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string>('');
   const [rankingData, setRankingData] = useState<GeneralRankingResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,9 +21,9 @@ function ClassificacaoGeral() {
         // Set active season as default
         const activeSeason = seasonsData.find(s => s.status === 'active');
         if (activeSeason) {
-          setSelectedSeasonId(activeSeason.id);
+          setSelectedSeasonId(String(activeSeason.id));
         } else if (seasonsData.length > 0) {
-          setSelectedSeasonId(seasonsData[0].id);
+          setSelectedSeasonId(String(seasonsData[0].id));
         }
       } catch (err) {
         console.error('Failed to load seasons:', err);
@@ -43,7 +43,7 @@ function ClassificacaoGeral() {
       setError(null);
 
       try {
-        const data = await api.rankings.getGeneralRanking(selectedSeasonId as number);
+        const data = await api.rankings.getGeneralRanking(Number(selectedSeasonId));
         setRankingData(data);
       } catch (err) {
         console.error('Failed to load rankings:', err);
