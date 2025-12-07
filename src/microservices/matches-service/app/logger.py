@@ -10,4 +10,3 @@ handler = logging_loki.LokiHandler(
 logger = logging.getLogger("matches-service")
 logger.addHandler(handler)
 logger.setLevel(logging.INFO)
-logger.info("Logger initialized for Matches Service")

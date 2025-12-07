@@ -69,21 +69,26 @@ def update_match(
             detail="Cannot update a finished match",
         )
 
+    changes = {}
     if match_data.location is not None:
         match.location = match_data.location
+        changes["location"] = match_data.location
     if match_data.start_time is not None:
         match.start_time = match_data.start_time
+        changes["start_time"] = match_data.start_time
     if match_data.team_home_id is not None:
         match.team_home_id = match_data.team_home_id
+        changes["team_home_id"] = match_data.team_home_id
     if match_data.team_away_id is not None:
         match.team_away_id = match_data.team_away_id
+        changes["team_away_id"] = match_data.team_away_id
 
     match.updated_at = datetime.now(timezone.utc)
 
     db.commit()
     db.refresh(match)
 
-    background_tasks.add_task(publish_match_updated, match, "Match details updated")
+    background_tasks.add_task(publish_match_updated, match, changes)
     return match
 
 

@@ -3,15 +3,13 @@ Event handling for Modalities Service.
 """
 
 from datetime import datetime, timezone
-import logging
 from typing import Any, Dict
 from uuid import UUID
 
 from taca_messaging import RabbitMQService
 
-from .models import Modality, Team, Student
-
-logger = logging.getLogger("modalities-service")
+from .logger import logger
+from .models import Modality, Student, Team
 
 rabbitmq_service = RabbitMQService(service_name="modalities-service")
 
