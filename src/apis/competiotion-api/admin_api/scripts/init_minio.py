@@ -26,7 +26,7 @@ def init_minio():
         endpoint,
         access_key=access_key,
         secret_key=secret_key,
-        secure=False,  # Set to True if using HTTPS
+        secure=False,
     )
 
     # Define buckets to create
@@ -57,8 +57,8 @@ def init_minio():
             print(f"✗ Error creating bucket {bucket['name']}: {e}")
             sys.exit(1)
 
-    # Set public read policy for specific buckets (optional)
-    public_buckets = ["team-logos", "tournament-images"]
+    # Set public read policy for specific buckets
+    public_buckets = ["regulations", "team-logos", "tournament-images"]
 
     for bucket_name in public_buckets:
         try:
