@@ -88,7 +88,7 @@ services:
       - minio_data:/data
 
   keycloak:
-    image: quay.io/keycloak/keycloak:21.1.0
+    image: quay.io/keycloak/keycloak:22.0.0
     command:
       - start-dev
       - --http-relative-path=/keycloak
