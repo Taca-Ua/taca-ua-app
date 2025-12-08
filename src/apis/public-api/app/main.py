@@ -4,11 +4,10 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import logging_loki
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
 from taca_messaging.rabbitmq_service import RabbitMQService
 
-from shared.auth import verify_token, verify_token_optional, get_username
 from .routes import all_routers
 # Add src directory to path for shared module imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
@@ -64,9 +63,8 @@ def read_root():
 
 
 @app.post("/api/public/send-event")
-async def send_event(msg: str, current_user: dict = Depends(verify_token)):
-    """Send event - requires authentication. User info is in current_user token."""
-    username = get_username(current_user)
-    await rabbitmq_service.publish_event("test.event", {"message": msg, "sent_by": username})
-    logger.info(f"Event sent: {msg} by {username}")
-    return {"status": "sent", "sent_by": username}
+async def send_event(msg: str):
+    """Send event - public endpoint for testing."""
+    await rabbitmq_service.publish_event("test.event", {"message": msg})
+    logger.info(f"Event sent: {msg}")
+    return {"status": "sent", "message": msg}

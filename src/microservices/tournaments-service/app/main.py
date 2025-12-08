@@ -4,16 +4,14 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import logging_loki
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
 from taca_messaging.rabbitmq_service import RabbitMQService
 
 # Add src directory to path for shared module imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from shared.auth import verify_token
-
-from .events import rabbitmq_service
+from .routes import router
 from .logger import logger
 from .routes import router
 
@@ -56,7 +54,7 @@ def read_root():
 
 
 @app.get("/tournaments")
-async def get_tournaments(current_user: dict = Depends(verify_token)):
-    """Get all tournaments - requires authentication."""
-    logger.info(f"Tournaments retrieved by {current_user.get('preferred_username')}")
+async def get_tournaments():
+    """Get all tournaments - internal microservice endpoint."""
+    logger.info("Tournaments retrieved")
     return {"tournaments": []}
