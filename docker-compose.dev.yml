@@ -106,6 +106,9 @@ services:
       - DATABASE_URL=postgres://user:password@postgres:5432/taca_ua
       - PYTHONUNBUFFERED=1
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
     depends_on:
       rabbitmq:
         condition: service_healthy
