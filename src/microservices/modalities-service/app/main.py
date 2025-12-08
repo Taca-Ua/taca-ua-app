@@ -13,6 +13,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
 from shared.auth import verify_token
 
+from .routes import router
+from .logger import logger
+from .events import rabbitmq_service
+
 # Logging setup
 handler = logging_loki.LokiHandler(
     url="http://loki:3100/loki/api/v1/push",
@@ -40,6 +44,9 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 Instrumentator().instrument(app).expose(app)  # Prometheus metrics endpoint
+
+# Include routers
+app.include_router(router, tags=["modalities", "teams", "students"])
 
 
 @app.get("/")

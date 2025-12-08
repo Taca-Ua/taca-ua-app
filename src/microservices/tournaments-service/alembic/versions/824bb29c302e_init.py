@@ -1,18 +1,19 @@
 """init
 
-Revision ID: 022586311123
+Revision ID: 824bb29c302e
 Revises:
-Create Date: 2025-12-01 16:54:56.222438
+Create Date: 2025-12-06 18:32:34.579287
 
 """
 
 from typing import Sequence, Union
 
-import sqlalchemy as sa
 from alembic import op
+import sqlalchemy as sa
+
 
 # revision identifiers, used by Alembic.
-revision: str = "022586311123"
+revision: str = "824bb29c302e"
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -26,13 +27,20 @@ def upgrade() -> None:
         sa.Column("id", sa.UUID(), nullable=False),
         sa.Column("modality_id", sa.UUID(), nullable=False),
         sa.Column("name", sa.Text(), nullable=False),
+        sa.Column("season_id", sa.UUID(), nullable=False),
         sa.Column(
-            "type",
-            sa.Enum("ROUND_ROBIN", "ELIMINATION", "GROUPS", name="tournamenttype"),
+            "status",
+            sa.Enum("DRAFT", "ACTIVE", "FINISHED", name="tournamentstatus"),
             nullable=False,
         ),
-        sa.Column("season", sa.Integer(), nullable=False),
+        sa.Column("rules", sa.JSON(), nullable=True),
+        sa.Column("teams", sa.ARRAY(sa.UUID()), nullable=True),
+        sa.Column("start_date", sa.DateTime(), nullable=True),
+        sa.Column("created_by", sa.UUID(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
+        sa.Column("updated_at", sa.DateTime(), nullable=True),
+        sa.Column("finished_at", sa.DateTime(), nullable=True),
+        sa.Column("finished_by", sa.UUID(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
         schema="tournaments",
     )
@@ -40,6 +48,13 @@ def upgrade() -> None:
         op.f("ix_tournaments_tournament_modality_id"),
         "tournament",
         ["modality_id"],
+        unique=False,
+        schema="tournaments",
+    )
+    op.create_index(
+        op.f("ix_tournaments_tournament_season_id"),
+        "tournament",
+        ["season_id"],
         unique=False,
         schema="tournaments",
     )
@@ -100,6 +115,11 @@ def downgrade() -> None:
         schema="tournaments",
     )
     op.drop_table("stage", schema="tournaments")
+    op.drop_index(
+        op.f("ix_tournaments_tournament_season_id"),
+        table_name="tournament",
+        schema="tournaments",
+    )
     op.drop_index(
         op.f("ix_tournaments_tournament_modality_id"),
         table_name="tournament",

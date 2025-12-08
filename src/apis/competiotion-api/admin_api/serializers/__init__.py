@@ -2,6 +2,7 @@
 Serializers package for admin_api
 """
 
+from .auth import LoginRequestSerializer, LoginResponseSerializer, UserInfoSerializer
 from .courses import (
     CourseCreateSerializer,
     CourseListSerializer,
@@ -44,6 +45,10 @@ from .users import (
 )
 
 __all__ = [
+    # Authentication
+    "LoginRequestSerializer",
+    "LoginResponseSerializer",
+    "UserInfoSerializer",
     # Users
     "NucleoAdminListSerializer",
     "NucleoAdminCreateSerializer",

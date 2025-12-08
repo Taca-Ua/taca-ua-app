@@ -1,8 +1,11 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useAuth } from "../hooks/useAuth";
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
+  const { logout, user } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <nav className="bg-white shadow-sm w-full sticky top-0 z-50">
@@ -41,7 +44,7 @@ export default function Sidebar() {
               {/* HEADER */}
               <div className="flex items-center justify-between mb-8">
                 <Link
-                  to="/"
+                  to="/geral/dashboard"
                   className="text-xl font-bold text-teal-600 transition-all duration-300 ease-in-out hover:text-teal-700 group"
                 >
                   <span className="inline-block transition-all duration-300 group-hover:scale-110 group-hover:-rotate-6">T</span>
@@ -89,7 +92,7 @@ export default function Sidebar() {
               </Link>
 
               <Link
-                to="/nucleo"
+                to="/geral/nucleos"
                 className="block text-gray-700 hover:text-teal-600 font-medium transition"
                 onClick={() => setIsOpen(false)}
               >
@@ -97,7 +100,7 @@ export default function Sidebar() {
               </Link>
 
               <Link
-                to="/torneios"
+                to="/geral/torneios"
                 className="block text-gray-700 hover:text-teal-600 font-medium transition"
                 onClick={() => setIsOpen(false)}
               >
@@ -105,7 +108,7 @@ export default function Sidebar() {
               </Link>
 
               <Link
-                to="/regulamentos"
+                to="/geral/regulamentos"
                 className="block text-gray-700 hover:text-teal-600 font-medium transition"
                 onClick={() => setIsOpen(false)}
               >
@@ -133,12 +136,12 @@ export default function Sidebar() {
                 <button
                   onClick={() => {
                     setIsOpen(false);
-                    // TODO: Clear session/token here
-                    window.location.href = '/admin/login';
+                    logout();
+                    navigate('/login/geral');
                   }}
                   className="block text-left w-full hover:text-red-600 font-medium transition"
                 >
-                  Logout
+                  Logout {user?.full_name && `(${user.full_name})`}
                 </button>
 
               </div>

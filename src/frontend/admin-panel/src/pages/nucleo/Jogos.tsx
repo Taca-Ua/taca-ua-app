@@ -1,231 +1,295 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NucleoSidebar from '../../components/nucleo_navbar';
-
-interface Match {
-  id: number;
-  team1: string;
-  team2: string;
-  date: string;
-  time: string;
-  location: string;
-  modality: string;
-}
+import { matchesApi } from '../../api/matches';
+import type { Match } from '../../api/matches';
+import { teamsApi } from '../../api/teams';
+import type { Team } from '../../api/teams';
 
 const Jogos = () => {
   const navigate = useNavigate();
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  // Mock data for matches (Replace with API call)
-  const [matches] = useState<Match[]>([
-    {
-      id: 1,
-      team1: 'Equipa 1',
-      team2: 'Equipa 4',
-      date: '2025-12-05',
-      time: '14:00',
-      location: 'Campo Principal',
-      modality: 'Futebol',
-    },
-    {
-      id: 2,
-      team1: 'Equipa 2',
-      team2: 'Equipa 8',
-      date: '2025-12-03',
-      time: '16:00',
-      location: 'Pavilhão A',
-      modality: 'Basquetebol',
-    },
-    {
-      id: 3,
-      team1: 'Equipa 3',
-      team2: 'Equipa 9',
-      date: '2025-11-28',
-      time: '18:00',
-      location: 'Pavilhão B',
-      modality: 'Voleibol',
-    },
-    {
-      id: 4,
-      team1: 'Equipa 5',
-      team2: 'Equipa 4',
-      date: '2025-12-10',
-      time: '15:30',
-      location: 'Pavilhão C',
-      modality: 'Futsal',
-    },
-    {
-      id: 5,
-      team1: 'Equipa 6',
-      team2: 'Equipa 7',
-      date: '2025-11-25',
-      time: '17:00',
-      location: 'Campo Secundário',
-      modality: 'Andebol',
-    },
-    {
-      id: 6,
-      team1: 'Equipa 1',
-      team2: 'Equipa 2',
-      date: '2025-12-15',
-      time: '19:00',
-      location: 'Estádio Central',
-      modality: 'Rugby',
-    },
-    {
-      id: 7,
-      team1: 'Equipa 7',
-      team2: 'Equipa 8',
-      date: '2025-12-12',
-      time: '16:30',
-      location: 'Pavilhão B',
-      modality: 'Basquetebol',
-    },
-    {
-      id: 8,
-      team1: 'Equipa 3',
-      team2: 'Equipa 6',
-      date: '2025-12-08',
-      time: '18:30',
-      location: 'Campo Secundário',
-      modality: 'Futebol',
-    },
-    {
-      id: 9,
-      team1: 'Equipa 5',
-      team2: 'Equipa 9',
-      date: '2025-12-20',
-      time: '20:00',
-      location: 'Pavilhão A',
-      modality: 'Voleibol',
-    },
-  ]);
+  // Fetch matches and teams from API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const [fetchedMatches, fetchedTeams] = await Promise.all([
+          matchesApi.getAll(),
+          teamsApi.getAll(true), // Get all teams including from other courses
+        ]);
+        setMatches(fetchedMatches);
+        setTeams(fetchedTeams);
+      } catch (err) {
+        console.error('Failed to fetch data:', err);
+        setError('Erro ao carregar jogos. Por favor, tente novamente.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const [filterModality, setFilterModality] = useState<string>('');
-  const [filterTeam, setFilterTeam] = useState<string>('');
+    fetchData();
+  }, []);
 
-  const modalities = [
-    'Futebol',
-    'Futsal',
-    'Basquetebol',
-    'Voleibol',
-    'Andebol',
-    'Rugby',
-  ];
+  // Helper function to get team name by ID
+  const getTeamName = (teamId: number) => {
+    const team = teams.find(t => t.id === teamId);
+    return team ? team.name : `Equipa ${teamId}`;
+  };
 
-  const teams = [
-    'Equipa 1',
-    'Equipa 2',
-    'Equipa 3',
-    'Equipa 4',
-    'Equipa 5',
-    'Equipa 6',
-    'Equipa 7',
-    'Equipa 8',
-    'Equipa 9',
-  ];
+  // Helper function to format match date/time
+  const formatDateTime = (startTime: string) => {
+    const date = new Date(startTime);
+    return {
+      date: date.toLocaleDateString('pt-PT'),
+      time: date.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+    };
+  };
 
-  // Filter matches by modality and team
-  let filteredMatches = matches;
-  
-  if (filterModality) {
-    filteredMatches = filteredMatches.filter((match) => match.modality === filterModality);
-  }
-  
-  if (filterTeam) {
-    filteredMatches = filteredMatches.filter(
-      (match) => match.team1 === filterTeam || match.team2 === filterTeam
-    );
-  }
+  // Helper function to get status display
+  const getStatusDisplay = (status: string) => {
+    const statusMap: Record<string, string> = {
+      scheduled: 'Agendado',
+      in_progress: 'Em curso',
+      finished: 'Terminado',
+      cancelled: 'Cancelado',
+    };
+    return statusMap[status] || status;
+  };
+
+  // Calendar helper functions
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+
+    return { daysInMonth, startingDayOfWeek };
+  };
+
+  const getMatchesForDay = (day: number) => {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+
+    return matches.filter(match => {
+      const matchDate = new Date(match.start_time);
+      return matchDate.getDate() === day &&
+             matchDate.getMonth() === month &&
+             matchDate.getFullYear() === year;
+    });
+  };
+
+  const previousMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
+  };
+
+  const nextMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
+  };
+
+  const monthName = currentMonth.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' });
 
   return (
     <div className="min-h-screen bg-gray-50">
       <NucleoSidebar />
-      
+
       <div className="p-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="mb-8">
+          <div className="mb-8 flex justify-between items-center">
             <h1 className="text-3xl font-bold text-gray-800">Jogos</h1>
-          </div>
 
-          {/* Filters */}
-          <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="modalityFilter" className="block text-gray-700 font-medium mb-2">
-                Modalidade
-              </label>
-              <select
-                id="modalityFilter"
-                value={filterModality}
-                onChange={(e) => setFilterModality(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+            {/* View Mode Toggle */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setViewMode('list')}
+                className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                  viewMode === 'list'
+                    ? 'bg-teal-500 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
               >
-                <option value="">Selecionar Modalidade</option>
-                {modalities.map((modality) => (
-                  <option key={modality} value={modality}>
-                    {modality}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="teamFilter" className="block text-gray-700 font-medium mb-2">
-                Equipa
-              </label>
-              <select
-                id="teamFilter"
-                value={filterTeam}
-                onChange={(e) => setFilterTeam(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                📋 Lista
+              </button>
+              <button
+                onClick={() => setViewMode('calendar')}
+                className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                  viewMode === 'calendar'
+                    ? 'bg-teal-500 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
               >
-                <option value="">Selecionar Equipa</option>
-                {teams.map((team) => (
-                  <option key={team} value={team}>
-                    {team}
-                  </option>
-                ))}
-              </select>
+                📅 Calendário
+              </button>
             </div>
           </div>
 
-          {/* Matches List */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800">Jogos</h2>
-            <div className="space-y-3">
-              {filteredMatches.length > 0 ? (
-                filteredMatches.map((match) => (
-                  <div
-                    key={match.id}
-                    onClick={() => navigate(`/nucleo/jogos/${match.id}`)}
-                    className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer transition-colors"
-                  >
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-gray-800 font-bold text-lg">
-                        {match.team1} vs {match.team2}
-                      </span>
-                      <span className="text-teal-600 text-sm font-medium">{match.modality}</span>
-                    </div>
-                    <div className="flex gap-6 text-sm text-gray-600">
-                      <span>
-                        <span className="font-medium">Data:</span> {new Date(match.date).toLocaleDateString('pt-PT')}
-                      </span>
-                      <span>
-                        <span className="font-medium">Hora:</span> {match.time}
-                      </span>
-                      <span>
-                        <span className="font-medium">Local:</span> {match.location}
-                      </span>
-                    </div>
+          {/* Loading State */}
+          {loading && (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-6">
+              {error}
+            </div>
+          )}
+
+          {/* Content - Only show when not loading */}
+          {!loading && !error && (
+            <>
+              {/* List View */}
+              {viewMode === 'list' && (
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <h2 className="text-2xl font-bold mb-6 text-gray-800">Jogos</h2>
+                  <div className="space-y-3">
+                    {matches.length > 0 ? (
+                      matches.map((match) => {
+                        const { date, time } = formatDateTime(match.start_time);
+                        return (
+                          <div
+                            key={match.id}
+                            onClick={() => navigate(`/nucleo/jogos/${match.id}`)}
+                            className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer transition-colors"
+                          >
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-gray-800 font-bold text-lg">
+                                {getTeamName(match.team_home_id)} vs {getTeamName(match.team_away_id)}
+                              </span>
+                              <span className="text-teal-600 text-sm font-medium">
+                                {getStatusDisplay(match.status)}
+                              </span>
+                            </div>
+                            <div className="flex gap-6 text-sm text-gray-600">
+                              <span>
+                                <span className="font-medium">Data:</span> {date}
+                              </span>
+                              <span>
+                                <span className="font-medium">Hora:</span> {time}
+                              </span>
+                              <span>
+                                <span className="font-medium">Local:</span> {match.location}
+                              </span>
+                              {match.home_score !== null && match.away_score !== null && (
+                                <span>
+                                  <span className="font-medium">Resultado:</span> {match.home_score} - {match.away_score}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <p className="text-gray-500 text-center py-8">
+                        Nenhum jogo encontrado.
+                      </p>
+                    )}
                   </div>
-                ))
-              ) : (
-                <p className="text-gray-500 text-center py-8">
-                  Nenhum jogo encontrado.
-                </p>
+                </div>
               )}
-            </div>
-          </div>
+
+              {/* Calendar View */}
+              {viewMode === 'calendar' && (
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  {/* Calendar Header */}
+                  <div className="flex justify-between items-center mb-6">
+                    <button
+                      onClick={previousMonth}
+                      className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md font-medium transition-colors"
+                    >
+                      ←
+                    </button>
+                    <h2 className="text-2xl font-bold text-gray-800 capitalize">
+                      {monthName}
+                    </h2>
+                    <button
+                      onClick={nextMonth}
+                      className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md font-medium transition-colors"
+                    >
+                      →
+                    </button>
+                  </div>
+
+                  {/* Calendar Grid */}
+                  <div className="grid grid-cols-7 gap-2">
+                    {/* Day headers */}
+                    {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
+                      <div key={day} className="text-center font-bold text-gray-600 py-2">
+                        {day}
+                      </div>
+                    ))}
+
+                    {/* Calendar days */}
+                    {(() => {
+                      const { daysInMonth, startingDayOfWeek } = getDaysInMonth(currentMonth);
+                      const days = [];
+
+                      // Empty cells for days before the first day of the month
+                      for (let i = 0; i < startingDayOfWeek; i++) {
+                        days.push(
+                          <div key={`empty-${i}`} className="min-h-[100px] bg-gray-50 rounded-md" />
+                        );
+                      }
+
+                      // Days of the month
+                      for (let day = 1; day <= daysInMonth; day++) {
+                        const dayMatches = getMatchesForDay(day);
+                        const isToday =
+                          day === new Date().getDate() &&
+                          currentMonth.getMonth() === new Date().getMonth() &&
+                          currentMonth.getFullYear() === new Date().getFullYear();
+
+                        days.push(
+                          <div
+                            key={day}
+                            className={`min-h-[100px] border rounded-md p-2 ${
+                              isToday ? 'bg-teal-50 border-teal-500' : 'bg-white border-gray-200'
+                            }`}
+                          >
+                            <div className={`font-bold mb-1 ${isToday ? 'text-teal-600' : 'text-gray-700'}`}>
+                              {day}
+                            </div>
+                            <div className="space-y-1">
+                              {dayMatches.map((match) => {
+                                const { time } = formatDateTime(match.start_time);
+                                return (
+                                  <div
+                                    key={match.id}
+                                    onClick={() => navigate(`/nucleo/jogos/${match.id}`)}
+                                    className="text-xs bg-teal-100 hover:bg-teal-200 px-2 py-1 rounded cursor-pointer transition-colors"
+                                    title={`${time} - ${getTeamName(match.team_home_id)} vs ${getTeamName(match.team_away_id)}`}
+                                  >
+                                    <div className="font-medium truncate">{time}</div>
+                                    <div className="truncate text-gray-600">
+                                      {getTeamName(match.team_home_id)} vs {getTeamName(match.team_away_id)}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      return days;
+                    })()}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>

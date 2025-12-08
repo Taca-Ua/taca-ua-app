@@ -1,205 +1,199 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import NucleoSidebar from '../../components/nucleo_navbar';
-
-interface Match {
-  id: number;
-  team1: string;
-  team2: string;
-  date: string;
-  time: string;
-  location: string;
-  modality: string;
-  team1Members: number[];
-  team2Members: number[];
-}
-
-interface Member {
-  id: number;
-  name: string;
-}
-
-// Mock data moved outside component to prevent re-creation on each render
-const mockMatches: Match[] = [
-    {
-      id: 1,
-      team1: 'Equipa 1',
-      team2: 'Equipa 4',
-      date: '2025-12-05',
-      time: '14:00',
-      location: 'Campo Principal',
-      modality: 'Futebol',
-      team1Members: [1, 2, 3, 4, 5],
-      team2Members: [6, 7, 8, 9],
-    },
-    {
-      id: 2,
-      team1: 'Equipa 2',
-      team2: 'Equipa 8',
-      date: '2025-12-03',
-      time: '16:00',
-      location: 'Pavilhão A',
-      modality: 'Basquetebol',
-      team1Members: [2, 4, 6, 8],
-      team2Members: [1, 3, 5, 7, 9],
-    },
-    {
-      id: 3,
-      team1: 'Equipa 3',
-      team2: 'Equipa 9',
-      date: '2025-11-28',
-      time: '18:00',
-      location: 'Pavilhão B',
-      modality: 'Voleibol',
-      team1Members: [1, 3, 5, 7],
-      team2Members: [2, 4, 6, 8, 9],
-    },
-    {
-      id: 4,
-      team1: 'Equipa 5',
-      team2: 'Equipa 4',
-      date: '2025-12-10',
-      time: '15:30',
-      location: 'Pavilhão C',
-      modality: 'Futsal',
-      team1Members: [1, 2, 3, 4, 5],
-      team2Members: [6, 7, 8],
-    },
-    {
-      id: 5,
-      team1: 'Equipa 6',
-      team2: 'Equipa 7',
-      date: '2025-11-25',
-      time: '17:00',
-      location: 'Campo Secundário',
-      modality: 'Andebol',
-      team1Members: [3, 4, 5, 6],
-      team2Members: [1, 2, 7, 8, 9],
-    },
-    {
-      id: 6,
-      team1: 'Equipa 1',
-      team2: 'Equipa 2',
-      date: '2025-12-15',
-      time: '19:00',
-      location: 'Estádio Central',
-      modality: 'Rugby',
-      team1Members: [1, 2, 3, 4, 5, 6, 7, 8, 9],
-      team2Members: [2, 4, 6, 8],
-    },
-    {
-      id: 7,
-      team1: 'Equipa 7',
-      team2: 'Equipa 8',
-      date: '2025-12-12',
-      time: '16:30',
-      location: 'Pavilhão B',
-      modality: 'Basquetebol',
-      team1Members: [5, 6, 7],
-      team2Members: [1, 8, 9],
-    },
-    {
-      id: 8,
-      team1: 'Equipa 3',
-      team2: 'Equipa 6',
-      date: '2025-12-08',
-      time: '18:30',
-      location: 'Campo Secundário',
-      modality: 'Futebol',
-      team1Members: [1, 3, 5, 7, 9],
-      team2Members: [2, 4, 6, 8],
-    },
-    {
-      id: 9,
-      team1: 'Equipa 5',
-      team2: 'Equipa 9',
-      date: '2025-12-20',
-      time: '20:00',
-      location: 'Pavilhão A',
-      modality: 'Voleibol',
-      team1Members: [1, 2, 3, 4],
-      team2Members: [5, 6, 7, 8, 9],
-    },
-  ];
-
-// Mock data for members
-const mockMembers: Member[] = [
-  { id: 1, name: 'Membro 1' },
-  { id: 2, name: 'Membro 2' },
-  { id: 3, name: 'Membro 3' },
-  { id: 4, name: 'Membro 4' },
-  { id: 5, name: 'Membro 5' },
-  { id: 6, name: 'Membro 6' },
-  { id: 7, name: 'Membro 7' },
-  { id: 8, name: 'Membro 8' },
-  { id: 9, name: 'Membro 9' },
-  { id: 10, name: 'Membro 10' },
-];
+import { matchesApi } from '../../api/matches';
+import type { Match, MatchLineup } from '../../api/matches';
+import { teamsApi } from '../../api/teams';
+import type { Team } from '../../api/teams';
+import { studentsApi } from '../../api/students';
+import type { Student } from '../../api/students';
+import { useAuth } from '../../hooks/useAuth';
 
 const MatchDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const [match, setMatch] = useState<Match | null>(null);
+  const [teamHome, setTeamHome] = useState<Team | null>(null);
+  const [teamAway, setTeamAway] = useState<Team | null>(null);
+  const [allStudents, setAllStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [userTeam, setUserTeam] = useState<'home' | 'away' | null>(null);
+
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingTeam, setEditingTeam] = useState<'team1' | 'team2'>('team1');
-
-  const match = useMemo(() => {
-    const foundMatch = mockMatches.find((m) => m.id === Number(id));
-    return foundMatch || null;
-  }, [id]);
-
-  const [selectedTeam1Members, setSelectedTeam1Members] = useState<number[]>(() =>
-    match ? match.team1Members : []
-  );
-  const [selectedTeam2Members, setSelectedTeam2Members] = useState<number[]>(() =>
-    match ? match.team2Members : []
-  );
+  const [editingTeam, setEditingTeam] = useState<'home' | 'away'>('home');
+  const [selectedHomePlayers, setSelectedHomePlayers] = useState<number[]>([]);
+  const [selectedAwayPlayers, setSelectedAwayPlayers] = useState<number[]>([]);
 
   useEffect(() => {
-    if (!match) {
-      navigate('/nucleo/jogos');
-    }
-  }, [match, navigate]);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        console.log('Fetching match data for ID:', id);
 
-  if (!match) {
-    return null;
+        const [matchesData, teamsData, studentsData] = await Promise.all([
+          matchesApi.getAll(),
+          teamsApi.getAll(true), // Get all teams including from other courses
+          studentsApi.getAll(),
+        ]);
+
+        console.log('Matches:', matchesData);
+        console.log('Teams:', teamsData);
+        console.log('Students:', studentsData);
+
+        const foundMatch = matchesData.find((m) => m.id === Number(id));
+        if (!foundMatch) {
+          console.error('Match not found with ID:', id);
+          console.error('Available matches:', matchesData.map(m => m.id));
+          navigate('/nucleo/jogos');
+          return;
+        }
+
+        console.log('Found match:', foundMatch);
+        setMatch(foundMatch);
+        setAllStudents(studentsData);
+
+        const home = teamsData.find((t) => t.id === foundMatch.team_home_id);
+        const away = teamsData.find((t) => t.id === foundMatch.team_away_id);
+
+        console.log('Home team:', home);
+        console.log('Away team:', away);
+
+        setTeamHome(home || null);
+        setTeamAway(away || null);
+        setSelectedHomePlayers(home?.players || []);
+        setSelectedAwayPlayers(away?.players || []);
+
+        // Determine which team belongs to the logged-in user
+        if (user && home && away) {
+          if (home.course_id === user.course_id) {
+            setUserTeam('home');
+          } else if (away.course_id === user.course_id) {
+            setUserTeam('away');
+          } else {
+            setUserTeam(null);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch match data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id, navigate, user]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <NucleoSidebar />
+        <div className="p-8 flex items-center justify-center">
+          <div className="text-gray-600">A carregar...</div>
+        </div>
+      </div>
+    );
   }
 
-  const matchMembers = mockMembers.filter((member) => 
-    selectedTeam1Members.includes(member.id)
+  if (!match) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <NucleoSidebar />
+        <div className="p-8">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            Jogo não encontrado. ID: {id}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!teamHome || !teamAway) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <NucleoSidebar />
+        <div className="p-8">
+          <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
+            <p>Equipas não encontradas para este jogo.</p>
+            <p className="text-sm mt-2">Team Home ID: {match.team_home_id} - Found: {teamHome ? 'Sim' : 'Não'}</p>
+            <p className="text-sm">Team Away ID: {match.team_away_id} - Found: {teamAway ? 'Sim' : 'Não'}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const homePlayersList = allStudents.filter((student) =>
+    selectedHomePlayers.includes(student.id)
   );
 
-  const handleSaveTeamMembers = () => {
-    if (match) {
+  const awayPlayersList = allStudents.filter((student) =>
+    selectedAwayPlayers.includes(student.id)
+  );
+
+  const matchDateTime = new Date(match.start_time);
+  const matchDate = matchDateTime.toLocaleDateString('pt-PT');
+  const matchTime = matchDateTime.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+
+  const handleSaveTeamMembers = async () => {
+    try {
+      const lineup: MatchLineup = {
+        team_id: editingTeam === 'home' ? teamHome.id : teamAway.id,
+        players: editingTeam === 'home' ? selectedHomePlayers : selectedAwayPlayers,
+      };
+
+      await matchesApi.submitLineup(match.id, lineup);
       setIsEditModalOpen(false);
-      // TODO: Make an API call to save the changes
+      alert('Equipa de jogo guardada com sucesso!');
+    } catch (error) {
+      console.error('Failed to save lineup:', error);
+      alert('Erro ao guardar escalação');
     }
   };
 
   const toggleTeamMember = (memberId: number) => {
-    if (editingTeam === 'team1') {
-      if (selectedTeam1Members.includes(memberId)) {
-        setSelectedTeam1Members(selectedTeam1Members.filter(id => id !== memberId));
+    if (editingTeam === 'home') {
+      if (selectedHomePlayers.includes(memberId)) {
+        setSelectedHomePlayers(selectedHomePlayers.filter((id: number) => id !== memberId));
       } else {
-        setSelectedTeam1Members([...selectedTeam1Members, memberId]);
+        setSelectedHomePlayers([...selectedHomePlayers, memberId]);
       }
     } else {
-      if (selectedTeam2Members.includes(memberId)) {
-        setSelectedTeam2Members(selectedTeam2Members.filter(id => id !== memberId));
+      if (selectedAwayPlayers.includes(memberId)) {
+        setSelectedAwayPlayers(selectedAwayPlayers.filter((id: number) => id !== memberId));
       } else {
-        setSelectedTeam2Members([...selectedTeam2Members, memberId]);
+        setSelectedAwayPlayers([...selectedAwayPlayers, memberId]);
       }
     }
   };
 
-  const handleOpenEditModal = (team: 'team1' | 'team2') => {
+  const handleOpenEditModal = (team: 'home' | 'away') => {
     setEditingTeam(team);
     setIsEditModalOpen(true);
+  };
+
+  const handleDownloadMatchSheet = async () => {
+    try {
+      const blob = await matchesApi.getMatchSheet(match.id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ficha-jogo-${match.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Failed to download match sheet:', error);
+      alert('Erro ao descarregar ficha de jogo');
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <NucleoSidebar />
-      
+
       <div className="p-8">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -238,50 +232,55 @@ const MatchDetail = () => {
               {/* Match Details Section */}
               <div>
                 <h2 className="text-xl font-bold text-gray-800 mb-6">Detalhes do jogo</h2>
-                
+
                 <div className="space-y-4">
                   <div>
                     <label className="block text-gray-600 text-sm mb-1">
-                      Equipa 1
+                      Equipa Casa
                     </label>
                     <div className="text-gray-800 font-medium">
-                      {match.team1}
+                      {teamHome.name}
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-gray-600 text-sm mb-1">
-                      Equipa 2
+                      Equipa Visitante
                     </label>
                     <div className="text-gray-800 font-medium">
-                      {match.team2}
+                      {teamAway.name}
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-gray-600 text-sm mb-1">
-                      Modalidade
+                      Estado
                     </label>
                     <div className="text-gray-800 font-medium">
-                      {match.modality}
+                      {match.status === 'scheduled' && '⏰ Agendado'}
+                      {match.status === 'in_progress' && '▶️ Em curso'}
+                      {match.status === 'finished' && '✅ Terminado'}
+                      {match.status === 'cancelled' && '❌ Cancelado'}
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-gray-600 text-sm mb-1">
-                      Data
-                    </label>
-                    <div className="text-gray-800 font-medium">
-                      {new Date(match.date).toLocaleDateString('pt-PT')}
+                  {match.status === 'finished' && (match.home_score !== null || match.away_score !== null) && (
+                    <div>
+                      <label className="block text-gray-600 text-sm mb-1">
+                        Resultado
+                      </label>
+                      <div className="text-gray-800 font-medium">
+                        {teamHome.name}: {match.home_score ?? 0} - {teamAway.name}: {match.away_score ?? 0}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <div>
                     <label className="block text-gray-600 text-sm mb-1">
-                      Hora
+                      Data e Hora
                     </label>
                     <div className="text-gray-800 font-medium">
-                      {match.time}
+                      {matchDate} às {matchTime}
                     </div>
                   </div>
 
@@ -297,42 +296,123 @@ const MatchDetail = () => {
               </div>
             </div>
 
-            {/* Right Column - Team Members */}
-            <div className="bg-white rounded-lg shadow-md p-8">
-              <h2 className="text-xl font-bold text-gray-800 mb-6">Membros de {match.team1}</h2>
-
-              <div className="space-y-3 max-h-[600px] overflow-y-auto">
-                {matchMembers.length > 0 ? (
-                  matchMembers.map((member) => (
-                    <div
-                      key={member.id}
-                      className="px-4 py-3 bg-gray-100 rounded-md"
-                    >
-                      <span className="text-gray-800 font-medium">{member.name}</span>
-                    </div>
-                  ))
+            {/* Right Column - Team Lineups */}
+            <div className="bg-white rounded-lg shadow-md p-8 space-y-6">
+              {/* Home Team Lineup */}
+              <div className={userTeam === 'home' ? 'border-2 border-teal-500 rounded-lg p-4 -m-4 mb-2' : ''}>
+                <h2 className="text-xl font-bold text-gray-800 mb-4">
+                  Equipa de Jogo {teamHome.name}
+                  {userTeam === 'home' && <span className="ml-2 text-teal-500 text-sm">(Minha Equipa)</span>}
+                </h2>
+                {(userTeam === 'home' || match.status === 'finished') ? (
+                  <div className="space-y-2 max-h-[250px] overflow-y-auto">
+                    {homePlayersList.length > 0 ? (
+                      homePlayersList.map((student) => (
+                        <div
+                          key={student.id}
+                          className="px-4 py-2 bg-gray-100 rounded-md flex justify-between items-center"
+                        >
+                          <span className="text-gray-800 font-medium">{student.full_name}</span>
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            student.member_type === 'technical_staff'
+                              ? 'bg-purple-100 text-purple-700'
+                              : 'bg-blue-100 text-blue-700'
+                          }`}>
+                            {student.member_type === 'technical_staff' ? 'Equipa Técnica' : 'Estudante'}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-gray-500 text-center py-4">
+                        Nenhum jogador na equipa de jogo.
+                      </p>
+                    )}
+                  </div>
                 ) : (
-                  <p className="text-gray-500 text-center py-8">
-                    Nenhum membro associado a este jogo.
-                  </p>
+                  <div className="bg-gray-100 rounded-md px-4 py-8 text-center">
+                    <p className="text-gray-600">🔒 Equipa de jogo oculta</p>
+                    <p className="text-gray-500 text-sm mt-2">
+                      A equipa de jogo adversária será revelada após o jogo
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Away Team Lineup */}
+              <div className={userTeam === 'away' ? 'border-2 border-teal-500 rounded-lg p-4 -m-4' : ''}>
+                <h2 className="text-xl font-bold text-gray-800 mb-4">
+                  Equipa de Jogo {teamAway.name}
+                  {userTeam === 'away' && <span className="ml-2 text-teal-500 text-sm">(Minha Equipa)</span>}
+                </h2>
+                {(userTeam === 'away' || match.status === 'finished') ? (
+                  <div className="space-y-2 max-h-[250px] overflow-y-auto">
+                    {awayPlayersList.length > 0 ? (
+                      awayPlayersList.map((student) => (
+                        <div
+                          key={student.id}
+                          className="px-4 py-2 bg-gray-100 rounded-md flex justify-between items-center"
+                        >
+                          <span className="text-gray-800 font-medium">{student.full_name}</span>
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            student.member_type === 'technical_staff'
+                              ? 'bg-purple-100 text-purple-700'
+                              : 'bg-blue-100 text-blue-700'
+                          }`}>
+                            {student.member_type === 'technical_staff' ? 'Equipa Técnica' : 'Estudante'}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-gray-500 text-center py-4">
+                        Nenhum jogador na equipa de jogo.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="bg-gray-100 rounded-md px-4 py-8 text-center">
+                    <p className="text-gray-600">🔒 Equipa de jogo oculta</p>
+                    <p className="text-gray-500 text-sm mt-2">
+                      A equipa de jogo adversária será revelada após o jogo
+                    </p>
+                  </div>
                 )}
               </div>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+          <div className="flex flex-wrap gap-4 mt-8">
+            {userTeam === 'home' && match.status === 'scheduled' && (
+              <button
+                className="flex-1 min-w-[200px] px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
+                onClick={() => handleOpenEditModal('home')}
+              >
+                Editar Minha Equipa de Jogo
+              </button>
+            )}
+            {userTeam === 'away' && match.status === 'scheduled' && (
+              <button
+                className="flex-1 min-w-[200px] px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
+                onClick={() => handleOpenEditModal('away')}
+              >
+                Editar Minha Equipa de Jogo
+              </button>
+            )}
+            {userTeam && match.status !== 'scheduled' && (
+              <div className="flex-1 min-w-[200px] px-6 py-3 bg-gray-300 text-gray-600 rounded-md font-medium text-center">
+                Não pode editar a equipa de jogo após o início do jogo
+              </div>
+            )}
+            {!userTeam && (
+              <div className="flex-1 min-w-[200px] px-6 py-3 bg-gray-300 text-gray-600 rounded-md font-medium text-center">
+                Não pode editar equipas de outros cursos
+              </div>
+            )}
             <button
-              className="px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
-              onClick={() => handleOpenEditModal('team1')}
+              className="flex-1 min-w-[200px] px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-md font-medium transition-colors"
+              onClick={handleDownloadMatchSheet}
             >
-              Editar Equipa de Jogo
-            </button>
-            <button
-              className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-md font-medium transition-colors"
-              onClick={() => alert('Imprimir Ficha de Jogo')}
-            >
-              Imprimir Ficha de Jogo
+              Descarregar Ficha de Jogo
             </button>
           </div>
         </div>
@@ -343,27 +423,35 @@ const MatchDetail = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
           <div className="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 animate-slideUp max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">
-              Editar {editingTeam === 'team1' ? match.team1 : match.team2}
+              Editar Equipa de Jogo - {editingTeam === 'home' ? teamHome.name : teamAway.name}
             </h2>
-            
+
             <div>
               <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                {mockMembers.map((member) => (
+                {allStudents.filter(s => s.is_member).map((student) => (
                   <label
-                    key={`${editingTeam}-${member.id}`}
+                    key={`${editingTeam}-${student.id}`}
                     className="flex items-center gap-3 px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-md cursor-pointer transition-colors"
                   >
                     <input
                       type="checkbox"
                       checked={
-                        editingTeam === 'team1'
-                          ? selectedTeam1Members.includes(member.id)
-                          : selectedTeam2Members.includes(member.id)
+                        editingTeam === 'home'
+                          ? selectedHomePlayers.includes(student.id)
+                          : selectedAwayPlayers.includes(student.id)
                       }
-                      onChange={() => toggleTeamMember(member.id)}
+                      onChange={() => toggleTeamMember(student.id)}
                       className="w-5 h-5 text-teal-500 rounded focus:ring-2 focus:ring-teal-500"
                     />
-                    <span className="text-gray-800">{member.name}</span>
+                    <span className="text-gray-800 flex-1">{student.full_name}</span>
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      student.member_type === 'technical_staff'
+                        ? 'bg-purple-100 text-purple-700'
+                        : 'bg-blue-100 text-blue-700'
+                    }`}>
+                      {student.member_type === 'technical_staff' ? 'Equipa Técnica' : 'Estudante'}
+                    </span>
+                    <span className="text-gray-500 text-sm">{student.student_number}</span>
                   </label>
                 ))}
               </div>
@@ -374,10 +462,9 @@ const MatchDetail = () => {
               <button
                 onClick={() => {
                   setIsEditModalOpen(false);
-                  if (match) {
-                    setSelectedTeam1Members(match.team1Members);
-                    setSelectedTeam2Members(match.team2Members);
-                  }
+                  // Reset to original team players
+                  setSelectedHomePlayers(teamHome.players);
+                  setSelectedAwayPlayers(teamAway.players);
                 }}
                 className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
               >

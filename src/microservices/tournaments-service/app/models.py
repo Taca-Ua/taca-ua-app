@@ -7,19 +7,19 @@ import enum
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, Text
+from sqlalchemy import ARRAY, JSON, Column, DateTime, Enum, ForeignKey, Integer, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
 
-class TournamentType(enum.Enum):
-    """Enum for tournament types"""
+class TournamentStatus(enum.Enum):
+    """Enum for tournament status"""
 
-    ROUND_ROBIN = "round_robin"
-    ELIMINATION = "elimination"
-    GROUPS = "groups"
+    DRAFT = "draft"
+    ACTIVE = "active"
+    FINISHED = "finished"
 
 
 class Tournament(Base):
@@ -33,14 +33,25 @@ class Tournament(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     modality_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     name = Column(Text, nullable=False)
-    type = Column(Enum(TournamentType), nullable=False)
-    season = Column(Integer, nullable=False)
+    season_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    status = Column(
+        Enum(TournamentStatus), nullable=False, default=TournamentStatus.DRAFT
+    )
+    rules = Column(JSON, nullable=True)
+    teams = Column(ARRAY(UUID(as_uuid=True)), nullable=True)
+    start_date = Column(DateTime, nullable=True)
+    created_by = Column(UUID(as_uuid=True), nullable=False)
     created_at = Column(
         DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
     )
+    updated_at = Column(
+        DateTime, nullable=True, onupdate=lambda: datetime.now(timezone.utc)
+    )
+    finished_at = Column(DateTime, nullable=True)
+    finished_by = Column(UUID(as_uuid=True), nullable=True)
 
     def __repr__(self):
-        return f"<Tournament {self.id} - {self.name} ({self.season})>"
+        return f"<Tournament {self.id} - {self.name} ({self.status})>"
 
 
 class Stage(Base):

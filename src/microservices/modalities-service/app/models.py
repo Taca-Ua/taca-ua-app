@@ -3,13 +3,23 @@ SQLAlchemy models for Modalities Service.
 Schema: modalities
 """
 
+import enum
 import uuid
+from datetime import datetime, timezone
 
-from sqlalchemy import Column, ForeignKey, Integer, Text
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import ARRAY, JSON, Boolean, Column, DateTime, Enum, Text
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
+
+
+class ModalityType(enum.Enum):
+    """Enum for modality types"""
+
+    COLETIVA = "coletiva"
+    INDIVIDUAL = "individual"
+    MISTA = "mista"
 
 
 class Modality(Base):
@@ -21,33 +31,67 @@ class Modality(Base):
     __table_args__ = {"schema": "modalities"}
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(Text, nullable=False, unique=True)
-    description = Column(Text)
+    name = Column(Text, nullable=False)
+    type = Column(Enum(ModalityType), nullable=False)
+    scoring_schema = Column(JSON, nullable=True)
+    created_by = Column(UUID(as_uuid=True), nullable=False)
+    created_at = Column(
+        DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at = Column(
+        DateTime, nullable=True, onupdate=lambda: datetime.now(timezone.utc)
+    )
 
     def __repr__(self):
-        return f"<Modality {self.id} - {self.name}>"
+        return f"<Modality {self.id} - {self.name} ({self.type.value})>"
 
 
-class Rule(Base):
+class Team(Base):
     """
-    Represents scoring rules for a modality.
-    Allows custom scoring formulas per modality.
+    Represents a team for a modality and course.
     """
 
-    __tablename__ = "rule"
+    __tablename__ = "team"
     __table_args__ = {"schema": "modalities"}
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    modality_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("modalities.modality.id"),
-        nullable=False,
-        index=True,
+    modality_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    course_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    name = Column(Text, nullable=False)
+    players = Column(ARRAY(UUID(as_uuid=True)), nullable=True)
+    created_by = Column(UUID(as_uuid=True), nullable=False)
+    created_at = Column(
+        DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
     )
-    points_for_win = Column(Integer, nullable=False, default=3)
-    points_for_draw = Column(Integer, nullable=False, default=1)
-    points_for_loss = Column(Integer, nullable=False, default=0)
-    scoring_formula = Column(JSONB, nullable=True)  # Custom scoring logic as JSON
+    updated_at = Column(
+        DateTime, nullable=True, onupdate=lambda: datetime.now(timezone.utc)
+    )
 
     def __repr__(self):
-        return f"<Rule {self.id} - Modality {self.modality_id}>"
+        return f"<Team {self.id} - {self.name}>"
+
+
+class Student(Base):
+    """
+    Represents a student.
+    """
+
+    __tablename__ = "student"
+    __table_args__ = {"schema": "modalities"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    course_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    full_name = Column(Text, nullable=False)
+    student_number = Column(Text, nullable=False, unique=True)
+    email = Column(Text, nullable=True)
+    is_member = Column(Boolean, nullable=False, default=False)
+    created_by = Column(UUID(as_uuid=True), nullable=False)
+    created_at = Column(
+        DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at = Column(
+        DateTime, nullable=True, onupdate=lambda: datetime.now(timezone.utc)
+    )
+
+    def __repr__(self):
+        return f"<Student {self.id} - {self.full_name} ({self.student_number})>"

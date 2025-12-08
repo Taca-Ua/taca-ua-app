@@ -1,8 +1,11 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useAuth } from "../hooks/useAuth";
 
 export default function NucleoSidebar() {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <nav className="bg-white shadow-sm w-full sticky top-0 z-50">
@@ -96,8 +99,14 @@ export default function NucleoSidebar() {
                 Jogos
               </Link>
 
-              {/* 📌 Final seccion */}
+              {/* Final seccion */}
               <div className="mt-auto pt-6 pb-6 border-t border-gray-200 space-y-4">
+                {user && (
+                  <div className="mb-4 p-3 bg-teal-50 rounded-lg">
+                    <p className="text-sm font-semibold text-teal-800">{user.full_name}</p>
+                    <p className="text-xs text-teal-600">{user.course_abbreviation}</p>
+                  </div>
+                )}
 
                 <a
                   href="/"
@@ -108,11 +117,11 @@ export default function NucleoSidebar() {
 
                 <button
                   onClick={() => {
+                    logout();
                     setIsOpen(false);
-                    // TODO: Clear session/token here
-                    window.location.href = '/admin/login';
+                    navigate('/login/nucleo');
                   }}
-                  className="block text-left w-full hover:text-red-600 font-medium transition"
+                  className="block text-left w-full text-gray-700 hover:text-red-600 font-medium transition"
                 >
                   Logout
                 </button>
