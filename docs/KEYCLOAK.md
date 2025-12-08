@@ -20,7 +20,11 @@ Este documento descreve a configuração do Keycloak usada pelo projeto, como ob
 
 ## Visão geral
 
-O projeto usa Keycloak (imagem `quay.io/keycloak/keycloak:22.0.0`) como provedor OIDC e de RBAC. Os serviços validam tokens JWT emitidos pelo realm `taca-ua`.
+O projeto usa Keycloak (imagem `quay.io/keycloak/keycloak:22.0.0`) como provedor OIDC e de RBAC para a **Competition API (Admin API)** apenas.
+
+⚠️ **Importante**: Keycloak auth está implementada **apenas na Competition API** (`/api/admin`) para autenticar administradores. A Public API (`/api/public`) e os microservices internos **não** usam Keycloak:
+- **Public API**: Endpoints completamente públicos (sem auth)
+- **Microservices**: Comunicação interna via RabbitMQ (não expostos externamente)
 
 ---
 
@@ -79,16 +83,22 @@ Dentro de um container, `localhost` refere-se ao próprio container — não ao 
 
 ## Implementação no código (resumo)
 
-### `src/shared/auth.py`
+### Competition API (Django) - `src/apis/competiotion-api/`
 
-- Busca JWKS usando `KEYCLOAK_INTERNAL_URL`
-- Verifica `iss` do token usando `KEYCLOAK_URL` (issuer externo)
-- Faz caching simples do JWKS para reduzir chamadas
-- Expõe `verify_token()` e `require_role()` usados como `Depends(...)` nos endpoints FastAPI
+- **Única API com Keycloak auth** — valida tokens JWT para endpoints administrativos
+- Usa middleware/decorators Django para autenticação de administradores
+- Endpoints em `/api/admin/*` requerem token válido
+
+### `src/shared/auth.py` (disponível mas não usado atualmente)
+
+- Código de suporte para validação JWT em FastAPI (criado durante setup inicial)
+- ⚠️ **Atualmente não é usado** — Public API e microservices não validam tokens
+- Mantido para referência futura se necessário implementar auth em outros serviços
 
 ### Nginx
 
-- Garantido que a rota `/api/public` **não é reescrita**, de modo que o caminho recebido pelo backend mantém o prefixo esperado (`/api/public/...`)
+- Proxy reverso para `/api/admin` (Competition API com auth) e `/api/public` (sem auth)
+- Rota `/api/public` **não reescrita**, caminho completo enviado ao backend
 
 ---
 
@@ -126,14 +136,17 @@ $response = Invoke-RestMethod -Method Post `
 $response.access_token
 ```
 
-### 3. Usar token para chamar endpoint protegido — curl
+### 3. Usar token para chamar endpoint protegido da Admin API — curl
 
 ```bash
-curl -X POST http://localhost/api/public/send-event?msg=Hello \
+# Exemplo: listar administradores de núcleo (requer token)
+curl http://localhost/api/admin/users/nucleo \
   -H "Authorization: Bearer <ACCESS_TOKEN>"
 ```
 
 Onde `<ACCESS_TOKEN>` é o `access_token` retornado pelo Keycloak.
+
+⚠️ **Nota**: A Public API (`/api/public/*`) **não requer** tokens — todos os endpoints são públicos.
 
 ### 4. Usar token — PowerShell
 
@@ -142,8 +155,9 @@ $headers = @{
   "Authorization" = "Bearer $($response.access_token)"
 }
 
-Invoke-RestMethod -Method Post `
-  -Uri 'http://localhost/api/public/send-event?msg=Hello' `
+# Exemplo: endpoint admin
+Invoke-RestMethod -Method Get `
+  -Uri 'http://localhost/api/admin/users/nucleo' `
   -Headers $headers
 ```
 
@@ -228,9 +242,12 @@ docker-compose logs keycloak
 
 ## Alterações aplicadas no repositório (resumo)
 
-- ✅ Adicionada `KEYCLOAK_INTERNAL_URL` nas env vars do `docker-compose.yml` para serviços que validam JWTs.
-- ✅ Atualizado `src/shared/auth.py` para usar `KEYCLOAK_INTERNAL_URL` ao buscar JWKS e `KEYCLOAK_URL` para validação do `iss`.
-- ✅ Ajustado `src/configs/nginx/nginx.conf` para não reescrever o prefixo `/api/public`.
+- ✅ Keycloak auth implementada **apenas na Competition API** (Django)
+- ✅ **Removida** auth da Public API e de todos os microservices (matches, modalities, ranking, tournaments, read-model-updater)
+- ✅ Public API agora é totalmente pública (sem validação de tokens)
+- ✅ Microservices são internos (comunicam via RabbitMQ, não expostos)
+- ✅ `src/shared/auth.py` mantido para referência mas não usado atualmente
+- ✅ Ajustado `src/configs/nginx/nginx.conf` para rotear corretamente `/api/admin` e `/api/public`
 
 ---
 
