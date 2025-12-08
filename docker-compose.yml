@@ -88,13 +88,16 @@ services:
       - minio_data:/data
 
   keycloak:
-    image: quay.io/keycloak/keycloak:22.0.0
-    command: start-dev
+    image: quay.io/keycloak/keycloak:21.1.0
+    command:
+      - start-dev
+      - --http-relative-path=/keycloak
     environment:
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
-      KC_HTTP_RELATIVE_PATH: /keycloak
-      KC_PROXY_HEADERS: xforwarded
+      KC_PROXY: edge
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
 
   # Observability
   prometheus:
