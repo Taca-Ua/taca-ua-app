@@ -1,15 +1,17 @@
 services:
   # Infrastructure Services
   nginx:
-    image: nginx:1.25-alpine
+    build:
+      context: .
+      dockerfile: src/configs/nginx/Dockerfile
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./src/configs/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./src/configs/nginx/ssl-params.conf:/etc/nginx/conf.d/ssl-params.conf:ro
       - certbot-www:/var/www/certbot:ro
       - certbot-certs:/etc/letsencrypt:ro
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
     depends_on:
       - competition-api
       - public-api
@@ -21,6 +23,8 @@ services:
       - prometheus
       - loki
     restart: unless-stopped
+    networks:
+      - default
 
   certbot:
     image: certbot/certbot:latest
@@ -28,9 +32,16 @@ services:
       - certbot-www:/var/www/certbot
       - certbot-certs:/etc/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet --deploy-hook \"sh -c \\\"docker exec $$(docker ps -q -f ancestor=nginx:1.25-alpine) nginx -s reload 2>/dev/null || true\\\"\"; sleep 12h & wait $${!}; done;'"
+      - ./src/configs/certbot/init-certbot.sh:/usr/local/bin/init-certbot.sh:ro
+    environment:
+      - DOMAIN=${DOMAIN}
+      - EMAIL=${CERTBOT_EMAIL}
+      - CERTBOT_STAGING=${CERTBOT_STAGING:-0}
+    entrypoint: ["/bin/sh", "/usr/local/bin/init-certbot.sh"]
     depends_on:
       - nginx
+    networks:
+      - default
 
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
