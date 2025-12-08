@@ -3,8 +3,25 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
 import { modalitiesApi, type Modality } from '../../api/modalities';
 
+const ModalityEntry = (mod: Modality) => {
+	const navigate = useNavigate();
+
+	console.log("Rendering modality:", `/geral/modalidades/${mod.id}`);
+
+	return <div
+		key={mod.id}
+		onClick={() => navigate(`/geral/modalidades/${mod.id}`)}
+		className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer transition-colors flex justify-between items-center"
+		>
+		<span className="text-gray-800 font-medium">{mod.name}</span>
+		<span className="text-gray-600 text-sm capitalize">
+			Tipo: {mod.type}
+		</span>
+	</div>
+}
+
+
 const Modalities = () => {
-  const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newModalityName, setNewModalityName] = useState('');
   const [modalityType, setModalityType] = useState<'coletiva' | 'individual' | 'mista' | ''>('');
@@ -109,16 +126,7 @@ const Modalities = () => {
             <div className="space-y-3">
               {modalities.length > 0 ? (
                 modalities.map((mod) => (
-                  <div
-                    key={mod.id}
-                    onClick={() => navigate(`/geral/modalidades/${mod.id}`)}
-                    className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer transition-colors flex justify-between items-center"
-                  >
-                    <span className="text-gray-800 font-medium">{mod.name}</span>
-                    <span className="text-gray-600 text-sm capitalize">
-                      Tipo: {mod.type}
-                    </span>
-                  </div>
+                  <ModalityEntry key={mod.id} {...mod} />
                 ))
               ) : (
                 <p className="text-gray-500 text-center py-8">

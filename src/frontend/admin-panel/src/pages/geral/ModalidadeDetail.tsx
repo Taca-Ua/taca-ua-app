@@ -19,7 +19,7 @@ function ModalidadeDetail() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const data = await modalitiesApi.getById(Number(id));
+        const data = await modalitiesApi.getById(String(id));
         setModality(data);
         setError('');
       } catch (err) {
@@ -66,7 +66,7 @@ function ModalidadeDetail() {
         }
       }
 
-      const updatedModality = await modalitiesApi.update(Number(id), {
+      const updatedModality = await modalitiesApi.update(String(id), {
         name: editedName,
         type: editedType as 'coletiva' | 'individual' | 'mista',
         scoring_schema: scoringSchema,
@@ -83,7 +83,7 @@ function ModalidadeDetail() {
   const handleDelete = async () => {
     if (window.confirm('Tem certeza que deseja eliminar esta modalidade?')) {
       try {
-        await modalitiesApi.delete(Number(id));
+        await modalitiesApi.delete(String(id));
         navigate('/geral/modalidades');
       } catch (err) {
         console.error('Failed to delete modality:', err);

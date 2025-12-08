@@ -4,6 +4,7 @@ Modality management views
 
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -12,58 +13,7 @@ from ..serializers import (
     ModalityListSerializer,
     ModalityUpdateSerializer,
 )
-
-# Mock database for modalities
-MOCK_MODALITIES = {
-    1: {
-        "id": 1,
-        "name": "Futebol",
-        "type": "coletiva",
-        "year": "25/26",
-        "description": "Futebol de campo 11v11",
-        "scoring_schema": '{"win": 3, "draw": 1, "loss": 0}',
-    },
-    2: {
-        "id": 2,
-        "name": "Futsal",
-        "type": "coletiva",
-        "year": "25/26",
-        "description": "Futebol de salão 5v5",
-        "scoring_schema": '{"win": 3, "draw": 1, "loss": 0}',
-    },
-    3: {
-        "id": 3,
-        "name": "Basquetebol",
-        "type": "coletiva",
-        "year": "25/26",
-        "description": "Basquetebol 5v5",
-        "scoring_schema": '{"win": 2, "loss": 0}',
-    },
-    4: {
-        "id": 4,
-        "name": "Voleibol",
-        "type": "coletiva",
-        "year": "25/26",
-        "description": "Voleibol 6v6",
-        "scoring_schema": '{"win": 2, "loss": 0}',
-    },
-    5: {
-        "id": 5,
-        "name": "Andebol",
-        "type": "coletiva",
-        "year": "25/26",
-        "description": "Andebol 7v7",
-        "scoring_schema": '{"win": 2, "loss": 0}',
-    },
-    6: {
-        "id": 6,
-        "name": "Rugby",
-        "type": "coletiva",
-        "year": "24/25",
-        "description": "Rugby 15v15",
-        "scoring_schema": '{"win": 4, "loss": 0}',
-    },
-}
+from ..services.modalities_service import ModalitiesService
 
 
 @extend_schema_view(
@@ -80,25 +30,34 @@ MOCK_MODALITIES = {
     ),
 )
 class ModalityListCreateView(APIView):
-    def get(self, request):
-        modalities = list(MOCK_MODALITIES.values())
-        return Response(modalities)
+    def get(self, request: Request):
+        service = ModalitiesService()
 
-    def post(self, request):
+        # Extract filters from query parameters
+        type_filter = request.query_params.get("type")
+        limit = request.query_params.get("limit", 50)
+        offset = request.query_params.get("offset", 0)
+
+        modalities = service.list_modalities(
+            type=type_filter, limit=int(limit), offset=int(offset)
+        )
+
+        return Response(modalities["modalities"])
+
+    def post(self, request: Request):
         serializer = ModalityCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Generate new ID
-        max_id = max(MOCK_MODALITIES.keys()) if MOCK_MODALITIES else 0
-        new_id = max_id + 1
+        service = ModalitiesService()
 
-        new_modality = {
-            "id": new_id,
-            **serializer.validated_data,
-        }
+        modality = service.create_modality(
+            name=serializer.validated_data["name"],
+            type=serializer.validated_data["type"],
+            created_by=request.user.id or "00000000-0000-0000-0000-000000000000",
+            scoring_schema=serializer.validated_data.get("scoring_schema"),
+        )
 
-        MOCK_MODALITIES[new_id] = new_modality
-        return Response(new_modality, status=status.HTTP_201_CREATED)
+        return Response(modality, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
@@ -121,36 +80,28 @@ class ModalityListCreateView(APIView):
 )
 class ModalityDetailView(APIView):
     def get(self, request, modality_id):
-        if modality_id not in MOCK_MODALITIES:
-            return Response(
-                {"error": "Modality not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-        return Response(MOCK_MODALITIES[modality_id])
+        service = ModalitiesService()
+        modality = service.get_modality(modality_id)
+        return Response(modality)
 
     def put(self, request, modality_id):
-        if modality_id not in MOCK_MODALITIES:
-            return Response(
-                {"error": "Modality not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
         serializer = ModalityUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Update existing modality
-        modality = MOCK_MODALITIES[modality_id]
-        for key, value in serializer.validated_data.items():
-            modality[key] = value
+        service = ModalitiesService()
+
+        modality = service.update_modality(
+            modality_id,
+            updated_by=request.user.id or "00000000-0000-0000-0000-000000000000",
+            name=serializer.validated_data.get("name"),
+            type=serializer.validated_data.get("type"),
+            scoring_schema=serializer.validated_data.get("scoring_schema"),
+        )
 
         return Response(modality)
 
     def delete(self, request, modality_id):
-        if modality_id not in MOCK_MODALITIES:
-            return Response(
-                {"error": "Modality not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        service = ModalitiesService()
+        resp = service.delete_modality(modality_id)
 
-        del MOCK_MODALITIES[modality_id]
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(resp)
