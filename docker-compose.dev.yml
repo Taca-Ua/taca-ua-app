@@ -55,18 +55,6 @@ services:
   redis:
     image: redis:7-alpine
 
-  minio:
-    image: minio/minio
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    volumes:
-      - minio_data:/data
-
   keycloak:
     image: quay.io/keycloak/keycloak:22.0.0
     command: start-dev
@@ -289,6 +277,19 @@ services:
       - /app/node_modules
     environment:
       - CHOKIDAR_USEPOLLING=true
+
+
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"   # API
+      - "9001:9001"   # Console Web
+    volumes:
+      - minio_data:/data
 
 
 volumes:
