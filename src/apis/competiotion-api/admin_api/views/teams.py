@@ -4,121 +4,79 @@ Team management views
 
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ..serializers import TeamCreateSerializer, TeamListSerializer, TeamUpdateSerializer
-from .auth import get_authenticated_user
+from ..services.modalities_service import ModalitiesService
 
 
 @extend_schema_view(
     get=extend_schema(
         responses=TeamListSerializer(many=True),
-        description="List teams for the authenticated nucleo (filtered by course_id)",
+        description="List teams with optional filters (modality_id, course_id, tournament_id)",
         tags=["Team Management"],
     ),
     post=extend_schema(
         request=TeamCreateSerializer,
         responses=TeamListSerializer,
-        description="Create a new team for the authenticated nucleo",
+        description="Create a new team for a modality and course",
         tags=["Team Management"],
     ),
 )
 class TeamListCreateView(APIView):
-    def get(self, request):
-        # Get authenticated user
-        user = get_authenticated_user(request)
-        if not user:
-            return Response(
-                {"error": "Authentication required"},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
+    def get(self, request: Request):
+        service = ModalitiesService()
 
-        # Mock database of all teams
-        all_teams = [
-            {
-                "id": 1,
-                "modality_id": 1,  # Futebol
-                "course_id": 1,
-                "name": "MECT Futebol A",
-                "players": [1, 2, 3, 4, 5, 11, 12],  # 7 players for football
-            },
-            {
-                "id": 2,
-                "modality_id": 1,  # Futebol
-                "course_id": 2,
-                "name": "LEI Futebol A",
-                "players": [6, 7, 8, 9, 10, 21],  # 6 players for football
-            },
-            {
-                "id": 3,
-                "modality_id": 2,  # Futsal
-                "course_id": 1,
-                "name": "MECT Futsal",
-                "players": [1, 2, 13, 14, 15],  # 5 players for futsal
-            },
-            {
-                "id": 4,
-                "modality_id": 5,  # Andebol
-                "course_id": 1,
-                "name": "MECT Andebol",
-                "players": [3, 4, 11, 12, 13, 14],  # 6 players for handball
-            },
-            {
-                "id": 5,
-                "modality_id": 1,  # Futebol
-                "course_id": 3,
-                "name": "LECI Futebol A",
-                "players": [16, 17, 18, 19, 20],  # 5 players for football
-            },
-            {
-                "id": 6,
-                "modality_id": 2,  # Futsal
-                "course_id": 2,
-                "name": "LEI Futsal",
-                "players": [6, 21, 22, 23],  # 4 players for futsal
-            },
-        ]
+        # Extract filters from query parameters
+        modality_id = request.query_params.get("modality_id")
+        course_id = request.query_params.get("course_id")
+        tournament_id = request.query_params.get("tournament_id")
+        limit = request.query_params.get("limit", 50)
+        offset = request.query_params.get("offset", 0)
 
-        # Check if 'all' query parameter is provided
-        show_all = request.query_params.get("all", "false").lower() == "true"
+        teams_data = service.list_teams(
+            modality_id=modality_id,
+            course_id=course_id,
+            tournament_id=tournament_id,
+            limit=int(limit),
+            offset=int(offset),
+        )
 
-        if show_all:
-            # Return all teams (needed for match details with teams from other courses)
-            return Response(all_teams)
-        else:
-            # Filter teams by user's course_id (default behavior)
-            filtered_teams = [
-                team for team in all_teams if team["course_id"] == user["course_id"]
-            ]
-            return Response(filtered_teams)
+        return Response(teams_data["teams"])
 
-    def post(self, request):
-        # Get authenticated user
-        user = get_authenticated_user(request)
-        if not user:
-            return Response(
-                {"error": "Authentication required"},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
-
+    def post(self, request: Request):
         serializer = TeamCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Auto-assign the team to the authenticated user's course
-        dummy_response = {
-            "id": 7,
-            "course_id": user["course_id"],
-            **serializer.validated_data,
-        }
-        return Response(dummy_response, status=status.HTTP_201_CREATED)
+        service = ModalitiesService()
+
+        team = service.create_team(
+            modality_id=str(serializer.validated_data["modality_id"]),
+            course_id=str(serializer.validated_data["course_id"]),
+            created_by=(
+                str(request.user.id)
+                if request.user.id
+                else "00000000-0000-0000-0000-000000000000"
+            ),
+            name=serializer.validated_data.get("name"),
+            players=[str(p) for p in serializer.validated_data.get("players", [])],
+        )
+
+        return Response(team, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
+    get=extend_schema(
+        responses=TeamListSerializer,
+        description="Get a team by ID",
+        tags=["Team Management"],
+    ),
     put=extend_schema(
         request=TeamUpdateSerializer,
         responses=TeamListSerializer,
-        description="Update a team",
+        description="Update a team (name, add/remove players)",
         tags=["Team Management"],
     ),
     delete=extend_schema(
@@ -128,23 +86,35 @@ class TeamListCreateView(APIView):
     ),
 )
 class TeamDetailView(APIView):
+    def get(self, request, team_id):
+        service = ModalitiesService()
+        team = service.get_team(team_id)
+        return Response(team)
+
     def put(self, request, team_id):
         serializer = TeamUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        current_players = [1, 2, 3]
-        players_add = serializer.validated_data.get("players_add", [])
-        players_remove = serializer.validated_data.get("players_remove", [])
-        updated_players = [
-            p for p in current_players if p not in players_remove
-        ] + players_add
-        dummy_response = {
-            "id": team_id,
-            "modality_id": 1,
-            "course_id": 1,
-            "name": serializer.validated_data.get("name", f"Team {team_id}"),
-            "players": updated_players,
-        }
-        return Response(dummy_response)
+
+        service = ModalitiesService()
+
+        players_add = serializer.validated_data.get("players_add")
+        players_remove = serializer.validated_data.get("players_remove")
+
+        team = service.update_team(
+            team_id=team_id,
+            updated_by=(
+                str(request.user.id)
+                if request.user.id
+                else "00000000-0000-0000-0000-000000000000"
+            ),
+            name=serializer.validated_data.get("name"),
+            players_add=[str(p) for p in players_add] if players_add else None,
+            players_remove=[str(p) for p in players_remove] if players_remove else None,
+        )
+
+        return Response(team)
 
     def delete(self, request, team_id):
+        service = ModalitiesService()
+        service.delete_team(team_id)
         return Response(status=status.HTTP_204_NO_CONTENT)

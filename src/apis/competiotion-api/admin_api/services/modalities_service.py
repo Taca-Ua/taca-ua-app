@@ -9,13 +9,130 @@ from .base_service import BaseService
 
 
 class ModalitiesService(BaseService):
-    """Service for managing modalities, teams, and students via modalities-service"""
+    """Service for managing courses, modalities, teams, and students via modalities-service"""
 
     def __init__(self):
         base_url = os.environ.get(
             "MODALITIES_SERVICE_URL", "http://modalities-service:8000"
         )
         super().__init__(base_url)
+
+    # ==================== Course Management ====================
+
+    def create_course(
+        self,
+        name: str,
+        abbreviation: str,
+        created_by: str,
+        description: Optional[str] = None,
+        logo_url: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Create a new course
+
+        Args:
+            name: Course name
+            abbreviation: Course abbreviation (must be unique)
+            created_by: UUID of the user creating
+            description: Optional course description
+            logo_url: Optional course logo URL
+
+        Returns:
+            Created course data
+        """
+        data = {
+            "name": name,
+            "abbreviation": abbreviation,
+            "created_by": created_by,
+        }
+
+        if description is not None:
+            data["description"] = description
+        if logo_url is not None:
+            data["logo_url"] = logo_url
+
+        return self.post("/courses", data)
+
+    def list_courses(
+        self, search: Optional[str] = None, limit: int = 50, offset: int = 0
+    ) -> Dict[str, Any]:
+        """
+        List courses with optional search
+
+        Args:
+            search: Optional search term for name or abbreviation
+            limit: Maximum number of results
+            offset: Pagination offset
+
+        Returns:
+            Dictionary with courses list, total, limit, offset
+        """
+        params = {"limit": limit, "offset": offset}
+
+        if search:
+            params["search"] = search
+
+        return self.get("/courses", params=params)
+
+    def get_course(self, course_id: str) -> Dict[str, Any]:
+        """
+        Get course details
+
+        Args:
+            course_id: UUID of the course
+
+        Returns:
+            Course data
+        """
+        return self.get(f"/courses/{course_id}")
+
+    def update_course(
+        self,
+        course_id: str,
+        updated_by: str,
+        name: Optional[str] = None,
+        abbreviation: Optional[str] = None,
+        description: Optional[str] = None,
+        logo_url: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Update a course
+
+        Args:
+            course_id: UUID of the course
+            updated_by: UUID of the user updating
+            name: Optional new name
+            abbreviation: Optional new abbreviation
+            description: Optional new description
+            logo_url: Optional new logo URL
+
+        Returns:
+            Updated course data
+        """
+        data = {"updated_by": updated_by}
+
+        if name is not None:
+            data["name"] = name
+        if abbreviation is not None:
+            data["abbreviation"] = abbreviation
+        if description is not None:
+            data["description"] = description
+        if logo_url is not None:
+            data["logo_url"] = logo_url
+
+        return self.put(f"/courses/{course_id}", data)
+
+    def delete_course(self, course_id: str) -> Dict[str, Any]:
+        """
+        Delete a course (and all associated teams and students)
+
+        Args:
+            course_id: UUID of the course
+
+        Returns:
+            Empty dict on success
+        """
+        return self.delete(f"/courses/{course_id}")
 
     # ==================== Modality Management ====================
 
