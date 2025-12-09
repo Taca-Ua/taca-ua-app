@@ -20,7 +20,7 @@ services:
 
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
-    user: "999:999"
+    user: "root"
     ports:
       - "5672:5672"
       - "15672:15672"
