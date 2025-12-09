@@ -1,5 +1,5 @@
 services:
-# Infrastructure Services
+  # Infrastructure Services
   nginx:
     image: nginx:1.25-alpine
     ports:
@@ -16,6 +16,7 @@ services:
       - minio
       - prometheus
       - loki
+      - storage-service
 
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
@@ -64,7 +65,44 @@ services:
       KC_HTTP_RELATIVE_PATH: /keycloak
       KC_PROXY_HEADERS: xforwarded
 
-# Observability
+  # MinIO - Storage Backend
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"   # API
+      - "9001:9001"   # Console Web
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Storage Service - Isolated Generic File Storage
+  storage-service:
+    build:
+      context: ./src/microservices/storage-service
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8000"
+    environment:
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_SECURE=false
+      - MINIO_PUBLIC_ENDPOINT=localhost:9000
+      - DEFAULT_BUCKET=files
+    depends_on:
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Observability
   prometheus:
     image: prom/prometheus:v2.45.0
     volumes:
@@ -89,7 +127,7 @@ services:
       - prometheus
       - loki
 
-# APIs
+  # APIs
   competition-api:
     build:
       context: .
@@ -106,9 +144,7 @@ services:
       - DATABASE_URL=postgres://user:password@postgres:5432/taca_ua
       - PYTHONUNBUFFERED=1
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
-      - MINIO_ENDPOINT=minio:9000
-      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - STORAGE_SERVICE_URL=http://storage-service:8000
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -116,6 +152,8 @@ services:
         condition: service_started
       postgres:
         condition: service_healthy
+      storage-service:
+        condition: service_started
 
   public-api:
     build:
@@ -131,6 +169,7 @@ services:
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
       - DATABASE_URL=${DATABASE_URL}
+      - STORAGE_SERVICE_URL=http://storage-service:8000
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -138,8 +177,10 @@ services:
         condition: service_started
       postgres:
         condition: service_healthy
+      storage-service:
+        condition: service_started
 
-# Microservices
+  # Microservices
   matches-service:
     build:
       context: .
@@ -260,7 +301,7 @@ services:
       postgres:
         condition: service_healthy
 
-# Frontend Services
+  # Frontend Services
   admin-panel:
     build:
       context: .
@@ -280,20 +321,6 @@ services:
       - /app/node_modules
     environment:
       - CHOKIDAR_USEPOLLING=true
-
-
-  minio:
-    image: minio/minio
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-    ports:
-      - "9000:9000"   # API
-      - "9001:9001"   # Console Web
-    volumes:
-      - minio_data:/data
-
 
 volumes:
   postgres_data:
