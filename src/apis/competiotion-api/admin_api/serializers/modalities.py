@@ -18,21 +18,18 @@ class ModalityListSerializer(serializers.Serializer):
 
     id = serializers.IntegerField(read_only=True)
     name = serializers.CharField()
-    type = serializers.ChoiceField(choices=MODALITY_TYPES)
-    scoring_schema = serializers.JSONField(required=False, allow_null=True)
+    modality_type = serializers.CharField()
 
 
 class ModalityCreateSerializer(serializers.Serializer):
     """Serializer for creating a modality"""
 
     name = serializers.CharField(required=True)
-    type = serializers.ChoiceField(choices=MODALITY_TYPES, required=True)
-    scoring_schema = serializers.JSONField(required=False, allow_null=True)
+    modality_type_id = serializers.UUIDField(required=False)
 
 
 class ModalityUpdateSerializer(serializers.Serializer):
     """Serializer for updating a modality"""
 
     name = serializers.CharField(required=False)
-    type = serializers.ChoiceField(choices=MODALITY_TYPES, required=False)
-    scoring_schema = serializers.JSONField(required=False, allow_null=True)
+    modality_type_id = serializers.UUIDField(required=False)

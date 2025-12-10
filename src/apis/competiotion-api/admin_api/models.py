@@ -157,8 +157,8 @@ class Modality(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.TextField()
-    type = models.UUIDField()  # References ModalityType
-    scoring_schema = models.JSONField(null=True, blank=True)
+    modality_type_id = models.UUIDField()  # References ModalityType
+
     created_by = models.UUIDField()
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)

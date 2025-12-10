@@ -4,6 +4,11 @@ API_URL = "http://localhost/api/admin"
 
 
 def populate_modalities_types():
+    check = requests.get(f"{API_URL}/modality-types")
+    if check.status_code == 200 and len(check.json()) > 0:
+        print("Modality types already populated.")
+        return None
+
     modalities_types = [
         {
             "name": "Modalidades Coletivas Recorrentes",
@@ -181,12 +186,12 @@ def populate_modalities_types():
         },
     ]
 
-    ids = []
+    ids = {}
     for modality_type in modalities_types:
         response = requests.post(f"{API_URL}/modality-types", json=modality_type)
         if response.status_code == 201:
             print(f"Created modality type: {modality_type['name']}")
-            ids.append(response.json().get("id", None))
+            ids[modality_type["name"]] = response.json().get("id", None)
         else:
             print(
                 f"Failed to create modality type: {modality_type['name']}, Status Code: {response.status_code}, Response: {response.text}"
@@ -195,9 +200,179 @@ def populate_modalities_types():
     return ids
 
 
+def populate_modalidades(modality_types_dict=None):
+    if modality_types_dict is None:
+        data = requests.get(f"{API_URL}/modality-types")
+        modality_types = data.json()
+        modality_types_dict = {mt["name"]: mt["id"] for mt in modality_types}
+
+    print("Modality Types Dict:", modality_types_dict)
+
+    modalidades = [
+        {
+            "name": "Andebol",
+            "modality_type_id": modality_types_dict[
+                "Modalidades Coletivas Recorrentes"
+            ],
+        },
+        {
+            "name": "Atletismo",
+            "modality_type_id": modality_types_dict["Modalidades Individuais"],
+        },
+        {
+            "name": "Badminton",
+            "modality_type_id": modality_types_dict["Modalidades Duplas/pares"],
+        },
+        {
+            "name": "Basquetebol 3x3",
+            "modality_type_id": modality_types_dict[
+                "Modalidades Coletivas Recorrentes"
+            ],
+        },
+        {
+            "name": "Stand-Up Paddle",
+            "modality_type_id": modality_types_dict["Modalidades Individuais"],
+        },
+        {
+            "name": "Canoagem",
+            "modality_type_id": modality_types_dict["Modalidades Individuais"],
+        },
+        {
+            "name": "Ciclismo",
+            "modality_type_id": modality_types_dict["Modalidades Individuais"],
+        },
+        {
+            "name": "Corfebol",
+            "modality_type_id": modality_types_dict["Modalidades Coletivas Pontuais"],
+        },
+        {
+            "name": "EA Sports FC",
+            "modality_type_id": modality_types_dict["Modalidades Individuais"],
+        },
+        {
+            "name": "Valorant",
+            "modality_type_id": modality_types_dict["Modalidades Coletivas Pontuais"],
+        },
+        {
+            "name": "CS 2",
+            "modality_type_id": modality_types_dict["Modalidades Coletivas Pontuais"],
+        },
+        {
+            "name": "League of Legends",
+            "modality_type_id": modality_types_dict["Modalidades Coletivas Pontuais"],
+        },
+        {
+            "name": "Futsal",
+            "modality_type_id": modality_types_dict[
+                "Modalidades Coletivas Recorrentes"
+            ],
+        },
+        {
+            "name": "Corta-mato",
+            "modality_type_id": modality_types_dict["Modalidades Individuais"],
+        },
+        {
+            "name": "Futebol 7 Masculino",
+            "modality_type_id": modality_types_dict[
+                "Modalidades Coletivas Recorrentes"
+            ],
+        },
+        {
+            "name": "Futebol 7 Feminino",
+            "modality_type_id": modality_types_dict["Modalidades Coletivas Pontuais"],
+        },
+        {
+            "name": "Matraquilhos",
+            "modality_type_id": modality_types_dict["Modalidades Duplas/pares"],
+        },
+        {
+            "name": "Natação",
+            "modality_type_id": modality_types_dict["Modalidades Individuais"],
+        },
+        {
+            "name": "Orientação",
+            "modality_type_id": modality_types_dict["Modalidades Individuais"],
+        },
+        {
+            "name": "Padel",
+            "modality_type_id": modality_types_dict["Modalidades Individuais"],
+        },
+        {
+            "name": "Squash",
+            "modality_type_id": modality_types_dict["Modalidades Individuais"],
+        },
+        {
+            "name": "Ténis",
+            "modality_type_id": modality_types_dict["Modalidades Duplas/pares"],
+        },
+        {
+            "name": "Ténis de Mesa",
+            "modality_type_id": modality_types_dict["Modalidades Duplas/pares"],
+        },
+        {
+            "name": "Voleibol 4x4",
+            "modality_type_id": modality_types_dict[
+                "Modalidades Coletivas Recorrentes"
+            ],
+        },
+        {
+            "name": "Xadrez",
+            "modality_type_id": modality_types_dict["Modalidades Individuais"],
+        },
+        {
+            "name": "Polybat",
+            "modality_type_id": modality_types_dict["Modalidades Individuais"],
+        },
+        {
+            "name": "Taekwondo",
+            "modality_type_id": modality_types_dict["Modalidades Individuais"],
+        },
+        {
+            "name": "Ultimate Frisbee",
+            "modality_type_id": modality_types_dict["Modalidades Coletivas Pontuais"],
+        },
+        {
+            "name": "Dardos",
+            "modality_type_id": modality_types_dict["Modalidades Individuais"],
+        },
+        {
+            "name": "Touch Rugby",
+            "modality_type_id": modality_types_dict["Modalidades Coletivas Pontuais"],
+        },
+        {
+            "name": "Dr. Why",
+            "modality_type_id": modality_types_dict["Modalidades Individuais"],
+        },
+        {
+            "name": "Sueca",
+            "modality_type_id": modality_types_dict["Modalidades Duplas/pares"],
+        },
+        {
+            "name": "Goalball",
+            "modality_type_id": modality_types_dict["Modalidades Coletivas Pontuais"],
+        },
+    ]
+
+    resp_modalidades = []
+    for modalidade in modalidades:
+        response = requests.post(f"{API_URL}/modalities", json=modalidade)
+        if response.status_code == 201:
+            print(f"Created modality: {modalidade['name']}")
+            resp_modalidades.append(response.json())
+        else:
+            print(
+                f"Failed to create modality: {modalidade['name']}, Status Code: {response.status_code}, Response: {response.text}"
+            )
+
+    return resp_modalidades
+
+
 def main():
     modality_types_ids = populate_modalities_types()
     print("Populated Modality Types IDs:", modality_types_ids)
+
+    modalities = populate_modalidades(modality_types_ids)
+    print("Populated Modalities:", [mod["name"] for mod in modalities])
 
 
 if __name__ == "__main__":

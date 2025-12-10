@@ -2,17 +2,24 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Sidebar from '../../components/geral_navbar';
 import { modalitiesApi, type Modality } from '../../api/modalities';
+import { scoringFormatsApi } from '../../api/scoring-formats';
+
+interface ModalityType {
+	  id: string;
+	  name: string;
+}
 
 function ModalidadeDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modality, setModality] = useState<Modality | null>(null);
+  const [modalityTypes, setModalityTypes] = useState<ModalityType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const [editedName, setEditedName] = useState('');
-  const [editedType, setEditedType] = useState<'coletiva' | 'individual' | 'mista' | ''>('');
+  const [editedType, setEditedType] = useState('');
   const [editedScoringSchema, setEditedScoringSchema] = useState('');
 
   useEffect(() => {
@@ -36,10 +43,22 @@ function ModalidadeDetail() {
     }
   }, [id, navigate]);
 
+  useEffect(() => {
+	const fetchModalityTypes = async () => {
+	  try {
+		const data = await scoringFormatsApi.getAll();
+		setModalityTypes(data);
+	  } catch (err) {
+		console.error('Failed to fetch modality types:', err);
+	  }
+	};
+	fetchModalityTypes();
+  }, []);
+
   const handleEdit = () => {
     if (!modality) return;
     setEditedName(modality.name);
-    setEditedType(modality.type);
+    setEditedType(modality.modality_type);
     setEditedScoringSchema(modality.scoring_schema ? JSON.stringify(modality.scoring_schema, null, 2) : '');
     setError('');
     setIsModalOpen(true);
@@ -68,12 +87,13 @@ function ModalidadeDetail() {
 
       const updatedModality = await modalitiesApi.update(String(id), {
         name: editedName,
-        type: editedType as 'coletiva' | 'individual' | 'mista',
+        modality_type_id: editedType,
         scoring_schema: scoringSchema,
       });
       setModality(updatedModality);
       setError('');
       setIsModalOpen(false);
+	  navigate(`/geral/modalidades/`);
     } catch (err) {
       console.error('Failed to update modality:', err);
       setError('Erro ao atualizar modalidade');
@@ -119,7 +139,7 @@ function ModalidadeDetail() {
             {/* Type */}
             <div>
               <label className="block text-teal-500 font-medium mb-2">Tipo</label>
-              <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800 capitalize">{modality.type}</div>
+              <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800 capitalize">{modality.modality_type}</div>
             </div>
             {/* Scoring Schema */}
             {modality.scoring_schema && (
@@ -176,18 +196,18 @@ function ModalidadeDetail() {
                 </label>
                 <select
                   value={editedType}
-                  onChange={(e) => setEditedType(e.target.value as 'coletiva' | 'individual' | 'mista' | '')}
+                  onChange={(e) => setEditedType(e.target.value)}
                   required
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
                 >
                   <option value="">Selecionar Tipo</option>
-                  <option value="coletiva">Coletiva</option>
-                  <option value="individual">Individual</option>
-                  <option value="mista">Mista</option>
+                  {modalityTypes.map((type) => (
+					<option key={type.id} value={type.id}>{type.name}</option>
+				  ))}
                 </select>
               </div>
               {/* Scoring Schema */}
-              <div>
+              {/* <div>
                 <label className="block text-gray-700 font-medium mb-2">Scoring Schema (JSON)</label>
                 <textarea
                   value={editedScoringSchema}
@@ -195,7 +215,7 @@ function ModalidadeDetail() {
                   placeholder='{"win": 3, "draw": 1, "loss": 0}'
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 min-h-[100px] font-mono text-sm"
                 />
-              </div>
+              </div> */}
             </div>
 
             <div className="flex gap-4 mt-6">

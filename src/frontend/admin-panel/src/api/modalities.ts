@@ -3,19 +3,19 @@ import { apiClient } from './client';
 export interface Modality {
   id: string;
   name: string;
-  type: 'coletiva' | 'individual' | 'mista';
+  modality_type: string;
   scoring_schema?: Record<string, number> | null;
 }
 
 export interface ModalityCreate {
   name: string;
-  type: 'coletiva' | 'individual' | 'mista';
+  modality_type_id: string;
   scoring_schema?: Record<string, number> | null;
 }
 
 export interface ModalityUpdate {
   name?: string;
-  type?: 'coletiva' | 'individual' | 'mista';
+  modality_type_id?: string;
   scoring_schema?: Record<string, number> | null;
 }
 
