@@ -5,8 +5,8 @@ class _EscalaoSerializer(serializers.Serializer):
     """Serializer for Escalao within ModalityType serializers"""
 
     escalao = serializers.CharField()
-    minParticipants = serializers.IntegerField()
-    maxParticipants = serializers.IntegerField()
+    minParticipants = serializers.IntegerField(required=False, allow_null=True)
+    maxParticipants = serializers.IntegerField(required=False, allow_null=True)
     points = serializers.ListField(child=serializers.IntegerField())
 
 
