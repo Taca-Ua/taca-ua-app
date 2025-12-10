@@ -14,6 +14,7 @@ import ModalityDetails from '../pages/geral/ModalidadeDetail';
 import Nucleo from '../pages/geral/Nucleos';
 import NucleoDetails from '../pages/geral/NucleoDetails';
 import Regulamentos from '../pages/geral/Regulamentos';
+import FormatosPontuacao from '../pages/geral/FormatosPontuacao';
 import Torneios from '../pages/geral/Torneios';
 import TorneioDetails from '../pages/geral/TorneioDetails';
 import JogoDetails from '../pages/geral/JogoDetails';
@@ -86,6 +87,10 @@ export const router = createBrowserRouter([
   {
     path: '/geral/regulamentos',
     element: <ProtectedRoute requiredRole="geral"><Regulamentos /></ProtectedRoute>,
+  },
+  {
+    path: '/geral/formatos-pontuacao',
+    element: <ProtectedRoute requiredRole="geral"><FormatosPontuacao /></ProtectedRoute>,
   },
   {
     path: '/geral/torneios',

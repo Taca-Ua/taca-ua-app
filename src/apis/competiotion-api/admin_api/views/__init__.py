@@ -13,6 +13,7 @@ from .matches import (
     match_sheet,
 )
 from .modalities import ModalityDetailView, ModalityListCreateView
+from .modalities_types import ModalityTypeDetailView, ModalityTypeListCreateView
 from .regulations import RegulationDetailView, RegulationListCreateView
 from .seasons import SeasonListCreateView, season_finish, season_start
 from .students import StudentListCreateView, student_detail
@@ -46,6 +47,9 @@ __all__ = [
     # Regulations
     "RegulationListCreateView",
     "RegulationDetailView",
+    # Modality Types
+    "ModalityTypeListCreateView",
+    "ModalityTypeDetailView",
     # Modalities
     "ModalityListCreateView",
     "ModalityDetailView",

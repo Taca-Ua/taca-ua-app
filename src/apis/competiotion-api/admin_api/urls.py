@@ -59,6 +59,16 @@ urlpatterns = [
         views.ModalityDetailView.as_view(),
         name="modality-detail",
     ),
+    path(
+        "modality-types",
+        views.ModalityTypeListCreateView.as_view(),
+        name="modality-type-list",
+    ),
+    path(
+        "modality-types/<modality_type_id>",
+        views.ModalityTypeDetailView.as_view(),
+        name="modality-type-detail",
+    ),
     # Tournament Management (RF3)
     path(
         "tournaments", views.TournamentListCreateView.as_view(), name="tournament-list"

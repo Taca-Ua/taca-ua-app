@@ -134,6 +134,95 @@ class ModalitiesService(BaseService):
         """
         return self.delete(f"/courses/{course_id}")
 
+    # ==================== Modality Type Management ====================
+    def list_modality_types(self) -> List[Dict[str, Any]]:
+        """
+        List all modality types
+
+        Returns:
+            List of modality types
+        """
+        return self.get("/modality-types")
+
+    def create_modality_type(
+        self,
+        name: str,
+        description: Optional[str],
+        escaloes: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """
+        Create a new modality type
+
+        Args:
+            name: Modality type name
+            description: Optional description
+            escaloes: List of escaloes
+
+        Returns:
+            Created modality type data
+        """
+        data = {
+            "name": name,
+            "description": description,
+            "escaloes": escaloes,
+        }
+
+        return self.post("/modality-types", data)
+
+    def get_modality_type(self, modality_id: str) -> Dict[str, Any]:
+        """
+        Get modality type details
+
+        Args:
+            modality_id: UUID of the modality type
+
+        Returns:
+            Modality type data
+        """
+        return self.get(f"/modality-types/{modality_id}")
+
+    def update_modality_type(
+        self,
+        modality_type_id: str,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        escaloes: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Update a modality type
+
+        Args:
+            modality_type_id: UUID of the modality type
+            name: Optional new name
+            description: Optional new description
+            escaloes: Optional new escaloes list
+
+        Returns:
+            Updated modality type data
+        """
+        data = {}
+
+        if name is not None:
+            data["name"] = name
+        if description is not None:
+            data["description"] = description
+        if escaloes is not None:
+            data["escaloes"] = escaloes
+
+        return self.put(f"/modality-types/{modality_type_id}", data)
+
+    def delete_modality_type(self, modality_type_id: str) -> Dict[str, Any]:
+        """
+        Delete a modality type
+
+        Args:
+            modality_type_id: UUID of the modality type
+
+        Returns:
+            Empty dict on success
+        """
+        return self.delete(f"/modality-types/{modality_type_id}")
+
     # ==================== Modality Management ====================
 
     def create_modality(

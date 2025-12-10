@@ -116,6 +116,14 @@ export default function Sidebar() {
               </Link>
 
               <Link
+                to="/geral/formatos-pontuacao"
+                className="block text-gray-700 hover:text-teal-600 font-medium transition"
+                onClick={() => setIsOpen(false)}
+              >
+                Formatos de Pontuação
+              </Link>
+
+              <Link
                 to="/socios"
                 className="block text-gray-700 hover:text-teal-600 font-medium transition"
                 onClick={() => setIsOpen(false)}

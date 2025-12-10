@@ -21,6 +21,12 @@ from .modalities import (
     ModalityListSerializer,
     ModalityUpdateSerializer,
 )
+from .modality_types import (
+    ModalityTypeCreateSerializer,
+    ModalityTypeDetailSerializer,
+    ModalityTypeListSerializer,
+    ModalityTypeUpdateSerializer,
+)
 from .regulations import (
     RegulationCreateSerializer,
     RegulationListSerializer,
@@ -61,6 +67,11 @@ __all__ = [
     "RegulationListSerializer",
     "RegulationCreateSerializer",
     "RegulationUpdateSerializer",
+    # Modality Types
+    "ModalityTypeListSerializer",
+    "ModalityTypeCreateSerializer",
+    "ModalityTypeUpdateSerializer",
+    "ModalityTypeDetailSerializer",
     # Modalities
     "ModalityListSerializer",
     "ModalityCreateSerializer",
