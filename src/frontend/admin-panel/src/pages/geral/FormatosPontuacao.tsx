@@ -551,7 +551,7 @@ const FormatosPontuacao = () => {
 
       {/* ========== EDIT MODAL ========== */}
       {isEditModalOpen && selectedFormat && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 overflow-y-auto">
+		<div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 overflow-y-auto">
           <div className="bg-white p-8 rounded-lg w-full max-w-4xl my-8">
             <h2 className="text-2xl font-bold mb-6">Editar Formato de Pontuação</h2>
 
@@ -594,12 +594,6 @@ const FormatosPontuacao = () => {
                   <label className="block font-medium">
                     Escalões <span className="text-red-500">*</span>
                   </label>
-                  <button
-                    onClick={handleAddEscalao}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm"
-                  >
-                    + Adicionar Escalão
-                  </button>
                 </div>
 
                 <div className="space-y-4">
@@ -675,6 +669,12 @@ const FormatosPontuacao = () => {
                       </div>
                     </div>
                   ))}
+				  <button
+					onClick={handleAddEscalao}
+					className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm"
+				  >
+					+ Adicionar Escalão
+				  </button>
                 </div>
               </div>
             </div>
