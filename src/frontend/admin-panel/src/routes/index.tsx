@@ -13,6 +13,8 @@ import Modalities from '../pages/geral/Modalidades';
 import ModalityDetails from '../pages/geral/ModalidadeDetail';
 import Nucleo from '../pages/geral/Nucleos';
 import NucleoDetails from '../pages/geral/NucleoDetails';
+import Cursos from '../pages/geral/Cursos';
+import CursoDetail from '../pages/geral/CursoDetail';
 import Regulamentos from '../pages/geral/Regulamentos';
 import FormatosPontuacao from '../pages/geral/FormatosPontuacao';
 import Torneios from '../pages/geral/Torneios';
@@ -83,6 +85,14 @@ export const router = createBrowserRouter([
   {
     path: '/geral/nucleos/:id',
     element: <ProtectedRoute requiredRole="geral"><NucleoDetails /></ProtectedRoute>,
+  },
+  {
+    path: '/geral/cursos',
+    element: <ProtectedRoute requiredRole="geral"><Cursos /></ProtectedRoute>,
+  },
+  {
+    path: '/geral/cursos/:id',
+    element: <ProtectedRoute requiredRole="geral"><CursoDetail /></ProtectedRoute>,
   },
   {
     path: '/geral/regulamentos',

@@ -5,6 +5,7 @@ Serializers package for admin_api
 from .auth import LoginRequestSerializer, LoginResponseSerializer, UserInfoSerializer
 from .courses import (
     CourseCreateSerializer,
+    CourseDetailSerializer,
     CourseListSerializer,
     CourseUpdateSerializer,
 )
@@ -68,6 +69,7 @@ __all__ = [
     "CourseListSerializer",
     "CourseCreateSerializer",
     "CourseUpdateSerializer",
+    "CourseDetailSerializer",
     # Regulations
     "RegulationListSerializer",
     "RegulationCreateSerializer",

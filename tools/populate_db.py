@@ -208,6 +208,11 @@ def populate_modalidades(modality_types_dict=None):
 
     print("Modality Types Dict:", modality_types_dict)
 
+    check = requests.get(f"{API_URL}/modalities")
+    if check.status_code == 200 and len(check.json()) > 0:
+        print("Modalities already populated.")
+        return check.json()
+
     modalidades = [
         {
             "name": "Andebol",
@@ -425,6 +430,164 @@ def populate_nucleos():
     return resp_nucleos
 
 
+def populate_courses(nucleos):
+    check = requests.get(f"{API_URL}/courses")
+    if check.status_code == 200 and len(check.json()) > 0:
+        print("Courses already populated.")
+        return check.json()
+
+    nucleos_dict = {nucleo["abbreviation"]: nucleo["id"] for nucleo in nucleos}
+
+    courses = [
+        {"name": "Administração Pública", "nucleo_id": nucleos_dict["NEAP"]},
+        {
+            "name": "Automação e Sistemas de Produção",
+            "nucleo_id": nucleos_dict["NAE-ESAN"],
+        },
+        {"name": "Biologia", "nucleo_id": nucleos_dict["NEB"]},
+        {"name": "Biologia e Geologia", "nucleo_id": nucleos_dict["NEBG"]},
+        {"name": "Bioquímica", "nucleo_id": nucleos_dict["NEQ"]},
+        {"name": "Biotecnologia", "nucleo_id": nucleos_dict["NEQ"]},
+        {"name": "Ciências Biomédicas", "nucleo_id": nucleos_dict["NECiB"]},
+        {"name": "Ciências do Mar", "nucleo_id": nucleos_dict["NECM"]},
+        {"name": "Contabilidade", "nucleo_id": nucleos_dict["NAE-ISCA"]},
+        {"name": "Contabilidade pós-laboral", "nucleo_id": nucleos_dict["NAE-ISCA"]},
+        {"name": "Design", "nucleo_id": nucleos_dict["NED"]},
+        {
+            "name": "Design de Produto e Tecnologia",
+            "nucleo_id": nucleos_dict["NAE-ESAN"],
+        },
+        {"name": "Economia", "nucleo_id": nucleos_dict["NEEC"]},
+        {"name": "Educação Básica", "nucleo_id": nucleos_dict["NEEB"]},
+        {
+            "name": "Eletrónica e Mecânica Industrial",
+            "nucleo_id": nucleos_dict["NAE-ESTGA"],
+        },
+        {"name": "Enfermagem", "nucleo_id": nucleos_dict["NAE-ESSUA"]},
+        {"name": "Engenharia Aeroespacial", "nucleo_id": nucleos_dict["NEEET"]},
+        {"name": "Engenharia Biomédica", "nucleo_id": nucleos_dict["NEEF"]},
+        {"name": "Engenharia Civil", "nucleo_id": nucleos_dict["NAE-ISCA"]},
+        {"name": "Engenharia Computacional", "nucleo_id": nucleos_dict["NEEF"]},
+        {
+            "name": "Engenharia de Automação Industrial",
+            "nucleo_id": nucleos_dict["NEEMec"],
+        },
+        {
+            "name": "Engenharia de Computadores e Informática",
+            "nucleo_id": nucleos_dict["NEECT"],
+        },
+        {"name": "Engenharia de Materiais", "nucleo_id": nucleos_dict["NEM"]},
+        {"name": "Engenharia do Ambiente", "nucleo_id": nucleos_dict["NEEA"]},
+        {
+            "name": "Engenharia Eletrotécnica e de Computadores",
+            "nucleo_id": nucleos_dict["NEEET"],
+        },
+        {"name": "Engenharia Física", "nucleo_id": nucleos_dict["NEEF"]},
+        {"name": "Engenharia Informática", "nucleo_id": nucleos_dict["NEI"]},
+        {
+            "name": "Engenharia Informática Aplicada",
+            "nucleo_id": nucleos_dict["NAE-ESTGA"],
+        },
+        {"name": "Engenharia Mecânica", "nucleo_id": nucleos_dict["NEEMec"]},
+        {"name": "Engenharia Química", "nucleo_id": nucleos_dict["NEEQu"]},
+        {"name": "Finanças", "nucleo_id": nucleos_dict["NAE-ISCA"]},
+        {"name": "Finanças pós-laboral", "nucleo_id": nucleos_dict["NAE-ISCA"]},
+        {"name": "Física", "nucleo_id": nucleos_dict["NEEF"]},
+        {"name": "Fisioterapia", "nucleo_id": nucleos_dict["NAE-ESSUA"]},
+        {"name": "Geologia", "nucleo_id": nucleos_dict["NEGeo"]},
+        {"name": "Gestão", "nucleo_id": nucleos_dict["NEG"]},
+        {"name": "Gestão Comercial", "nucleo_id": nucleos_dict["NAE-ESTGA"]},
+        {"name": "Gestão da Qualidade", "nucleo_id": nucleos_dict["NAE-ESTGA"]},
+        {"name": "Gestão e Planeamento em Turismo", "nucleo_id": nucleos_dict["NEGPT"]},
+        {"name": "Gestão Pública", "nucleo_id": nucleos_dict["NAE-ESTGA"]},
+        {
+            "name": "Imagem Médica e Radioterapia",
+            "nucleo_id": nucleos_dict["NAE-ESSUA"],
+        },
+        {"name": "Línguas e Estudos Editoriais", "nucleo_id": nucleos_dict["NEEE"]},
+        {"name": "Línguas e Relações Empresariais", "nucleo_id": nucleos_dict["NELRE"]},
+        {"name": "Línguas, Literaturas e Culturas", "nucleo_id": nucleos_dict["NELLC"]},
+        {"name": "Marketing", "nucleo_id": nucleos_dict["NAE-ISCA"]},
+        {"name": "Marketing pós-laboral", "nucleo_id": nucleos_dict["NAE-ISCA"]},
+        {"name": "Matemática", "nucleo_id": nucleos_dict["NEMat"]},
+        {
+            "name": "Meteorologia, Oceanografia e Clima",
+            "nucleo_id": nucleos_dict["NEMOC"],
+        },
+        {
+            "name": "Multimédia e Tecnologias da Comunicação",
+            "nucleo_id": nucleos_dict["NEMTC"],
+        },
+        {"name": "Música", "nucleo_id": nucleos_dict["NEMu"]},
+        {"name": "Psicologia", "nucleo_id": nucleos_dict["NEP"]},
+        {"name": "Química", "nucleo_id": nucleos_dict["NEQ"]},
+        {
+            "name": "Secretariado e Comunicação Empresarial",
+            "nucleo_id": nucleos_dict["NAE-ESTGA"],
+        },
+        {"name": "Terapia da Fala", "nucleo_id": nucleos_dict["NAE-ESSUA"]},
+        {"name": "Tradução", "nucleo_id": nucleos_dict["NET"]},
+    ]
+
+    abreviations_set = set()
+    for i in range(len(courses)):
+        courses[i]["abbreviation"] = (
+            "".join(
+                word[0]
+                for word in courses[i]["name"].replace("-", " ").split()
+                if len(word) > 2
+            )
+            .upper()
+            .strip()
+        )
+
+        if len(courses[i]["abbreviation"]) < 3:
+            courses[i]["abbreviation"] = "".join(
+                word[:3]
+                for word in courses[i]["name"].replace("-", " ").split()
+                if len(word) > 2
+            ).strip()
+        # Ensure uniqueness
+        original_abbr = courses[i]["abbreviation"]
+        counter = 1
+        while courses[i]["abbreviation"] in abreviations_set:
+            courses[i]["abbreviation"] = f"{original_abbr}{counter}"
+            counter += 1
+
+        abreviations_set.add(courses[i]["abbreviation"])
+
+    print("Courses to be created:", [course["abbreviation"] for course in courses])
+    resp = []
+    for course in courses:
+        response = requests.post(f"{API_URL}/courses", json=course)
+        if response.status_code == 201:
+            print(f"Created course: {course['name']}")
+            resp.append(response.json())
+        else:
+            print(
+                f"Failed to create course: {course['name']}, Status Code: {response.status_code}, Response: {response.text}"
+            )
+
+    return resp
+
+
+def delete_all_courses():
+    response = requests.get(f"{API_URL}/courses")
+    if response.status_code != 200:
+        print("Failed to fetch courses for deletion.")
+        return
+
+    courses = response.json()
+    for course in courses:
+        del_response = requests.delete(f"{API_URL}/courses/{course['id']}")
+        if del_response.status_code == 204:
+            print(f"Deleted course: {course['name']}")
+        else:
+            print(
+                f"Failed to delete course: {course['name']}, Status Code: {del_response.status_code}, Response: {del_response.text}"
+            )
+
+
 def main():
     modality_types_ids = populate_modalities_types()
     print("Populated Modality Types IDs:", modality_types_ids)
@@ -434,6 +597,10 @@ def main():
 
     nucleos = populate_nucleos()
     print("Populated Nucleos:", [nucleo["name"] for nucleo in nucleos])
+
+    delete_all_courses()
+    courses = populate_courses(nucleos)
+    print("Populated Courses: ", [course["abbreviation"] for course in courses])
 
 
 if __name__ == "__main__":

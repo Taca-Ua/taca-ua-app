@@ -134,8 +134,8 @@ class Course(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.TextField()
     abbreviation = models.TextField(unique=True)
-    description = models.TextField(null=True, blank=True)
-    logo_url = models.TextField(null=True, blank=True)
+    nucleo = models.ForeignKey(Nucleo, on_delete=models.DO_NOTHING, db_index=True)
+
     created_by = models.UUIDField()
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)

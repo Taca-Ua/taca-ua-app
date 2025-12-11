@@ -11,10 +11,7 @@ class CourseListSerializer(serializers.Serializer):
     id = serializers.UUIDField(read_only=True)
     name = serializers.CharField()
     abbreviation = serializers.CharField()
-    description = serializers.CharField(
-        required=False, allow_null=True, allow_blank=True
-    )
-    logo_url = serializers.URLField(required=False, allow_null=True, allow_blank=True)
+    nucleo = serializers.CharField()
     created_at = serializers.DateTimeField(read_only=True)
 
 
@@ -23,10 +20,7 @@ class CourseCreateSerializer(serializers.Serializer):
 
     name = serializers.CharField(required=True)
     abbreviation = serializers.CharField(required=True)
-    description = serializers.CharField(
-        required=False, allow_blank=True, allow_null=True
-    )
-    logo_url = serializers.URLField(required=False, allow_blank=True, allow_null=True)
+    nucleo_id = serializers.UUIDField(required=True)
 
 
 class CourseUpdateSerializer(serializers.Serializer):
@@ -34,7 +28,14 @@ class CourseUpdateSerializer(serializers.Serializer):
 
     name = serializers.CharField(required=False)
     abbreviation = serializers.CharField(required=False)
-    description = serializers.CharField(
-        required=False, allow_blank=True, allow_null=True
-    )
-    logo_url = serializers.URLField(required=False, allow_blank=True, allow_null=True)
+    nucleo_id = serializers.UUIDField(required=False)
+
+
+class CourseDetailSerializer(serializers.Serializer):
+    """Serializer for course details"""
+
+    id = serializers.UUIDField(read_only=True)
+    name = serializers.CharField()
+    abbreviation = serializers.CharField()
+    nucleo = serializers.CharField()
+    created_at = serializers.DateTimeField(read_only=True)

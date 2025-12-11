@@ -99,6 +99,14 @@ export default function Sidebar() {
                 Núcleo
               </Link>
 
+			  <Link
+				to="/geral/cursos"
+				className="block text-gray-700 hover:text-teal-600 font-medium transition"
+				onClick={() => setIsOpen(false)}
+			  >
+				Cursos
+			  </Link>
+
               <Link
                 to="/geral/torneios"
                 className="block text-gray-700 hover:text-teal-600 font-medium transition"

@@ -2,18 +2,21 @@
 Course management views
 """
 
+from datetime import datetime, timezone
+
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from ..models import Course, Nucleo
 from ..serializers import (
     CourseCreateSerializer,
+    CourseDetailSerializer,
     CourseListSerializer,
     CourseUpdateSerializer,
 )
-from ..services.modalities_service import ModalitiesService
 
 
 @extend_schema_view(
@@ -31,51 +34,65 @@ from ..services.modalities_service import ModalitiesService
 )
 class CourseListCreateView(APIView):
     def get(self, request: Request):
-        service = ModalitiesService()
-
-        # Extract filters from query parameters
-        search = request.query_params.get("search")
-        limit = request.query_params.get("limit", 50)
-        offset = request.query_params.get("offset", 0)
-
-        courses_data = service.list_courses(
-            search=search,
-            limit=int(limit),
-            offset=int(offset),
+        courses = Course.objects.all()
+        return Response(
+            [
+                {
+                    "id": course.id,
+                    "name": course.name,
+                    "abbreviation": course.abbreviation,
+                    "nucleo": course.nucleo.name,
+                    "created_at": course.created_at,
+                }
+                for course in courses
+            ],
+            status=status.HTTP_200_OK,
         )
-
-        return Response(courses_data["courses"])
 
     def post(self, request: Request):
         serializer = CourseCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        service = ModalitiesService()
+        # validate nucleo existence
+        nucleo = Nucleo.objects.filter(
+            id=serializer.validated_data["nucleo_id"]
+        ).first()
+        if not nucleo:
+            return Response(
+                {"detail": "Nucleo not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
-        course = service.create_course(
+        course = Course.objects.create(
             name=serializer.validated_data["name"],
             abbreviation=serializer.validated_data["abbreviation"],
-            created_by=(
-                str(request.user.id)
-                if request.user.id
-                else "00000000-0000-0000-0000-000000000000"
-            ),
-            description=serializer.validated_data.get("description"),
-            logo_url=serializer.validated_data.get("logo_url"),
+            nucleo=nucleo,
+            created_by=request.user.id or "00000000-0000-0000-0000-000000000000",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
         )
 
-        return Response(course, status=status.HTTP_201_CREATED)
+        return Response(
+            {
+                "id": course.id,
+                "name": course.name,
+                "abbreviation": course.abbreviation,
+                "nucleo": course.nucleo.name,
+                "created_at": course.created_at,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 @extend_schema_view(
     get=extend_schema(
-        responses=CourseListSerializer,
+        responses=CourseDetailSerializer,
         description="Get a course by ID",
         tags=["Course Management"],
     ),
     put=extend_schema(
         request=CourseUpdateSerializer,
-        responses=CourseListSerializer,
+        responses=CourseDetailSerializer,
         description="Update a course",
         tags=["Course Management"],
     ),
@@ -87,32 +104,72 @@ class CourseListCreateView(APIView):
 )
 class CourseDetailView(APIView):
     def get(self, request, course_id):
-        service = ModalitiesService()
-        course = service.get_course(course_id)
-        return Response(course)
+        course = Course.objects.filter(id=course_id).first()
+        if not course:
+            return Response(
+                {"detail": "Course not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        return Response(
+            {
+                "id": course.id,
+                "name": course.name,
+                "abbreviation": course.abbreviation,
+                "nucleo": course.nucleo.name,
+                "created_at": course.created_at,
+            }
+        )
 
     def put(self, request, course_id):
         serializer = CourseUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        service = ModalitiesService()
+        # get course
+        course = Course.objects.filter(id=course_id).first()
+        if not course:
+            return Response(
+                {"detail": "Course not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
-        course = service.update_course(
-            course_id=course_id,
-            updated_by=(
-                str(request.user.id)
-                if request.user.id
-                else "00000000-0000-0000-0000-000000000000"
-            ),
-            name=serializer.validated_data.get("name"),
-            abbreviation=serializer.validated_data.get("abbreviation"),
-            description=serializer.validated_data.get("description"),
-            logo_url=serializer.validated_data.get("logo_url"),
+        # update fields
+        if serializer.validated_data.get("name", None) is not None:
+            course.name = serializer.validated_data["name"]
+
+        if serializer.validated_data.get("abbreviation", None) is not None:
+            course.abbreviation = serializer.validated_data["abbreviation"]
+
+        if serializer.validated_data.get("nucleo_id", None) is not None:
+            nucleo = Nucleo.objects.filter(
+                id=serializer.validated_data["nucleo_id"]
+            ).first()
+            if not nucleo:
+                return Response(
+                    {"detail": "Nucleo not found."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            course.nucleo = nucleo
+
+        course.save()
+
+        return Response(
+            {
+                "id": course.id,
+                "name": course.name,
+                "abbreviation": course.abbreviation,
+                "nucleo": course.nucleo.name,
+                "created_at": course.created_at,
+            }
         )
 
-        return Response(course)
-
     def delete(self, request, course_id):
-        service = ModalitiesService()
-        service.delete_course(course_id)
+        course = Course.objects.filter(id=course_id).first()
+        if not course:
+            return Response(
+                {"detail": "Course not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        course.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
