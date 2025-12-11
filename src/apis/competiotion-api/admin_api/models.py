@@ -102,6 +102,7 @@ class Comment(models.Model):
 # ==================== MODALITIES MODELS ====================
 
 
+# used
 class Nucleo(models.Model):
     """
     Represents an academic nucleos.
@@ -181,7 +182,9 @@ class Modality(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.TextField(unique=True)
-    modality_type_id = models.UUIDField()  # References ModalityType
+    modality_type = models.ForeignKey(
+        ModalityType, on_delete=models.DO_NOTHING, db_index=True
+    )
 
     created_by = models.UUIDField()
     created_at = models.DateTimeField(default=timezone.now)

@@ -36,18 +36,12 @@ class ModalityListCreateView(APIView):
     def get(self, request: Request):
         modalities = Modality.objects.all()
 
-        modality_type_ids = [modality.modality_type_id for modality in modalities]
-        modality_types = ModalityType.objects.filter(id__in=modality_type_ids)
-        modality_type_dict = {mt.id: mt.name for mt in modality_types}
-
         return Response(
             [
                 {
                     "id": str(modality.id),
                     "name": modality.name,
-                    "modality_type": modality_type_dict.get(
-                        modality.modality_type_id, None
-                    ),
+                    "modality_type": modality.modality_type.name,
                 }
                 for modality in modalities
             ]
@@ -66,15 +60,13 @@ class ModalityListCreateView(APIView):
                 {"error": "Invalid modality_type_id"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
         try:
             modality = Modality.objects.create(
                 name=serializer.validated_data["name"],
-                modality_type_id=serializer.validated_data.get(
-                    "modality_type_id", None
-                ),
-                created_by=getattr(
-                    request.user, "id", "00000000-0000-0000-0000-000000000000"
-                ),
+                modality_type=modality_type,
+                created_by=getattr(request.user, "id")
+                or "00000000-0000-0000-0000-000000000000",
                 created_at=datetime.now(timezone.utc),
                 updated_at=datetime.now(timezone.utc),
             )
@@ -94,7 +86,7 @@ class ModalityListCreateView(APIView):
             {
                 "id": str(modality.id),
                 "name": modality.name,
-                "modality_type": modality_type.name if modality_type else None,
+                "modality_type": modality.modality_type.name,
             },
             status=status.HTTP_201_CREATED,
         )
@@ -124,15 +116,11 @@ class ModalityDetailView(APIView):
         if not modality:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-        modality_type = ModalityType.objects.filter(
-            id=modality.modality_type_id
-        ).first()
-
         return Response(
             {
                 "id": str(modality.id),
                 "name": modality.name,
-                "modality_type": modality_type.name if modality_type else None,
+                "modality_type": modality.modality_type.name,
             },
             status=status.HTTP_200_OK,
         )
@@ -146,37 +134,32 @@ class ModalityDetailView(APIView):
         if not modality:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-        # validate modality_type_id if provided
-        modality_type = None
+        # update fields if provided
+        if serializer.validated_data.get("name", None) is not None:
+            modality.name = serializer.validated_data["name"]
+
         if serializer.validated_data.get("modality_type_id", None) is not None:
             modality_type = ModalityType.objects.filter(
                 id=serializer.validated_data["modality_type_id"]
             ).first()
+
             if not modality_type:
                 return Response(
                     {"error": "Invalid modality_type_id"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        # update modality
-        modality.name = serializer.validated_data.get("name", modality.name)
-        modality.modality_type_id = serializer.validated_data.get(
-            "modality_type_id", modality.modality_type_id
-        )
+            modality.modality_type = modality_type
+
+        # update timestamp
         modality.updated_at = datetime.now(timezone.utc)
         modality.save()
-
-        # fetch updated modality_type
-        if not modality_type:
-            modality_type = ModalityType.objects.filter(
-                id=modality.modality_type_id
-            ).first()
 
         return Response(
             {
                 "id": str(modality.id),
                 "name": modality.name,
-                "modality_type": modality_type.name if modality_type else None,
+                "modality_type": modality.modality_type.name,
             },
             status=status.HTTP_200_OK,
         )
