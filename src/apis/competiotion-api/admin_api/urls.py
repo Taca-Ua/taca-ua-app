@@ -69,6 +69,13 @@ urlpatterns = [
         views.ModalityTypeDetailView.as_view(),
         name="modality-type-detail",
     ),
+    # Nucleo Management
+    path("nucleos", views.NucleoListCreateView.as_view(), name="nucleo-list"),
+    path(
+        "nucleos/<nucleo_id>",
+        views.NucleoDetailView.as_view(),
+        name="nucleo-detail",
+    ),
     # Tournament Management (RF3)
     path(
         "tournaments", views.TournamentListCreateView.as_view(), name="tournament-list"

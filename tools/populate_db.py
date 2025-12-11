@@ -367,12 +367,73 @@ def populate_modalidades(modality_types_dict=None):
     return resp_modalidades
 
 
+def populate_nucleos():
+    check = requests.get(f"{API_URL}/nucleos")
+    if check.status_code == 200 and len(check.json()) > 0:
+        print("Nucleos already populated.")
+        return check.json()
+
+    nucleos = [
+        {"name": "NEAP", "abbreviation": "NEAP"},
+        {"name": "NEEA", "abbreviation": "NEEA"},
+        {"name": "NEB", "abbreviation": "NEB"},
+        {"name": "NEBEC", "abbreviation": "NEBEC"},
+        {"name": "NECiB", "abbreviation": "NECiB"},
+        {"name": "NEMu", "abbreviation": "NEMu"},
+        {"name": "NEMTC", "abbreviation": "NEMTC"},
+        {"name": "NED", "abbreviation": "NED"},
+        {"name": "NEG", "abbreviation": "NEG"},
+        {"name": "NEEC", "abbreviation": "NEEC"},
+        {"name": "NEGPT", "abbreviation": "NEGPT"},
+        {"name": "NEEMec", "abbreviation": "NEEMec"},
+        {"name": "NEECT", "abbreviation": "NEECT"},
+        {"name": "NEEET", "abbreviation": "NEEET"},
+        {"name": "NEI", "abbreviation": "NEI"},
+        {"name": "NECM", "abbreviation": "NECM"},
+        {"name": "NEMOC", "abbreviation": "NEMOC"},
+        {"name": "NEEF", "abbreviation": "NEEF"},
+        {"name": "NEM", "abbreviation": "NEM"},
+        {"name": "NEP", "abbreviation": "NEP"},
+        {"name": "NEEB", "abbreviation": "NEEB"},
+        {"name": "NEBG", "abbreviation": "NEBG"},
+        {"name": "NEGeo", "abbreviation": "NEGeo"},
+        {"name": "NEEE", "abbreviation": "NEEE"},
+        {"name": "NELLC", "abbreviation": "NELLC"},
+        {"name": "NELRE", "abbreviation": "NELRE"},
+        {"name": "NET", "abbreviation": "NET"},
+        {"name": "NEMat", "abbreviation": "NEMat"},
+        {"name": "NEEQu", "abbreviation": "NEEQu"},
+        {"name": "NEQ", "abbreviation": "NEQ"},
+        {"name": "NAE-ESAN", "abbreviation": "NAE-ESAN"},
+        {"name": "NAE-ESSUA", "abbreviation": "NAE-ESSUA"},
+        {"name": "NAE-ESTGA", "abbreviation": "NAE-ESTGA"},
+        {"name": "NAE-ISCA", "abbreviation": "NAE-ISCA"},
+        {"name": "NEMOG", "abbreviation": "NEMOG"},
+    ]
+
+    resp_nucleos = []
+    for nucleo in nucleos:
+        response = requests.post(f"{API_URL}/nucleos", json=nucleo)
+        if response.status_code == 201:
+            print(f"Created nucleo: {nucleo['name']}")
+            resp_nucleos.append(response.json())
+        else:
+            print(
+                f"Failed to create nucleo: {nucleo['name']}, Status Code: {response.status_code}, Response: {response.text}"
+            )
+
+    return resp_nucleos
+
+
 def main():
     modality_types_ids = populate_modalities_types()
     print("Populated Modality Types IDs:", modality_types_ids)
 
     modalities = populate_modalidades(modality_types_ids)
     print("Populated Modalities:", [mod["name"] for mod in modalities])
+
+    nucleos = populate_nucleos()
+    print("Populated Nucleos:", [nucleo["name"] for nucleo in nucleos])
 
 
 if __name__ == "__main__":

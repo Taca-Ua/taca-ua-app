@@ -102,6 +102,28 @@ class Comment(models.Model):
 # ==================== MODALITIES MODELS ====================
 
 
+class Nucleo(models.Model):
+    """
+    Represents an academic nucleos.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.TextField()
+    abbreviation = models.TextField(unique=True)
+
+    created_by = models.UUIDField()
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+
+    class Meta:
+        db_table = "nucleo"
+        verbose_name = "Nucleo"
+        verbose_name_plural = "Nucleos"
+
+    def __str__(self):
+        return self.name
+
+
 class Course(models.Model):
     """
     Represents an academic course.
@@ -126,6 +148,7 @@ class Course(models.Model):
         return f"{self.abbreviation}: {self.name}"
 
 
+# used
 class ModalityType(models.Model):
     """
     Enumeration for modality types.
@@ -149,6 +172,7 @@ class ModalityType(models.Model):
         return self.name
 
 
+# used
 class Modality(models.Model):
     """
     Represents a sport modality.
@@ -156,7 +180,7 @@ class Modality(models.Model):
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.TextField()
+    name = models.TextField(unique=True)
     modality_type_id = models.UUIDField()  # References ModalityType
 
     created_by = models.UUIDField()

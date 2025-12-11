@@ -14,6 +14,7 @@ from .matches import (
 )
 from .modalities import ModalityDetailView, ModalityListCreateView
 from .modalities_types import ModalityTypeDetailView, ModalityTypeListCreateView
+from .nucleus import NucleoDetailView, NucleoListCreateView
 from .regulations import RegulationDetailView, RegulationListCreateView
 from .seasons import SeasonListCreateView, season_finish, season_start
 from .students import StudentListCreateView, student_detail
@@ -53,6 +54,9 @@ __all__ = [
     # Modalities
     "ModalityListCreateView",
     "ModalityDetailView",
+    # Nucleos
+    "NucleoListCreateView",
+    "NucleoDetailView",
     # Tournaments
     "TournamentListCreateView",
     "TournamentDetailView",

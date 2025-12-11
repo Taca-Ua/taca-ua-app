@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
-import { coursesApi, type Course } from '../../api/courses';
+import { nucleosApi, type Nucleo } from '../../api/nucleos';
 
 const Nucleo = () => {
   const navigate = useNavigate();
@@ -9,10 +9,8 @@ const Nucleo = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newNucleusAbbreviation, setNewNucleusAbbreviation] = useState('');
   const [newNucleusName, setNewNucleusName] = useState('');
-  const [newDescription, setNewDescription] = useState('');
-  const [newLogoUrl, setNewLogoUrl] = useState('');
 
-  const [nuclei, setNuclei] = useState<Course[]>([]);
+  const [nuclei, setNuclei] = useState<Nucleo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -23,7 +21,7 @@ const Nucleo = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const data = await coursesApi.getAll();
+        const data = await nucleosApi.getAll();
         setNuclei(data);
         setError('');
       } catch (err) {
@@ -50,11 +48,9 @@ const Nucleo = () => {
     }
 
     try {
-      const newNucleus = await coursesApi.create({
+      const newNucleus = await nucleosApi.create({
+		name: newNucleusName,
         abbreviation: newNucleusAbbreviation,
-        name: newNucleusName,
-        description: newDescription || undefined,
-        logo_url: newLogoUrl || undefined,
       });
 
       setNuclei([...nuclei, newNucleus]);
@@ -63,8 +59,6 @@ const Nucleo = () => {
       // Reset
       setNewNucleusAbbreviation('');
       setNewNucleusName('');
-      setNewDescription('');
-      setNewLogoUrl('');
       setIsModalOpen(false);
     } catch (err) {
       console.error('Failed to create course:', err);
@@ -116,11 +110,7 @@ const Nucleo = () => {
                     <div className="flex items-center gap-4">
                       {/* Logo */}
                       <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-teal-500 flex-shrink-0">
-                        {n.logo_url ? (
-                          <img src={n.logo_url} alt={n.abbreviation} className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-teal-600 font-bold text-sm">{n.abbreviation}</span>
-                        )}
+						<span className="text-teal-600 font-bold text-sm">{n.abbreviation}</span>
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-teal-600 font-bold text-lg">{n.abbreviation}</span>
@@ -128,9 +118,6 @@ const Nucleo = () => {
                         <span className="text-gray-800 font-medium">{n.name}</span>
                       </div>
                     </div>
-                    {n.description && (
-                      <span className="text-gray-600 text-sm">{n.description}</span>
-                    )}
                   </div>
                 ))
               ) : (
@@ -185,7 +172,7 @@ const Nucleo = () => {
               </div>
 
               {/* Description */}
-              <div>
+              {/* <div>
                 <label className="block text-gray-700 font-medium mb-2">
                   Descrição
                 </label>
@@ -195,36 +182,14 @@ const Nucleo = () => {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 min-h-[80px]"
                   placeholder="Digite a descrição do núcleo"
                 />
-              </div>
+              </div> */}
 
               {/* Logo URL */}
-              <div>
+              {/* <div>
                 <label className="block text-gray-700 font-medium mb-2">
                   Logo URL
                 </label>
-                <input
-                  type="url"
-                  value={newLogoUrl}
-                  onChange={(e) => setNewLogoUrl(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  placeholder="https://exemplo.com/logo.png"
-                />
-                {newLogoUrl && (
-                  <div className="mt-2 flex items-center gap-2">
-                    <span className="text-sm text-gray-600">Preview:</span>
-                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-teal-500">
-                      <img
-                        src={newLogoUrl}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
+              </div> */}
             </div>
 
             {/* Actions */}
@@ -234,8 +199,6 @@ const Nucleo = () => {
                   setIsModalOpen(false);
                   setNewNucleusAbbreviation('');
                   setNewNucleusName('');
-                  setNewDescription('');
-                  setNewLogoUrl('');
                   setError('');
                 }}
                 className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"

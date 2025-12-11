@@ -4,6 +4,7 @@ Modality management views
 
 from datetime import datetime, timezone
 
+from django.db import IntegrityError
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.request import Request
@@ -65,15 +66,29 @@ class ModalityListCreateView(APIView):
                 {"error": "Invalid modality_type_id"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-        modality = Modality.objects.create(
-            name=serializer.validated_data["name"],
-            modality_type_id=serializer.validated_data.get("modality_type_id", None),
-            created_by=request.user.id or "00000000-0000-0000-0000-000000000000",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
-        )
-        modality.save()
+        try:
+            modality = Modality.objects.create(
+                name=serializer.validated_data["name"],
+                modality_type_id=serializer.validated_data.get(
+                    "modality_type_id", None
+                ),
+                created_by=getattr(
+                    request.user, "id", "00000000-0000-0000-0000-000000000000"
+                ),
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc),
+            )
+            modality.save()
+        except IntegrityError as e:
+            return Response(
+                {"error": f"Integrity error creating modality: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to create modality: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
         return Response(
             {

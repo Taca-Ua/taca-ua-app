@@ -1,31 +1,29 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
-import { coursesApi, type Course } from '../../api/courses';
+import { nucleosApi, type Nucleo } from '../../api/nucleos';
 
 const NucleoDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [nucleus, setNucleus] = useState<Course | null>(null);
+  const [nucleus, setNucleus] = useState<Nucleo>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editedAbbreviation, setEditedAbbreviation] = useState('');
   const [editedName, setEditedName] = useState('');
-  const [editedDescription, setEditedDescription] = useState('');
-  const [editedLogoUrl, setEditedLogoUrl] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const data = await coursesApi.getById(Number(id));
+        const data = await nucleosApi.getById(String(id));
         setNucleus(data);
         setError('');
       } catch (err) {
-        console.error('Failed to fetch course:', err);
+        console.error('Failed to fetch núcleo:', err);
         setError('Erro ao carregar núcleo');
         navigate('/geral/nucleos');
       } finally {
@@ -42,8 +40,6 @@ const NucleoDetails = () => {
     if (!nucleus) return;
     setEditedAbbreviation(nucleus.abbreviation);
     setEditedName(nucleus.name);
-    setEditedDescription(nucleus.description || '');
-    setEditedLogoUrl(nucleus.logo_url || '');
     setError('');
     setIsEditModalOpen(true);
   };
@@ -59,11 +55,9 @@ const NucleoDetails = () => {
     }
 
     try {
-      const updatedNucleus = await coursesApi.update(Number(id), {
+      const updatedNucleus = await nucleosApi.update(String(id), {
         abbreviation: editedAbbreviation,
         name: editedName,
-        description: editedDescription || undefined,
-        logo_url: editedLogoUrl || undefined,
       });
       setNucleus(updatedNucleus);
       setError('');
@@ -77,7 +71,7 @@ const NucleoDetails = () => {
   const handleDelete = async () => {
     if (window.confirm(`Tem certeza que deseja eliminar "${nucleus?.name}"?`)) {
       try {
-        await coursesApi.delete(Number(id));
+        await nucleosApi.delete(String(id));
         navigate('/geral/nucleos');
       } catch (err) {
         console.error('Failed to delete course:', err);
@@ -124,15 +118,8 @@ const NucleoDetails = () => {
               <label className="block text-teal-500 font-medium mb-2">Logo</label>
               <div className="flex items-center gap-4">
                 <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-teal-500">
-                  {nucleus.logo_url ? (
-                    <img src={nucleus.logo_url} alt={nucleus.abbreviation} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-teal-600 font-bold text-2xl">{nucleus.abbreviation}</span>
-                  )}
+					<span className="text-teal-600 font-bold text-2xl">{nucleus.abbreviation}</span>
                 </div>
-                {nucleus.logo_url && (
-                  <span className="text-gray-600 text-sm">{nucleus.logo_url}</span>
-                )}
               </div>
             </div>
 
@@ -153,14 +140,14 @@ const NucleoDetails = () => {
             </div>
 
             {/* Description */}
-            {nucleus.description && (
+            {/* {nucleus.description && (
               <div>
                 <label className="block text-teal-500 font-medium mb-2">Descrição</label>
                 <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
                   {nucleus.description}
                 </div>
               </div>
-            )}
+            )} */}
 
             <div className="flex gap-4 pt-4">
               <button
@@ -226,7 +213,7 @@ const NucleoDetails = () => {
               </div>
 
               {/* Description */}
-              <div>
+              {/* <div>
                 <label className="block text-gray-700 font-medium mb-2">Descrição</label>
                 <textarea
                   value={editedDescription}
@@ -234,10 +221,10 @@ const NucleoDetails = () => {
                   placeholder="Digite a descrição"
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 min-h-[80px]"
                 />
-              </div>
+              </div> */}
 
               {/* Logo URL */}
-              <div>
+              {/* <div>
                 <label className="block text-gray-700 font-medium mb-2">Logo URL</label>
                 <input
                   type="url"
@@ -256,7 +243,7 @@ const NucleoDetails = () => {
                     </div>
                   </div>
                 )}
-              </div>
+              </div> */}
             </div>
 
             <div className="flex gap-4 mt-6">

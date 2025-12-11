@@ -16,7 +16,7 @@ from ..serializers import (
 
 # Mock database for tournaments
 MOCK_TOURNAMENTS = {
-    1: {
+    "1": {
         "id": 1,
         "modality_id": 1,
         "name": "Campeonato Futebol 25/26",
@@ -27,7 +27,7 @@ MOCK_TOURNAMENTS = {
         "start_date": "2025-02-01T10:00:00Z",
         "teams": [1, 2, 3, 4, 5, 6, 7, 8],
     },
-    2: {
+    "2": {
         "id": 2,
         "modality_id": 2,
         "name": "Campeonato Futsal 25/26",
@@ -38,7 +38,7 @@ MOCK_TOURNAMENTS = {
         "start_date": None,
         "teams": [],
     },
-    3: {
+    "3": {
         "id": 3,
         "modality_id": 3,
         "name": "Taça Basquetebol 24/25",
@@ -49,7 +49,7 @@ MOCK_TOURNAMENTS = {
         "start_date": "2024-11-15T14:00:00Z",
         "teams": [10, 11, 12, 13],
     },
-    4: {
+    "4": {
         "id": 4,
         "modality_id": 4,
         "name": "Liga Voleibol 25/26",

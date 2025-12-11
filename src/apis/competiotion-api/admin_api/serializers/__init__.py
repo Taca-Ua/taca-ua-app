@@ -27,6 +27,11 @@ from .modality_types import (
     ModalityTypeListSerializer,
     ModalityTypeUpdateSerializer,
 )
+from .nucleus import (
+    NucleosCreateSerializer,
+    NucleosListSerializer,
+    NucleosUpdateSerializer,
+)
 from .regulations import (
     RegulationCreateSerializer,
     RegulationListSerializer,
@@ -72,6 +77,10 @@ __all__ = [
     "ModalityTypeCreateSerializer",
     "ModalityTypeUpdateSerializer",
     "ModalityTypeDetailSerializer",
+    # Nucleus
+    "NucleosListSerializer",
+    "NucleosCreateSerializer",
+    "NucleosUpdateSerializer",
     # Modalities
     "ModalityListSerializer",
     "ModalityCreateSerializer",

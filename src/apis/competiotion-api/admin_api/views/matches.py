@@ -272,7 +272,7 @@ class MatchDetailView(APIView):
 
     def get(self, request, match_id):
         # Find match by ID
-        match = next((m for m in self.MOCK_MATCHES if m["id"] == match_id), None)
+        match = next((m for m in self.MOCK_MATCHES if str(m["id"]) == match_id), None)
         if not match:
             return Response(
                 {"error": "Match not found"},
