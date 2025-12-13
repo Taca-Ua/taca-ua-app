@@ -3,36 +3,21 @@ map $http_upgrade $connection_upgrade {
     ''      close;
 }
 
-# Upstream para MinIO
-upstream minio-server {
-    server minio:9000;
-}
-
-upstream minio-console {
-    server minio:9001;
-}
-
-# Servidor HTTP - serve desafio ACME e redireciona para HTTPS
+# Servidor HTTP - redireciona para HTTPS e serve desafio ACME
 server {
     listen 80;
     server_name _;
-
-    # Tamanho máximo de upload
-    client_max_body_size 50M;
 
     # Desafio ACME do Let's Encrypt (certbot)
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
     }
 
-    # Configuração temporária: serve HTTP até obter certificados
-    # Após obter certificados, descomente a linha de redirecionamento abaixo
-    # e comente as localizações abaixo
+    # Redirecionar todo o resto para HTTPS (comentado inicialmente até obter certificados)
+    # Descomente após obter os certificados TLS
     location / {
-        # Descomente após obter certificados TLS:
         # return 301 https://$host$request_uri;
-
-        # Configuração HTTP temporária:
+        # Configuração temporária para servir HTTP até obter certificados
         proxy_pass http://public-website:5173/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -44,8 +29,9 @@ server {
         proxy_buffering off;
     }
 
+    # Admin Panel
     location /admin/ {
-        proxy_pass http://admin-panel:5173/admin/;
+        proxy_pass http://admin-panel:5173/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -57,23 +43,24 @@ server {
     }
 
     # Competition API
-    location /api/admin/ {
-        proxy_pass http://competition-api:8000/api/admin/;
+    location /api/competition/ {
+        proxy_pass http://competition-api:8000/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # Public API (catch-all for /api/)
-    location /api/public/ {
-        proxy_pass http://public-api:8000/api/public/;
+    # Public API
+    location /api/ {
+        proxy_pass http://public-api:8000/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
+    # Keycloak
     location /keycloak/ {
         proxy_pass http://keycloak:8080/;
         proxy_set_header Host $host;
@@ -82,48 +69,21 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_buffering off;
     }
-
-    # MinIO - Proxy para arquivos públicos
-    location /files/ {
-        proxy_pass http://minio-server/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-
-        # Headers CORS
-        add_header Access-Control-Allow-Origin * always;
-        add_header Access-Control-Allow-Methods "GET, HEAD, OPTIONS" always;
-        add_header Access-Control-Allow-Headers "Range, Content-Type" always;
-
-        # Desabilitar buffering para streaming de arquivos grandes
-        proxy_buffering off;
-        proxy_request_buffering off;
-
-        # Timeouts maiores para upload/download de arquivos grandes
-        proxy_connect_timeout 300;
-        proxy_send_timeout 300;
-        proxy_read_timeout 300;
-    }
 }
 
-# Servidor HTTPS
-# IMPORTANTE: Descomentar este bloco APÓS obter os certificados TLS
-# Execute o script init-letsencrypt.sh que irá configurar automaticamente
+# Servidor HTTPS - será ativado após obter certificados
+# Descomente este bloco após executar init-letsencrypt.sh
 #
 # server {
 #     listen 443 ssl http2;
-#     server_name SEU_DOMINIO_AQUI;
+#     server_name DOMAIN_PLACEHOLDER;
 #
-#     # Tamanho máximo de upload
-#     client_max_body_size 50M;
-#
-#     ssl_certificate /etc/letsencrypt/live/SEU_DOMINIO_AQUI/fullchain.pem;
-#     ssl_certificate_key /etc/letsencrypt/live/SEU_DOMINIO_AQUI/privkey.pem;
+#     ssl_certificate /etc/letsencrypt/live/DOMAIN_PLACEHOLDER/fullchain.pem;
+#     ssl_certificate_key /etc/letsencrypt/live/DOMAIN_PLACEHOLDER/privkey.pem;
 #     include /etc/nginx/conf.d/ssl-params.conf;
 #
 #     location /admin/ {
-#         proxy_pass http://admin-panel:5173/admin/;
+#         proxy_pass http://admin-panel:5173/;
 #         proxy_set_header Host $host;
 #         proxy_set_header X-Real-IP $remote_addr;
 #         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -146,16 +106,16 @@ server {
 #         proxy_buffering off;
 #     }
 #
-#     location /api/admin/ {
-#         proxy_pass http://competition-api:8000/api/admin/;
+#     location /api/competition/ {
+#         proxy_pass http://competition-api:8000/;
 #         proxy_set_header Host $host;
 #         proxy_set_header X-Real-IP $remote_addr;
 #         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 #         proxy_set_header X-Forwarded-Proto $scheme;
 #     }
 #
-#     location /api/public/ {
-#         proxy_pass http://public-api:8000/api/public/;
+#     location /api/ {
+#         proxy_pass http://public-api:8000/;
 #         proxy_set_header Host $host;
 #         proxy_set_header X-Real-IP $remote_addr;
 #         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -170,27 +130,5 @@ server {
 #         proxy_set_header X-Forwarded-Proto $scheme;
 #         proxy_buffering off;
 #     }
-#
-#     # MinIO - Proxy para arquivos públicos (HTTPS)
-#     location /files/ {
-#         proxy_pass http://minio-server/;
-#         proxy_set_header Host $host;
-#         proxy_set_header X-Real-IP $remote_addr;
-#         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-#         proxy_set_header X-Forwarded-Proto $scheme;
-#
-#         # Headers CORS
-#         add_header Access-Control-Allow-Origin * always;
-#         add_header Access-Control-Allow-Methods "GET, HEAD, OPTIONS" always;
-#         add_header Access-Control-Allow-Headers "Range, Content-Type" always;
-#
-#         # Desabilitar buffering para streaming de arquivos grandes
-#         proxy_buffering off;
-#         proxy_request_buffering off;
-#
-#         # Timeouts maiores para upload/download de arquivos grandes
-#         proxy_connect_timeout 300;
-#         proxy_send_timeout 300;
-#         proxy_read_timeout 300;
-#     }
 # }
+

@@ -6,6 +6,7 @@ Maps endpoints according to API_ENDPOINTS.md specification
 from django.urls import path
 
 from . import views
+from .views.file_views import FileDeleteView, FileUploadView
 
 app_name = "admin_api"
 
@@ -14,6 +15,9 @@ urlpatterns = [
     path("auth/login", views.login, name="auth-login"),
     path("auth/logout", views.logout, name="auth-logout"),
     path("auth/me", views.me, name="auth-me"),
+    # File Management
+    path("files/upload", FileUploadView.as_view(), name="file-upload"),
+    path("files/delete", FileDeleteView.as_view(), name="file-delete"),
     # Administrator Management
     path(
         "administrators",
