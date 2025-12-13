@@ -175,3 +175,7 @@ MINIO_USE_SSL = os.environ.get("MINIO_USE_SSL", "false").lower() == "true"
 # File Upload Settings
 DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB
+
+MINIO_PUBLIC_ENDPOINT = os.environ.get(
+    "MINIO_PUBLIC_ENDPOINT", "http://localhost/files"
+)

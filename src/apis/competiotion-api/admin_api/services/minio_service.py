@@ -116,18 +116,15 @@ class MinioService:
     def get_public_url(self, bucket_name: str, object_name: str) -> str:
         """
         Get public URL for an object
-
-        Args:
-            bucket_name: Bucket name
-            object_name: Object name
-
-        Returns:
-            Public URL
         """
-        # For MinIO, construct the URL directly
-        protocol = "https" if settings.MINIO_USE_SSL else "http"
-        endpoint = settings.MINIO_ENDPOINT
-        return f"{protocol}://{endpoint}/{bucket_name}/{object_name}"
+        public_endpoint = getattr(settings, "MINIO_PUBLIC_ENDPOINT", None)
+        if public_endpoint:
+            return f"{public_endpoint}/{bucket_name}/{object_name}"
+        else:
+            # Fallback
+            protocol = "https" if settings.MINIO_USE_SSL else "http"
+            endpoint = settings.MINIO_ENDPOINT
+            return f"{protocol}://{endpoint}/{bucket_name}/{object_name}"
 
     def delete_file(self, bucket_name: str, object_name: str) -> None:
         """
