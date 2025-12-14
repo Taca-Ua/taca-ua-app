@@ -111,15 +111,36 @@ class StaffListCreateView(APIView):
     ),
 )
 class StaffDetailView(APIView):
+    def get(self, request, staff_id):
+        # Get authenticated user
+        # user = get_authenticated_user(request)
+
+        try:
+            staff_member = Staff.objects.get(id=staff_id)
+        except Staff.DoesNotExist:
+            return Response(
+                {"detail": "Staff member not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        return Response(
+            {
+                "id": staff_member.id,
+                "full_name": staff_member.full_name,
+                "staff_number": staff_member.staff_number,
+                "contact": staff_member.contact,
+            },
+            status=status.HTTP_200_OK,
+        )
+
     def put(self, request, staff_id):
         # Get authenticated user
-        user = get_authenticated_user(request)
+        # user = get_authenticated_user(request)
 
         serializer = StaffUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         try:
-            staff_member = Staff.objects.get(id=staff_id, nucleo_id=user["nucleo_id"])
+            staff_member = Staff.objects.get(id=staff_id)
         except Staff.DoesNotExist:
             return Response(
                 {"detail": "Staff member not found."}, status=status.HTTP_404_NOT_FOUND
@@ -134,7 +155,22 @@ class StaffDetailView(APIView):
                 "id": staff_member.id,
                 "full_name": staff_member.full_name,
                 "staff_number": staff_member.staff_number,
-                "role": staff_member.role,
+                "contact": staff_member.contact,
             },
             status=status.HTTP_200_OK,
         )
+
+    def delete(self, request, staff_id):
+        # Get authenticated user
+        # user = get_authenticated_user(request)
+
+        try:
+            staff_member = Staff.objects.get(id=staff_id)
+        except Staff.DoesNotExist:
+            return Response(
+                {"detail": "Staff member not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        staff_member.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)

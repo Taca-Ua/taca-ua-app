@@ -2,7 +2,7 @@ import { apiClient } from './client';
 
 // Participant interface (students)
 export interface Participant {
-  id: number;
+  id: string;
   course_id: string;
   full_name: string;
   is_member: boolean;
@@ -25,7 +25,7 @@ export interface ParticipantUpdate {
 
 // Staff interface
 export interface Staff {
-  id: number;
+  id: string;
   full_name: string;
   contact?: string;
   staff_number?: string;
@@ -54,7 +54,7 @@ export const participantsApi = {
     return apiClient.get<Participant[]>('/students');
   },
 
-  async getById(id: number): Promise<Participant> {
+  async getById(id: string): Promise<Participant> {
     return apiClient.get<Participant>(`/students/${id}`);
   },
 
@@ -62,11 +62,11 @@ export const participantsApi = {
     return apiClient.post<Participant>('/students', data);
   },
 
-  async update(id: number, data: ParticipantUpdate): Promise<Participant> {
+  async update(id: string, data: ParticipantUpdate): Promise<Participant> {
     return apiClient.put<Participant>(`/students/${id}`, data);
   },
 
-  async delete(id: number): Promise<void> {
+  async delete(id: string): Promise<void> {
     return apiClient.delete(`/students/${id}`);
   },
 };
@@ -77,7 +77,7 @@ export const staffApi = {
     return apiClient.get<Staff[]>('/staff');
   },
 
-  async getById(id: number): Promise<Staff> {
+  async getById(id: string): Promise<Staff> {
     return apiClient.get<Staff>(`/staff/${id}`);
   },
 
@@ -85,11 +85,11 @@ export const staffApi = {
     return apiClient.post<Staff>('/staff', data);
   },
 
-  async update(id: number, data: StaffUpdate): Promise<Staff> {
+  async update(id: string, data: StaffUpdate): Promise<Staff> {
     return apiClient.put<Staff>(`/staff/${id}`, data);
   },
 
-  async delete(id: number): Promise<void> {
+  async delete(id: string): Promise<void> {
     return apiClient.delete(`/staff/${id}`);
   },
 };
