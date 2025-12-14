@@ -3,12 +3,13 @@ import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router-dom'
 import './index.css'
 import { router } from './routes'
-import { AuthProvider } from './contexts/AuthProvider'
+// import { AuthProvider } from './contexts/AuthProvider'
+import { KeycloakProvider } from './auth/KeycloakProvider'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <AuthProvider>
+    <KeycloakProvider> /
       <RouterProvider router={router} />
-    </AuthProvider>
+    </KeycloakProvider>
   </StrictMode>,
 )

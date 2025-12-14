@@ -1,38 +1,32 @@
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useKeycloak } from '../auth/KeycloakProvider';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: 'nucleo' | 'geral';
+  requiredRole?: string;
 }
 
-const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
-  const { isAuthenticated, isLoading, user } = useAuth();
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
+  requiredRole,
+}) => {
+  const { authenticated, loading, hasRole } = useKeycloak();
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+  if (loading) {
+    return <div>Loading...</div>;
   }
 
-  if (!isAuthenticated) {
-    // Redirect to appropriate login page based on required role
-    const loginPath = requiredRole === 'geral' ? '/login/geral' : '/login/nucleo';
-    return <Navigate to={loginPath} replace />;
+  // Si no está autenticado, redirige a la página de inicio de sesión
+  if (!authenticated) {
+    return <Navigate to="/login" replace />;
   }
 
-  // Check if user has required role
-  if (requiredRole && user && 'role' in user && user.role !== requiredRole) {
-    // Redirect to appropriate dashboard
-    const dashboardPath = user.role === 'geral' ? '/geral/dashboard' : '/nucleo/dashboard';
-    return <Navigate to={dashboardPath} replace />;
+  // Si requiere un rol y el usuario no lo tiene, redirige a acceso denegado
+  if (requiredRole && !hasRole(requiredRole)) {
+    return <Navigate to="/unauthorized" replace />;
   }
 
+  // Si pasa todas las validaciones
   return <>{children}</>;
 };
 
