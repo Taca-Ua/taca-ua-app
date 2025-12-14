@@ -200,30 +200,7 @@ class Modality(models.Model):
         return self.name
 
 
-class Team(models.Model):
-    """
-    Represents a team for a modality and course.
-    Originally from: modalities-service
-    """
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    modality_id = models.UUIDField(db_index=True)
-    course_id = models.UUIDField(db_index=True)
-    name = models.TextField()
-    players = models.JSONField(null=True, blank=True)  # Array of UUIDs stored as JSON
-    created_by = models.UUIDField()
-    created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
-
-    class Meta:
-        db_table = "team"
-        verbose_name = "Team"
-        verbose_name_plural = "Teams"
-
-    def __str__(self):
-        return self.name
-
-
+# used
 class Member(models.Model):
     """
     Represents a member.
@@ -249,6 +226,7 @@ class Member(models.Model):
         return self.full_name
 
 
+# used
 class Student(Member):
     """
     Represents a student.
@@ -264,10 +242,20 @@ class Student(Member):
         verbose_name = "Student"
         verbose_name_plural = "Students"
 
+    def to_json(self):
+        return {
+            "id": str(self.id),
+            "full_name": self.full_name,
+            "course_id": str(self.course_id),
+            "student_number": self.student_number,
+            "is_member": self.is_member,
+        }
+
     def __str__(self):
         return f"{self.full_name} ({self.student_number})"
 
 
+# used
 class Staff(Member):
     """
     Represents a staff member.
@@ -305,6 +293,35 @@ class Staff(Member):
 
     def __str__(self):
         return f"{self.full_name} ({self.staff_number})"
+
+
+class Team(models.Model):
+    """
+    Represents a team for a modality and course.
+    Originally from: modalities-service
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    modality = models.ForeignKey(Modality, on_delete=models.DO_NOTHING, db_index=True)
+    course = models.ForeignKey(Course, on_delete=models.DO_NOTHING, db_index=True)
+    name = models.TextField()
+    players = models.ManyToManyField(Student, blank=True)
+
+    created_by = models.UUIDField()
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        self.updated_at = timezone.now()
+        return super().save(*args, **kwargs)
+
+    class Meta:
+        db_table = "team"
+        verbose_name = "Team"
+        verbose_name_plural = "Teams"
+
+    def __str__(self):
+        return self.name
 
 
 # ==================== RANKING MODELS ====================

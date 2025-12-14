@@ -5,42 +5,53 @@ import { teamsApi } from '../../api/teams';
 import type { Team } from '../../api/teams';
 import { modalitiesApi } from '../../api/modalities';
 import type { Modality } from '../../api/modalities';
+import { coursesApi } from '../../api/courses';
+import type { Course } from '../../api/courses';
 
 const Equipas = () => {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
   const [selectedModality, setSelectedModality] = useState('');
-  const [newTeamDescription, setNewTeamDescription] = useState('');
+  const [selectedCourse, setSelectedCourse] = useState('');
   const [teams, setTeams] = useState<Team[]>([]);
   const [allModalities, setAllModalities] = useState<Modality[]>([]);
+  const [allCourses, setAllCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterModality, setFilterModality] = useState('');
+  const [filterCourse, setFilterCourse] = useState('');
 
-  // Get only modalities that have teams (for filtering)
+  // Get only modalities and courses that have teams (for filtering)
   const availableModalities = allModalities.filter(modality =>
-    teams.some(team => team.modality_id === modality.id)
+    teams.some(team => team.modality_name === modality.id)
   );
 
-  // Fetch teams and modalities from API
+  const availableCourses = allCourses.filter(course =>
+    teams.some(team => team.course_name === course.id)
+  );
+
+  // Fetch teams, modalities, and courses from API
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Fetch both teams and modalities in parallel
-        const [fetchedTeams, fetchedModalities] = await Promise.all([
+        // Fetch teams, modalities, and courses in parallel
+        const [fetchedTeams, fetchedModalities, fetchedCourses] = await Promise.all([
           teamsApi.getAll(),
           modalitiesApi.getAll(),
+          coursesApi.getAll(),
         ]);
 
         console.log('Fetched teams:', fetchedTeams);
         console.log('Fetched modalities:', fetchedModalities);
+        console.log('Fetched courses:', fetchedCourses);
 
         setTeams(fetchedTeams);
         setAllModalities(fetchedModalities);
+        setAllCourses(fetchedCourses);
       } catch (err) {
         console.error('Failed to fetch data:', err);
         setError('Erro ao carregar dados. Por favor, tente novamente.');
@@ -63,18 +74,23 @@ const Equipas = () => {
       return;
     }
 
+    if (!selectedCourse) {
+      alert('Por favor, selecione um curso.');
+      return;
+    }
+
     try {
       const newTeam = await teamsApi.create({
-        modality_id: parseInt(selectedModality),
+        modality_id: selectedModality,
+        course_id: selectedCourse,
         name: newTeamName,
-        players: [],
       });
 
       // Add to local state
       setTeams([...teams, newTeam]);
       setNewTeamName('');
       setSelectedModality('');
-      setNewTeamDescription('');
+      setSelectedCourse('');
       setIsModalOpen(false);
     } catch (err) {
       console.error('Failed to create team:', err);
@@ -83,15 +99,23 @@ const Equipas = () => {
   };
 
   // Helper function to get modality name from ID
-  const getModalityName = (modalityId: number) => {
+  const getModalityName = (modalityId: string) => {
     const modality = allModalities.find(m => m.id === modalityId);
     return modality ? modality.name : `Modalidade ${modalityId}`;
   };
 
-  // Filter teams by modality
-  const filteredTeams = filterModality
-    ? teams.filter((team) => team.modality_id === parseInt(filterModality))
-    : teams;
+  // Helper function to get course name from ID
+  const getCourseName = (courseId: string) => {
+    const course = allCourses.find(c => c.id === courseId);
+    return course ? course.name : `Curso ${courseId}`;
+  };
+
+  // Filter teams by modality and/or course
+  const filteredTeams = teams.filter((team) => {
+    const matchesModality = filterModality ? team.modality_name === filterModality : true;
+    const matchesCourse = filterCourse ? team.course_name === filterCourse : true;
+    return matchesModality && matchesCourse;
+  });
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -128,24 +152,47 @@ const Equipas = () => {
           {/* Content - Only show when not loading */}
           {!loading && !error && (
             <>
-              {/* Modality Filter */}
-              <div className="mb-6">
-                <label htmlFor="modalityFilter" className="block text-gray-700 font-medium mb-2">
-                  Modalidade
-                </label>
-                <select
-                  id="modalityFilter"
-                  value={filterModality}
-                  onChange={(e) => setFilterModality(e.target.value)}
-                  className="w-64 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                  <option value="">Todas as Modalidades</option>
-                  {availableModalities.map((modality) => (
-                    <option key={modality.id} value={modality.id}>
-                      {modality.name}
-                    </option>
-                  ))}
-                </select>
+              {/* Filters */}
+              <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Modality Filter */}
+                <div>
+                  <label htmlFor="modalityFilter" className="block text-gray-700 font-medium mb-2">
+                    Modalidade
+                  </label>
+                  <select
+                    id="modalityFilter"
+                    value={filterModality}
+                    onChange={(e) => setFilterModality(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    <option value="">Todas as Modalidades</option>
+                    {availableModalities.map((modality) => (
+                      <option key={modality.id} value={modality.id}>
+                        {modality.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Course Filter */}
+                <div>
+                  <label htmlFor="courseFilter" className="block text-gray-700 font-medium mb-2">
+                    Curso
+                  </label>
+                  <select
+                    id="courseFilter"
+                    value={filterCourse}
+                    onChange={(e) => setFilterCourse(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    <option value="">Todos os Cursos</option>
+                    {availableCourses.map((course) => (
+                      <option key={course.id} value={course.id}>
+                        {course.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {/* Teams List */}
@@ -157,15 +204,20 @@ const Equipas = () => {
                       <div
                         key={team.id}
                         onClick={() => navigate(`/nucleo/equipas/${team.id}`)}
-                        className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer transition-colors flex justify-between items-center"
+                        className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer transition-colors"
                       >
-                        <span className="text-gray-800 font-medium">{team.name}</span>
-                        <span className="text-teal-600 text-sm font-medium">{getModalityName(team.modality_id)}</span>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-800 font-medium">{team.name}</span>
+                          <div className="flex gap-4 text-sm">
+                            <span className="text-teal-600 font-medium">{getModalityName(team.modality_name)}</span>
+                            <span className="text-gray-500">{getCourseName(team.course_name)}</span>
+                          </div>
+                        </div>
                       </div>
                     ))
                   ) : (
                     <p className="text-gray-500 text-center py-8">
-                      Nenhuma equipa encontrada para esta modalidade.
+                      Nenhuma equipa encontrada com os filtros selecionados.
                     </p>
                   )}
                 </div>
@@ -217,18 +269,24 @@ const Equipas = () => {
                 </select>
               </div>
 
-              {/* Description */}
+              {/* Course Selection */}
               <div>
-                <label htmlFor="description" className="block text-gray-700 font-medium mb-2">
-                  Descrição
+                <label htmlFor="course" className="block text-gray-700 font-medium mb-2">
+                  Curso <span className="text-red-500">*</span>
                 </label>
-                <textarea
-                  id="description"
-                  value={newTeamDescription}
-                  onChange={(e) => setNewTeamDescription(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 min-h-[100px]"
-                  placeholder="Digite a descrição da equipa"
-                />
+                <select
+                  id="course"
+                  value={selectedCourse}
+                  onChange={(e) => setSelectedCourse(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                >
+                  <option value="">Selecionar Curso</option>
+                  {allCourses.map((course) => (
+                    <option key={course.id} value={course.id}>
+                      {course.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -239,7 +297,7 @@ const Equipas = () => {
                   setIsModalOpen(false);
                   setNewTeamName('');
                   setSelectedModality('');
-                  setNewTeamDescription('');
+                  setSelectedCourse('');
                 }}
                 className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
               >

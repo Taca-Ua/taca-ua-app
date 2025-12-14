@@ -15,7 +15,6 @@ from ..serializers import (
     StudentListSerializer,
     StudentUpdateSerializer,
 )
-from .auth import get_authenticated_user
 
 
 @extend_schema_view(
@@ -54,7 +53,7 @@ class StudentListCreateView(APIView):
 
     def post(self, request):
         # Get authenticated user
-        user = get_authenticated_user(request)
+        # user = get_authenticated_user(request)
 
         serializer = StudentCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -67,7 +66,7 @@ class StudentListCreateView(APIView):
             student_number=serializer.validated_data["student_number"],
             is_member=serializer.validated_data.get("is_member", False),
             course=course,
-            created_by=user or "00000000-0000-0000-0000-000000000000",
+            created_by="00000000-0000-0000-0000-000000000000",
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
         )
@@ -110,7 +109,7 @@ class StudentDetailView(APIView):
         return Response(
             {
                 "id": student.id,
-                "course_id": student.course.id,
+                "course_id": student.course.name,
                 "full_name": student.full_name,
                 "student_number": student.student_number,
                 "is_member": student.is_member,
