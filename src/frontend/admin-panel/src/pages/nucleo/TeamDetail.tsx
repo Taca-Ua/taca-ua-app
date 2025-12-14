@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import NucleoSidebar from '../../components/nucleo_navbar';
 import { teamsApi, type Team } from '../../api/teams';
-import { studentsApi, type Student } from '../../api/students';
+// import { membersApi, type Student } from '../../api/members';
 import { modalitiesApi, type Modality } from '../../api/modalities';
 
 const TeamDetail = () => {

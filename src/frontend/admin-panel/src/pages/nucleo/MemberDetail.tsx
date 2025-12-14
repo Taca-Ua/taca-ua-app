@@ -1,12 +1,12 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import NucleoSidebar from '../../components/nucleo_navbar';
-import { studentsApi, type Student } from '../../api/students';
+// import { membersApi, type Student } from '../../api/members';
 
 function MemberDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [member, setMember] = useState<Student | null>(null);
+  const [member, setMember] = useState<Member | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);

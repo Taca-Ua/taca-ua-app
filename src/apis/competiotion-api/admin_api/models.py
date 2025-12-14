@@ -9,6 +9,7 @@ This is a monolithic implementation combining models from:
 
 import uuid
 
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
@@ -223,21 +224,40 @@ class Team(models.Model):
         return self.name
 
 
-class Student(models.Model):
+class Member(models.Model):
+    """
+    Represents a member.
+    Originally from: modalities-service
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    full_name = models.TextField()
+    created_by = models.UUIDField()
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        self.updated_at = timezone.now()
+        return super().save(*args, **kwargs)
+
+    class Meta:
+        db_table = "member"
+        verbose_name = "Member"
+        verbose_name_plural = "Members"
+
+    def __str__(self):
+        return self.full_name
+
+
+class Student(Member):
     """
     Represents a student.
     Originally from: modalities-service
     """
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    course_id = models.UUIDField(db_index=True)
-    full_name = models.TextField()
+    course = models.ForeignKey(Course, on_delete=models.DO_NOTHING, db_index=True)
     student_number = models.TextField(unique=True)
-    email = models.TextField(null=True, blank=True)
     is_member = models.BooleanField(default=False)
-    created_by = models.UUIDField()
-    created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
 
     class Meta:
         db_table = "student"
@@ -246,6 +266,45 @@ class Student(models.Model):
 
     def __str__(self):
         return f"{self.full_name} ({self.student_number})"
+
+
+class Staff(Member):
+    """
+    Represents a staff member.
+    Originally from: modalities-service
+    """
+
+    staff_number = models.TextField(unique=True, null=True, blank=True)
+    contact = models.TextField(unique=True, null=True, blank=True)
+
+    def clean(self):
+
+        # treat empty/whitespace-only strings as not set
+        staff_ok = bool(self.staff_number and str(self.staff_number).strip())
+        contact_ok = bool(self.contact and str(self.contact).strip())
+
+        if not (staff_ok or contact_ok):
+            raise ValidationError(
+                "At least one of 'staff_number' or 'contact' must be set."
+            )
+
+    def save(self, *args, **kwargs):
+        # normalize empty strings to None
+        if isinstance(self.staff_number, str) and not self.staff_number.strip():
+            self.staff_number = None
+        if isinstance(self.contact, str) and not self.contact.strip():
+            self.contact = None
+
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    class Meta:
+        db_table = "staff"
+        verbose_name = "Staff"
+        verbose_name_plural = "Staff Members"
+
+    def __str__(self):
+        return f"{self.full_name} ({self.staff_number})"
 
 
 # ==================== RANKING MODELS ====================

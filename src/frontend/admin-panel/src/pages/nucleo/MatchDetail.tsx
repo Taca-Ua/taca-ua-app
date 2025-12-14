@@ -5,8 +5,7 @@ import { matchesApi } from '../../api/matches';
 import type { Match, MatchLineup } from '../../api/matches';
 import { teamsApi } from '../../api/teams';
 import type { Team } from '../../api/teams';
-import { studentsApi } from '../../api/students';
-import type { Student } from '../../api/students';
+// import { membersApi, type Member } from '../../api/members';
 import { useAuth } from '../../hooks/useAuth';
 
 const MatchDetail = () => {
