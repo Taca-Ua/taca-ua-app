@@ -55,7 +55,7 @@ class Match(models.Model):
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    tournament = models.ForeignKey(
+    tournament: "Tournament" = models.ForeignKey(
         "Tournament",
         related_name="matches",
         on_delete=models.DO_NOTHING,
@@ -63,10 +63,10 @@ class Match(models.Model):
         null=True,
         blank=True,
     )
-    team_home = models.ForeignKey(
+    team_home: "Team" = models.ForeignKey(
         "Team", on_delete=models.DO_NOTHING, related_name="home_matches", db_index=True
     )
-    team_away = models.ForeignKey(
+    team_away: "Team" = models.ForeignKey(
         "Team", on_delete=models.DO_NOTHING, related_name="away_matches", db_index=True
     )
     location = models.TextField()
@@ -247,7 +247,7 @@ class Modality(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.TextField(unique=True)
-    modality_type = models.ForeignKey(
+    modality_type: ModalityType = models.ForeignKey(
         ModalityType, on_delete=models.DO_NOTHING, db_index=True
     )
 

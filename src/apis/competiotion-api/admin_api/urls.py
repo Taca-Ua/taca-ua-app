@@ -118,4 +118,7 @@ urlpatterns = [
     path("seasons", views.SeasonListCreateView.as_view(), name="season-list"),
     path("seasons/<season_id>/start", views.season_start, name="season-start"),
     path("seasons/<season_id>/finish", views.season_finish, name="season-finish"),
+    # Public API
+    path("public/matches", views.calendar, name="public-calendar"),
+    path("public/modalities", views.modality_list, name="public-modality-list"),
 ]
