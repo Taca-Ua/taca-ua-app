@@ -20,7 +20,9 @@ class NucleoAdminCreateSerializer(serializers.Serializer):
 
     username = serializers.CharField(required=True)
     email = serializers.EmailField(required=True)
+    password = serializers.CharField(required=True, write_only=True)
     course_id = serializers.IntegerField(required=True)
+    course_abbreviation = serializers.CharField(required=False, allow_blank=True)
     full_name = serializers.CharField(required=False, allow_blank=True)
 
 
@@ -28,4 +30,5 @@ class NucleoAdminUpdateSerializer(serializers.Serializer):
     """Serializer for updating nucleo administrator"""
 
     course_id = serializers.IntegerField(required=False)
+    course_abbreviation = serializers.CharField(required=False, allow_blank=True)
     full_name = serializers.CharField(required=False, allow_blank=True)
