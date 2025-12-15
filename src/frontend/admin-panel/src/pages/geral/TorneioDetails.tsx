@@ -402,9 +402,6 @@ const TorneioDetails = () => {
             <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
               {matches.length > 0 ? (
                 matches.map(match => {
-                  const homeTeam = allTeams.find(t => t.id === match.team_home_id);
-                  const awayTeam = allTeams.find(t => t.id === match.team_away_id);
-
                   return (
                     <div
                       key={match.id}
@@ -413,7 +410,7 @@ const TorneioDetails = () => {
                     >
                       <div className="flex justify-between items-center">
                         <div className="text-sm font-medium">
-                          {homeTeam?.name || `Equipa ${match.team_home_id}`} vs {awayTeam?.name || `Equipa ${match.team_away_id}`}
+                          {match.team_home_name || `Equipa X`} vs {match.team_away_name || `Equipa Y`}
                         </div>
                         <span className={`text-xs px-2 py-1 rounded ${
                           match.status === 'finished' ? 'bg-green-100 text-green-700' :

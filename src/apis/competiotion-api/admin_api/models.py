@@ -53,6 +53,14 @@ class Match(models.Model):
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tournament = models.ForeignKey(
+        "Tournament",
+        related_name="matches",
+        on_delete=models.DO_NOTHING,
+        db_index=True,
+        null=True,
+        blank=True,
+    )
     team_home = models.ForeignKey(
         "Team", on_delete=models.DO_NOTHING, related_name="home_matches", db_index=True
     )
@@ -442,7 +450,6 @@ class Tournament(models.Model):
         max_length=20, choices=TournamentStatus.choices, default=TournamentStatus.DRAFT
     )
     teams = models.ManyToManyField(Team, blank=True)
-    matches = models.ManyToManyField(Match, blank=True)
     start_date = models.DateTimeField(null=True, blank=True)
 
     created_by = models.UUIDField()

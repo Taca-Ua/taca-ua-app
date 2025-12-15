@@ -109,13 +109,24 @@ class MatchListCreateView(APIView):
 class MatchDetailView(APIView):
 
     def get(self, request, match_id):
+        match = Match.objects.get(id=match_id)
 
-        return Response({}, status=status.HTTP_200_OK)
+        return Response(match.to_json(), status=status.HTTP_200_OK)
 
     def put(self, request, match_id):
         serializer = MatchUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        return Response({})
+
+        match = Match.objects.get(id=match_id)
+
+        if "location" in serializer.validated_data:
+            match.location = serializer.validated_data["location"]
+        if "start_time" in serializer.validated_data:
+            match.start_time = serializer.validated_data["start_time"]
+        if "status" in serializer.validated_data:
+            match.status = serializer.validated_data["status"]
+        match.save()
+        return Response(match.to_json(), status=status.HTTP_200_OK)
 
     def delete(self, request, match_id):
         return Response(status=status.HTTP_204_NO_CONTENT)
