@@ -16,7 +16,6 @@ from ..serializers import (
     MatchResultSerializer,
     MatchUpdateSerializer,
 )
-from .auth import get_authenticated_user
 
 
 @extend_schema_view(
@@ -35,22 +34,14 @@ from .auth import get_authenticated_user
 class MatchListCreateView(APIView):
     def get(self, request):
         # Get authenticated user
-        user = get_authenticated_user(request)
-        if not user:
-            return Response(
-                {"error": "Authentication required"},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
+        # user = get_authenticated_user(request)
+        # if not user:
+        #     return Response(
+        #         {"error": "Authentication required"},
+        #         status=status.HTTP_401_UNAUTHORIZED,
+        #     )
 
         # Mock database of teams (to determine which matches belong to this nucleo)
-        teams = [
-            {"id": 1, "course_id": 1, "name": "MECT Futebol A", "modality_id": 1},
-            {"id": 2, "course_id": 2, "name": "LEI Futebol A", "modality_id": 1},
-            {"id": 3, "course_id": 1, "name": "MECT Futsal", "modality_id": 2},
-            {"id": 4, "course_id": 1, "name": "MECT Andebol", "modality_id": 5},
-            {"id": 5, "course_id": 3, "name": "LECI Futebol A", "modality_id": 1},
-            {"id": 6, "course_id": 2, "name": "LEI Futsal", "modality_id": 2},
-        ]
 
         # Mock database of all matches
         all_matches = [
@@ -139,23 +130,7 @@ class MatchListCreateView(APIView):
 
         # If user is geral admin (role "geral"), return all matches
         # If user is nucleo admin, filter by their teams
-        if user.get("role") == "geral":
-            return Response(all_matches)
-
-        # Get team IDs for this nucleo
-        nucleo_team_ids = [
-            team["id"] for team in teams if team["course_id"] == user["course_id"]
-        ]
-
-        # Filter matches where either home or away team belongs to this nucleo
-        filtered_matches = [
-            match
-            for match in all_matches
-            if match["team_home_id"] in nucleo_team_ids
-            or match["team_away_id"] in nucleo_team_ids
-        ]
-
-        return Response(filtered_matches)
+        return Response(all_matches)
 
     def post(self, request):
         serializer = MatchCreateSerializer(data=request.data)

@@ -8,6 +8,7 @@ This is a monolithic implementation combining models from:
 """
 
 import uuid
+from typing import List
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -126,6 +127,7 @@ class Nucleo(models.Model):
         return self.name
 
 
+# used
 class Course(models.Model):
     """
     Represents an academic course.
@@ -295,6 +297,7 @@ class Staff(Member):
         return f"{self.full_name} ({self.staff_number})"
 
 
+# used
 class Team(models.Model):
     """
     Represents a team for a modality and course.
@@ -417,20 +420,49 @@ class Tournament(models.Model):
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    modality_id = models.UUIDField(db_index=True)
+    modality = models.ForeignKey(Modality, on_delete=models.DO_NOTHING, db_index=True)
     name = models.TextField()
-    season_id = models.UUIDField(db_index=True)
     status = models.CharField(
         max_length=20, choices=TournamentStatus.choices, default=TournamentStatus.DRAFT
     )
-    rules = models.JSONField(null=True, blank=True)
-    teams = models.JSONField(null=True, blank=True)  # Array of UUIDs stored as JSON
+    teams = models.ManyToManyField(Team, blank=True)
     start_date = models.DateTimeField(null=True, blank=True)
+
     created_by = models.UUIDField()
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
     finished_at = models.DateTimeField(null=True, blank=True)
     finished_by = models.UUIDField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        self.updated_at = timezone.now()
+        return super().save(*args, **kwargs)
+
+    def to_json(self):
+        return {
+            "id": str(self.id),
+            "modality_name": str(self.modality.name),
+            "name": self.name,
+            "status": self.status,
+            "start_date": self.start_date.isoformat() if self.start_date else None,
+        }
+
+    def to_json_detail(self):
+        teams: List[Team] = self.teams.all()
+        return {
+            "id": str(self.id),
+            "modality_name": str(self.modality.name),
+            "name": self.name,
+            "status": self.status,
+            "start_date": self.start_date.isoformat() if self.start_date else None,
+            "teams": [
+                {
+                    "id": str(team.id),
+                    "name": team.name,
+                }
+                for team in teams
+            ],
+        }
 
     class Meta:
         db_table = "tournament"

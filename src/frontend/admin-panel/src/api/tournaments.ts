@@ -1,33 +1,33 @@
 import { apiClient } from './client';
 
 export interface Tournament {
-  id: number;
+  id: string;
+  modality_name: string;
   name: string;
-  modality_id: number;
-  season_id: number;
-  season_year?: string;
-  rules?: string;
-  status: 'draft' | 'active' | 'finished';
+  status: string;
   start_date?: string;
-  teams?: number[];
+}
+
+export interface TournamentDetail extends Tournament {
+    teams: {
+        id: string;
+        name: string;
+    }[];
 }
 
 export interface TournamentCreate {
-  name: string;
-  modality_id: number;
-  season_id: number;
-  season_year?: string;
-  rules?: string;
-  teams?: number[];
-  start_date?: string;
+    modality_id: string;
+    name: string;
+    teams?: string[];
+    start_date?: string;
 }
 
 export interface TournamentUpdate {
-  name?: string;
-  rules?: string;
-  teams?: number[];
-  start_date?: string;
-  status?: 'draft' | 'active' | 'finished';
+    name?: string;
+    start_date?: string;
+    status?: 'draft' | 'active' | 'finished';
+    teams_add?: string[];
+    teams_remove?: string[];
 }
 
 export const tournamentsApi = {
@@ -35,23 +35,23 @@ export const tournamentsApi = {
     return apiClient.get<Tournament[]>('/tournaments');
   },
 
-  async getById(id: number): Promise<Tournament> {
-    return apiClient.get<Tournament>(`/tournaments/${id}`);
+  async getById(id: string): Promise<TournamentDetail> {
+    return apiClient.get<TournamentDetail>(`/tournaments/${id}`);
   },
 
-  async create(data: TournamentCreate): Promise<Tournament> {
-    return apiClient.post<Tournament>('/tournaments', data);
+  async create(data: TournamentCreate): Promise<TournamentDetail> {
+    return apiClient.post<TournamentDetail>('/tournaments', data);
   },
 
-  async update(id: number, data: TournamentUpdate): Promise<Tournament> {
-    return apiClient.put<Tournament>(`/tournaments/${id}`, data);
+  async update(id: string, data: TournamentUpdate): Promise<TournamentDetail> {
+    return apiClient.put<TournamentDetail>(`/tournaments/${id}`, data);
   },
 
-  async delete(id: number): Promise<void> {
+  async delete(id: string): Promise<void> {
     return apiClient.delete(`/tournaments/${id}`);
   },
 
-  async finish(id: number): Promise<Tournament> {
-    return apiClient.post<Tournament>(`/tournaments/${id}/finish`, {});
+  async finish(id: string): Promise<TournamentDetail> {
+    return apiClient.post<TournamentDetail>(`/tournaments/${id}/finish`, {});
   },
 };
