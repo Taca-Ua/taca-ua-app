@@ -51,25 +51,33 @@ export const KeycloakProvider = ({ children }: { children: React.ReactNode }) =>
       .then((auth) => {
         setAuthenticated(auth);
         setLoading(false);
-        setToken(keycloak.token); // Almacenar el token inicial
+        setToken(keycloak.token);
 
         if (auth) {
 
-          // 1. Function to retrieve the current token from Keycloak's state
           const getToken = () => keycloak.token;
 
-          // 2. Function to handle 401: Forcing a Keycloak re-login
+
           const handle401 = () => {
-            console.log("401 detected by API client. Forcing Keycloak login.");
-            keycloak.login(); // Inicia el flujo de autenticación
+            console.warn("401 detected by API client. Attempting token refresh.");
+
+            keycloak.updateToken(30)
+                .then(() => {
+
+                    console.log("Token successfully refreshed after 401.");
+                })
+                .catch(() => {
+                    console.error("Token refresh failed after 401. Forcing login.");
+                    // Si el refresh falla, entonces sí, forzar el login (redirección)
+                    keycloak.login();
+                });
           };
 
-          // 3. Setup client (Axios/Fetch) - Esto configura los interceptores de Axios
-          setupApiClient(getToken, handle401); // Se llama a setupApiClient con las funciones necesarias
+
+          setupApiClient(getToken, handle401);
 
           // Token automatic refresh interval (checks every minute)
           refreshInterval = window.setInterval(() => {
-            // Intenta refrescar si expira en los próximos 60 segundos
             keycloak
               .updateToken(60)
               .then((refreshed) => {
@@ -80,7 +88,6 @@ export const KeycloakProvider = ({ children }: { children: React.ReactNode }) =>
               })
               .catch(() => {
                 console.error('Token refresh failed (Periodic Check)');
-                // Si el refresco periódico falla, redirige para re-autenticar
                 keycloak.login();
               });
           }, 60000); // Check every minute

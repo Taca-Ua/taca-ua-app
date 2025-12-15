@@ -1,36 +1,42 @@
 import { useNavigate } from 'react-router-dom';
 import { useKeycloak } from '../auth/KeycloakProvider';
+import { useEffect } from 'react'; // <-- ¡Importar useEffect!
 
 /**
- * Login Component: Initiates the Keycloak authentication flow.
- * It checks the authentication status and redirects to Keycloak
- * if the user decides to log in.
+ * Login Component: Initiates the Keycloak authentication flow
+ * and handles post-login redirection based on user roles.
  */
 function Login() {
-  // Use the Keycloak hook to get authentication status and the login function.
-  const { login, authenticated } = useKeycloak();
+  const { login, authenticated, hasRole } = useKeycloak();
   const navigate = useNavigate();
 
 
-  // 1. Check if the user is already authenticated.
-  if (authenticated) {
-    // If authenticated, redirect them immediately to the dashboard.
-    navigate('/dashboard');
-    return null;
-  }
 
+  useEffect(() => {
+    if (authenticated) {
 
-  /**
-   * Handles the click event for admin login buttons.
-   * Calls the Keycloak `login()` method, which starts the OIDC redirect.
-   */
+      if (hasRole('admin_geral')) {
+        navigate('/geral/dashboard', { replace: true });
+        return;
+      }
+
+      if (hasRole('admin_nucleo')) { // <-- Asumiendo este es el nombre
+        navigate('/nucleo/dashboard', { replace: true });
+        return;
+      }
+
+      navigate('/unauthorized', { replace: true }); // <-- Usar la ruta completa
+    }
+  }, [authenticated, navigate, hasRole]);
+
   const handleAdminLogin = () => {
     login();
   };
 
-  // Note: Both 'Admin Geral' and 'Admin Núcleo' buttons trigger the same
-  // centralized Keycloak login process, as role validation happens after
-  // successful authentication.
+  if (authenticated) {
+      return null;
+  }
+
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-cover bg-center relative"

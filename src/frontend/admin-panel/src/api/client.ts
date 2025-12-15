@@ -37,8 +37,6 @@ export class ApiClient {
     this.baseUrl = baseUrl;
   }
 
-  // CRITICAL CHANGE: Get token from the injected function (Keycloak state)
-  // NOT from localStorage (Security fix).
   private getAuthHeader(): Record<string, string> {
     const token = globalGetToken ? globalGetToken() : undefined;
 

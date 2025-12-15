@@ -57,47 +57,47 @@ export const router = createBrowserRouter([
   // ============================================
   {
     path: '/geral/dashboard',
-    element: <ProtectedRoute requiredRole="geral"><DashboardGeral /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="admin_geral"><DashboardGeral /></ProtectedRoute>,
   },
   {
     path: '/geral/administradores',
-    element: <ProtectedRoute requiredRole="geral"><Administradores /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="admin_geral"><Administradores /></ProtectedRoute>,
   },
   {
     path: '/geral/administradores/:id',
-    element: <ProtectedRoute requiredRole="geral"><AdminDetail /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="admin_geral"><AdminDetail /></ProtectedRoute>,
   },
   {
     path: '/geral/modalidades',
-    element: <ProtectedRoute requiredRole="geral"><Modalities /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="admin_geral"><Modalities /></ProtectedRoute>,
   },
   {
     path: '/geral/modalidades/:id',
-    element: <ProtectedRoute requiredRole="geral"><ModalityDetails /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="admin_geral"><ModalityDetails /></ProtectedRoute>,
   },
   {
     path: '/geral/nucleos',
-    element: <ProtectedRoute requiredRole="geral"><Nucleo /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="admin_geral"><Nucleo /></ProtectedRoute>,
   },
   {
     path: '/geral/nucleos/:id',
-    element: <ProtectedRoute requiredRole="geral"><NucleoDetails /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="admin_geral"><NucleoDetails /></ProtectedRoute>,
   },
   {
     path: '/geral/regulamentos',
-    element: <ProtectedRoute requiredRole="geral"><Regulamentos /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="admin_geral"><Regulamentos /></ProtectedRoute>,
   },
   {
     path: '/geral/torneios',
-    element: <ProtectedRoute requiredRole="geral"><Torneios /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="admin_geral"><Torneios /></ProtectedRoute>,
   },
   {
     path: '/geral/torneios/:id',
-    element: <ProtectedRoute requiredRole="geral"><TorneioDetails /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="admin_geral"><TorneioDetails /></ProtectedRoute>,
   },
   {
     path: '/geral/jogos/:id',
-    element: <ProtectedRoute requiredRole="geral"><JogoDetails /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="admin_geral"><JogoDetails /></ProtectedRoute>,
   },
 
   // ============================================
@@ -105,31 +105,31 @@ export const router = createBrowserRouter([
   // ============================================
   {
     path: '/nucleo/dashboard',
-    element: <ProtectedRoute requiredRole="nucleo"><DashboardNucleo /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="admin_nucleo"><DashboardNucleo /></ProtectedRoute>,
   },
   {
     path: '/nucleo/membros',
-    element: <ProtectedRoute requiredRole="nucleo"><Membros /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="admin_nucleo"><Membros /></ProtectedRoute>,
   },
   {
     path: '/nucleo/membros/:id',
-    element: <ProtectedRoute requiredRole="nucleo"><MemberDetail /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="admin_nucleo"><MemberDetail /></ProtectedRoute>,
   },
   {
     path: '/nucleo/equipas',
-    element: <ProtectedRoute requiredRole="nucleo"><Equipas /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="admin_nucleo"><Equipas /></ProtectedRoute>,
   },
   {
     path: '/nucleo/equipas/:id',
-    element: <ProtectedRoute requiredRole="nucleo"><TeamDetail /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="admin_nucleo"><TeamDetail /></ProtectedRoute>,
   },
   {
     path: '/nucleo/jogos',
-    element: <ProtectedRoute requiredRole="nucleo"><Jogos /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="admin_nucleo"><Jogos /></ProtectedRoute>,
   },
   {
     path: '/nucleo/jogos/:id',
-    element: <ProtectedRoute requiredRole="nucleo"><MatchDetail /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="admin_nucleo"><MatchDetail /></ProtectedRoute>,
   },
 
   // ============================================
