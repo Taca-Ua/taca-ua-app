@@ -37,15 +37,15 @@ const TorneioDetails = () => {
 
     try {
       setLoading(true);
-      const [tournamentData, teamsData, matchesData] = await Promise.all([
+      const [tournamentData, teamsData] = await Promise.all([
         tournamentsApi.getById(id),
         teamsApi.getAll(true), // Get all teams
-        matchesApi.getAll(), // Get all matches
       ]);
       setTournament(tournamentData);
       setAllTeams(teamsData);
       // Filter matches for this tournament
-      const tournamentMatches = matchesData.filter(m => String(m.tournament_id) === id);
+    //   const tournamentMatches = matchesData.filter(m => String(m.tournament_id) === id);
+      const tournamentMatches = tournamentData.matches;
       setMatches(tournamentMatches);
       setError('');
     } catch (err) {
@@ -203,9 +203,9 @@ const TorneioDetails = () => {
 
     try {
       const newMatchData: MatchCreate = {
-        tournament_id: Number(tournament.id),
-        team_home_id: Number(matchTeamHome),
-        team_away_id: Number(matchTeamAway),
+        tournament_id: String(tournament.id),
+        team_home_id: String(matchTeamHome),
+        team_away_id: String(matchTeamAway),
         location: matchLocation,
         start_time: matchStartTime,
       };
@@ -402,8 +402,8 @@ const TorneioDetails = () => {
             <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
               {matches.length > 0 ? (
                 matches.map(match => {
-                  const homeTeam = allTeams.find(t => Number(t.id) === match.team_home_id);
-                  const awayTeam = allTeams.find(t => Number(t.id) === match.team_away_id);
+                  const homeTeam = allTeams.find(t => t.id === match.team_home_id);
+                  const awayTeam = allTeams.find(t => t.id === match.team_away_id);
 
                   return (
                     <div
@@ -634,7 +634,7 @@ const TorneioDetails = () => {
               <div>
                 <label className="block font-medium mb-2">Data e Hora <span className="text-red-500">*</span></label>
                 <input
-                  type="datetime-local"
+                  type="date"
                   className="border w-full px-4 py-2 rounded-md"
                   value={matchStartTime}
                   onChange={e => setMatchStartTime(e.target.value)}

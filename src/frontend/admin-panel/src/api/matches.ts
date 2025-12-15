@@ -1,10 +1,10 @@
 import { apiClient } from './client';
 
 export interface Match {
-  id: number;
-  tournament_id: number;
-  team_home_id: number;
-  team_away_id: number;
+  id: string;
+  tournament_id: string;
+  team_home_id: string;
+  team_away_id: string;
   location: string;
   start_time: string;
   status: 'scheduled' | 'in_progress' | 'finished' | 'cancelled';
@@ -13,16 +13,16 @@ export interface Match {
 }
 
 export interface MatchCreate {
-  tournament_id: number;
-  team_home_id: number;
-  team_away_id: number;
+  tournament_id: string;
+  team_home_id: string;
+  team_away_id: string;
   location: string;
   start_time: string;
 }
 
 export interface MatchUpdate {
-  team_home_id?: number;
-  team_away_id?: number;
+  team_home_id?: string;
+  team_away_id?: string;
   location?: string;
   start_time?: string;
   status?: 'scheduled' | 'in_progress' | 'finished' | 'cancelled';

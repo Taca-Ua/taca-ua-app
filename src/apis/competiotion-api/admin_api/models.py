@@ -26,6 +26,26 @@ class MatchStatus(models.TextChoices):
     CANCELLED = "cancelled", "Cancelled"
 
 
+class Comment(models.Model):
+    """
+    Stores comments for a match.
+    Originally from: matches-service
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    message = models.TextField()
+    created_by = models.UUIDField()
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "comment"
+        verbose_name = "Comment"
+        verbose_name_plural = "Comments"
+
+    def __str__(self):
+        return f"Comment {self.id} - Match {self.match_id}"
+
+
 class Match(models.Model):
     """
     Represents a match/game in a tournament.
@@ -33,20 +53,35 @@ class Match(models.Model):
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    tournament_id = models.UUIDField(db_index=True)
-    team_home_id = models.UUIDField(db_index=True)
-    team_away_id = models.UUIDField(db_index=True)
+    team_home = models.ForeignKey(
+        "Team", on_delete=models.DO_NOTHING, related_name="home_matches", db_index=True
+    )
+    team_away = models.ForeignKey(
+        "Team", on_delete=models.DO_NOTHING, related_name="away_matches", db_index=True
+    )
     location = models.TextField()
     start_time = models.DateTimeField()
     status = models.CharField(
         max_length=20, choices=MatchStatus.choices, default=MatchStatus.SCHEDULED
     )
-    home_score = models.IntegerField(null=True, blank=True)
-    away_score = models.IntegerField(null=True, blank=True)
-    additional_details = models.JSONField(null=True, blank=True)
+
     created_by = models.UUIDField()
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        self.updated_at = timezone.now()
+        return super().save(*args, **kwargs)
+
+    def to_json(self):
+        return {
+            "id": str(self.id),
+            "team_home_name": str(self.team_home.name),
+            "team_away_name": str(self.team_away.name),
+            "location": self.location,
+            "start_time": self.start_time.isoformat(),
+            "status": self.status,
+        }
 
     class Meta:
         db_table = "match"
@@ -78,27 +113,6 @@ class Lineup(models.Model):
 
     def __str__(self):
         return f"Lineup {self.id} - Match {self.match_id}, Player {self.player_id}"
-
-
-class Comment(models.Model):
-    """
-    Stores comments for a match.
-    Originally from: matches-service
-    """
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    match = models.ForeignKey(Match, on_delete=models.CASCADE, db_index=True)
-    message = models.TextField()
-    author_id = models.UUIDField()
-    created_at = models.DateTimeField(default=timezone.now)
-
-    class Meta:
-        db_table = "comment"
-        verbose_name = "Comment"
-        verbose_name_plural = "Comments"
-
-    def __str__(self):
-        return f"Comment {self.id} - Match {self.match_id}"
 
 
 # ==================== MODALITIES MODELS ====================
@@ -405,6 +419,7 @@ class GeneralRanking(models.Model):
 # ==================== TOURNAMENTS MODELS ====================
 
 
+# used
 class TournamentStatus(models.TextChoices):
     """Enum for tournament status"""
 
@@ -413,6 +428,7 @@ class TournamentStatus(models.TextChoices):
     FINISHED = "finished", "Finished"
 
 
+# used
 class Tournament(models.Model):
     """
     Represents a tournament.
@@ -426,6 +442,7 @@ class Tournament(models.Model):
         max_length=20, choices=TournamentStatus.choices, default=TournamentStatus.DRAFT
     )
     teams = models.ManyToManyField(Team, blank=True)
+    matches = models.ManyToManyField(Match, blank=True)
     start_date = models.DateTimeField(null=True, blank=True)
 
     created_by = models.UUIDField()
@@ -462,6 +479,7 @@ class Tournament(models.Model):
                 }
                 for team in teams
             ],
+            "matches": [match.to_json() for match in self.matches.all()],
         }
 
     class Meta:

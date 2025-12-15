@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import { type Match } from "./matches";
 
 export interface Tournament {
   id: string;
@@ -13,6 +14,7 @@ export interface TournamentDetail extends Tournament {
         id: string;
         name: string;
     }[];
+	matches: Match[];
 }
 
 export interface TournamentCreate {
