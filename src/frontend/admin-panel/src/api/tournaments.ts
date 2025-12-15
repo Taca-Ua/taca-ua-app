@@ -15,6 +15,12 @@ export interface TournamentDetail extends Tournament {
         name: string;
     }[];
 	matches: Match[];
+    ranking_positions?: number; // Number of ranking positions to collect (e.g., 3 for top 3)
+    final_rankings?: {
+        team_id: string;
+        team_name: string;
+        position: number;
+    }[];
 }
 
 export interface TournamentCreate {
@@ -53,7 +59,7 @@ export const tournamentsApi = {
     return apiClient.delete(`/tournaments/${id}`);
   },
 
-  async finish(id: string): Promise<TournamentDetail> {
-    return apiClient.post<TournamentDetail>(`/tournaments/${id}/finish`, {});
+  async finish(id: string, rankings?: { team_id: string; position: number }[]): Promise<TournamentDetail> {
+    return apiClient.post<TournamentDetail>(`/tournaments/${id}/finish`, { "ranking_entries": rankings  });
   },
 };

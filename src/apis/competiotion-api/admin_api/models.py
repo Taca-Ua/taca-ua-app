@@ -17,6 +17,7 @@ from django.utils import timezone
 # ==================== MATCHES MODELS ====================
 
 
+# used
 class MatchStatus(models.TextChoices):
     """Enum for match status"""
 
@@ -46,6 +47,7 @@ class Comment(models.Model):
         return f"Comment {self.id} - Match {self.match_id}"
 
 
+# used
 class Match(models.Model):
     """
     Represents a match/game in a tournament.
@@ -137,6 +139,7 @@ class Match(models.Model):
         return f"Match {self.id} - {self.status}"
 
 
+# used
 class Lineup(models.Model):
     """
     Stores lineup/roster information for a match.
@@ -488,6 +491,7 @@ class Tournament(models.Model):
     )
     teams = models.ManyToManyField(Team, blank=True)
     start_date = models.DateTimeField(null=True, blank=True)
+    ranking_positions: List["TournamentRankingPosition"]  # type: ignore
 
     created_by = models.UUIDField()
     created_at = models.DateTimeField(default=timezone.now)
@@ -524,7 +528,35 @@ class Tournament(models.Model):
                 for team in teams
             ],
             "matches": [match.to_json() for match in self.matches.all()],
+            "ranking_positions": self.get_n_ranking_positions(),
+            "final_rankings": [rp.to_json() for rp in self.ranking_positions.all()],
         }
+
+    def get_n_ranking_positions(self, n: int = 3):
+        """
+        Get the number ranking positions for this tournament.
+        """
+
+        n_participants = self.teams.count()
+        modalities_escaloes = self.modality.modality_type.escaloes or []
+
+        for escaloes in modalities_escaloes:
+            min_participants = escaloes.get("minParticipants")
+            max_participants = escaloes.get("maxParticipants")
+
+            if min_participants is None and max_participants is None:
+                continue
+
+            if min_participants is None and n_participants <= max_participants:
+                return len(escaloes.get("points", [1, 2, 3]))
+
+            if max_participants is None and n_participants >= min_participants:
+                return len(escaloes.get("points", [1, 2, 3]))
+
+            if min_participants <= n_participants <= max_participants:
+                return len(escaloes.get("points", [1, 2, 3]))
+
+        return 5
 
     class Meta:
         db_table = "tournament"
@@ -533,6 +565,39 @@ class Tournament(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.status})"
+
+
+class TournamentRankingPosition(models.Model):
+    """
+    Represents the ranking position of a team in a tournament.
+    Originally from: tournaments-service
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tournament = models.ForeignKey(
+        Tournament,
+        related_name="ranking_positions",
+        on_delete=models.CASCADE,
+        db_index=True,
+    )
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, db_index=True)
+    position = models.IntegerField()
+
+    class Meta:
+        db_table = "tournament_ranking_position"
+        verbose_name = "Tournament Ranking Position"
+        verbose_name_plural = "Tournament Ranking Positions"
+        unique_together = ("tournament", "team")
+
+    def to_json(self):
+        return {
+            "team_id": str(self.team.id),
+            "team_name": self.team.name,
+            "position": self.position,
+        }
+
+    def __str__(self):
+        return f"Tournament {self.tournament_id} - Team {self.team_id}: Position {self.position}"
 
 
 class Stage(models.Model):

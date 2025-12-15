@@ -18,6 +18,7 @@ const TorneioDetails = () => {
   const [isEditModal, setIsEditModal] = useState(false);
   const [isAddTeamModal, setIsAddTeamModal] = useState(false);
   const [isAddMatchModal, setIsAddMatchModal] = useState(false);
+  const [isRankingModal, setIsRankingModal] = useState(false);
 
   // Campos edição
   const [editName, setEditName] = useState('');
@@ -31,6 +32,9 @@ const TorneioDetails = () => {
   const [matchTeamAway, setMatchTeamAway] = useState('');
   const [matchLocation, setMatchLocation] = useState('');
   const [matchStartTime, setMatchStartTime] = useState('');
+
+  // Rankings
+  const [rankings, setRankings] = useState<{ position: number; team_id: string }[]>([]);
 
   const fetchData = async () => {
     if (!id) return;
@@ -125,19 +129,65 @@ const TorneioDetails = () => {
     }
   };
 
+  const openRankingModal = () => {
+    if (!tournament) return;
+    // Initialize rankings array based on ranking_positions
+    const numPositions = tournament.ranking_positions || tournamentTeams.length;
+    const initialRankings = Array.from({ length: numPositions }, (_, i) => ({
+      position: i + 1,
+      team_id: '',
+    }));
+    setRankings(initialRankings);
+    setIsRankingModal(true);
+  };
+
   const finishTournament = async () => {
     if (!tournament) return;
-    if (!window.confirm("Finalizar torneio? Isso bloqueará edições.")) return;
 
-    try {
-      const finished = await tournamentsApi.finish(tournament.id);
-      setTournament(finished);
-      setError('');
-    } catch (err) {
-      console.error('Failed to finish tournament:', err);
-      setError('Erro ao finalizar torneio');
+    // Check if we need to collect rankings
+    if (tournament.ranking_positions && tournament.ranking_positions > 0) {
+      openRankingModal();
+    } else {
+      // Finish without rankings
+      if (!window.confirm("Finalizar torneio? Isso bloqueará edições.")) return;
+
+      try {
+        const finished = await tournamentsApi.finish(tournament.id);
+        setTournament(finished);
+        setError('');
+      } catch (err) {
+        console.error('Failed to finish tournament:', err);
+        setError('Erro ao finalizar torneio');
+      }
     }
   };
+
+const submitRankings = async () => {
+	if (!tournament) return;
+
+	// Allow empty positions — only validate duplicates among filled positions
+	const teamIds = rankings.map(r => r.team_id).filter(id => id);
+	const uniqueTeamIds = new Set(teamIds);
+	if (teamIds.length !== uniqueTeamIds.size) {
+		alert('Cada equipa só pode aparecer uma vez no ranking.');
+		return;
+	}
+
+	// filter out empty rankings
+	const filteredRankings = rankings
+		.filter(r => r.team_id)
+		.map(r => ({ team_id: r.team_id, position: r.position }));
+
+	try {
+		const finished = await tournamentsApi.finish(tournament.id, filteredRankings);
+		setTournament(finished);
+		setIsRankingModal(false);
+		setError('');
+	} catch (err) {
+		console.error('Failed to finish tournament:', err);
+		setError('Erro ao finalizar torneio');
+	}
+};
 
   const addTeam = async () => {
     if (!tournament || !selectedTeamId) return;
@@ -313,7 +363,7 @@ const TorneioDetails = () => {
         )}
 
         {/* GRID */}
-        <div className="grid grid-cols-3 gap-8">
+        <div className={`grid gap-8 ${tournament.final_rankings && tournament.final_rankings.length > 0 ? 'grid-cols-4' : 'grid-cols-3'}`}>
 
           {/* COL 1 - Detalhes */}
           <div className="bg-white rounded-xl shadow p-6">
@@ -460,6 +510,38 @@ const TorneioDetails = () => {
               </div>
             )}
           </div>
+
+          {/* COL 4 - Rankings (only shown if tournament has final rankings) */}
+          {tournament.final_rankings && tournament.final_rankings.length > 0 && (
+            <div className="bg-white rounded-xl shadow p-6">
+              <h2 className="text-xl font-semibold mb-4">Classificação Final</h2>
+
+              <div className="space-y-2">
+                {tournament.final_rankings
+                  .sort((a, b) => a.position - b.position)
+                  .map((ranking) => (
+                    <div
+                      key={ranking.position}
+                      className="bg-gradient-to-r from-teal-50 to-white px-4 py-3 rounded-md border border-teal-100"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`font-bold text-lg ${
+                          ranking.position === 1 ? 'text-yellow-500' :
+                          ranking.position === 2 ? 'text-gray-400' :
+                          ranking.position === 3 ? 'text-amber-600' :
+                          'text-gray-600'
+                        }`}>
+                          {ranking.position}º
+                        </div>
+                        <div className="text-gray-700 font-medium">
+                          {ranking.team_name}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
 
         </div>
       </div>
@@ -659,6 +741,76 @@ const TorneioDetails = () => {
                 className="flex-1 bg-teal-500 hover:bg-teal-600 text-white py-2 rounded-md transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
                 Criar Jogo
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ==================== MODAL RANKING ==================== */}
+      {isRankingModal && (
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 overflow-y-auto">
+          <div className="bg-white p-8 rounded-lg max-w-2xl w-full my-8 mx-4">
+
+            <h2 className="text-2xl font-bold mb-4">Classificação Final do Torneio</h2>
+            <p className="text-gray-600 mb-6">
+              Selecione a equipa para cada posição da classificação final.
+            </p>
+
+            {error && (
+              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 mb-6">
+              {rankings.map((ranking, index) => (
+                <div key={ranking.position} className="flex items-center gap-4">
+                  <div className={`font-bold text-lg w-12 text-center ${
+                    ranking.position === 1 ? 'text-yellow-500' :
+                    ranking.position === 2 ? 'text-gray-400' :
+                    ranking.position === 3 ? 'text-amber-600' :
+                    'text-gray-600'
+                  }`}>
+                    {ranking.position}º
+                  </div>
+                  <select
+                    className="flex-1 border px-4 py-2 rounded-md bg-white"
+                    value={ranking.team_id}
+                    onChange={e => {
+                      const newRankings = [...rankings];
+                      newRankings[index].team_id = e.target.value;
+                      setRankings(newRankings);
+                    }}
+                  >
+                    <option value="">Selecionar equipa...</option>
+                    {tournamentTeams.map(team => (
+                      <option key={team.id} value={team.id}>
+                        {team.name} ({team.course_name})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-4 mt-6">
+              <button
+                onClick={() => {
+                  setIsRankingModal(false);
+                  setRankings([]);
+                  setError('');
+                }}
+                className="flex-1 bg-gray-300 hover:bg-gray-400 py-2 rounded-md transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={submitRankings}
+                className="flex-1 bg-teal-500 hover:bg-teal-600 text-white py-2 rounded-md transition-colors"
+              >
+                Finalizar Torneio
               </button>
             </div>
 

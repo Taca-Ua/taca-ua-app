@@ -13,7 +13,7 @@ from rest_framework.views import APIView
 #     TournamentListSerializer,
 #     TournamentUpdateSerializer,
 # )
-from ..models import Team, Tournament, TournamentStatus
+from ..models import Team, Tournament, TournamentRankingPosition, TournamentStatus
 
 
 class TournamentListSerializer(serializers.Serializer):
@@ -53,6 +53,18 @@ class TournamentUpdateSerializer(serializers.Serializer):
     )
     teams_add = serializers.ListField(child=serializers.UUIDField(), required=False)
     teams_remove = serializers.ListField(child=serializers.UUIDField(), required=False)
+
+
+class TournamentFinishSerializer(serializers.Serializer):
+    """Serializer for finishing a tournament"""
+
+    class TournamentFinishEntrySerializer(serializers.Serializer):
+        """Serializer for finishing a tournament entry"""
+
+        team_id = serializers.UUIDField(required=True)
+        position = serializers.IntegerField(required=True)
+
+    ranking_entries = TournamentFinishEntrySerializer(many=True)
 
 
 # Mock database for tournaments
@@ -167,18 +179,30 @@ class TournamentDetailView(APIView):
 
 
 @extend_schema(
-    request=None,
-    responses={200: TournamentListSerializer},
+    request=TournamentFinishSerializer,
+    responses={200: TournamentDetailSerializer},
     description="Finish a tournament",
     tags=["Tournament Management"],
 )
 @api_view(["POST"])
 def tournament_finish(request, tournament_id):
     """Mark a tournament as finished"""
+    serializer = TournamentFinishSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
     try:
         tournament = Tournament.objects.get(id=tournament_id)
     except Tournament.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
+
+    tournament.ranking_positions.all().delete()
+    for entry in serializer.validated_data["ranking_entries"]:
+        team = Team.objects.get(id=entry["team_id"])
+        position = entry["position"]
+        TournamentRankingPosition.objects.create(
+            tournament=tournament, team=team, position=position
+        )
+
     tournament.status = TournamentStatus.FINISHED
     tournament.save()
     return Response(tournament.to_json_detail(), status=status.HTTP_200_OK)
