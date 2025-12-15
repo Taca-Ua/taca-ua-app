@@ -73,6 +73,9 @@ class Match(models.Model):
         max_length=20, choices=MatchStatus.choices, default=MatchStatus.SCHEDULED
     )
 
+    home_score = models.IntegerField(default=None, null=True, blank=True)
+    away_score = models.IntegerField(default=None, null=True, blank=True)
+
     created_by = models.UUIDField()
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
@@ -82,7 +85,7 @@ class Match(models.Model):
         return super().save(*args, **kwargs)
 
     def to_json(self):
-        return {
+        obj = {
             "id": str(self.id),
             "team_home_name": str(self.team_home.name),
             "team_away_name": str(self.team_away.name),
@@ -90,6 +93,12 @@ class Match(models.Model):
             "start_time": self.start_time.isoformat(),
             "status": self.status,
         }
+
+        if self.status == MatchStatus.FINISHED:
+            obj["home_score"] = self.home_score
+            obj["away_score"] = self.away_score
+
+        return obj
 
     class Meta:
         db_table = "match"

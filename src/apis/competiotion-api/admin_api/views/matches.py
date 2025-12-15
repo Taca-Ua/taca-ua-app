@@ -9,11 +9,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ..models import Match, Team, Tournament
-from ..serializers import (  # MatchCreateSerializer,; MatchListSerializer,
+from ..serializers import (  # MatchCreateSerializer,; MatchListSerializer,; MatchUpdateSerializer,
     MatchCommentSerializer,
     MatchLineupSerializer,
     MatchResultSerializer,
-    MatchUpdateSerializer,
 )
 
 
@@ -25,6 +24,9 @@ class MatchListSerializer(serializers.Serializer):
     start_time = serializers.DateTimeField()
     status = serializers.CharField()
 
+    home_score = serializers.IntegerField(required=False)
+    away_score = serializers.IntegerField(required=False)
+
 
 class MatchCreateSerializer(serializers.Serializer):
     tournament_id = serializers.UUIDField()
@@ -32,6 +34,14 @@ class MatchCreateSerializer(serializers.Serializer):
     team_away_id = serializers.UUIDField()
     location = serializers.CharField()
     start_time = serializers.DateTimeField()
+
+
+class MatchUpdateSerializer(serializers.Serializer):
+    location = serializers.CharField(required=False)
+    start_time = serializers.DateTimeField(required=False)
+    status = serializers.CharField(required=False)
+    home_score = serializers.IntegerField(required=False)
+    away_score = serializers.IntegerField(required=False)
 
 
 @extend_schema_view(
@@ -125,6 +135,18 @@ class MatchDetailView(APIView):
             match.start_time = serializer.validated_data["start_time"]
         if "status" in serializer.validated_data:
             match.status = serializer.validated_data["status"]
+
+        # scores must be provided together
+        if not all(
+            field in serializer.validated_data for field in ("home_score", "away_score")
+        ):
+            raise serializers.ValidationError(
+                "Both home_score and away_score must be provided together."
+            )
+        else:
+            match.home_score = serializer.validated_data["home_score"]
+            match.away_score = serializer.validated_data["away_score"]
+
         match.save()
         return Response(match.to_json(), status=status.HTTP_200_OK)
 
