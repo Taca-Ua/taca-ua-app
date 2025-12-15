@@ -62,9 +62,14 @@ class PlayerLineupSerializer(serializers.Serializer):
 class MatchLineupSerializer(serializers.Serializer):
     """Serializer for assigning players to match"""
 
-    team_id = serializers.IntegerField(required=True)
+    class PlayerLineupSerializer(serializers.Serializer):
+        player_id = serializers.UUIDField(required=True)
+        jersey_number = serializers.IntegerField(required=True)
+        is_starter = serializers.BooleanField(required=True)
+
+    team_id = serializers.UUIDField(required=True)
     players = serializers.ListField(
-        child=serializers.IntegerField(), required=True, help_text="List of player IDs"
+        child=PlayerLineupSerializer(), required=True, help_text="List of player IDs"
     )
 
 

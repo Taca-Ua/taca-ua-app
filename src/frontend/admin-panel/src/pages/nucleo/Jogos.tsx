@@ -3,30 +3,23 @@ import { useNavigate } from 'react-router-dom';
 import NucleoSidebar from '../../components/nucleo_navbar';
 import { matchesApi } from '../../api/matches';
 import type { Match } from '../../api/matches';
-import { teamsApi } from '../../api/teams';
-import type { Team } from '../../api/teams';
 
 const Jogos = () => {
   const navigate = useNavigate();
   const [matches, setMatches] = useState<Match[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  // Fetch matches and teams from API
+  // Fetch matches from API
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
-        const [fetchedMatches, fetchedTeams] = await Promise.all([
-          matchesApi.getAll(),
-          teamsApi.getAll(true), // Get all teams including from other courses
-        ]);
+        const fetchedMatches = await matchesApi.getAll();
         setMatches(fetchedMatches);
-        setTeams(fetchedTeams);
       } catch (err) {
         console.error('Failed to fetch data:', err);
         setError('Erro ao carregar jogos. Por favor, tente novamente.');
@@ -37,12 +30,6 @@ const Jogos = () => {
 
     fetchData();
   }, []);
-
-  // Helper function to get team name by ID
-  const getTeamName = (teamId: number) => {
-    const team = teams.find(t => t.id === teamId);
-    return team ? team.name : `Equipa ${teamId}`;
-  };
 
   // Helper function to format match date/time
   const formatDateTime = (startTime: string) => {
@@ -166,7 +153,7 @@ const Jogos = () => {
                           >
                             <div className="flex justify-between items-center mb-2">
                               <span className="text-gray-800 font-bold text-lg">
-                                {getTeamName(match.team_home_id)} vs {getTeamName(match.team_away_id)}
+                                {match.team_home_name} vs {match.team_away_name}
                               </span>
                               <span className="text-teal-600 text-sm font-medium">
                                 {getStatusDisplay(match.status)}
@@ -269,11 +256,11 @@ const Jogos = () => {
                                     key={match.id}
                                     onClick={() => navigate(`/nucleo/jogos/${match.id}`)}
                                     className="text-xs bg-teal-100 hover:bg-teal-200 px-2 py-1 rounded cursor-pointer transition-colors"
-                                    title={`${time} - ${getTeamName(match.team_home_id)} vs ${getTeamName(match.team_away_id)}`}
+                                    title={`${time} - ${match.team_home_name} vs ${match.team_away_name}`}
                                   >
                                     <div className="font-medium truncate">{time}</div>
                                     <div className="truncate text-gray-600">
-                                      {getTeamName(match.team_home_id)} vs {getTeamName(match.team_away_id)}
+                                      {match.team_home_name} vs {match.team_away_name}
                                     </div>
                                   </div>
                                 );

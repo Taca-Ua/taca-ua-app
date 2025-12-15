@@ -1,10 +1,20 @@
 import { apiClient } from './client';
 
+interface Lineup {
+	player_id: string;
+	jersey_number: number;
+	is_starter: boolean;
+}
+
 export interface Match {
   id: string;
   tournament_id: string;
   team_home_name: string;
   team_away_name: string;
+  team_home_id: string;
+  team_away_id: string;
+  team_home: { id: string; name: string; lineup: Lineup[] };
+  team_away: { id: string; name: string; lineup: Lineup[] };
   location: string;
   start_time: string;
   status: 'scheduled' | 'in_progress' | 'finished' | 'cancelled';
@@ -36,8 +46,8 @@ export interface MatchResult {
 }
 
 export interface MatchLineup {
-  team_id: number;
-  players: number[];
+  team_id: string;
+  players: Lineup[];
 }
 
 export interface MatchComment {

@@ -87,8 +87,36 @@ class Match(models.Model):
     def to_json(self):
         obj = {
             "id": str(self.id),
+            "team_home": {
+                "id": str(self.team_home.id),
+                "name": str(self.team_home.name),
+                "lineup": [
+                    {
+                        "player_id": str(lineup.player_id),
+                        "jersey_number": lineup.jersey_number,
+                        "is_starter": lineup.is_starter,
+                    }
+                    for lineup in Lineup.objects.filter(match_id=self.id)
+                ],
+            },
+            "team_away": {
+                "id": str(self.team_away.id),
+                "name": str(self.team_away.name),
+                "lineup": [
+                    {
+                        "player_id": str(lineup.player_id),
+                        "jersey_number": lineup.jersey_number,
+                        "is_starter": lineup.is_starter,
+                    }
+                    for lineup in Lineup.objects.filter(
+                        match_id=self.id, team_id=self.team_away.id
+                    )
+                ],
+            },
             "team_home_name": str(self.team_home.name),
             "team_away_name": str(self.team_away.name),
+            "team_home_id": str(self.team_home.id),
+            "team_away_id": str(self.team_away.id),
             "location": self.location,
             "start_time": self.start_time.isoformat(),
             "status": self.status,
@@ -116,9 +144,9 @@ class Lineup(models.Model):
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    match = models.ForeignKey(Match, on_delete=models.CASCADE, db_index=True)
-    team_id = models.UUIDField(db_index=True)
-    player_id = models.UUIDField()
+    match = models.ForeignKey(Match, on_delete=models.DO_NOTHING, db_index=True)
+    team = models.ForeignKey("Team", on_delete=models.DO_NOTHING, db_index=True)
+    player = models.ForeignKey("Student", on_delete=models.DO_NOTHING, db_index=True)
     jersey_number = models.IntegerField()
     is_starter = models.BooleanField(default=True)
     created_at = models.DateTimeField(default=timezone.now)

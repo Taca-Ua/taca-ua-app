@@ -2,13 +2,15 @@
 Match management views
 """
 
+from typing import List
+
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import serializers, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ..models import Match, Team, Tournament
+from ..models import Lineup, Match, Student, Team, Tournament
 from ..serializers import (  # MatchCreateSerializer,; MatchListSerializer,; MatchUpdateSerializer,
     MatchCommentSerializer,
     MatchLineupSerializer,
@@ -20,6 +22,8 @@ class MatchListSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     team_home_name = serializers.CharField()
     team_away_name = serializers.CharField()
+    team_home_id = serializers.UUIDField(required=False)
+    team_away_id = serializers.UUIDField(required=False)
     location = serializers.CharField()
     start_time = serializers.DateTimeField()
     status = serializers.CharField()
@@ -177,7 +181,50 @@ def match_result(request, match_id):
 def match_lineup(request, match_id):
     serializer = MatchLineupSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    return Response({}, status=status.HTTP_200_OK)
+
+    try:
+        match = Match.objects.get(id=match_id)
+        team = Team.objects.get(id=serializer.validated_data["team_id"])
+    except Match.DoesNotExist:
+        return Response(
+            {"detail": "Match not found."}, status=status.HTTP_404_NOT_FOUND
+        )
+    except Team.DoesNotExist:
+        return Response({"detail": "Team not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    lineups: List[Lineup] = []
+    for player_data in serializer.validated_data["players"]:
+        try:
+            player = Student.objects.get(id=player_data["player_id"])
+        except Student.DoesNotExist:
+            return Response(
+                {"detail": f"Player with ID {player_data['player_id']} not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        lineup = Lineup.objects.create(
+            match=match,
+            team=team,
+            player=player,
+            jersey_number=player_data["jersey_number"],
+            is_starter=player_data["is_starter"],
+        )
+        lineups.append(lineup)
+
+    return Response(
+        [
+            {
+                "id": lineup.id,
+                "match_id": lineup.match.id,
+                "team_id": lineup.team.id,
+                "player_id": lineup.player.id,
+                "jersey_number": lineup.jersey_number,
+                "is_starter": lineup.is_starter,
+            }
+            for lineup in lineups
+        ],
+        status=status.HTTP_200_OK,
+    )
 
 
 @extend_schema(
