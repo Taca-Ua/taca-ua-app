@@ -1,3 +1,5 @@
+import random
+
 import requests
 
 API_URL = "http://localhost/api/admin"
@@ -588,6 +590,86 @@ def delete_all_courses():
             )
 
 
+def populate_members(courses):
+    courses_dict = {course["name"]: course["id"] for course in courses}
+
+    def names_generator(n: int = 100):
+        surnames = [
+            "Pinto",
+            "Silva",
+            "Costa",
+            "Santos",
+            "Ferreira",
+            "Oliveira",
+            "Rodrigues",
+            "Martins",
+            "Gomes",
+            "Almeida",
+            "Lopes",
+            "Carvalho",
+        ]
+        first_names = [
+            "Ana",
+            "João",
+            "Maria",
+            "Pinto",
+            "Carlos",
+            "Sofia",
+            "Miguel",
+            "Beatriz",
+            "Rui",
+            "Inês",
+            "Pedro",
+            "Catarina",
+            "Tiago",
+            "Marta",
+            "Rafael",
+            "Leonor",
+        ]
+        for _ in range(n):
+            yield f"{random.choice(first_names)} {random.choice(surnames)} {random.choice(surnames)}"
+
+    cursos = ["Engenharia Informática", "Química", "Biologia"]
+    participants = [
+        # {"full_name":"Pinto Pintao","course_id":courses_dict["Química"],"student_number":"84864","is_member":True}
+    ]
+    for i, full_name in enumerate(names_generator(100)):
+        participant = {
+            "full_name": full_name,
+            "course_id": courses_dict[random.choice(cursos)],
+            "student_number": f"{i}".zfill(6),
+            "is_member": True,
+        }
+        participants.append(participant)
+
+    for participant in participants:
+        response = requests.post(f"{API_URL}/students", json=participant)
+        if response.status_code == 201:
+            print(f"Created member: {participant['full_name']}")
+        else:
+            print(
+                f"Failed to create member: {participant['full_name']}, Status Code: {response.status_code}, Response: {response.text}"
+            )
+    return participants
+
+
+def delete_all_members():
+    response = requests.get(f"{API_URL}/students")
+    if response.status_code != 200:
+        print("Failed to fetch members for deletion.")
+        return
+
+    members = response.json()
+    for member in members:
+        del_response = requests.delete(f"{API_URL}/students/{member['id']}")
+        if del_response.status_code == 204:
+            print(f"Deleted member: {member['full_name']}")
+        else:
+            print(
+                f"Failed to delete member: {member['full_name']}, Status Code: {del_response.status_code}, Response: {del_response.text}"
+            )
+
+
 def main():
     modality_types_ids = populate_modalities_types()
     print("Populated Modality Types IDs:", modality_types_ids)
@@ -598,9 +680,12 @@ def main():
     nucleos = populate_nucleos()
     print("Populated Nucleos:", [nucleo["name"] for nucleo in nucleos])
 
-    delete_all_courses()
     courses = populate_courses(nucleos)
     print("Populated Courses: ", [course["abbreviation"] for course in courses])
+
+    # delete_all_members()
+    members = populate_members(courses)
+    print("Populated Members: ", len(members))
 
 
 if __name__ == "__main__":
