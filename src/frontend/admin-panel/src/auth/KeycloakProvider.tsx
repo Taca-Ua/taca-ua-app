@@ -45,7 +45,7 @@ export const KeycloakProvider = ({ children }: { children: React.ReactNode }) =>
         onLoad: 'check-sso',
         pkceMethod: 'S256',
         silentCheckSsoRedirectUri:
-          window.location.origin + '/silent-check-sso.html',
+          window.location.origin + '/admin/silent-check-sso.html',
         checkLoginIframe: false,
       })
       .then((auth) => {
