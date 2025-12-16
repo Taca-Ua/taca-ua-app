@@ -121,4 +121,10 @@ urlpatterns = [
     # Public API
     path("public/matches", views.calendar, name="public-calendar"),
     path("public/modalities", views.modality_list, name="public-modality-list"),
+    path(
+        "public/rankings/general",
+        views.rankings_general,
+        name="public-rankings-general",
+    ),
+    path("public/seasons", views.public_season_list, name="public-season-list"),
 ]

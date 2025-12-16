@@ -1,36 +1,12 @@
-"""
-{
-    "id": 1,
-    "tournament_id": 1,
-    "tournament_name": "Campeonato de Futebol 25/26",
-    "team_home": {
-        "id": 1,
-        "name": "NEI",
-        "course_abbreviation": "NEI"
-    },
-    "team_away": {
-        "id": 2,
-        "name": "NEC",
-        "course_abbreviation": "NEC"
-    },
-    "modality": {
-        "id": 1,
-        "name": "Futebol"
-    },
-    "start_time": "2025-12-03T14:00:00",
-    "location": "Pavilhão Gimnodesportivo da UA",
-    "status": "finished",
-    "home_score": 2,
-    "away_score": 1
-}
-"""
+from collections import defaultdict
+from typing import List
 
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from ..models import Match, Modality
+from ..models import Course, Match, Modality, TournamentRankingPosition
 
 
 class GetMatchesParamsSerializer(serializers.Serializer):
@@ -91,16 +67,6 @@ def calendar(request):
     )
 
 
-"""
-Modality {
-  id: number;
-  name: string;
-  type: string;
-  scoring_schema?: Record<string, number>;
-}
-"""
-
-
 class ModalitySerializer(serializers.Serializer):
     """Serializer for Modality model"""
 
@@ -127,6 +93,106 @@ def modality_list(_request):
                 "type": modality.modality_type.name,
             }
             for modality in modalities
+        ],
+        status=status.HTTP_200_OK,
+    )
+
+
+@extend_schema(
+    responses=dict,
+    description="Endpoint to get general rankings per Course for a given season.",
+    tags=["Public API"],
+)
+@api_view(["GET"])
+def rankings_general(request):
+    """
+    General ranking per Course.
+
+    Rules:
+    - A Course earns points from tournaments
+    - Teams belong to a Course
+    - If multiple teams from the same Course participate in a tournament,
+      only the best positioned team counts
+    - Points are assigned using tournament escaloes
+    """
+
+    # TODO: replace with real season logic when available
+    SEASON_ID = 1
+    SEASON_YEAR = 2024
+
+    # Load all ranking positions efficiently
+    ranking_positions = TournamentRankingPosition.objects.select_related(
+        "team",
+        "team__course",
+        "tournament",
+        "tournament__modality",
+        "tournament__modality__modality_type",
+    ).prefetch_related("tournament__teams")
+
+    # (tournament_id, course_id) -> (best_position, tournament)
+    best_positions = {}
+
+    for rp in ranking_positions:
+        team = rp.team
+        course = getattr(team, "course", None)
+
+        if course is None:
+            continue
+
+        key = (rp.tournament_id, course.id)
+
+        if key not in best_positions or rp.position < best_positions[key][0]:
+            best_positions[key] = (rp.position, rp.tournament)
+
+    # Sum points per course
+    course_points = defaultdict(int)
+
+    for (_, course_id), (position, tournament) in best_positions.items():
+        points = tournament.get_points_for_position(position)
+        course_points[course_id] += points
+
+    # Load courses in bulk
+    courses: List[Course] = Course.objects.all()
+
+    # Build ranking list
+    rankings = [
+        {
+            "course_id": str(course.id),
+            "course_name": course.name,
+            "points": course_points.get(course.id, 0),
+        }
+        for course in courses
+    ]
+
+    # Sort by points desc
+    rankings.sort(key=lambda x: x["points"], reverse=True)
+
+    return Response(
+        {
+            "season_id": SEASON_ID,
+            "season_year": SEASON_YEAR,
+            "rankings": rankings,
+        },
+        status=status.HTTP_200_OK,
+    )
+
+
+@extend_schema(
+    responses=serializers.ListSerializer(child=serializers.DictField()),
+    description="Endpoint to get the list of public seasons.",
+    tags=["Public API"],
+)
+@api_view(["GET"])
+def public_season_list(request):
+    """Endpoint to get the list of public seasons."""
+
+    return Response(
+        [
+            {
+                "id": 1,
+                "year": 2023,
+                "status": "draft",
+            }
         ],
         status=status.HTTP_200_OK,
     )

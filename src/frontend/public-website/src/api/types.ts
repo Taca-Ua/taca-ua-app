@@ -118,6 +118,7 @@ export interface GeneralRanking {
 
 // RankingEntry shape (backend public API - general rankings)
 export interface RankingEntry {
+  team_id: string;
   position: number;
   course_id: number | string;
   course_name: string;

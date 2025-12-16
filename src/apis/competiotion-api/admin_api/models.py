@@ -558,6 +558,24 @@ class Tournament(models.Model):
 
         return 5
 
+    def get_points_for_position(self, position: int) -> int:
+        n_participants = self.teams.count()
+        escaloes = self.modality.modality_type.escaloes or []
+
+        for esc in escaloes:
+            min_p = esc.get("minParticipants")
+            max_p = esc.get("maxParticipants")
+
+            if min_p is not None and n_participants < min_p:
+                continue
+            if max_p is not None and n_participants > max_p:
+                continue
+
+            points = esc.get("points", [])
+            return points[position - 1] if position <= len(points) else 0
+
+        return 0
+
     class Meta:
         db_table = "tournament"
         verbose_name = "Tournament"

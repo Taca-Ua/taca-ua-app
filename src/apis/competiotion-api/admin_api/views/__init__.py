@@ -15,7 +15,7 @@ from .matches import (
 from .modalities import ModalityDetailView, ModalityListCreateView
 from .modalities_types import ModalityTypeDetailView, ModalityTypeListCreateView
 from .nucleus import NucleoDetailView, NucleoListCreateView
-from .public import calendar, modality_list
+from .public import calendar, modality_list, public_season_list, rankings_general
 from .regulations import RegulationDetailView, RegulationListCreateView
 from .seasons import SeasonListCreateView, season_finish, season_start
 from .staff import StaffDetailView, StaffListCreateView
@@ -86,4 +86,6 @@ __all__ = [
     # Public API
     "calendar",
     "modality_list",
+    "rankings_general",
+    "public_season_list",
 ]
