@@ -85,20 +85,8 @@ function TorneioDet() {
                         <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
                           Equipa
                         </th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+						<th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
                           Curso
-                        </th>
-                        <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
-                          J
-                        </th>
-                        <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
-                          V
-                        </th>
-                        <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
-                          E
-                        </th>
-                        <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
-                          D
                         </th>
                         <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
                           Pontos
@@ -128,33 +116,14 @@ function TorneioDet() {
                                     : 'bg-gray-200 text-gray-700'
                                 }`}
                               >
-                                {entry.position}
+                                {index + 1}
                               </span>
                             </td>
                             <td className="px-6 py-4 text-lg font-medium text-gray-900">
                               {entry.team_name}
                             </td>
                             <td className="px-6 py-4">
-                              <div>
-                                <div className="text-sm font-medium text-gray-900">
-                                  {entry.course_short_code}
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  {entry.course_name}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 text-center text-gray-700">
-                              {entry.played}
-                            </td>
-                            <td className="px-6 py-4 text-center text-green-600 font-medium">
-                              {entry.won}
-                            </td>
-                            <td className="px-6 py-4 text-center text-gray-600">
-                              {entry.drawn}
-                            </td>
-                            <td className="px-6 py-4 text-center text-red-600 font-medium">
-                              {entry.lost}
+								{entry.team_course_name}
                             </td>
                             <td className="px-6 py-4 text-right text-lg font-bold text-gray-900">
                               {entry.points}

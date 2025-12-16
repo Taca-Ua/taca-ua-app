@@ -22,6 +22,31 @@ class ModalityType(enum.Enum):
     MISTA = "mista"
 
 
+class Course(Base):
+    """
+    Represents an academic course.
+    """
+
+    __tablename__ = "course"
+    __table_args__ = {"schema": "modalities"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(Text, nullable=False)
+    abbreviation = Column(Text, nullable=False, unique=True)
+    description = Column(Text, nullable=True)
+    logo_url = Column(Text, nullable=True)
+    created_by = Column(UUID(as_uuid=True), nullable=False)
+    created_at = Column(
+        DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at = Column(
+        DateTime, nullable=True, onupdate=lambda: datetime.now(timezone.utc)
+    )
+
+    def __repr__(self):
+        return f"<Course {self.id} - {self.abbreviation}: {self.name}>"
+
+
 class Modality(Base):
     """
     Represents a sport modality.

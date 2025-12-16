@@ -2,61 +2,27 @@
 Course management views
 """
 
+from datetime import datetime, timezone
+
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from ..models import Course, Nucleo
 from ..serializers import (
     CourseCreateSerializer,
+    CourseDetailSerializer,
     CourseListSerializer,
     CourseUpdateSerializer,
 )
-
-# Mock database for courses
-MOCK_COURSES = {
-    1: {
-        "id": 1,
-        "abbreviation": "MECT",
-        "name": "Engenharia de Computadores e Telemática",
-        "description": "Mestrado em Engenharia de Computadores e Telemática",
-        "logo_url": "https://via.placeholder.com/150?text=MECT",
-    },
-    2: {
-        "id": 2,
-        "abbreviation": "LEI",
-        "name": "Engenharia Informática",
-        "description": "Licenciatura em Engenharia Informática",
-        "logo_url": "https://via.placeholder.com/150?text=LEI",
-    },
-    3: {
-        "id": 3,
-        "abbreviation": "LECI",
-        "name": "Engenharia Eletrónica e Telecomunicações",
-        "description": "Licenciatura em Engenharia Eletrónica e Telecomunicações",
-        "logo_url": "https://via.placeholder.com/150?text=LECI",
-    },
-    4: {
-        "id": 4,
-        "abbreviation": "BIOMED",
-        "name": "Engenharia Biomédica",
-        "description": "Mestrado em Engenharia Biomédica",
-        "logo_url": "https://via.placeholder.com/150?text=BIOMED",
-    },
-    5: {
-        "id": 5,
-        "abbreviation": "MMAT",
-        "name": "Matemática",
-        "description": "Mestrado em Matemática",
-        "logo_url": "https://via.placeholder.com/150?text=MMAT",
-    },
-}
 
 
 @extend_schema_view(
     get=extend_schema(
         responses=CourseListSerializer(many=True),
-        description="List all courses",
+        description="List all courses with optional search",
         tags=["Course Management"],
     ),
     post=extend_schema(
@@ -67,75 +33,143 @@ MOCK_COURSES = {
     ),
 )
 class CourseListCreateView(APIView):
-    def get(self, request):
-        courses = list(MOCK_COURSES.values())
-        return Response(courses)
+    def get(self, request: Request):
+        courses = Course.objects.all()
+        return Response(
+            [
+                {
+                    "id": course.id,
+                    "name": course.name,
+                    "abbreviation": course.abbreviation,
+                    "nucleo": course.nucleo.name,
+                    "created_at": course.created_at,
+                }
+                for course in courses
+            ],
+            status=status.HTTP_200_OK,
+        )
 
-    def post(self, request):
+    def post(self, request: Request):
         serializer = CourseCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Generate new ID
-        max_id = max(MOCK_COURSES.keys()) if MOCK_COURSES else 0
-        new_id = max_id + 1
+        # validate nucleo existence
+        nucleo = Nucleo.objects.filter(
+            id=serializer.validated_data["nucleo_id"]
+        ).first()
+        if not nucleo:
+            return Response(
+                {"detail": "Nucleo not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
-        # Create new course
-        new_course = {"id": new_id, **serializer.validated_data}
+        course = Course.objects.create(
+            name=serializer.validated_data["name"],
+            abbreviation=serializer.validated_data["abbreviation"],
+            nucleo=nucleo,
+            created_by=request.user.id or "00000000-0000-0000-0000-000000000000",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+        )
 
-        MOCK_COURSES[new_id] = new_course
-        return Response(new_course, status=status.HTTP_201_CREATED)
+        return Response(
+            {
+                "id": course.id,
+                "name": course.name,
+                "abbreviation": course.abbreviation,
+                "nucleo": course.nucleo.name,
+                "created_at": course.created_at,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 @extend_schema_view(
     get=extend_schema(
-        responses=CourseListSerializer,
+        responses=CourseDetailSerializer,
         description="Get a course by ID",
         tags=["Course Management"],
     ),
     put=extend_schema(
         request=CourseUpdateSerializer,
-        responses=CourseListSerializer,
+        responses=CourseDetailSerializer,
         description="Update a course",
         tags=["Course Management"],
     ),
     delete=extend_schema(
         responses={204: None},
-        description="Delete a course",
+        description="Delete a course and all associated teams and students",
         tags=["Course Management"],
     ),
 )
 class CourseDetailView(APIView):
     def get(self, request, course_id):
-        if course_id not in MOCK_COURSES:
+        course = Course.objects.filter(id=course_id).first()
+        if not course:
             return Response(
-                {"error": "Course not found"},
+                {"detail": "Course not found."},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        return Response(MOCK_COURSES[course_id])
+
+        return Response(
+            {
+                "id": course.id,
+                "name": course.name,
+                "abbreviation": course.abbreviation,
+                "nucleo": course.nucleo.name,
+                "created_at": course.created_at,
+            }
+        )
 
     def put(self, request, course_id):
-        if course_id not in MOCK_COURSES:
-            return Response(
-                {"error": "Course not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
         serializer = CourseUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Update existing course
-        course = MOCK_COURSES[course_id]
-        for key, value in serializer.validated_data.items():
-            course[key] = value
-
-        return Response(course)
-
-    def delete(self, request, course_id):
-        if course_id not in MOCK_COURSES:
+        # get course
+        course = Course.objects.filter(id=course_id).first()
+        if not course:
             return Response(
-                {"error": "Course not found"},
+                {"detail": "Course not found."},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        del MOCK_COURSES[course_id]
+        # update fields
+        if serializer.validated_data.get("name", None) is not None:
+            course.name = serializer.validated_data["name"]
+
+        if serializer.validated_data.get("abbreviation", None) is not None:
+            course.abbreviation = serializer.validated_data["abbreviation"]
+
+        if serializer.validated_data.get("nucleo_id", None) is not None:
+            nucleo = Nucleo.objects.filter(
+                id=serializer.validated_data["nucleo_id"]
+            ).first()
+            if not nucleo:
+                return Response(
+                    {"detail": "Nucleo not found."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            course.nucleo = nucleo
+
+        course.save()
+
+        return Response(
+            {
+                "id": course.id,
+                "name": course.name,
+                "abbreviation": course.abbreviation,
+                "nucleo": course.nucleo.name,
+                "created_at": course.created_at,
+            }
+        )
+
+    def delete(self, request, course_id):
+        course = Course.objects.filter(id=course_id).first()
+        if not course:
+            return Response(
+                {"detail": "Course not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        course.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

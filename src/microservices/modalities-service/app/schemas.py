@@ -9,6 +9,41 @@ from uuid import UUID
 from pydantic import BaseModel
 
 
+# Course Schemas
+class CourseCreate(BaseModel):
+    """Schema for creating a course."""
+
+    name: str
+    abbreviation: str
+    description: Optional[str] = None
+    logo_url: Optional[str] = None
+    created_by: UUID
+
+
+class CourseUpdate(BaseModel):
+    """Schema for updating a course."""
+
+    name: Optional[str] = None
+    abbreviation: Optional[str] = None
+    description: Optional[str] = None
+    logo_url: Optional[str] = None
+    updated_by: UUID
+
+
+class CourseResponse(BaseModel):
+    """Schema for course response."""
+
+    id: UUID
+    name: str
+    abbreviation: str
+    description: Optional[str] = None
+    logo_url: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 # Modality Schemas
 class ModalityCreate(BaseModel):
     """Schema for creating a modality."""

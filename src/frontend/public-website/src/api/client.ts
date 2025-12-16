@@ -1,5 +1,6 @@
 // API Configuration
-const API_BASE_URL = '/api/public';
+// const API_BASE_URL = '/api/public';
+const API_BASE_URL = '/api/admin/public';
 
 /**
  * Generic API call handler

@@ -2,12 +2,36 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
 import { modalitiesApi, type Modality } from '../../api/modalities';
+import { scoringFormatsApi } from '../../api/scoring-formats';
+
+interface ModalityType {
+	  id: string;
+	  name: string;
+}
+
+const ModalityEntry = (mod: Modality) => {
+	const navigate = useNavigate();
+
+	console.log("Rendering modality:", `/geral/modalidades/${mod.id}`);
+
+	return <div
+		key={mod.id}
+		onClick={() => navigate(`/geral/modalidades/${mod.id}`)}
+		className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer transition-colors flex justify-between items-center"
+		>
+		<span className="text-gray-800 font-medium">{mod.name}</span>
+		<span className="text-gray-600 text-sm capitalize">
+			Tipo: {mod.modality_type}
+		</span>
+	</div>
+}
+
 
 const Modalities = () => {
-  const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newModalityName, setNewModalityName] = useState('');
-  const [modalityType, setModalityType] = useState<'coletiva' | 'individual' | 'mista' | ''>('');
+  const [modalityType, setModalityType] = useState('');
+  const [modalityTypes, setModalityTypes] = useState<ModalityType[]>([]);
   const [newScoringSchema, setNewScoringSchema] = useState('');
 
   const [modalities, setModalities] = useState<Modality[]>([]);
@@ -31,6 +55,20 @@ const Modalities = () => {
     };
 
     fetchData();
+  }, []);
+
+  // Fetch modality types on mount
+  useEffect(() => {
+	const fetchModalityTypes = async () => {
+	  try {
+		const data = await scoringFormatsApi.getAll();
+		setModalityTypes(data);
+	  } catch (err) {
+		console.error('Failed to fetch modality types:', err);
+	  }
+	};
+
+	fetchModalityTypes();
   }, []);
 
   const handleAddModality = async () => {
@@ -57,7 +95,7 @@ const Modalities = () => {
 
       const newModality = await modalitiesApi.create({
         name: newModalityName,
-        type: modalityType,
+        modality_type_id: modalityType,
         scoring_schema: scoringSchema,
       });
 
@@ -109,16 +147,7 @@ const Modalities = () => {
             <div className="space-y-3">
               {modalities.length > 0 ? (
                 modalities.map((mod) => (
-                  <div
-                    key={mod.id}
-                    onClick={() => navigate(`/geral/modalidades/${mod.id}`)}
-                    className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer transition-colors flex justify-between items-center"
-                  >
-                    <span className="text-gray-800 font-medium">{mod.name}</span>
-                    <span className="text-gray-600 text-sm capitalize">
-                      Tipo: {mod.type}
-                    </span>
-                  </div>
+                  <ModalityEntry key={mod.id} {...mod} />
                 ))
               ) : (
                 <p className="text-gray-500 text-center py-8">
@@ -164,18 +193,18 @@ const Modalities = () => {
                 </label>
                 <select
                   value={modalityType}
-                  onChange={(e) => setModalityType(e.target.value as 'coletiva' | 'individual' | 'mista' | '')}
+                  onChange={(e) => setModalityType(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <option value="">Selecionar Tipo</option>
-                  <option value="coletiva">Coletiva</option>
-                  <option value="individual">Individual</option>
-                  <option value="mista">Mista</option>
+                  {modalityTypes.map((type) => (
+					<option key={type.id} value={type.id}>{type.name}</option>
+				  ))}
                 </select>
               </div>
 
               {/* Scoring Schema (JSON) */}
-              <div>
+              {/* <div>
                 <label className="block text-gray-700 font-medium mb-2">
                   Scoring Schema (JSON)
                 </label>
@@ -185,7 +214,7 @@ const Modalities = () => {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 min-h-[100px]"
                   placeholder='{"win": 3, "draw": 1, "loss": 0}'
                 />
-              </div>
+              </div> */}
             </div>
 
             {/* Actions */}

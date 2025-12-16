@@ -43,7 +43,7 @@ function ClassificacaoGeral() {
       setError(null);
 
       try {
-        const data = await api.rankings.getGeneralRanking(Number(selectedSeasonId));
+        const data = await api.rankings.getGeneralRanking(String(selectedSeasonId));
         setRankingData(data);
       } catch (err) {
         console.error('Failed to load rankings:', err);
@@ -57,6 +57,7 @@ function ClassificacaoGeral() {
   }, [selectedSeasonId]);
 
   const rankings = rankingData?.rankings || [];
+  console.log('Rankings Data:', rankings);
 
   const selectedSeasonDisplayName = seasons.find(s => String(s.id) === String(selectedSeasonId))?.year?.toString() || (rankingData ? `${rankingData.season_year}` : '');
 
@@ -118,18 +119,6 @@ function ClassificacaoGeral() {
                       <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
                         Curso
                       </th>
-                      <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
-                        J
-                      </th>
-                      <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
-                        V
-                      </th>
-                      <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
-                        E
-                      </th>
-                      <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
-                        D
-                      </th>
                       <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
                         Pontos
                       </th>
@@ -145,7 +134,7 @@ function ClassificacaoGeral() {
                     ) : (
                       rankings.map((entry, index) => (
                         <tr
-                          key={entry.course_id}
+                          key={entry.team_id}
                           className={`hover:bg-gray-50 transition-colors ${
                             index === 0 ? 'bg-yellow-50' : ''
                           }`}
@@ -158,7 +147,7 @@ function ClassificacaoGeral() {
                                   : 'bg-gray-200 text-gray-700'
                               }`}
                             >
-                              {entry.position}
+                              {index + 1}
                             </span>
                           </td>
                           <td className="px-6 py-4">
@@ -170,18 +159,6 @@ function ClassificacaoGeral() {
                                 {entry.course_name}
                               </div>
                             </div>
-                          </td>
-                          <td className="px-6 py-4 text-center text-gray-700">
-                            {entry.played}
-                          </td>
-                          <td className="px-6 py-4 text-center text-green-600 font-medium">
-                            {entry.won}
-                          </td>
-                          <td className="px-6 py-4 text-center text-gray-600">
-                            {entry.drawn}
-                          </td>
-                          <td className="px-6 py-4 text-center text-red-600 font-medium">
-                            {entry.lost}
                           </td>
                           <td className="px-6 py-4 text-right text-lg font-bold text-gray-900">
                             {entry.points}

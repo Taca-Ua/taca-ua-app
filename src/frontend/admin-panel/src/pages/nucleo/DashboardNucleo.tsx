@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NucleoSidebar from "../../components/nucleo_navbar";
-import { studentsApi } from '../../api/students';
+// import { membersApi } from '../../api/members';
 import { teamsApi } from '../../api/teams';
 import { matchesApi } from '../../api/matches';
 import { useAuth } from '../../hooks/useAuth';

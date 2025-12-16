@@ -13,7 +13,10 @@ import Modalities from '../pages/geral/Modalidades';
 import ModalityDetails from '../pages/geral/ModalidadeDetail';
 import Nucleo from '../pages/geral/Nucleos';
 import NucleoDetails from '../pages/geral/NucleoDetails';
+import Cursos from '../pages/geral/Cursos';
+import CursoDetail from '../pages/geral/CursoDetail';
 import Regulamentos from '../pages/geral/Regulamentos';
+import FormatosPontuacao from '../pages/geral/FormatosPontuacao';
 import Torneios from '../pages/geral/Torneios';
 import TorneioDetails from '../pages/geral/TorneioDetails';
 import JogoDetails from '../pages/geral/JogoDetails';
@@ -84,8 +87,20 @@ export const router = createBrowserRouter([
     element: <ProtectedRoute requiredRole="geral"><NucleoDetails /></ProtectedRoute>,
   },
   {
+    path: '/geral/cursos',
+    element: <ProtectedRoute requiredRole="geral"><Cursos /></ProtectedRoute>,
+  },
+  {
+    path: '/geral/cursos/:id',
+    element: <ProtectedRoute requiredRole="geral"><CursoDetail /></ProtectedRoute>,
+  },
+  {
     path: '/geral/regulamentos',
     element: <ProtectedRoute requiredRole="geral"><Regulamentos /></ProtectedRoute>,
+  },
+  {
+    path: '/geral/formatos-pontuacao',
+    element: <ProtectedRoute requiredRole="geral"><FormatosPontuacao /></ProtectedRoute>,
   },
   {
     path: '/geral/torneios',
@@ -112,7 +127,7 @@ export const router = createBrowserRouter([
     element: <ProtectedRoute requiredRole="nucleo"><Membros /></ProtectedRoute>,
   },
   {
-    path: '/nucleo/membros/:id',
+    path: '/nucleo/membros/:type/:id',
     element: <ProtectedRoute requiredRole="nucleo"><MemberDetail /></ProtectedRoute>,
   },
   {

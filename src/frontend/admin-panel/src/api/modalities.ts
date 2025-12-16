@@ -1,21 +1,21 @@
 import { apiClient } from './client';
 
 export interface Modality {
-  id: number;
+  id: string;
   name: string;
-  type: 'coletiva' | 'individual' | 'mista';
+  modality_type: string;
   scoring_schema?: Record<string, number> | null;
 }
 
 export interface ModalityCreate {
   name: string;
-  type: 'coletiva' | 'individual' | 'mista';
+  modality_type_id: string;
   scoring_schema?: Record<string, number> | null;
 }
 
 export interface ModalityUpdate {
   name?: string;
-  type?: 'coletiva' | 'individual' | 'mista';
+  modality_type_id?: string;
   scoring_schema?: Record<string, number> | null;
 }
 
@@ -24,7 +24,7 @@ export const modalitiesApi = {
     return apiClient.get<Modality[]>('/modalities');
   },
 
-  async getById(modalityId: number): Promise<Modality> {
+  async getById(modalityId: string): Promise<Modality> {
     return apiClient.get<Modality>(`/modalities/${modalityId}`);
   },
 
@@ -32,11 +32,11 @@ export const modalitiesApi = {
     return apiClient.post<Modality>('/modalities', data);
   },
 
-  async update(modalityId: number, data: ModalityUpdate): Promise<Modality> {
+  async update(modalityId: string, data: ModalityUpdate): Promise<Modality> {
     return apiClient.put<Modality>(`/modalities/${modalityId}`, data);
   },
 
-  async delete(modalityId: number): Promise<void> {
+  async delete(modalityId: string): Promise<void> {
     return apiClient.delete(`/modalities/${modalityId}`);
   },
 };

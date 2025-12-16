@@ -1,18 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
-import { tournamentsApi, type Tournament } from '../../api/tournaments';
+import { tournamentsApi, type TournamentDetail, type TournamentUpdate } from '../../api/tournaments';
 import { teamsApi, type Team } from '../../api/teams';
 import { matchesApi, type Match, type MatchCreate } from '../../api/matches';
-import { coursesApi, type Course } from '../../api/courses';
 
 const TorneioDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [tournament, setTournament] = useState<Tournament | null>(null);
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [tournament, setTournament] = useState<TournamentDetail | null>(null);
+  const [allTeams, setAllTeams] = useState<Team[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -20,10 +18,10 @@ const TorneioDetails = () => {
   const [isEditModal, setIsEditModal] = useState(false);
   const [isAddTeamModal, setIsAddTeamModal] = useState(false);
   const [isAddMatchModal, setIsAddMatchModal] = useState(false);
+  const [isRankingModal, setIsRankingModal] = useState(false);
 
   // Campos edição
   const [editName, setEditName] = useState('');
-  const [editRules, setEditRules] = useState('');
   const [editStartDate, setEditStartDate] = useState('');
 
   // Novo team
@@ -35,22 +33,23 @@ const TorneioDetails = () => {
   const [matchLocation, setMatchLocation] = useState('');
   const [matchStartTime, setMatchStartTime] = useState('');
 
+  // Rankings
+  const [rankings, setRankings] = useState<{ position: number; team_id: string }[]>([]);
+
   const fetchData = async () => {
     if (!id) return;
 
     try {
       setLoading(true);
-      const [tournamentData, teamsData, matchesData, coursesData] = await Promise.all([
-        tournamentsApi.getById(Number(id)),
+      const [tournamentData, teamsData] = await Promise.all([
+        tournamentsApi.getById(id),
         teamsApi.getAll(true), // Get all teams
-        matchesApi.getAll(), // Get all matches
-        coursesApi.getAll(), // Get all courses/nucleos
       ]);
       setTournament(tournamentData);
-      setTeams(teamsData);
-      setCourses(coursesData);
+      setAllTeams(teamsData);
       // Filter matches for this tournament
-      const tournamentMatches = matchesData.filter(m => m.tournament_id === Number(id));
+    //   const tournamentMatches = matchesData.filter(m => String(m.tournament_id) === id);
+      const tournamentMatches = tournamentData.matches;
       setMatches(tournamentMatches);
       setError('');
     } catch (err) {
@@ -63,12 +62,23 @@ const TorneioDetails = () => {
 
   useEffect(() => {
     fetchData();
-  }, [id]);
+  });
+
+  // Get teams filtered by tournament modality
+  const availableTeams = useMemo(() => {
+    if (!tournament) return [];
+    return allTeams.filter(team => team.modality_name === tournament.modality_name);
+  }, [tournament, allTeams]);
+
+  // Get current tournament teams
+  const tournamentTeams = useMemo(() => {
+    if (!tournament?.teams) return [];
+    return tournament.teams.map(t => allTeams.find(team => team.id === t.id)).filter(Boolean) as Team[];
+  }, [tournament, allTeams]);
 
   const openEdit = () => {
     if (!tournament) return;
     setEditName(tournament.name);
-    setEditRules(tournament.rules ?? '');
     setEditStartDate(tournament.start_date ?? '');
     setIsEditModal(true);
   };
@@ -77,11 +87,11 @@ const TorneioDetails = () => {
     if (!tournament) return;
 
     try {
-      const updated = await tournamentsApi.update(tournament.id, {
+      const updateData: TournamentUpdate = {
         name: editName,
-        rules: editRules || undefined,
         start_date: editStartDate || undefined,
-      });
+      };
+      const updated = await tournamentsApi.update(tournament.id, updateData);
       setTournament(updated);
       setIsEditModal(false);
       setError('');
@@ -109,9 +119,8 @@ const TorneioDetails = () => {
     if (!window.confirm("Ativar torneio? Isso permitirá que jogos sejam jogados.")) return;
 
     try {
-      const updated = await tournamentsApi.update(tournament.id, {
-        status: 'active',
-      });
+      const updateData: TournamentUpdate = { status: 'active' };
+      const updated = await tournamentsApi.update(tournament.id, updateData);
       setTournament(updated);
       setError('');
     } catch (err) {
@@ -120,36 +129,80 @@ const TorneioDetails = () => {
     }
   };
 
+  const openRankingModal = () => {
+    if (!tournament) return;
+    // Initialize rankings array based on ranking_positions
+    const numPositions = tournament.ranking_positions || tournamentTeams.length;
+    const initialRankings = Array.from({ length: numPositions }, (_, i) => ({
+      position: i + 1,
+      team_id: '',
+    }));
+    setRankings(initialRankings);
+    setIsRankingModal(true);
+  };
+
   const finishTournament = async () => {
     if (!tournament) return;
-    if (!window.confirm("Finalizar torneio? Isso bloqueará edições.")) return;
 
-    try {
-      const finished = await tournamentsApi.finish(tournament.id);
-      setTournament(finished);
-      setError('');
-    } catch (err) {
-      console.error('Failed to finish tournament:', err);
-      setError('Erro ao finalizar torneio');
+    // Check if we need to collect rankings
+    if (tournament.ranking_positions && tournament.ranking_positions > 0) {
+      openRankingModal();
+    } else {
+      // Finish without rankings
+      if (!window.confirm("Finalizar torneio? Isso bloqueará edições.")) return;
+
+      try {
+        const finished = await tournamentsApi.finish(tournament.id);
+        setTournament(finished);
+        setError('');
+      } catch (err) {
+        console.error('Failed to finish tournament:', err);
+        setError('Erro ao finalizar torneio');
+      }
     }
   };
+
+const submitRankings = async () => {
+	if (!tournament) return;
+
+	// Allow empty positions — only validate duplicates among filled positions
+	const teamIds = rankings.map(r => r.team_id).filter(id => id);
+	const uniqueTeamIds = new Set(teamIds);
+	if (teamIds.length !== uniqueTeamIds.size) {
+		alert('Cada equipa só pode aparecer uma vez no ranking.');
+		return;
+	}
+
+	// filter out empty rankings
+	const filteredRankings = rankings
+		.filter(r => r.team_id)
+		.map(r => ({ team_id: r.team_id, position: r.position }));
+
+	try {
+		const finished = await tournamentsApi.finish(tournament.id, filteredRankings);
+		setTournament(finished);
+		setIsRankingModal(false);
+		setError('');
+	} catch (err) {
+		console.error('Failed to finish tournament:', err);
+		setError('Erro ao finalizar torneio');
+	}
+};
 
   const addTeam = async () => {
     if (!tournament || !selectedTeamId) return;
 
-    const teamId = Number(selectedTeamId);
-
     // Check if team is already added
-    if (tournament.teams?.includes(teamId)) {
+    if (tournament.teams?.some(t => t.id === selectedTeamId)) {
       alert('Esta equipa já foi adicionada ao torneio.');
       return;
     }
 
     try {
-      const updatedTeams = [...(tournament.teams || []), teamId];
-      const updated = await tournamentsApi.update(tournament.id, {
-        teams: updatedTeams,
-      });
+      const updateData: TournamentUpdate = {
+        teams_add: [selectedTeamId],
+      };
+      const updated = await tournamentsApi.update(tournament.id, updateData);
       setTournament(updated);
       setSelectedTeamId('');
       setIsAddTeamModal(false);
@@ -160,14 +213,21 @@ const TorneioDetails = () => {
     }
   };
 
-  const getTeamName = (teamId: number) => {
-    const team = teams.find(t => t.id === teamId);
-    if (!team) return `Equipa ${teamId}`;
+  const removeTeam = async (teamId: string) => {
+    if (!tournament) return;
+    if (!window.confirm("Remover esta equipa do torneio?")) return;
 
-    const course = courses.find(c => c.id === team.course_id);
-    const courseName = course ? course.abbreviation : `Curso ${team.course_id}`;
-
-    return `${team.name} (${courseName})`;
+    try {
+      const updateData: TournamentUpdate = {
+        teams_remove: [teamId],
+      };
+      const updated = await tournamentsApi.update(tournament.id, updateData);
+      setTournament(updated);
+      setError('');
+    } catch (err) {
+      console.error('Failed to remove team:', err);
+      setError('Erro ao remover equipa');
+    }
   };
 
   const getStatusLabel = (status: string) => {
@@ -193,9 +253,9 @@ const TorneioDetails = () => {
 
     try {
       const newMatchData: MatchCreate = {
-        tournament_id: tournament.id,
-        team_home_id: Number(matchTeamHome),
-        team_away_id: Number(matchTeamAway),
+        tournament_id: String(tournament.id),
+        team_home_id: String(matchTeamHome),
+        team_away_id: String(matchTeamAway),
         location: matchLocation,
         start_time: matchStartTime,
       };
@@ -303,7 +363,7 @@ const TorneioDetails = () => {
         )}
 
         {/* GRID */}
-        <div className="grid grid-cols-3 gap-8">
+        <div className={`grid gap-8 ${tournament.final_rankings && tournament.final_rankings.length > 0 ? 'grid-cols-4' : 'grid-cols-3'}`}>
 
           {/* COL 1 - Detalhes */}
           <div className="bg-white rounded-xl shadow p-6">
@@ -317,13 +377,8 @@ const TorneioDetails = () => {
               </div>
 
               <div>
-                <label className="font-medium text-teal-600">Modalidade ID</label>
-                <div className="bg-gray-100 p-3 rounded-md">{tournament.modality_id}</div>
-              </div>
-
-              <div>
-                <label className="font-medium text-teal-600">Época</label>
-                <div className="bg-gray-100 p-3 rounded-md">{tournament.season_year || 'N/A'}</div>
+                <label className="font-medium text-teal-600">Modalidade</label>
+                <div className="bg-gray-100 p-3 rounded-md">{tournament.modality_name}</div>
               </div>
 
               <div>
@@ -332,16 +387,9 @@ const TorneioDetails = () => {
               </div>
 
               <div>
-                <label className="font-medium text-teal-600">Regras</label>
-                <pre className="bg-gray-100 p-3 rounded-md whitespace-pre-wrap">
-                  {tournament.rules ?? "Nenhuma"}
-                </pre>
-              </div>
-
-              <div>
                 <label className="font-medium text-teal-600">Data de início</label>
                 <div className="bg-gray-100 p-3 rounded-md">
-                  {tournament.start_date ?? "Não definida"}
+                  {tournament.start_date ? new Date(tournament.start_date).toLocaleDateString('pt-PT') : "Não definida"}
                 </div>
               </div>
 
@@ -363,13 +411,21 @@ const TorneioDetails = () => {
             <h2 className="text-xl font-semibold mb-4">Equipas</h2>
 
             <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-              {tournament.teams && tournament.teams.length > 0 ? (
-                tournament.teams.map((teamId) => (
+              {tournamentTeams.length > 0 ? (
+                tournamentTeams.map((team) => (
                   <div
-                    key={teamId}
-                    className="bg-gray-100 px-4 py-2 rounded-md text-gray-700"
+                    key={team.id}
+                    className="bg-gray-100 px-4 py-2 rounded-md text-gray-700 flex justify-between items-center"
                   >
-                    {getTeamName(teamId)}
+                    <span>{team.name} ({team.course_name})</span>
+                    {!isLocked && (
+                      <button
+                        onClick={() => removeTeam(team.id)}
+                        className="text-red-500 hover:text-red-700 text-sm"
+                      >
+                        Remover
+                      </button>
+                    )}
                   </div>
                 ))
               ) : (
@@ -395,32 +451,34 @@ const TorneioDetails = () => {
 
             <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
               {matches.length > 0 ? (
-                matches.map(match => (
-                  <div
-                    key={match.id}
-                    onClick={() => navigate(`/geral/jogos/${match.id}`)}
-                    className="bg-gray-100 px-4 py-3 rounded-md hover:bg-gray-200 cursor-pointer"
-                  >
-                    <div className="flex justify-between items-center">
-                      <div className="text-sm font-medium">
-                        {getTeamName(match.team_home_id)} vs {getTeamName(match.team_away_id)}
+                matches.map(match => {
+                  return (
+                    <div
+                      key={match.id}
+                      onClick={() => navigate(`/geral/jogos/${match.id}`)}
+                      className="bg-gray-100 px-4 py-3 rounded-md hover:bg-gray-200 cursor-pointer"
+                    >
+                      <div className="flex justify-between items-center">
+                        <div className="text-sm font-medium">
+                          {match.team_home_name || `Equipa X`} vs {match.team_away_name || `Equipa Y`}
+                        </div>
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          match.status === 'finished' ? 'bg-green-100 text-green-700' :
+                          match.status === 'in_progress' ? 'bg-yellow-100 text-yellow-700' :
+                          match.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                          'bg-blue-100 text-blue-700'
+                        }`}>
+                          {getStatusLabel(match.status)}
+                        </span>
                       </div>
-                      <span className={`text-xs px-2 py-1 rounded ${
-                        match.status === 'finished' ? 'bg-green-100 text-green-700' :
-                        match.status === 'in_progress' ? 'bg-yellow-100 text-yellow-700' :
-                        match.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                        'bg-blue-100 text-blue-700'
-                      }`}>
-                        {getStatusLabel(match.status)}
-                      </span>
+                      {match.status === 'finished' && match.home_score !== null && match.away_score !== null && (
+                        <div className="text-xs text-gray-600 mt-1">
+                          Resultado: {match.home_score} - {match.away_score}
+                        </div>
+                      )}
                     </div>
-                    {match.status === 'finished' && match.home_score !== null && match.away_score !== null && (
-                      <div className="text-xs text-gray-600 mt-1">
-                        Resultado: {match.home_score} - {match.away_score}
-                      </div>
-                    )}
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <p className="text-gray-500 italic">Nenhum jogo criado</p>
               )}
@@ -453,6 +511,38 @@ const TorneioDetails = () => {
             )}
           </div>
 
+          {/* COL 4 - Rankings (only shown if tournament has final rankings) */}
+          {tournament.final_rankings && tournament.final_rankings.length > 0 && (
+            <div className="bg-white rounded-xl shadow p-6">
+              <h2 className="text-xl font-semibold mb-4">Classificação Final</h2>
+
+              <div className="space-y-2">
+                {tournament.final_rankings
+                  .sort((a, b) => a.position - b.position)
+                  .map((ranking) => (
+                    <div
+                      key={ranking.position}
+                      className="bg-gradient-to-r from-teal-50 to-white px-4 py-3 rounded-md border border-teal-100"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`font-bold text-lg ${
+                          ranking.position === 1 ? 'text-yellow-500' :
+                          ranking.position === 2 ? 'text-gray-400' :
+                          ranking.position === 3 ? 'text-amber-600' :
+                          'text-gray-600'
+                        }`}>
+                          {ranking.position}º
+                        </div>
+                        <div className="text-gray-700 font-medium">
+                          {ranking.team_name}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
 
@@ -470,15 +560,6 @@ const TorneioDetails = () => {
                   className="border w-full px-4 py-2 rounded-md"
                   value={editName}
                   onChange={e => setEditName(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="font-medium">Regras (JSON)</label>
-                <textarea
-                  className="border w-full px-4 py-2 rounded-md min-h-[80px]"
-                  value={editRules}
-                  onChange={e => setEditRules(e.target.value)}
                 />
               </div>
 
@@ -527,20 +608,21 @@ const TorneioDetails = () => {
                 onChange={e => setSelectedTeamId(e.target.value)}
               >
                 <option value="">Selecionar equipa...</option>
-                {teams
-                  .filter(team => !tournament?.teams?.includes(team.id))
-                  .map(team => {
-                    const course = courses.find(c => c.id === team.course_id);
-                    const courseName = course ? course.abbreviation : `Curso ${team.course_id}`;
-                    return (
-                      <option key={team.id} value={team.id}>
-                        {team.name} ({courseName})
-                      </option>
-                    );
-                  })}
+                {availableTeams
+                  .filter(team => !tournament?.teams?.some(t => t.id === team.id))
+                  .map(team => (
+                    <option key={team.id} value={team.id}>
+                      {team.name} ({team.course_name})
+                    </option>
+                  ))}
               </select>
-              {teams.filter(team => !tournament?.teams?.includes(team.id)).length === 0 && (
-                <p className="text-sm text-gray-500 mt-2 italic">Todas as equipas já foram adicionadas</p>
+              {availableTeams.filter(team => !tournament?.teams?.some(t => t.id === team.id)).length === 0 && (
+                <p className="text-sm text-gray-500 mt-2 italic">
+                  {availableTeams.length === 0
+                    ? 'Nenhuma equipa disponível para esta modalidade'
+                    : 'Todas as equipas desta modalidade já foram adicionadas'
+                  }
+                </p>
               )}
             </div>
 
@@ -590,9 +672,9 @@ const TorneioDetails = () => {
                   onChange={e => setMatchTeamHome(e.target.value)}
                 >
                   <option value="">Selecionar equipa...</option>
-                  {tournament?.teams?.map(teamId => (
-                    <option key={teamId} value={teamId}>
-                      {getTeamName(teamId)}
+                  {tournamentTeams.map(team => (
+                    <option key={team.id} value={team.id}>
+                      {team.name} ({team.course_name})
                     </option>
                   ))}
                 </select>
@@ -607,9 +689,9 @@ const TorneioDetails = () => {
                   onChange={e => setMatchTeamAway(e.target.value)}
                 >
                   <option value="">Selecionar equipa...</option>
-                  {tournament?.teams?.map(teamId => (
-                    <option key={teamId} value={teamId}>
-                      {getTeamName(teamId)}
+                  {tournamentTeams.map(team => (
+                    <option key={team.id} value={team.id}>
+                      {team.name} ({team.course_name})
                     </option>
                   ))}
                 </select>
@@ -631,7 +713,7 @@ const TorneioDetails = () => {
               <div>
                 <label className="block font-medium mb-2">Data e Hora <span className="text-red-500">*</span></label>
                 <input
-                  type="datetime-local"
+                  type="date"
                   className="border w-full px-4 py-2 rounded-md"
                   value={matchStartTime}
                   onChange={e => setMatchStartTime(e.target.value)}
@@ -659,6 +741,76 @@ const TorneioDetails = () => {
                 className="flex-1 bg-teal-500 hover:bg-teal-600 text-white py-2 rounded-md transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
                 Criar Jogo
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ==================== MODAL RANKING ==================== */}
+      {isRankingModal && (
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 overflow-y-auto">
+          <div className="bg-white p-8 rounded-lg max-w-2xl w-full my-8 mx-4">
+
+            <h2 className="text-2xl font-bold mb-4">Classificação Final do Torneio</h2>
+            <p className="text-gray-600 mb-6">
+              Selecione a equipa para cada posição da classificação final.
+            </p>
+
+            {error && (
+              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 mb-6">
+              {rankings.map((ranking, index) => (
+                <div key={ranking.position} className="flex items-center gap-4">
+                  <div className={`font-bold text-lg w-12 text-center ${
+                    ranking.position === 1 ? 'text-yellow-500' :
+                    ranking.position === 2 ? 'text-gray-400' :
+                    ranking.position === 3 ? 'text-amber-600' :
+                    'text-gray-600'
+                  }`}>
+                    {ranking.position}º
+                  </div>
+                  <select
+                    className="flex-1 border px-4 py-2 rounded-md bg-white"
+                    value={ranking.team_id}
+                    onChange={e => {
+                      const newRankings = [...rankings];
+                      newRankings[index].team_id = e.target.value;
+                      setRankings(newRankings);
+                    }}
+                  >
+                    <option value="">Selecionar equipa...</option>
+                    {tournamentTeams.map(team => (
+                      <option key={team.id} value={team.id}>
+                        {team.name} ({team.course_name})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-4 mt-6">
+              <button
+                onClick={() => {
+                  setIsRankingModal(false);
+                  setRankings([]);
+                  setError('');
+                }}
+                className="flex-1 bg-gray-300 hover:bg-gray-400 py-2 rounded-md transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={submitRankings}
+                className="flex-1 bg-teal-500 hover:bg-teal-600 text-white py-2 rounded-md transition-colors"
+              >
+                Finalizar Torneio
               </button>
             </div>
 

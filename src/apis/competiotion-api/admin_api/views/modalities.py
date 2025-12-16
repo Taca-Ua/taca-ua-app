@@ -2,68 +2,21 @@
 Modality management views
 """
 
+from datetime import datetime, timezone
+
+from django.db import IntegrityError
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from ..models import Modality, ModalityType
 from ..serializers import (
     ModalityCreateSerializer,
     ModalityListSerializer,
     ModalityUpdateSerializer,
 )
-
-# Mock database for modalities
-MOCK_MODALITIES = {
-    1: {
-        "id": 1,
-        "name": "Futebol",
-        "type": "coletiva",
-        "year": "25/26",
-        "description": "Futebol de campo 11v11",
-        "scoring_schema": '{"win": 3, "draw": 1, "loss": 0}',
-    },
-    2: {
-        "id": 2,
-        "name": "Futsal",
-        "type": "coletiva",
-        "year": "25/26",
-        "description": "Futebol de salão 5v5",
-        "scoring_schema": '{"win": 3, "draw": 1, "loss": 0}',
-    },
-    3: {
-        "id": 3,
-        "name": "Basquetebol",
-        "type": "coletiva",
-        "year": "25/26",
-        "description": "Basquetebol 5v5",
-        "scoring_schema": '{"win": 2, "loss": 0}',
-    },
-    4: {
-        "id": 4,
-        "name": "Voleibol",
-        "type": "coletiva",
-        "year": "25/26",
-        "description": "Voleibol 6v6",
-        "scoring_schema": '{"win": 2, "loss": 0}',
-    },
-    5: {
-        "id": 5,
-        "name": "Andebol",
-        "type": "coletiva",
-        "year": "25/26",
-        "description": "Andebol 7v7",
-        "scoring_schema": '{"win": 2, "loss": 0}',
-    },
-    6: {
-        "id": 6,
-        "name": "Rugby",
-        "type": "coletiva",
-        "year": "24/25",
-        "description": "Rugby 15v15",
-        "scoring_schema": '{"win": 4, "loss": 0}',
-    },
-}
 
 
 @extend_schema_view(
@@ -80,25 +33,63 @@ MOCK_MODALITIES = {
     ),
 )
 class ModalityListCreateView(APIView):
-    def get(self, request):
-        modalities = list(MOCK_MODALITIES.values())
-        return Response(modalities)
+    def get(self, request: Request):
+        modalities = Modality.objects.all()
 
-    def post(self, request):
+        return Response(
+            [
+                {
+                    "id": str(modality.id),
+                    "name": modality.name,
+                    "modality_type": modality.modality_type.name,
+                }
+                for modality in modalities
+            ]
+        )
+
+    def post(self, request: Request):
         serializer = ModalityCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Generate new ID
-        max_id = max(MOCK_MODALITIES.keys()) if MOCK_MODALITIES else 0
-        new_id = max_id + 1
+        # validate modality_type_id if provided
+        modality_type = ModalityType.objects.filter(
+            id=serializer.validated_data.get("modality_type_id", None)
+        ).first()
+        if not modality_type:
+            return Response(
+                {"error": "Invalid modality_type_id"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-        new_modality = {
-            "id": new_id,
-            **serializer.validated_data,
-        }
+        try:
+            modality = Modality.objects.create(
+                name=serializer.validated_data["name"],
+                modality_type=modality_type,
+                created_by=getattr(request.user, "id")
+                or "00000000-0000-0000-0000-000000000000",
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc),
+            )
+            modality.save()
+        except IntegrityError as e:
+            return Response(
+                {"error": f"Integrity error creating modality: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to create modality: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
-        MOCK_MODALITIES[new_id] = new_modality
-        return Response(new_modality, status=status.HTTP_201_CREATED)
+        return Response(
+            {
+                "id": str(modality.id),
+                "name": modality.name,
+                "modality_type": modality.modality_type.name,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 @extend_schema_view(
@@ -121,36 +112,62 @@ class ModalityListCreateView(APIView):
 )
 class ModalityDetailView(APIView):
     def get(self, request, modality_id):
-        if modality_id not in MOCK_MODALITIES:
-            return Response(
-                {"error": "Modality not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-        return Response(MOCK_MODALITIES[modality_id])
+        modality = Modality.objects.filter(id=modality_id).first()
+        if not modality:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        return Response(
+            {
+                "id": str(modality.id),
+                "name": modality.name,
+                "modality_type": modality.modality_type.name,
+            },
+            status=status.HTTP_200_OK,
+        )
 
     def put(self, request, modality_id):
-        if modality_id not in MOCK_MODALITIES:
-            return Response(
-                {"error": "Modality not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
         serializer = ModalityUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Update existing modality
-        modality = MOCK_MODALITIES[modality_id]
-        for key, value in serializer.validated_data.items():
-            modality[key] = value
+        # get modality
+        modality = Modality.objects.filter(id=modality_id).first()
+        if not modality:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
-        return Response(modality)
+        # update fields if provided
+        if serializer.validated_data.get("name", None) is not None:
+            modality.name = serializer.validated_data["name"]
+
+        if serializer.validated_data.get("modality_type_id", None) is not None:
+            modality_type = ModalityType.objects.filter(
+                id=serializer.validated_data["modality_type_id"]
+            ).first()
+
+            if not modality_type:
+                return Response(
+                    {"error": "Invalid modality_type_id"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            modality.modality_type = modality_type
+
+        # update timestamp
+        modality.updated_at = datetime.now(timezone.utc)
+        modality.save()
+
+        return Response(
+            {
+                "id": str(modality.id),
+                "name": modality.name,
+                "modality_type": modality.modality_type.name,
+            },
+            status=status.HTTP_200_OK,
+        )
 
     def delete(self, request, modality_id):
-        if modality_id not in MOCK_MODALITIES:
-            return Response(
-                {"error": "Modality not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        modality = Modality.objects.filter(id=modality_id).first()
+        if not modality:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
-        del MOCK_MODALITIES[modality_id]
+        modality.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

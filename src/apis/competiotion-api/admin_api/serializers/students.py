@@ -9,38 +9,26 @@ class StudentListSerializer(serializers.Serializer):
     """Serializer for listing students"""
 
     id = serializers.IntegerField(read_only=True)
-    course_id = serializers.IntegerField()
     full_name = serializers.CharField()
+
+    course_name = serializers.CharField()
     student_number = serializers.CharField()
-    email = serializers.EmailField(required=False, allow_blank=True)
     is_member = serializers.BooleanField(default=False)
-    member_type = serializers.ChoiceField(
-        choices=[("student", "Estudante"), ("technical_staff", "Equipa Técnica")],
-        default="student",
-    )
 
 
 class StudentCreateSerializer(serializers.Serializer):
     """Serializer for creating a student"""
 
     full_name = serializers.CharField(required=True)
+    course_id = serializers.UUIDField(required=True)
     student_number = serializers.CharField(required=True)
-    email = serializers.EmailField(required=False, allow_blank=True)
     is_member = serializers.BooleanField(required=False, default=False)
-    member_type = serializers.ChoiceField(
-        choices=[("student", "Estudante"), ("technical_staff", "Equipa Técnica")],
-        required=False,
-        default="student",
-    )
 
 
 class StudentUpdateSerializer(serializers.Serializer):
     """Serializer for updating a student"""
 
     full_name = serializers.CharField(required=False)
-    email = serializers.EmailField(required=False, allow_blank=True)
+    course_id = serializers.UUIDField(required=False)
+    student_number = serializers.CharField(required=False)
     is_member = serializers.BooleanField(required=False)
-    member_type = serializers.ChoiceField(
-        choices=[("student", "Estudante"), ("technical_staff", "Equipa Técnica")],
-        required=False,
-    )

@@ -5,6 +5,7 @@ Serializers package for admin_api
 from .auth import LoginRequestSerializer, LoginResponseSerializer, UserInfoSerializer
 from .courses import (
     CourseCreateSerializer,
+    CourseDetailSerializer,
     CourseListSerializer,
     CourseUpdateSerializer,
 )
@@ -20,6 +21,17 @@ from .modalities import (
     ModalityCreateSerializer,
     ModalityListSerializer,
     ModalityUpdateSerializer,
+)
+from .modality_types import (
+    ModalityTypeCreateSerializer,
+    ModalityTypeDetailSerializer,
+    ModalityTypeListSerializer,
+    ModalityTypeUpdateSerializer,
+)
+from .nucleus import (
+    NucleosCreateSerializer,
+    NucleosListSerializer,
+    NucleosUpdateSerializer,
 )
 from .regulations import (
     RegulationCreateSerializer,
@@ -57,10 +69,20 @@ __all__ = [
     "CourseListSerializer",
     "CourseCreateSerializer",
     "CourseUpdateSerializer",
+    "CourseDetailSerializer",
     # Regulations
     "RegulationListSerializer",
     "RegulationCreateSerializer",
     "RegulationUpdateSerializer",
+    # Modality Types
+    "ModalityTypeListSerializer",
+    "ModalityTypeCreateSerializer",
+    "ModalityTypeUpdateSerializer",
+    "ModalityTypeDetailSerializer",
+    # Nucleus
+    "NucleosListSerializer",
+    "NucleosCreateSerializer",
+    "NucleosUpdateSerializer",
     # Modalities
     "ModalityListSerializer",
     "ModalityCreateSerializer",

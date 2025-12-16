@@ -1,11 +1,12 @@
 import { apiClient } from './client';
 
 export interface Course {
-  id: number;
+  id: string;
   abbreviation: string;
   name: string;
   description?: string;
   logo_url?: string;
+  nucleo: string;
 }
 
 export interface CourseCreate {
@@ -13,6 +14,7 @@ export interface CourseCreate {
   name: string;
   description?: string;
   logo_url?: string;
+  nucleo_id: string;
 }
 
 export interface CourseUpdate {
@@ -20,6 +22,7 @@ export interface CourseUpdate {
   name?: string;
   description?: string;
   logo_url?: string;
+  nucleo_id?: string;
 }
 
 export const coursesApi = {
@@ -27,7 +30,7 @@ export const coursesApi = {
     return apiClient.get<Course[]>('/courses');
   },
 
-  async getById(courseId: number): Promise<Course> {
+  async getById(courseId: string): Promise<Course> {
     return apiClient.get<Course>(`/courses/${courseId}`);
   },
 
@@ -35,11 +38,11 @@ export const coursesApi = {
     return apiClient.post<Course>('/courses', data);
   },
 
-  async update(courseId: number, data: CourseUpdate): Promise<Course> {
+  async update(courseId: string, data: CourseUpdate): Promise<Course> {
     return apiClient.put<Course>(`/courses/${courseId}`, data);
   },
 
-  async delete(courseId: number): Promise<void> {
+  async delete(courseId: string): Promise<void> {
     return apiClient.delete(`/courses/${courseId}`);
   },
 };

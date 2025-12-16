@@ -74,21 +74,21 @@ export interface TournamentRankingEntry {
 }
 
 export interface TournamentPublicDetail {
-  id: number;
+  id: string;
   name: string;
   modality: {
-    id: number;
+    id: string;
     name: string;
   };
   season: {
-    id: number;
+    id: string;
     year: number;
   };
   status: string;
   rules?: string;
   start_date?: string;
   team_count: number;
-  rankings?: TournamentRankingEntry[];
+  rankings?: {team_name: string, team_id: string, abbreviation: string, points: number, team_course_name: string}[];
 }
 
 export interface ModalityRanking {
@@ -118,6 +118,7 @@ export interface GeneralRanking {
 
 // RankingEntry shape (backend public API - general rankings)
 export interface RankingEntry {
+  team_id: string;
   position: number;
   course_id: number | string;
   course_name: string;

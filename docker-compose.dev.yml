@@ -115,7 +115,12 @@ services:
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
-      - DATABASE_URL=postgres://user:password@postgres:5432/taca_ua
+      - POSTGRES_DB=taca_ua
+      - POSTGRES_USER=${POSTGRES_USER:-user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - DATABASE_URL=${DATABASE_URL}
       - PYTHONUNBUFFERED=1
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
       - MINIO_ENDPOINT=minio:9000

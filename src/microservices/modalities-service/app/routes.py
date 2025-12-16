@@ -13,6 +13,9 @@ from sqlalchemy.orm import Session
 from . import schemas
 from .database import get_db_session
 from .events import (
+    publish_course_created,
+    publish_course_deleted,
+    publish_course_updated,
     publish_modality_created,
     publish_modality_deleted,
     publish_modality_updated,
@@ -21,9 +24,167 @@ from .events import (
     publish_team_deleted,
     publish_team_updated,
 )
-from .models import Modality, ModalityType, Student, Team
+from .models import Course, Modality, ModalityType, Student, Team
 
 router = APIRouter()
+
+
+# ==================== Course Management ====================
+
+
+@router.post("/courses", response_model=schemas.CourseResponse, status_code=201)
+def create_course(
+    course_data: schemas.CourseCreate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db_session),
+):
+    """Create a new course."""
+    # Check if abbreviation already exists
+    existing = (
+        db.query(Course).filter(Course.abbreviation == course_data.abbreviation).first()
+    )
+    if existing:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Course with abbreviation {course_data.abbreviation} already exists",
+        )
+
+    course = Course(
+        name=course_data.name,
+        abbreviation=course_data.abbreviation,
+        description=course_data.description,
+        logo_url=course_data.logo_url,
+        created_by=course_data.created_by,
+    )
+
+    db.add(course)
+    db.commit()
+    db.refresh(course)
+
+    background_tasks.add_task(publish_course_created, course)
+    return course
+
+
+@router.put("/courses/{course_id}", response_model=schemas.CourseResponse)
+def update_course(
+    course_id: UUID,
+    course_data: schemas.CourseUpdate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db_session),
+):
+    """Update a course."""
+    course = db.query(Course).filter(Course.id == course_id).first()
+
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    # Check if new abbreviation conflicts with existing
+    if course_data.abbreviation and course_data.abbreviation != course.abbreviation:
+        existing = (
+            db.query(Course)
+            .filter(
+                Course.abbreviation == course_data.abbreviation,
+                Course.id != course_id,
+            )
+            .first()
+        )
+        if existing:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Course with abbreviation {course_data.abbreviation} already exists",
+            )
+
+    changes = {}
+    if course_data.name is not None:
+        changes["name"] = course_data.name
+        course.name = course_data.name
+    if course_data.abbreviation is not None:
+        changes["abbreviation"] = course_data.abbreviation
+        course.abbreviation = course_data.abbreviation
+    if course_data.description is not None:
+        changes["description"] = course_data.description
+        course.description = course_data.description
+    if course_data.logo_url is not None:
+        changes["logo_url"] = course_data.logo_url
+        course.logo_url = course_data.logo_url
+
+    course.updated_at = datetime.now(timezone.utc)
+
+    db.commit()
+    db.refresh(course)
+
+    background_tasks.add_task(publish_course_updated, course, changes)
+    return course
+
+
+@router.delete("/courses/{course_id}", status_code=204)
+def delete_course(
+    course_id: UUID,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db_session),
+):
+    """Delete a course and all associated teams and students."""
+    course = db.query(Course).filter(Course.id == course_id).first()
+
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    # Delete all teams for this course
+    teams = db.query(Team).filter(Team.course_id == course_id).all()
+    for team in teams:
+        background_tasks.add_task(publish_team_deleted, team.id)
+    db.query(Team).filter(Team.course_id == course_id).delete()
+
+    # Delete all students for this course
+    db.query(Student).filter(Student.course_id == course_id).delete()
+
+    # Delete the course
+    db.delete(course)
+    db.commit()
+
+    background_tasks.add_task(publish_course_deleted, course_id)
+    return None
+
+
+@router.get("/courses/{course_id}", response_model=schemas.CourseResponse)
+def get_course(course_id: UUID, db: Session = Depends(get_db_session)):
+    """Get a course by ID."""
+    course = db.query(Course).filter(Course.id == course_id).first()
+
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    return course
+
+
+@router.get("/courses")
+def list_courses(
+    search: Optional[str] = Query(None),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db_session),
+):
+    """List courses with optional search."""
+    query = db.query(Course)
+
+    if search:
+        query = query.filter(
+            (Course.name.ilike(f"%{search}%"))
+            | (Course.abbreviation.ilike(f"%{search}%"))
+        )
+
+    total = query.count()
+    courses = query.order_by(Course.abbreviation).offset(offset).limit(limit).all()
+
+    return {
+        "courses": courses,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
+
+
+# ==================== Modality Management ====================
 
 
 @router.post("/modalities", response_model=schemas.ModalityResponse, status_code=201)
