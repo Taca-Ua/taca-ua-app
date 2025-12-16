@@ -37,20 +37,25 @@ const FormatosPontuacao = () => {
     { escalao: 'A', minParticipants: null, maxParticipants: null, points: [] }
   ]);
 
-  const fetchScoringFormats = async () => {
-	try {
-	//   setError('');
-	  const formats = await Promise.resolve(scoringFormatsApi.getAll());
-	  setScoringFormats(formats);
-	} catch (err) {
-	  console.error('Failed to fetch scoring formats:', err);
-	  setError('Erro ao carregar formatos de pontuação');
-	}
-  };
+useEffect(() => {
+	let mounted = true;
 
-  useEffect(() => {
-	fetchScoringFormats();
-  });
+	(async () => {
+		try {
+			const formats = await scoringFormatsApi.getAll();
+			if (!mounted) return;
+			setScoringFormats(formats);
+		} catch (err) {
+			console.error('Failed to fetch scoring formats:', err);
+			if (!mounted) return;
+			setError('Erro ao carregar formatos de pontuação');
+		}
+	})();
+
+	return () => {
+		mounted = false;
+	};
+}, []);
 
   const handleAddEscalao = () => {
     const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
