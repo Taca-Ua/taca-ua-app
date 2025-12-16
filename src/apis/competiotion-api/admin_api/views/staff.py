@@ -6,7 +6,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ..models import Staff
-from .auth import get_authenticated_user
 
 
 class StaffListSerializer(serializers.Serializer):
@@ -69,7 +68,7 @@ class StaffListCreateView(APIView):
 
     def post(self, request):
         # Get authenticated user
-        user = get_authenticated_user(request)
+        # user = get_authenticated_user(request)
 
         serializer = StaffCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -78,7 +77,7 @@ class StaffListCreateView(APIView):
             full_name=serializer.validated_data["full_name"],
             staff_number=serializer.validated_data.get("staff_number", None),
             contact=serializer.validated_data.get("contact", None),
-            created_by=user or "00000000-0000-0000-0000-000000000000",
+            created_by="00000000-0000-0000-0000-000000000000",
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
         )

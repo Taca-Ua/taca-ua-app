@@ -75,7 +75,7 @@ function ClassificacaoGeral() {
           )}
 
           {/* Época Filter */}
-          <div className="mb-8">
+          {/* <div className="mb-8">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Época
             </label>
@@ -91,7 +91,7 @@ function ClassificacaoGeral() {
                 </option>
               ))}
             </select>
-          </div>
+          </div> */}
 
           {/* Error Message */}
           {error && (
