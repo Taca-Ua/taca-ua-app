@@ -1,39 +1,41 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import NucleoSidebar from '../../components/nucleo_navbar';
-import { teamsApi, type Team } from '../../api/teams';
-import { studentsApi, type Student } from '../../api/students';
+import { teamsApi, type Team, type Player } from '../../api/teams';
+import { participantsApi, type Participant } from '../../api/members';
 import { modalitiesApi, type Modality } from '../../api/modalities';
+import { coursesApi, type Course } from '../../api/courses';
 
 const TeamDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [team, setTeam] = useState<Team | null>(null);
-  const [students, setStudents] = useState<Student[]>([]);
+  const [team, setTeam] = useState<Team>();
+  const [participants, setParticipants] = useState<Participant[]>([]);
   const [modalities, setModalities] = useState<Modality[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [editedName, setEditedName] = useState('');
-  const [editedModalityId, setEditedModalityId] = useState<number>(0);
-  const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
 
-  // Fetch team data, students, and modalities
+  // Fetch team data, participants, modalities, and courses
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const [teams, fetchedStudents, fetchedModalities] = await Promise.all([
-          teamsApi.getAll(),
-          studentsApi.getAll(),
+        const [teamData, fetchedParticipants, fetchedModalities, fetchedCourses] = await Promise.all([
+          teamsApi.get(id!),
+          participantsApi.getAll(),
           modalitiesApi.getAll(),
+          coursesApi.getAll(),
         ]);
 
-        const foundTeam = teams.find(t => t.id === Number(id));
+        const foundTeam = teamData;
 
         if (!foundTeam) {
           setError('Equipa não encontrada');
@@ -42,8 +44,9 @@ const TeamDetail = () => {
         }
 
         setTeam(foundTeam);
-        setStudents(fetchedStudents);
+        setParticipants(fetchedParticipants);
         setModalities(fetchedModalities);
+        setCourses(fetchedCourses);
       } catch (err) {
         console.error('Error fetching data:', err);
         setError('Erro ao carregar dados');
@@ -83,17 +86,21 @@ const TeamDetail = () => {
     );
   }
 
-  const teamMembers = students.filter((student) => team.players.includes(student.id));
-  const availableMembers = students.filter((student) => !team.players.includes(student.id));
+  const teamMembers = participants.filter((participant: Player) => team.players.some(player => player.id === participant.id));
+  const availableMembers = participants.filter((participant: Player) => !team.players.some(player => player.id === participant.id));
 
-  const getModalityName = (modalityId: number) => {
-    const modality = modalities.find(m => m.id === modalityId);
+  const getModalityName = (modalityId: string) => {
+    const modality = modalities.find((m: Modality) => m.id === modalityId);
     return modality ? modality.name : `Modalidade ${modalityId}`;
+  };
+
+  const getCourseName = (courseId: string) => {
+    const course = courses.find((c: Course) => c.id === courseId);
+    return course ? course.name : `Curso ${courseId}`;
   };
 
   const handleEdit = () => {
     setEditedName(team.name);
-    setEditedModalityId(team.modality_id);
     setIsEditModalOpen(true);
   };
 
@@ -103,23 +110,16 @@ const TeamDetail = () => {
       return;
     }
 
-    if (!editedModalityId) {
-      alert('Por favor, selecione uma modalidade.');
-      return;
-    }
-
     try {
       setError(null);
-      // Update team name (modality cannot be changed according to API)
       await teamsApi.update(team.id, {
         name: editedName,
       });
 
       // Refresh team data
-      const teams = await teamsApi.getAll();
-      const updatedTeam = teams.find(t => t.id === team.id);
-      if (updatedTeam) {
-        setTeam(updatedTeam);
+      const teamData = await teamsApi.get(team.id);
+      if (teamData) {
+        setTeam(teamData);
       }
 
       setIsEditModalOpen(false);
@@ -158,10 +158,9 @@ const TeamDetail = () => {
       });
 
       // Refresh team data
-      const teams = await teamsApi.getAll();
-      const updatedTeam = teams.find(t => t.id === team.id);
-      if (updatedTeam) {
-        setTeam(updatedTeam);
+      const teamData = await teamsApi.get(team.id);
+      if (teamData) {
+        setTeam(teamData);
       }
 
       setSelectedMemberId(null);
@@ -172,7 +171,7 @@ const TeamDetail = () => {
     }
   };
 
-  const handleRemoveMember = async (memberId: number) => {
+  const handleRemoveMember = async (memberId: string) => {
     if (!window.confirm('Tem certeza que deseja remover este membro da equipa?')) {
       return;
     }
@@ -184,10 +183,9 @@ const TeamDetail = () => {
       });
 
       // Refresh team data
-      const teams = await teamsApi.getAll();
-      const updatedTeam = teams.find(t => t.id === team.id);
-      if (updatedTeam) {
-        setTeam(updatedTeam);
+      const teamData = await teamsApi.get(team.id);
+      if (teamData) {
+        setTeam(teamData);
       }
     } catch (err) {
       console.error('Error removing member:', err);
@@ -240,7 +238,16 @@ const TeamDetail = () => {
                     Modalidade
                   </label>
                   <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
-                    {getModalityName(team.modality_id)}
+                    {getModalityName(team.modality_name)}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-teal-500 font-medium mb-2">
+                    Curso
+                  </label>
+                  <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
+                    {getCourseName(team.course_name)}
                   </div>
                 </div>
 
@@ -286,27 +293,25 @@ const TeamDetail = () => {
 
               <div className="space-y-3 max-h-[600px] overflow-y-auto">
                 {teamMembers.length > 0 ? (
-                  teamMembers.map((member) => (
+                  teamMembers.map((member: Participant) => (
                     <div
                       key={member.id}
-                      className="px-4 py-3 bg-gray-100 rounded-md flex justify-between items-center group"
+                      className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
                     >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-800 font-medium">{member.full_name}</span>
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            member.member_type === 'technical_staff'
-                              ? 'bg-purple-100 text-purple-700'
-                              : 'bg-blue-100 text-blue-700'
-                          }`}>
-                            {member.member_type === 'technical_staff' ? 'Equipa Técnica' : 'Estudante'}
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
+                          <span className="text-teal-700 font-medium">
+                            {member.full_name.charAt(0).toUpperCase()}
                           </span>
                         </div>
-                        <span className="text-gray-500 text-sm">{member.student_number}</span>
+                        <div>
+                          <p className="text-gray-800 font-medium">{member.full_name}</p>
+                          <p className="text-sm text-gray-500">Nº {member.student_number}</p>
+                        </div>
                       </div>
                       <button
                         onClick={() => handleRemoveMember(member.id)}
-                        className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm font-medium transition-colors opacity-0 group-hover:opacity-100"
+                        className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-md text-sm font-medium transition-colors"
                       >
                         Remover
                       </button>
@@ -351,9 +356,20 @@ const TeamDetail = () => {
                   Modalidade
                 </label>
                 <div className="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-600">
-                  {getModalityName(editedModalityId)}
+                  {getModalityName(team.modality_name)}
                 </div>
                 <p className="text-sm text-gray-500 mt-1">A modalidade não pode ser alterada</p>
+              </div>
+
+              {/* Course (read-only) */}
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">
+                  Curso
+                </label>
+                <div className="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-600">
+                  {getCourseName(team.course_name)}
+                </div>
+                <p className="text-sm text-gray-500 mt-1">O curso não pode ser alterado</p>
               </div>
             </div>
 
@@ -393,13 +409,13 @@ const TeamDetail = () => {
                 <select
                   id="selectMember"
                   value={selectedMemberId || ''}
-                  onChange={(e) => setSelectedMemberId(Number(e.target.value))}
+                  onChange={(e) => setSelectedMemberId(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <option value="">Selecionar Membro</option>
-                  {availableMembers.map((member) => (
+                  {availableMembers.map((member: Participant) => (
                     <option key={member.id} value={member.id}>
-                      {member.full_name} ({member.student_number})
+                      {member.full_name} - Nº {member.student_number}
                     </option>
                   ))}
                 </select>

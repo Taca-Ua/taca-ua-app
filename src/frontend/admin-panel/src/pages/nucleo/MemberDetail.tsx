@@ -1,16 +1,21 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import NucleoSidebar from '../../components/nucleo_navbar';
-import { studentsApi, type Student } from '../../api/students';
+import { participantsApi, staffApi, type Participant, type Staff } from '../../api/members';
+
+type MemberType = 'participant' | 'staff';
+type Member = Participant | Staff;
 
 function MemberDetail() {
-  const { id } = useParams();
+  const { type, id } = useParams<{ type: MemberType; id: string }>();
   const navigate = useNavigate();
-  const [member, setMember] = useState<Student | null>(null);
+  const [member, setMember] = useState<Member | null>(null);
+  const [memberType, setMemberType] = useState<MemberType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editedName, setEditedName] = useState('');
+  const [editedContact, setEditedContact] = useState('');
   const [isMember, setIsMember] = useState(true);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
@@ -20,27 +25,41 @@ function MemberDetail() {
       try {
         setLoading(true);
         setError(null);
-        // Get all students and find the one matching this ID
-        const students = await studentsApi.getAll();
-        const foundStudent = students.find(s => s.id === parseInt(id || '0'));
 
-        if (!foundStudent) {
-          setError('Membro não encontrado');
+		console.log('Fetching member with ID:', id, 'and type:', type);
+
+        if (!id || !type) {
+          setError('ID ou tipo inválido');
           setTimeout(() => navigate('/nucleo/membros'), 2000);
           return;
         }
 
-        setMember(foundStudent);
+        if (type !== 'participant' && type !== 'staff') {
+          setError('Tipo de membro inválido');
+          setTimeout(() => navigate('/nucleo/membros'), 2000);
+          return;
+        }
+
+        setMemberType(type);
+
+        if (type === 'participant') {
+          const participant = await participantsApi.getById(id as any);
+          setMember(participant);
+        } else {
+          const staff = await staffApi.getById(id as any);
+          setMember(staff);
+        }
       } catch (err) {
         console.error('Error fetching member:', err);
         setError('Erro ao carregar os dados do membro');
+        setTimeout(() => navigate('/nucleo/membros'), 2000);
       } finally {
         setLoading(false);
       }
     };
 
     fetchMember();
-  }, [id, navigate]);
+  }, [id, type, navigate]);
 
   if (loading) {
     return (
@@ -73,25 +92,34 @@ function MemberDetail() {
   const handleEdit = () => {
     if (!member) return;
     setEditedName(member.full_name);
-    setIsMember(member.is_member);
+
+    if (memberType === 'participant') {
+      setIsMember((member as Participant).is_member);
+    } else if (memberType === 'staff') {
+      setEditedContact((member as Staff).contact || '');
+    }
+
     setIsModalOpen(true);
   };
 
   const handleSave = async () => {
-    if (!member || !editedName.trim()) return;
+    if (!member || !editedName.trim() || !memberType) return;
 
     try {
       setError(null);
-      await studentsApi.update(member.id, {
-        full_name: editedName,
-        is_member: isMember,
-      });
 
-      // Refresh the member data
-      const students = await studentsApi.getAll();
-      const updatedStudent = students.find(s => s.id === member.id);
-      if (updatedStudent) {
-        setMember(updatedStudent);
+      if (memberType === 'participant') {
+        const updatedMember = await participantsApi.update(member.id as any, {
+          full_name: editedName,
+          is_member: isMember,
+        });
+        setMember(updatedMember);
+      } else if (memberType === 'staff') {
+        const updatedMember = await staffApi.update(member.id as any, {
+          full_name: editedName,
+          contact: editedContact || undefined,
+        });
+        setMember(updatedMember);
       }
 
       setIsModalOpen(false);
@@ -106,11 +134,17 @@ function MemberDetail() {
   };
 
   const confirmDelete = async () => {
-    if (!member) return;
+    if (!member || !memberType) return;
 
     try {
       setError(null);
-      await studentsApi.delete(member.id);
+
+      if (memberType === 'participant') {
+        await participantsApi.delete(member.id as any);
+      } else if (memberType === 'staff') {
+        await staffApi.delete(member.id as any);
+      }
+
       navigate('/nucleo/membros');
     } catch (err) {
       console.error('Error deleting member:', err);
@@ -127,6 +161,17 @@ function MemberDetail() {
           <div className="bg-white rounded-lg shadow-md p-8">
             {/* Member Details - Read Only */}
             <div className="space-y-6">
+              {/* Type Badge */}
+              <div>
+                <span className={`inline-block px-4 py-2 rounded-full text-sm font-medium ${
+                  memberType === 'participant'
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'bg-purple-100 text-purple-700'
+                }`}>
+                  {memberType === 'participant' ? 'Participante' : 'Equipa Técnica'}
+                </span>
+              </div>
+
               {/* Name */}
               <div>
                 <label className="block text-teal-500 font-medium mb-2">
@@ -137,31 +182,75 @@ function MemberDetail() {
                 </div>
               </div>
 
-              {/* Student Number */}
-              <div>
-                <label className="block text-teal-500 font-medium mb-2">
-                  Número de Estudante
-                </label>
-                <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
-                  {member.student_number}
-                </div>
-              </div>
+              {/* Participant-specific fields */}
+              {memberType === 'participant' && (
+                <>
+                  {/* Student Number */}
+                  <div>
+                    <label className="block text-teal-500 font-medium mb-2">
+                      Número de Estudante
+                    </label>
+                    <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
+                      {(member as Participant).student_number}
+                    </div>
+                  </div>
 
-              {/* Type */}
-              <div>
-                <label className="block text-teal-500 font-medium mb-2">
-                  Tipo de Membro
-                </label>
-                <div className="w-full px-4 py-3 bg-gray-100 rounded-md">
-                  <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                    member.member_type === 'technical_staff'
-                      ? 'bg-purple-100 text-purple-700'
-                      : 'bg-blue-100 text-blue-700'
-                  }`}>
-                    {member.member_type === 'technical_staff' ? 'Equipa Técnica' : 'Estudante'}
-                  </span>
-                </div>
-              </div>
+                  {/* Member Status */}
+                  <div>
+                    <label className="block text-teal-500 font-medium mb-2">
+                      Estado de Membro
+                    </label>
+                    <div className="w-full px-4 py-3 bg-gray-100 rounded-md">
+                      <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                        (member as Participant).is_member
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-gray-100 text-gray-700'
+                      }`}>
+                        {(member as Participant).is_member ? 'Membro' : 'Não-Membro'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Course ID */}
+                  <div>
+                    <label className="block text-teal-500 font-medium mb-2">
+                      Curso
+                    </label>
+                    <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
+                      {(member as Participant).course_id}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Staff-specific fields */}
+              {memberType === 'staff' && (
+                <>
+                  {/* Staff Number */}
+                  {(member as Staff).staff_number && (
+                    <div>
+                      <label className="block text-teal-500 font-medium mb-2">
+                        Número de Staff
+                      </label>
+                      <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
+                        {(member as Staff).staff_number}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Contact */}
+                  {(member as Staff).contact && (
+                    <div>
+                      <label className="block text-teal-500 font-medium mb-2">
+                        Contacto
+                      </label>
+                      <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
+                        {(member as Staff).contact}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
 
             {/* Action Buttons */}
@@ -205,44 +294,81 @@ function MemberDetail() {
                 />
               </div>
 
-              {/* Student Number (read-only) */}
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">
-                  Número de Estudante
-                </label>
-                <div className="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-600">
-                  {member.student_number}
-                </div>
-              </div>
+              {/* Participant-specific fields */}
+              {memberType === 'participant' && (
+                <>
+                  {/* Student Number (read-only) */}
+                  <div>
+                    <label className="block text-gray-700 font-medium mb-2">
+                      Número de Estudante
+                    </label>
+                    <div className="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-600">
+                      {(member as Participant).student_number}
+                    </div>
+                  </div>
 
-              {/* Is Member Toggle */}
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">
-                  Tipo
-                </label>
-                <div className="flex gap-4">
-                  <label className="flex items-center">
+                  {/* Is Member Toggle */}
+                  <div>
+                    <label className="block text-gray-700 font-medium mb-2">
+                      Tipo
+                    </label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="isMember"
+                          checked={isMember}
+                          onChange={() => setIsMember(true)}
+                          className="mr-2"
+                        />
+                        <span className="text-gray-700">Membro</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="isMember"
+                          checked={!isMember}
+                          onChange={() => setIsMember(false)}
+                          className="mr-2"
+                        />
+                        <span className="text-gray-700">Não-Membro</span>
+                      </label>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Staff-specific fields */}
+              {memberType === 'staff' && (
+                <>
+                  {/* Staff Number (read-only) */}
+                  {(member as Staff).staff_number && (
+                    <div>
+                      <label className="block text-gray-700 font-medium mb-2">
+                        Número de Staff
+                      </label>
+                      <div className="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-600">
+                        {(member as Staff).staff_number}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Contact Input */}
+                  <div>
+                    <label htmlFor="editContact" className="block text-gray-700 font-medium mb-2">
+                      Contacto
+                    </label>
                     <input
-                      type="radio"
-                      name="isMember"
-                      checked={isMember}
-                      onChange={() => setIsMember(true)}
-                      className="mr-2"
+                      type="text"
+                      id="editContact"
+                      value={editedContact}
+                      onChange={(e) => setEditedContact(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="Digite o contacto"
                     />
-                    <span className="text-gray-700">Membro</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="isMember"
-                      checked={!isMember}
-                      onChange={() => setIsMember(false)}
-                      className="mr-2"
-                    />
-                    <span className="text-gray-700">Não-Membro</span>
-                  </label>
-                </div>
-              </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Modal Actions */}
@@ -251,6 +377,7 @@ function MemberDetail() {
                 onClick={() => {
                   setIsModalOpen(false);
                   setEditedName('');
+                  setEditedContact('');
                 }}
                 className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
               >

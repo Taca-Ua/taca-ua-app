@@ -19,16 +19,13 @@ const Torneios = () => {
   // Campos de criação
   const [name, setName] = useState('');
   const [modalityId, setModalityId] = useState('');
-  const [seasonYear, setSeasonYear] = useState('');
-  const [rules, setRules] = useState('');
   const [startDate, setStartDate] = useState('');
-  const [teams, setTeams] = useState<number[]>([]);
+  const [teams, setTeams] = useState<string[]>([]);
   const [newTeamId, setNewTeamId] = useState('');
 
   // Filtros
   const [filterStatus, setFilterStatus] = useState('');
   const [filterModality, setFilterModality] = useState('');
-  const [filterYear, setFilterYear] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -57,35 +54,30 @@ const Torneios = () => {
   const handleAddTeam = () => {
     if (!newTeamId.trim()) return;
 
-    const id = Number(newTeamId);
-
-    if (teams.includes(id)) {
+    if (teams.includes(newTeamId)) {
       alert("Essa equipa já foi adicionada.");
       return;
     }
 
-    setTeams([...teams, id]);
+    setTeams([...teams, newTeamId]);
     setNewTeamId('');
     setIsTeamModalOpen(false);
   };
 
-  const handleRemoveTeam = (id: number) => {
+  const handleRemoveTeam = (id: string) => {
     setTeams(teams.filter(t => t !== id));
   };
 
   const handleCreate = async () => {
-    if (!name.trim() || !modalityId || !seasonYear) {
-      alert("Nome, modalidade e época são obrigatórios.");
+    if (!name.trim() || !modalityId) {
+      alert("Nome e modalidade são obrigatórios.");
       return;
     }
 
     try {
       const newTournamentData: TournamentCreate = {
         name,
-        modality_id: Number(modalityId),
-        season_id: 1, // Default season ID
-        season_year: seasonYear,
-        rules: rules || undefined,
+        modality_id: modalityId,
         start_date: startDate || undefined,
         teams: teams.length > 0 ? teams : undefined,
       };
@@ -97,8 +89,6 @@ const Torneios = () => {
       // Reset
       setName('');
       setModalityId('');
-      setSeasonYear('');
-      setRules('');
       setStartDate('');
       setTeams([]);
       setIsModalOpen(false);
@@ -110,34 +100,27 @@ const Torneios = () => {
 
   const filtered = tournaments.filter(t =>
     (!filterStatus || t.status === filterStatus) &&
-    (!filterModality || String(t.modality_id) === filterModality) &&
-    (!filterYear || t.season_year === filterYear)
+    (!filterModality || t.modality_name === filterModality)
   );
 
-  const getModalityName = (modalityId: number) => {
-    const modality = modalities.find(m => m.id === modalityId);
-    return modality ? modality.name : `Modalidade ${modalityId}`;
-  };
-
-  // Get unique years from tournaments
-  const availableYears = useMemo(() => {
-    const yearSet = new Set<string>();
-
-    // Add years from tournaments
+  // Get unique modality names from tournaments
+  const availableModalities = useMemo(() => {
+    const modalitySet = new Set<string>();
     tournaments.forEach(t => {
-      if (t.season_year) {
-        yearSet.add(t.season_year);
+      if (t.modality_name) {
+        modalitySet.add(t.modality_name);
       }
     });
-
-    // Convert to array and sort (newest first)
-    return Array.from(yearSet).sort((a, b) => {
-      // Extract first year from format "XX/YY"
-      const yearA = parseInt(a.split('/')[0]);
-      const yearB = parseInt(b.split('/')[0]);
-      return yearB - yearA;
-    });
+    return Array.from(modalitySet).sort();
   }, [tournaments]);
+
+  // Get teams filtered by selected modality
+  const availableTeams = useMemo(() => {
+    if (!modalityId) return [];
+    const selectedModality = modalities.find(m => m.id === modalityId);
+    if (!selectedModality) return [];
+    return allTeams.filter(team => team.modality_name === selectedModality.name);
+  }, [modalityId, allTeams, modalities]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -187,22 +170,8 @@ const Torneios = () => {
               className="border px-3 py-2 rounded-md"
             >
               <option value="">Todas</option>
-              {modalities.map(m => (
-                <option key={m.id} value={m.id}>{m.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block mb-1 font-medium text-gray-700">Época</label>
-            <select
-              value={filterYear}
-              onChange={e => setFilterYear(e.target.value)}
-              className="border px-3 py-2 rounded-md"
-            >
-              <option value="">Todas</option>
-              {availableYears.map(y => (
-                <option key={y} value={y}>{y}</option>
+              {availableModalities.map(m => (
+                <option key={m} value={m}>{m}</option>
               ))}
             </select>
           </div>
@@ -224,7 +193,7 @@ const Torneios = () => {
               >
                 <div className="font-medium">{t.name}</div>
                 <div className="text-sm text-teal-600">
-                  {getModalityName(t.modality_id)} | época {t.season_year || 'N/A'} | {t.status}
+                  {t.modality_name} | {t.status}
                 </div>
               </div>
             ))
@@ -259,38 +228,16 @@ const Torneios = () => {
                 <select
                   className="border w-full px-4 py-2 rounded-md bg-white"
                   value={modalityId}
-                  onChange={e => setModalityId(e.target.value)}
+                  onChange={e => {
+                    setModalityId(e.target.value);
+                    setTeams([]); // Reset teams when modality changes
+                  }}
                 >
                   <option value="">Selecionar</option>
                   {modalities.map(m => (
                     <option key={m.id} value={m.id}>{m.name}</option>
                   ))}
                 </select>
-              </div>
-
-              {/* Season */}
-              <div>
-                <label className="font-medium">Época <span className="text-red-500">*</span></label>
-                <select
-                  className="border w-full px-4 py-2 rounded-md bg-white"
-                  value={seasonYear}
-                  onChange={e => setSeasonYear(e.target.value)}
-                >
-                  <option value="">Selecionar</option>
-                  {availableYears.map(s => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Rules */}
-              <div>
-                <label className="font-medium">Regras</label>
-                <textarea
-                  className="border w-full px-4 py-2 rounded-md min-h-[80px]"
-                  value={rules}
-                  onChange={e => setRules(e.target.value)}
-                />
               </div>
 
               {/* Data */}
@@ -308,33 +255,43 @@ const Torneios = () => {
               <div>
                 <label className="font-medium">Equipas</label>
 
-                <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
-                  {teams.map(teamId => {
-                    const team = allTeams.find(t => t.id === teamId);
-                    return (
-                      <div key={teamId} className="bg-gray-100 px-4 py-2 rounded-md flex justify-between">
-                        <span>{team?.name || `Equipa ${teamId}`}</span>
-                        <button
-                          onClick={() => handleRemoveTeam(teamId)}
-                          className="text-red-500"
-                        >
-                          Remover
-                        </button>
-                      </div>
-                    );
-                  })}
+                {!modalityId ? (
+                  <p className="text-sm text-gray-500 mt-2 italic">Selecione uma modalidade primeiro</p>
+                ) : (
+                  <>
+                    <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
+                      {teams.map(teamId => {
+                        const team = allTeams.find(t => t.id === teamId);
+                        return (
+                          <div key={teamId} className="bg-gray-100 px-4 py-2 rounded-md flex justify-between">
+                            <span>{team?.name || `Equipa ${teamId}`}</span>
+                            <button
+                              onClick={() => handleRemoveTeam(teamId)}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              Remover
+                            </button>
+                          </div>
+                        );
+                      })}
 
-                  {teams.length === 0 && (
-                    <p className="text-gray-500 italic">Nenhuma equipa adicionada.</p>
-                  )}
-                </div>
+                      {teams.length === 0 && (
+                        <p className="text-gray-500 italic">Nenhuma equipa adicionada.</p>
+                      )}
+                    </div>
 
-                <button
-                  onClick={() => setIsTeamModalOpen(true)}
-                  className="mt-3 bg-teal-500 text-white px-4 py-2 rounded-md"
-                >
-                  + Adicionar Equipa
-                </button>
+                    <button
+                      onClick={() => setIsTeamModalOpen(true)}
+                      disabled={availableTeams.length === 0}
+                      className="mt-3 bg-teal-500 text-white px-4 py-2 rounded-md disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    >
+                      + Adicionar Equipa
+                    </button>
+                    {availableTeams.length === 0 && (
+                      <p className="text-sm text-gray-500 mt-1">Nenhuma equipa disponível para esta modalidade</p>
+                    )}
+                  </>
+                )}
               </div>
 
             </div>
@@ -372,11 +329,11 @@ const Torneios = () => {
               className="border w-full px-4 py-2 rounded-md mt-1 bg-white"
             >
               <option value="">Selecionar equipa...</option>
-              {allTeams
+              {availableTeams
                 .filter(team => !teams.includes(team.id))
                 .map(team => (
                   <option key={team.id} value={team.id}>
-                    {team.name}
+                    {team.name} ({team.course_name})
                   </option>
                 ))}
             </select>

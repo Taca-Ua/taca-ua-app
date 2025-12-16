@@ -99,7 +99,14 @@ urlpatterns = [
     path("teams/<team_id>", views.TeamDetailView.as_view(), name="team-detail"),
     # Student Management (RF4)
     path("students", views.StudentListCreateView.as_view(), name="student-list"),
-    path("students/<student_id>", views.student_detail, name="student-detail"),
+    path(
+        "students/<student_id>",
+        views.StudentDetailView.as_view(),
+        name="student-detail",
+    ),
+    # Staff Management
+    path("staff", views.StaffListCreateView.as_view(), name="staff-list"),
+    path("staff/<staff_id>", views.StaffDetailView.as_view(), name="staff-detail"),
     # Match Management (RF7)
     path("matches", views.MatchListCreateView.as_view(), name="match-list"),
     path("matches/<match_id>", views.MatchDetailView.as_view(), name="match-detail"),
@@ -111,4 +118,19 @@ urlpatterns = [
     path("seasons", views.SeasonListCreateView.as_view(), name="season-list"),
     path("seasons/<season_id>/start", views.season_start, name="season-start"),
     path("seasons/<season_id>/finish", views.season_finish, name="season-finish"),
+    # Public API
+    path("public/matches", views.calendar, name="public-calendar"),
+    path("public/modalities", views.modality_list, name="public-modality-list"),
+    path(
+        "public/rankings/general",
+        views.rankings_general,
+        name="public-rankings-general",
+    ),
+    path("public/seasons", views.public_season_list, name="public-season-list"),
+    path("public/tournaments", views.tournaments_public, name="public-tournament-list"),
+    path(
+        "public/tournaments/<tournament_id>",
+        views.get_tournament_public,
+        name="public-tournament-detail",
+    ),
 ]

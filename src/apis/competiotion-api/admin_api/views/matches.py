@@ -2,21 +2,50 @@
 Match management views
 """
 
+from typing import List
+
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ..serializers import (
+from ..models import Lineup, Match, Student, Team, Tournament
+from ..serializers import (  # MatchCreateSerializer,; MatchListSerializer,; MatchUpdateSerializer,
     MatchCommentSerializer,
-    MatchCreateSerializer,
     MatchLineupSerializer,
-    MatchListSerializer,
     MatchResultSerializer,
-    MatchUpdateSerializer,
 )
-from .auth import get_authenticated_user
+
+
+class MatchListSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    team_home_name = serializers.CharField()
+    team_away_name = serializers.CharField()
+    team_home_id = serializers.UUIDField(required=False)
+    team_away_id = serializers.UUIDField(required=False)
+    location = serializers.CharField()
+    start_time = serializers.DateTimeField()
+    status = serializers.CharField()
+
+    home_score = serializers.IntegerField(required=False)
+    away_score = serializers.IntegerField(required=False)
+
+
+class MatchCreateSerializer(serializers.Serializer):
+    tournament_id = serializers.UUIDField()
+    team_home_id = serializers.UUIDField()
+    team_away_id = serializers.UUIDField()
+    location = serializers.CharField()
+    start_time = serializers.DateTimeField()
+
+
+class MatchUpdateSerializer(serializers.Serializer):
+    location = serializers.CharField(required=False)
+    start_time = serializers.DateTimeField(required=False)
+    status = serializers.CharField(required=False)
+    home_score = serializers.IntegerField(required=False)
+    away_score = serializers.IntegerField(required=False)
 
 
 @extend_schema_view(
@@ -34,140 +63,43 @@ from .auth import get_authenticated_user
 )
 class MatchListCreateView(APIView):
     def get(self, request):
-        # Get authenticated user
-        user = get_authenticated_user(request)
-        if not user:
-            return Response(
-                {"error": "Authentication required"},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
-
-        # Mock database of teams (to determine which matches belong to this nucleo)
-        teams = [
-            {"id": 1, "course_id": 1, "name": "MECT Futebol A", "modality_id": 1},
-            {"id": 2, "course_id": 2, "name": "LEI Futebol A", "modality_id": 1},
-            {"id": 3, "course_id": 1, "name": "MECT Futsal", "modality_id": 2},
-            {"id": 4, "course_id": 1, "name": "MECT Andebol", "modality_id": 5},
-            {"id": 5, "course_id": 3, "name": "LECI Futebol A", "modality_id": 1},
-            {"id": 6, "course_id": 2, "name": "LEI Futsal", "modality_id": 2},
-        ]
-
-        # Mock database of all matches
-        all_matches = [
-            # Futebol matches
-            {
-                "id": 1,
-                "tournament_id": 1,
-                "team_home_id": 1,  # MECT Futebol A
-                "team_away_id": 2,  # LEI Futebol A
-                "location": "Campo 1 - Complexo Desportivo UA",
-                "start_time": "2025-12-10T15:00:00Z",
-                "status": "scheduled",
-                "home_score": None,
-                "away_score": None,
-            },
-            {
-                "id": 2,
-                "tournament_id": 1,
-                "team_home_id": 1,  # MECT Futebol A
-                "team_away_id": 5,  # LECI Futebol A
-                "location": "Campo 2 - Complexo Desportivo UA",
-                "start_time": "2025-12-05T16:00:00Z",
-                "status": "finished",
-                "home_score": 3,
-                "away_score": 1,
-            },
-            # Futsal matches
-            {
-                "id": 3,
-                "tournament_id": 2,
-                "team_home_id": 3,  # MECT Futsal
-                "team_away_id": 6,  # LEI Futsal
-                "location": "Pavilhão A - UA",
-                "start_time": "2025-12-12T18:00:00Z",
-                "status": "scheduled",
-                "home_score": None,
-                "away_score": None,
-            },
-            {
-                "id": 4,
-                "tournament_id": 2,
-                "team_home_id": 6,  # LEI Futsal
-                "team_away_id": 3,  # MECT Futsal
-                "start_time": "2025-12-01T17:30:00Z",
-                "location": "Pavilhão B - UA",
-                "status": "finished",
-                "home_score": 2,
-                "away_score": 2,
-            },
-            # Andebol match
-            {
-                "id": 5,
-                "tournament_id": 3,
-                "team_home_id": 4,  # MECT Andebol
-                "team_away_id": 2,  # LEI Futebol A (cross-sport friendly match - unlikely but for variety)
-                "location": "Campo 3 - Complexo Desportivo UA",
-                "start_time": "2025-12-20T14:00:00Z",
-                "status": "scheduled",
-                "home_score": None,
-                "away_score": None,
-            },
-            # More upcoming matches
-            {
-                "id": 6,
-                "tournament_id": 1,
-                "team_home_id": 2,  # LEI Futebol A
-                "team_away_id": 5,  # LECI Futebol A
-                "location": "Campo 1 - Complexo Desportivo UA",
-                "start_time": "2025-12-18T16:00:00Z",
-                "status": "scheduled",
-                "home_score": None,
-                "away_score": None,
-            },
-            {
-                "id": 7,
-                "tournament_id": 1,
-                "team_home_id": 5,  # LECI Futebol A
-                "team_away_id": 1,  # MECT Futebol A
-                "location": "Campo 2 - Complexo Desportivo UA",
-                "start_time": "2025-12-25T15:00:00Z",
-                "status": "scheduled",
-                "home_score": None,
-                "away_score": None,
-            },
-        ]
-
-        # If user is geral admin (role "geral"), return all matches
-        # If user is nucleo admin, filter by their teams
-        if user.get("role") == "geral":
-            return Response(all_matches)
-
-        # Get team IDs for this nucleo
-        nucleo_team_ids = [
-            team["id"] for team in teams if team["course_id"] == user["course_id"]
-        ]
-
-        # Filter matches where either home or away team belongs to this nucleo
-        filtered_matches = [
-            match
-            for match in all_matches
-            if match["team_home_id"] in nucleo_team_ids
-            or match["team_away_id"] in nucleo_team_ids
-        ]
-
-        return Response(filtered_matches)
+        matchs = Match.objects.all()
+        return Response(
+            [match.to_json() for match in matchs], status=status.HTTP_200_OK
+        )
 
     def post(self, request):
         serializer = MatchCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        dummy_response = {
-            "id": 3,
-            "status": "scheduled",
-            "home_score": None,
-            "away_score": None,
-            **serializer.validated_data,
-        }
-        return Response(dummy_response, status=status.HTTP_201_CREATED)
+
+        # Create the match
+        match = Match.objects.create(
+            team_home=Team.objects.get(id=serializer.validated_data["team_home_id"]),
+            team_away=Team.objects.get(id=serializer.validated_data["team_away_id"]),
+            location=serializer.validated_data["location"],
+            start_time=serializer.validated_data["start_time"],
+            created_by="00000000-0000-0000-0000-000000000000",
+        )
+
+        # Add the match to the tournament's matches
+        try:
+            tournament = Tournament.objects.get(
+                id=serializer.validated_data["tournament_id"]
+            )
+            tournament.matches.add(match)
+            tournament.save()
+        except Tournament.DoesNotExist:
+            match.delete()  # Clean up the created match
+            return Response(
+                {"detail": "Tournament not found."}, status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            match.delete()  # Clean up the created match
+            return Response(
+                {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        return Response(match.to_json(), status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
@@ -189,127 +121,40 @@ class MatchListCreateView(APIView):
     ),
 )
 class MatchDetailView(APIView):
-    # Mock database of all matches (same as in MatchListCreateView)
-    MOCK_MATCHES = [
-        {
-            "id": 1,
-            "tournament_id": 1,
-            "team_home_id": 1,
-            "team_away_id": 2,
-            "location": "Campo 1 - Complexo Desportivo UA",
-            "start_time": "2025-12-10T15:00:00Z",
-            "status": "scheduled",
-            "home_score": None,
-            "away_score": None,
-        },
-        {
-            "id": 2,
-            "tournament_id": 1,
-            "team_home_id": 1,
-            "team_away_id": 5,
-            "location": "Campo 2 - Complexo Desportivo UA",
-            "start_time": "2025-12-05T16:00:00Z",
-            "status": "finished",
-            "home_score": 3,
-            "away_score": 1,
-        },
-        {
-            "id": 3,
-            "tournament_id": 2,
-            "team_home_id": 3,
-            "team_away_id": 6,
-            "location": "Pavilhão A - UA",
-            "start_time": "2025-12-12T18:00:00Z",
-            "status": "scheduled",
-            "home_score": None,
-            "away_score": None,
-        },
-        {
-            "id": 4,
-            "tournament_id": 2,
-            "team_home_id": 6,
-            "team_away_id": 3,
-            "start_time": "2025-12-01T17:30:00Z",
-            "location": "Pavilhão B - UA",
-            "status": "finished",
-            "home_score": 2,
-            "away_score": 2,
-        },
-        {
-            "id": 5,
-            "tournament_id": 3,
-            "team_home_id": 4,
-            "team_away_id": 2,
-            "location": "Campo 3 - Complexo Desportivo UA",
-            "start_time": "2025-12-20T14:00:00Z",
-            "status": "scheduled",
-            "home_score": None,
-            "away_score": None,
-        },
-        {
-            "id": 6,
-            "tournament_id": 1,
-            "team_home_id": 2,
-            "team_away_id": 5,
-            "location": "Campo 1 - Complexo Desportivo UA",
-            "start_time": "2025-12-18T16:00:00Z",
-            "status": "scheduled",
-            "home_score": None,
-            "away_score": None,
-        },
-        {
-            "id": 7,
-            "tournament_id": 1,
-            "team_home_id": 5,
-            "team_away_id": 1,
-            "location": "Campo 2 - Complexo Desportivo UA",
-            "start_time": "2025-12-25T15:00:00Z",
-            "status": "scheduled",
-            "home_score": None,
-            "away_score": None,
-        },
-    ]
 
     def get(self, request, match_id):
-        # Find match by ID
-        match = next((m for m in self.MOCK_MATCHES if str(m["id"]) == match_id), None)
-        if not match:
-            return Response(
-                {"error": "Match not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-        return Response(match)
+        match = Match.objects.get(id=match_id)
+
+        return Response(match.to_json(), status=status.HTTP_200_OK)
 
     def put(self, request, match_id):
-        # Find match by ID
-        match = next((m for m in self.MOCK_MATCHES if m["id"] == match_id), None)
-        if not match:
-            return Response(
-                {"error": "Match not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
         serializer = MatchUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Update match with provided fields
-        updated_match = {**match}
-        for field, value in serializer.validated_data.items():
-            updated_match[field] = value
+        match = Match.objects.get(id=match_id)
 
-        return Response(updated_match)
+        if "location" in serializer.validated_data:
+            match.location = serializer.validated_data["location"]
+        if "start_time" in serializer.validated_data:
+            match.start_time = serializer.validated_data["start_time"]
+        if "status" in serializer.validated_data:
+            match.status = serializer.validated_data["status"]
+
+        # scores must be provided together
+        if not all(
+            field in serializer.validated_data for field in ("home_score", "away_score")
+        ):
+            raise serializers.ValidationError(
+                "Both home_score and away_score must be provided together."
+            )
+        else:
+            match.home_score = serializer.validated_data["home_score"]
+            match.away_score = serializer.validated_data["away_score"]
+
+        match.save()
+        return Response(match.to_json(), status=status.HTTP_200_OK)
 
     def delete(self, request, match_id):
-        # Find match by ID
-        match = next((m for m in self.MOCK_MATCHES if m["id"] == match_id), None)
-        if not match:
-            return Response(
-                {"error": "Match not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        # In a real implementation, we would delete from database
-        # For now, just return success
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -323,17 +168,7 @@ class MatchDetailView(APIView):
 def match_result(request, match_id):
     serializer = MatchResultSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    dummy_response = {
-        "id": match_id,
-        "tournament_id": 1,
-        "team_home_id": 1,
-        "team_away_id": 2,
-        "location": "Campo 1",
-        "start_time": "2025-02-10T15:00:00Z",
-        "status": "finished",
-        **serializer.validated_data,
-    }
-    return Response(dummy_response)
+    return Response({}, status=status.HTTP_200_OK)
 
 
 @extend_schema(
@@ -346,13 +181,50 @@ def match_result(request, match_id):
 def match_lineup(request, match_id):
     serializer = MatchLineupSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    dummy_response = {
-        "match_id": match_id,
-        "team_id": serializer.validated_data.get("team_id"),
-        "players": serializer.validated_data.get("players"),
-        "message": "Lineup assigned successfully",
-    }
-    return Response(dummy_response)
+
+    try:
+        match = Match.objects.get(id=match_id)
+        team = Team.objects.get(id=serializer.validated_data["team_id"])
+    except Match.DoesNotExist:
+        return Response(
+            {"detail": "Match not found."}, status=status.HTTP_404_NOT_FOUND
+        )
+    except Team.DoesNotExist:
+        return Response({"detail": "Team not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    lineups: List[Lineup] = []
+    for player_data in serializer.validated_data["players"]:
+        try:
+            player = Student.objects.get(id=player_data["player_id"])
+        except Student.DoesNotExist:
+            return Response(
+                {"detail": f"Player with ID {player_data['player_id']} not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        lineup = Lineup.objects.create(
+            match=match,
+            team=team,
+            player=player,
+            jersey_number=player_data["jersey_number"],
+            is_starter=player_data["is_starter"],
+        )
+        lineups.append(lineup)
+
+    return Response(
+        [
+            {
+                "id": lineup.id,
+                "match_id": lineup.match.id,
+                "team_id": lineup.team.id,
+                "player_id": lineup.player.id,
+                "jersey_number": lineup.jersey_number,
+                "is_starter": lineup.is_starter,
+            }
+            for lineup in lineups
+        ],
+        status=status.HTTP_200_OK,
+    )
 
 
 @extend_schema(
@@ -365,14 +237,7 @@ def match_lineup(request, match_id):
 def match_comments(request, match_id):
     serializer = MatchCommentSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    dummy_response = {
-        "id": 1,
-        "match_id": match_id,
-        "message": serializer.validated_data.get("message"),
-        "created_at": "2025-12-01T12:00:00Z",
-        "author": "Admin User",
-    }
-    return Response(dummy_response, status=status.HTTP_201_CREATED)
+    return Response({}, status=status.HTTP_201_CREATED)
 
 
 @extend_schema(
