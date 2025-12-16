@@ -40,7 +40,7 @@ const FormatosPontuacao = () => {
   const fetchScoringFormats = async () => {
 	try {
 	//   setError('');
-	  const formats = await scoringFormatsApi.getAll();
+	  const formats = await Promise.resolve(scoringFormatsApi.getAll());
 	  setScoringFormats(formats);
 	} catch (err) {
 	  console.error('Failed to fetch scoring formats:', err);
@@ -50,7 +50,7 @@ const FormatosPontuacao = () => {
 
   useEffect(() => {
 	fetchScoringFormats();
-  }, []);
+  });
 
   const handleAddEscalao = () => {
     const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
