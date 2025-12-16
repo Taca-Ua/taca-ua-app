@@ -127,4 +127,10 @@ urlpatterns = [
         name="public-rankings-general",
     ),
     path("public/seasons", views.public_season_list, name="public-season-list"),
+    path("public/tournaments", views.tournaments_public, name="public-tournament-list"),
+    path(
+        "public/tournaments/<tournament_id>",
+        views.get_tournament_public,
+        name="public-tournament-detail",
+    ),
 ]

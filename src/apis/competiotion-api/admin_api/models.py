@@ -576,6 +576,9 @@ class Tournament(models.Model):
 
         return 0
 
+    def get_final_rankings(self):
+        return [rp.to_json() for rp in self.ranking_positions.all()]
+
     class Meta:
         db_table = "tournament"
         verbose_name = "Tournament"
@@ -612,6 +615,8 @@ class TournamentRankingPosition(models.Model):
             "team_id": str(self.team.id),
             "team_name": self.team.name,
             "position": self.position,
+            "team_course_name": str(self.team.course.name),
+            "points": self.tournament.get_points_for_position(self.position),
         }
 
     def __str__(self):

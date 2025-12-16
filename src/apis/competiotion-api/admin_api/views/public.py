@@ -6,7 +6,17 @@ from rest_framework import serializers, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from ..models import Course, Match, Modality, TournamentRankingPosition
+from ..models import (
+    Course,
+    Match,
+    Modality,
+    Tournament,
+    TournamentRankingPosition,
+    TournamentStatus,
+)
+
+SEASON_ID = 1
+SEASON_YEAR = 2024
 
 
 class GetMatchesParamsSerializer(serializers.Serializer):
@@ -117,8 +127,6 @@ def rankings_general(request):
     """
 
     # TODO: replace with real season logic when available
-    SEASON_ID = 1
-    SEASON_YEAR = 2024
 
     # Load all ranking positions efficiently
     ranking_positions = TournamentRankingPosition.objects.select_related(
@@ -194,5 +202,78 @@ def public_season_list(request):
                 "status": "draft",
             }
         ],
+        status=status.HTTP_200_OK,
+    )
+
+
+@extend_schema(
+    responses=serializers.ListSerializer(child=serializers.DictField()),
+    description="Endpoint to get the list of tournaments.",
+    tags=["Public API"],
+)
+@api_view(["GET"])
+def tournaments_public(request):
+    """Endpoint to get the list of tournaments."""
+    tournaments = Tournament.objects.filter(status=TournamentStatus.FINISHED)
+
+    return Response(
+        [
+            {
+                "id": str(tournament.id),
+                "name": tournament.name,
+                "modality": {
+                    "id": str(tournament.modality.id),
+                    "name": tournament.modality.name,
+                },
+                "season": {
+                    "id": SEASON_ID,
+                    "year": SEASON_YEAR,
+                },
+                "status": tournament.status,
+                "start_date": tournament.start_date,
+                "team_count": tournament.teams.count(),
+                "rankings": tournament.get_final_rankings(),
+            }
+            for tournament in tournaments
+        ],
+        status=status.HTTP_200_OK,
+    )
+
+
+@extend_schema(
+    responses=serializers.DictField(),
+    description="Endpoint to get the tournaments.",
+    tags=["Public API"],
+)
+@api_view(["GET"])
+def get_tournament_public(request, tournament_id):
+    """Endpoint to get the tournaments."""
+    try:
+        tournament = Tournament.objects.get(
+            id=tournament_id, status=TournamentStatus.FINISHED
+        )
+    except Tournament.DoesNotExist:
+        return Response(
+            {"detail": "Tournament not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    return Response(
+        {
+            "id": str(tournament.id),
+            "name": tournament.name,
+            "modality": {
+                "id": str(tournament.modality.id),
+                "name": tournament.modality.name,
+            },
+            "season": {
+                "id": SEASON_ID,
+                "year": SEASON_YEAR,
+            },
+            "status": tournament.status,
+            "start_date": tournament.start_date,
+            "team_count": tournament.teams.count(),
+            "rankings": tournament.get_final_rankings(),
+        },
         status=status.HTTP_200_OK,
     )

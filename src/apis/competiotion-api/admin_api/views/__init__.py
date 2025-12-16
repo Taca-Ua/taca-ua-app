@@ -15,7 +15,14 @@ from .matches import (
 from .modalities import ModalityDetailView, ModalityListCreateView
 from .modalities_types import ModalityTypeDetailView, ModalityTypeListCreateView
 from .nucleus import NucleoDetailView, NucleoListCreateView
-from .public import calendar, modality_list, public_season_list, rankings_general
+from .public import (
+    calendar,
+    get_tournament_public,
+    modality_list,
+    public_season_list,
+    rankings_general,
+    tournaments_public,
+)
 from .regulations import RegulationDetailView, RegulationListCreateView
 from .seasons import SeasonListCreateView, season_finish, season_start
 from .staff import StaffDetailView, StaffListCreateView
@@ -88,4 +95,6 @@ __all__ = [
     "modality_list",
     "rankings_general",
     "public_season_list",
+    "tournaments_public",
+    "get_tournament_public",
 ]
