@@ -43,10 +43,10 @@ function MemberDetail() {
         setMemberType(type);
 
         if (type === 'participant') {
-          const participant = await participantsApi.getById(id as any);
+          const participant = await participantsApi.getById(id);
           setMember(participant);
         } else {
-          const staff = await staffApi.getById(id as any);
+          const staff = await staffApi.getById(id);
           setMember(staff);
         }
       } catch (err) {
@@ -109,13 +109,13 @@ function MemberDetail() {
       setError(null);
 
       if (memberType === 'participant') {
-        const updatedMember = await participantsApi.update(member.id as any, {
+        const updatedMember = await participantsApi.update(member.id, {
           full_name: editedName,
           is_member: isMember,
         });
         setMember(updatedMember);
       } else if (memberType === 'staff') {
-        const updatedMember = await staffApi.update(member.id as any, {
+        const updatedMember = await staffApi.update(member.id, {
           full_name: editedName,
           contact: editedContact || undefined,
         });
@@ -140,9 +140,9 @@ function MemberDetail() {
       setError(null);
 
       if (memberType === 'participant') {
-        await participantsApi.delete(member.id as any);
+        await participantsApi.delete(member.id);
       } else if (memberType === 'staff') {
-        await staffApi.delete(member.id as any);
+        await staffApi.delete(member.id);
       }
 
       navigate('/nucleo/membros');

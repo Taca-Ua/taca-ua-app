@@ -5,8 +5,6 @@ import {
   participantsApi,
   staffApi,
   type UnifiedMember,
-  type Participant,
-  type Staff
 } from '../../api/members';
 import { coursesApi, type Course } from '../../api/courses';
 
@@ -109,7 +107,7 @@ function Membros() {
         setMembers([...members, { ...newParticipant, memberType: 'participant' }]);
       } else {
         // Validate staff fields - need either contact or staff_number
-        const staffData: any = {
+        const staffData: { full_name: string; contact?: string; staff_number?: string } = {
           full_name: memberName,
         };
 

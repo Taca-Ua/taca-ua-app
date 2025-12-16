@@ -62,7 +62,7 @@ const TorneioDetails = () => {
 
   useEffect(() => {
     fetchData();
-  }, [id]);
+  }, []);
 
   // Get teams filtered by tournament modality
   const availableTeams = useMemo(() => {
