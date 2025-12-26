@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import TournamentCard from '../../components/TournamentCard';
@@ -11,6 +11,7 @@ function ClassificacaoModalidade() {
   const [selectedSeasonId, setSelectedSeasonId] = useState<string>('');
   const [selectedModalityId, setSelectedModalityId] = useState<string>('');
   const [tournaments, setTournaments] = useState<TournamentPublicDetail[]>([]);
+  const [shownTournaments, setShownTournaments] = useState<TournamentPublicDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,6 +79,17 @@ function ClassificacaoModalidade() {
     loadTournaments();
   }, [selectedSeasonId, selectedModalityId]);
 
+  useEffect(() => {
+	// Filter tournaments based on selected modality
+	if (selectedModalityId === 'all') {
+	  setShownTournaments(tournaments);
+	}
+	else {
+		const filtered = tournaments.filter(t => String(t.modality.id) === String(selectedModalityId));
+		setShownTournaments(filtered);
+	}
+	  }, [tournaments, selectedModalityId]);
+
   // Get display names
   const selectedSeasonDisplayName = seasons.find(s => String(s.id) === String(selectedSeasonId))?.year?.toString() || '';
   const selectedModalityName = selectedModalityId === 'all'
@@ -101,7 +113,7 @@ function ClassificacaoModalidade() {
 
           {/* Filters */}
           <div className="flex flex-col md:flex-row gap-4 mb-8">
-            <div className="flex-1">
+            {/* <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Época
               </label>
@@ -117,7 +129,7 @@ function ClassificacaoModalidade() {
                   </option>
                 ))}
               </select>
-            </div>
+            </div> */}
 
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -155,8 +167,8 @@ function ClassificacaoModalidade() {
           ) : (
             /* Tournament Cards */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {tournaments.length > 0 ? (
-                tournaments.map((tournament) => (
+              {shownTournaments.length > 0 ? (
+                shownTournaments.map((tournament) => (
                   <TournamentCard
                     key={tournament.id}
                     id={String(tournament.id)}

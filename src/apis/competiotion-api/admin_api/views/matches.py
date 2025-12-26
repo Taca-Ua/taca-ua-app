@@ -192,6 +192,9 @@ def match_lineup(request, match_id):
     except Team.DoesNotExist:
         return Response({"detail": "Team not found."}, status=status.HTTP_404_NOT_FOUND)
 
+    # Clear existing lineup for the team in this match
+    Lineup.objects.filter(match=match, team=team).delete()
+
     lineups: List[Lineup] = []
     for player_data in serializer.validated_data["players"]:
         try:

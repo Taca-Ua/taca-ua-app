@@ -52,7 +52,7 @@ const JogoDetails = () => {
 
   useEffect(() => {
     fetchMatch();
-  });
+  }, [id]);
 
   const validateForm = (): boolean => {
     if (!formData.location.trim()) {

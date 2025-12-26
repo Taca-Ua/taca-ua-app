@@ -13,7 +13,7 @@ export interface Season {
 }
 
 export interface Modality {
-  id: number;
+  id: string;
   name: string;
   type: string;
   scoring_schema?: Record<string, number>;
