@@ -41,7 +41,10 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "rest_framework",
+    "drf_spectacular",
     "django_prometheus",
+    "admin_api",
 ]
 
 MIDDLEWARE = [
@@ -101,8 +104,12 @@ WSGI_APPLICATION = "competition_api.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get("POSTGRES_DB", "taca_ua"),
+        "USER": os.environ.get("POSTGRES_USER", "user"),
+        "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "password"),
+        "HOST": os.environ.get("POSTGRES_HOST", "postgres"),
+        "PORT": os.environ.get("POSTGRES_PORT", "5432"),
     }
 }
 
@@ -147,3 +154,32 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# REST Framework settings
+REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# DRF Spectacular settings
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Competition API (Admin API)",
+    "DESCRIPTION": "API for managing TACA competitions - used by administrators",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SCHEMA_PATH_PREFIX": "/api/admin",
+}
+
+# MinIO Configuration
+MINIO_ENDPOINT = os.environ.get("MINIO_ENDPOINT", "minio:9000")
+MINIO_ROOT_USER = os.environ.get("MINIO_ROOT_USER", "admin")
+MINIO_ROOT_PASSWORD = os.environ.get("MINIO_ROOT_PASSWORD", "adminadmin")
+MINIO_USE_SSL = os.environ.get("MINIO_USE_SSL", "false").lower() == "true"
+
+# File Upload Settings
+DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB
+
+MINIO_PUBLIC_ENDPOINT = os.environ.get(
+    "MINIO_PUBLIC_ENDPOINT", "http://localhost/files"
+)

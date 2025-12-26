@@ -1,6 +1,6 @@
-FROM node:21-alpine
+FROM node:22-alpine
 WORKDIR /app
-COPY package*.json ./
+COPY src/frontend/public-website/package*.json ./
 RUN npm install
-COPY . .
+COPY src/frontend/public-website .
 CMD ["npm", "run", "dev", "--", "--host"]

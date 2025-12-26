@@ -19,12 +19,21 @@ services:
 
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
+    user: "root"
     ports:
       - "5672:5672"
       - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE:-secret_cookie_change_me}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
 
   postgres:
     image: postgres:15-alpine
@@ -34,6 +43,14 @@ services:
       POSTGRES_DB: taca_ua
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-user}", "-d", "taca_ua"]
+      interval: 10s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
 
   redis:
     image: redis:7-alpine
@@ -87,28 +104,46 @@ services:
 # APIs
   competition-api:
     build:
-      context: ./src/apis/competiotion-api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: src/apis/competiotion-api/Dockerfile.dev
     volumes:
+      - ./src/shared:/tmp
       - ./src/apis/competiotion-api:/app
     environment:
+      - DJANGO_AUTORELOAD_EXTRA_DIRS=/tmp/taca-messaging
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
-      - DATABASE_URL=postgres://user:password@postgres:5432/taca_ua
+      - POSTGRES_DB=taca_ua
+      - POSTGRES_USER=${POSTGRES_USER:-user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - DATABASE_URL=${DATABASE_URL}
       - PYTHONUNBUFFERED=1
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_PUBLIC_ENDPOINT=http://localhost/files
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_USE_SSL=false
     depends_on:
-      - rabbitmq
-      - postgres
-      - loki
+      rabbitmq:
+        condition: service_healthy
+      loki:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
 
   public-api:
     build:
-      context: ./src/apis/public-api
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: src/apis/public-api/Dockerfile.dev
     volumes:
+      - ./src/shared:/tmp
       - ./src/apis/public-api:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -116,16 +151,22 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
+      - DATABASE_URL=${DATABASE_URL}
     depends_on:
-      - rabbitmq
-      - loki
+      rabbitmq:
+        condition: service_healthy
+      loki:
+        condition: service_started
+      postgres:
+        condition: service_healthy
 
 # Microservices
   matches-service:
     build:
-      context: ./src/microservices/matches-service
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: src/microservices/matches-service/Dockerfile.dev
     volumes:
+      - ./src/shared:/tmp
       - ./src/microservices/matches-service:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -133,15 +174,23 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
+      - DATABASE_URL=${DATABASE_URL}
+    ports:
+      - "8001:8000"
     depends_on:
-      - rabbitmq
-      - loki
+      rabbitmq:
+        condition: service_healthy
+      loki:
+        condition: service_started
+      postgres:
+        condition: service_healthy
 
   modalities-service:
     build:
-      context: ./src/microservices/modalities-service
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: src/microservices/modalities-service/Dockerfile.dev
     volumes:
+      - ./src/shared:/tmp
       - ./src/microservices/modalities-service:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -149,15 +198,23 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
+      - DATABASE_URL=${DATABASE_URL}
+    ports:
+      - "8002:8000"
     depends_on:
-      - rabbitmq
-      - loki
+      rabbitmq:
+        condition: service_healthy
+      loki:
+        condition: service_started
+      postgres:
+        condition: service_healthy
 
   ranking-service:
     build:
-      context: ./src/microservices/ranking-service
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: src/microservices/ranking-service/Dockerfile.dev
     volumes:
+      - ./src/shared:/tmp
       - ./src/microservices/ranking-service:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -165,15 +222,23 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
+      - DATABASE_URL=${DATABASE_URL}
+    ports:
+      - "8003:8000"
     depends_on:
-      - rabbitmq
-      - loki
+      rabbitmq:
+        condition: service_healthy
+      loki:
+        condition: service_started
+      postgres:
+        condition: service_healthy
 
   read-model-updater:
     build:
-      context: ./src/microservices/read-model-updater
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: src/microservices/read-model-updater/Dockerfile.dev
     volumes:
+      - ./src/shared:/tmp
       - ./src/microservices/read-model-updater:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -181,15 +246,23 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
+      - DATABASE_URL=${DATABASE_URL}
+    ports:
+      - "8004:8000"
     depends_on:
-      - rabbitmq
-      - loki
+      rabbitmq:
+        condition: service_healthy
+      loki:
+        condition: service_started
+      postgres:
+        condition: service_healthy
 
   tournaments-service:
     build:
-      context: ./src/microservices/tournaments-service
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: src/microservices/tournaments-service/Dockerfile.dev
     volumes:
+      - ./src/shared:/tmp
       - ./src/microservices/tournaments-service:/app
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -197,15 +270,22 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
+      - DATABASE_URL=${DATABASE_URL}
+    ports:
+      - "8005:8000"
     depends_on:
-      - rabbitmq
-      - loki
+      rabbitmq:
+        condition: service_healthy
+      loki:
+        condition: service_started
+      postgres:
+        condition: service_healthy
 
 # Frontend Services
   admin-panel:
     build:
-      context: ./src/frontend/admin-panel
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: src/frontend/admin-panel/Dockerfile
     volumes:
       - ./src/frontend/admin-panel:/app
       - /app/node_modules
@@ -214,8 +294,8 @@ services:
 
   public-website:
     build:
-      context: ./src/frontend/public-website
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: src/frontend/public-website/Dockerfile
     volumes:
       - ./src/frontend/public-website:/app
       - /app/node_modules
@@ -226,3 +306,4 @@ services:
 volumes:
   postgres_data:
   minio_data:
+  rabbitmq_data:
