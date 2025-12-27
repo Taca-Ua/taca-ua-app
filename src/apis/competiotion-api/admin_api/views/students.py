@@ -2,19 +2,17 @@
 Student management views
 """
 
-from datetime import datetime, timezone
-
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ..models import Course, Student
 from ..serializers import (
     StudentCreateSerializer,
     StudentListSerializer,
     StudentUpdateSerializer,
 )
+from ..services.modalities_service import modalities_service_client
 
 
 @extend_schema_view(
@@ -32,55 +30,23 @@ from ..serializers import (
 )
 class StudentListCreateView(APIView):
     def get(self, request):
-        # Get authenticated user
-        # user = get_authenticated_user(request)
-
-        all_students = Student.objects.filter()
-
-        return Response(
-            [
-                {
-                    "id": student.id,
-                    "course_name": student.course.name,
-                    "full_name": student.full_name,
-                    "student_number": student.student_number,
-                    "is_member": student.is_member,
-                }
-                for student in all_students
-            ],
-            status=status.HTTP_200_OK,
-        )
+        all_students = modalities_service_client.list_students()
+        return Response(all_students, status=status.HTTP_200_OK)
 
     def post(self, request):
-        # Get authenticated user
-        # user = get_authenticated_user(request)
-
         serializer = StudentCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        print(serializer.validated_data["course_id"])
-        course = Course.objects.get(id=serializer.validated_data["course_id"])
-
-        member = Student.objects.create(
-            full_name=serializer.validated_data["full_name"],
-            student_number=serializer.validated_data["student_number"],
-            is_member=serializer.validated_data.get("is_member", False),
-            course=course,
-            created_by="00000000-0000-0000-0000-000000000000",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
-        )
-
-        return Response(
+        member = modalities_service_client.create_student(
             {
-                "id": member.id,
-                "course_name": member.course.name,
-                "full_name": member.full_name,
-                "student_number": member.student_number,
-                "is_member": member.is_member,
-            },
-            status=status.HTTP_201_CREATED,
+                "full_name": serializer.validated_data["full_name"],
+                "student_number": serializer.validated_data["student_number"],
+                "is_member": serializer.validated_data.get("is_member", False),
+                "course_id": str(serializer.validated_data["course_id"]),
+            }
         )
+
+        return Response(member, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
@@ -104,54 +70,28 @@ class StudentListCreateView(APIView):
 )
 class StudentDetailView(APIView):
     def get(self, request, student_id):
-        student = Student.objects.get(id=student_id)
-
-        return Response(
-            {
-                "id": student.id,
-                "course_id": student.course.name,
-                "full_name": student.full_name,
-                "student_number": student.student_number,
-                "is_member": student.is_member,
-            },
-            status=status.HTTP_200_OK,
-        )
+        student = modalities_service_client.get_student(student_id)
+        return Response(student, status=status.HTTP_200_OK)
 
     def put(self, request, student_id):
         serializer = StudentUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        student = Student.objects.get(id=student_id)
-
+        update_data = {}
         if "full_name" in serializer.validated_data:
-            student.full_name = serializer.validated_data["full_name"]
+            update_data["full_name"] = serializer.validated_data["full_name"]
         if "course_id" in serializer.validated_data:
-            course = Course.objects.get(id=serializer.validated_data["course_id"])
-            student.course = course
+            update_data["course_id"] = str(serializer.validated_data["course_id"])
         if "student_number" in serializer.validated_data:
-            student.student_number = serializer.validated_data["student_number"]
+            update_data["student_number"] = serializer.validated_data["student_number"]
         if "is_member" in serializer.validated_data:
-            student.is_member = serializer.validated_data["is_member"]
-        student.save()
+            update_data["is_member"] = serializer.validated_data["is_member"]
 
-        return Response(
-            {
-                "id": student.id,
-                "course_id": student.course.id,
-                "full_name": student.full_name,
-                "student_number": student.student_number,
-                "is_member": student.is_member,
-            },
-            status=status.HTTP_200_OK,
-        )
+        student = modalities_service_client.update_student(student_id, update_data)
+        return Response(student, status=status.HTTP_200_OK)
 
     def delete(self, request, student_id):
-        # Get authenticated user
-        # user = get_authenticated_user(request)
-
-        student = Student.objects.get(id=student_id)
-        student.delete()
-
+        modalities_service_client.delete_student(student_id)
         return Response(
             {"detail": "Student deleted successfully."},
             status=status.HTTP_204_NO_CONTENT,

@@ -673,19 +673,24 @@ def delete_all_members():
 def main():
     modality_types_ids = populate_modalities_types()
     print("Populated Modality Types IDs:", modality_types_ids)
+    input("Press Enter to continue...")
 
     modalities = populate_modalidades(modality_types_ids)
     print("Populated Modalities:", [mod["name"] for mod in modalities])
+    input("Press Enter to continue...")
 
     nucleos = populate_nucleos()
     print("Populated Nucleos:", [nucleo["name"] for nucleo in nucleos])
+    input("Press Enter to continue...")
 
     courses = populate_courses(nucleos)
     print("Populated Courses: ", [course["abbreviation"] for course in courses])
+    input("Press Enter to continue...")
 
     # delete_all_members()
     members = populate_members(courses)
     print("Populated Members: ", len(members))
+    input("Press Enter to continue...")
 
 
 if __name__ == "__main__":

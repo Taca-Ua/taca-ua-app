@@ -2,21 +2,18 @@
 Modality management views
 """
 
-from datetime import datetime, timezone
-
-from django.db import IntegrityError
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ..models import Modality, ModalityType
 from ..serializers import (
     ModalityCreateSerializer,
     ModalityListSerializer,
     ModalityUpdateSerializer,
 )
+from ..services.modalities_service import modalities_service_client
 
 
 @extend_schema_view(
@@ -34,62 +31,23 @@ from ..serializers import (
 )
 class ModalityListCreateView(APIView):
     def get(self, request: Request):
-        modalities = Modality.objects.all()
-
-        return Response(
-            [
-                {
-                    "id": str(modality.id),
-                    "name": modality.name,
-                    "modality_type": modality.modality_type.name,
-                }
-                for modality in modalities
-            ]
-        )
+        modalities = modalities_service_client.list_modalities()
+        return Response(modalities)
 
     def post(self, request: Request):
         serializer = ModalityCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # validate modality_type_id if provided
-        modality_type = ModalityType.objects.filter(
-            id=serializer.validated_data.get("modality_type_id", None)
-        ).first()
-        if not modality_type:
-            return Response(
-                {"error": "Invalid modality_type_id"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        try:
-            modality = Modality.objects.create(
-                name=serializer.validated_data["name"],
-                modality_type=modality_type,
-                created_by=getattr(request.user, "id")
-                or "00000000-0000-0000-0000-000000000000",
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc),
-            )
-            modality.save()
-        except IntegrityError as e:
-            return Response(
-                {"error": f"Integrity error creating modality: {str(e)}"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        except Exception as e:
-            return Response(
-                {"error": f"Failed to create modality: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-        return Response(
+        modality = modalities_service_client.create_modality(
             {
-                "id": str(modality.id),
-                "name": modality.name,
-                "modality_type": modality.modality_type.name,
-            },
-            status=status.HTTP_201_CREATED,
+                "name": serializer.validated_data["name"],
+                "modality_type_id": str(
+                    serializer.validated_data.get("modality_type_id")
+                ),
+            }
         )
+
+        return Response(modality, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
@@ -112,62 +70,24 @@ class ModalityListCreateView(APIView):
 )
 class ModalityDetailView(APIView):
     def get(self, request, modality_id):
-        modality = Modality.objects.filter(id=modality_id).first()
-        if not modality:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
-        return Response(
-            {
-                "id": str(modality.id),
-                "name": modality.name,
-                "modality_type": modality.modality_type.name,
-            },
-            status=status.HTTP_200_OK,
-        )
+        modality = modalities_service_client.get_modality(modality_id)
+        return Response(modality, status=status.HTTP_200_OK)
 
     def put(self, request, modality_id):
         serializer = ModalityUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # get modality
-        modality = Modality.objects.filter(id=modality_id).first()
-        if not modality:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
-        # update fields if provided
+        update_data = {}
         if serializer.validated_data.get("name", None) is not None:
-            modality.name = serializer.validated_data["name"]
-
+            update_data["name"] = serializer.validated_data["name"]
         if serializer.validated_data.get("modality_type_id", None) is not None:
-            modality_type = ModalityType.objects.filter(
-                id=serializer.validated_data["modality_type_id"]
-            ).first()
+            update_data["modality_type_id"] = str(
+                serializer.validated_data["modality_type_id"]
+            )
 
-            if not modality_type:
-                return Response(
-                    {"error": "Invalid modality_type_id"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            modality.modality_type = modality_type
-
-        # update timestamp
-        modality.updated_at = datetime.now(timezone.utc)
-        modality.save()
-
-        return Response(
-            {
-                "id": str(modality.id),
-                "name": modality.name,
-                "modality_type": modality.modality_type.name,
-            },
-            status=status.HTTP_200_OK,
-        )
+        modality = modalities_service_client.update_modality(modality_id, update_data)
+        return Response(modality, status=status.HTTP_200_OK)
 
     def delete(self, request, modality_id):
-        modality = Modality.objects.filter(id=modality_id).first()
-        if not modality:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
-        modality.delete()
+        modalities_service_client.delete_modality(modality_id)
         return Response(status=status.HTTP_204_NO_CONTENT)
