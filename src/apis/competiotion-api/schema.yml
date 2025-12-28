@@ -1,0 +1,1548 @@
+openapi: 3.0.3
+info:
+  title: Competition API (Admin API)
+  version: 1.0.0
+  description: API for managing TACA competitions - used by administrators
+paths:
+  /api/admin/courses:
+    get:
+      operationId: courses_list
+      description: List all courses
+      tags:
+      - Course Management
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CourseList'
+          description: ''
+    post:
+      operationId: courses_create
+      description: Create a new course
+      tags:
+      - Course Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CourseCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CourseCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseList'
+          description: ''
+  /api/admin/courses/{course_id}:
+    put:
+      operationId: courses_update
+      description: Update a course
+      parameters:
+      - in: path
+        name: course_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Course Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CourseUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CourseUpdateRequest'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseList'
+          description: ''
+    delete:
+      operationId: courses_destroy
+      description: Delete a course
+      parameters:
+      - in: path
+        name: course_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Course Management
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/admin/matches:
+    get:
+      operationId: matches_list
+      description: List all matches
+      tags:
+      - Match Management
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MatchList'
+          description: ''
+    post:
+      operationId: matches_create
+      description: Create a new match
+      tags:
+      - Match Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MatchCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MatchCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchList'
+          description: ''
+  /api/admin/matches/{match_id}:
+    put:
+      operationId: matches_update
+      description: Update a match
+      parameters:
+      - in: path
+        name: match_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Match Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MatchUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MatchUpdateRequest'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchList'
+          description: ''
+  /api/admin/matches/{match_id}/comments:
+    post:
+      operationId: matches_comments_create
+      description: Add comments to match
+      parameters:
+      - in: path
+        name: match_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Match Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchCommentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MatchCommentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MatchCommentRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          description: No response body
+  /api/admin/matches/{match_id}/lineup:
+    post:
+      operationId: matches_lineup_create
+      description: Assign players to match lineup
+      parameters:
+      - in: path
+        name: match_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Match Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchLineupRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MatchLineupRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MatchLineupRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/admin/matches/{match_id}/result:
+    post:
+      operationId: matches_result_create
+      description: Register match result
+      parameters:
+      - in: path
+        name: match_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Match Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchResultRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MatchResultRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MatchResultRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchList'
+          description: ''
+  /api/admin/matches/{match_id}/sheet:
+    get:
+      operationId: matches_sheet_retrieve
+      description: Generate match sheet PDF
+      parameters:
+      - in: path
+        name: match_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Match Management
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/admin/modalities:
+    get:
+      operationId: modalities_list
+      description: List all modalities
+      tags:
+      - Modality Management
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ModalityList'
+          description: ''
+    post:
+      operationId: modalities_create
+      description: Create a new modality
+      tags:
+      - Modality Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModalityCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ModalityCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ModalityCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModalityList'
+          description: ''
+  /api/admin/modalities/{modality_id}:
+    put:
+      operationId: modalities_update
+      description: Update a modality
+      parameters:
+      - in: path
+        name: modality_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Modality Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModalityUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ModalityUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ModalityUpdateRequest'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModalityList'
+          description: ''
+    delete:
+      operationId: modalities_destroy
+      description: Delete a modality
+      parameters:
+      - in: path
+        name: modality_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Modality Management
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/admin/regulations:
+    get:
+      operationId: regulations_list
+      description: List all regulations
+      tags:
+      - Regulation Management
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RegulationList'
+          description: ''
+    post:
+      operationId: regulations_create
+      description: Upload a new regulation
+      tags:
+      - Regulation Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegulationCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RegulationCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RegulationCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegulationList'
+          description: ''
+  /api/admin/regulations/{regulation_id}:
+    put:
+      operationId: regulations_update
+      description: Update regulation metadata
+      parameters:
+      - in: path
+        name: regulation_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Regulation Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegulationUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RegulationUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RegulationUpdateRequest'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegulationList'
+          description: ''
+    delete:
+      operationId: regulations_destroy
+      description: Delete a regulation
+      parameters:
+      - in: path
+        name: regulation_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Regulation Management
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/admin/seasons:
+    get:
+      operationId: seasons_list
+      description: List all seasons
+      tags:
+      - Season Management
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SeasonList'
+          description: ''
+    post:
+      operationId: seasons_create
+      description: Create a new season
+      tags:
+      - Season Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeasonCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SeasonCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SeasonCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeasonList'
+          description: ''
+  /api/admin/seasons/{season_id}/finish:
+    post:
+      operationId: seasons_finish_create
+      description: Finish a season
+      parameters:
+      - in: path
+        name: season_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Season Management
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeasonList'
+          description: ''
+  /api/admin/seasons/{season_id}/start:
+    post:
+      operationId: seasons_start_create
+      description: Start a season
+      parameters:
+      - in: path
+        name: season_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Season Management
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeasonList'
+          description: ''
+  /api/admin/students:
+    get:
+      operationId: students_list
+      description: List all students of the course
+      tags:
+      - Student Management
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StudentList'
+          description: ''
+    post:
+      operationId: students_create
+      description: Create a new student
+      tags:
+      - Student Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudentCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StudentCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StudentCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentList'
+          description: ''
+  /api/admin/students/{student_id}:
+    put:
+      operationId: students_update
+      description: Update a student
+      parameters:
+      - in: path
+        name: student_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Student Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudentUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StudentUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StudentUpdateRequest'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentList'
+          description: ''
+  /api/admin/teams:
+    get:
+      operationId: teams_list
+      description: List all teams
+      tags:
+      - Team Management
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TeamList'
+          description: ''
+    post:
+      operationId: teams_create
+      description: Create a new team
+      tags:
+      - Team Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TeamCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TeamCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamList'
+          description: ''
+  /api/admin/teams/{team_id}:
+    put:
+      operationId: teams_update
+      description: Update a team
+      parameters:
+      - in: path
+        name: team_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Team Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TeamUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TeamUpdateRequest'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamList'
+          description: ''
+    delete:
+      operationId: teams_destroy
+      description: Delete a team
+      parameters:
+      - in: path
+        name: team_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Team Management
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/admin/tournaments:
+    get:
+      operationId: tournaments_list
+      description: List all tournaments
+      tags:
+      - Tournament Management
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TournamentList'
+          description: ''
+    post:
+      operationId: tournaments_create
+      description: Create a new tournament
+      tags:
+      - Tournament Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TournamentCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TournamentCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TournamentCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TournamentList'
+          description: ''
+  /api/admin/tournaments/{tournament_id}:
+    put:
+      operationId: tournaments_update
+      description: Update a tournament
+      parameters:
+      - in: path
+        name: tournament_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Tournament Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TournamentUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TournamentUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TournamentUpdateRequest'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TournamentList'
+          description: ''
+    delete:
+      operationId: tournaments_destroy
+      description: Delete a tournament
+      parameters:
+      - in: path
+        name: tournament_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Tournament Management
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/admin/tournaments/{tournament_id}/finish:
+    post:
+      operationId: tournaments_finish_create
+      description: Finish a tournament
+      parameters:
+      - in: path
+        name: tournament_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Tournament Management
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TournamentList'
+          description: ''
+  /api/admin/users/nucleo:
+    get:
+      operationId: users_nucleo_list
+      description: List nucleo administrators
+      tags:
+      - User Management
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NucleoAdminList'
+          description: ''
+    post:
+      operationId: users_nucleo_create
+      description: Create nucleo administrator
+      tags:
+      - User Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NucleoAdminCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NucleoAdminCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NucleoAdminCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NucleoAdminList'
+          description: ''
+  /api/admin/users/nucleo/{user_id}:
+    put:
+      operationId: users_nucleo_update
+      description: Update nucleo administrator
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - User Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NucleoAdminUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NucleoAdminUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NucleoAdminUpdateRequest'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NucleoAdminList'
+          description: ''
+    delete:
+      operationId: users_nucleo_destroy
+      description: Delete nucleo administrator
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - User Management
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+components:
+  schemas:
+    CourseCreateRequest:
+      type: object
+      description: Serializer for creating a course
+      properties:
+        name:
+          type: string
+          minLength: 1
+        short_code:
+          type: string
+          minLength: 1
+        color:
+          type: string
+      required:
+      - name
+      - short_code
+    CourseList:
+      type: object
+      description: Serializer for listing courses
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+        short_code:
+          type: string
+        color:
+          type: string
+      required:
+      - id
+      - name
+      - short_code
+    CourseUpdateRequest:
+      type: object
+      description: Serializer for updating a course
+      properties:
+        name:
+          type: string
+          minLength: 1
+        short_code:
+          type: string
+          minLength: 1
+        color:
+          type: string
+    MatchCommentRequest:
+      type: object
+      description: Serializer for adding match comments
+      properties:
+        message:
+          type: string
+          minLength: 1
+      required:
+      - message
+    MatchCreateRequest:
+      type: object
+      description: Serializer for creating a match
+      properties:
+        tournament_id:
+          type: integer
+        team_home_id:
+          type: integer
+        team_away_id:
+          type: integer
+        location:
+          type: string
+          minLength: 1
+        start_time:
+          type: string
+          format: date-time
+      required:
+      - location
+      - start_time
+      - team_away_id
+      - team_home_id
+      - tournament_id
+    MatchLineupRequest:
+      type: object
+      description: Serializer for assigning players to match
+      properties:
+        team_id:
+          type: integer
+        players:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlayerLineupRequest'
+      required:
+      - players
+      - team_id
+    MatchList:
+      type: object
+      description: Serializer for listing matches
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        tournament_id:
+          type: integer
+        team_home_id:
+          type: integer
+        team_away_id:
+          type: integer
+        location:
+          type: string
+        start_time:
+          type: string
+          format: date-time
+        status:
+          allOf:
+          - $ref: '#/components/schemas/MatchListStatusEnum'
+          readOnly: true
+        home_score:
+          type: integer
+          nullable: true
+        away_score:
+          type: integer
+          nullable: true
+      required:
+      - id
+      - location
+      - start_time
+      - status
+      - team_away_id
+      - team_home_id
+      - tournament_id
+    MatchListStatusEnum:
+      enum:
+      - scheduled
+      - finished
+      type: string
+      description: |-
+        * `scheduled` - scheduled
+        * `finished` - finished
+    MatchResultRequest:
+      type: object
+      description: Serializer for registering match result
+      properties:
+        home_score:
+          type: integer
+        away_score:
+          type: integer
+      required:
+      - away_score
+      - home_score
+    MatchUpdateRequest:
+      type: object
+      description: Serializer for updating a match
+      properties:
+        location:
+          type: string
+          minLength: 1
+        start_time:
+          type: string
+          format: date-time
+        team_home_id:
+          type: integer
+        team_away_id:
+          type: integer
+    ModalityCreateRequest:
+      type: object
+      description: Serializer for creating a modality
+      properties:
+        name:
+          type: string
+          minLength: 1
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        scoring_schema:
+          nullable: true
+      required:
+      - name
+      - type
+    ModalityList:
+      type: object
+      description: Serializer for listing modalities
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        scoring_schema:
+          nullable: true
+      required:
+      - id
+      - name
+      - type
+    ModalityUpdateRequest:
+      type: object
+      description: Serializer for updating a modality
+      properties:
+        name:
+          type: string
+          minLength: 1
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        scoring_schema:
+          nullable: true
+    NucleoAdminCreateRequest:
+      type: object
+      description: Serializer for creating nucleo administrator
+      properties:
+        username:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          format: email
+          minLength: 1
+        course_id:
+          type: integer
+        full_name:
+          type: string
+      required:
+      - course_id
+      - email
+      - username
+    NucleoAdminList:
+      type: object
+      description: Serializer for listing nucleo administrators
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        course_id:
+          type: integer
+        full_name:
+          type: string
+      required:
+      - course_id
+      - email
+      - id
+      - username
+    NucleoAdminUpdateRequest:
+      type: object
+      description: Serializer for updating nucleo administrator
+      properties:
+        course_id:
+          type: integer
+        full_name:
+          type: string
+    PlayerLineupRequest:
+      type: object
+      description: Serializer for player in lineup
+      properties:
+        player_id:
+          type: integer
+        jersey_number:
+          type: integer
+      required:
+      - jersey_number
+      - player_id
+    RegulationCreateRequest:
+      type: object
+      description: Serializer for uploading a regulation
+      properties:
+        file:
+          type: string
+          format: binary
+        title:
+          type: string
+          minLength: 1
+        modality_id:
+          type: integer
+          nullable: true
+        description:
+          type: string
+      required:
+      - file
+      - title
+    RegulationList:
+      type: object
+      description: Serializer for listing regulations
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+        description:
+          type: string
+        modality_id:
+          type: integer
+          nullable: true
+        file_url:
+          type: string
+          format: uri
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - file_url
+      - id
+      - title
+    RegulationUpdateRequest:
+      type: object
+      description: Serializer for updating regulation metadata
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        modality_id:
+          type: integer
+          nullable: true
+    SeasonCreateRequest:
+      type: object
+      description: Serializer for creating a season
+      properties:
+        year:
+          type: integer
+      required:
+      - year
+    SeasonList:
+      type: object
+      description: Serializer for listing seasons
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        year:
+          type: integer
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEb4Enum'
+          readOnly: true
+      required:
+      - id
+      - status
+      - year
+    StatusEb4Enum:
+      enum:
+      - draft
+      - active
+      - finished
+      type: string
+      description: |-
+        * `draft` - draft
+        * `active` - active
+        * `finished` - finished
+    StudentCreateRequest:
+      type: object
+      description: Serializer for creating a student
+      properties:
+        full_name:
+          type: string
+          minLength: 1
+        student_number:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          format: email
+        is_member:
+          type: boolean
+          default: false
+      required:
+      - full_name
+      - student_number
+    StudentList:
+      type: object
+      description: Serializer for listing students
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        course_id:
+          type: integer
+        full_name:
+          type: string
+        student_number:
+          type: string
+        email:
+          type: string
+          format: email
+        is_member:
+          type: boolean
+          default: false
+      required:
+      - course_id
+      - full_name
+      - id
+      - student_number
+    StudentUpdateRequest:
+      type: object
+      description: Serializer for updating a student
+      properties:
+        full_name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          format: email
+        is_member:
+          type: boolean
+    TeamCreateRequest:
+      type: object
+      description: Serializer for creating a team
+      properties:
+        modality_id:
+          type: integer
+        name:
+          type: string
+        players:
+          type: array
+          items:
+            type: integer
+      required:
+      - modality_id
+    TeamList:
+      type: object
+      description: Serializer for listing teams
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        modality_id:
+          type: integer
+        course_id:
+          type: integer
+        name:
+          type: string
+        players:
+          type: array
+          items:
+            type: integer
+      required:
+      - course_id
+      - id
+      - modality_id
+    TeamUpdateRequest:
+      type: object
+      description: Serializer for updating a team
+      properties:
+        name:
+          type: string
+        players_add:
+          type: array
+          items:
+            type: integer
+        players_remove:
+          type: array
+          items:
+            type: integer
+    TournamentCreateRequest:
+      type: object
+      description: Serializer for creating a tournament
+      properties:
+        modality_id:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+        season_id:
+          type: integer
+        rules:
+          type: string
+        teams:
+          type: array
+          items:
+            type: integer
+        start_date:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - modality_id
+      - name
+      - season_id
+    TournamentList:
+      type: object
+      description: Serializer for listing tournaments
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        modality_id:
+          type: integer
+        name:
+          type: string
+        season_id:
+          type: integer
+        rules:
+          type: string
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEb4Enum'
+          readOnly: true
+        start_date:
+          type: string
+          format: date-time
+          nullable: true
+        teams:
+          type: array
+          items:
+            type: integer
+      required:
+      - id
+      - modality_id
+      - name
+      - season_id
+      - status
+    TournamentUpdateRequest:
+      type: object
+      description: Serializer for updating a tournament
+      properties:
+        name:
+          type: string
+          minLength: 1
+        rules:
+          type: string
+        teams:
+          type: array
+          items:
+            type: integer
+        start_date:
+          type: string
+          format: date-time
+          nullable: true
+    TypeEnum:
+      enum:
+      - coletiva
+      - individual
+      - mista
+      type: string
+      description: |-
+        * `coletiva` - coletiva
+        * `individual` - individual
+        * `mista` - mista
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

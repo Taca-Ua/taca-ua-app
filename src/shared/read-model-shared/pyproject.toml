@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "taca-read-models"
+version = "0.1.0"
+description = "Shared read models for TACA-UA microservices"
+requires-python = ">=3.10"
+authors = [
+    {name = "TACA-UA Team"}
+]
+dependencies = [
+    "sqlalchemy>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.1.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["taca_models*"]
+
+[tool.setuptools.package-data]
+taca_models = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["taca_models"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-v --tb=short --strict-markers"
+
+[tool.coverage.run]
+source = ["taca_models"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false

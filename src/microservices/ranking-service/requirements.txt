@@ -5,3 +5,4 @@ psycopg2-binary==2.9.11
 sqlalchemy==2.0.44
 prometheus-fastapi-instrumentator==7.1.0
 python-logging-loki==0.3.1
+alembic==1.11.1

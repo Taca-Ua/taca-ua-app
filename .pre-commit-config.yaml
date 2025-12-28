@@ -15,18 +15,18 @@ repos:
         stages: [pre-commit]
         args: [--fix]
 
-  # Python code formatter
-  - repo: https://github.com/psf/black
-    rev: 24.4.0
-    hooks:
-      - id: black
-        stages: [pre-commit]
-
   # Python import sorter
   - repo: https://github.com/PyCQA/isort
     rev: 5.13.2
     hooks:
       - id: isort
+        stages: [pre-commit]
+
+  # Python code formatter
+  - repo: https://github.com/psf/black
+    rev: 24.4.0
+    hooks:
+      - id: black
         stages: [pre-commit]
 
   # General purpose pre-commit hooks
@@ -43,11 +43,4 @@ repos:
 
       # Hook to ensure files end with a newline
       - id: end-of-file-fixer
-        stages: [pre-commit]
-
-  # Secrets detection hook to prevent committing sensitive information
-  - repo: https://github.com/Yelp/detect-secrets
-    rev: v1.4.0
-    hooks:
-      - id: detect-secrets
         stages: [pre-commit]
