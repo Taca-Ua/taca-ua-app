@@ -3,29 +3,47 @@ SQLAlchemy models for Tournaments Service.
 Schema: tournaments
 """
 
-import enum
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import ARRAY, JSON, Column, DateTime, Enum, ForeignKey, Integer, Text
+import sqlalchemy as sa
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Table,
+    Text,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
 
 Base = declarative_base()
 
-
-class TournamentStatus(enum.Enum):
-    """Enum for tournament status"""
-
-    DRAFT = "draft"
-    ACTIVE = "active"
-    FINISHED = "finished"
+# Association table for Tournament-Team many-to-many relationship
+tournament_teams = Table(
+    "tournament_teams",
+    Base.metadata,
+    Column(
+        "tournament_id",
+        UUID(as_uuid=True),
+        ForeignKey("tournaments.tournament.id"),
+        primary_key=True,
+    ),
+    Column(
+        "team_id",
+        UUID(as_uuid=True),
+        primary_key=True,
+    ),
+    schema="tournaments",
+)
 
 
 class Tournament(Base):
-    """
-    Represents a tournament.
-    """
+    """Represents a tournament"""
 
     __tablename__ = "tournament"
     __table_args__ = {"schema": "tournaments"}
@@ -33,65 +51,124 @@ class Tournament(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     modality_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     name = Column(Text, nullable=False)
-    season_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     status = Column(
-        Enum(TournamentStatus), nullable=False, default=TournamentStatus.DRAFT
-    )
-    rules = Column(JSON, nullable=True)
-    teams = Column(ARRAY(UUID(as_uuid=True)), nullable=True)
-    start_date = Column(DateTime, nullable=True)
+        String(20), nullable=False, default="draft", index=True
+    )  # draft, active, finished
+    start_date = Column(DateTime(timezone=True), nullable=True)
     created_by = Column(UUID(as_uuid=True), nullable=False)
     created_at = Column(
-        DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
     updated_at = Column(
-        DateTime, nullable=True, onupdate=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True), onupdate=lambda: datetime.now(timezone.utc)
     )
-    finished_at = Column(DateTime, nullable=True)
+    finished_at = Column(DateTime(timezone=True), nullable=True)
     finished_by = Column(UUID(as_uuid=True), nullable=True)
 
-    def __repr__(self):
-        return f"<Tournament {self.id} - {self.name} ({self.status})>"
+    # Relationships
+    ranking_positions = relationship(
+        "TournamentRankingPosition",
+        back_populates="tournament",
+        cascade="all, delete-orphan",
+    )
+
+    def to_dict(self, include_teams=False, include_ranking=False):
+        result = {
+            "id": str(self.id),
+            "modality_id": str(self.modality_id),
+            "name": self.name,
+            "status": self.status,
+            "start_date": self.start_date.isoformat() if self.start_date else None,
+            "created_by": str(self.created_by),
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "finished_at": self.finished_at.isoformat() if self.finished_at else None,
+            "finished_by": str(self.finished_by) if self.finished_by else None,
+        }
+
+        if include_ranking:
+            result["ranking_positions"] = [
+                rp.to_dict() for rp in self.ranking_positions
+            ]
+
+        return result
 
 
-class Stage(Base):
-    """
-    Represents a stage within a tournament (e.g., group stage, playoffs).
-    """
+class TournamentRankingPosition(Base):
+    """Represents the ranking position of a team in a tournament"""
 
-    __tablename__ = "stage"
-    __table_args__ = {"schema": "tournaments"}
+    __tablename__ = "tournament_ranking_position"
+    __table_args__ = (
+        sa.UniqueConstraint("tournament_id", "team_id", name="uq_tournament_team"),
+        {"schema": "tournaments"},
+    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     tournament_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("tournaments.tournament.id"),
+        ForeignKey("tournaments.tournament.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
-    name = Column(Text, nullable=False)
-    order = Column(Integer, nullable=False)
+    team_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    position = Column(Integer, nullable=False)
+    created_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
 
-    def __repr__(self):
-        return f"<Stage {self.id} - {self.name} (Order: {self.order})>"
+    # Relationships
+    tournament = relationship("Tournament", back_populates="ranking_positions")
+
+    def to_dict(self):
+        return {
+            "id": str(self.id),
+            "tournament_id": str(self.tournament_id),
+            "team_id": str(self.team_id),
+            "position": self.position,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
 
 
-class Journey(Base):
+class OutboxEvent(Base):
     """
-    Represents a journey/round within a stage (e.g., matchday, round).
+    Outbox pattern for reliable event publishing.
+    Events are stored here first, then published by the OutboxPublisher.
     """
 
-    __tablename__ = "journey"
+    __tablename__ = "outbox_event"
     __table_args__ = {"schema": "tournaments"}
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    stage_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("tournaments.stage.id"),
+    event_type = Column(
+        String(255), nullable=False, index=True
+    )  # e.g., 'tournament.created'
+    aggregate_type = Column(
+        String(100), nullable=False, index=True
+    )  # e.g., 'tournament'
+    aggregate_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    payload = Column(sa.JSON, nullable=False)  # Event data
+    published = Column(Boolean, default=False, nullable=False, index=True)
+    published_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
         nullable=False,
-        index=True,
     )
-    number = Column(Integer, nullable=False)
+    retry_count = Column(sa.Integer, default=0, nullable=False)
+    last_error = Column(Text, nullable=True)
 
-    def __repr__(self):
-        return f"<Journey {self.id} - Number {self.number}>"
+    def to_dict(self):
+        return {
+            "id": str(self.id),
+            "event_type": self.event_type,
+            "aggregate_type": self.aggregate_type,
+            "aggregate_id": str(self.aggregate_id),
+            "payload": self.payload,
+            "published": self.published,
+            "published_at": (
+                self.published_at.isoformat() if self.published_at else None
+            ),
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "retry_count": self.retry_count,
+            "last_error": self.last_error,
+        }

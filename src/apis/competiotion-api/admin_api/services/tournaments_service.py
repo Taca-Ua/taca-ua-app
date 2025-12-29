@@ -4,6 +4,7 @@ Service for communicating with tournaments-service microservice
 
 import os
 from typing import Any, Dict, List, Optional
+from uuid import UUID
 
 from .base_service import BaseService
 
@@ -17,177 +18,141 @@ class TournamentsService(BaseService):
         )
         super().__init__(base_url)
 
+    def list_tournaments(
+        self, status_filter: Optional[str] = None, modality_id: Optional[UUID] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        List all tournaments with optional filters
+
+        Args:
+            status_filter: Filter by status (draft, active, finished)
+            modality_id: Filter by modality ID
+
+        Returns:
+            List of tournament dictionaries
+        """
+        params = {}
+        if status_filter:
+            params["status_filter"] = status_filter
+        if modality_id:
+            params["modality_id"] = str(modality_id)
+
+        return self.get("/tournaments", params=params)
+
+    def get_tournament(self, tournament_id: UUID) -> Dict[str, Any]:
+        """
+        Get a tournament by ID
+
+        Args:
+            tournament_id: Tournament ID
+
+        Returns:
+            Tournament dictionary
+        """
+        return self.get(f"/tournaments/{tournament_id}")
+
     def create_tournament(
         self,
-        modality_id: str,
+        modality_id: UUID,
         name: str,
-        season_id: str,
-        created_by: str,
-        rules: Optional[Dict[str, Any]] = None,
-        teams: Optional[List[str]] = None,
+        created_by: UUID,
         start_date: Optional[str] = None,
+        team_ids: Optional[List[UUID]] = None,
     ) -> Dict[str, Any]:
         """
         Create a new tournament
 
         Args:
-            modality_id: UUID of the modality
+            modality_id: ID of the modality
             name: Tournament name
-            season_id: UUID of the season
-            created_by: UUID of the user creating the tournament
-            rules: Optional tournament rules (JSON)
-            teams: Optional list of team UUIDs
-            start_date: Optional start date (ISO 8601)
+            created_by: ID of the user creating the tournament
+            start_date: Optional start date (ISO format)
+            team_ids: Optional list of team IDs
 
         Returns:
-            Created tournament data
+            Created tournament dictionary
         """
         data = {
-            "modality_id": modality_id,
+            "modality_id": str(modality_id),
             "name": name,
-            "season_id": season_id,
-            "created_by": created_by,
+            "created_by": str(created_by),
         }
-
-        if rules is not None:
-            data["rules"] = rules
-        if teams is not None:
-            data["teams"] = teams
-        if start_date is not None:
+        if start_date:
             data["start_date"] = start_date
+        if team_ids:
+            data["team_ids"] = [str(team_id) for team_id in team_ids]
 
-        return self.post("/tournaments", data)
-
-    def list_tournaments(
-        self,
-        modality_id: Optional[str] = None,
-        season_id: Optional[str] = None,
-        status: Optional[str] = None,
-        limit: int = 50,
-        offset: int = 0,
-    ) -> List[Dict[str, Any]]:
-        """
-        List tournaments with optional filters
-
-        Args:
-            modality_id: Filter by modality
-            season_id: Filter by season
-            status: Filter by status (draft, active, finished)
-            limit: Maximum number of results
-            offset: Pagination offset
-
-        Returns:
-            List of tournaments
-        """
-        params = {"limit": limit, "offset": offset}
-
-        if modality_id:
-            params["modality_id"] = modality_id
-        if season_id:
-            params["season_id"] = season_id
-        if status:
-            params["status"] = status
-
-        return self.get("/tournaments", params=params)
-
-    def get_tournament(self, tournament_id: str) -> Dict[str, Any]:
-        """
-        Get tournament details
-
-        Args:
-            tournament_id: UUID of the tournament
-
-        Returns:
-            Tournament data
-        """
-        return self.get(f"/tournaments/{tournament_id}")
+        return self.post("/tournaments", data=data)
 
     def update_tournament(
         self,
-        tournament_id: str,
-        updated_by: str,
+        tournament_id: UUID,
         name: Optional[str] = None,
-        rules: Optional[Dict[str, Any]] = None,
-        teams: Optional[List[str]] = None,
         start_date: Optional[str] = None,
+        status: Optional[str] = None,
+        teams_add: Optional[List[UUID]] = None,
+        teams_remove: Optional[List[UUID]] = None,
     ) -> Dict[str, Any]:
         """
         Update a tournament
 
         Args:
-            tournament_id: UUID of the tournament
-            updated_by: UUID of the user updating
-            name: Optional new name
-            rules: Optional new rules
-            teams: Optional new team list (replaces existing)
-            start_date: Optional new start date
+            tournament_id: Tournament ID
+            name: New tournament name
+            start_date: New start date (ISO format)
+            status: New status (draft, active, finished)
+            teams_add: Team IDs to add
+            teams_remove: Team IDs to remove
 
         Returns:
-            Updated tournament data
+            Updated tournament dictionary
         """
-        data = {"updated_by": updated_by}
-
+        data = {}
         if name is not None:
             data["name"] = name
-        if rules is not None:
-            data["rules"] = rules
-        if teams is not None:
-            data["teams"] = teams
         if start_date is not None:
             data["start_date"] = start_date
+        if status is not None:
+            data["status"] = status
+        if teams_add is not None:
+            data["teams_add"] = [str(team_id) for team_id in teams_add]
+        if teams_remove is not None:
+            data["teams_remove"] = [str(team_id) for team_id in teams_remove]
 
-        return self.put(f"/tournaments/{tournament_id}", data)
+        return self.put(f"/tournaments/{tournament_id}", data=data)
 
-    def add_teams(self, tournament_id: str, team_ids: List[str]) -> Dict[str, Any]:
-        """
-        Add teams to tournament
-
-        Args:
-            tournament_id: UUID of the tournament
-            team_ids: List of team UUIDs to add
-
-        Returns:
-            Response data
-        """
-        data = {"team_ids": team_ids}
-        return self.post(f"/tournaments/{tournament_id}/teams", data)
-
-    def remove_teams(self, tournament_id: str, team_ids: List[str]) -> Dict[str, Any]:
-        """
-        Remove teams from tournament
-
-        Args:
-            tournament_id: UUID of the tournament
-            team_ids: List of team UUIDs to remove
-
-        Returns:
-            Response data
-        """
-        data = {"team_ids": team_ids}
-        return self.delete(f"/tournaments/{tournament_id}/teams", data)
-
-    def finish_tournament(self, tournament_id: str, finished_by: str) -> Dict[str, Any]:
-        """
-        Finish a tournament
-
-        Args:
-            tournament_id: UUID of the tournament
-            finished_by: UUID of the user finishing the tournament
-
-        Returns:
-            Updated tournament data
-        """
-        data = {"finished_by": finished_by}
-        return self.post(f"/tournaments/{tournament_id}/finish", data)
-
-    def delete_tournament(self, tournament_id: str) -> Dict[str, Any]:
+    def delete_tournament(self, tournament_id: UUID) -> None:
         """
         Delete a tournament
 
         Args:
-            tournament_id: UUID of the tournament
+            tournament_id: Tournament ID
+        """
+        self.delete(f"/tournaments/{tournament_id}")
+
+    def finish_tournament(
+        self,
+        tournament_id: UUID,
+        ranking_entries: List[Dict[str, Any]],
+        finished_by: UUID,
+    ) -> Dict[str, Any]:
+        """
+        Mark a tournament as finished and set final rankings
+
+        Args:
+            tournament_id: Tournament ID
+            ranking_entries: List of dicts with team_id and position
+            finished_by: ID of the user finishing the tournament
 
         Returns:
-            Empty dict on success
+            Updated tournament dictionary
         """
-        return self.delete(f"/tournaments/{tournament_id}")
+        data = {
+            "ranking_entries": ranking_entries,
+            "finished_by": str(finished_by),
+        }
+        return self.post(f"/tournaments/{tournament_id}/finish", data=data)
+
+
+# Singleton instance
+tournaments_service = TournamentsService()
