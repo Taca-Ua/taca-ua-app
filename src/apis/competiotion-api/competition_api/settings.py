@@ -159,7 +159,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # REST Framework settings
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_ROUTER_TRAILING_SLASH": False,
 }
+APPEND_SLASH = True
 
 # DRF Spectacular settings
 SPECTACULAR_SETTINGS = {

@@ -1,42 +1,188 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Sidebar from '../../components/geral_navbar';
-import { modalitiesApi, type Modality } from '../../api/modalities';
-import { scoringFormatsApi } from '../../api/scoring-formats';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import Sidebar from "../../components/geral_navbar";
+import { modalitiesApi, type Modality } from "../../api/modalities";
+import { scoringFormatsApi } from "../../api/scoring-formats";
 
 interface ModalityType {
-	  id: string;
-	  name: string;
+  id: string;
+  name: string;
 }
 
-const ModalityEntry = (mod: Modality) => {
-	const navigate = useNavigate();
+const MoadlitiesList = (modalities: Modality[]) => {
+  if (modalities.length === 0) {
+    return (
+      <p className="text-gray-500 text-center py-8">
+        Nenhuma modalidade encontrada.
+      </p>
+    );
+  }
 
-	console.log("Rendering modality:", `/geral/modalidades/${mod.id}`);
+  const ModalityEntry = (mod: Modality) => {
+    const navigate = useNavigate();
+    return (
+      <div
+        key={mod.id}
+        onClick={() => navigate(`/geral/modalidades/${mod.id}`)}
+        className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer transition-colors flex justify-between items-center"
+      >
+        <span className="text-gray-800 font-medium">{mod.name}</span>
+        <span className="text-gray-600 text-sm capitalize">
+          Tipo: {mod.modality_type_name}
+        </span>
+      </div>
+    );
+  };
 
-	return <div
-		key={mod.id}
-		onClick={() => navigate(`/geral/modalidades/${mod.id}`)}
-		className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer transition-colors flex justify-between items-center"
-		>
-		<span className="text-gray-800 font-medium">{mod.name}</span>
-		<span className="text-gray-600 text-sm capitalize">
-			Tipo: {mod.modality_type}
-		</span>
-	</div>
-}
+  return (
+    <div className="space-y-3">
+      {modalities.map((mod) => (
+        <ModalityEntry key={mod.id} {...mod} />
+      ))}
+    </div>
+  );
+};
 
+const CreateModalityModal = ({
+  modalityTypes,
+  setModalityTypes,
+  addModality,
+  onClose,
+}: {
+  modalityTypes: ModalityType[];
+  setModalityTypes: React.Dispatch<React.SetStateAction<ModalityType[]>>;
+  addModality: (modality: Modality) => void;
+  onClose: () => void;
+}) => {
+  const [newModalityName, setNewModalityName] = useState("");
+  const [modalityType, setModalityType] = useState("");
+  const [error, setError] = useState("");
+
+  // Fetch modality types on mount if empty
+  useEffect(() => {
+    const fetchModalityTypes = async () => {
+      try {
+        const data = await scoringFormatsApi.getAllSimplified();
+        setModalityTypes(data);
+      } catch (err) {
+        console.error("Failed to fetch modality types:", err);
+      }
+    };
+
+    if (modalityTypes.length === 0) {
+      fetchModalityTypes();
+    }
+  }, []);
+
+  const handleAddModality = async () => {
+    if (!newModalityName.trim()) {
+      setError("Por favor, preencha o nome da modalidade.");
+      return;
+    }
+
+    if (!modalityType) {
+      setError("Por favor, selecione o tipo.");
+      return;
+    }
+
+    try {
+      const newModality = await modalitiesApi.create({
+        name: newModalityName,
+        modality_type_id: modalityType,
+      });
+
+      addModality(newModality);
+      setError("");
+
+      // Reset
+      setNewModalityName("");
+      setModalityType("");
+      onClose();
+    } catch (err) {
+      console.error("Failed to create modality:", err);
+      setError("Erro ao criar modalidade");
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
+      <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
+        <h2 className="text-2xl font-bold mb-6 text-gray-800">
+          Adicionar Modalidade
+        </h2>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
+            {error}
+          </div>
+        )}
+
+        <div className="space-y-4">
+          {/* Name */}
+          <div>
+            <label className="block text-gray-700 font-medium mb-2">
+              Nome da Modalidade <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={newModalityName}
+              onChange={(e) => setNewModalityName(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+              placeholder="Digite o nome"
+            />
+          </div>
+
+          {/* Type */}
+          <div>
+            <label className="block text-gray-700 font-medium mb-2">
+              Tipo <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={modalityType}
+              onChange={(e) => setModalityType(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+            >
+              <option value="">Selecionar Tipo</option>
+              {modalityTypes.map((type) => (
+                <option key={type.id} value={type.id}>
+                  {type.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-4 mt-6">
+          <button
+            onClick={() => {
+              onClose();
+              setNewModalityName("");
+              setModalityType("");
+              setError("");
+            }}
+            className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleAddModality}
+            className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
+          >
+            Adicionar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Modalities = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newModalityName, setNewModalityName] = useState('');
-  const [modalityType, setModalityType] = useState('');
-  const [modalityTypes, setModalityTypes] = useState<ModalityType[]>([]);
-  const [newScoringSchema, setNewScoringSchema] = useState('');
+  const [loading, setLoading] = useState(true);
 
   const [modalities, setModalities] = useState<Modality[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [modalityTypes, setModalityTypes] = useState<ModalityType[]>([]);
 
   // Fetch modalities on mount
   useEffect(() => {
@@ -45,10 +191,8 @@ const Modalities = () => {
         setLoading(true);
         const data = await modalitiesApi.getAll();
         setModalities(data);
-        setError('');
       } catch (err) {
-        console.error('Failed to fetch modalities:', err);
-        setError('Erro ao carregar modalidades');
+        console.error("Failed to fetch modalities:", err);
       } finally {
         setLoading(false);
       }
@@ -57,60 +201,8 @@ const Modalities = () => {
     fetchData();
   }, []);
 
-  // Fetch modality types on mount
-  useEffect(() => {
-	const fetchModalityTypes = async () => {
-	  try {
-		const data = await scoringFormatsApi.getAll();
-		setModalityTypes(data);
-	  } catch (err) {
-		console.error('Failed to fetch modality types:', err);
-	  }
-	};
-
-	fetchModalityTypes();
-  }, []);
-
-  const handleAddModality = async () => {
-    if (!newModalityName.trim()) {
-      setError('Por favor, preencha o nome da modalidade.');
-      return;
-    }
-
-    if (!modalityType) {
-      setError('Por favor, selecione o tipo.');
-      return;
-    }
-
-    try {
-      let scoringSchema: Record<string, number> | null = null;
-      if (newScoringSchema.trim()) {
-        try {
-          scoringSchema = JSON.parse(newScoringSchema);
-        } catch {
-          setError('Scoring schema inválido. Use formato JSON válido.');
-          return;
-        }
-      }
-
-      const newModality = await modalitiesApi.create({
-        name: newModalityName,
-        modality_type_id: modalityType,
-        scoring_schema: scoringSchema,
-      });
-
-      setModalities([...modalities, newModality]);
-      setError('');
-
-      // Reset
-      setNewModalityName('');
-      setModalityType('');
-      setNewScoringSchema('');
-      setIsModalOpen(false);
-    } catch (err) {
-      console.error('Failed to create modality:', err);
-      setError('Erro ao criar modalidade');
-    }
+  const addModality = (modality: Modality) => {
+    setModalities([...modalities, modality]);
   };
 
   if (loading) {
@@ -144,102 +236,19 @@ const Modalities = () => {
 
           {/* Modalities List */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="space-y-3">
-              {modalities.length > 0 ? (
-                modalities.map((mod) => (
-                  <ModalityEntry key={mod.id} {...mod} />
-                ))
-              ) : (
-                <p className="text-gray-500 text-center py-8">
-                  Nenhuma modalidade encontrada.
-                </p>
-              )}
-            </div>
+            {MoadlitiesList(modalities)}
           </div>
         </div>
       </div>
 
       {/* Add Modality Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800">Adicionar Modalidade</h2>
-
-            {error && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-                {error}
-              </div>
-            )}
-
-            <div className="space-y-4">
-              {/* Name */}
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">
-                  Nome da Modalidade <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={newModalityName}
-                  onChange={(e) => setNewModalityName(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  placeholder="Digite o nome"
-                />
-              </div>
-
-              {/* Type */}
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">
-                  Tipo <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={modalityType}
-                  onChange={(e) => setModalityType(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                  <option value="">Selecionar Tipo</option>
-                  {modalityTypes.map((type) => (
-					<option key={type.id} value={type.id}>{type.name}</option>
-				  ))}
-                </select>
-              </div>
-
-              {/* Scoring Schema (JSON) */}
-              {/* <div>
-                <label className="block text-gray-700 font-medium mb-2">
-                  Scoring Schema (JSON)
-                </label>
-                <textarea
-                  value={newScoringSchema}
-                  onChange={(e) => setNewScoringSchema(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 min-h-[100px]"
-                  placeholder='{"win": 3, "draw": 1, "loss": 0}'
-                />
-              </div> */}
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-4 mt-6">
-              <button
-                onClick={() => {
-                  setIsModalOpen(false);
-                  setNewModalityName('');
-                  setModalityType('');
-                  setNewScoringSchema('');
-                  setError('');
-                }}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleAddModality}
-                className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
-              >
-                Adicionar
-              </button>
-            </div>
-          </div>
-        </div>
+        <CreateModalityModal
+          modalityTypes={modalityTypes}
+          setModalityTypes={setModalityTypes}
+          addModality={addModality}
+          onClose={() => setIsModalOpen(false)}
+        />
       )}
     </div>
   );

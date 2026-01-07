@@ -2,20 +2,49 @@
 Modality management views
 """
 
+from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ..serializers import (
-    ModalityCreateSerializer,
-    ModalityListSerializer,
-    ModalityUpdateSerializer,
-)
 from ..services.modalities_service import modalities_service_client
 
 
+# Serializers
+class ModalityListSerializer(serializers.Serializer):
+    """Serializer for listing modalities"""
+
+    id = serializers.UUIDField()
+    name = serializers.CharField()
+    modality_type_name = serializers.CharField()
+
+
+class ModalityDetailSerializer(serializers.Serializer):
+    """Serializer for modality details"""
+
+    id = serializers.UUIDField()
+    name = serializers.CharField()
+    modality_type_id = serializers.UUIDField()
+    modality_type_name = serializers.CharField()
+
+
+class ModalityCreateSerializer(serializers.Serializer):
+    """Serializer for creating a modality"""
+
+    name = serializers.CharField(required=True)
+    modality_type_id = serializers.UUIDField(required=False)
+
+
+class ModalityUpdateSerializer(serializers.Serializer):
+    """Serializer for updating a modality"""
+
+    name = serializers.CharField(required=False)
+    modality_type_id = serializers.UUIDField(required=False)
+
+
+# Views
 @extend_schema_view(
     get=extend_schema(
         responses=ModalityListSerializer(many=True),
@@ -32,7 +61,9 @@ from ..services.modalities_service import modalities_service_client
 class ModalityListCreateView(APIView):
     def get(self, request: Request):
         modalities = modalities_service_client.list_modalities()
-        return Response(modalities)
+        serializer = ModalityListSerializer(data=modalities, many=True)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request: Request):
         serializer = ModalityCreateSerializer(data=request.data)
@@ -47,18 +78,20 @@ class ModalityListCreateView(APIView):
             }
         )
 
-        return Response(modality, status=status.HTTP_201_CREATED)
+        serializer = ModalityListSerializer(data=modality)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
     get=extend_schema(
-        responses=ModalityListSerializer,
+        responses=ModalityDetailSerializer,
         description="Get a modality by ID",
         tags=["Modality Management"],
     ),
     put=extend_schema(
         request=ModalityUpdateSerializer,
-        responses=ModalityListSerializer,
+        responses=ModalityDetailSerializer,
         description="Update a modality",
         tags=["Modality Management"],
     ),
@@ -71,7 +104,9 @@ class ModalityListCreateView(APIView):
 class ModalityDetailView(APIView):
     def get(self, request, modality_id):
         modality = modalities_service_client.get_modality(modality_id)
-        return Response(modality, status=status.HTTP_200_OK)
+        serializer = ModalityDetailSerializer(data=modality)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, modality_id):
         serializer = ModalityUpdateSerializer(data=request.data)
@@ -86,8 +121,17 @@ class ModalityDetailView(APIView):
             )
 
         modality = modalities_service_client.update_modality(modality_id, update_data)
-        return Response(modality, status=status.HTTP_200_OK)
+        serializer = ModalityDetailSerializer(data=modality)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, modality_id):
         modalities_service_client.delete_modality(modality_id)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# URL patterns
+urlpatterns = [
+    path("", ModalityListCreateView.as_view(), name="modality-list-create"),
+    path("<uuid:modality_id>/", ModalityDetailView.as_view(), name="modality-detail"),
+]

@@ -2,8 +2,10 @@
 Modality management views
 """
 
+from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from rest_framework import status
+from rest_framework import serializers, status
+from rest_framework.decorators import api_view
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -15,6 +17,13 @@ from ..serializers import (
     ModalityTypeUpdateSerializer,
 )
 from ..services.modalities_service import modalities_service_client
+
+
+class ModalityTypeSimpleSerializer(serializers.Serializer):
+    """Serializer for listing modality types simply"""
+
+    id = serializers.UUIDField()
+    name = serializers.CharField()
 
 
 @extend_schema_view(
@@ -96,3 +105,35 @@ class ModalityTypeDetailView(APIView):
             {"detail": "Modality type deleted successfully."},
             status=status.HTTP_204_NO_CONTENT,
         )
+
+
+@extend_schema(
+    responses={200: ModalityTypeSimpleSerializer(many=True)},
+    description="List all modality types simple",
+    tags=["Modality Management"],
+)
+@api_view(["GET"])
+def list_modality_types(request: Request):
+    modality_types = modalities_service_client.list_modality_types()
+    serializer = ModalityTypeSimpleSerializer(data=modality_types, many=True)
+    serializer.is_valid(raise_exception=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+urlpatterns = [
+    path(
+        "",
+        ModalityTypeListCreateView.as_view(),
+        name="modality-type-list-create",
+    ),
+    path(
+        "simple/",
+        list_modality_types,
+        name="modality-type-list-simple",
+    ),
+    path(
+        "<uuid:modality_type_id>/",
+        ModalityTypeDetailView.as_view(),
+        name="modality-type-detail",
+    ),
+]

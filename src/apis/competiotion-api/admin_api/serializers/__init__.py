@@ -17,11 +17,6 @@ from .matches import (
     MatchResultSerializer,
     MatchUpdateSerializer,
 )
-from .modalities import (
-    ModalityCreateSerializer,
-    ModalityListSerializer,
-    ModalityUpdateSerializer,
-)
 from .modality_types import (
     ModalityTypeCreateSerializer,
     ModalityTypeDetailSerializer,
@@ -83,10 +78,6 @@ __all__ = [
     "NucleosListSerializer",
     "NucleosCreateSerializer",
     "NucleosUpdateSerializer",
-    # Modalities
-    "ModalityListSerializer",
-    "ModalityCreateSerializer",
-    "ModalityUpdateSerializer",
     # Tournaments
     "TournamentListSerializer",
     "TournamentCreateSerializer",

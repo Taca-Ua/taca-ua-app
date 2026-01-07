@@ -3,7 +3,7 @@ URL configuration for admin_api app
 Maps endpoints according to API_ENDPOINTS.md specification
 """
 
-from django.urls import path
+from django.urls import include, path
 
 from . import views
 from .views.file_views import FileDeleteView, FileUploadView
@@ -57,22 +57,8 @@ urlpatterns = [
         name="regulation-detail",
     ),
     # Modality Management (RF3)
-    path("modalities", views.ModalityListCreateView.as_view(), name="modality-list"),
-    path(
-        "modalities/<modality_id>",
-        views.ModalityDetailView.as_view(),
-        name="modality-detail",
-    ),
-    path(
-        "modality-types",
-        views.ModalityTypeListCreateView.as_view(),
-        name="modality-type-list",
-    ),
-    path(
-        "modality-types/<modality_type_id>",
-        views.ModalityTypeDetailView.as_view(),
-        name="modality-type-detail",
-    ),
+    path("modalities/", include("admin_api.views.modalities")),
+    path("modality-types/", include("admin_api.views.modalities_types")),
     # Nucleo Management
     path("nucleos", views.NucleoListCreateView.as_view(), name="nucleo-list"),
     path(
