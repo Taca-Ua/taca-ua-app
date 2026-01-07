@@ -10,13 +10,22 @@ class _EscalaoSerializer(serializers.Serializer):
     points = serializers.ListField(child=serializers.IntegerField())
 
 
-class ModalityTypeListSerializer(serializers.Serializer):
-    """Serializer for listing modality types"""
+class ModalityTypeSerializer(serializers.Serializer):
+    """Serializer for modality type details"""
 
     id = serializers.UUIDField()
     name = serializers.CharField()
     description = serializers.CharField()
     escaloes = _EscalaoSerializer(many=True)
+
+    created_at = serializers.DateTimeField(default_timezone=None)
+
+
+class ModalityTypeSimpleSerializer(serializers.Serializer):
+    """Serializer for listing modality types simply"""
+
+    id = serializers.UUIDField()
+    name = serializers.CharField()
 
 
 class ModalityTypeCreateSerializer(serializers.Serializer):
@@ -41,16 +50,3 @@ class ModalityTypeUpdateSerializer(serializers.Serializer):
         required=False, allow_null=True, allow_blank=True
     )
     escaloes = _EscalaoSerializer(many=True, required=False)
-
-
-class ModalityTypeDetailSerializer(serializers.Serializer):
-    """Serializer for modality type details"""
-
-    id = serializers.UUIDField()
-    name = serializers.CharField()
-    description = serializers.CharField()
-    escaloes = _EscalaoSerializer(many=True)
-
-    created_by = serializers.UUIDField()
-    created_at = serializers.DateTimeField(default_timezone=None)
-    updated_at = serializers.DateTimeField(default_timezone=None)

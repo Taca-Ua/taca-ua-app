@@ -2,12 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/geral_navbar";
 import { modalitiesApi, type Modality } from "../../api/modalities";
-import { scoringFormatsApi } from "../../api/scoring-formats";
-
-interface ModalityType {
-  id: string;
-  name: string;
-}
+import { modalityTypesApi, type ModalityTypeSimplified } from "../../api/modality-types";
 
 const MoadlitiesList = (modalities: Modality[]) => {
   if (modalities.length === 0) {
@@ -49,8 +44,8 @@ const CreateModalityModal = ({
   addModality,
   onClose,
 }: {
-  modalityTypes: ModalityType[];
-  setModalityTypes: React.Dispatch<React.SetStateAction<ModalityType[]>>;
+  modalityTypes: ModalityTypeSimplified[];
+  setModalityTypes: React.Dispatch<React.SetStateAction<ModalityTypeSimplified[]>>;
   addModality: (modality: Modality) => void;
   onClose: () => void;
 }) => {
@@ -62,7 +57,7 @@ const CreateModalityModal = ({
   useEffect(() => {
     const fetchModalityTypes = async () => {
       try {
-        const data = await scoringFormatsApi.getAllSimplified();
+        const data = await modalityTypesApi.getAllSimplified();
         setModalityTypes(data);
       } catch (err) {
         console.error("Failed to fetch modality types:", err);
@@ -182,7 +177,7 @@ const Modalities = () => {
   const [loading, setLoading] = useState(true);
 
   const [modalities, setModalities] = useState<Modality[]>([]);
-  const [modalityTypes, setModalityTypes] = useState<ModalityType[]>([]);
+  const [modalityTypes, setModalityTypes] = useState<ModalityTypeSimplified[]>([]);
 
   // Fetch modalities on mount
   useEffect(() => {

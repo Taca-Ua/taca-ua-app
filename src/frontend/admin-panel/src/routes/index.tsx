@@ -99,7 +99,7 @@ export const router = createBrowserRouter([
     element: <ProtectedRoute requiredRole="geral"><Regulamentos /></ProtectedRoute>,
   },
   {
-    path: '/geral/formatos-pontuacao',
+    path: '/geral/formatos-prova',
     element: <ProtectedRoute requiredRole="geral"><FormatosPontuacao /></ProtectedRoute>,
   },
   {

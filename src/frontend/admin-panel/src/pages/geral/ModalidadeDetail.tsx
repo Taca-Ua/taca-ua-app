@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Sidebar from '../../components/geral_navbar';
 import { modalitiesApi, type ModalityDetail } from '../../api/modalities';
-import { scoringFormatsApi } from '../../api/scoring-formats';
+import { modalityTypesApi } from '../../api/modality-types';
 
 interface ModalityType {
 	  id: string;
@@ -30,7 +30,7 @@ const ModalidadeDetailEditModal = ({
   useEffect(() => {
     const fetchModalityTypes = async () => {
       try {
-      const data = await scoringFormatsApi.getAll();
+      const data = await modalityTypesApi.getAll();
       setModalityTypes(data);
       } catch (err) {
       console.error('Failed to fetch modality types:', err);

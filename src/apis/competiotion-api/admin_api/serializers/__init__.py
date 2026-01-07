@@ -19,8 +19,8 @@ from .matches import (
 )
 from .modality_types import (
     ModalityTypeCreateSerializer,
-    ModalityTypeDetailSerializer,
-    ModalityTypeListSerializer,
+    ModalityTypeSerializer,
+    ModalityTypeSimpleSerializer,
     ModalityTypeUpdateSerializer,
 )
 from .nucleus import (
@@ -70,10 +70,10 @@ __all__ = [
     "RegulationCreateSerializer",
     "RegulationUpdateSerializer",
     # Modality Types
-    "ModalityTypeListSerializer",
+    "ModalityTypeSerializer",
+    "ModalityTypeSimpleSerializer",
     "ModalityTypeCreateSerializer",
     "ModalityTypeUpdateSerializer",
-    "ModalityTypeDetailSerializer",
     # Nucleus
     "NucleosListSerializer",
     "NucleosCreateSerializer",

@@ -4,7 +4,7 @@ Modality management views
 
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from rest_framework import serializers, status
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -12,29 +12,22 @@ from rest_framework.views import APIView
 
 from ..serializers import (
     ModalityTypeCreateSerializer,
-    ModalityTypeDetailSerializer,
-    ModalityTypeListSerializer,
+    ModalityTypeSerializer,
+    ModalityTypeSimpleSerializer,
     ModalityTypeUpdateSerializer,
 )
 from ..services.modalities_service import modalities_service_client
 
 
-class ModalityTypeSimpleSerializer(serializers.Serializer):
-    """Serializer for listing modality types simply"""
-
-    id = serializers.UUIDField()
-    name = serializers.CharField()
-
-
 @extend_schema_view(
     get=extend_schema(
-        responses=ModalityTypeListSerializer(many=True),
+        responses=ModalityTypeSerializer(many=True),
         description="List all modality types",
         tags=["Modality Management"],
     ),
     post=extend_schema(
         request=ModalityTypeCreateSerializer,
-        responses=ModalityTypeListSerializer,
+        responses=ModalityTypeSerializer,
         description="Create a new modality type",
         tags=["Modality Management"],
     ),
@@ -61,13 +54,13 @@ class ModalityTypeListCreateView(APIView):
 
 @extend_schema_view(
     get=extend_schema(
-        responses=ModalityTypeDetailSerializer,
+        responses=ModalityTypeSerializer,
         description="Get a modality by ID",
         tags=["Modality Management"],
     ),
     put=extend_schema(
         request=ModalityTypeUpdateSerializer,
-        responses=ModalityTypeDetailSerializer,
+        responses=ModalityTypeSerializer,
         description="Update a modality",
         tags=["Modality Management"],
     ),

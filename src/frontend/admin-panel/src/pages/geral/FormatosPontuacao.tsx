@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Sidebar from "../../components/geral_navbar";
-import { scoringFormatsApi } from "../../api/scoring-formats";
+import { modalityTypesApi } from "../../api/modality-types";
 
 // Types for the scoring format structure
 interface EscalaoRow {
@@ -42,13 +42,13 @@ useEffect(() => {
 
 	(async () => {
 		try {
-			const formats = await scoringFormatsApi.getAll();
+			const formats = await modalityTypesApi.getAll();
 			if (!mounted) return;
 			setScoringFormats(formats);
 		} catch (err) {
 			console.error('Failed to fetch scoring formats:', err);
 			if (!mounted) return;
-			setError('Erro ao carregar formatos de pontuação');
+			setError('Erro ao carregar formatos de prova');
 		}
 	})();
 
@@ -109,7 +109,7 @@ useEffect(() => {
       setError('');
 
     //   TODO: API call to create scoring format
-      const newFormat = await scoringFormatsApi.create({
+      const newFormat = await modalityTypesApi.create({
         name: formatName,
         description: formatDescription || undefined,
         escaloes: escaloes,
@@ -132,7 +132,7 @@ useEffect(() => {
       setIsCreateModalOpen(false);
     } catch (err) {
       console.error('Failed to create scoring format:', err);
-      setError('Erro ao criar formato de pontuação');
+      setError('Erro ao criar formato de prova');
     }
   };
 
@@ -177,7 +177,7 @@ useEffect(() => {
       setError('');
 
       // TODO: API call to update scoring format
-      const updatedFormat = await scoringFormatsApi.update(selectedFormat!.id, {
+      const updatedFormat = await modalityTypesApi.update(selectedFormat!.id, {
         name: formatName,
         description: formatDescription || undefined,
         escaloes: escaloes,
@@ -201,10 +201,10 @@ useEffect(() => {
       setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: [] }]);
       setSelectedFormat(null);
       setIsEditModalOpen(false);
-      alert('Formato de pontuação atualizado com sucesso!');
+      alert('Formato de prova atualizado com sucesso!');
     } catch (err) {
       console.error('Failed to update scoring format:', err);
-      setError('Erro ao atualizar formato de pontuação');
+      setError('Erro ao atualizar formato de prova');
     }
   };
 
@@ -219,15 +219,15 @@ useEffect(() => {
       setError('');
 
       // TODO: API call to delete scoring format
-      await scoringFormatsApi.delete(selectedFormat.id);
+      await modalityTypesApi.delete(selectedFormat.id);
 
       setScoringFormats(scoringFormats.filter(f => f.id !== selectedFormat.id));
       setIsViewModalOpen(false);
       setSelectedFormat(null);
-      alert('Formato de pontuação eliminado com sucesso!');
+      alert('Formato de prova eliminado com sucesso!');
     } catch (err) {
       console.error('Failed to delete scoring format:', err);
-      setError('Erro ao eliminar formato de pontuação');
+      setError('Erro ao eliminar formato de prova');
     }
   };
 
@@ -246,7 +246,7 @@ useEffect(() => {
       <div className="p-8 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Formatos de Pontuação</h1>
+          <h1 className="text-3xl font-bold text-gray-800">Formatos de Prova</h1>
 
           <button
             onClick={() => setIsCreateModalOpen(true)}
@@ -291,7 +291,7 @@ useEffect(() => {
               </div>
             ))
           ) : (
-            <p className="text-gray-500 text-center py-8">Nenhum formato de pontuação encontrado.</p>
+            <p className="text-gray-500 text-center py-8">Nenhum formato de prova encontrado.</p>
           )}
         </div>
       </div>
@@ -300,7 +300,7 @@ useEffect(() => {
       {isCreateModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 overflow-y-auto">
           <div className="bg-white p-8 rounded-lg w-full max-w-4xl my-8">
-            <h2 className="text-2xl font-bold mb-6">Criar Formato de Pontuação</h2>
+            <h2 className="text-2xl font-bold mb-6">Criar Formato de Prova</h2>
 
             {error && (
               <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
@@ -476,7 +476,7 @@ useEffect(() => {
 
             {/* Escalões Table */}
             <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-3">Tabela de Pontuação</h3>
+              <h3 className="text-lg font-semibold mb-3">Tabela de Prova</h3>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse border border-gray-300">
                   <thead>
@@ -558,7 +558,7 @@ useEffect(() => {
       {isEditModalOpen && selectedFormat && (
 		<div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 overflow-y-auto">
           <div className="bg-white p-8 rounded-lg w-full max-w-4xl my-8">
-            <h2 className="text-2xl font-bold mb-6">Editar Formato de Pontuação</h2>
+            <h2 className="text-2xl font-bold mb-6">Editar Formato de Prova</h2>
 
             {error && (
               <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
