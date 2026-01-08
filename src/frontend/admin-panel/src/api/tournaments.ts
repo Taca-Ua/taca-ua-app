@@ -40,26 +40,26 @@ export interface TournamentUpdate {
 
 export const tournamentsApi = {
   async getAll(): Promise<Tournament[]> {
-    return apiClient.get<Tournament[]>('/tournaments');
+    return apiClient.get<Tournament[]>('/tournaments/');
   },
 
   async getById(id: string): Promise<TournamentDetail> {
-    return apiClient.get<TournamentDetail>(`/tournaments/${id}`);
+    return apiClient.get<TournamentDetail>(`/tournaments/${id}/`);
   },
 
   async create(data: TournamentCreate): Promise<TournamentDetail> {
-    return apiClient.post<TournamentDetail>('/tournaments', data);
+    return apiClient.post<TournamentDetail>('/tournaments/', data);
   },
 
   async update(id: string, data: TournamentUpdate): Promise<TournamentDetail> {
-    return apiClient.put<TournamentDetail>(`/tournaments/${id}`, data);
+    return apiClient.put<TournamentDetail>(`/tournaments/${id}/`, data);
   },
 
   async delete(id: string): Promise<void> {
-    return apiClient.delete(`/tournaments/${id}`);
+    return apiClient.delete(`/tournaments/${id}/`);
   },
 
   async finish(id: string, rankings?: { team_id: string; position: number }[]): Promise<TournamentDetail> {
-    return apiClient.post<TournamentDetail>(`/tournaments/${id}/finish`, { "ranking_entries": rankings  });
+    return apiClient.post<TournamentDetail>(`/tournaments/${id}/finish/`, { "ranking_entries": rankings  });
   },
 };

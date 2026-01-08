@@ -5,6 +5,13 @@ Team management serializers
 from rest_framework import serializers
 
 
+class TeamListRequestSerializer(serializers.Serializer):
+    """Serializer for listing teams with filters"""
+
+    modality_id = serializers.UUIDField(required=False)
+    course_id = serializers.UUIDField(required=False)
+
+
 class TeamListSerializer(serializers.Serializer):
     """Serializer for listing teams"""
 

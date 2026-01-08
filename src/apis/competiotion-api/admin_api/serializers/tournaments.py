@@ -9,30 +9,32 @@ class TournamentListSerializer(serializers.Serializer):
     """Serializer for listing tournaments"""
 
     id = serializers.UUIDField(read_only=True)
-    modality_id = serializers.UUIDField(read_only=True)
     name = serializers.CharField()
     status = serializers.ChoiceField(
         choices=["draft", "active", "finished"], read_only=True
     )
-    start_date = serializers.DateTimeField(required=False, allow_null=True)
+    # modality_id = serializers.UUIDField(read_only=True)
+    # start_date = serializers.DateTimeField(required=False, allow_null=True)
 
 
-class TournamentDetailSerializer(TournamentListSerializer):
+class TournamentDetailSerializer(serializers.Serializer):
     """Serializer for tournament details"""
 
-    created_by = serializers.UUIDField(read_only=True)
-    created_at = serializers.DateTimeField(read_only=True)
-    updated_at = serializers.DateTimeField(read_only=True, allow_null=True)
-    finished_at = serializers.DateTimeField(read_only=True, allow_null=True)
-    finished_by = serializers.UUIDField(read_only=True, allow_null=True)
-    ranking_positions = serializers.ListField(required=False, read_only=True)
+    id = serializers.UUIDField(read_only=True)
+    name = serializers.CharField()
+    status = serializers.ChoiceField(
+        choices=["draft", "active", "finished"], read_only=True
+    )
+    modality_id = serializers.UUIDField(read_only=True)
+    modality_name = serializers.CharField(read_only=True)
+    start_date = serializers.DateTimeField(required=False, allow_null=True)
 
 
 class TournamentCreateSerializer(serializers.Serializer):
     """Serializer for creating a tournament"""
 
-    modality_id = serializers.UUIDField(required=True)
     name = serializers.CharField(required=True)
+    modality_id = serializers.UUIDField(required=True)
     team_ids = serializers.ListField(child=serializers.UUIDField(), required=False)
     start_date = serializers.DateTimeField(required=False, allow_null=True)
 

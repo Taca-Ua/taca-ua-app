@@ -162,32 +162,32 @@ const TorneioDetails = () => {
     }
   };
 
-const submitRankings = async () => {
-	if (!tournament) return;
+  const submitRankings = async () => {
+    if (!tournament) return;
 
-	// Allow empty positions — only validate duplicates among filled positions
-	const teamIds = rankings.map(r => r.team_id).filter(id => id);
-	const uniqueTeamIds = new Set(teamIds);
-	if (teamIds.length !== uniqueTeamIds.size) {
-		alert('Cada equipa só pode aparecer uma vez no ranking.');
-		return;
-	}
+    // Allow empty positions — only validate duplicates among filled positions
+    const teamIds = rankings.map(r => r.team_id).filter(id => id);
+    const uniqueTeamIds = new Set(teamIds);
+    if (teamIds.length !== uniqueTeamIds.size) {
+      alert('Cada equipa só pode aparecer uma vez no ranking.');
+      return;
+    }
 
-	// filter out empty rankings
-	const filteredRankings = rankings
-		.filter(r => r.team_id)
-		.map(r => ({ team_id: r.team_id, position: r.position }));
+    // filter out empty rankings
+    const filteredRankings = rankings
+      .filter(r => r.team_id)
+      .map(r => ({ team_id: r.team_id, position: r.position }));
 
-	try {
-		const finished = await tournamentsApi.finish(tournament.id, filteredRankings);
-		setTournament(finished);
-		setIsRankingModal(false);
-		setError('');
-	} catch (err) {
-		console.error('Failed to finish tournament:', err);
-		setError('Erro ao finalizar torneio');
-	}
-};
+    try {
+      const finished = await tournamentsApi.finish(tournament.id, filteredRankings);
+      setTournament(finished);
+      setIsRankingModal(false);
+      setError('');
+    } catch (err) {
+      console.error('Failed to finish tournament:', err);
+      setError('Erro ao finalizar torneio');
+    }
+  };
 
   const addTeam = async () => {
     if (!tournament || !selectedTeamId) return;

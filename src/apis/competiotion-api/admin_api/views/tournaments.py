@@ -35,14 +35,9 @@ from ..services.tournaments_service import tournaments_service
 class TournamentListCreateView(APIView):
     def get(self, request):
         """List all tournaments"""
-        try:
-            # Call microservice
-            tournaments = tournaments_service.list_tournaments()
-            return Response(tournaments, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response(
-                {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+        tournaments = tournaments_service.list_tournaments()
+        serializer = TournamentListSerializer(tournaments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
         """Create a new tournament"""

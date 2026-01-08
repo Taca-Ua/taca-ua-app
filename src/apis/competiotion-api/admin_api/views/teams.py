@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 
 from ..serializers.teams import (
     TeamCreateSerializer,
+    TeamListRequestSerializer,
     TeamListSerializer,
     TeamUpdateSerializer,
 )
@@ -19,6 +20,7 @@ from ..services.modalities_service import modalities_service_client
 
 @extend_schema_view(
     get=extend_schema(
+        parameters=[TeamListRequestSerializer],
         responses=TeamListSerializer(many=True),
         description="List teams with optional filters (modality_id, course_id, tournament_id)",
         tags=["Team Management"],
@@ -32,8 +34,14 @@ from ..services.modalities_service import modalities_service_client
 )
 class TeamListCreateView(APIView):
     def get(self, request: Request):
+        serializer = TeamListRequestSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+
+        # TODO: Pass filters to the modalities service client
         teams = modalities_service_client.list_teams()
-        return Response(teams)
+
+        serializer = TeamListSerializer(teams, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request: Request):
         serializer = TeamCreateSerializer(data=request.data)

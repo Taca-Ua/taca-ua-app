@@ -28,24 +28,24 @@ export interface TeamUpdate {
 }
 
 export const teamsApi = {
-  async getAll(includeAll = false): Promise<Team[]> {
-    const params = includeAll ? { all: 'true' } : undefined;
-    return apiClient.get<Team[]>('/teams', params);
+  async getAll(modality_id?: string): Promise<Team[]> {
+    const params = modality_id ? { modality_id } : undefined;
+    return apiClient.get<Team[]>('/teams/', params);
   },
 
   async get(teamId: string): Promise<Team> {
-	return apiClient.get<Team>(`/teams/${teamId}`);
+	return apiClient.get<Team>(`/teams/${teamId}/`);
   },
 
   async create(data: TeamCreate): Promise<Team> {
-    return apiClient.post<Team>('/teams', data);
+    return apiClient.post<Team>('/teams/', data);
   },
 
   async update(teamId: string, data: TeamUpdate): Promise<Team> {
-    return apiClient.put<Team>(`/teams/${teamId}`, data);
+    return apiClient.put<Team>(`/teams/${teamId}/`, data);
   },
 
   async delete(teamId: string): Promise<void> {
-    return apiClient.delete(`/teams/${teamId}`);
+    return apiClient.delete(`/teams/${teamId}/`);
   },
 };
