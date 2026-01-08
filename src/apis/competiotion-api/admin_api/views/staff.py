@@ -1,34 +1,15 @@
+from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from rest_framework import serializers, status
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from ..serializers.staff import (
+    StaffCreateSerializer,
+    StaffListSerializer,
+    StaffUpdateSerializer,
+)
 from ..services.modalities_service import modalities_service_client
-
-
-class StaffListSerializer(serializers.Serializer):
-    """Serializer for listing staff"""
-
-    id = serializers.IntegerField(read_only=True)
-    full_name = serializers.CharField()
-    staff_number = serializers.CharField()
-    contact = serializers.CharField()
-
-
-class StaffCreateSerializer(serializers.Serializer):
-    """Serializer for creating a staff member"""
-
-    full_name = serializers.CharField(required=True)
-    staff_number = serializers.CharField(required=False)
-    contact = serializers.CharField(required=False)
-
-
-class StaffUpdateSerializer(serializers.Serializer):
-    """Serializer for updating a staff member"""
-
-    full_name = serializers.CharField(required=False)
-    staff_number = serializers.CharField(required=False)
-    contact = serializers.CharField(required=False)
 
 
 @extend_schema_view(
@@ -97,3 +78,9 @@ class StaffDetailView(APIView):
     def delete(self, request, staff_id):
         modalities_service_client.delete_staff(staff_id)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+urlpatterns = [
+    path("staff", StaffListCreateView.as_view(), name="staff-list"),
+    path("staff/<uuid:staff_id>/", StaffDetailView.as_view(), name="staff-detail"),
+]

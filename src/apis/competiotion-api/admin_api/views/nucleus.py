@@ -2,13 +2,14 @@
 Modality management views
 """
 
+from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ..serializers import (
+from ..serializers.nucleus import (
     NucleosCreateSerializer,
     NucleosListSerializer,
     NucleosUpdateSerializer,
@@ -86,3 +87,9 @@ class NucleoDetailView(APIView):
     def delete(self, request, nucleo_id):
         modalities_service_client.delete_nucleo(nucleo_id)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+urlpatterns = [
+    path("", NucleoListCreateView.as_view(), name="nucleo-list"),
+    path("<uuid:nucleo_id>/", NucleoDetailView.as_view(), name="nucleo-detail"),
+]

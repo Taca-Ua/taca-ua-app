@@ -2,12 +2,13 @@
 Regulation management views
 """
 
+from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ..serializers import (
+from ..serializers.regulations import (
     RegulationCreateSerializer,
     RegulationListSerializer,
     RegulationUpdateSerializer,
@@ -131,3 +132,13 @@ class RegulationDetailView(APIView):
 
     def delete(self, request, regulation_id):
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+urlpatterns = [
+    path("", RegulationListCreateView.as_view(), name="regulation-list"),
+    path(
+        "<uuid:regulation_id>/",
+        RegulationDetailView.as_view(),
+        name="regulation-detail",
+    ),
+]

@@ -4,6 +4,7 @@ Match management views
 
 from typing import List
 
+from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import serializers, status
 from rest_framework.decorators import api_view
@@ -11,41 +12,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ..models import Lineup, Match, Student, Team, Tournament
-from ..serializers import (  # MatchCreateSerializer,; MatchListSerializer,; MatchUpdateSerializer,
+from ..serializers.matches import (
     MatchCommentSerializer,
+    MatchCreateSerializer,
     MatchLineupSerializer,
+    MatchListSerializer,
     MatchResultSerializer,
+    MatchUpdateSerializer,
 )
-
-
-class MatchListSerializer(serializers.Serializer):
-    id = serializers.UUIDField()
-    team_home_name = serializers.CharField()
-    team_away_name = serializers.CharField()
-    team_home_id = serializers.UUIDField(required=False)
-    team_away_id = serializers.UUIDField(required=False)
-    location = serializers.CharField()
-    start_time = serializers.DateTimeField()
-    status = serializers.CharField()
-
-    home_score = serializers.IntegerField(required=False)
-    away_score = serializers.IntegerField(required=False)
-
-
-class MatchCreateSerializer(serializers.Serializer):
-    tournament_id = serializers.UUIDField()
-    team_home_id = serializers.UUIDField()
-    team_away_id = serializers.UUIDField()
-    location = serializers.CharField()
-    start_time = serializers.DateTimeField()
-
-
-class MatchUpdateSerializer(serializers.Serializer):
-    location = serializers.CharField(required=False)
-    start_time = serializers.DateTimeField(required=False)
-    status = serializers.CharField(required=False)
-    home_score = serializers.IntegerField(required=False)
-    away_score = serializers.IntegerField(required=False)
 
 
 @extend_schema_view(
@@ -251,3 +225,13 @@ def match_comments(request, match_id):
 @api_view(["GET"])
 def match_sheet(request, match_id):
     return Response({"message": "PDF generation not implemented"})
+
+
+urlpatterns = [
+    path("", MatchListCreateView.as_view(), name="match-list"),
+    path("<uuid:match_id>/", MatchDetailView.as_view(), name="match-detail"),
+    path("<uuid:match_id>/result/", match_result, name="match-result"),
+    path("<uuid:match_id>/lineup/", match_lineup, name="match-lineup"),
+    path("<uuid:match_id>/comments/", match_comments, name="match-comments"),
+    path("<uuid:match_id>/sheet/", match_sheet, name="match-sheet"),
+]

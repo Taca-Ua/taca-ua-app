@@ -2,13 +2,14 @@
 Season management views
 """
 
+from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ..serializers import SeasonCreateSerializer, SeasonListSerializer
+from ..serializers.seasons import SeasonCreateSerializer, SeasonListSerializer
 
 
 @extend_schema_view(
@@ -62,3 +63,10 @@ def season_start(request, season_id):
 def season_finish(request, season_id):
     dummy_response = {"id": season_id, "year": 2025, "status": "finished"}
     return Response(dummy_response)
+
+
+urlpatterns = [
+    path("", SeasonListCreateView.as_view(), name="season-list"),
+    path("<uuid:season_id>/start/", season_start, name="season-start"),
+    path("<uuid:season_id>/finish/", season_finish, name="season-finish"),
+]

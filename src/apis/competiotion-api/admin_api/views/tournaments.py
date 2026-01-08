@@ -2,69 +2,21 @@
 Tournament management views - Updated to use tournaments-service microservice
 """
 
+from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from rest_framework import serializers, status
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from ..serializers.tournaments import (
+    TournamentCreateSerializer,
+    TournamentDetailSerializer,
+    TournamentFinishSerializer,
+    TournamentListSerializer,
+    TournamentUpdateSerializer,
+)
 from ..services.tournaments_service import tournaments_service
-
-
-class TournamentListSerializer(serializers.Serializer):
-    """Serializer for listing tournaments"""
-
-    id = serializers.UUIDField(read_only=True)
-    modality_id = serializers.UUIDField(read_only=True)
-    name = serializers.CharField()
-    status = serializers.ChoiceField(
-        choices=["draft", "active", "finished"], read_only=True
-    )
-    start_date = serializers.DateTimeField(required=False, allow_null=True)
-
-
-class TournamentDetailSerializer(TournamentListSerializer):
-    """Serializer for tournament details"""
-
-    created_by = serializers.UUIDField(read_only=True)
-    created_at = serializers.DateTimeField(read_only=True)
-    updated_at = serializers.DateTimeField(read_only=True, allow_null=True)
-    finished_at = serializers.DateTimeField(read_only=True, allow_null=True)
-    finished_by = serializers.UUIDField(read_only=True, allow_null=True)
-    ranking_positions = serializers.ListField(required=False, read_only=True)
-
-
-class TournamentCreateSerializer(serializers.Serializer):
-    """Serializer for creating a tournament"""
-
-    modality_id = serializers.UUIDField(required=True)
-    name = serializers.CharField(required=True)
-    team_ids = serializers.ListField(child=serializers.UUIDField(), required=False)
-    start_date = serializers.DateTimeField(required=False, allow_null=True)
-
-
-class TournamentUpdateSerializer(serializers.Serializer):
-    """Serializer for updating a tournament"""
-
-    name = serializers.CharField(required=False)
-    start_date = serializers.DateTimeField(required=False, allow_null=True)
-    status = serializers.ChoiceField(
-        choices=["draft", "active", "finished"], required=False
-    )
-    teams_add = serializers.ListField(child=serializers.UUIDField(), required=False)
-    teams_remove = serializers.ListField(child=serializers.UUIDField(), required=False)
-
-
-class TournamentFinishSerializer(serializers.Serializer):
-    """Serializer for finishing a tournament"""
-
-    class TournamentFinishEntrySerializer(serializers.Serializer):
-        """Serializer for finishing a tournament entry"""
-
-        team_id = serializers.UUIDField(required=True)
-        position = serializers.IntegerField(required=True)
-
-    ranking_entries = TournamentFinishEntrySerializer(many=True)
 
 
 @extend_schema_view(
@@ -209,3 +161,18 @@ def tournament_finish(request, tournament_id):
         return Response(
             {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+
+urlpatterns = [
+    path("", TournamentListCreateView.as_view(), name="tournament-list"),
+    path(
+        "<uuid:tournament_id>/",
+        TournamentDetailView.as_view(),
+        name="tournament-detail",
+    ),
+    path(
+        "<uuid:tournament_id>/finish/",
+        tournament_finish,
+        name="tournament-finish",
+    ),
+]

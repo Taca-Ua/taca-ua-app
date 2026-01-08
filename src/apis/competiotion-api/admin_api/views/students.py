@@ -2,12 +2,13 @@
 Student management views
 """
 
+from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ..serializers import (
+from ..serializers.students import (
     StudentCreateSerializer,
     StudentListSerializer,
     StudentUpdateSerializer,
@@ -96,3 +97,9 @@ class StudentDetailView(APIView):
             {"detail": "Student deleted successfully."},
             status=status.HTTP_204_NO_CONTENT,
         )
+
+
+urlpatterns = [
+    path("", StudentListCreateView.as_view(), name="student-list"),
+    path("<uuid:student_id>/", StudentDetailView.as_view(), name="student-detail"),
+]

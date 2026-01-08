@@ -2,13 +2,18 @@
 Team management views
 """
 
+from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ..serializers import TeamCreateSerializer, TeamListSerializer, TeamUpdateSerializer
+from ..serializers.teams import (
+    TeamCreateSerializer,
+    TeamListSerializer,
+    TeamUpdateSerializer,
+)
 from ..services.modalities_service import modalities_service_client
 
 
@@ -94,3 +99,9 @@ class TeamDetailView(APIView):
     def delete(self, request, team_id):
         modalities_service_client.delete_team(team_id)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+urlpatterns = [
+    path("", TeamListCreateView.as_view(), name="team-list"),
+    path("<uuid:team_id>/", TeamDetailView.as_view(), name="team-detail"),
+]

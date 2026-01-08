@@ -6,43 +6,33 @@ from rest_framework import serializers
 
 
 class MatchListSerializer(serializers.Serializer):
-    """Serializer for listing matches"""
-
-    id = serializers.IntegerField(read_only=True)
-    tournament_id = serializers.IntegerField()
-    team_home_id = serializers.IntegerField()
-    team_away_id = serializers.IntegerField()
+    id = serializers.UUIDField()
+    team_home_name = serializers.CharField()
+    team_away_name = serializers.CharField()
+    team_home_id = serializers.UUIDField(required=False)
+    team_away_id = serializers.UUIDField(required=False)
     location = serializers.CharField()
     start_time = serializers.DateTimeField()
-    status = serializers.ChoiceField(
-        choices=["scheduled", "in_progress", "finished", "cancelled"], read_only=True
-    )
-    home_score = serializers.IntegerField(required=False, allow_null=True)
-    away_score = serializers.IntegerField(required=False, allow_null=True)
+    status = serializers.CharField()
+
+    home_score = serializers.IntegerField(required=False)
+    away_score = serializers.IntegerField(required=False)
 
 
 class MatchCreateSerializer(serializers.Serializer):
-    """Serializer for creating a match"""
-
-    tournament_id = serializers.IntegerField(required=True)
-    team_home_id = serializers.IntegerField(required=True)
-    team_away_id = serializers.IntegerField(required=True)
-    location = serializers.CharField(required=True)
-    start_time = serializers.DateTimeField(required=True)
+    tournament_id = serializers.UUIDField()
+    team_home_id = serializers.UUIDField()
+    team_away_id = serializers.UUIDField()
+    location = serializers.CharField()
+    start_time = serializers.DateTimeField()
 
 
 class MatchUpdateSerializer(serializers.Serializer):
-    """Serializer for updating a match"""
-
     location = serializers.CharField(required=False)
     start_time = serializers.DateTimeField(required=False)
-    team_home_id = serializers.IntegerField(required=False)
-    team_away_id = serializers.IntegerField(required=False)
-    status = serializers.ChoiceField(
-        choices=["scheduled", "in_progress", "finished", "cancelled"], required=False
-    )
-    home_score = serializers.IntegerField(required=False, allow_null=True)
-    away_score = serializers.IntegerField(required=False, allow_null=True)
+    status = serializers.CharField(required=False)
+    home_score = serializers.IntegerField(required=False)
+    away_score = serializers.IntegerField(required=False)
 
 
 class MatchResultSerializer(serializers.Serializer):
@@ -50,13 +40,6 @@ class MatchResultSerializer(serializers.Serializer):
 
     home_score = serializers.IntegerField(required=True)
     away_score = serializers.IntegerField(required=True)
-
-
-class PlayerLineupSerializer(serializers.Serializer):
-    """Serializer for player in lineup"""
-
-    player_id = serializers.IntegerField(required=True)
-    jersey_number = serializers.IntegerField(required=False)
 
 
 class MatchLineupSerializer(serializers.Serializer):

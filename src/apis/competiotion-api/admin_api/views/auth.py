@@ -4,12 +4,13 @@ Simple mock authentication for nucleo admins
 TO BE REPLACED WITH PROPER AUTHENTICATION IN PRODUCTION
 """
 
+from django.urls.conf import path
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from ..serializers import (
+from ..serializers.auth import (
     LoginRequestSerializer,
     LoginResponseSerializer,
     UserInfoSerializer,
@@ -203,3 +204,10 @@ def get_authenticated_user(request):
 
     token = auth_header.replace("Bearer ", "")
     return MOCK_SESSIONS.get(token)
+
+
+urlpatterns = [
+    path("login/", login, name="admin_login"),
+    path("me/", me, name="admin_me"),
+    path("logout/", logout, name="admin_logout"),
+]
