@@ -4,6 +4,8 @@ Team management serializers
 
 from rest_framework import serializers
 
+from .students import StudentListSerializer
+
 
 class TeamListRequestSerializer(serializers.Serializer):
     """Serializer for listing teams with filters"""
@@ -19,9 +21,7 @@ class TeamListSerializer(serializers.Serializer):
     modality_name = serializers.CharField()
     course_name = serializers.CharField()
     name = serializers.CharField()
-    players = serializers.ListField(
-        child=serializers.UUIDField(), required=False, allow_null=True
-    )
+    players = StudentListSerializer(many=True)
 
 
 class TeamCreateSerializer(serializers.Serializer):

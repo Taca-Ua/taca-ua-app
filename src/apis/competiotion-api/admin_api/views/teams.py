@@ -101,6 +101,9 @@ class TeamDetailView(APIView):
                 str(pid) for pid in serializer.validated_data["players_remove"]
             ]
 
+        print("Update data:", update_data)
+        print("request data:", request.data)
+
         team = modalities_service_client.update_team(team_id, update_data)
         return Response(team)
 

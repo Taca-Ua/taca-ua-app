@@ -81,6 +81,6 @@ class StaffDetailView(APIView):
 
 
 urlpatterns = [
-    path("staff", StaffListCreateView.as_view(), name="staff-list"),
-    path("staff/<uuid:staff_id>/", StaffDetailView.as_view(), name="staff-detail"),
+    path("", StaffListCreateView.as_view(), name="staff-list"),
+    path("<uuid:staff_id>/", StaffDetailView.as_view(), name="staff-detail"),
 ]

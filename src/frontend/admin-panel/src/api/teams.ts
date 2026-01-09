@@ -3,12 +3,14 @@ import { apiClient } from './client';
 export interface Player {
   id: string;
   full_name: string;
+  student_number: string;
 }
 
 export interface Team {
   id: string;
   modality_name: string;
   course_name: string;
+  course_id: string;
   name: string;
   players: Player[];
 }

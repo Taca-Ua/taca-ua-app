@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import { type Player } from "./teams";
 
 // Participant interface (students)
 export interface Participant {
@@ -50,46 +51,47 @@ export type UnifiedMember =
 
 // Participants API
 export const participantsApi = {
-  async getAll(): Promise<Participant[]> {
-    return apiClient.get<Participant[]>('/students');
+  async getAll(course_id?: string): Promise<Player[]> {
+    const params = course_id ? { course_id } : undefined;
+    return apiClient.get<Participant[]>(`/students/`, params);
   },
 
   async getById(id: string): Promise<Participant> {
-    return apiClient.get<Participant>(`/students/${id}`);
+    return apiClient.get<Participant>(`/students/${id}/`);
   },
 
   async create(data: ParticipantCreate): Promise<Participant> {
-    return apiClient.post<Participant>('/students', data);
+    return apiClient.post<Participant>('/students/', data);
   },
 
   async update(id: string, data: ParticipantUpdate): Promise<Participant> {
-    return apiClient.put<Participant>(`/students/${id}`, data);
+    return apiClient.put<Participant>(`/students/${id}/`, data);
   },
 
   async delete(id: string): Promise<void> {
-    return apiClient.delete(`/students/${id}`);
+    return apiClient.delete(`/students/${id}/`);
   },
 };
 
 // Staff API
 export const staffApi = {
   async getAll(): Promise<Staff[]> {
-    return apiClient.get<Staff[]>('/staff');
+    return apiClient.get<Staff[]>('/staff/');
   },
 
   async getById(id: string): Promise<Staff> {
-    return apiClient.get<Staff>(`/staff/${id}`);
+    return apiClient.get<Staff>(`/staff/${id}/`);
   },
 
   async create(data: StaffCreate): Promise<Staff> {
-    return apiClient.post<Staff>('/staff', data);
+    return apiClient.post<Staff>('/staff/', data);
   },
 
   async update(id: string, data: StaffUpdate): Promise<Staff> {
-    return apiClient.put<Staff>(`/staff/${id}`, data);
+    return apiClient.put<Staff>(`/staff/${id}/`, data);
   },
 
   async delete(id: string): Promise<void> {
-    return apiClient.delete(`/staff/${id}`);
+    return apiClient.delete(`/staff/${id}/`);
   },
 };

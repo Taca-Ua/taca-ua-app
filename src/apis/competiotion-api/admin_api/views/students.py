@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 
 from ..serializers.students import (
     StudentCreateSerializer,
+    StudentListRequestSerializer,
     StudentListSerializer,
     StudentUpdateSerializer,
 )
@@ -18,6 +19,7 @@ from ..services.modalities_service import modalities_service_client
 
 @extend_schema_view(
     get=extend_schema(
+        parameters=[StudentListRequestSerializer],
         responses=StudentListSerializer(many=True),
         description="List students of the authenticated nucleo (filtered by course_id)",
         tags=["Student Management"],
@@ -31,8 +33,14 @@ from ..services.modalities_service import modalities_service_client
 )
 class StudentListCreateView(APIView):
     def get(self, request):
+        serializer = StudentListRequestSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+
         all_students = modalities_service_client.list_students()
-        return Response(all_students, status=status.HTTP_200_OK)
+
+        serializer = StudentListSerializer(data=all_students, many=True)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
         serializer = StudentCreateSerializer(data=request.data)
