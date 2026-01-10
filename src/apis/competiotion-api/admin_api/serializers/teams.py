@@ -4,6 +4,8 @@ Team management serializers
 
 from rest_framework import serializers
 
+from .courses import CourseListSerializer
+from .modalities import ModalityListSerializer
 from .students import StudentListSerializer
 
 
@@ -18,9 +20,14 @@ class TeamListSerializer(serializers.Serializer):
     """Serializer for listing teams"""
 
     id = serializers.UUIDField(read_only=True)
-    modality_name = serializers.CharField()
-    course_name = serializers.CharField()
     name = serializers.CharField()
+    modality = ModalityListSerializer()
+    course = CourseListSerializer()
+
+
+class TeamDetailSerializer(TeamListSerializer):
+    """Serializer for team details"""
+
     players = StudentListSerializer(many=True)
 
 

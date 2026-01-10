@@ -86,7 +86,8 @@ class TournamentDetailView(APIView):
         """Get tournament details by ID"""
         try:
             tournament = tournaments_service.get_tournament(tournament_id)
-            return Response(tournament, status=status.HTTP_200_OK)
+            serializer = TournamentDetailSerializer(tournament)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
 

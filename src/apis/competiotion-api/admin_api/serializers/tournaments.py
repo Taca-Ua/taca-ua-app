@@ -4,30 +4,33 @@ Tournament management serializers
 
 from rest_framework import serializers
 
+from .modalities import ModalityListSerializer
+from .teams import TeamListSerializer
+
+STATUS_CHOICES = [
+    ("draft", "Draft"),
+    ("active", "Active"),
+    ("finished", "Finished"),
+]
+
 
 class TournamentListSerializer(serializers.Serializer):
     """Serializer for listing tournaments"""
 
     id = serializers.UUIDField(read_only=True)
     name = serializers.CharField()
-    status = serializers.ChoiceField(
-        choices=["draft", "active", "finished"], read_only=True
-    )
-    # modality_id = serializers.UUIDField(read_only=True)
-    # start_date = serializers.DateTimeField(required=False, allow_null=True)
+    status = serializers.ChoiceField(choices=STATUS_CHOICES, read_only=True)
 
 
-class TournamentDetailSerializer(serializers.Serializer):
+class TournamentDetailSerializer(TournamentListSerializer):
     """Serializer for tournament details"""
 
-    id = serializers.UUIDField(read_only=True)
-    name = serializers.CharField()
-    status = serializers.ChoiceField(
-        choices=["draft", "active", "finished"], read_only=True
-    )
-    modality_id = serializers.UUIDField(read_only=True)
-    modality_name = serializers.CharField(read_only=True)
+    modality = ModalityListSerializer(read_only=True)
     start_date = serializers.DateTimeField(required=False, allow_null=True)
+    teams = TeamListSerializer(many=True, read_only=True)
+    matches = serializers.ListField(
+        child=serializers.DictField(), read_only=True, default=[]
+    )
 
 
 class TournamentCreateSerializer(serializers.Serializer):
@@ -44,9 +47,7 @@ class TournamentUpdateSerializer(serializers.Serializer):
 
     name = serializers.CharField(required=False)
     start_date = serializers.DateTimeField(required=False, allow_null=True)
-    status = serializers.ChoiceField(
-        choices=["draft", "active", "finished"], required=False
-    )
+    status = serializers.ChoiceField(choices=STATUS_CHOICES, required=False)
     teams_add = serializers.ListField(child=serializers.UUIDField(), required=False)
     teams_remove = serializers.ListField(child=serializers.UUIDField(), required=False)
 

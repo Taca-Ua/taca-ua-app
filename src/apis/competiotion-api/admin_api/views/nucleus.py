@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 
 from ..serializers.nucleus import (
     NucleosCreateSerializer,
+    NucleosDetailSerializer,
     NucleosListSerializer,
     NucleosUpdateSerializer,
 )
@@ -33,9 +34,14 @@ from ..services.modalities_service import modalities_service_client
 class NucleoListCreateView(APIView):
     def get(self, request: Request):
         nucleos = modalities_service_client.list_nucleos()
-        return Response(nucleos)
+
+        # Serialize output data
+        serializer = NucleosListSerializer(data=nucleos, many=True)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request: Request):
+        # Serialize input data
         serializer = NucleosCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -45,18 +51,22 @@ class NucleoListCreateView(APIView):
                 "abbreviation": serializer.validated_data["abbreviation"],
             }
         )
-        return Response(nucleo, status=status.HTTP_201_CREATED)
+
+        # Serialize output data
+        serializer = NucleosListSerializer(data=nucleo)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
     get=extend_schema(
-        responses=NucleosListSerializer,
+        responses=NucleosDetailSerializer,
         description="Get a nucleo by ID",
         tags=["Nucleo Management"],
     ),
     put=extend_schema(
         request=NucleosUpdateSerializer,
-        responses=NucleosListSerializer,
+        responses=NucleosDetailSerializer,
         description="Update a nucleo",
         tags=["Nucleo Management"],
     ),
@@ -69,9 +79,14 @@ class NucleoListCreateView(APIView):
 class NucleoDetailView(APIView):
     def get(self, request, nucleo_id):
         nucleo = modalities_service_client.get_nucleo(nucleo_id)
-        return Response(nucleo, status=status.HTTP_200_OK)
+
+        # Serialize output data
+        serializer = NucleosDetailSerializer(data=nucleo)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, nucleo_id):
+        # Serialize input data
         serializer = NucleosUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -82,7 +97,11 @@ class NucleoDetailView(APIView):
             update_data["abbreviation"] = serializer.validated_data["abbreviation"]
 
         nucleo = modalities_service_client.update_nucleo(nucleo_id, update_data)
-        return Response(nucleo, status=status.HTTP_200_OK)
+
+        # Serialize output data
+        serializer = NucleosDetailSerializer(data=nucleo)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, nucleo_id):
         modalities_service_client.delete_nucleo(nucleo_id)

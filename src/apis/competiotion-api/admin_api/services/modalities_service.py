@@ -87,8 +87,9 @@ class ModalitiesService(BaseService):
         """List all modalities"""
         return self.get("/modalities")
 
-    def create_modality(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def create_modality(self, name: str, modality_type_id: str) -> Dict[str, Any]:
         """Create a new modality"""
+        data = {"name": name, "modality_type_id": modality_type_id}
         return self.post("/modalities", data)
 
     def get_modality(self, modality_id: str) -> Dict[str, Any]:
@@ -129,8 +130,15 @@ class ModalitiesService(BaseService):
         """List all staff members"""
         return self.get("/staff")
 
-    def create_staff(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def create_staff(
+        self, full_name: str, staff_number: str = None, contact: str = None
+    ) -> Dict[str, Any]:
         """Create a new staff member"""
+        data = {
+            "full_name": full_name,
+            "staff_number": staff_number,
+            "contact": contact,
+        }
         return self.post("/staff", data)
 
     def get_staff(self, staff_id: str) -> Dict[str, Any]:

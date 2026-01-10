@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 
 from ..serializers.teams import (
     TeamCreateSerializer,
+    TeamDetailSerializer,
     TeamListRequestSerializer,
     TeamListSerializer,
     TeamUpdateSerializer,
@@ -34,16 +35,20 @@ from ..services.modalities_service import modalities_service_client
 )
 class TeamListCreateView(APIView):
     def get(self, request: Request):
+        # Serialize input data
         serializer = TeamListRequestSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
         # TODO: Pass filters to the modalities service client
         teams = modalities_service_client.list_teams()
 
+        # Serialize output data
         serializer = TeamListSerializer(teams, many=True)
+        serializer.is_valid(raise_exception=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request: Request):
+        # Serialize input data
         serializer = TeamCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -55,18 +60,21 @@ class TeamListCreateView(APIView):
             }
         )
 
-        return Response(team, status=status.HTTP_201_CREATED)
+        # Serialize output data
+        serializer = TeamListSerializer(data=team)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
     get=extend_schema(
-        responses=TeamListSerializer,
+        responses=TeamDetailSerializer,
         description="Get a team by ID",
         tags=["Team Management"],
     ),
     put=extend_schema(
         request=TeamUpdateSerializer,
-        responses=TeamListSerializer,
+        responses=TeamDetailSerializer,
         description="Update a team (name, add/remove players)",
         tags=["Team Management"],
     ),
@@ -79,9 +87,14 @@ class TeamListCreateView(APIView):
 class TeamDetailView(APIView):
     def get(self, request, team_id):
         team = modalities_service_client.get_team(team_id)
-        return Response(team)
+
+        # Serialize output data
+        serializer = TeamDetailSerializer(data=team)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, team_id):
+        # Serialize input data
         serializer = TeamUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -101,11 +114,12 @@ class TeamDetailView(APIView):
                 str(pid) for pid in serializer.validated_data["players_remove"]
             ]
 
-        print("Update data:", update_data)
-        print("request data:", request.data)
-
         team = modalities_service_client.update_team(team_id, update_data)
-        return Response(team)
+
+        # Serialize output data
+        serializer = TeamDetailSerializer(data=team)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, team_id):
         modalities_service_client.delete_team(team_id)

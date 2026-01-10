@@ -48,8 +48,7 @@ class CourseResponse(BaseModel):
     id: str
     name: str
     abbreviation: str
-    nucleo_id: Optional[str] = None
-    nucleo_name: Optional[str] = None
+    nucleo: NucleoResponse
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -59,23 +58,30 @@ class CourseResponse(BaseModel):
 
 
 # ==================== MODALITY TYPE SCHEMAS ====================
+class _Escalao(BaseModel):
+    escalao: str
+    minParticipants: Optional[int] = None
+    maxParticipants: Optional[int] = None
+    points: List[int]
+
+
 class ModalityTypeCreate(BaseModel):
     name: str
     description: Optional[str] = None
-    escaloes: Optional[List[dict]] = None
+    escaloes: Optional[List[_Escalao]] = None
 
 
 class ModalityTypeUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
-    escaloes: Optional[List[dict]] = None
+    escaloes: Optional[List[_Escalao]] = None
 
 
 class ModalityTypeResponse(BaseModel):
     id: str
     name: str
     description: Optional[str] = None
-    escaloes: Optional[List[dict]] = None
+    escaloes: Optional[List[_Escalao]] = None
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -98,8 +104,7 @@ class ModalityUpdate(BaseModel):
 class ModalityResponse(BaseModel):
     id: str
     name: str
-    modality_type_id: Optional[str] = None
-    modality_type_name: Optional[str] = None
+    modality_type: ModalityTypeResponse
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -126,8 +131,7 @@ class StudentUpdate(BaseModel):
 class StudentResponse(BaseModel):
     id: str
     full_name: str
-    course_id: Optional[str] = None
-    course_name: Optional[str] = None
+    course: CourseResponse
     student_number: str
     is_member: bool
     created_by: Optional[str] = None
@@ -182,11 +186,9 @@ class TeamUpdate(BaseModel):
 class TeamResponse(BaseModel):
     id: str
     name: str
-    modality_id: Optional[str] = None
-    modality_name: Optional[str] = None
-    course_id: Optional[str] = None
-    course_name: Optional[str] = None
-    players: Optional[List[StudentResponse]] = None
+    modality: ModalityResponse
+    course: CourseResponse
+    players: List[StudentResponse] = []
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None

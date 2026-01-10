@@ -21,6 +21,14 @@ class StaffCreateSerializer(serializers.Serializer):
     staff_number = serializers.CharField(required=False)
     contact = serializers.CharField(required=False)
 
+    def validate(self, data):
+        """Ensure at least one of staff_number or contact is provided"""
+        if not data.get("staff_number") and not data.get("contact"):
+            raise serializers.ValidationError(
+                "Either staff_number or contact must be provided."
+            )
+        return data
+
 
 class StaffUpdateSerializer(serializers.Serializer):
     """Serializer for updating a staff member"""

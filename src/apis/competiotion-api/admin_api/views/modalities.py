@@ -27,7 +27,7 @@ from ..services.modalities_service import modalities_service_client
     ),
     post=extend_schema(
         request=ModalityCreateSerializer,
-        responses=ModalityListSerializer,
+        responses=ModalityDetailSerializer,
         description="Create a new modality",
         tags=["Modality Management"],
     ),
@@ -35,24 +35,25 @@ from ..services.modalities_service import modalities_service_client
 class ModalityListCreateView(APIView):
     def get(self, request: Request):
         modalities = modalities_service_client.list_modalities()
+
+        # Serialize output data
         serializer = ModalityListSerializer(data=modalities, many=True)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request: Request):
+        # Serialize input data
         serializer = ModalityCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        # Create modality via service client
         modality = modalities_service_client.create_modality(
-            {
-                "name": serializer.validated_data["name"],
-                "modality_type_id": str(
-                    serializer.validated_data.get("modality_type_id")
-                ),
-            }
+            name=serializer.validated_data["name"],
+            modality_type_id=str(serializer.validated_data.get("modality_type_id")),
         )
 
-        serializer = ModalityListSerializer(data=modality)
+        # Serialize output data
+        serializer = ModalityDetailSerializer(data=modality)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -78,11 +79,14 @@ class ModalityListCreateView(APIView):
 class ModalityDetailView(APIView):
     def get(self, request, modality_id):
         modality = modalities_service_client.get_modality(modality_id)
+
+        # Serialize output data
         serializer = ModalityDetailSerializer(data=modality)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, modality_id):
+        # Serialize input data
         serializer = ModalityUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -95,6 +99,8 @@ class ModalityDetailView(APIView):
             )
 
         modality = modalities_service_client.update_modality(modality_id, update_data)
+
+        # Serialize output data
         serializer = ModalityDetailSerializer(data=modality)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

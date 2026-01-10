@@ -4,6 +4,8 @@ Student management serializers
 
 from rest_framework import serializers
 
+from .courses import CourseListSerializer
+
 
 class StudentListRequestSerializer(serializers.Serializer):
     """Serializer for listing students request parameters"""
@@ -17,7 +19,7 @@ class StudentListSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     full_name = serializers.CharField()
 
-    course_name = serializers.CharField()
+    course = CourseListSerializer()
     student_number = serializers.CharField()
     is_member = serializers.BooleanField(default=False)
 

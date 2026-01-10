@@ -12,8 +12,8 @@ from rest_framework.views import APIView
 
 from ..serializers.modality_types import (
     ModalityTypeCreateSerializer,
-    ModalityTypeSerializer,
-    ModalityTypeSimpleSerializer,
+    ModalityTypeDetailSerializer,
+    ModalityTypeListSerializer,
     ModalityTypeUpdateSerializer,
 )
 from ..services.modalities_service import modalities_service_client
@@ -21,13 +21,13 @@ from ..services.modalities_service import modalities_service_client
 
 @extend_schema_view(
     get=extend_schema(
-        responses=ModalityTypeSerializer(many=True),
+        responses=ModalityTypeDetailSerializer(many=True),
         description="List all modality types",
         tags=["Modality Management"],
     ),
     post=extend_schema(
         request=ModalityTypeCreateSerializer,
-        responses=ModalityTypeSerializer,
+        responses=ModalityTypeDetailSerializer,
         description="Create a new modality type",
         tags=["Modality Management"],
     ),
@@ -35,7 +35,10 @@ from ..services.modalities_service import modalities_service_client
 class ModalityTypeListCreateView(APIView):
     def get(self, request: Request):
         modality_types = modalities_service_client.list_modality_types()
-        return Response(modality_types, status=status.HTTP_200_OK)
+
+        serializer = ModalityTypeDetailSerializer(data=modality_types, many=True)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request: Request):
         serializer = ModalityTypeCreateSerializer(data=request.data)
@@ -48,19 +51,20 @@ class ModalityTypeListCreateView(APIView):
                 "escaloes": serializer.validated_data["escaloes"],
             }
         )
-
-        return Response(modality_type, status=status.HTTP_201_CREATED)
+        serializer = ModalityTypeDetailSerializer(data=modality_type)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
     get=extend_schema(
-        responses=ModalityTypeSerializer,
+        responses=ModalityTypeDetailSerializer,
         description="Get a modality by ID",
         tags=["Modality Management"],
     ),
     put=extend_schema(
         request=ModalityTypeUpdateSerializer,
-        responses=ModalityTypeSerializer,
+        responses=ModalityTypeDetailSerializer,
         description="Update a modality",
         tags=["Modality Management"],
     ),
@@ -73,7 +77,10 @@ class ModalityTypeListCreateView(APIView):
 class ModalityTypeDetailView(APIView):
     def get(self, request, modality_type_id):
         modality_type = modalities_service_client.get_modality_type(modality_type_id)
-        return Response(modality_type, status=status.HTTP_200_OK)
+
+        serializer = ModalityTypeDetailSerializer(data=modality_type)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, modality_type_id):
         serializer = ModalityTypeUpdateSerializer(data=request.data)
@@ -90,7 +97,10 @@ class ModalityTypeDetailView(APIView):
         modality_type = modalities_service_client.update_modality_type(
             modality_type_id, update_data
         )
-        return Response(modality_type, status=status.HTTP_200_OK)
+
+        serializer = ModalityTypeDetailSerializer(data=modality_type)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, modality_type_id):
         modalities_service_client.delete_modality_type(modality_type_id)
@@ -101,14 +111,14 @@ class ModalityTypeDetailView(APIView):
 
 
 @extend_schema(
-    responses={200: ModalityTypeSimpleSerializer(many=True)},
+    responses={200: ModalityTypeListSerializer(many=True)},
     description="List all modality types simple",
     tags=["Modality Management"],
 )
 @api_view(["GET"])
 def list_modality_types(request: Request):
     modality_types = modalities_service_client.list_modality_types()
-    serializer = ModalityTypeSimpleSerializer(data=modality_types, many=True)
+    serializer = ModalityTypeListSerializer(data=modality_types, many=True)
     serializer.is_valid(raise_exception=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 

@@ -163,9 +163,8 @@ class Modality(Base):
         return {
             "id": str(self.id),
             "name": self.name,
-            "modality_type_id": str(self.modality_type_id),
-            "modality_type_name": (
-                self.modality_type.name if self.modality_type else None
+            "modality_type": (
+                self.modality_type.to_dict() if self.modality_type else None
             ),
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat() if self.created_at else None,

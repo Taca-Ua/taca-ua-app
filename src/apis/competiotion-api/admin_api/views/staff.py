@@ -35,11 +35,9 @@ class StaffListCreateView(APIView):
         serializer.is_valid(raise_exception=True)
 
         staff_member = modalities_service_client.create_staff(
-            {
-                "full_name": serializer.validated_data["full_name"],
-                "staff_number": serializer.validated_data.get("staff_number", None),
-                "contact": serializer.validated_data.get("contact", None),
-            }
+            full_name=serializer.validated_data["full_name"],
+            staff_number=serializer.validated_data.get("staff_number", None),
+            contact=serializer.validated_data.get("contact", None),
         )
 
         return Response(staff_member, status=status.HTTP_201_CREATED)
@@ -50,15 +48,18 @@ class StaffListCreateView(APIView):
         request=StaffUpdateSerializer,
         responses=StaffListSerializer,
         description="Update a staff member of the authenticated nucleo",
+        tags=["Staff Management"],
     ),
     put=extend_schema(
         request=StaffUpdateSerializer,
         responses=StaffListSerializer,
         description="Update a staff member of the authenticated nucleo",
+        tags=["Staff Management"],
     ),
     delete=extend_schema(
         description="Delete a staff member of the authenticated nucleo",
         responses={204: None},
+        tags=["Staff Management"],
     ),
 )
 class StaffDetailView(APIView):

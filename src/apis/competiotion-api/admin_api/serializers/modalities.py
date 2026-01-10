@@ -1,12 +1,14 @@
 from rest_framework import serializers
 
+from .modality_types import ModalityTypeDetailSerializer, ModalityTypeListSerializer
+
 
 class ModalityListSerializer(serializers.Serializer):
     """Serializer for listing modalities"""
 
     id = serializers.UUIDField()
     name = serializers.CharField()
-    modality_type_name = serializers.CharField()
+    modality_type = ModalityTypeListSerializer()
 
 
 class ModalityDetailSerializer(serializers.Serializer):
@@ -14,8 +16,7 @@ class ModalityDetailSerializer(serializers.Serializer):
 
     id = serializers.UUIDField()
     name = serializers.CharField()
-    modality_type_id = serializers.UUIDField()
-    modality_type_name = serializers.CharField()
+    modality_type = ModalityTypeDetailSerializer()
 
 
 class ModalityCreateSerializer(serializers.Serializer):
