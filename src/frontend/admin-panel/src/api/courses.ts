@@ -1,11 +1,13 @@
 import { apiClient } from './client';
 
+
 export interface Course {
   id: string;
-  abbreviation: string;
   name: string;
-  description?: string;
-  logo_url?: string;
+  abbreviation: string;
+}
+
+export interface CourseDetail extends Course {
   nucleo: string;
 }
 
@@ -30,16 +32,16 @@ export const coursesApi = {
     return apiClient.get<Course[]>('/courses');
   },
 
-  async getById(courseId: string): Promise<Course> {
-    return apiClient.get<Course>(`/courses/${courseId}`);
+  async getById(courseId: string): Promise<CourseDetail> {
+    return apiClient.get<CourseDetail>(`/courses/${courseId}`);
   },
 
-  async create(data: CourseCreate): Promise<Course> {
-    return apiClient.post<Course>('/courses', data);
+  async create(data: CourseCreate): Promise<CourseDetail> {
+    return apiClient.post<CourseDetail>('/courses', data);
   },
 
-  async update(courseId: string, data: CourseUpdate): Promise<Course> {
-    return apiClient.put<Course>(`/courses/${courseId}`, data);
+  async update(courseId: string, data: CourseUpdate): Promise<CourseDetail> {
+    return apiClient.put<CourseDetail>(`/courses/${courseId}`, data);
   },
 
   async delete(courseId: string): Promise<void> {

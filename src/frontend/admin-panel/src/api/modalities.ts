@@ -1,16 +1,14 @@
 import { apiClient } from './client';
+import { type ModalityType, type ModalityTypeDetail } from './modality-types';
 
 export interface Modality {
   id: string;
   name: string;
-  modality_type_name: string;
+  modality_type: ModalityType;
 }
 
-export interface ModalityDetail {
-  id: string;
-  name: string;
-  modality_type_id: string;
-  modality_type_name: string;
+export interface ModalityDetail extends Modality {
+  modality_type: ModalityTypeDetail;
 }
 
 export interface ModalityCreate {

@@ -6,6 +6,10 @@ export interface Nucleo {
   abbreviation: string;
 }
 
+export interface NucleoDetail extends Nucleo {
+  // Additional fields can be added here if needed
+}
+
 export interface NucleoCreate {
   name: string;
   abbreviation: string;

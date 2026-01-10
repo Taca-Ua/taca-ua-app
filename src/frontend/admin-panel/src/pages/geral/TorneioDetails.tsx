@@ -1,9 +1,76 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, use } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
 import { tournamentsApi, type TournamentDetail, type TournamentUpdate } from '../../api/tournaments';
 import { teamsApi, type Team } from '../../api/teams';
 import { matchesApi, type Match, type MatchCreate } from '../../api/matches';
+
+
+const TorneioInfoSection = () => {
+  const { id } = useParams();
+  const [tournament, setTournament] = useState<TournamentDetail | null>(null);
+
+  // Fetch tournament info on mount
+  useEffect(() => {
+    const fetchTournament = async () => {
+      if (!id) return;
+      try {
+        const data = await tournamentsApi.getById(id);
+        setTournament(data);
+      } catch (err) {
+        console.error('Failed to fetch tournament:', err);
+      }
+    };
+    fetchTournament();
+  }, []);
+
+  if (!tournament) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <div className="bg-white rounded-xl shadow p-6">
+      <h2 className="text-xl font-semibold mb-4">Detalhes</h2>
+
+      <div className="space-y-4">
+
+        <div>
+          <label className="font-medium text-teal-600">Nome</label>
+          <div className="bg-gray-100 p-3 rounded-md">{tournament.name}</div>
+        </div>
+
+        <div>
+          <label className="font-medium text-teal-600">Modalidade</label>
+          <div className="bg-gray-100 p-3 rounded-md">{tournament.modality_name}</div>
+        </div>
+
+        <div>
+          <label className="font-medium text-teal-600">Estado</label>
+          <div className="bg-gray-100 p-3 rounded-md capitalize">{tournament.status}</div>
+        </div>
+
+        <div>
+          <label className="font-medium text-teal-600">Data de início</label>
+          <div className="bg-gray-100 p-3 rounded-md">
+            {tournament.start_date ? new Date(tournament.start_date).toLocaleDateString('pt-PT') : "Não definida"}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const TorneioTeamsSection = () => {
+  return null;
+};
+
+const TorneioMatchesSection = () => {
+  return null;
+};
+
+const TorneioRankingsSection = () => {
+  return null;
+};
 
 const TorneioDetails = () => {
   const { id } = useParams();
@@ -43,7 +110,7 @@ const TorneioDetails = () => {
       setLoading(true);
       const [tournamentData, teamsData] = await Promise.all([
         tournamentsApi.getById(id),
-        teamsApi.getAll(true), // Get all teams
+        teamsApi.getAll(), // Get all teams
       ]);
       setTournament(tournamentData);
       setAllTeams(teamsData);
@@ -366,7 +433,7 @@ const TorneioDetails = () => {
         <div className={`grid gap-8 ${tournament.final_rankings && tournament.final_rankings.length > 0 ? 'grid-cols-4' : 'grid-cols-3'}`}>
 
           {/* COL 1 - Detalhes */}
-          <div className="bg-white rounded-xl shadow p-6">
+          {/* <div className="bg-white rounded-xl shadow p-6">
             <h2 className="text-xl font-semibold mb-4">Detalhes</h2>
 
             <div className="space-y-4">
@@ -404,7 +471,8 @@ const TorneioDetails = () => {
                 </div>
               )}
             </div>
-          </div>
+          </div> */}
+          <TorneioInfoSection />
 
           {/* COL 2 - Equipas */}
           <div className="bg-white rounded-xl shadow p-6">
