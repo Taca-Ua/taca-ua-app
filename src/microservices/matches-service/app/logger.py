@@ -1,12 +1,14 @@
-import logging
+"""
+Logging configuration for matches-service
+"""
 
-import logging_loki
+from taca_logging import configure_logging, get_logger
 
-handler = logging_loki.LokiHandler(
-    url="http://loki:3100/loki/api/v1/push",
-    tags={"application": "matches-service", "job": "matches-service"},
-    version="1",
+# Configure structured logging
+configure_logging(
+    service_name="matches-service",
+    log_level="INFO",
 )
-logger = logging.getLogger("matches-service")
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
+
+# Export logger for use in other modules
+logger = get_logger("matches-service")

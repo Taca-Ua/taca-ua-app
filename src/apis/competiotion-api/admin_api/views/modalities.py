@@ -9,6 +9,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from ..logging_decorators import log_action
 from ..serializers.modalities import (
     ModalityCreateSerializer,
     ModalityDetailSerializer,
@@ -33,6 +34,7 @@ from ..services.modalities_service import modalities_service_client
     ),
 )
 class ModalityListCreateView(APIView):
+    @log_action("list_modalities")
     def get(self, request: Request):
         modalities = modalities_service_client.list_modalities()
 
@@ -41,6 +43,7 @@ class ModalityListCreateView(APIView):
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @log_action("create_modality")
     def post(self, request: Request):
         # Serialize input data
         serializer = ModalityCreateSerializer(data=request.data)
@@ -77,6 +80,7 @@ class ModalityListCreateView(APIView):
     ),
 )
 class ModalityDetailView(APIView):
+    @log_action("get_modality")
     def get(self, request, modality_id):
         modality = modalities_service_client.get_modality(modality_id)
 
@@ -85,6 +89,7 @@ class ModalityDetailView(APIView):
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @log_action("update_modality")
     def put(self, request, modality_id):
         # Serialize input data
         serializer = ModalityUpdateSerializer(data=request.data)
@@ -105,6 +110,7 @@ class ModalityDetailView(APIView):
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @log_action("delete_modality")
     def delete(self, request, modality_id):
         modalities_service_client.delete_modality(modality_id)
         return Response(status=status.HTTP_204_NO_CONTENT)

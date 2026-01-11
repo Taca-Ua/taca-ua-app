@@ -1,20 +1,16 @@
-import logging
 from contextlib import asynccontextmanager
 
-import logging_loki
 from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
+from taca_logging import StructlogMiddleware, configure_logging, get_logger
 from taca_messaging.rabbitmq_service import RabbitMQService
 
-# Logging setup
-handler = logging_loki.LokiHandler(
-    url="http://loki:3100/loki/api/v1/push",
-    tags={"application": "read-model-updater", "job": "read-model-updater"},
-    version="1",
+# Configure structured logging
+configure_logging(
+    service_name="read-model-updater",
+    log_level="INFO",
 )
-logger = logging.getLogger("read-model-updater")
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
+logger = get_logger("read-model-updater")
 
 # Register event handlers
 rabbitmq_service = RabbitMQService(service_name="read-model-updater")
@@ -24,18 +20,21 @@ rabbitmq_service = RabbitMQService(service_name="read-model-updater")
 async def lifespan(app: FastAPI):
     # Startup: Start RabbitMQ consumer
     await rabbitmq_service.start_consuming()
-    logger.info("Read Model Updater started")
+    logger.info("service_started", action="startup")
     yield
     # Shutdown: Disconnect RabbitMQ
     await rabbitmq_service.disconnect()
-    logger.info("Read Model Updater stopped")
+    logger.info("service_stopped", action="shutdown")
 
 
 app = FastAPI(lifespan=lifespan)
+
+# Add structured logging middleware
+app.add_middleware(StructlogMiddleware)
+
 Instrumentator().instrument(app).expose(app)  # Prometheus metrics endpoint
 
 
 @app.get("/")
 def read_root():
-    logger.info("Root endpoint accessed")
     return {"Service": "Read Model Updater"}

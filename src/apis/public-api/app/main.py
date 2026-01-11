@@ -1,22 +1,18 @@
-import logging
 from contextlib import asynccontextmanager
 
-import logging_loki
 from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
+from taca_logging import StructlogMiddleware, configure_logging, get_logger
 from taca_messaging.rabbitmq_service import RabbitMQService
 
 from .routes import all_routers
 
-# Logging setup
-handler = logging_loki.LokiHandler(
-    url="http://loki:3100/loki/api/v1/push",
-    tags={"application": "public-api", "job": "public-api"},
-    version="1",
+# Configure structured logging
+configure_logging(
+    service_name="public-api",
+    log_level="INFO",
 )
-logger = logging.getLogger("public-api")
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
+logger = get_logger("public-api")
 
 # Register event handlers
 rabbitmq_service = RabbitMQService(service_name="public-api")
@@ -26,11 +22,11 @@ rabbitmq_service = RabbitMQService(service_name="public-api")
 async def lifespan(app: FastAPI):
     # Startup: Start RabbitMQ consumer
     await rabbitmq_service.start_consuming()
-    logger.info("Public API started")
+    logger.info("service_started", action="startup")
     yield
     # Shutdown: Disconnect RabbitMQ
     await rabbitmq_service.disconnect()
-    logger.info("Public API stopped")
+    logger.info("service_stopped", action="shutdown")
 
 
 app = FastAPI(
@@ -43,6 +39,9 @@ app = FastAPI(
     openapi_url="/api/public/openapi.json",
 )
 
+# Add structured logging middleware
+app.add_middleware(StructlogMiddleware)
+
 # Include all routers
 for router in all_routers:
     app.include_router(router)
@@ -53,12 +52,11 @@ Instrumentator().instrument(app).expose(app)
 
 @app.get("/")
 def read_root():
-    logger.info("Root endpoint accessed")
     return {"Service": "Public API"}
 
 
 @app.post("/send-event")
 async def send_event(msg: str):
     await rabbitmq_service.publish_event("test.event", {"message": msg})
-    logger.info(f"Event sent: {msg}")
+    logger.info("event_sent", event_type="test.event", message=msg)
     return {"status": "sent"}

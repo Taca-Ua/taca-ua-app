@@ -79,11 +79,21 @@ def create_nucleo(nucleo_data: NucleoCreate, db: Session = Depends(get_db_sessio
 
         db.commit()
         db.refresh(nucleo)
-        logger.info(f"Created nucleo: {nucleo.id}")
+        logger.info(
+            "entity_created",
+            entity_type="nucleo",
+            entity_id=str(nucleo.id),
+            name=nucleo.name,
+        )
         return nucleo.to_dict()
     except IntegrityError as e:
         db.rollback()
-        logger.error(f"Integrity error creating nucleo: {e}")
+        logger.error(
+            "integrity_error",
+            entity_type="nucleo",
+            error="duplicate_abbreviation",
+            details=str(e),
+        )
         raise HTTPException(
             status_code=400, detail="Nucleo with this abbreviation already exists"
         )
@@ -94,6 +104,9 @@ def get_nucleo(nucleo_id: UUID, db: Session = Depends(get_db_session)):
     """Get a nucleo by ID"""
     nucleo = db.query(Nucleo).filter(Nucleo.id == nucleo_id).first()
     if not nucleo:
+        logger.warning(
+            "entity_not_found", entity_type="nucleo", entity_id=str(nucleo_id)
+        )
         raise HTTPException(status_code=404, detail="Nucleo not found")
     return nucleo.to_dict()
 

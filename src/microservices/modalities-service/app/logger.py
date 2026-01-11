@@ -1,12 +1,14 @@
-import logging
+"""
+Logging configuration for modalities-service
+"""
 
-import logging_loki
+from taca_logging import configure_logging, get_logger
 
-handler = logging_loki.LokiHandler(
-    url="http://loki:3100/loki/api/v1/push",
-    tags={"application": "modalities-service", "job": "modalities-service"},
-    version="1",
+# Configure structured logging
+configure_logging(
+    service_name="modalities-service",
+    log_level="INFO",
 )
-logger = logging.getLogger("modalities-service")
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
+
+# Export logger for use in other modules
+logger = get_logger("modalities-service")

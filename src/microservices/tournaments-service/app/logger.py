@@ -1,13 +1,14 @@
-import logging
+"""
+Logging configuration for tournaments-service
+"""
 
-import logging_loki
+from taca_logging import configure_logging, get_logger
 
-# Logging setup
-handler = logging_loki.LokiHandler(
-    url="http://loki:3100/loki/api/v1/push",
-    tags={"application": "tournaments-service", "job": "tournaments-service"},
-    version="1",
+# Configure structured logging
+configure_logging(
+    service_name="tournaments-service",
+    log_level="INFO",
 )
-logger = logging.getLogger("tournaments-service")
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
+
+# Export logger for use in other modules
+logger = get_logger("tournaments-service")
