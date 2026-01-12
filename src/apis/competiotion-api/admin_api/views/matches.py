@@ -43,7 +43,10 @@ class MatchListCreateView(APIView):
         # TODO: Filter by course_id when available
         result = matches_service_client.list_matches()
         matches = result.get("matches", [])
-        return Response(matches, status=status.HTTP_200_OK)
+
+        serializer = MatchListSerializer(data=matches, many=True)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
         serializer = MatchCreateSerializer(data=request.data)
@@ -77,11 +80,14 @@ class MatchListCreateView(APIView):
                 ),  # TODO: Get from auth
                 participants=participants,
             )
-            return Response(match, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response(
                 {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+        serializer = MatchListSerializer(data=match)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
@@ -106,9 +112,12 @@ class MatchDetailView(APIView):
     def get(self, request, match_id):
         try:
             match = matches_service_client.get_match(match_id=match_id)
-            return Response(match, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = MatchListSerializer(data=match)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, match_id):
         serializer = MatchUpdateSerializer(data=request.data)
@@ -176,11 +185,14 @@ class MatchDetailView(APIView):
             match = matches_service_client.update_match(
                 match_id=match_id, **update_data
             )
-            return Response(match, status=status.HTTP_200_OK)
         except Exception as e:
             return Response(
                 {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+        serializer = MatchListSerializer(data=match)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, match_id):
         try:
@@ -231,11 +243,14 @@ def match_result(request, match_id):
             status="finished",
         )
 
-        return Response(updated_match, status=status.HTTP_200_OK)
     except Exception as e:
         return Response(
             {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+    serializer = MatchListSerializer(data=updated_match)
+    serializer.is_valid(raise_exception=True)
+    return Response(updated_match, status=status.HTTP_200_OK)
 
 
 @extend_schema(
@@ -265,11 +280,14 @@ def match_lineup(request, match_id):
             team_id=serializer.validated_data["team_id"],
             players=players,
         )
-        return Response(result, status=status.HTTP_200_OK)
     except Exception as e:
         return Response(
             {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+    serializer = MatchListSerializer(data=result)
+    serializer.is_valid(raise_exception=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @extend_schema(

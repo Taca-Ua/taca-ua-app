@@ -73,7 +73,7 @@ class TeamListCreateView(APIView):
         tags=["Team Management"],
     ),
     put=extend_schema(
-        parameters=[TeamUpdateSerializer],
+        request=TeamUpdateSerializer,
         responses=TeamDetailSerializer,
         description="Update a team (name, add/remove players)",
         tags=["Team Management"],

@@ -11,11 +11,9 @@ class ModalityListSerializer(serializers.Serializer):
     modality_type = ModalityTypeListSerializer()
 
 
-class ModalityDetailSerializer(serializers.Serializer):
+class ModalityDetailSerializer(ModalityListSerializer):
     """Serializer for modality details"""
 
-    id = serializers.UUIDField()
-    name = serializers.CharField()
     modality_type = ModalityTypeDetailSerializer()
 
 

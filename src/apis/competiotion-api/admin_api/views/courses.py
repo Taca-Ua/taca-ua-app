@@ -26,7 +26,7 @@ from ..services.modalities_service import modalities_service_client
     ),
     post=extend_schema(
         request=CourseCreateSerializer,
-        responses=CourseListSerializer,
+        responses=CourseDetailSerializer,
         description="Create a new course",
         tags=["Course Management"],
     ),
@@ -48,7 +48,8 @@ class CourseListCreateView(APIView):
             }
         )
 
-        return Response(course, status=status.HTTP_201_CREATED)
+        serializer = CourseDetailSerializer(course)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
@@ -87,7 +88,9 @@ class CourseDetailView(APIView):
             update_data["nucleo_id"] = str(serializer.validated_data["nucleo_id"])
 
         course = modalities_service_client.update_course(course_id, update_data)
-        return Response(course)
+
+        serializer = CourseDetailSerializer(course)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, course_id):
         modalities_service_client.delete_course(course_id)

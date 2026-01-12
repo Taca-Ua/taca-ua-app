@@ -28,7 +28,7 @@ from ..services.modalities_service import modalities_service_client
     ),
     post=extend_schema(
         request=ModalityCreateSerializer,
-        responses=ModalityDetailSerializer,
+        responses=ModalityListSerializer,
         description="Create a new modality",
         tags=["Modality Management"],
     ),
@@ -56,7 +56,7 @@ class ModalityListCreateView(APIView):
         )
 
         # Serialize output data
-        serializer = ModalityDetailSerializer(data=modality)
+        serializer = ModalityListSerializer(data=modality)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 

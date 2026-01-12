@@ -15,24 +15,29 @@ export interface NucleoCreate {
   abbreviation: string;
 }
 
+export interface NucleoUpdate {
+  name?: string;
+  abbreviation?: string;
+}
+
 export const nucleosApi = {
   async getAll(): Promise<Nucleo[]> {
-	return apiClient.get<Nucleo[]>('/nucleos');
+	return apiClient.get<Nucleo[]>('/nucleos/');
   },
 
   async getById(nucleoId: string): Promise<Nucleo> {
-	return apiClient.get<Nucleo>(`/nucleos/${nucleoId}`);
+	return apiClient.get<Nucleo>(`/nucleos/${nucleoId}/`);
   },
 
-  async create(data: NucleoCreate): Promise<Nucleo> {
-	return apiClient.post<Nucleo>('/nucleos', data);
+  async create(data: NucleoCreate): Promise<NucleoDetail> {
+	return apiClient.post<NucleoDetail>('/nucleos/', data);
   },
 
-  async update(nucleoId: string, data: Partial<NucleoCreate>): Promise<Nucleo> {
-	return apiClient.put<Nucleo>(`/nucleos/${nucleoId}`, data);
+  async update(nucleoId: string, data: NucleoUpdate): Promise<NucleoDetail> {
+	return apiClient.put<NucleoDetail>(`/nucleos/${nucleoId}/`, data);
   },
 
   async delete(nucleoId: string): Promise<void> {
-	return apiClient.delete(`/nucleos/${nucleoId}`);
+	return apiClient.delete(`/nucleos/${nucleoId}/`);
   },
 };

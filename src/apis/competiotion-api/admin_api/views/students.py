@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 
 from ..serializers.students import (
     StudentCreateSerializer,
+    StudentDetailSerializer,
     StudentListRequestSerializer,
     StudentListSerializer,
     StudentUpdateSerializer,
@@ -55,19 +56,20 @@ class StudentListCreateView(APIView):
             }
         )
 
+        serializer = StudentListSerializer(data=member)
+        serializer.is_valid(raise_exception=True)
         return Response(member, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
     get=extend_schema(
-        request=StudentUpdateSerializer,
-        responses=StudentListSerializer,
+        responses=StudentDetailSerializer,
         description="Update or delete a student",
         tags=["Student Management"],
     ),
     put=extend_schema(
         request=StudentUpdateSerializer,
-        responses=StudentListSerializer,
+        responses=StudentDetailSerializer,
         description="Update or delete a student",
         tags=["Student Management"],
     ),
@@ -80,7 +82,10 @@ class StudentListCreateView(APIView):
 class StudentDetailView(APIView):
     def get(self, request, student_id):
         student = modalities_service_client.get_student(student_id)
-        return Response(student, status=status.HTTP_200_OK)
+
+        serializer = StudentDetailSerializer(data=student)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, student_id):
         serializer = StudentUpdateSerializer(data=request.data)
@@ -97,7 +102,10 @@ class StudentDetailView(APIView):
             update_data["is_member"] = serializer.validated_data["is_member"]
 
         student = modalities_service_client.update_student(student_id, update_data)
-        return Response(student, status=status.HTTP_200_OK)
+
+        serializer = StudentDetailSerializer(data=student)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, student_id):
         modalities_service_client.delete_student(student_id)

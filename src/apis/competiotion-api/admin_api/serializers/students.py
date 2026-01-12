@@ -24,6 +24,12 @@ class StudentListSerializer(serializers.Serializer):
     is_member = serializers.BooleanField(default=False)
 
 
+class StudentDetailSerializer(StudentListSerializer):
+    """Serializer for student detail"""
+
+    pass
+
+
 class StudentCreateSerializer(serializers.Serializer):
     """Serializer for creating a student"""
 

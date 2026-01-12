@@ -21,13 +21,13 @@ from ..services.modalities_service import modalities_service_client
 
 @extend_schema_view(
     get=extend_schema(
-        responses=ModalityTypeDetailSerializer(many=True),
+        responses=ModalityTypeListSerializer(many=True),
         description="List all modality types",
         tags=["Modality Management"],
     ),
     post=extend_schema(
         request=ModalityTypeCreateSerializer,
-        responses=ModalityTypeDetailSerializer,
+        responses=ModalityTypeListSerializer,
         description="Create a new modality type",
         tags=["Modality Management"],
     ),
@@ -36,7 +36,7 @@ class ModalityTypeListCreateView(APIView):
     def get(self, request: Request):
         modality_types = modalities_service_client.list_modality_types()
 
-        serializer = ModalityTypeDetailSerializer(data=modality_types, many=True)
+        serializer = ModalityTypeListSerializer(data=modality_types, many=True)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -51,7 +51,7 @@ class ModalityTypeListCreateView(APIView):
                 "escaloes": serializer.validated_data["escaloes"],
             }
         )
-        serializer = ModalityTypeDetailSerializer(data=modality_type)
+        serializer = ModalityTypeListSerializer(data=modality_type)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 

@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 
 from ..serializers.staff import (
     StaffCreateSerializer,
+    StaffDetailSerializer,
     StaffListSerializer,
     StaffUpdateSerializer,
 )
@@ -28,7 +29,10 @@ from ..services.modalities_service import modalities_service_client
 class StaffListCreateView(APIView):
     def get(self, request):
         all_staff = modalities_service_client.list_staff()
-        return Response(all_staff, status=status.HTTP_200_OK)
+
+        serializer = StaffListSerializer(data=all_staff, many=True)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
         serializer = StaffCreateSerializer(data=request.data)
@@ -40,19 +44,20 @@ class StaffListCreateView(APIView):
             contact=serializer.validated_data.get("contact", None),
         )
 
-        return Response(staff_member, status=status.HTTP_201_CREATED)
+        serializer = StaffListSerializer(data=staff_member)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
     get=extend_schema(
-        request=StaffUpdateSerializer,
-        responses=StaffListSerializer,
+        responses=StaffDetailSerializer,
         description="Update a staff member of the authenticated nucleo",
         tags=["Staff Management"],
     ),
     put=extend_schema(
         request=StaffUpdateSerializer,
-        responses=StaffListSerializer,
+        responses=StaffDetailSerializer,
         description="Update a staff member of the authenticated nucleo",
         tags=["Staff Management"],
     ),
@@ -65,7 +70,10 @@ class StaffListCreateView(APIView):
 class StaffDetailView(APIView):
     def get(self, request, staff_id):
         staff_member = modalities_service_client.get_staff(staff_id)
-        return Response(staff_member, status=status.HTTP_200_OK)
+
+        serializer = StaffDetailSerializer(data=staff_member)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, staff_id):
         serializer = StaffUpdateSerializer(data=request.data)
@@ -74,7 +82,10 @@ class StaffDetailView(APIView):
         staff_member = modalities_service_client.update_staff(
             staff_id, serializer.validated_data
         )
-        return Response(staff_member, status=status.HTTP_200_OK)
+
+        serializer = StaffDetailSerializer(data=staff_member)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, staff_id):
         modalities_service_client.delete_staff(staff_id)

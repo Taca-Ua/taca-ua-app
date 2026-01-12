@@ -1,41 +1,39 @@
 import { apiClient } from './client';
 import { type Match } from "./matches";
+import type { Modality } from './modalities';
+import type { Team } from './teams';
 
 export interface Tournament {
   id: string;
-  modality_name: string;
   name: string;
   status: string;
-  start_date?: string;
 }
 
 export interface TournamentDetail extends Tournament {
-    teams: {
-        id: string;
-        name: string;
-    }[];
-	matches: Match[];
-    ranking_positions?: number; // Number of ranking positions to collect (e.g., 3 for top 3)
-    final_rankings?: {
-        team_id: string;
-        team_name: string;
-        position: number;
-    }[];
+  modality: Modality;
+  start_date: string;
+  teams: Team[];
+  matches: Match[];
 }
 
 export interface TournamentCreate {
-    modality_id: string;
-    name: string;
-    teams?: string[];
-    start_date?: string;
+  name: string;
+  modality_id: string;
+  teams_ids?: string[];
+  start_date?: string;
 }
 
 export interface TournamentUpdate {
-    name?: string;
-    start_date?: string;
-    status?: 'draft' | 'active' | 'finished';
-    teams_add?: string[];
-    teams_remove?: string[];
+  name?: string;
+  start_date?: string;
+  status?: 'draft' | 'active' | 'finished';
+  teams_add?: string[];
+  teams_remove?: string[];
+}
+
+// Input interfaces
+export interface TournamentFinish {
+  ranking_entries?: { team_id: string; position: number }[];
 }
 
 export const tournamentsApi = {
@@ -43,12 +41,12 @@ export const tournamentsApi = {
     return apiClient.get<Tournament[]>('/tournaments/');
   },
 
-  async getById(id: string): Promise<TournamentDetail> {
-    return apiClient.get<TournamentDetail>(`/tournaments/${id}/`);
+  async create(data: TournamentCreate): Promise<Tournament> {
+    return apiClient.post<Tournament>('/tournaments/', data);
   },
 
-  async create(data: TournamentCreate): Promise<TournamentDetail> {
-    return apiClient.post<TournamentDetail>('/tournaments/', data);
+  async getById(id: string): Promise<TournamentDetail> {
+    return apiClient.get<TournamentDetail>(`/tournaments/${id}/`);
   },
 
   async update(id: string, data: TournamentUpdate): Promise<TournamentDetail> {
@@ -59,7 +57,7 @@ export const tournamentsApi = {
     return apiClient.delete(`/tournaments/${id}/`);
   },
 
-  async finish(id: string, rankings?: { team_id: string; position: number }[]): Promise<TournamentDetail> {
-    return apiClient.post<TournamentDetail>(`/tournaments/${id}/finish/`, { "ranking_entries": rankings  });
+  async finish(id: string, data: TournamentFinish): Promise<TournamentDetail> {
+    return apiClient.post<TournamentDetail>(`/tournaments/${id}/finish/`, data);
   },
 };

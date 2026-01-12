@@ -29,7 +29,7 @@ from ..services.tournaments_service import tournaments_service
     ),
     post=extend_schema(
         request=TournamentCreateSerializer,
-        responses=TournamentDetailSerializer,
+        responses=TournamentListSerializer,
         description="Create a new tournament",
         tags=["Tournament Management"],
     ),
@@ -59,11 +59,14 @@ class TournamentListCreateView(APIView):
                 ),
                 teams_ids=serializer.validated_data.get("teams_ids"),
             )
-            return Response(tournament, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response(
                 {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+        serializer = TournamentListSerializer(data=tournament)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(

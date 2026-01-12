@@ -14,6 +14,12 @@ class StaffListSerializer(serializers.Serializer):
     contact = serializers.CharField()
 
 
+class StaffDetailSerializer(StaffListSerializer):
+    """Serializer for detailed staff view"""
+
+    pass
+
+
 class StaffCreateSerializer(serializers.Serializer):
     """Serializer for creating a staff member"""
 
