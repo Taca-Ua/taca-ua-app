@@ -310,7 +310,7 @@ def create_modality_type(
         modality_type = ModalityType(
             name=modality_type_data.name,
             description=modality_type_data.description,
-            escaloes=modality_type_data.escaloes,
+            escaloes=modality_type_data.escaloes_encoder(),
             created_by=DEFAULT_USER_ID,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
@@ -823,3 +823,10 @@ def delete_team(team_id: UUID, db: Session = Depends(get_db_session)):
     db.delete(team)
     db.commit()
     logger.info(f"Deleted team: {team_id}")
+
+
+@router.post("/teams/batch-get", response_model=List[TeamResponse])
+def get_teams_by_ids(team_ids: List[UUID], db: Session = Depends(get_db_session)):
+    """Get multiple teams by their IDs"""
+    teams = db.query(Team).filter(Team.id.in_(team_ids)).all()
+    return [team.to_dict(include_players=True) for team in teams]

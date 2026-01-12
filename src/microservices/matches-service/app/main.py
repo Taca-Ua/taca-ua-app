@@ -6,16 +6,19 @@ from taca_logging import StructlogMiddleware
 
 from .events import rabbitmq_service
 from .logger import logger
+from .outbox_publisher import outbox_publisher
 from .routes import router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Start RabbitMQ consumer
+    # Startup: Start RabbitMQ consumer and OutboxPublisher
     await rabbitmq_service.start_consuming()
+    await outbox_publisher.start()
     logger.info("service_started", action="startup")
     yield
-    # Shutdown: Disconnect RabbitMQ
+    # Shutdown: Disconnect RabbitMQ and stop OutboxPublisher
+    await outbox_publisher.stop()
     await rabbitmq_service.disconnect()
     logger.info("service_stopped", action="shutdown")
 

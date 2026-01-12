@@ -57,7 +57,7 @@ class TournamentsService(BaseService):
         name: str,
         created_by: UUID,
         start_date: Optional[str] = None,
-        team_ids: Optional[List[UUID]] = None,
+        teams_ids: Optional[List[UUID]] = None,
     ) -> Dict[str, Any]:
         """
         Create a new tournament
@@ -67,7 +67,7 @@ class TournamentsService(BaseService):
             name: Tournament name
             created_by: ID of the user creating the tournament
             start_date: Optional start date (ISO format)
-            team_ids: Optional list of team IDs
+            teams_ids: Optional list of team IDs
 
         Returns:
             Created tournament dictionary
@@ -79,9 +79,10 @@ class TournamentsService(BaseService):
         }
         if start_date:
             data["start_date"] = start_date
-        if team_ids:
-            data["team_ids"] = [str(team_id) for team_id in team_ids]
+        if teams_ids:
+            data["teams_ids"] = [str(team_id) for team_id in teams_ids]
 
+        print(data)
         return self.post("/tournaments", data=data)
 
     def update_tournament(

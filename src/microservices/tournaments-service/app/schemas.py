@@ -16,7 +16,7 @@ class TournamentCreate(BaseModel):
 
     name: str
     modality_id: UUID
-    team_ids: Optional[List[UUID]]
+    teams_ids: Optional[List[UUID]]
     start_date: Optional[datetime]
     created_by: Optional[UUID] = None
 

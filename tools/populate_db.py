@@ -1,3 +1,4 @@
+import datetime
 import random
 
 import requests
@@ -190,7 +191,7 @@ def populate_modalities_types():
 
     ids = {}
     for modality_type in modalities_types:
-        response = requests.post(f"{API_URL}/modality-types", json=modality_type)
+        response = requests.post(f"{API_URL}/modality-types/", json=modality_type)
         if response.status_code == 201:
             print(f"Created modality type: {modality_type['name']}")
             ids[modality_type["name"]] = response.json().get("id", None)
@@ -198,13 +199,14 @@ def populate_modalities_types():
             print(
                 f"Failed to create modality type: {modality_type['name']}, Status Code: {response.status_code}, Response: {response.text}"
             )
+            raise Exception("Failed to populate modality types.")
 
     return ids
 
 
 def populate_modalidades(modality_types_dict=None):
     if modality_types_dict is None:
-        data = requests.get(f"{API_URL}/modality-types")
+        data = requests.get(f"{API_URL}/modality-types/")
         modality_types = data.json()
         modality_types_dict = {mt["name"]: mt["id"] for mt in modality_types}
 
@@ -362,7 +364,7 @@ def populate_modalidades(modality_types_dict=None):
 
     resp_modalidades = []
     for modalidade in modalidades:
-        response = requests.post(f"{API_URL}/modalities", json=modalidade)
+        response = requests.post(f"{API_URL}/modalities/", json=modalidade)
         if response.status_code == 201:
             print(f"Created modality: {modalidade['name']}")
             resp_modalidades.append(response.json())
@@ -370,12 +372,13 @@ def populate_modalidades(modality_types_dict=None):
             print(
                 f"Failed to create modality: {modalidade['name']}, Status Code: {response.status_code}, Response: {response.text}"
             )
+            raise Exception("Failed to populate modalities.")
 
     return resp_modalidades
 
 
 def populate_nucleos():
-    check = requests.get(f"{API_URL}/nucleos")
+    check = requests.get(f"{API_URL}/nucleos/")
     if check.status_code == 200 and len(check.json()) > 0:
         print("Nucleos already populated.")
         return check.json()
@@ -420,7 +423,7 @@ def populate_nucleos():
 
     resp_nucleos = []
     for nucleo in nucleos:
-        response = requests.post(f"{API_URL}/nucleos", json=nucleo)
+        response = requests.post(f"{API_URL}/nucleos/", json=nucleo)
         if response.status_code == 201:
             print(f"Created nucleo: {nucleo['name']}")
             resp_nucleos.append(response.json())
@@ -428,12 +431,13 @@ def populate_nucleos():
             print(
                 f"Failed to create nucleo: {nucleo['name']}, Status Code: {response.status_code}, Response: {response.text}"
             )
+            raise Exception("Failed to populate nucleos.")
 
     return resp_nucleos
 
 
 def populate_courses(nucleos):
-    check = requests.get(f"{API_URL}/courses")
+    check = requests.get(f"{API_URL}/courses/")
     if check.status_code == 200 and len(check.json()) > 0:
         print("Courses already populated.")
         return check.json()
@@ -561,7 +565,7 @@ def populate_courses(nucleos):
     print("Courses to be created:", [course["abbreviation"] for course in courses])
     resp = []
     for course in courses:
-        response = requests.post(f"{API_URL}/courses", json=course)
+        response = requests.post(f"{API_URL}/courses/", json=course)
         if response.status_code == 201:
             print(f"Created course: {course['name']}")
             resp.append(response.json())
@@ -569,28 +573,36 @@ def populate_courses(nucleos):
             print(
                 f"Failed to create course: {course['name']}, Status Code: {response.status_code}, Response: {response.text}"
             )
+            with open("error.html", "w") as f:
+                f.write(response.text)
+            raise Exception("Failed to populate courses.")
 
     return resp
 
 
 def delete_all_courses():
-    response = requests.get(f"{API_URL}/courses")
+    response = requests.get(f"{API_URL}/courses/")
     if response.status_code != 200:
         print("Failed to fetch courses for deletion.")
         return
 
     courses = response.json()
     for course in courses:
-        del_response = requests.delete(f"{API_URL}/courses/{course['id']}")
+        del_response = requests.delete(f"{API_URL}/courses/{course['id']}/")
         if del_response.status_code == 204:
             print(f"Deleted course: {course['name']}")
         else:
             print(
                 f"Failed to delete course: {course['name']}, Status Code: {del_response.status_code}, Response: {del_response.text}"
             )
+            raise Exception("Failed to delete courses.")
 
 
 def populate_members(courses):
+    response = requests.get(f"{API_URL}/students")
+    if response.status_code == 200 and len(response.json()) > 0:
+        print("Members already populated.")
+        return response.json()
     courses_dict = {course["name"]: course["id"] for course in courses}
 
     def names_generator(n: int = 100):
@@ -643,13 +655,15 @@ def populate_members(courses):
         participants.append(participant)
 
     for participant in participants:
-        response = requests.post(f"{API_URL}/students", json=participant)
+        response = requests.post(f"{API_URL}/students/", json=participant)
         if response.status_code == 201:
             print(f"Created member: {participant['full_name']}")
         else:
             print(
                 f"Failed to create member: {participant['full_name']}, Status Code: {response.status_code}, Response: {response.text}"
             )
+            raise Exception("Failed to populate members.")
+
     return participants
 
 
@@ -657,20 +671,163 @@ def delete_all_members():
     response = requests.get(f"{API_URL}/students")
     if response.status_code != 200:
         print("Failed to fetch members for deletion.")
+        print(response.text)
         return
 
     members = response.json()
     for member in members:
-        del_response = requests.delete(f"{API_URL}/students/{member['id']}")
+        del_response = requests.delete(f"{API_URL}/students/{member['id']}/")
         if del_response.status_code == 204:
             print(f"Deleted member: {member['full_name']}")
         else:
             print(
                 f"Failed to delete member: {member['full_name']}, Status Code: {del_response.status_code}, Response: {del_response.text}"
             )
+            raise Exception("Failed to delete members.")
+
+
+def populate_teams(courses, modality):
+    response = requests.get(f"{API_URL}/teams/")
+    if response.status_code == 200 and len(response.json()) > 0:
+        print("Teams already populated.")
+        return response.json()
+
+    def _generate_team_data(x):
+        return {
+            "name": f"Team {x}",
+            "modality_id": modality["id"],
+            "course_id": random.choice(courses)["id"],
+        }
+
+    resp_teams = []
+    for team in [_generate_team_data(i) for i in range(1, 6)]:
+        response = requests.post(f"{API_URL}/teams/", json=team)
+        if response.status_code == 201:
+            print(f"Created team: {team['name']}")
+            resp_teams.append(response.json())
+        else:
+            print(
+                f"Failed to create team: {team['name']}, Status Code: {response.status_code}, Response: {response.text}"
+            )
+            raise Exception("Failed to populate teams.")
+
+    return resp_teams
+
+
+def delete_all_teams():
+    response = requests.get(f"{API_URL}/teams/")
+    if response.status_code != 200:
+        print("Failed to fetch teams for deletion.")
+        print(response.text)
+        return
+
+    teams = response.json()
+    for team in teams:
+        del_response = requests.delete(f"{API_URL}/teams/{team['id']}/")
+        if del_response.status_code == 204:
+            print(f"Deleted team: {team['name']}")
+        else:
+            print(
+                f"Failed to delete team: {team['name']}, Status Code: {del_response.status_code}, Response: {del_response.text}"
+            )
+            raise Exception("Failed to delete teams.")
+
+
+def fill_teams_with_members(teams, members):
+    for team in teams:
+        team_members = random.sample(members, k=10)
+
+        players_add = []
+        for member in team_members:
+            players_add.append(member["id"])
+
+        response = requests.put(
+            f"{API_URL}/teams/{team['id']}/",
+            json={"players_add": players_add},
+        )
+
+        if response.status_code == 200:
+            print(f"Added member: {member['full_name']} to team: {team['name']}")
+        else:
+            print(
+                f"Failed to add member: {member['full_name']} to team: {team['name']}, Status Code: {response.status_code}, Response: {response.text}"
+            )
+            raise Exception("Failed to add members to teams.")
+
+
+def populate_tournament(modality, teams):
+    response = requests.get(f"{API_URL}/tournaments/")
+    if (
+        response.status_code == 200
+        and len(response.json()) > 0
+        and any(t["name"] == "Tournament EA Sports FC" for t in response.json())
+    ):
+        print("Tournament 'Tournament EA Sports FC' already populated.")
+        return response.json()[0]
+
+    tournament = {
+        "name": "Tournament EA Sports FC",
+        "modality_id": modality["id"],
+        "teams_ids": [team["id"] for team in teams],
+        "start_date": "2026-01-12T13:30:54.823Z",
+    }
+
+    response = requests.post(f"{API_URL}/tournaments/", json=tournament)
+    if response.status_code == 201:
+        print(f"Created tournament: {tournament['name']}")
+    else:
+        print(
+            f"Failed to create tournament: {tournament['name']}, Status Code: {response.status_code}, Response: {response.text}"
+        )
+        raise Exception("Failed to populate tournament.")
+
+    return response.json()
+
+
+def populate_matches(tournament, teams):
+    response = requests.get(f"{API_URL}/tournaments/{tournament['id']}/")
+    if response.status_code == 200 and len(response.json().get("matches", [])) > 0:
+        print(f"Matches for tournament '{tournament['name']}' already populated.")
+        return response.json().get("matches", [])
+
+    def generate_match_data(tournament):
+        team_home, team_away = random.sample(teams, 2)
+        random_date = datetime.datetime.now() + datetime.timedelta(
+            days=random.randint(1, 30)
+        )
+        random_location = f"Stadium {random.randint(1, 100)}"
+
+        dat = {
+            "tournament_id": tournament["id"],
+            "team_home_id": team_home["id"],
+            "team_away_id": team_away["id"],
+            "location": random_location,
+            "start_time": random_date.isoformat(),
+        }
+
+        return dat
+
+    matches = [generate_match_data(tournament) for _ in range(10)]
+    resp_matches = []
+    for match in matches:
+        response = requests.post(f"{API_URL}/matches/", json=match)
+        if response.status_code == 201:
+            print(
+                f"Created match between: {match['team_home_id']} and {match['team_away_id']}"
+            )
+            resp_matches.append(response.json())
+        else:
+            print(
+                f"Failed to create match between: {match['team_home_id']} and {match['team_away_id']}, Status Code: {response.status_code}, Response: {response.text}"
+            )
+            raise Exception("Failed to populate matches.")
+
+    return resp_matches
 
 
 def main():
+    input("Press Enter to continue...")
+
     modality_types_ids = populate_modalities_types()
     print("Populated Modality Types IDs:", modality_types_ids)
     input("Press Enter to continue...")
@@ -683,6 +840,7 @@ def main():
     print("Populated Nucleos:", [nucleo["name"] for nucleo in nucleos])
     input("Press Enter to continue...")
 
+    # delete_all_courses()
     courses = populate_courses(nucleos)
     print("Populated Courses: ", [course["abbreviation"] for course in courses])
     input("Press Enter to continue...")
@@ -691,6 +849,24 @@ def main():
     members = populate_members(courses)
     print("Populated Members: ", len(members))
     input("Press Enter to continue...")
+
+    # delete_all_teams()
+    modality = next((m for m in modalities if m["name"] == "EA Sports FC"), None)
+    teams = None
+    if courses and modality:
+        teams = populate_teams(courses, modality)
+        print("Populated Teams: ", [team["name"] for team in teams])
+    input("Press Enter to continue...")
+
+    if teams:
+        # fill_teams_with_members(teams, members)
+        print("Filled Teams with Members.")
+    input("Press Enter to continue...")
+
+    tournament = populate_tournament(modality, teams)
+    input("Press Enter to continue...")
+
+    populate_matches(tournament, teams)
 
 
 if __name__ == "__main__":

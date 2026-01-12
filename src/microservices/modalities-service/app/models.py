@@ -95,8 +95,7 @@ class Course(Base):
             "id": str(self.id),
             "name": self.name,
             "abbreviation": self.abbreviation,
-            "nucleo_id": str(self.nucleo_id),
-            "nucleo_name": self.nucleo.name if self.nucleo else None,
+            "nucleo": self.nucleo.to_dict() if self.nucleo else None,
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
@@ -232,8 +231,7 @@ class Student(Member):
         base_dict = super().to_dict()
         base_dict.update(
             {
-                "course_id": str(self.course_id),
-                "course_name": self.course.name if self.course else None,
+                "course": self.course.to_dict() if self.course else None,
                 "student_number": self.student_number,
                 "is_member": self.is_member,
             }
@@ -300,10 +298,8 @@ class Team(Base):
         result = {
             "id": str(self.id),
             "name": self.name,
-            "modality_id": str(self.modality_id),
-            "modality_name": self.modality.name if self.modality else None,
-            "course_id": str(self.course_id),
-            "course_name": self.course.name if self.course else None,
+            "modality": self.modality.to_dict() if self.modality else None,
+            "course": self.course.to_dict() if self.course else None,
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,

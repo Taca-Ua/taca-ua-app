@@ -43,7 +43,7 @@ class TeamListCreateView(APIView):
         teams = modalities_service_client.list_teams()
 
         # Serialize output data
-        serializer = TeamListSerializer(teams, many=True)
+        serializer = TeamListSerializer(data=teams, many=True)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -73,7 +73,7 @@ class TeamListCreateView(APIView):
         tags=["Team Management"],
     ),
     put=extend_schema(
-        request=TeamUpdateSerializer,
+        parameters=[TeamUpdateSerializer],
         responses=TeamDetailSerializer,
         description="Update a team (name, add/remove players)",
         tags=["Team Management"],

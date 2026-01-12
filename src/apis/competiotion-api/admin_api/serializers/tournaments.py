@@ -4,6 +4,7 @@ Tournament management serializers
 
 from rest_framework import serializers
 
+from .matches import MatchListSerializer
 from .modalities import ModalityListSerializer
 from .teams import TeamListSerializer
 
@@ -17,20 +18,18 @@ STATUS_CHOICES = [
 class TournamentListSerializer(serializers.Serializer):
     """Serializer for listing tournaments"""
 
-    id = serializers.UUIDField(read_only=True)
+    id = serializers.UUIDField()
     name = serializers.CharField()
-    status = serializers.ChoiceField(choices=STATUS_CHOICES, read_only=True)
+    status = serializers.ChoiceField(choices=STATUS_CHOICES)
 
 
 class TournamentDetailSerializer(TournamentListSerializer):
     """Serializer for tournament details"""
 
-    modality = ModalityListSerializer(read_only=True)
+    modality = ModalityListSerializer()
     start_date = serializers.DateTimeField(required=False, allow_null=True)
-    teams = TeamListSerializer(many=True, read_only=True)
-    matches = serializers.ListField(
-        child=serializers.DictField(), read_only=True, default=[]
-    )
+    teams = TeamListSerializer(many=True)
+    matches = MatchListSerializer(many=True)
 
 
 class TournamentCreateSerializer(serializers.Serializer):
@@ -38,7 +37,7 @@ class TournamentCreateSerializer(serializers.Serializer):
 
     name = serializers.CharField(required=True)
     modality_id = serializers.UUIDField(required=True)
-    team_ids = serializers.ListField(child=serializers.UUIDField(), required=False)
+    teams_ids = serializers.ListField(child=serializers.UUIDField(), required=False)
     start_date = serializers.DateTimeField(required=False, allow_null=True)
 
 

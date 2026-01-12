@@ -4,14 +4,16 @@ Course management serializers
 
 from rest_framework import serializers
 
+from .nucleus import NucleosListSerializer
+
 
 class CourseListSerializer(serializers.Serializer):
     """Serializer for listing courses"""
 
-    id = serializers.UUIDField(read_only=True)
+    id = serializers.UUIDField()
     name = serializers.CharField()
     abbreviation = serializers.CharField()
-    nucleo = serializers.CharField()
+    nucleo = NucleosListSerializer()
 
 
 class CourseDetailSerializer(CourseListSerializer):

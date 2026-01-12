@@ -16,6 +16,8 @@ from ..serializers.tournaments import (
     TournamentListSerializer,
     TournamentUpdateSerializer,
 )
+from ..services.matches_service import matches_service_client
+from ..services.modalities_service import modalities_service_client
 from ..services.tournaments_service import tournaments_service
 
 
@@ -55,7 +57,7 @@ class TournamentListCreateView(APIView):
                     if serializer.validated_data.get("start_date")
                     else None
                 ),
-                team_ids=serializer.validated_data.get("team_ids"),
+                teams_ids=serializer.validated_data.get("teams_ids"),
             )
             return Response(tournament, status=status.HTTP_201_CREATED)
         except Exception as e:
@@ -86,7 +88,33 @@ class TournamentDetailView(APIView):
         """Get tournament details by ID"""
         try:
             tournament = tournaments_service.get_tournament(tournament_id)
-            serializer = TournamentDetailSerializer(tournament)
+
+            # Enrich with modality and team details
+            tournament["modality"] = modalities_service_client.get_modality(
+                tournament["modality_id"]
+            )
+            tournament["teams"] = modalities_service_client.get_teams_by_ids(
+                tournament["teams_ids"]
+            )
+            tournament_matches = matches_service_client.list_matches(
+                tournament_id=tournament_id
+            ).get("matches", [])
+
+            for match in tournament_matches:
+                for participant in match["participants"]:
+                    if participant.get("team_id", None):
+                        participant["team"] = modalities_service_client.get_team(
+                            participant["team_id"]
+                        )
+
+                    if participant.get("athlete_id", None):
+                        participant["athlete"] = modalities_service_client.get_student(
+                            participant["athlete_id"]
+                        )
+
+            tournament["matches"] = tournament_matches
+            serializer = TournamentDetailSerializer(data=tournament)
+            serializer.is_valid(raise_exception=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)

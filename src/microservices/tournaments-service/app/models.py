@@ -7,39 +7,32 @@ import uuid
 from datetime import datetime, timezone
 
 import sqlalchemy as sa
-from sqlalchemy import (
-    Boolean,
-    Column,
-    DateTime,
-    ForeignKey,
-    Integer,
-    String,
-    Table,
-    Text,
-)
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
 Base = declarative_base()
 
-# Association table for Tournament-Team many-to-many relationship
-tournament_teams = Table(
-    "tournament_teams",
-    Base.metadata,
-    Column(
-        "tournament_id",
+
+class TournamentTeam(Base):
+    """Association model for Tournament-Team relationship"""
+
+    __tablename__ = "tournament_teams"
+    __table_args__ = {"schema": "tournaments"}
+
+    tournament_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("tournaments.tournament.id"),
+        ForeignKey("tournaments.tournament.id", ondelete="CASCADE"),
         primary_key=True,
-    ),
-    Column(
-        "team_id",
-        UUID(as_uuid=True),
-        primary_key=True,
-    ),
-    schema="tournaments",
-)
+    )
+    team_id = Column(UUID(as_uuid=True), primary_key=True)
+    created_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    # Relationships
+    tournament = relationship("Tournament", back_populates="teams_ids")
 
 
 class Tournament(Base):
@@ -71,6 +64,11 @@ class Tournament(Base):
         back_populates="tournament",
         cascade="all, delete-orphan",
     )
+    teams_ids = relationship(
+        "TournamentTeam",
+        back_populates="tournament",
+        cascade="all, delete-orphan",
+    )
 
     def to_dict(self, include_teams=False, include_ranking=False):
         result = {
@@ -84,6 +82,7 @@ class Tournament(Base):
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "finished_at": self.finished_at.isoformat() if self.finished_at else None,
             "finished_by": str(self.finished_by) if self.finished_by else None,
+            "teams_ids": [str(team.team_id) for team in self.teams_ids],
         }
 
         if include_ranking:

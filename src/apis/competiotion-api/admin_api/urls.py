@@ -42,7 +42,7 @@ urlpatterns = [
         name="nucleo-admin-detail",
     ),
     # Course Management (RF2)
-    path("courses", include("admin_api.views.courses")),
+    path("courses/", include("admin_api.views.courses")),
     # Regulation Management (RF2.3)
     path("regulations/", include("admin_api.views.regulations")),
     # Modality Management (RF3)

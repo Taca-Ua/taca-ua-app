@@ -166,6 +166,10 @@ class ModalitiesService(BaseService):
         """Get a team by ID"""
         return self.get(f"/teams/{team_id}")
 
+    def get_teams_by_ids(self, team_ids: List[str]) -> List[Dict[str, Any]]:
+        """Get multiple teams by their IDs"""
+        return self.post("/teams/batch-get", team_ids)
+
     def update_team(self, team_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
         """Update a team"""
         return self.put(f"/teams/{team_id}", data)

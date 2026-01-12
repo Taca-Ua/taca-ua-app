@@ -64,11 +64,29 @@ class _Escalao(BaseModel):
     maxParticipants: Optional[int] = None
     points: List[int]
 
+    def to_dict(self):
+        return {
+            "escalao": self.escalao,
+            "minParticipants": self.minParticipants,
+            "maxParticipants": self.maxParticipants,
+            "points": self.points,
+        }
+
 
 class ModalityTypeCreate(BaseModel):
     name: str
     description: Optional[str] = None
     escaloes: Optional[List[_Escalao]] = None
+
+    def escaloes_encoder(self):
+        if not self.escaloes:
+            return []
+
+        escaloes_list = []
+        for escalao in self.escaloes:
+            escaloes_list.append(escalao.to_dict())
+
+        return escaloes_list
 
 
 class ModalityTypeUpdate(BaseModel):

@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from .database import get_db_session
 from .logger import logger
-from .models import Tournament, TournamentRankingPosition
+from .models import Tournament, TournamentRankingPosition, TournamentTeam
 from .outbox_publisher import outbox_publisher
 from .schemas import (
     TournamentCreate,
@@ -77,6 +77,15 @@ async def create_tournament(
         db.add(tournament)
         db.flush()  # Get the ID before committing
 
+        # Add teams if provided
+        if data.teams_ids:
+            for team_id in data.teams_ids:
+                tournament_team = TournamentTeam(
+                    tournament_id=tournament.id,
+                    team_id=team_id,
+                )
+                db.add(tournament_team)
+
         # Create outbox event
         outbox_publisher.create_event(
             db=db,
@@ -120,6 +129,33 @@ async def update_tournament(
             tournament.start_date = data.start_date
         if data.status is not None:
             tournament.status = data.status
+
+        # Handle team additions
+        if data.teams_add:
+            for team_id in data.teams_add:
+                # Check if team is not already in tournament
+                existing = (
+                    db.query(TournamentTeam)
+                    .filter(
+                        TournamentTeam.tournament_id == tournament_id,
+                        TournamentTeam.team_id == team_id,
+                    )
+                    .first()
+                )
+                if not existing:
+                    tournament_team = TournamentTeam(
+                        tournament_id=tournament_id,
+                        team_id=team_id,
+                    )
+                    db.add(tournament_team)
+
+        # Handle team removals
+        if data.teams_remove:
+            for team_id in data.teams_remove:
+                db.query(TournamentTeam).filter(
+                    TournamentTeam.tournament_id == tournament_id,
+                    TournamentTeam.team_id == team_id,
+                ).delete()
 
         tournament.updated_at = datetime.now(timezone.utc)
 

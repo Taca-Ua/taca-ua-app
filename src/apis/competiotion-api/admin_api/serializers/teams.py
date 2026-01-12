@@ -19,7 +19,7 @@ class TeamListRequestSerializer(serializers.Serializer):
 class TeamListSerializer(serializers.Serializer):
     """Serializer for listing teams"""
 
-    id = serializers.UUIDField(read_only=True)
+    id = serializers.UUIDField()
     name = serializers.CharField()
     modality = ModalityListSerializer()
     course = CourseListSerializer()
