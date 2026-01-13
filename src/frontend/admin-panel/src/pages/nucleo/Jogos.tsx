@@ -153,7 +153,7 @@ const Jogos = () => {
                           >
                             <div className="flex justify-between items-center mb-2">
                               <span className="text-gray-800 font-bold text-lg">
-                                {match.team_home_name} vs {match.team_away_name}
+                                {match.participants.map(p => p.team?.name).join(' vs ')}
                               </span>
                               <span className="text-teal-600 text-sm font-medium">
                                 {getStatusDisplay(match.status)}
@@ -256,11 +256,11 @@ const Jogos = () => {
                                     key={match.id}
                                     onClick={() => navigate(`/nucleo/jogos/${match.id}`)}
                                     className="text-xs bg-teal-100 hover:bg-teal-200 px-2 py-1 rounded cursor-pointer transition-colors"
-                                    title={`${time} - ${match.team_home_name} vs ${match.team_away_name}`}
+                                    title={`${time} - ${match.participants.map(p => p.team?.name).join(' vs ')}`}
                                   >
                                     <div className="font-medium truncate">{time}</div>
                                     <div className="truncate text-gray-600">
-                                      {match.team_home_name} vs {match.team_away_name}
+                                      {match.participants.map(p => p.team?.name).join(' vs ')}
                                     </div>
                                   </div>
                                 );

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Sidebar from "../../components/geral_navbar";
-import { modalityTypesApi } from "../../api/modality-types";
+import { modalityTypesApi, type ModalityType } from "../../api/modality-types";
 
 // Types for the scoring format structure
 interface EscalaoRow {
@@ -10,17 +10,9 @@ interface EscalaoRow {
   points: number[];
 }
 
-interface ScoringFormat {
-  id: string;
-  name: string;
-  description?: string;
-  escaloes: EscalaoRow[];
-  created_at?: string;
-  updated_at?: string;
-}
 
 const FormatosPontuacao = () => {
-  const [scoringFormats, setScoringFormats] = useState<ScoringFormat[]>([]);
+  const [scoringFormats, setModalityTypes] = useState<ModalityType[]>([]);
   const [loading] = useState(false);
   const [error, setError] = useState('');
 
@@ -28,7 +20,7 @@ const FormatosPontuacao = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [selectedFormat, setSelectedFormat] = useState<ScoringFormat | null>(null);
+  const [selectedFormat, setSelectedFormat] = useState<ModalityType | null>(null);
 
   // Form states
   const [formatName, setFormatName] = useState('');
@@ -44,7 +36,7 @@ useEffect(() => {
 		try {
 			const formats = await modalityTypesApi.getAll();
 			if (!mounted) return;
-			setScoringFormats(formats);
+			setModalityTypes(formats);
 		} catch (err) {
 			console.error('Failed to fetch scoring formats:', err);
 			if (!mounted) return;
@@ -115,7 +107,7 @@ useEffect(() => {
         escaloes: escaloes,
       });
 
-    //   const newFormat: ScoringFormat = {
+    //   const newFormat: ModalityType = {
     //     id: Date.now().toString(),
     //     name: formatName,
     //     description: formatDescription || undefined,
@@ -123,7 +115,7 @@ useEffect(() => {
     //     created_at: new Date().toISOString(),
     //   };
 
-      setScoringFormats([...scoringFormats, newFormat]);
+      setModalityTypes([...scoringFormats, newFormat]);
 
       // Reset form
       setFormatName('');
@@ -136,12 +128,12 @@ useEffect(() => {
     }
   };
 
-  const handleViewFormat = (format: ScoringFormat) => {
+  const handleViewFormat = (format: ModalityType) => {
     setSelectedFormat(format);
     setIsViewModalOpen(true);
   };
 
-  const handleEditFormat = (format: ScoringFormat) => {
+  const handleEditFormat = (format: ModalityType) => {
     setSelectedFormat(format);
     setFormatName(format.name);
     setFormatDescription(format.description || '');
@@ -183,7 +175,7 @@ useEffect(() => {
         escaloes: escaloes,
       });
 
-    //   const updatedFormat: ScoringFormat = {
+    //   const updatedFormat: ModalityType = {
     //     ...selectedFormat!,
     //     name: formatName,
     //     description: formatDescription || undefined,
@@ -191,7 +183,7 @@ useEffect(() => {
     //     updated_at: new Date().toISOString(),
     //   };
 
-      setScoringFormats(scoringFormats.map(f =>
+      setModalityTypes(scoringFormats.map(f =>
         f.id === selectedFormat!.id ? updatedFormat : f
       ));
 
@@ -221,7 +213,7 @@ useEffect(() => {
       // TODO: API call to delete scoring format
       await modalityTypesApi.delete(selectedFormat.id);
 
-      setScoringFormats(scoringFormats.filter(f => f.id !== selectedFormat.id));
+      setModalityTypes(scoringFormats.filter(f => f.id !== selectedFormat.id));
       setIsViewModalOpen(false);
       setSelectedFormat(null);
       alert('Formato de prova eliminado com sucesso!');

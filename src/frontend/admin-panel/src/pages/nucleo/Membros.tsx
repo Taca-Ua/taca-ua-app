@@ -2,11 +2,17 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NucleoSidebar from '../../components/nucleo_navbar';
 import {
-  participantsApi,
+  studentsApi,
   staffApi,
-  type UnifiedMember,
+  type Student,
+  type Staff,
 } from '../../api/members';
 import { coursesApi, type Course } from '../../api/courses';
+
+type CombinedMember =
+  | { memberType: 'participant'; data: Student }
+  | { memberType: 'staff'; data: Staff };
+
 
 function Membros() {
   const navigate = useNavigate();
@@ -19,7 +25,7 @@ function Membros() {
   const [contact, setContact] = useState('');
   const [staffNumber, setStaffNumber] = useState('');
 
-  const [members, setMembers] = useState<UnifiedMember[]>([]);
+  const [members, setMembers] = useState<CombinedMember[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,14 +40,14 @@ function Membros() {
         setError(null);
 
         const [participants, staff] = await Promise.all([
-          participantsApi.getAll(),
+          studentsApi.getAll(),
           staffApi.getAll()
         ]);
 
         // Combine and tag members
-        const unifiedMembers: UnifiedMember[] = [
-          ...participants.map(p => ({ ...p, memberType: 'participant' as const })),
-          ...staff.map(s => ({ ...s, memberType: 'staff' as const }))
+        const unifiedMembers: CombinedMember[] = [
+          ...participants.map(p => ({ data: p, memberType: 'participant' as const })),
+          ...staff.map(s => ({ data: s, memberType: 'staff' as const }))
         ];
 
         setMembers(unifiedMembers);
@@ -73,7 +79,8 @@ function Membros() {
   // Filter members based on type and search query
   const filteredMembers = members.filter(member => {
     const matchesType = filterType === 'all' || member.memberType === filterType;
-    const matchesSearch = member.full_name.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesSearch = (member.data.full_name).toLowerCase().includes(searchQuery.toLowerCase());
     return matchesType && matchesSearch;
   });
 
@@ -96,7 +103,7 @@ function Membros() {
           return;
         }
 
-        const newParticipant = await participantsApi.create({
+        const newParticipant = await studentsApi.create({
           full_name: memberName,
           course_id: String(courseId),
           student_number: studentNumber,
@@ -104,7 +111,7 @@ function Membros() {
         });
 
         // Add to local state
-        setMembers([...members, { ...newParticipant, memberType: 'participant' }]);
+        setMembers([...members, { data: newParticipant, memberType: 'participant' }]);
       } else {
         // Validate staff fields - need either contact or staff_number
         const staffData: { full_name: string; contact?: string; staff_number?: string } = {
@@ -128,7 +135,7 @@ function Membros() {
         const newStaff = await staffApi.create(staffData);
 
         // Add to local state
-        setMembers([...members, { ...newStaff, memberType: 'staff' }]);
+        setMembers([...members, { data: newStaff, memberType: 'staff' }]);
       }
 
       // Reset form
@@ -146,19 +153,19 @@ function Membros() {
     }
   };
 
-  const handleMemberClick = (member: UnifiedMember) => {
-    navigate(`/nucleo/membros/${member.memberType}/${member.id}`);
+  const handleMemberClick = (member: CombinedMember) => {
+    navigate(`/nucleo/membros/${member.memberType}/${member.data.id}`);
   };
 
-  const getDisplayInfo = (member: UnifiedMember): string => {
+  const getDisplayInfo = (member: CombinedMember): string => {
     if (member.memberType === 'participant') {
-      return `NMEC: ${member.student_number}`;
+      return `NMEC: ${member.data.student_number}`;
     } else {
-      if ('contact' in member && member.contact) {
-        return `Tel: ${member.contact}`;
+      if ('contact' in member.data && member.data.contact) {
+        return `Tel: ${member.data.contact}`;
       }
-      if ('staff_number' in member && member.staff_number) {
-        return `Staff: ${member.staff_number}`;
+      if ('staff_number' in member.data && member.data.staff_number) {
+        return `Staff: ${member.data.staff_number}`;
       }
       return 'N/A';
     }
@@ -238,13 +245,13 @@ function Membros() {
                 <div className="space-y-3 max-h-[600px] overflow-y-auto">
                   {filteredMembers.map((member) => (
                     <div
-                      key={`${member.memberType}-${member.id}`}
+                      key={`${member.memberType}-${member.data.id}`}
                       onClick={() => handleMemberClick(member)}
                       className="bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors cursor-pointer"
                     >
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-3">
-                          <span className="text-gray-800 font-medium">{member.full_name}</span>
+                          <span className="text-gray-800 font-medium">{member.data.full_name}</span>
                           <span className="text-xs px-2 py-1 rounded-full bg-teal-100 text-teal-700 font-medium">
                             {member.memberType === 'participant' ? 'Participante' : 'Staff'}
                           </span>

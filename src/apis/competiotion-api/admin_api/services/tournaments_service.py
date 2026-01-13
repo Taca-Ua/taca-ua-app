@@ -81,8 +81,9 @@ class TournamentsService(BaseService):
             data["start_date"] = start_date
         if teams_ids:
             data["teams_ids"] = [str(team_id) for team_id in teams_ids]
+        else:
+            data["teams_ids"] = []
 
-        print(data)
         return self.post("/tournaments", data=data)
 
     def update_tournament(

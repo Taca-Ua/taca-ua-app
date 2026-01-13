@@ -56,11 +56,6 @@ export interface StaffUpdate {
   contact?: string;
 }
 
-// Unified member type for display
-export type UnifiedMember =
-  | (Student & { memberType: 'student' })
-  | (Staff & { memberType: 'staff' });
-
 // Students API
 export const studentsApi = {
   async getAll(params?: StudentListParams): Promise<Student[]> {

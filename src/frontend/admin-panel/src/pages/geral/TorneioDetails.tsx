@@ -41,7 +41,7 @@ const TorneioInfoSection = () => {
 
         <div>
           <label className="font-medium text-teal-600">Modalidade</label>
-          <div className="bg-gray-100 p-3 rounded-md">{tournament.modality_name}</div>
+          <div className="bg-gray-100 p-3 rounded-md">{tournament.modality.name}</div>
         </div>
 
         <div>
@@ -134,7 +134,7 @@ const TorneioDetails = () => {
   // Get teams filtered by tournament modality
   const availableTeams = useMemo(() => {
     if (!tournament) return [];
-    return allTeams.filter(team => team.modality_name === tournament.modality_name);
+    return allTeams.filter(team => team.modality.name === tournament.modality.name);
   }, [tournament, allTeams]);
 
   // Get current tournament teams
@@ -219,7 +219,9 @@ const TorneioDetails = () => {
       if (!window.confirm("Finalizar torneio? Isso bloqueará edições.")) return;
 
       try {
-        const finished = await tournamentsApi.finish(tournament.id);
+        const finished = await tournamentsApi.finish(tournament.id, {
+          ranking_entries: [],
+        });
         setTournament(finished);
         setError('');
       } catch (err) {
@@ -485,7 +487,7 @@ const TorneioDetails = () => {
                     key={team.id}
                     className="bg-gray-100 px-4 py-2 rounded-md text-gray-700 flex justify-between items-center"
                   >
-                    <span>{team.name} ({team.course_name})</span>
+                    <span>{team.name} ({team.course.name})</span>
                     {!isLocked && (
                       <button
                         onClick={() => removeTeam(team.id)}
@@ -528,7 +530,7 @@ const TorneioDetails = () => {
                     >
                       <div className="flex justify-between items-center">
                         <div className="text-sm font-medium">
-                          {match.team_home_name || `Equipa X`} vs {match.team_away_name || `Equipa Y`}
+                          { match.participants.map(p => p.team?.name).join(' vs ') }
                         </div>
                         <span className={`text-xs px-2 py-1 rounded ${
                           match.status === 'finished' ? 'bg-green-100 text-green-700' :
@@ -680,7 +682,7 @@ const TorneioDetails = () => {
                   .filter(team => !tournament?.teams?.some(t => t.id === team.id))
                   .map(team => (
                     <option key={team.id} value={team.id}>
-                      {team.name} ({team.course_name})
+                      {team.name} ({team.course.name})
                     </option>
                   ))}
               </select>
@@ -742,7 +744,7 @@ const TorneioDetails = () => {
                   <option value="">Selecionar equipa...</option>
                   {tournamentTeams.map(team => (
                     <option key={team.id} value={team.id}>
-                      {team.name} ({team.course_name})
+                      {team.name} ({team.course.name})
                     </option>
                   ))}
                 </select>
@@ -759,7 +761,7 @@ const TorneioDetails = () => {
                   <option value="">Selecionar equipa...</option>
                   {tournamentTeams.map(team => (
                     <option key={team.id} value={team.id}>
-                      {team.name} ({team.course_name})
+                      {team.name} ({team.course.name})
                     </option>
                   ))}
                 </select>
@@ -855,7 +857,7 @@ const TorneioDetails = () => {
                     <option value="">Selecionar equipa...</option>
                     {tournamentTeams.map(team => (
                       <option key={team.id} value={team.id}>
-                        {team.name} ({team.course_name})
+                        {team.name} ({team.course.name})
                       </option>
                     ))}
                   </select>

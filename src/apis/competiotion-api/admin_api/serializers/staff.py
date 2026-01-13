@@ -8,10 +8,10 @@ from rest_framework import serializers
 class StaffListSerializer(serializers.Serializer):
     """Serializer for listing staff"""
 
-    id = serializers.IntegerField(read_only=True)
+    id = serializers.UUIDField()
     full_name = serializers.CharField()
-    staff_number = serializers.CharField()
-    contact = serializers.CharField()
+    staff_number = serializers.CharField(required=False, allow_null=True)
+    contact = serializers.CharField(required=False, allow_null=True)
 
 
 class StaffDetailSerializer(StaffListSerializer):

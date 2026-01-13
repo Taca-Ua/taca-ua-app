@@ -356,7 +356,7 @@ def update_modality_type(
     if modality_type_data.description is not None:
         modality_type.description = modality_type_data.description
     if modality_type_data.escaloes is not None:
-        modality_type.escaloes = modality_type_data.escaloes
+        modality_type.escaloes = modality_type_data.escaloes_encoder()
     modality_type.updated_at = datetime.now(timezone.utc)
 
     try:

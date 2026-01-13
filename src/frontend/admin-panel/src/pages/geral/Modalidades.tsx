@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/geral_navbar";
 import { modalitiesApi, type Modality } from "../../api/modalities";
-import { modalityTypesApi, type ModalityTypeSimplified } from "../../api/modality-types";
+import { modalityTypesApi, type ModalityTypeMinimal } from "../../api/modality-types";
 
 const MoadlitiesList = (modalities: Modality[]) => {
   if (modalities.length === 0) {
@@ -23,7 +23,7 @@ const MoadlitiesList = (modalities: Modality[]) => {
       >
         <span className="text-gray-800 font-medium">{mod.name}</span>
         <span className="text-gray-600 text-sm capitalize">
-          Tipo: {mod.modality_type_name}
+          Tipo: {mod.modality_type.name}
         </span>
       </div>
     );
@@ -44,8 +44,8 @@ const CreateModalityModal = ({
   addModality,
   onClose,
 }: {
-  modalityTypes: ModalityTypeSimplified[];
-  setModalityTypes: React.Dispatch<React.SetStateAction<ModalityTypeSimplified[]>>;
+  modalityTypes: ModalityTypeMinimal[];
+  setModalityTypes: React.Dispatch<React.SetStateAction<ModalityTypeMinimal[]>>;
   addModality: (modality: Modality) => void;
   onClose: () => void;
 }) => {
@@ -57,7 +57,7 @@ const CreateModalityModal = ({
   useEffect(() => {
     const fetchModalityTypes = async () => {
       try {
-        const data = await modalityTypesApi.getAllSimplified();
+        const data = await modalityTypesApi.getAllMinimal();
         setModalityTypes(data);
       } catch (err) {
         console.error("Failed to fetch modality types:", err);
@@ -177,7 +177,7 @@ const Modalities = () => {
   const [loading, setLoading] = useState(true);
 
   const [modalities, setModalities] = useState<Modality[]>([]);
-  const [modalityTypes, setModalityTypes] = useState<ModalityTypeSimplified[]>([]);
+  const [modalityTypes, setModalityTypes] = useState<ModalityTypeMinimal[]>([]);
 
   // Fetch modalities on mount
   useEffect(() => {

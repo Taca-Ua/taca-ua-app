@@ -1,16 +1,17 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import NucleoSidebar from '../../components/nucleo_navbar';
-import { participantsApi, staffApi, type Participant, type Staff } from '../../api/members';
+import { staffApi, studentsApi, type StaffDetail, type StudentDetail } from '../../api/members';
 
-type MemberType = 'participant' | 'staff';
-type Member = Participant | Staff;
+type CombinedMember =
+  | { memberType: 'participant'; data: StudentDetail }
+  | { memberType: 'staff'; data: StaffDetail };
 
 function MemberDetail() {
-  const { type, id } = useParams<{ type: MemberType; id: string }>();
+  const { type, id } = useParams<{ type: string; id: string }>();
   const navigate = useNavigate();
-  const [member, setMember] = useState<Member | null>(null);
-  const [memberType, setMemberType] = useState<MemberType | null>(null);
+  const [member, setMember] = useState<CombinedMember | null>(null);
+  const [memberType, setMemberType] = useState< string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,11 +44,11 @@ function MemberDetail() {
         setMemberType(type);
 
         if (type === 'participant') {
-          const participant = await participantsApi.getById(id);
-          setMember(participant);
+          const participant = await studentsApi.getById(id);
+          setMember({ memberType: 'participant', data: participant });
         } else {
           const staff = await staffApi.getById(id);
-          setMember(staff);
+          setMember({ memberType: 'staff', data: staff });
         }
       } catch (err) {
         console.error('Error fetching member:', err);
@@ -91,12 +92,12 @@ function MemberDetail() {
 
   const handleEdit = () => {
     if (!member) return;
-    setEditedName(member.full_name);
+    setEditedName(member.data.full_name);
 
     if (memberType === 'participant') {
-      setIsMember((member as Participant).is_member);
+      setIsMember((member.data as StudentDetail).is_member);
     } else if (memberType === 'staff') {
-      setEditedContact((member as Staff).contact || '');
+      setEditedContact((member.data as StaffDetail).contact || '');
     }
 
     setIsModalOpen(true);
@@ -109,17 +110,17 @@ function MemberDetail() {
       setError(null);
 
       if (memberType === 'participant') {
-        const updatedMember = await participantsApi.update(member.id, {
+        const updatedMember = await studentsApi.update(member.data.id, {
           full_name: editedName,
           is_member: isMember,
         });
-        setMember(updatedMember);
+        setMember({ memberType: 'participant', data: updatedMember });
       } else if (memberType === 'staff') {
-        const updatedMember = await staffApi.update(member.id, {
+        const updatedMember = await staffApi.update(member.data.id, {
           full_name: editedName,
           contact: editedContact || undefined,
         });
-        setMember(updatedMember);
+        setMember({ memberType: 'staff', data: updatedMember });
       }
 
       setIsModalOpen(false);
@@ -140,9 +141,9 @@ function MemberDetail() {
       setError(null);
 
       if (memberType === 'participant') {
-        await participantsApi.delete(member.id);
+        await studentsApi.delete(member.data.id);
       } else if (memberType === 'staff') {
-        await staffApi.delete(member.id);
+        await staffApi.delete(member.data.id);
       }
 
       navigate('/nucleo/membros');
@@ -178,7 +179,7 @@ function MemberDetail() {
                   Nome
                 </label>
                 <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
-                  {member.full_name}
+                  {member.data.full_name}
                 </div>
               </div>
 
@@ -191,7 +192,7 @@ function MemberDetail() {
                       Número de Estudante
                     </label>
                     <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
-                      {(member as Participant).student_number}
+                      {(member.data as StudentDetail).student_number}
                     </div>
                   </div>
 
@@ -202,11 +203,11 @@ function MemberDetail() {
                     </label>
                     <div className="w-full px-4 py-3 bg-gray-100 rounded-md">
                       <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                        (member as Participant).is_member
+                        (member.data as StudentDetail).is_member
                           ? 'bg-green-100 text-green-700'
                           : 'bg-gray-100 text-gray-700'
                       }`}>
-                        {(member as Participant).is_member ? 'Membro' : 'Não-Membro'}
+                        {(member.data as StudentDetail).is_member ? 'Membro' : 'Não-Membro'}
                       </span>
                     </div>
                   </div>
@@ -217,7 +218,7 @@ function MemberDetail() {
                       Curso
                     </label>
                     <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
-                      {(member as Participant).course_id}
+                      {(member.data as StudentDetail).course.id}
                     </div>
                   </div>
                 </>
@@ -227,25 +228,25 @@ function MemberDetail() {
               {memberType === 'staff' && (
                 <>
                   {/* Staff Number */}
-                  {(member as Staff).staff_number && (
+                  {(member.data as StaffDetail).staff_number && (
                     <div>
                       <label className="block text-teal-500 font-medium mb-2">
                         Número de Staff
                       </label>
                       <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
-                        {(member as Staff).staff_number}
+                        {(member.data as StaffDetail).staff_number}
                       </div>
                     </div>
                   )}
 
                   {/* Contact */}
-                  {(member as Staff).contact && (
+                  {(member.data as StaffDetail).contact && (
                     <div>
                       <label className="block text-teal-500 font-medium mb-2">
                         Contacto
                       </label>
                       <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
-                        {(member as Staff).contact}
+                        {(member.data as StaffDetail).contact}
                       </div>
                     </div>
                   )}
@@ -303,7 +304,7 @@ function MemberDetail() {
                       Número de Estudante
                     </label>
                     <div className="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-600">
-                      {(member as Participant).student_number}
+                      {(member.data as StudentDetail).student_number}
                     </div>
                   </div>
 
@@ -342,13 +343,13 @@ function MemberDetail() {
               {memberType === 'staff' && (
                 <>
                   {/* Staff Number (read-only) */}
-                  {(member as Staff).staff_number && (
+                  {(member.data as StaffDetail).staff_number && (
                     <div>
                       <label className="block text-gray-700 font-medium mb-2">
                         Número de Staff
                       </label>
                       <div className="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-600">
-                        {(member as Staff).staff_number}
+                        {(member.data as StaffDetail).staff_number}
                       </div>
                     </div>
                   )}
@@ -400,7 +401,7 @@ function MemberDetail() {
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
             <h2 className="text-2xl font-bold mb-4 text-gray-800">Confirmar Eliminação</h2>
             <p className="text-gray-600 mb-6">
-              Tem certeza que deseja eliminar <strong>{member.full_name}</strong>?
+              Tem certeza que deseja eliminar <strong>{member.data.full_name}</strong>?
               Esta ação não pode ser desfeita.
             </p>
 

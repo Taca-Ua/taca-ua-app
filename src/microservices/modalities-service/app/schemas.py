@@ -94,6 +94,16 @@ class ModalityTypeUpdate(BaseModel):
     description: Optional[str] = None
     escaloes: Optional[List[_Escalao]] = None
 
+    def escaloes_encoder(self):
+        if not self.escaloes:
+            return []
+
+        escaloes_list = []
+        for escalao in self.escaloes:
+            escaloes_list.append(escalao.to_dict())
+
+        return escaloes_list
+
 
 class ModalityTypeResponse(BaseModel):
     id: str

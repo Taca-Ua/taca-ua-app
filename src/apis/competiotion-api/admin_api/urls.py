@@ -47,7 +47,7 @@ urlpatterns = [
     path("regulations/", include("admin_api.views.regulations")),
     # Modality Management (RF3)
     path("modalities/", include("admin_api.views.modalities")),
-    path("modality-types/", include("admin_api.views.modalities_types")),
+    path("modality-types/", include("admin_api.views.modality_types")),
     # Nucleo Management
     path("nucleos/", include("admin_api.views.nucleus")),
     # Tournament Management (RF3)

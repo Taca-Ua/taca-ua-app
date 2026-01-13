@@ -8,15 +8,21 @@ export interface EscalaoRow {
   points: number[];
 }
 
-export interface ModalityType {
+export interface ModalityTypeMinimal {
   id: string;
   name: string;
 }
 
-export interface ModalityTypeDetail extends ModalityType {
+export interface ModalityType {
+  id: string;
+  name: string;
   description?: string;
   escaloes: EscalaoRow[];
   created_at: string;
+}
+
+export interface ModalityTypeDetail extends ModalityType {
+  // Additional fields can be added here if needed
 }
 
 export interface ModalityTypeCreate {
@@ -52,4 +58,8 @@ export const modalityTypesApi = {
   async delete(id: string): Promise<void> {
     await apiClient.delete(`/modality-types/${id}/`);
   },
+
+  async getAllMinimal(): Promise<ModalityTypeMinimal[]> {
+    return apiClient.get<ModalityTypeMinimal[]>('/modality-types/minimal/');
+  }
 };

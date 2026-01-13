@@ -24,7 +24,7 @@ const ModalidadeDetailEditModal = ({
 }) => {
   const [error, setError] = useState('');
   const [editedName, setEditedName] = useState(modality.name);
-  const [editedType, setEditedType] = useState(modality.modality_type_id);
+  const [editedType, setEditedType] = useState(modality.modality_type.id);
 
   // Fetch modality types if not already loaded
   useEffect(() => {
@@ -203,7 +203,7 @@ function ModalidadeDetail() {
             {/* Type */}
             <div>
               <label className="block text-teal-500 font-medium mb-2">Tipo</label>
-              <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800 capitalize">{modality.modality_type_name}</div>
+              <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800 capitalize">{modality.modality_type.name}</div>
             </div>
           </div>
 

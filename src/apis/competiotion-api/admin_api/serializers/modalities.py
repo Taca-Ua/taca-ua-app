@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .modality_types import ModalityTypeDetailSerializer, ModalityTypeListSerializer
+from .modality_types import ModalityTypeListSerializer, ModalityTypeMinimalSerializer
 
 
 class ModalityListSerializer(serializers.Serializer):
@@ -8,13 +8,13 @@ class ModalityListSerializer(serializers.Serializer):
 
     id = serializers.UUIDField()
     name = serializers.CharField()
-    modality_type = ModalityTypeListSerializer()
+    modality_type = ModalityTypeMinimalSerializer()
 
 
 class ModalityDetailSerializer(ModalityListSerializer):
     """Serializer for modality details"""
 
-    modality_type = ModalityTypeDetailSerializer()
+    modality_type = ModalityTypeListSerializer()
 
 
 class ModalityCreateSerializer(serializers.Serializer):

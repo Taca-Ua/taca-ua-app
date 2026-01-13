@@ -859,7 +859,7 @@ def main():
     input("Press Enter to continue...")
 
     if teams:
-        # fill_teams_with_members(teams, members)
+        fill_teams_with_members(teams, members)
         print("Filled Teams with Members.")
     input("Press Enter to continue...")
 

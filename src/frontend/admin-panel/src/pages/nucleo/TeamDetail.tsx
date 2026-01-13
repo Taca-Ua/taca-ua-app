@@ -1,18 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import NucleoSidebar from '../../components/nucleo_navbar';
-import { teamsApi, type Team, type Player } from '../../api/teams';
-import { participantsApi, type Participant } from '../../api/members';
-import { modalitiesApi, type Modality } from '../../api/modalities';
-import { coursesApi, type Course } from '../../api/courses';
+import { teamsApi, type TeamDetail } from '../../api/teams';
+import { studentsApi, type Student } from '../../api/members';
 
 const TeamDetailsEditModal = ({
   team,
   setTeam,
   onClose,
 } : {
-  team: Team;
-  setTeam: React.Dispatch<React.SetStateAction<Team | undefined>>;
+  team: TeamDetail;
+  setTeam: React.Dispatch<React.SetStateAction<TeamDetail | undefined>>;
   onClose: () => void;
 }) => {
   const [editedName, setEditedName] = useState(team.name);
@@ -97,19 +95,22 @@ const TeamParticipantsEdditModal = ({
   setTeam,
   onClose,
 } : {
-  team: Team;
-  setTeam: React.Dispatch<React.SetStateAction<Team | undefined>>;
+  team: TeamDetail;
+  setTeam: React.Dispatch<React.SetStateAction<TeamDetail | undefined>>;
   onClose: () => void;
 }) => {
-  const [availableParticipants, setAvailableParticipants] = useState<Player[]>([]);
-  const [originalParticipantsList, setOriginalParticipantsList] = useState<Player[]>(team.players);
-  const [editedParticipantsList, setEditedParticipantsList] = useState<Player[]>(team.players);
+  const [availableParticipants, setAvailableParticipants] = useState<Student[]>([]);
+  const [editedParticipantsList, setEditedParticipantsList] = useState<Student[]>(team.players);
+
+  const originalParticipantsList = [...team.players];
 
   // Fetch all participants for that course
   useEffect(() => {
     const fetchParticipants = async () => {
       try {
-        const participantsData = await participantsApi.getAll(team.course_id);
+        const participantsData = await studentsApi.getAll({
+          course_id: team.course.id,
+        });
         setAvailableParticipants(participantsData);
       } catch (err) {
         console.error('Error fetching participants:', err);
@@ -208,10 +209,10 @@ const TeamParticipantsEdditModal = ({
   );
 };
 
-const TeamDetail = () => {
+const TeamDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [team, setTeam] = useState<Team>();
+  const [team, setTeam] = useState<TeamDetail>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -355,7 +356,7 @@ const TeamDetail = () => {
                     Modalidade
                   </label>
                   <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
-                    {team.modality_name}
+                    {team.modality.name}
                   </div>
                 </div>
 
@@ -364,7 +365,7 @@ const TeamDetail = () => {
                     Curso
                   </label>
                   <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
-                    {team.course_name}
+                    {team.course.name}
                   </div>
                 </div>
 
@@ -410,7 +411,7 @@ const TeamDetail = () => {
 
               <div className="space-y-3 max-h-[600px] overflow-y-auto">
                 {team.players.length > 0 ? (
-                  team.players.map((member: Player) => (
+                  team.players.map((member: Student) => (
                     <div
                       key={member.id}
                       className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
@@ -494,4 +495,4 @@ const TeamDetail = () => {
   );
 };
 
-export default TeamDetail;
+export default TeamDetailPage;

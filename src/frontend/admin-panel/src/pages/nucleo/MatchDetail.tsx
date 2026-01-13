@@ -52,28 +52,25 @@ const MatchDetail = () => {
 
         setMatch(foundMatch);
 
-		const [homeTeam, awayTeam] = await Promise.all([
-		  teamsApi.get(foundMatch.team_home_id),
-		  teamsApi.get(foundMatch.team_away_id),
-		]);
 
-        setTeamHome(homeTeam || null);
-        setTeamAway(awayTeam || null);
+
+        setTeamHome(foundMatch.participants[0]?.team || null);
+        setTeamAway(foundMatch.participants[1]?.team || null);
 
         // Initialize selected players from match lineup (default to empty)
-        setSelectedHomePlayers(foundMatch.team_home?.lineup || []);
-        setSelectedAwayPlayers(foundMatch.team_away?.lineup || []);
+        // setSelectedHomePlayers(foundMatch.participants[0]?.lineup || []);
+        // setSelectedAwayPlayers(foundMatch.participants[1]?.lineup || []);
 
         // Determine which team belongs to the logged-in user
-        if (user && homeTeam && awayTeam) {
-          if (homeTeam.course_name === (user.course_abbreviation || '')) {
-            setUserTeam('home');
-          } else if (awayTeam.course_name === (user.course_abbreviation || '')) {
-            setUserTeam('away');
-          } else {
-            setUserTeam(null);
-          }
-        }
+        // if (user && homeTeam && awayTeam) {
+        //   if (homeTeam.course_name === (user.course_abbreviation || '')) {
+        //     setUserTeam('home');
+        //   } else if (awayTeam.course_name === (user.course_abbreviation || '')) {
+        //     setUserTeam('away');
+        //   } else {
+        //   }
+        // }
+        setUserTeam(null);
       } catch (error) {
         console.error('Failed to fetch match data:', error);
       } finally {
@@ -115,8 +112,8 @@ const MatchDetail = () => {
         <div className="p-8">
           <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
             <p>Equipas não encontradas para este jogo.</p>
-            <p className="text-sm mt-2">Team Home: {match.team_home_name} - Found: {teamHome ? 'Sim' : 'Não'}</p>
-            <p className="text-sm">Team Away: {match.team_away_name} - Found: {teamAway ? 'Sim' : 'Não'}</p>
+            <p className="text-sm mt-2">Team Home: {teamHome?.name} - Found: {teamHome ? 'Sim' : 'Não'}</p>
+            <p className="text-sm">Team Away: {teamAway?.name} - Found: {teamAway ? 'Sim' : 'Não'}</p>
           </div>
         </div>
       </div>

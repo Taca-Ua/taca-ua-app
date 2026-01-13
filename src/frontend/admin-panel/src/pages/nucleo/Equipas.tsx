@@ -24,11 +24,11 @@ const Equipas = () => {
 
   // Get only modalities and courses that have teams (for filtering)
   const availableModalities = allModalities.filter(modality =>
-    teams.some(team => team.modality_name === modality.id)
+    teams.some(team => team.modality.name === modality.id)
   );
 
   const availableCourses = allCourses.filter(course =>
-    teams.some(team => team.course_name === course.id)
+    teams.some(team => team.course.name === course.id)
   );
 
   // Fetch teams, modalities, and courses from API
@@ -112,8 +112,8 @@ const Equipas = () => {
 
   // Filter teams by modality and/or course
   const filteredTeams = teams.filter((team) => {
-    const matchesModality = filterModality ? team.modality_name === filterModality : true;
-    const matchesCourse = filterCourse ? team.course_name === filterCourse : true;
+    const matchesModality = filterModality ? team.modality.id === filterModality : true;
+    const matchesCourse = filterCourse ? team.course.id === filterCourse : true;
     return matchesModality && matchesCourse;
   });
 
@@ -209,8 +209,8 @@ const Equipas = () => {
                         <div className="flex justify-between items-center">
                           <span className="text-gray-800 font-medium">{team.name}</span>
                           <div className="flex gap-4 text-sm">
-                            <span className="text-teal-600 font-medium">{getModalityName(team.modality_name)}</span>
-                            <span className="text-gray-500">{getCourseName(team.course_name)}</span>
+                            <span className="text-teal-600 font-medium">{getModalityName(team.modality.id)}</span>
+                            <span className="text-gray-500">{getCourseName(team.course.id)}</span>
                           </div>
                         </div>
                       </div>

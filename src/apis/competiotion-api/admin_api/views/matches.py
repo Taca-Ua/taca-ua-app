@@ -21,6 +21,7 @@ from ..serializers.matches import (
     MatchUpdateSerializer,
 )
 from ..services.matches_service import matches_service_client
+from ..services.modalities_service import modalities_service_client
 
 logger = structlog.get_logger(__name__)
 
@@ -43,6 +44,20 @@ class MatchListCreateView(APIView):
         # TODO: Filter by course_id when available
         result = matches_service_client.list_matches()
         matches = result.get("matches", [])
+
+        for match in matches:
+            participants = match.get("participants", [])
+            for participant in participants:
+                if participant.get("participant_type") == "team":
+                    team_id = participant.get("team_id")
+                    team_details = modalities_service_client.get_team(team_id=team_id)
+                    participant["team"] = team_details
+                elif participant.get("participant_type") == "athlete":
+                    athlete_id = participant.get("athlete_id")
+                    athlete_details = modalities_service_client.get_student(
+                        student_id=athlete_id
+                    )
+                    participant["athlete"] = athlete_details
 
         serializer = MatchListSerializer(data=matches, many=True)
         serializer.is_valid(raise_exception=True)

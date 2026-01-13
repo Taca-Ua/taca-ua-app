@@ -14,6 +14,7 @@ from ..serializers.modality_types import (
     ModalityTypeCreateSerializer,
     ModalityTypeDetailSerializer,
     ModalityTypeListSerializer,
+    ModalityTypeMinimalSerializer,
     ModalityTypeUpdateSerializer,
 )
 from ..services.modalities_service import modalities_service_client
@@ -111,14 +112,15 @@ class ModalityTypeDetailView(APIView):
 
 
 @extend_schema(
-    responses={200: ModalityTypeListSerializer(many=True)},
-    description="List all modality types simple",
+    responses={200: ModalityTypeMinimalSerializer(many=True)},
+    description="List all modality types with minimal information",
     tags=["Modality Management"],
 )
 @api_view(["GET"])
 def list_modality_types(request: Request):
     modality_types = modalities_service_client.list_modality_types()
-    serializer = ModalityTypeListSerializer(data=modality_types, many=True)
+
+    serializer = ModalityTypeMinimalSerializer(data=modality_types, many=True)
     serializer.is_valid(raise_exception=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -130,9 +132,9 @@ urlpatterns = [
         name="modality-type-list-create",
     ),
     path(
-        "simple/",
+        "minimal/",
         list_modality_types,
-        name="modality-type-list-simple",
+        name="modality-type-list-minimal",
     ),
     path(
         "<uuid:modality_type_id>/",

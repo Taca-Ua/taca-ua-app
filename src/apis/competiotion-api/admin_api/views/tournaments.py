@@ -2,6 +2,8 @@
 Tournament management views - Updated to use tournaments-service microservice
 """
 
+from datetime import datetime
+
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
@@ -55,9 +57,9 @@ class TournamentListCreateView(APIView):
                 start_date=(
                     serializer.validated_data.get("start_date").isoformat()
                     if serializer.validated_data.get("start_date")
-                    else None
+                    else datetime.now().isoformat()
                 ),
-                teams_ids=serializer.validated_data.get("teams_ids"),
+                teams_ids=serializer.validated_data.get("teams_ids", []),
             )
         except Exception as e:
             return Response(
