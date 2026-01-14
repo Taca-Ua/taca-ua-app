@@ -56,6 +56,7 @@ class TeamListCreateView(APIView):
             {
                 "name": serializer.validated_data.get("name"),
                 "modality_id": str(serializer.validated_data["modality_id"]),
+                "course_id": str(serializer.validated_data["course_id"]),
             }
         )
 

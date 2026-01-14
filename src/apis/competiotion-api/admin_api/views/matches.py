@@ -95,6 +95,19 @@ class MatchListCreateView(APIView):
                 ),  # TODO: Get from auth
                 participants=participants,
             )
+
+            # Populate participant details
+            for participant in match.get("participants", []):
+                if participant.get("participant_type") == "team":
+                    team_id = participant.get("team_id")
+                    team_details = modalities_service_client.get_team(team_id=team_id)
+                    participant["team"] = team_details
+                elif participant.get("participant_type") == "athlete":
+                    athlete_id = participant.get("athlete_id")
+                    athlete_details = modalities_service_client.get_student(
+                        student_id=athlete_id
+                    )
+                    participant["athlete"] = athlete_details
         except Exception as e:
             return Response(
                 {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -127,6 +140,19 @@ class MatchDetailView(APIView):
     def get(self, request, match_id):
         try:
             match = matches_service_client.get_match(match_id=match_id)
+
+            # Populate participant details
+            for participant in match.get("participants", []):
+                if participant.get("participant_type") == "team":
+                    team_id = participant.get("team_id")
+                    team_details = modalities_service_client.get_team(team_id=team_id)
+                    participant["team"] = team_details
+                elif participant.get("participant_type") == "athlete":
+                    athlete_id = participant.get("athlete_id")
+                    athlete_details = modalities_service_client.get_student(
+                        student_id=athlete_id
+                    )
+                    participant["athlete"] = athlete_details
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
@@ -200,6 +226,19 @@ class MatchDetailView(APIView):
             match = matches_service_client.update_match(
                 match_id=match_id, **update_data
             )
+
+            # Populate participant details
+            for participant in match.get("participants", []):
+                if participant.get("participant_type") == "team":
+                    team_id = participant.get("team_id")
+                    team_details = modalities_service_client.get_team(team_id=team_id)
+                    participant["team"] = team_details
+                elif participant.get("participant_type") == "athlete":
+                    athlete_id = participant.get("athlete_id")
+                    athlete_details = modalities_service_client.get_student(
+                        student_id=athlete_id
+                    )
+                    participant["athlete"] = athlete_details
         except Exception as e:
             return Response(
                 {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -258,6 +297,19 @@ def match_result(request, match_id):
             status="finished",
         )
 
+        # Populate participant details
+        for participant in updated_match.get("participants", []):
+            if participant.get("participant_type") == "team":
+                team_id = participant.get("team_id")
+                team_details = modalities_service_client.get_team(team_id=team_id)
+                participant["team"] = team_details
+            elif participant.get("participant_type") == "athlete":
+                athlete_id = participant.get("athlete_id")
+                athlete_details = modalities_service_client.get_student(
+                    student_id=athlete_id
+                )
+                participant["athlete"] = athlete_details
+
     except Exception as e:
         return Response(
             {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -265,7 +317,7 @@ def match_result(request, match_id):
 
     serializer = MatchListSerializer(data=updated_match)
     serializer.is_valid(raise_exception=True)
-    return Response(updated_match, status=status.HTTP_200_OK)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @extend_schema(

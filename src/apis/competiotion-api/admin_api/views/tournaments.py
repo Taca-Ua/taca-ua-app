@@ -105,24 +105,23 @@ class TournamentDetailView(APIView):
                 tournament_id=tournament_id
             ).get("matches", [])
 
+            teams_data_map = {team["id"]: team for team in tournament["teams"]}
             for match in tournament_matches:
                 for participant in match["participants"]:
                     if participant.get("team_id", None):
-                        participant["team"] = modalities_service_client.get_team(
-                            participant["team_id"]
-                        )
+                        participant["team"] = teams_data_map.get(participant["team_id"])
 
                     if participant.get("athlete_id", None):
                         participant["athlete"] = modalities_service_client.get_student(
                             participant["athlete_id"]
                         )
-
             tournament["matches"] = tournament_matches
-            serializer = TournamentDetailSerializer(data=tournament)
-            serializer.is_valid(raise_exception=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = TournamentDetailSerializer(data=tournament)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, tournament_id):
         """Update a tournament"""
@@ -143,11 +142,37 @@ class TournamentDetailView(APIView):
                 teams_add=serializer.validated_data.get("teams_add"),
                 teams_remove=serializer.validated_data.get("teams_remove"),
             )
-            return Response(tournament, status=status.HTTP_200_OK)
+
+            # Enrich with modality and team details
+            tournament["modality"] = modalities_service_client.get_modality(
+                tournament["modality_id"]
+            )
+            tournament["teams"] = modalities_service_client.get_teams_by_ids(
+                tournament["teams_ids"]
+            )
+            tournament_matches = matches_service_client.list_matches(
+                tournament_id=tournament_id
+            ).get("matches", [])
+
+            teams_data_map = {team["id"]: team for team in tournament["teams"]}
+            for match in tournament_matches:
+                for participant in match["participants"]:
+                    if participant.get("team_id", None):
+                        participant["team"] = teams_data_map.get(participant["team_id"])
+
+                    if participant.get("athlete_id", None):
+                        participant["athlete"] = modalities_service_client.get_student(
+                            participant["athlete_id"]
+                        )
+            tournament["matches"] = tournament_matches
         except Exception as e:
             return Response(
                 {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+        serializer = TournamentDetailSerializer(data=tournament)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, tournament_id):
         """Delete a tournament"""
@@ -185,11 +210,38 @@ def tournament_finish(request, tournament_id):
             ranking_entries=ranking_entries,
             finished_by="00000000-0000-0000-0000-000000000000",  # Placeholder
         )
-        return Response(tournament, status=status.HTTP_200_OK)
+
+        # Enrich with modality and team details
+        tournament["modality"] = modalities_service_client.get_modality(
+            tournament["modality_id"]
+        )
+        tournament["teams"] = modalities_service_client.get_teams_by_ids(
+            tournament["teams_ids"]
+        )
+
+        tournament_matches = matches_service_client.list_matches(
+            tournament_id=tournament_id
+        ).get("matches", [])
+
+        teams_data_map = {team["id"]: team for team in tournament["teams"]}
+        for match in tournament_matches:
+            for participant in match["participants"]:
+                if participant.get("team_id", None):
+                    participant["team"] = teams_data_map.get(participant["team_id"])
+
+                if participant.get("athlete_id", None):
+                    participant["athlete"] = modalities_service_client.get_student(
+                        participant["athlete_id"]
+                    )
+        tournament["matches"] = tournament_matches
     except Exception as e:
         return Response(
             {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+    serializer = TournamentDetailSerializer(data=tournament)
+    serializer.is_valid(raise_exception=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 urlpatterns = [
