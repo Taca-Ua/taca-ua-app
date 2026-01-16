@@ -157,4 +157,4 @@ class TournamentsService(BaseService):
 
 
 # Singleton instance
-tournaments_service = TournamentsService()
+tournaments_service_client = TournamentsService()

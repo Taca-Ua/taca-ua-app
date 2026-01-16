@@ -18,9 +18,8 @@ from ..serializers.tournaments import (
     TournamentListSerializer,
     TournamentUpdateSerializer,
 )
-from ..services.matches_service import matches_service_client
-from ..services.modalities_service import modalities_service_client
-from ..services.tournaments_service import tournaments_service
+from ..services.enricher_service import enricher_service
+from ..services.tournaments_service import tournaments_service_client
 
 
 @extend_schema_view(
@@ -39,7 +38,7 @@ from ..services.tournaments_service import tournaments_service
 class TournamentListCreateView(APIView):
     def get(self, request):
         """List all tournaments"""
-        tournaments = tournaments_service.list_tournaments()
+        tournaments = tournaments_service_client.list_tournaments()
         serializer = TournamentListSerializer(tournaments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -50,7 +49,7 @@ class TournamentListCreateView(APIView):
 
         try:
             # Call microservice
-            tournament = tournaments_service.create_tournament(
+            tournament = tournaments_service_client.create_tournament(
                 modality_id=serializer.validated_data["modality_id"],
                 name=serializer.validated_data["name"],
                 created_by="00000000-0000-0000-0000-000000000000",  # Placeholder
@@ -61,6 +60,9 @@ class TournamentListCreateView(APIView):
                 ),
                 teams_ids=serializer.validated_data.get("teams_ids", []),
             )
+
+            # Enrich tournament info
+            enricher_service.complete_tournament_info(tournament)
         except Exception as e:
             return Response(
                 {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -92,30 +94,10 @@ class TournamentDetailView(APIView):
     def get(self, request, tournament_id):
         """Get tournament details by ID"""
         try:
-            tournament = tournaments_service.get_tournament(tournament_id)
+            tournament = tournaments_service_client.get_tournament(tournament_id)
 
-            # Enrich with modality and team details
-            tournament["modality"] = modalities_service_client.get_modality(
-                tournament["modality_id"]
-            )
-            tournament["teams"] = modalities_service_client.get_teams_by_ids(
-                tournament["teams_ids"]
-            )
-            tournament_matches = matches_service_client.list_matches(
-                tournament_id=tournament_id
-            ).get("matches", [])
-
-            teams_data_map = {team["id"]: team for team in tournament["teams"]}
-            for match in tournament_matches:
-                for participant in match["participants"]:
-                    if participant.get("team_id", None):
-                        participant["team"] = teams_data_map.get(participant["team_id"])
-
-                    if participant.get("athlete_id", None):
-                        participant["athlete"] = modalities_service_client.get_student(
-                            participant["athlete_id"]
-                        )
-            tournament["matches"] = tournament_matches
+            # Enrich tournament info
+            enricher_service.complete_tournament_info(tournament=tournament)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
@@ -130,7 +112,7 @@ class TournamentDetailView(APIView):
 
         try:
             # Call microservice
-            tournament = tournaments_service.update_tournament(
+            tournament = tournaments_service_client.update_tournament(
                 tournament_id=tournament_id,
                 name=serializer.validated_data.get("name"),
                 start_date=(
@@ -143,28 +125,8 @@ class TournamentDetailView(APIView):
                 teams_remove=serializer.validated_data.get("teams_remove"),
             )
 
-            # Enrich with modality and team details
-            tournament["modality"] = modalities_service_client.get_modality(
-                tournament["modality_id"]
-            )
-            tournament["teams"] = modalities_service_client.get_teams_by_ids(
-                tournament["teams_ids"]
-            )
-            tournament_matches = matches_service_client.list_matches(
-                tournament_id=tournament_id
-            ).get("matches", [])
-
-            teams_data_map = {team["id"]: team for team in tournament["teams"]}
-            for match in tournament_matches:
-                for participant in match["participants"]:
-                    if participant.get("team_id", None):
-                        participant["team"] = teams_data_map.get(participant["team_id"])
-
-                    if participant.get("athlete_id", None):
-                        participant["athlete"] = modalities_service_client.get_student(
-                            participant["athlete_id"]
-                        )
-            tournament["matches"] = tournament_matches
+            # Enrich tournament info
+            enricher_service.complete_tournament_info(tournament)
         except Exception as e:
             return Response(
                 {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -177,12 +139,13 @@ class TournamentDetailView(APIView):
     def delete(self, request, tournament_id):
         """Delete a tournament"""
         try:
-            tournaments_service.delete_tournament(tournament_id)
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            tournaments_service_client.delete_tournament(tournament_id)
         except Exception as e:
             return Response(
                 {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema(
@@ -205,35 +168,14 @@ def tournament_finish(request, tournament_id):
         ]
 
         # Call microservice
-        tournament = tournaments_service.finish_tournament(
+        tournament = tournaments_service_client.finish_tournament(
             tournament_id=tournament_id,
             ranking_entries=ranking_entries,
             finished_by="00000000-0000-0000-0000-000000000000",  # Placeholder
         )
 
-        # Enrich with modality and team details
-        tournament["modality"] = modalities_service_client.get_modality(
-            tournament["modality_id"]
-        )
-        tournament["teams"] = modalities_service_client.get_teams_by_ids(
-            tournament["teams_ids"]
-        )
-
-        tournament_matches = matches_service_client.list_matches(
-            tournament_id=tournament_id
-        ).get("matches", [])
-
-        teams_data_map = {team["id"]: team for team in tournament["teams"]}
-        for match in tournament_matches:
-            for participant in match["participants"]:
-                if participant.get("team_id", None):
-                    participant["team"] = teams_data_map.get(participant["team_id"])
-
-                if participant.get("athlete_id", None):
-                    participant["athlete"] = modalities_service_client.get_student(
-                        participant["athlete_id"]
-                    )
-        tournament["matches"] = tournament_matches
+        # Enrich tournament info
+        enricher_service.complete_tournament_info(tournament)
     except Exception as e:
         return Response(
             {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR

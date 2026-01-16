@@ -125,6 +125,10 @@ class ModalitiesService(BaseService):
         """Delete a student"""
         self.delete(f"/students/{student_id}")
 
+    def get_students_by_ids(self, student_ids: List[str]) -> List[Dict[str, Any]]:
+        """Get multiple students by their IDs"""
+        return self.post("/students/batch-get", student_ids)
+
     # ==================== STAFF METHODS ====================
     def list_staff(self) -> List[Dict[str, Any]]:
         """List all staff members"""

@@ -20,8 +20,8 @@ from ..serializers.matches import (
     MatchResultRequestSerializer,
     MatchUpdateSerializer,
 )
+from ..services.enricher_service import enricher_service
 from ..services.matches_service import matches_service_client
-from ..services.modalities_service import modalities_service_client
 
 logger = structlog.get_logger(__name__)
 
@@ -45,19 +45,8 @@ class MatchListCreateView(APIView):
         result = matches_service_client.list_matches()
         matches = result.get("matches", [])
 
-        for match in matches:
-            participants = match.get("participants", [])
-            for participant in participants:
-                if participant.get("participant_type") == "team":
-                    team_id = participant.get("team_id")
-                    team_details = modalities_service_client.get_team(team_id=team_id)
-                    participant["team"] = team_details
-                elif participant.get("participant_type") == "athlete":
-                    athlete_id = participant.get("athlete_id")
-                    athlete_details = modalities_service_client.get_student(
-                        student_id=athlete_id
-                    )
-                    participant["athlete"] = athlete_details
+        # Populate participant details
+        enricher_service.complete_matches_info(matches)
 
         serializer = MatchListSerializer(data=matches, many=True)
         serializer.is_valid(raise_exception=True)
@@ -97,17 +86,7 @@ class MatchListCreateView(APIView):
             )
 
             # Populate participant details
-            for participant in match.get("participants", []):
-                if participant.get("participant_type") == "team":
-                    team_id = participant.get("team_id")
-                    team_details = modalities_service_client.get_team(team_id=team_id)
-                    participant["team"] = team_details
-                elif participant.get("participant_type") == "athlete":
-                    athlete_id = participant.get("athlete_id")
-                    athlete_details = modalities_service_client.get_student(
-                        student_id=athlete_id
-                    )
-                    participant["athlete"] = athlete_details
+            enricher_service.complete_matches_info([match])
         except Exception as e:
             return Response(
                 {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -142,17 +121,7 @@ class MatchDetailView(APIView):
             match = matches_service_client.get_match(match_id=match_id)
 
             # Populate participant details
-            for participant in match.get("participants", []):
-                if participant.get("participant_type") == "team":
-                    team_id = participant.get("team_id")
-                    team_details = modalities_service_client.get_team(team_id=team_id)
-                    participant["team"] = team_details
-                elif participant.get("participant_type") == "athlete":
-                    athlete_id = participant.get("athlete_id")
-                    athlete_details = modalities_service_client.get_student(
-                        student_id=athlete_id
-                    )
-                    participant["athlete"] = athlete_details
+            enricher_service.complete_matches_info([match])
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
@@ -228,17 +197,8 @@ class MatchDetailView(APIView):
             )
 
             # Populate participant details
-            for participant in match.get("participants", []):
-                if participant.get("participant_type") == "team":
-                    team_id = participant.get("team_id")
-                    team_details = modalities_service_client.get_team(team_id=team_id)
-                    participant["team"] = team_details
-                elif participant.get("participant_type") == "athlete":
-                    athlete_id = participant.get("athlete_id")
-                    athlete_details = modalities_service_client.get_student(
-                        student_id=athlete_id
-                    )
-                    participant["athlete"] = athlete_details
+            enricher_service.complete_matches_info([match])
+
         except Exception as e:
             return Response(
                 {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -298,17 +258,7 @@ def match_result(request, match_id):
         )
 
         # Populate participant details
-        for participant in updated_match.get("participants", []):
-            if participant.get("participant_type") == "team":
-                team_id = participant.get("team_id")
-                team_details = modalities_service_client.get_team(team_id=team_id)
-                participant["team"] = team_details
-            elif participant.get("participant_type") == "athlete":
-                athlete_id = participant.get("athlete_id")
-                athlete_details = modalities_service_client.get_student(
-                    student_id=athlete_id
-                )
-                participant["athlete"] = athlete_details
+        enricher_service.complete_matches_info([updated_match])
 
     except Exception as e:
         return Response(
