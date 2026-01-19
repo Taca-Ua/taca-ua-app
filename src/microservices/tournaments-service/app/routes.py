@@ -11,7 +11,12 @@ from sqlalchemy.orm import Session
 
 from .database import get_db_session
 from .logger import logger
-from .models import Tournament, TournamentRankingPosition, TournamentTeam
+from .models import (
+    CompetitorType,
+    Tournament,
+    TournamentCompetitor,
+    TournamentRankingPosition,
+)
 from .outbox_publisher import outbox_publisher
 from .schemas import (
     TournamentCreate,
@@ -77,14 +82,30 @@ async def create_tournament(
         db.add(tournament)
         db.flush()  # Get the ID before committing
 
-        # Add teams if provided
-        if data.teams_ids:
-            for team_id in data.teams_ids:
-                tournament_team = TournamentTeam(
-                    tournament_id=tournament.id,
-                    team_id=team_id,
+        # Add competitors if provided
+        if data.competitors:
+            for competitor_input in data.competitors:
+                competitor_type = (
+                    CompetitorType.TEAM
+                    if competitor_input.competitor_type == "team"
+                    else CompetitorType.ATHLETE
                 )
-                db.add(tournament_team)
+
+                tournament_competitor = TournamentCompetitor(
+                    tournament_id=tournament.id,
+                    competitor_type=competitor_type,
+                    team_id=(
+                        competitor_input.team_id
+                        if competitor_type == CompetitorType.TEAM
+                        else None
+                    ),
+                    athlete_id=(
+                        competitor_input.athlete_id
+                        if competitor_type == CompetitorType.ATHLETE
+                        else None
+                    ),
+                )
+                db.add(tournament_competitor)
 
         # Create outbox event
         outbox_publisher.create_event(
@@ -130,31 +151,57 @@ async def update_tournament(
         if data.status is not None:
             tournament.status = data.status
 
-        # Handle team additions
-        if data.teams_add:
-            for team_id in data.teams_add:
-                # Check if team is not already in tournament
-                existing = (
-                    db.query(TournamentTeam)
-                    .filter(
-                        TournamentTeam.tournament_id == tournament_id,
-                        TournamentTeam.team_id == team_id,
-                    )
-                    .first()
+        # Handle competitor additions
+        print("Competitors to add:")
+        print(data.competitors_add)
+        if data.competitors_add:
+            for competitor_input in data.competitors_add:
+                competitor_type = (
+                    CompetitorType.TEAM
+                    if competitor_input.competitor_type == "team"
+                    else CompetitorType.ATHLETE
                 )
-                if not existing:
-                    tournament_team = TournamentTeam(
-                        tournament_id=tournament_id,
-                        team_id=team_id,
-                    )
-                    db.add(tournament_team)
 
-        # Handle team removals
-        if data.teams_remove:
-            for team_id in data.teams_remove:
-                db.query(TournamentTeam).filter(
-                    TournamentTeam.tournament_id == tournament_id,
-                    TournamentTeam.team_id == team_id,
+                # Check if competitor is not already in tournament
+                query = db.query(TournamentCompetitor).filter(
+                    TournamentCompetitor.tournament_id == tournament_id,
+                    TournamentCompetitor.competitor_type == competitor_type,
+                )
+
+                if competitor_type == CompetitorType.TEAM:
+                    query = query.filter(
+                        TournamentCompetitor.team_id == competitor_input.team_id
+                    )
+                else:
+                    query = query.filter(
+                        TournamentCompetitor.athlete_id == competitor_input.athlete_id
+                    )
+
+                existing = query.first()
+
+                if not existing:
+                    tournament_competitor = TournamentCompetitor(
+                        tournament_id=tournament_id,
+                        competitor_type=competitor_type,
+                        team_id=(
+                            competitor_input.team_id
+                            if competitor_type == CompetitorType.TEAM
+                            else None
+                        ),
+                        athlete_id=(
+                            competitor_input.athlete_id
+                            if competitor_type == CompetitorType.ATHLETE
+                            else None
+                        ),
+                    )
+                    db.add(tournament_competitor)
+
+        # Handle competitor removals
+        if data.competitors_remove:
+            for competitor_id in data.competitors_remove:
+                db.query(TournamentCompetitor).filter(
+                    TournamentCompetitor.tournament_id == tournament_id,
+                    TournamentCompetitor.id == competitor_id,
                 ).delete()
 
         tournament.updated_at = datetime.now(timezone.utc)

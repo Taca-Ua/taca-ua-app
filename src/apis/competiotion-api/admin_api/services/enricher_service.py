@@ -25,15 +25,28 @@ class EnricherService:
         tournament["modality"] = modalities_service_client.get_modality(
             tournament["modality_id"]
         )
-        tournament["teams"] = modalities_service_client.get_teams_by_ids(
-            tournament["teams_ids"]
-        )
+
+        # Fetch and enrich teams data
+        team_ids = []
+        for competitor in tournament.get("competitors", []):
+            if competitor["competitor_type"] == "team":
+                team_ids.append(competitor["competitor"]["team_id"])
+        teams_data = modalities_service_client.get_teams_by_ids(team_ids)
+        teams_data_map = {team["id"]: team for team in teams_data}
+        for competitor in tournament.get("competitors", []):
+            if competitor["competitor_type"] == "team":
+                competitor["team"] = teams_data_map.get(
+                    competitor["competitor"]["team_id"]
+                )
+
+        # Fetch and enrich matches data
         tournament_matches = matches_service_client.list_matches(
             tournament_id=tournament["id"]
         ).get("matches", [])
 
         self.complete_matches_info(tournament_matches)
         tournament["matches"] = tournament_matches
+
         return tournament
 
     def complete_matches_info(self, matches: List[dict]) -> List[dict]:

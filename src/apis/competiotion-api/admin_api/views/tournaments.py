@@ -95,6 +95,7 @@ class TournamentDetailView(APIView):
         """Get tournament details by ID"""
         try:
             tournament = tournaments_service_client.get_tournament(tournament_id)
+            print("Tournament details:", tournament)
 
             # Enrich tournament info
             enricher_service.complete_tournament_info(tournament=tournament)
@@ -121,8 +122,8 @@ class TournamentDetailView(APIView):
                     else None
                 ),
                 status=serializer.validated_data.get("status"),
-                teams_add=serializer.validated_data.get("teams_add"),
-                teams_remove=serializer.validated_data.get("teams_remove"),
+                competitors_add=serializer.validated_data.get("competitors_add"),
+                competitors_remove=serializer.validated_data.get("competitors_remove"),
             )
 
             # Enrich tournament info

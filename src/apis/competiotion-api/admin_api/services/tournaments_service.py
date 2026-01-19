@@ -92,8 +92,8 @@ class TournamentsService(BaseService):
         name: Optional[str] = None,
         start_date: Optional[str] = None,
         status: Optional[str] = None,
-        teams_add: Optional[List[UUID]] = None,
-        teams_remove: Optional[List[UUID]] = None,
+        competitors_add: Optional[List[UUID]] = None,
+        competitors_remove: Optional[List[UUID]] = None,
     ) -> Dict[str, Any]:
         """
         Update a tournament
@@ -103,8 +103,8 @@ class TournamentsService(BaseService):
             name: New tournament name
             start_date: New start date (ISO format)
             status: New status (draft, active, finished)
-            teams_add: Team IDs to add
-            teams_remove: Team IDs to remove
+            competitors_add: Team IDs to add
+            competitors_remove: Team IDs to remove
 
         Returns:
             Updated tournament dictionary
@@ -116,11 +116,14 @@ class TournamentsService(BaseService):
             data["start_date"] = start_date
         if status is not None:
             data["status"] = status
-        if teams_add is not None:
-            data["teams_add"] = [str(team_id) for team_id in teams_add]
-        if teams_remove is not None:
-            data["teams_remove"] = [str(team_id) for team_id in teams_remove]
+        if competitors_add is not None:
+            data["competitors_add"] = [competitor for competitor in competitors_add]
+        if competitors_remove is not None:
+            data["competitors_remove"] = [
+                competitor for competitor in competitors_remove
+            ]
 
+        print("Update tournament data:", data)
         return self.put(f"/tournaments/{tournament_id}", data=data)
 
     def delete_tournament(self, tournament_id: UUID) -> None:

@@ -2,6 +2,19 @@ import { apiClient } from './client';
 import { type Match } from "./matches";
 import type { Modality } from './modalities';
 import type { Team } from './teams';
+import type { Student } from './members';
+
+export interface TournamentCompetitor {
+  competitor_type: 'team' | 'athlete';
+  team_id?: string;
+  athlete_id?: string;
+}
+
+export interface TournamentCompetitorDetail {
+  competitor_type: 'team' | 'athlete';
+  team: Team;
+  athlete: Student;
+}
 
 export interface Tournament {
   id: string;
@@ -12,14 +25,14 @@ export interface Tournament {
 export interface TournamentDetail extends Tournament {
   modality: Modality;
   start_date: string;
-  teams: Team[];
+  competitors: TournamentCompetitorDetail[];
   matches: Match[];
 }
 
 export interface TournamentCreate {
   name: string;
   modality_id: string;
-  teams_ids?: string[];
+  competitors: TournamentCompetitor[];
   start_date?: string;
 }
 
@@ -27,13 +40,17 @@ export interface TournamentUpdate {
   name?: string;
   start_date?: string;
   status?: 'draft' | 'active' | 'finished';
-  teams_add?: string[];
-  teams_remove?: string[];
+  competitors_add?: TournamentCompetitor[];
+  competitors_remove?: TournamentCompetitor[];
 }
 
 // Input interfaces
+interface TournamentFinishEntry extends TournamentCompetitor {
+  position: number;
+}
+
 export interface TournamentFinish {
-  ranking_entries?: { team_id: string; position: number }[];
+  ranking_entries?: TournamentFinishEntry[];
 }
 
 export const tournamentsApi = {

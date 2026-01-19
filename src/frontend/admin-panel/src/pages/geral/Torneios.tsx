@@ -61,7 +61,7 @@ const TorneiosCreateModal = ({ isOpen, onClose, onCreate, modalities, setModalit
       const newTournament: TournamentCreate = {
         name,
         modality_id: modalityId,
-        teams: selectedTeams,
+        competitors: selectedTeams.map(teamId => ({ competitor_type: 'team', team_id: teamId })),
       };
       const createdTournament = await tournamentsApi.create(newTournament);
       onCreate(createdTournament);

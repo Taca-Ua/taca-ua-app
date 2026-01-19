@@ -6,9 +6,51 @@ from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 # ==================== Tournament Schemas ====================
+
+
+class CompetitorInput(BaseModel):
+    """Schema for competitor input (team or athlete)"""
+
+    competitor_type: str  # "team" or "athlete"
+    team_id: Optional[UUID] = None
+    athlete_id: Optional[UUID] = None
+
+    @field_validator("competitor_type")
+    @classmethod
+    def validate_competitor_type(cls, v):
+        if v not in ["team", "athlete"]:
+            raise ValueError('competitor_type must be "team" or "athlete"')
+        return v
+
+    @field_validator("team_id")
+    @classmethod
+    def validate_team_id(cls, v, info):
+        if info.data.get("competitor_type") == "team" and v is None:
+            raise ValueError('team_id is required when competitor_type is "team"')
+        return v
+
+    @field_validator("athlete_id")
+    @classmethod
+    def validate_athlete_id(cls, v, info):
+        if info.data.get("competitor_type") == "athlete" and v is None:
+            raise ValueError('athlete_id is required when competitor_type is "athlete"')
+        return v
+
+
+class CompetitorResponse(BaseModel):
+    """Schema for competitor response"""
+
+    # id: UUID
+    tournament_id: UUID
+    competitor_type: str
+    competitor: dict  # Contains either {"team_id": UUID} or {"athlete_id": UUID}
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 
 class TournamentCreate(BaseModel):
@@ -16,7 +58,7 @@ class TournamentCreate(BaseModel):
 
     name: str
     modality_id: UUID
-    teams_ids: Optional[List[UUID]]
+    competitors: Optional[List[CompetitorInput]] = None
     start_date: Optional[datetime]
     created_by: Optional[UUID] = None
 
@@ -27,8 +69,8 @@ class TournamentUpdate(BaseModel):
     name: Optional[str] = None
     start_date: Optional[datetime] = None
     status: Optional[str] = None
-    teams_add: Optional[List[UUID]] = None
-    teams_remove: Optional[List[UUID]] = None
+    competitors_add: List[CompetitorInput] = None
+    competitors_remove: List[UUID] = None  # competitor IDs to remove
 
 
 class TournamentRankingPositionSchema(BaseModel):
@@ -52,7 +94,7 @@ class TournamentResponse(BaseModel):
     status: str
     modality_id: UUID
     start_date: Optional[datetime]
-    teams_ids: List[UUID]
+    competitors: List[CompetitorResponse]
 
     created_by: UUID
     created_at: datetime

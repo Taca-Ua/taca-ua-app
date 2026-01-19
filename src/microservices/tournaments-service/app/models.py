@@ -3,11 +3,21 @@ SQLAlchemy models for Tournaments Service.
 Schema: tournaments
 """
 
+import enum
 import uuid
 from datetime import datetime, timezone
 
 import sqlalchemy as sa
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -15,24 +25,56 @@ from sqlalchemy.orm import relationship
 Base = declarative_base()
 
 
-class TournamentTeam(Base):
-    """Association model for Tournament-Team relationship"""
+class CompetitorType(enum.Enum):
+    TEAM = "team"
+    ATHLETE = "athlete"
 
-    __tablename__ = "tournament_teams"
+
+class TournamentCompetitor(Base):
+    """
+    A competitor subscribed to a tournament.
+    Can be a team or an individual athlete.
+    """
+
+    __tablename__ = "tournament_competitor"
     __table_args__ = {"schema": "tournaments"}
 
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     tournament_id = Column(
         UUID(as_uuid=True),
         ForeignKey("tournaments.tournament.id", ondelete="CASCADE"),
-        primary_key=True,
-    )
-    team_id = Column(UUID(as_uuid=True), primary_key=True)
-    created_at = Column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+        nullable=False,
+        index=True,
     )
 
-    # Relationships
-    tournament = relationship("Tournament", back_populates="teams_ids")
+    competitor_type = Column(
+        Enum(CompetitorType, name="competitor_type"),
+        nullable=False,
+    )
+
+    team_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+    athlete_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    tournament = relationship("Tournament", back_populates="competitors")
+
+    def to_dict(self):
+        resp = {
+            "tournament_id": str(self.tournament_id),
+            "competitor_type": self.competitor_type.value,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+        if self.competitor_type == CompetitorType.TEAM:
+            resp["competitor"] = {"team_id": str(self.team_id)}
+        else:
+            resp["competitor"] = {"athlete_id": str(self.athlete_id)}
+
+        return resp
 
 
 class Tournament(Base):
@@ -64,8 +106,8 @@ class Tournament(Base):
         back_populates="tournament",
         cascade="all, delete-orphan",
     )
-    teams_ids = relationship(
-        "TournamentTeam",
+    competitors = relationship(
+        "TournamentCompetitor",
         back_populates="tournament",
         cascade="all, delete-orphan",
     )
@@ -82,7 +124,7 @@ class Tournament(Base):
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "finished_at": self.finished_at.isoformat() if self.finished_at else None,
             "finished_by": str(self.finished_by) if self.finished_by else None,
-            "teams_ids": [str(team.team_id) for team in self.teams_ids],
+            "competitors": [comp.to_dict() for comp in self.competitors],
         }
 
         if include_ranking:

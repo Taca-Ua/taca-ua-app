@@ -33,12 +33,12 @@ function DashboardGeral() {
         const [modalities, tournaments, teams, seasons] = await Promise.all([
           modalitiesApi.getAll(),
           tournamentsApi.getAll(),
-          teamsApi.getAll(true), // Get teams from all courses
+          teamsApi.getAll(), // Get teams from all courses
           seasonsApi.getAll(),
         ]);
 
         // Count unique courses from teams
-        const uniqueCourses = new Set(teams.map(t => t.course_id));
+        const uniqueCourses = new Set(teams.map(t => t.course.id));
 
         // Count active tournaments
         const activeTournaments = tournaments.filter(t => t.status === 'active').length;
