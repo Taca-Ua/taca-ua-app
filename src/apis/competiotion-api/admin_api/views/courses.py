@@ -43,11 +43,9 @@ class CourseListCreateView(APIView):
         serializer.is_valid(raise_exception=True)
 
         course = modalities_service_client.create_course(
-            {
-                "name": serializer.validated_data["name"],
-                "abbreviation": serializer.validated_data["abbreviation"],
-                "nucleo_id": str(serializer.validated_data["nucleo_id"]),
-            }
+            name=serializer.validated_data["name"],
+            abbreviation=serializer.validated_data["abbreviation"],
+            nucleo_id=str(serializer.validated_data["nucleo_id"]),
         )
 
         serializer = CourseDetailSerializer(course)
@@ -82,15 +80,12 @@ class CourseDetailView(APIView):
         serializer = CourseUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        update_data = {}
-        if serializer.validated_data.get("name", None) is not None:
-            update_data["name"] = serializer.validated_data["name"]
-        if serializer.validated_data.get("abbreviation", None) is not None:
-            update_data["abbreviation"] = serializer.validated_data["abbreviation"]
-        if serializer.validated_data.get("nucleo_id", None) is not None:
-            update_data["nucleo_id"] = str(serializer.validated_data["nucleo_id"])
-
-        course = modalities_service_client.update_course(course_id, update_data)
+        course = modalities_service_client.update_course(
+            course_id,
+            name=serializer.validated_data.get("name"),
+            abbreviation=serializer.validated_data.get("abbreviation"),
+            nucleo_id=serializer.validated_data.get("nucleo_id"),
+        )
 
         serializer = CourseDetailSerializer(course)
         return Response(serializer.data, status=status.HTTP_200_OK)

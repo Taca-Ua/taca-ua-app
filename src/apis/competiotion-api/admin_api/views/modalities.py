@@ -92,15 +92,11 @@ class ModalityDetailView(APIView):
         serializer = ModalityUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        update_data = {}
-        if serializer.validated_data.get("name", None) is not None:
-            update_data["name"] = serializer.validated_data["name"]
-        if serializer.validated_data.get("modality_type_id", None) is not None:
-            update_data["modality_type_id"] = str(
-                serializer.validated_data["modality_type_id"]
-            )
-
-        modality = modalities_service_client.update_modality(modality_id, update_data)
+        modality = modalities_service_client.update_modality(
+            modality_id,
+            name=serializer.validated_data.get("name"),
+            modality_type_id=str(serializer.validated_data.get("modality_type_id")),
+        )
 
         # Serialize output data
         serializer = ModalityDetailSerializer(modality)

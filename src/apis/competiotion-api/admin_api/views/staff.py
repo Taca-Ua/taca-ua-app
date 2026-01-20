@@ -77,7 +77,10 @@ class StaffDetailView(APIView):
         serializer.is_valid(raise_exception=True)
 
         staff_member = modalities_service_client.update_staff(
-            staff_id, serializer.validated_data
+            staff_id,
+            full_name=serializer.validated_data.get("full_name", None),
+            staff_number=serializer.validated_data.get("staff_number", None),
+            contact=serializer.validated_data.get("contact", None),
         )
 
         serializer = StaffDetailSerializer(staff_member)

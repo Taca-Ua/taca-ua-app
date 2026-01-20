@@ -45,11 +45,9 @@ class ModalityTypeListCreateView(APIView):
         serializer.is_valid(raise_exception=True)
 
         modality_type = modalities_service_client.create_modality_type(
-            {
-                "name": serializer.validated_data["name"],
-                "description": serializer.validated_data.get("description", ""),
-                "escaloes": serializer.validated_data["escaloes"],
-            }
+            name=serializer.validated_data["name"],
+            description=serializer.validated_data.get("description", ""),
+            escaloes=serializer.validated_data["escaloes"],
         )
         serializer = ModalityTypeListSerializer(modality_type)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -84,16 +82,11 @@ class ModalityTypeDetailView(APIView):
         serializer = ModalityTypeUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        update_data = {}
-        if "name" in serializer.validated_data:
-            update_data["name"] = serializer.validated_data["name"]
-        if "description" in serializer.validated_data:
-            update_data["description"] = serializer.validated_data["description"]
-        if "escaloes" in serializer.validated_data:
-            update_data["escaloes"] = serializer.validated_data["escaloes"]
-
         modality_type = modalities_service_client.update_modality_type(
-            modality_type_id, update_data
+            modality_type_id,
+            name=serializer.validated_data.get("name"),
+            description=serializer.validated_data.get("description"),
+            escaloes=serializer.validated_data.get("escaloes"),
         )
 
         serializer = ModalityTypeDetailSerializer(modality_type)

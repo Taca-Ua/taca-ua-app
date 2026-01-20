@@ -45,10 +45,8 @@ class NucleoListCreateView(APIView):
         serializer.is_valid(raise_exception=True)
 
         nucleo = modalities_service_client.create_nucleo(
-            {
-                "name": serializer.validated_data["name"],
-                "abbreviation": serializer.validated_data["abbreviation"],
-            }
+            name=serializer.validated_data["name"],
+            abbreviation=serializer.validated_data["abbreviation"],
         )
 
         # Serialize output data
@@ -87,13 +85,11 @@ class NucleoDetailView(APIView):
         serializer = NucleosUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        update_data = {}
-        if "name" in serializer.validated_data:
-            update_data["name"] = serializer.validated_data["name"]
-        if "abbreviation" in serializer.validated_data:
-            update_data["abbreviation"] = serializer.validated_data["abbreviation"]
-
-        nucleo = modalities_service_client.update_nucleo(nucleo_id, update_data)
+        nucleo = modalities_service_client.update_nucleo(
+            nucleo_id,
+            name=serializer.validated_data.get("name"),
+            abbreviation=serializer.validated_data.get("abbreviation"),
+        )
 
         # Serialize output data
         serializer = NucleosDetailSerializer(nucleo)

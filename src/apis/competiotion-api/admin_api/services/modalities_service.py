@@ -4,7 +4,7 @@ Service for communicating with modalities-service microservice
 
 import os
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 from uuid import UUID
 
 from .base_service import BaseService
@@ -136,8 +136,12 @@ class ModalitiesService(BaseService):
         nucleos_data = self.get("/nucleos")
         return [NucleoDTO(**nucleo) for nucleo in nucleos_data]
 
-    def create_nucleo(self, data: Dict[str, Any]) -> NucleoDTO:
+    def create_nucleo(self, name: str, abbreviation: str) -> NucleoDTO:
         """Create a new nucleo"""
+        data = {
+            "name": name,
+            "abbreviation": abbreviation,
+        }
         nucleo_data = self.post("/nucleos", data)
         return NucleoDTO(**nucleo_data)
 
@@ -146,8 +150,17 @@ class ModalitiesService(BaseService):
         nucleo_data = self.get(f"/nucleos/{nucleo_id}")
         return NucleoDTO(**nucleo_data)
 
-    def update_nucleo(self, nucleo_id: str, data: Dict[str, Any]) -> NucleoDTO:
+    def update_nucleo(
+        self, nucleo_id: str, name: str = None, abbreviation: str = None
+    ) -> NucleoDTO:
         """Update a nucleo"""
+        data = {}
+
+        if name is not None:
+            data["name"] = name
+        if abbreviation is not None:
+            data["abbreviation"] = abbreviation
+
         nucleo_data = self.put(f"/nucleos/{nucleo_id}", data)
         return NucleoDTO(**nucleo_data)
 
@@ -161,8 +174,13 @@ class ModalitiesService(BaseService):
         courses_data = self.get("/courses")
         return [CourseDTO(**course) for course in courses_data]
 
-    def create_course(self, data: Dict[str, Any]) -> CourseDTO:
+    def create_course(self, name: str, abbreviation: str, nucleo_id: str) -> CourseDTO:
         """Create a new course"""
+        data = {
+            "name": name,
+            "abbreviation": abbreviation,
+            "nucleo_id": nucleo_id,
+        }
         course_data = self.post("/courses", data)
         return CourseDTO(**course_data)
 
@@ -171,8 +189,22 @@ class ModalitiesService(BaseService):
         course_data = self.get(f"/courses/{course_id}")
         return CourseDTO(**course_data)
 
-    def update_course(self, course_id: str, data: Dict[str, Any]) -> CourseDTO:
+    def update_course(
+        self,
+        course_id: str,
+        name: str = None,
+        abbreviation: str = None,
+        nucleo_id: str = None,
+    ) -> CourseDTO:
         """Update a course"""
+        data = {}
+        if name is not None:
+            data["name"] = name
+        if abbreviation is not None:
+            data["abbreviation"] = abbreviation
+        if nucleo_id is not None:
+            data["nucleo_id"] = nucleo_id
+
         course_data = self.put(f"/courses/{course_id}", data)
         return CourseDTO(**course_data)
 
@@ -188,8 +220,18 @@ class ModalitiesService(BaseService):
             ModalityTypeDTO(**modality_type) for modality_type in modality_types_data
         ]
 
-    def create_modality_type(self, data: Dict[str, Any]) -> ModalityTypeDTO:
+    def create_modality_type(
+        self, name: str, description: str = "", escaloes: List[str] = None
+    ) -> ModalityTypeDTO:
         """Create a new modality type"""
+        if escaloes is None:
+            escaloes = []
+
+        data = {
+            "name": name,
+            "description": description,
+            "escaloes": escaloes,
+        }
         modality_type_data = self.post("/modality-types", data)
         return ModalityTypeDTO(**modality_type_data)
 
@@ -199,9 +241,21 @@ class ModalitiesService(BaseService):
         return ModalityTypeDTO(**modality_type_data)
 
     def update_modality_type(
-        self, modality_type_id: str, data: Dict[str, Any]
+        self,
+        modality_type_id: str,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        escaloes: Optional[List[str]] = None,
     ) -> ModalityTypeDTO:
         """Update a modality type"""
+        data = {}
+        if name is not None:
+            data["name"] = name
+        if description is not None:
+            data["description"] = description
+        if escaloes is not None:
+            data["escaloes"] = escaloes
+
         modality_type_data = self.put(f"/modality-types/{modality_type_id}", data)
         return ModalityTypeDTO(**modality_type_data)
 
@@ -226,8 +280,20 @@ class ModalitiesService(BaseService):
         modality_data = self.get(f"/modalities/{modality_id}")
         return ModalityDTO(**modality_data)
 
-    def update_modality(self, modality_id: str, data: Dict[str, Any]) -> ModalityDTO:
+    def update_modality(
+        self,
+        modality_id: str,
+        name: Optional[str] = None,
+        modality_type_id: Optional[str] = None,
+    ) -> ModalityDTO:
         """Update a modality"""
+
+        data = {}
+        if name is not None:
+            data["name"] = name
+        if modality_type_id is not None:
+            data["modality_type_id"] = modality_type_id
+
         modality_data = self.put(f"/modalities/{modality_id}", data)
         return ModalityDTO(**modality_data)
 
@@ -241,8 +307,20 @@ class ModalitiesService(BaseService):
         students_data = self.get("/students")
         return [StudentDTO(**student) for student in students_data]
 
-    def create_student(self, data: Dict[str, Any]) -> StudentDTO:
+    def create_student(
+        self,
+        full_name: str,
+        student_number: str,
+        is_member: bool = False,
+        course_id: str = None,
+    ) -> StudentDTO:
         """Create a new student"""
+        data = {
+            "full_name": full_name,
+            "student_number": student_number,
+            "is_member": is_member,
+            "course_id": course_id,
+        }
         student_data = self.post("/students", data)
         return StudentDTO(**student_data)
 
@@ -251,8 +329,25 @@ class ModalitiesService(BaseService):
         student_data = self.get(f"/students/{student_id}")
         return StudentDTO(**student_data)
 
-    def update_student(self, student_id: str, data: Dict[str, Any]) -> StudentDTO:
+    def update_student(
+        self,
+        student_id: str,
+        full_name: Optional[str] = None,
+        course_id: Optional[str] = None,
+        student_number: Optional[str] = None,
+        is_member: Optional[bool] = None,
+    ) -> StudentDTO:
         """Update a student"""
+        data = {}
+        if full_name is not None:
+            data["full_name"] = full_name
+        if course_id is not None:
+            data["course_id"] = course_id
+        if student_number is not None:
+            data["student_number"] = student_number
+        if is_member is not None:
+            data["is_member"] = is_member
+
         student_data = self.put(f"/students/{student_id}", data)
         return StudentDTO(**student_data)
 
@@ -288,8 +383,22 @@ class ModalitiesService(BaseService):
         staff_data = self.get(f"/staff/{staff_id}")
         return StaffDTO(**staff_data)
 
-    def update_staff(self, staff_id: str, data: Dict[str, Any]) -> StaffDTO:
+    def update_staff(
+        self,
+        staff_id: str,
+        full_name: Optional[str] = None,
+        staff_number: Optional[str] = None,
+        contact: Optional[str] = None,
+    ) -> StaffDTO:
         """Update a staff member"""
+        data = {}
+        if full_name is not None:
+            data["full_name"] = full_name
+        if staff_number is not None:
+            data["staff_number"] = staff_number
+        if contact is not None:
+            data["contact"] = contact
+
         staff_data = self.put(f"/staff/{staff_id}", data)
         return StaffDTO(**staff_data)
 
@@ -300,11 +409,18 @@ class ModalitiesService(BaseService):
     # ==================== TEAM METHODS ====================
     def list_teams(self) -> List[TeamDTO]:
         """List all teams"""
-        return self.get("/teams")
+        teams_data = self.get("/teams")
+        return [TeamDTO(**team) for team in teams_data]
 
-    def create_team(self, data: Dict[str, Any]) -> TeamDTO:
+    def create_team(self, name: str, modality_id: str, course_id: str) -> TeamDTO:
         """Create a new team"""
-        return self.post("/teams", data)
+        data = {
+            "name": name,
+            "modality_id": modality_id,
+            "course_id": course_id,
+        }
+        team_data = self.post("/teams", data)
+        return TeamDTO(**team_data)
 
     def get_team(self, team_id: str) -> TeamDTO:
         """Get a team by ID"""
@@ -316,8 +432,28 @@ class ModalitiesService(BaseService):
         teams_data = self.post("/teams/batch-get", team_ids)
         return [TeamDTO(**team) for team in teams_data]
 
-    def update_team(self, team_id: str, data: Dict[str, Any]) -> TeamDTO:
+    def update_team(
+        self,
+        team_id: str,
+        name: Optional[str] = None,
+        modality_id: Optional[str] = None,
+        course_id: Optional[str] = None,
+        players_add: Optional[List[str]] = None,
+        players_remove: Optional[List[str]] = None,
+    ) -> TeamDTO:
         """Update a team"""
+        data = {}
+        if name is not None:
+            data["name"] = name
+        if modality_id is not None:
+            data["modality_id"] = modality_id
+        if course_id is not None:
+            data["course_id"] = course_id
+        if players_add is not None:
+            data["players_add"] = players_add
+        if players_remove is not None:
+            data["players_remove"] = players_remove
+
         team_data = self.put(f"/teams/{team_id}", data)
         return TeamDTO(**team_data)
 

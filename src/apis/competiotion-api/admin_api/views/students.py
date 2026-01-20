@@ -47,12 +47,10 @@ class StudentListCreateView(APIView):
         serializer.is_valid(raise_exception=True)
 
         member = modalities_service_client.create_student(
-            {
-                "full_name": serializer.validated_data["full_name"],
-                "student_number": serializer.validated_data["student_number"],
-                "is_member": serializer.validated_data.get("is_member", False),
-                "course_id": str(serializer.validated_data["course_id"]),
-            }
+            full_name=serializer.validated_data["full_name"],
+            student_number=serializer.validated_data["student_number"],
+            is_member=serializer.validated_data.get("is_member", False),
+            course_id=str(serializer.validated_data["course_id"]),
         )
 
         serializer = StudentListSerializer(member)
@@ -88,17 +86,13 @@ class StudentDetailView(APIView):
         serializer = StudentUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        update_data = {}
-        if "full_name" in serializer.validated_data:
-            update_data["full_name"] = serializer.validated_data["full_name"]
-        if "course_id" in serializer.validated_data:
-            update_data["course_id"] = str(serializer.validated_data["course_id"])
-        if "student_number" in serializer.validated_data:
-            update_data["student_number"] = serializer.validated_data["student_number"]
-        if "is_member" in serializer.validated_data:
-            update_data["is_member"] = serializer.validated_data["is_member"]
-
-        student = modalities_service_client.update_student(student_id, update_data)
+        student = modalities_service_client.update_student(
+            student_id,
+            full_name=serializer.validated_data.get("full_name"),
+            course_id=serializer.validated_data.get("course_id"),
+            student_number=serializer.validated_data.get("student_number"),
+            is_member=serializer.validated_data.get("is_member"),
+        )
 
         serializer = StudentDetailSerializer(student)
         return Response(serializer.data, status=status.HTTP_200_OK)

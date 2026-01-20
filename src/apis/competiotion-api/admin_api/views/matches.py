@@ -42,8 +42,7 @@ logger = structlog.get_logger(__name__)
 class MatchListCreateView(APIView):
     def get(self, request):
         # TODO: Filter by course_id when available
-        result = matches_service_client.list_matches()
-        matches = result.get("matches", [])
+        matches = matches_service_client.list_matches()
 
         # Populate participant details
         enricher_service.complete_matches_info(matches)

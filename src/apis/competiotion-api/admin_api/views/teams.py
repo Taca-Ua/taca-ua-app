@@ -52,11 +52,9 @@ class TeamListCreateView(APIView):
         serializer.is_valid(raise_exception=True)
 
         team = modalities_service_client.create_team(
-            {
-                "name": serializer.validated_data.get("name"),
-                "modality_id": str(serializer.validated_data["modality_id"]),
-                "course_id": str(serializer.validated_data["course_id"]),
-            }
+            name=serializer.validated_data.get("name"),
+            modality_id=str(serializer.validated_data["modality_id"]),
+            course_id=str(serializer.validated_data["course_id"]),
         )
 
         # Serialize output data
@@ -95,23 +93,30 @@ class TeamDetailView(APIView):
         serializer = TeamUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        update_data = {}
-        if "name" in serializer.validated_data:
-            update_data["name"] = serializer.validated_data["name"]
-        if "modality_id" in serializer.validated_data:
-            update_data["modality_id"] = str(serializer.validated_data["modality_id"])
-        if "course_id" in serializer.validated_data:
-            update_data["course_id"] = str(serializer.validated_data["course_id"])
-        if "players_add" in serializer.validated_data:
-            update_data["players_add"] = [
-                str(pid) for pid in serializer.validated_data["players_add"]
-            ]
-        if "players_remove" in serializer.validated_data:
-            update_data["players_remove"] = [
-                str(pid) for pid in serializer.validated_data["players_remove"]
-            ]
-
-        team = modalities_service_client.update_team(team_id, update_data)
+        team = modalities_service_client.update_team(
+            team_id,
+            name=serializer.validated_data.get("name"),
+            modality_id=(
+                str(serializer.validated_data["modality_id"])
+                if "modality_id" in serializer.validated_data
+                else None
+            ),
+            course_id=(
+                str(serializer.validated_data["course_id"])
+                if "course_id" in serializer.validated_data
+                else None
+            ),
+            players_add=(
+                [str(pid) for pid in serializer.validated_data["players_add"]]
+                if "players_add" in serializer.validated_data
+                else None
+            ),
+            players_remove=(
+                [str(pid) for pid in serializer.validated_data["players_remove"]]
+                if "players_remove" in serializer.validated_data
+                else None
+            ),
+        )
 
         # Serialize output data
         serializer = TeamDetailSerializer(team)
