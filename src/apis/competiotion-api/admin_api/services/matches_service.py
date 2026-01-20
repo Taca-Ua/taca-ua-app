@@ -3,10 +3,63 @@ Service for communicating with matches-service microservice
 """
 
 import os
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from .base_service import BaseService
+
+
+@dataclass
+class MatchParticipantDTO:
+    id: UUID
+    match_id: UUID
+    participant_type: str  # "team" or "athlete"
+    team_id: Optional[UUID] = None
+    athlete_id: Optional[UUID] = None
+    score: Optional[int] = None
+    position: Optional[int] = None
+    result_metadata: Optional[Dict[str, Any]] = None
+
+
+@dataclass
+class MatchDTO:
+    id: UUID
+    tournament_id: Optional[UUID]
+    location: str
+    start_time: str  # ISO format
+    status: str  # "scheduled", "in_progress", "finished", "cancelled"
+    created_by: UUID
+    created_at: str  # ISO format
+    updated_at: str  # ISO format
+    participants: List[MatchParticipantDTO] = field(default_factory=list)
+
+    def __post_init__(self):
+        # Convert participants dicts to MatchParticipantDTO if necessary
+        self.participants = [
+            MatchParticipantDTO(**p) if not isinstance(p, MatchParticipantDTO) else p
+            for p in self.participants
+        ]
+
+
+@dataclass
+class LineupDTO:
+    id: UUID
+    match_id: UUID
+    team_id: UUID
+    player_id: UUID
+    jersey_number: int
+    is_starter: bool
+    created_at: str  # ISO format
+
+
+@dataclass
+class CommentDTO:
+    id: UUID
+    match_id: UUID
+    message: str
+    created_by: UUID
+    created_at: str  # ISO format
 
 
 class MatchesService(BaseService):
@@ -28,7 +81,7 @@ class MatchesService(BaseService):
         status: Optional[str] = None,
         limit: int = 50,
         offset: int = 0,
-    ) -> Dict[str, Any]:
+    ) -> List[MatchDTO]:
         """
         List matches with optional filters.
 
@@ -66,7 +119,9 @@ class MatchesService(BaseService):
         if offset != 0:
             params["offset"] = offset
 
-        return self.get("/matches", params=params)
+        matches_data = self.get("/matches", params=params)
+        matches = [MatchDTO(**match) for match in matches_data.get("matches", [])]
+        return matches
 
     def create_match(
         self,
@@ -75,7 +130,7 @@ class MatchesService(BaseService):
         created_by: UUID,
         tournament_id: Optional[UUID] = None,
         participants: Optional[List[Dict[str, Any]]] = None,
-    ) -> Dict[str, Any]:
+    ) -> MatchDTO:
         """
         Create a new match with participants.
 
@@ -102,9 +157,10 @@ class MatchesService(BaseService):
         if participants is not None:
             data["participants"] = participants
 
-        return self.post("/matches", data=data)
+        match_data = self.post("/matches", data=data)
+        return MatchDTO(**match_data)
 
-    def get_match(self, match_id: UUID) -> Dict[str, Any]:
+    def get_match(self, match_id: UUID) -> MatchDTO:
         """
         Get a match by ID.
 
@@ -114,7 +170,8 @@ class MatchesService(BaseService):
         Returns:
             Match data with participants
         """
-        return self.get(f"/matches/{match_id}")
+        match_data = self.get(f"/matches/{match_id}")
+        return MatchDTO(**match_data)
 
     def update_match(
         self,
@@ -122,7 +179,7 @@ class MatchesService(BaseService):
         location: Optional[str] = None,
         start_time: Optional[str] = None,
         status: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> MatchDTO:
         """
         Update a match.
 
@@ -143,7 +200,8 @@ class MatchesService(BaseService):
         if status is not None:
             data["status"] = status
 
-        return self.put(f"/matches/{match_id}", data=data)
+        updated_match_data = self.put(f"/matches/{match_id}", data=data)
+        return MatchDTO(**updated_match_data)
 
     def delete_match(self, match_id: UUID) -> Dict[str, Any]:
         """
@@ -164,7 +222,7 @@ class MatchesService(BaseService):
         participant_type: str,
         team_id: Optional[UUID] = None,
         athlete_id: Optional[UUID] = None,
-    ) -> Dict[str, Any]:
+    ) -> MatchParticipantDTO:
         """
         Add a participant to a match.
 
@@ -183,7 +241,8 @@ class MatchesService(BaseService):
         if athlete_id is not None:
             data["athlete_id"] = str(athlete_id)
 
-        return self.post(f"/matches/{match_id}/participants", data=data)
+        participant_data = self.post(f"/matches/{match_id}/participants", data=data)
+        return MatchParticipantDTO(**participant_data)
 
     def update_participant_result(
         self,
@@ -192,7 +251,7 @@ class MatchesService(BaseService):
         score: Optional[int] = None,
         position: Optional[int] = None,
         result_metadata: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+    ) -> MatchParticipantDTO:
         """
         Update a participant's result.
 
@@ -214,7 +273,10 @@ class MatchesService(BaseService):
         if result_metadata is not None:
             data["result_metadata"] = result_metadata
 
-        return self.put(f"/matches/{match_id}/participants/{participant_id}", data=data)
+        participant_data = self.put(
+            f"/matches/{match_id}/participants/{participant_id}", data=data
+        )
+        return MatchParticipantDTO(**participant_data)
 
     def remove_participant(
         self, match_id: UUID, participant_id: UUID
@@ -262,7 +324,7 @@ class MatchesService(BaseService):
         self,
         match_id: UUID,
         team_id: Optional[UUID] = None,
-    ) -> List[Dict[str, Any]]:
+    ) -> List[LineupDTO]:
         """
         Get lineup for a match.
 
@@ -277,7 +339,8 @@ class MatchesService(BaseService):
         if team_id is not None:
             params["team_id"] = str(team_id)
 
-        return self.get(f"/matches/{match_id}/lineup", params=params)
+        lineup_data = self.get(f"/matches/{match_id}/lineup", params=params)
+        return [LineupDTO(**entry) for entry in lineup_data]
 
     # Comment operations
     def add_comment(
@@ -285,7 +348,7 @@ class MatchesService(BaseService):
         match_id: UUID,
         message: str,
         created_by: UUID,
-    ) -> Dict[str, Any]:
+    ) -> CommentDTO:
         """
         Add a comment to a match.
 
@@ -301,9 +364,11 @@ class MatchesService(BaseService):
             "message": message,
             "created_by": str(created_by),
         }
-        return self.post(f"/matches/{match_id}/comments", data=data)
 
-    def get_comments(self, match_id: UUID) -> List[Dict[str, Any]]:
+        comment_data = self.post(f"/matches/{match_id}/comments", data=data)
+        return CommentDTO(**comment_data)
+
+    def get_comments(self, match_id: UUID) -> List[CommentDTO]:
         """
         Get all comments for a match.
 
@@ -313,7 +378,8 @@ class MatchesService(BaseService):
         Returns:
             List of comments
         """
-        return self.get(f"/matches/{match_id}/comments")
+        comments_data = self.get(f"/matches/{match_id}/comments")
+        return [CommentDTO(**entry) for entry in comments_data]
 
     def delete_comment(self, match_id: UUID, comment_id: UUID) -> Dict[str, Any]:
         """
@@ -334,7 +400,7 @@ class MatchesService(BaseService):
         match_id: UUID,
         participant_results: List[Dict[str, Any]],
         status: Optional[str] = "finished",
-    ) -> Dict[str, Any]:
+    ) -> MatchDTO:
         """
         Update results for multiple participants and optionally finish the match.
 
@@ -354,7 +420,8 @@ class MatchesService(BaseService):
         if status is not None:
             data["status"] = status
 
-        return self.post(f"/matches/{match_id}/results", data=data)
+        match_data = self.put(f"/matches/{match_id}/results", data=data)
+        return MatchDTO(**match_data)
 
 
 # Singleton instance

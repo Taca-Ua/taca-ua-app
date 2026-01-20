@@ -68,8 +68,7 @@ class TournamentListCreateView(APIView):
                 {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-        serializer = TournamentListSerializer(data=tournament)
-        serializer.is_valid(raise_exception=True)
+        serializer = TournamentListSerializer(tournament)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
@@ -98,12 +97,11 @@ class TournamentDetailView(APIView):
             print("Tournament details:", tournament)
 
             # Enrich tournament info
-            enricher_service.complete_tournament_info(tournament=tournament)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = TournamentDetailSerializer(data=tournament)
-        serializer.is_valid(raise_exception=True)
+        enricher_service.complete_tournament_info(tournament=tournament)
+        serializer = TournamentDetailSerializer(tournament)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, tournament_id):
@@ -133,8 +131,7 @@ class TournamentDetailView(APIView):
                 {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-        serializer = TournamentDetailSerializer(data=tournament)
-        serializer.is_valid(raise_exception=True)
+        serializer = TournamentDetailSerializer(tournament)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, tournament_id):
@@ -182,8 +179,7 @@ def tournament_finish(request, tournament_id):
             {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-    serializer = TournamentDetailSerializer(data=tournament)
-    serializer.is_valid(raise_exception=True)
+    serializer = TournamentDetailSerializer(tournament)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 

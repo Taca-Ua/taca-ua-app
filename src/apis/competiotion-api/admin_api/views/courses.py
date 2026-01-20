@@ -34,7 +34,9 @@ from ..services.modalities_service import modalities_service_client
 class CourseListCreateView(APIView):
     def get(self, request: Request):
         courses = modalities_service_client.list_courses()
-        return Response(courses, status=status.HTTP_200_OK)
+
+        serializer = CourseListSerializer(courses, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request: Request):
         serializer = CourseCreateSerializer(data=request.data)
@@ -73,7 +75,8 @@ class CourseListCreateView(APIView):
 class CourseDetailView(APIView):
     def get(self, request, course_id):
         course = modalities_service_client.get_course(course_id)
-        return Response(course)
+        serializer = CourseDetailSerializer(course)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, course_id):
         serializer = CourseUpdateSerializer(data=request.data)

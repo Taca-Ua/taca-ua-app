@@ -48,8 +48,7 @@ class MatchListCreateView(APIView):
         # Populate participant details
         enricher_service.complete_matches_info(matches)
 
-        serializer = MatchListSerializer(data=matches, many=True)
-        serializer.is_valid(raise_exception=True)
+        serializer = MatchListSerializer(matches, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
@@ -92,8 +91,7 @@ class MatchListCreateView(APIView):
                 {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-        serializer = MatchListSerializer(data=match)
-        serializer.is_valid(raise_exception=True)
+        serializer = MatchListSerializer(match)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
@@ -125,8 +123,7 @@ class MatchDetailView(APIView):
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = MatchListSerializer(data=match)
-        serializer.is_valid(raise_exception=True)
+        serializer = MatchListSerializer(match)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, match_id):
@@ -184,7 +181,11 @@ class MatchDetailView(APIView):
                     participant_results=participant_results,
                     status=update_data.get("status", "finished"),
                 )
-                return Response(match, status=status.HTTP_200_OK)
+                # Populate participant details
+                enricher_service.complete_matches_info([match])
+
+                serializer = MatchListSerializer(match)
+                return Response(serializer.data, status=status.HTTP_200_OK)
             except Exception as e:
                 return Response(
                     {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -204,8 +205,7 @@ class MatchDetailView(APIView):
                 {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-        serializer = MatchListSerializer(data=match)
-        serializer.is_valid(raise_exception=True)
+        serializer = MatchListSerializer(match)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, match_id):
@@ -265,8 +265,7 @@ def match_result(request, match_id):
             {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-    serializer = MatchListSerializer(data=updated_match)
-    serializer.is_valid(raise_exception=True)
+    serializer = MatchListSerializer(updated_match)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -302,8 +301,7 @@ def match_lineup(request, match_id):
             {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-    serializer = MatchListSerializer(data=result)
-    serializer.is_valid(raise_exception=True)
+    serializer = MatchListSerializer(result)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 

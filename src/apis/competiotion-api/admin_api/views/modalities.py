@@ -39,8 +39,7 @@ class ModalityListCreateView(APIView):
         modalities = modalities_service_client.list_modalities()
 
         # Serialize output data
-        serializer = ModalityListSerializer(data=modalities, many=True)
-        serializer.is_valid(raise_exception=True)
+        serializer = ModalityListSerializer(modalities, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @log_action("create_modality")
@@ -56,8 +55,7 @@ class ModalityListCreateView(APIView):
         )
 
         # Serialize output data
-        serializer = ModalityListSerializer(data=modality)
-        serializer.is_valid(raise_exception=True)
+        serializer = ModalityListSerializer(modality)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
@@ -85,8 +83,7 @@ class ModalityDetailView(APIView):
         modality = modalities_service_client.get_modality(modality_id)
 
         # Serialize output data
-        serializer = ModalityDetailSerializer(data=modality)
-        serializer.is_valid(raise_exception=True)
+        serializer = ModalityDetailSerializer(modality)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @log_action("update_modality")
@@ -106,8 +103,7 @@ class ModalityDetailView(APIView):
         modality = modalities_service_client.update_modality(modality_id, update_data)
 
         # Serialize output data
-        serializer = ModalityDetailSerializer(data=modality)
-        serializer.is_valid(raise_exception=True)
+        serializer = ModalityDetailSerializer(modality)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @log_action("delete_modality")

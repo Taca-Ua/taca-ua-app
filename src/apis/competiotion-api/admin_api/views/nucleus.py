@@ -36,8 +36,7 @@ class NucleoListCreateView(APIView):
         nucleos = modalities_service_client.list_nucleos()
 
         # Serialize output data
-        serializer = NucleosListSerializer(data=nucleos, many=True)
-        serializer.is_valid(raise_exception=True)
+        serializer = NucleosListSerializer(nucleos, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request: Request):
@@ -53,8 +52,7 @@ class NucleoListCreateView(APIView):
         )
 
         # Serialize output data
-        serializer = NucleosListSerializer(data=nucleo)
-        serializer.is_valid(raise_exception=True)
+        serializer = NucleosListSerializer(nucleo)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
@@ -81,8 +79,7 @@ class NucleoDetailView(APIView):
         nucleo = modalities_service_client.get_nucleo(nucleo_id)
 
         # Serialize output data
-        serializer = NucleosDetailSerializer(data=nucleo)
-        serializer.is_valid(raise_exception=True)
+        serializer = NucleosDetailSerializer(nucleo)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, nucleo_id):
@@ -99,8 +96,7 @@ class NucleoDetailView(APIView):
         nucleo = modalities_service_client.update_nucleo(nucleo_id, update_data)
 
         # Serialize output data
-        serializer = NucleosDetailSerializer(data=nucleo)
-        serializer.is_valid(raise_exception=True)
+        serializer = NucleosDetailSerializer(nucleo)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, nucleo_id):

@@ -37,8 +37,7 @@ class ModalityTypeListCreateView(APIView):
     def get(self, request: Request):
         modality_types = modalities_service_client.list_modality_types()
 
-        serializer = ModalityTypeListSerializer(data=modality_types, many=True)
-        serializer.is_valid(raise_exception=True)
+        serializer = ModalityTypeListSerializer(modality_types, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request: Request):
@@ -52,8 +51,7 @@ class ModalityTypeListCreateView(APIView):
                 "escaloes": serializer.validated_data["escaloes"],
             }
         )
-        serializer = ModalityTypeListSerializer(data=modality_type)
-        serializer.is_valid(raise_exception=True)
+        serializer = ModalityTypeListSerializer(modality_type)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
@@ -79,8 +77,7 @@ class ModalityTypeDetailView(APIView):
     def get(self, request, modality_type_id):
         modality_type = modalities_service_client.get_modality_type(modality_type_id)
 
-        serializer = ModalityTypeDetailSerializer(data=modality_type)
-        serializer.is_valid(raise_exception=True)
+        serializer = ModalityTypeDetailSerializer(modality_type)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, modality_type_id):
@@ -99,8 +96,7 @@ class ModalityTypeDetailView(APIView):
             modality_type_id, update_data
         )
 
-        serializer = ModalityTypeDetailSerializer(data=modality_type)
-        serializer.is_valid(raise_exception=True)
+        serializer = ModalityTypeDetailSerializer(modality_type)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, modality_type_id):
@@ -120,8 +116,7 @@ class ModalityTypeDetailView(APIView):
 def list_modality_types(request: Request):
     modality_types = modalities_service_client.list_modality_types()
 
-    serializer = ModalityTypeMinimalSerializer(data=modality_types, many=True)
-    serializer.is_valid(raise_exception=True)
+    serializer = ModalityTypeMinimalSerializer(modality_types, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 

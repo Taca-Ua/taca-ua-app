@@ -39,8 +39,7 @@ class StudentListCreateView(APIView):
 
         all_students = modalities_service_client.list_students()
 
-        serializer = StudentListSerializer(data=all_students, many=True)
-        serializer.is_valid(raise_exception=True)
+        serializer = StudentListSerializer(all_students, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
@@ -56,9 +55,8 @@ class StudentListCreateView(APIView):
             }
         )
 
-        serializer = StudentListSerializer(data=member)
-        serializer.is_valid(raise_exception=True)
-        return Response(member, status=status.HTTP_201_CREATED)
+        serializer = StudentListSerializer(member)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
@@ -83,8 +81,7 @@ class StudentDetailView(APIView):
     def get(self, request, student_id):
         student = modalities_service_client.get_student(student_id)
 
-        serializer = StudentDetailSerializer(data=student)
-        serializer.is_valid(raise_exception=True)
+        serializer = StudentDetailSerializer(student)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, student_id):
@@ -103,8 +100,7 @@ class StudentDetailView(APIView):
 
         student = modalities_service_client.update_student(student_id, update_data)
 
-        serializer = StudentDetailSerializer(data=student)
-        serializer.is_valid(raise_exception=True)
+        serializer = StudentDetailSerializer(student)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, student_id):

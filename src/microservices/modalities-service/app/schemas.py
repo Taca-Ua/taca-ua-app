@@ -5,7 +5,7 @@ Pydantic schemas for Modalities Service API.
 from typing import List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 # ==================== NUCLEO SCHEMAS ====================
@@ -216,7 +216,7 @@ class TeamResponse(BaseModel):
     name: str
     modality: ModalityResponse
     course: CourseResponse
-    players: List[StudentResponse] = []
+    players: List[StudentResponse] = Field(default_factory=list)
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None

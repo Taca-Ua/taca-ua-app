@@ -3,10 +3,54 @@ Service for communicating with tournaments-service microservice
 """
 
 import os
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from .base_service import BaseService
+
+
+@dataclass
+class CompetitorDTO:
+    tournament_id: UUID
+    competitor_type: str  # "team" or "athlete"
+    competitor: Dict[str, UUID]  # {"team_id": UUID} or {"athlete_id": UUID}
+    created_at: str  # ISO formatted datetime string
+
+
+@dataclass
+class _TournamentRankingPositionDTO:
+    id: UUID
+    tournament_id: UUID
+    team_id: UUID
+    position: int
+    created_at: str  # ISO formatted datetime string
+
+
+@dataclass
+class TournamentDTO:
+    id: UUID
+    name: str
+    status: str  # "draft", "active", "finished"
+    modality_id: UUID
+    start_date: Optional[str] = None  # ISO formatted datetime string
+    competitors: List[CompetitorDTO] = field(default_factory=list)
+    ranking_positions: List[_TournamentRankingPositionDTO] = field(default_factory=list)
+
+    created_by: Optional[UUID] = None
+    created_at: Optional[str] = None  # ISO formatted datetime string
+    updated_at: Optional[str] = None  # ISO formatted datetime string
+    finished_at: Optional[str] = None  # ISO formatted datetime string
+    finished_by: Optional[UUID] = None
+
+    def __post_init__(self):
+        self.competitors = [
+            CompetitorDTO(**competitor) for competitor in self.competitors
+        ]
+        self.ranking_positions = [
+            _TournamentRankingPositionDTO(**position)
+            for position in self.ranking_positions
+        ]
 
 
 class TournamentsService(BaseService):
@@ -20,7 +64,7 @@ class TournamentsService(BaseService):
 
     def list_tournaments(
         self, status_filter: Optional[str] = None, modality_id: Optional[UUID] = None
-    ) -> List[Dict[str, Any]]:
+    ) -> List[TournamentDTO]:
         """
         List all tournaments with optional filters
 
@@ -37,9 +81,10 @@ class TournamentsService(BaseService):
         if modality_id:
             params["modality_id"] = str(modality_id)
 
-        return self.get("/tournaments", params=params)
+        tournaments_data = self.get("/tournaments", params=params)
+        return [TournamentDTO(**tournament) for tournament in tournaments_data]
 
-    def get_tournament(self, tournament_id: UUID) -> Dict[str, Any]:
+    def get_tournament(self, tournament_id: UUID) -> TournamentDTO:
         """
         Get a tournament by ID
 
@@ -49,7 +94,8 @@ class TournamentsService(BaseService):
         Returns:
             Tournament dictionary
         """
-        return self.get(f"/tournaments/{tournament_id}")
+        tournament_data = self.get(f"/tournaments/{tournament_id}")
+        return TournamentDTO(**tournament_data)
 
     def create_tournament(
         self,
@@ -58,7 +104,7 @@ class TournamentsService(BaseService):
         created_by: UUID,
         start_date: Optional[str] = None,
         teams_ids: Optional[List[UUID]] = None,
-    ) -> Dict[str, Any]:
+    ) -> TournamentDTO:
         """
         Create a new tournament
 
@@ -84,7 +130,8 @@ class TournamentsService(BaseService):
         else:
             data["teams_ids"] = []
 
-        return self.post("/tournaments", data=data)
+        tournament_data = self.post("/tournaments", data=data)
+        return TournamentDTO(**tournament_data)
 
     def update_tournament(
         self,
@@ -94,7 +141,7 @@ class TournamentsService(BaseService):
         status: Optional[str] = None,
         competitors_add: Optional[List[UUID]] = None,
         competitors_remove: Optional[List[UUID]] = None,
-    ) -> Dict[str, Any]:
+    ) -> TournamentDTO:
         """
         Update a tournament
 
@@ -124,7 +171,8 @@ class TournamentsService(BaseService):
             ]
 
         print("Update tournament data:", data)
-        return self.put(f"/tournaments/{tournament_id}", data=data)
+        tournament_data = self.put(f"/tournaments/{tournament_id}", data=data)
+        return TournamentDTO(**tournament_data)
 
     def delete_tournament(self, tournament_id: UUID) -> None:
         """
@@ -140,7 +188,7 @@ class TournamentsService(BaseService):
         tournament_id: UUID,
         ranking_entries: List[Dict[str, Any]],
         finished_by: UUID,
-    ) -> Dict[str, Any]:
+    ) -> TournamentDTO:
         """
         Mark a tournament as finished and set final rankings
 
@@ -156,7 +204,9 @@ class TournamentsService(BaseService):
             "ranking_entries": ranking_entries,
             "finished_by": str(finished_by),
         }
-        return self.post(f"/tournaments/{tournament_id}/finish", data=data)
+
+        tournament_data = self.post(f"/tournaments/{tournament_id}/finish", data=data)
+        return TournamentDTO(**tournament_data)
 
 
 # Singleton instance

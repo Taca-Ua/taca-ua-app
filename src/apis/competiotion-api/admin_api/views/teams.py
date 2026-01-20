@@ -43,8 +43,7 @@ class TeamListCreateView(APIView):
         teams = modalities_service_client.list_teams()
 
         # Serialize output data
-        serializer = TeamListSerializer(data=teams, many=True)
-        serializer.is_valid(raise_exception=True)
+        serializer = TeamListSerializer(teams, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request: Request):
@@ -61,8 +60,7 @@ class TeamListCreateView(APIView):
         )
 
         # Serialize output data
-        serializer = TeamListSerializer(data=team)
-        serializer.is_valid(raise_exception=True)
+        serializer = TeamListSerializer(team)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
@@ -89,8 +87,7 @@ class TeamDetailView(APIView):
         team = modalities_service_client.get_team(team_id)
 
         # Serialize output data
-        serializer = TeamDetailSerializer(data=team)
-        serializer.is_valid(raise_exception=True)
+        serializer = TeamDetailSerializer(team)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, team_id):
@@ -117,8 +114,7 @@ class TeamDetailView(APIView):
         team = modalities_service_client.update_team(team_id, update_data)
 
         # Serialize output data
-        serializer = TeamDetailSerializer(data=team)
-        serializer.is_valid(raise_exception=True)
+        serializer = TeamDetailSerializer(team)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, team_id):

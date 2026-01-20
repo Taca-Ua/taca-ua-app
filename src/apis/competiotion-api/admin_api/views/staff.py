@@ -30,8 +30,7 @@ class StaffListCreateView(APIView):
     def get(self, request):
         all_staff = modalities_service_client.list_staff()
 
-        serializer = StaffListSerializer(data=all_staff, many=True)
-        serializer.is_valid(raise_exception=True)
+        serializer = StaffListSerializer(all_staff, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
@@ -44,8 +43,7 @@ class StaffListCreateView(APIView):
             contact=serializer.validated_data.get("contact", None),
         )
 
-        serializer = StaffListSerializer(data=staff_member)
-        serializer.is_valid(raise_exception=True)
+        serializer = StaffListSerializer(staff_member)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
@@ -71,8 +69,7 @@ class StaffDetailView(APIView):
     def get(self, request, staff_id):
         staff_member = modalities_service_client.get_staff(staff_id)
 
-        serializer = StaffDetailSerializer(data=staff_member)
-        serializer.is_valid(raise_exception=True)
+        serializer = StaffDetailSerializer(staff_member)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, staff_id):
@@ -83,8 +80,7 @@ class StaffDetailView(APIView):
             staff_id, serializer.validated_data
         )
 
-        serializer = StaffDetailSerializer(data=staff_member)
-        serializer.is_valid(raise_exception=True)
+        serializer = StaffDetailSerializer(staff_member)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, staff_id):
