@@ -183,6 +183,7 @@ class EnricherService:
 
         # Fetch all players data in a single call
         if player_ids_to_fetch:
+            print("Fetching player details for IDs:", list(player_ids_to_fetch.keys()))
             students_data = modalities_service_client.get_students_by_ids(
                 list(player_ids_to_fetch.keys())
             )

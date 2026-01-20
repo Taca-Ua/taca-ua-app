@@ -1,201 +1,436 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import NucleoSidebar from '../../components/nucleo_navbar';
-import { matchesApi } from '../../api/matches';
-import type { Match, MatchLineup } from '../../api/matches';
-import { teamsApi } from '../../api/teams';
+import {
+  matchesApi,
+  type MatchDetail,
+  type LineupDetail,
+  type LineupAssign,
+  type PlayerLineup
+} from '../../api/matches';
 import type { Team } from '../../api/teams';
-import { useAuth } from '../../hooks/useAuth';
 
-interface Lineup {
-  player_id: string;
-  jersey_number: number;
-  is_starter: boolean;
-}
+// ==================== Private Components ====================
+
+// Match Info Card Component
+const MatchInfoCard = ({ match }: { match: MatchDetail }) => {
+  const formatDateTime = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return {
+        date: date.toLocaleDateString('pt-PT'),
+        time: date.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+      };
+    } catch {
+      return { date: dateString, time: '' };
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      scheduled: { label: '⏰ Agendado', color: 'bg-blue-100 text-blue-800' },
+      in_progress: { label: '▶️ Em Curso', color: 'bg-yellow-100 text-yellow-800' },
+      finished: { label: '✅ Terminado', color: 'bg-green-100 text-green-800' },
+      cancelled: { label: '❌ Cancelado', color: 'bg-red-100 text-red-800' },
+    };
+
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.scheduled;
+
+    return (
+      <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${config.color}`}>
+        {config.label}
+      </span>
+    );
+  };
+
+  const { date, time } = formatDateTime(match.start_time);
+  const participants = match.participants || [];
+
+  return (
+    <div className="bg-white rounded-lg shadow-md p-8">
+      {/* Team Avatars */}
+      <div className="flex justify-center items-center gap-8 mb-8">
+        {participants.slice(0, 2).map((participant, idx) => (
+          <div key={participant.id}>
+            <div className="w-24 h-24 bg-indigo-100 rounded-full flex items-center justify-center shadow-lg">
+              <svg className="w-12 h-12 text-gray-700" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+              </svg>
+            </div>
+            <p className="text-center mt-2 text-sm font-medium text-gray-700 max-w-[120px] truncate">
+              {participant.team?.name || participant.athlete?.full_name || 'Participante'}
+            </p>
+          </div>
+        ))}
+        {participants.length > 2 && (
+          <div className="text-sm text-gray-500">
+            +{participants.length - 2} mais
+          </div>
+        )}
+      </div>
+
+      {/* Match Details */}
+      <div>
+        <h2 className="text-xl font-bold text-gray-800 mb-6">Detalhes do Jogo</h2>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-gray-600 text-sm mb-1">Estado</label>
+            <div>{getStatusBadge(match.status)}</div>
+          </div>
+
+          <div>
+            <label className="block text-gray-600 text-sm mb-1">Data e Hora</label>
+            <div className="text-gray-800 font-medium">
+              {date} às {time}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-gray-600 text-sm mb-1">Local</label>
+            <div className="text-gray-800 font-medium">{match.location}</div>
+          </div>
+
+          {match.status === 'finished' && (
+            <div>
+              <label className="block text-gray-600 text-sm mb-1">Resultados</label>
+              <div className="space-y-2">
+                {participants.map((participant) => (
+                  <div key={participant.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <span className="text-gray-800 font-medium">
+                      {participant.team?.name || participant.athlete?.full_name || 'Participante'}
+                    </span>
+                    <div className="flex gap-4 text-sm">
+                      {participant.score !== null && participant.score !== undefined && (
+                        <span className="text-teal-600 font-bold">
+                          Pontuação: {participant.score}
+                        </span>
+                      )}
+                      {participant.position !== null && participant.position !== undefined && (
+                        <span className="text-teal-600 font-bold">
+                          {participant.position}º Lugar
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Team Lineup Card Component
+const TeamLineupCard = ({
+  participant,
+  lineups,
+  canEdit,
+  onEdit
+}: {
+  participant: MatchDetail['participants'][0];
+  lineups: LineupDetail[];
+  canEdit: boolean;
+  onEdit: () => void;
+}) => {
+  const teamName = participant.team?.name || participant.athlete?.full_name || 'Participante';
+  const teamLineups = lineups.filter(l => l.team_id === participant.team?.id);
+  const starters = teamLineups.filter(l => l.is_starter);
+  const bench = teamLineups.filter(l => !l.is_starter);
+
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-bold text-gray-800">{teamName}</h3>
+        {canEdit && (
+          <button
+            onClick={onEdit}
+            className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md text-sm font-medium transition-colors"
+          >
+            Editar Convocatória
+          </button>
+        )}
+      </div>
+
+      {teamLineups.length === 0 ? (
+        <p className="text-gray-500 text-center py-4">Nenhum jogador convocado.</p>
+      ) : (
+        <div className="space-y-4">
+          {starters.length > 0 && (
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-2">Titulares</p>
+              <div className="space-y-2">
+                {starters.map((lineup) => (
+                  <div key={lineup.id} className="flex justify-between items-center p-3 bg-teal-50 rounded-md">
+                    <span className="text-gray-800 font-medium">
+                      {lineup.player?.full_name || 'Jogador'}
+                    </span>
+                    <span className="flex-shrink-0 w-8 h-8 bg-teal-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                      {lineup.jersey_number}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {bench.length > 0 && (
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-2">Suplentes</p>
+              <div className="space-y-2">
+                {bench.map((lineup) => (
+                  <div key={lineup.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-md">
+                    <span className="text-gray-800 font-medium">
+                      {lineup.player?.full_name || 'Jogador'}
+                    </span>
+                    <span className="flex-shrink-0 w-8 h-8 bg-gray-400 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                      {lineup.jersey_number}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Lineup Editor Modal Component
+const LineupEditorModal = ({
+  show,
+  team,
+  existingLineups,
+  onSave,
+  onClose
+}: {
+  show: boolean;
+  team: Team | null;
+  existingLineups: LineupDetail[];
+  onSave: (players: PlayerLineup[]) => void;
+  onClose: () => void;
+}) => {
+  const [selectedPlayers, setSelectedPlayers] = useState<PlayerLineup[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    if (show && team) {
+      // Initialize with existing lineups
+      const initial: PlayerLineup[] = existingLineups.map(lineup => ({
+        player_id: lineup.player_id,
+        jersey_number: lineup.jersey_number,
+        is_starter: lineup.is_starter,
+      }));
+      setSelectedPlayers(initial);
+    }
+  }, [show, team, existingLineups]);
+
+  if (!show || !team) return null;
+
+  const togglePlayer = (playerId: string) => {
+    const index = selectedPlayers.findIndex(p => p.player_id === playerId);
+    if (index >= 0) {
+      setSelectedPlayers(selectedPlayers.filter(p => p.player_id !== playerId));
+    } else {
+      setSelectedPlayers([...selectedPlayers, { player_id: playerId, jersey_number: 1, is_starter: false }]);
+    }
+  };
+
+  const updatePlayer = (playerId: string, field: 'jersey_number' | 'is_starter', value: number | boolean) => {
+    setSelectedPlayers(selectedPlayers.map(p =>
+      p.player_id === playerId ? { ...p, [field]: value } : p
+    ));
+  };
+
+  const handleSave = () => {
+    onSave(selectedPlayers);
+    setSearchQuery('');
+  };
+
+  const handleCancel = () => {
+    setSearchQuery('');
+    onClose();
+  };
+
+  const filteredPlayers = team.players?.filter(player =>
+    player.full_name.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <h2 className="text-2xl font-bold mb-6 text-gray-800">
+          Editar Convocatória - {team.name}
+        </h2>
+
+        {/* Search Bar */}
+        <div className="mb-4">
+          <input
+            type="text"
+            placeholder="Procurar jogadores..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+          />
+        </div>
+
+        {/* Players List */}
+        <div className="space-y-2 max-h-[500px] overflow-y-auto mb-6">
+          {filteredPlayers.length > 0 ? (
+            filteredPlayers.map((player) => {
+              const lineupEntry = selectedPlayers.find(p => p.player_id === player.id);
+              const isSelected = !!lineupEntry;
+
+              return (
+                <div key={player.id} className="px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-md transition-colors">
+                  <div className="flex items-center gap-3 mb-2">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => togglePlayer(player.id)}
+                      className="w-5 h-5 text-teal-500 rounded focus:ring-2 focus:ring-teal-500"
+                    />
+                    <span className="text-gray-800 flex-1 font-medium">{player.full_name}</span>
+                  </div>
+                  {isSelected && lineupEntry && (
+                    <div className="ml-8 flex gap-4 items-center">
+                      <div className="flex items-center gap-2">
+                        <label className="text-sm text-gray-600">Número:</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="99"
+                          value={lineupEntry.jersey_number}
+                          onChange={(e) => updatePlayer(player.id, 'jersey_number', parseInt(e.target.value) || 1)}
+                          className="w-16 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        />
+                      </div>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={lineupEntry.is_starter}
+                          onChange={(e) => updatePlayer(player.id, 'is_starter', e.target.checked)}
+                          className="w-4 h-4 text-teal-500 rounded focus:ring-2 focus:ring-teal-500"
+                        />
+                        <span className="text-sm text-gray-600">Titular</span>
+                      </label>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          ) : (
+            <p className="text-gray-500 text-center py-4">
+              {searchQuery ? 'Nenhum jogador encontrado.' : 'Nenhum jogador disponível.'}
+            </p>
+          )}
+        </div>
+
+        {/* Modal Actions */}
+        <div className="flex gap-4">
+          <button
+            onClick={handleCancel}
+            className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSave}
+            className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
+          >
+            Guardar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ==================== Main Component ====================
 
 const MatchDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
 
-  const [match, setMatch] = useState<Match | null>(null);
-  const [teamHome, setTeamHome] = useState<Team | null>(null);
-  const [teamAway, setTeamAway] = useState<Team | null>(null);
+  const [match, setMatch] = useState<MatchDetail | null>(null);
+  const [lineups, setLineups] = useState<LineupDetail[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userTeam, setUserTeam] = useState<'home' | 'away' | null>(null);
+  const [error, setError] = useState('');
 
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingTeam, setEditingTeam] = useState<'home' | 'away'>('home');
-  const [selectedHomePlayers, setSelectedHomePlayers] = useState<Lineup[]>([]);
-  const [selectedAwayPlayers, setSelectedAwayPlayers] = useState<Lineup[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  // Modal state
+  const [showLineupModal, setShowLineupModal] = useState(false);
+  const [editingParticipant, setEditingParticipant] = useState<MatchDetail['participants'][0] | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!id) return;
+    fetchMatchData();
+  }, [id]);
 
-      try {
-        setLoading(true);
-        console.log('Fetching match data for ID:', id);
-
-        const [foundMatch] = await Promise.all([
-          matchesApi.getById(id),
-        ]);
-
-        console.log('Match:', foundMatch);
-
-        if (!foundMatch) {
-          console.error('Match not found with ID:', id);
-          navigate('/nucleo/jogos');
-          return;
-        }
-
-        setMatch(foundMatch);
-
-
-
-        setTeamHome(foundMatch.participants[0]?.team || null);
-        setTeamAway(foundMatch.participants[1]?.team || null);
-
-        // Initialize selected players from match lineup (default to empty)
-        // setSelectedHomePlayers(foundMatch.participants[0]?.lineup || []);
-        // setSelectedAwayPlayers(foundMatch.participants[1]?.lineup || []);
-
-        // Determine which team belongs to the logged-in user
-        // if (user && homeTeam && awayTeam) {
-        //   if (homeTeam.course_name === (user.course_abbreviation || '')) {
-        //     setUserTeam('home');
-        //   } else if (awayTeam.course_name === (user.course_abbreviation || '')) {
-        //     setUserTeam('away');
-        //   } else {
-        //   }
-        // }
-        setUserTeam(null);
-      } catch (error) {
-        console.error('Failed to fetch match data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [id, navigate, user]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <NucleoSidebar />
-        <div className="p-8 flex items-center justify-center">
-          <div className="text-gray-600">A carregar...</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!match) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <NucleoSidebar />
-        <div className="p-8">
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            Jogo não encontrado. ID: {id}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!teamHome || !teamAway) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <NucleoSidebar />
-        <div className="p-8">
-          <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
-            <p>Equipas não encontradas para este jogo.</p>
-            <p className="text-sm mt-2">Team Home: {teamHome?.name} - Found: {teamHome ? 'Sim' : 'Não'}</p>
-            <p className="text-sm">Team Away: {teamAway?.name} - Found: {teamAway ? 'Sim' : 'Não'}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Get selected players with lineup details from team's full player list
-  const homePlayersList = selectedHomePlayers
-    .map(lineup => {
-      const player = teamHome?.players.find(p => p.id === lineup.player_id);
-      return player ? { ...player, ...lineup } : null;
-    })
-    .filter((player): player is { id: string; full_name: string; jersey_number: number; is_starter: boolean; player_id: string } => player !== null);
-
-  const awayPlayersList = selectedAwayPlayers
-    .map(lineup => {
-      const player = teamAway?.players.find(p => p.id === lineup.player_id);
-      return player ? { ...player, ...lineup } : null;
-    })
-    .filter((player): player is { id: string; full_name: string; jersey_number: number; is_starter: boolean; player_id: string } => player !== null);
-
-  const matchDateTime = new Date(match.start_time);
-  const matchDate = matchDateTime.toLocaleDateString('pt-PT');
-  const matchTime = matchDateTime.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
-
-  const handleSaveTeamMembers = async () => {
-    if (!match || !teamHome || !teamAway) return;
+  const fetchMatchData = async () => {
+    if (!id) return;
 
     try {
-      const lineup: MatchLineup = {
-        team_id: editingTeam === 'home' ? teamHome.id : teamAway.id,
-        players: editingTeam === 'home' ? selectedHomePlayers : selectedAwayPlayers,
+      setLoading(true);
+      setError('');
+
+      const [matchData, lineupsData] = await Promise.all([
+        matchesApi.getById(id),
+        matchesApi.getLineups(id),
+      ]);
+
+      setMatch(matchData);
+      setLineups(lineupsData);
+    } catch (err) {
+      console.error('Error loading match data:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao carregar dados do jogo');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenLineupEditor = (participant: MatchDetail['participants'][0]) => {
+    if (!participant.team) {
+      alert('Este participante não é uma equipa.');
+      return;
+    }
+
+    setEditingParticipant(participant);
+    setShowLineupModal(true);
+  };
+
+  const handleSaveLineup = async (players: PlayerLineup[]) => {
+    if (!match || !editingParticipant?.team) return;
+
+    try {
+      setError('');
+
+      const lineupData: LineupAssign = {
+        team_id: editingParticipant.team.id,
+        players: players,
       };
 
-      await matchesApi.submitLineup(match.id, lineup);
-      setIsEditModalOpen(false);
-      setSearchQuery('');
-      alert('Equipa de jogo guardada com sucesso!');
-    } catch (error) {
-      console.error('Failed to save lineup:', error);
-      alert('Erro ao guardar escalação');
-    }
-  };
+      await matchesApi.assignLineup(match.id, lineupData);
+      setShowLineupModal(false);
+      setEditingParticipant(null);
 
-  const toggleTeamMember = (playerId: string) => {
-    if (editingTeam === 'home') {
-      const existingIndex = selectedHomePlayers.findIndex(p => p.player_id === playerId);
-      if (existingIndex >= 0) {
-        setSelectedHomePlayers(selectedHomePlayers.filter(p => p.player_id !== playerId));
-      } else {
-        setSelectedHomePlayers([...selectedHomePlayers, { player_id: playerId, jersey_number: 0, is_starter: false }]);
-      }
-    } else {
-      const existingIndex = selectedAwayPlayers.findIndex(p => p.player_id === playerId);
-      if (existingIndex >= 0) {
-        setSelectedAwayPlayers(selectedAwayPlayers.filter(p => p.player_id !== playerId));
-      } else {
-        setSelectedAwayPlayers([...selectedAwayPlayers, { player_id: playerId, jersey_number: 0, is_starter: false }]);
-      }
-    }
-  };
+      // Refresh lineups
+      const updatedLineups = await matchesApi.getLineups(match.id);
+      setLineups(updatedLineups);
 
-  const updatePlayerLineup = (playerId: string, field: 'jersey_number' | 'is_starter', value: number | boolean) => {
-    if (editingTeam === 'home') {
-      setSelectedHomePlayers(selectedHomePlayers.map(p =>
-        p.player_id === playerId ? { ...p, [field]: value } : p
-      ));
-    } else {
-      setSelectedAwayPlayers(selectedAwayPlayers.map(p =>
-        p.player_id === playerId ? { ...p, [field]: value } : p
-      ));
+      alert('Convocatória guardada com sucesso!');
+    } catch (err) {
+      console.error('Error saving lineup:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao guardar convocatória');
     }
-  };
-
-  const handleOpenEditModal = (team: 'home' | 'away') => {
-    setEditingTeam(team);
-    setSearchQuery('');
-    setIsEditModalOpen(true);
   };
 
   const handleDownloadMatchSheet = async () => {
+    if (!match) return;
+
     try {
+      setError('');
       const blob = await matchesApi.getMatchSheet(match.id);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -205,11 +440,39 @@ const MatchDetail = () => {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-    } catch (error) {
-      console.error('Failed to download match sheet:', error);
-      alert('Erro ao descarregar ficha de jogo');
+    } catch (err) {
+      console.error('Error downloading match sheet:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao descarregar ficha de jogo');
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <NucleoSidebar />
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!match) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <NucleoSidebar />
+        <div className="p-8 max-w-4xl mx-auto">
+          <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded">
+            <p className="font-bold">Jogo não encontrado</p>
+            <p className="text-sm mt-1">O jogo que procura não existe ou foi removido.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const canEditLineups = match.status === 'scheduled';
+  const teamParticipants = match.participants.filter(p => p.team);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -217,314 +480,90 @@ const MatchDetail = () => {
 
       <div className="p-8">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Left Column - Match Details */}
-            <div className="bg-white rounded-lg shadow-md p-8">
-              {/* Team Avatars */}
-              <div className="flex justify-center items-center gap-8 mb-8">
-                {/* Team 1 Avatar */}
-                <div className="w-32 h-32 bg-indigo-100 rounded-full flex items-center justify-center shadow-lg">
-                  <svg
-                    className="w-16 h-16 text-gray-700"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+          {/* Back Button */}
+          <button
+            onClick={() => navigate(-1)}
+            className="mb-6 flex items-center text-teal-600 hover:text-teal-700 font-medium transition-colors group"
+          >
+            <svg
+              className="w-5 h-5 mr-2 transform group-hover:-translate-x-1 transition-transform"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Voltar
+          </button>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-md flex items-start">
+              <svg className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <span>{error}</span>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column - Match Info */}
+            <div className="lg:col-span-1">
+              <MatchInfoCard match={match} />
+
+              {/* Action Buttons */}
+              <div className="mt-6 space-y-3">
+                <button
+                  onClick={handleDownloadMatchSheet}
+                  className="w-full px-4 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-md font-medium transition-colors flex items-center justify-center"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                </div>
+                  Descarregar Ficha de Jogo
+                </button>
 
-                {/* VS Text */}
-                <div className="text-3xl font-bold text-gray-700">
-                  VS
-                </div>
-
-                {/* Team 2 Avatar */}
-                <div className="w-32 h-32 bg-indigo-100 rounded-full flex items-center justify-center shadow-lg">
-                  <svg
-                    className="w-16 h-16 text-gray-700"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                  </svg>
-                </div>
-              </div>
-
-              {/* Match Details Section */}
-              <div>
-                <h2 className="text-xl font-bold text-gray-800 mb-6">Detalhes do jogo</h2>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-gray-600 text-sm mb-1">
-                      Equipa Casa
-                    </label>
-                    <div className="text-gray-800 font-medium">
-                      {teamHome.name}
-                    </div>
+                {!canEditLineups && (
+                  <div className="px-4 py-3 bg-gray-100 text-gray-600 rounded-md text-sm text-center">
+                    ⚠️ Não pode editar convocatórias após o início do jogo
                   </div>
-
-                  <div>
-                    <label className="block text-gray-600 text-sm mb-1">
-                      Equipa Visitante
-                    </label>
-                    <div className="text-gray-800 font-medium">
-                      {teamAway.name}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-gray-600 text-sm mb-1">
-                      Estado
-                    </label>
-                    <div className="text-gray-800 font-medium">
-                      {match.status === 'scheduled' && '⏰ Agendado'}
-                      {match.status === 'in_progress' && '▶️ Em curso'}
-                      {match.status === 'finished' && '✅ Terminado'}
-                      {match.status === 'cancelled' && '❌ Cancelado'}
-                    </div>
-                  </div>
-
-                  {match.status === 'finished' && (match.home_score !== null || match.away_score !== null) && (
-                    <div>
-                      <label className="block text-gray-600 text-sm mb-1">
-                        Resultado
-                      </label>
-                      <div className="text-gray-800 font-medium">
-                        {teamHome.name}: {match.home_score ?? 0} - {teamAway.name}: {match.away_score ?? 0}
-                      </div>
-                    </div>
-                  )}
-
-                  <div>
-                    <label className="block text-gray-600 text-sm mb-1">
-                      Data e Hora
-                    </label>
-                    <div className="text-gray-800 font-medium">
-                      {matchDate} às {matchTime}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-gray-600 text-sm mb-1">
-                      Local
-                    </label>
-                    <div className="text-gray-800 font-medium">
-                      {match.location}
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
 
             {/* Right Column - Team Lineups */}
-            <div className="bg-white rounded-lg shadow-md p-8 space-y-6">
-              {/* Home Team Lineup */}
-              <div className={userTeam === 'home' ? 'border-2 border-teal-500 rounded-lg p-4 -m-4 mb-2' : ''}>
-                <h2 className="text-xl font-bold text-gray-800 mb-4">
-                  Equipa de Jogo {teamHome.name}
-                  {userTeam === 'home' && <span className="ml-2 text-teal-500 text-sm">(Minha Equipa)</span>}
-                </h2>
-                <div className="space-y-2 max-h-[250px] overflow-y-auto">
-                  {homePlayersList.length > 0 ? (
-                    homePlayersList.map((player) => (
-                      <div
-                        key={player.id}
-                        className="px-4 py-2 bg-gray-100 rounded-md flex justify-between items-center"
-                      >
-                        <div className="flex items-center gap-3">
-                          {player.is_starter && (
-                            <span className="px-2 py-1 bg-teal-500 text-white text-xs rounded-full font-bold">T</span>
-                          )}
-                          <span className="text-gray-800 font-medium">{player.full_name}</span>
-                        </div>
-                        <span className="text-gray-600 text-sm font-semibold">#{player.jersey_number}</span>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-gray-500 text-center py-4">
-                      Nenhum jogador na equipa de jogo.
-                    </p>
-                  )}
+            <div className="lg:col-span-2 space-y-6">
+              {teamParticipants.length === 0 ? (
+                <div className="bg-white rounded-lg shadow-md p-8 text-center">
+                  <p className="text-gray-500">Nenhuma equipa participante neste jogo.</p>
                 </div>
-              </div>
-
-              {/* Away Team Lineup */}
-              <div className={userTeam === 'away' ? 'border-2 border-teal-500 rounded-lg p-4 -m-4' : ''}>
-                <h2 className="text-xl font-bold text-gray-800 mb-4">
-                  Equipa de Jogo {teamAway.name}
-                  {userTeam === 'away' && <span className="ml-2 text-teal-500 text-sm">(Minha Equipa)</span>}
-                </h2>
-                <div className="space-y-2 max-h-[250px] overflow-y-auto">
-                  {awayPlayersList.length > 0 ? (
-                    awayPlayersList.map((player) => (
-                      <div
-                        key={player.id}
-                        className="px-4 py-2 bg-gray-100 rounded-md flex justify-between items-center"
-                      >
-                        <div className="flex items-center gap-3">
-                          {player.is_starter && (
-                            <span className="px-2 py-1 bg-teal-500 text-white text-xs rounded-full font-bold">T</span>
-                          )}
-                          <span className="text-gray-800 font-medium">{player.full_name}</span>
-                        </div>
-                        <span className="text-gray-600 text-sm font-semibold">#{player.jersey_number}</span>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-gray-500 text-center py-4">
-                      Nenhum jogador na equipa de jogo.
-                    </p>
-                  )}
-                </div>
-              </div>
+              ) : (
+                teamParticipants.map((participant) => (
+                  <TeamLineupCard
+                    key={participant.id}
+                    participant={participant}
+                    lineups={lineups}
+                    canEdit={canEditLineups}
+                    onEdit={() => handleOpenLineupEditor(participant)}
+                  />
+                ))
+              )}
             </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex flex-wrap gap-4 mt-8">
-            {match.status === 'scheduled' && (
-              <>
-                <button
-                  className="flex-1 min-w-[200px] px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
-                  onClick={() => handleOpenEditModal('home')}
-                >
-                  Editar Equipa de Jogo {teamHome.name}
-                </button>
-                <button
-                  className="flex-1 min-w-[200px] px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
-                  onClick={() => handleOpenEditModal('away')}
-                >
-                  Editar Equipa de Jogo {teamAway.name}
-                </button>
-              </>
-            )}
-            {match.status !== 'scheduled' && (
-              <div className="flex-1 min-w-[200px] px-6 py-3 bg-gray-300 text-gray-600 rounded-md font-medium text-center">
-                Não pode editar a equipa de jogo após o início do jogo
-              </div>
-            )}
-            <button
-              className="flex-1 min-w-[200px] px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-md font-medium transition-colors"
-              onClick={handleDownloadMatchSheet}
-            >
-              Descarregar Ficha de Jogo
-            </button>
           </div>
         </div>
       </div>
 
-      {/* Edit Team Members Modal */}
-      {isEditModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
-          <div className="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 animate-slideUp max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800">
-              Editar Equipa de Jogo - {editingTeam === 'home' ? teamHome?.name : teamAway?.name}
-            </h2>
-
-            {/* Search Bar */}
-            <div className="mb-4">
-              <input
-                type="text"
-                placeholder="Procurar jogadores..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-              />
-            </div>
-
-            <div>
-              <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                {(() => {
-                  const currentTeam = editingTeam === 'home' ? teamHome : teamAway;
-                  const currentLineup = editingTeam === 'home' ? selectedHomePlayers : selectedAwayPlayers;
-                  const filteredPlayers = currentTeam?.players.filter(player =>
-                    player.full_name.toLowerCase().includes(searchQuery.toLowerCase())
-                  ) || [];
-
-                  return filteredPlayers.length > 0 ? (
-                    filteredPlayers.map((player) => {
-                      const lineupEntry = currentLineup.find(l => l.player_id === player.id);
-                      const isSelected = !!lineupEntry;
-
-                      return (
-                        <div
-                          key={`${editingTeam}-${player.id}`}
-                          className="px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-md transition-colors"
-                        >
-                          <div className="flex items-center gap-3 mb-2">
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => toggleTeamMember(player.id)}
-                              className="w-5 h-5 text-teal-500 rounded focus:ring-2 focus:ring-teal-500"
-                            />
-                            <span className="text-gray-800 flex-1 font-medium">{player.full_name}</span>
-                          </div>
-                          {isSelected && (
-                            <div className="ml-8 flex gap-4 items-center">
-                              <div className="flex items-center gap-2">
-                                <label className="text-sm text-gray-600">Número:</label>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  max="99"
-                                  value={lineupEntry.jersey_number}
-                                  onChange={(e) => updatePlayerLineup(player.id, 'jersey_number', parseInt(e.target.value) || 0)}
-                                  className="w-16 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-                                  onClick={(e) => e.stopPropagation()}
-                                />
-                              </div>
-                              <label className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={lineupEntry.is_starter}
-                                  onChange={(e) => updatePlayerLineup(player.id, 'is_starter', e.target.checked)}
-                                  className="w-4 h-4 text-teal-500 rounded focus:ring-2 focus:ring-teal-500"
-                                  onClick={(e) => e.stopPropagation()}
-                                />
-                                <span className="text-sm text-gray-600">Titular</span>
-                              </label>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <p className="text-gray-500 text-center py-4">
-                      {searchQuery ? 'Nenhum jogador encontrado.' : 'Nenhum jogador disponível.'}
-                    </p>
-                  );
-                })()}
-              </div>
-            </div>
-
-            {/* Modal Actions */}
-            <div className="flex gap-4 mt-6">
-              <button
-                onClick={() => {
-                  setIsEditModalOpen(false);
-                  setSearchQuery('');
-                  // Reset to original lineup from match
-                  if (match) {
-                    setSelectedHomePlayers(match.team_home?.lineup || []);
-                    setSelectedAwayPlayers(match.team_away?.lineup || []);
-                  }
-                }}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSaveTeamMembers}
-                className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
-              >
-                Guardar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Lineup Editor Modal */}
+      <LineupEditorModal
+        show={showLineupModal}
+        team={editingParticipant?.team || null}
+        existingLineups={lineups.filter(l => l.team_id === editingParticipant?.team?.id)}
+        onSave={handleSaveLineup}
+        onClose={() => {
+          setShowLineupModal(false);
+          setEditingParticipant(null);
+        }}
+      />
     </div>
   );
 };

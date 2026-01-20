@@ -269,7 +269,7 @@ def remove_participant(request, match_id, participant_id):
     description="Update match results for all participants (scores and/or positions)",
     tags=["Match Management"],
 )
-@api_view(["POST"])
+@api_view(["PUT"])
 def update_match_results(request, match_id):
     """Update match results"""
     serializer = MatchResultsUpdateSerializer(data=request.data)

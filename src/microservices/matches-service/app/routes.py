@@ -876,7 +876,7 @@ def delete_comment(
 
 
 # Batch result update
-@router.post("/matches/{match_id}/results", response_model=schemas.MatchResponse)
+@router.put("/matches/{match_id}/results", response_model=schemas.MatchResponse)
 def update_match_results(
     match_id: UUID,
     result_data: schemas.MatchResultUpdate,

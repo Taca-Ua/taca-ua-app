@@ -140,7 +140,6 @@ const Jogos = () => {
               {/* List View */}
               {viewMode === 'list' && (
                 <div className="bg-white rounded-lg shadow-md p-6">
-                  <h2 className="text-2xl font-bold mb-6 text-gray-800">Jogos</h2>
                   <div className="space-y-3">
                     {matches.length > 0 ? (
                       matches.map((match) => {
@@ -169,11 +168,11 @@ const Jogos = () => {
                               <span>
                                 <span className="font-medium">Local:</span> {match.location}
                               </span>
-                              {match.home_score !== null && match.away_score !== null && (
+                              {/* {match.home_score !== null && match.away_score !== null && (
                                 <span>
                                   <span className="font-medium">Resultado:</span> {match.home_score} - {match.away_score}
                                 </span>
-                              )}
+                              )} */}
                             </div>
                           </div>
                         );

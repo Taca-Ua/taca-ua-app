@@ -79,11 +79,17 @@ class ModalityDTO:
 class StudentDTO:
     id: UUID
     full_name: str
+    course: CourseDTO
+    is_member: bool
     student_number: Optional[str] = None
     contact: Optional[str] = None
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
+
+    def __post_init__(self):
+        if not isinstance(self.course, CourseDTO):
+            self.course = CourseDTO(**self.course)
 
 
 @dataclass

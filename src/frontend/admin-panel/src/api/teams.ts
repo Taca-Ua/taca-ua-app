@@ -8,10 +8,10 @@ export interface Team {
   name: string;
   modality: Modality;
   course: Course;
+  players: Student[];
 }
 
 export interface TeamDetail extends Team {
-  players: Student[];
 }
 
 export interface TeamCreate {

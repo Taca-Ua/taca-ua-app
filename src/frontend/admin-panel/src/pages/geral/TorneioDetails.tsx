@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
 import { tournamentsApi, type TournamentDetail, type TournamentUpdate, type TournamentCompetitor } from '../../api/tournaments';
 import { teamsApi, type Team } from '../../api/teams';
-import { matchesApi, type Match, type MatchCreate } from '../../api/matches';
+import { matchesApi, type Match, type MatchCreate, type ParticipantCreate } from '../../api/matches';
 // import { type Student } from '../../api/members';
 
 // Component to display tournament information
@@ -432,21 +432,24 @@ const TournamentMatches = ({
 }) => {
   const navigate = useNavigate();
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [teamHomeId, setTeamHomeId] = useState('');
-  const [teamAwayId, setTeamAwayId] = useState('');
+  const [selectedParticipants, setSelectedParticipants] = useState<string[]>(['', '']);
   const [location, setLocation] = useState('');
   const [startTime, setStartTime] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleCreateMatch = async () => {
-    if (!teamHomeId || !teamAwayId) {
-      setError('Selecione as duas equipas');
+    // Validate at least 2 participants
+    const validParticipants = selectedParticipants.filter(p => p.trim() !== '');
+    if (validParticipants.length < 2) {
+      setError('Selecione pelo menos 2 participantes');
       return;
     }
 
-    if (teamHomeId === teamAwayId) {
-      setError('As equipas devem ser diferentes');
+    // Check for duplicates
+    const uniqueParticipants = new Set(validParticipants);
+    if (uniqueParticipants.size !== validParticipants.length) {
+      setError('Os participantes devem ser diferentes');
       return;
     }
 
@@ -464,12 +467,16 @@ const TournamentMatches = ({
       setLoading(true);
       setError('');
 
+      const participants: ParticipantCreate[] = validParticipants.map(teamId => ({
+        participant_type: 'team',
+        team_id: teamId
+      }));
+
       const matchData: MatchCreate = {
         tournament_id: tournament.id,
-        team_home_id: teamHomeId,
-        team_away_id: teamAwayId,
         location: location.trim(),
-        start_time: startTime
+        start_time: startTime,
+        participants
       };
 
       await matchesApi.create(matchData);
@@ -484,11 +491,26 @@ const TournamentMatches = ({
   };
 
   const resetForm = () => {
-    setTeamHomeId('');
-    setTeamAwayId('');
+    setSelectedParticipants(['', '']);
     setLocation('');
     setStartTime('');
     setError('');
+  };
+
+  const addParticipantSlot = () => {
+    setSelectedParticipants([...selectedParticipants, '']);
+  };
+
+  const removeParticipantSlot = (index: number) => {
+    if (selectedParticipants.length > 2) {
+      setSelectedParticipants(selectedParticipants.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateParticipant = (index: number, value: string) => {
+    const updated = [...selectedParticipants];
+    updated[index] = value;
+    setSelectedParticipants(updated);
   };
 
   const handleDeleteMatch = async (matchId: string) => {
@@ -523,9 +545,23 @@ const TournamentMatches = ({
     }
   };
 
-  const getTeamName = (participants: Match['participants']): string => {
-    const teamParticipant = participants.find(p => p.participant_type === 'team' && p.team);
-    return teamParticipant?.team?.name || 'Equipa Desconhecida';
+  const getParticipantNames = (participants: Match['participants']): string => {
+    const names = participants.map(p => {
+      if (p.participant_type === 'team' && p.team) {
+        return p.team.name;
+      } else if (p.participant_type === 'athlete' && p.athlete) {
+        return p.athlete.full_name;
+      }
+      return 'Desconhecido';
+    });
+    return names.join(' vs ');
+  };
+
+  const getParticipantScores = (participants: Match['participants']): string | null => {
+    if (participants.every(p => p.score !== null && p.score !== undefined)) {
+      return participants.map(p => p.score).join(' - ');
+    }
+    return null;
   };
 
   return (
@@ -558,19 +594,13 @@ const TournamentMatches = ({
             >
               <div className="flex justify-between items-start mb-2">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="font-medium text-gray-800">
-                      {getTeamName(match.participants.slice(0, 1))}
-                    </span>
-                    <span className="text-gray-500">vs</span>
-                    <span className="font-medium text-gray-800">
-                      {getTeamName(match.participants.slice(1, 2))}
-                    </span>
+                  <div className="font-medium text-gray-800 mb-2">
+                    {getParticipantNames(match.participants)}
                   </div>
 
-                  {(match.home_score !== null || match.away_score !== null) && (
+                  {getParticipantScores(match.participants) && (
                     <div className="text-lg font-bold text-teal-600 mb-2">
-                      {match.home_score ?? 0} - {match.away_score ?? 0}
+                      {getParticipantScores(match.participants)}
                     </div>
                   )}
 
@@ -620,43 +650,51 @@ const TournamentMatches = ({
 
             <div className="space-y-4">
               <div>
-                <label className="block text-gray-700 font-medium mb-2">
-                  Equipa Casa <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={teamHomeId}
-                  onChange={(e) => setTeamHomeId(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
-                >
-                  <option value="">Selecione a equipa casa</option>
-                  {tournament.competitors
-                    .filter(c => c.competitor_type === 'team' && c.team)
-                    .map((competitor) => (
-                      <option key={competitor.team.id} value={competitor.team.id}>
-                        {competitor.team.name}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">
-                  Equipa Visitante <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={teamAwayId}
-                  onChange={(e) => setTeamAwayId(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
-                >
-                  <option value="">Selecione a equipa visitante</option>
-                  {tournament.competitors
-                    .filter(c => c.competitor_type === 'team' && c.team)
-                    .map((competitor) => (
-                      <option key={competitor.team.id} value={competitor.team.id}>
-                        {competitor.team.name}
-                      </option>
-                    ))}
-                </select>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-gray-700 font-medium">
+                    Participantes <span className="text-red-500">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={addParticipantSlot}
+                    className="text-sm px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors"
+                  >
+                    + Adicionar Participante
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {selectedParticipants.map((participantId, index) => (
+                    <div key={index} className="flex gap-2">
+                      <select
+                        value={participantId}
+                        onChange={(e) => updateParticipant(index, e.target.value)}
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
+                      >
+                        <option value="">Selecione um participante</option>
+                        {tournament.competitors
+                          .filter(c => c.competitor_type === 'team' && c.team)
+                          .map((competitor) => (
+                            <option key={competitor.team.id} value={competitor.team.id}>
+                              {competitor.team.name}
+                            </option>
+                          ))}
+                      </select>
+                      {selectedParticipants.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => removeParticipantSlot(index)}
+                          className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors"
+                          title="Remover participante"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-sm text-gray-500 mt-1">
+                  Mínimo de 2 participantes necessários
+                </p>
               </div>
 
               <div>

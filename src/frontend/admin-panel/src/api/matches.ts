@@ -2,64 +2,101 @@ import { apiClient } from './client';
 import { type Team } from './teams';
 import { type Student } from './members';
 
-interface Participant {
+// Participant interfaces
+export interface ParticipantDetail {
+  id: string;
   participant_type: string;
   team?: Team;
   athlete?: Student;
+  score?: number;
+  position?: number;
 }
+
+export interface ParticipantCreate {
+  participant_type: string;
+  team_id?: string;
+  athlete_id?: string;
+}
+
+// Match interfaces
 export interface Match {
   id: string;
-  participants: Participant[];
+  tournament_id: string;
   location: string;
   start_time: string;
   status: 'scheduled' | 'in_progress' | 'finished' | 'cancelled';
-  home_score: number | null;
-  away_score: number | null;
+  created_at: string;
+  participants: ParticipantDetail[];
 }
 
-interface TeamWithLineup extends Team {
-  players: Student[];
-}
-
-export interface MatchDetail extends Match {
-  team_home: TeamWithLineup;
-  team_away: TeamWithLineup;
-  additional_info?: JSON;
+export interface MatchDetail {
+  id: string;
+  tournament_id: string;
+  location: string;
+  start_time: string;
+  status: 'scheduled' | 'in_progress' | 'finished' | 'cancelled';
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  participants: ParticipantDetail[];
 }
 
 export interface MatchCreate {
   tournament_id: string;
-  team_home_id: string;
-  team_away_id: string;
   location: string;
   start_time: string;
+  participants: ParticipantCreate[];
 }
 
 export interface MatchUpdate {
   location?: string;
   start_time?: string;
   status?: 'scheduled' | 'in_progress' | 'finished' | 'cancelled';
-  home_score?: number | null;
-  away_score?: number | null;
 }
 
-export interface MatchResult {
-  home_score: number;
-  away_score: number;
+// Result interfaces
+export interface ParticipantResult {
+  participant_id: string;
+  score?: number;
+  position?: number;
+  result_details?: JSON;
+}
+export interface MatchResultsUpdate {
+  participant_results: ParticipantResult[];
+  status?: 'scheduled' | 'in_progress' | 'finished' | 'cancelled';
 }
 
-interface PlayerLineup {
+// Lineup interfaces
+export interface PlayerLineup {
   player_id: string;
   jersey_number: number;
   is_starter: boolean;
 }
-export interface MatchLineup {
+export interface LineupAssign {
   team_id: string;
   players: PlayerLineup[];
 }
+export interface LineupDetail {
+  id: string;
+  match_id: string;
+  team_id: string;
+  player_id: string;
+  player?: Student;
+  jersey_number: number;
+  is_starter: boolean;
+  created_at: string;
+}
 
-export interface MatchComment {
+// Comment interfaces
+export interface CommentCreate {
   message: string;
+}
+export interface CommentDetail {
+  id: string;
+  match_id: string;
+  message: string;
+  created_by: string;
+  created_at: string;
 }
 
 export const matchesApi = {
@@ -67,8 +104,8 @@ export const matchesApi = {
     return apiClient.get<Match[]>('/matches/');
   },
 
-  async create(data: MatchCreate): Promise<Match> {
-    return apiClient.post<Match>('/matches/', data);
+  async create(data: MatchCreate): Promise<MatchDetail> {
+    return apiClient.post<MatchDetail>('/matches/', data);
   },
 
   async getById(matchId: string): Promise<MatchDetail> {
@@ -83,16 +120,36 @@ export const matchesApi = {
     return apiClient.delete(`/matches/${matchId}/`);
   },
 
-  async submitResult(matchId: string, data: MatchResult): Promise<Match> {
-    return apiClient.post<Match>(`/matches/${matchId}/result/`, data);
+  async addParticipants(matchId: string, data: ParticipantCreate[]): Promise<ParticipantDetail[]> {
+    return apiClient.post<ParticipantDetail[]>(`/matches/${matchId}/participants/`, data);
   },
 
-  async submitLineup(matchId: string, data: MatchLineup): Promise<void> {
-    return apiClient.post<void>(`/matches/${matchId}/lineup/`, data);
+  async removeParticipant(matchId: string, participantId: string): Promise<void> {
+    return apiClient.delete(`/matches/${matchId}/participants/${participantId}/`);
   },
 
-  async addComment(matchId: string, data: MatchComment): Promise<void> {
-    return apiClient.post<void>(`/matches/${matchId}/comments/`, data);
+  async updateMatchResults(matchId: string, data: MatchResultsUpdate): Promise<MatchDetail> {
+    return apiClient.put<MatchDetail>(`/matches/${matchId}/results/`, data);
+  },
+
+  async getLineups(matchId: string): Promise<LineupDetail[]> {
+    return apiClient.get<LineupDetail[]>(`/matches/${matchId}/lineup/`);
+  },
+
+  async assignLineup(matchId: string, data: LineupAssign): Promise<JSON> {
+    return apiClient.post<JSON>(`/matches/${matchId}/lineup/`, data);
+  },
+
+  async getComments(matchId: string): Promise<CommentDetail[]> {
+    return apiClient.get<CommentDetail[]>(`/matches/${matchId}/comments/`);
+  },
+
+  async addComment(matchId: string, data: CommentCreate): Promise<CommentDetail> {
+    return apiClient.post<CommentDetail>(`/matches/${matchId}/comments/`, data);
+  },
+
+  async deleteComment(matchId: string, commentId: string): Promise<void> {
+    return apiClient.delete(`/matches/${matchId}/comments/${commentId}/`);
   },
 
   async getMatchSheet(matchId: string): Promise<Blob> {

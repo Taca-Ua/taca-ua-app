@@ -23,12 +23,11 @@ class TeamListSerializer(serializers.Serializer):
     name = serializers.CharField()
     modality = ModalityListSerializer()
     course = CourseListSerializer()
+    players = StudentListSerializer(many=True)
 
 
 class TeamDetailSerializer(TeamListSerializer):
     """Serializer for team details"""
-
-    players = StudentListSerializer(many=True)
 
 
 class TeamCreateSerializer(serializers.Serializer):
