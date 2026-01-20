@@ -1,6 +1,11 @@
 from typing import List
 
-from .matches_service import MatchDTO, matches_service_client
+from .matches_service import (
+    LineupDTO,
+    MatchDTO,
+    MatchParticipantDTO,
+    matches_service_client,
+)
 from .modalities_service import modalities_service_client
 from .tournaments_service import TournamentDTO
 
@@ -105,15 +110,17 @@ class EnricherService:
 
         return matches
 
-    def complete_participant_info(self, participants: List) -> List:
+    def complete_participant_info(
+        self, participants: List[MatchParticipantDTO]
+    ) -> List[MatchParticipantDTO]:
         """Enrich a list of participants with detailed team/athlete information.
         The changes are made in place to the input participants list.
 
         Args:
-            participants (List): List of participant data to be enriched.
+            participants (List[MatchParticipantDTO]): List of participant data to be enriched.
 
         Returns:
-            List: List of enriched participant data.
+            List[MatchParticipantDTO]: List of enriched participant data.
         """
         athlete_ids_to_fetch = {}
         teams_ids_to_fetch = {}
@@ -156,15 +163,14 @@ class EnricherService:
 
         return participants
 
-    def complete_lineup_info(self, lineup_entries: List) -> List:
+    def complete_lineup_info(self, lineup_entries: List[LineupDTO]) -> List[LineupDTO]:
         """Enrich a list of lineup entries with detailed player information.
         The changes are made in place to the input lineup list.
 
         Args:
-            lineup_entries (List): List of lineup entries to be enriched.
-
+            lineup_entries (List[LineupDTO]): List of lineup entries to be enriched.
         Returns:
-            List: List of enriched lineup entries.
+            List[LineupDTO]: List of enriched lineup entries.
         """
         player_ids_to_fetch = {}
 
