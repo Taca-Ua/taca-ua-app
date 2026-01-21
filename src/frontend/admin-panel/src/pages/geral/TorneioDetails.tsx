@@ -4,6 +4,7 @@ import Sidebar from '../../components/geral_navbar';
 import { tournamentsApi, type TournamentDetail, type TournamentUpdate, type TournamentCompetitor } from '../../api/tournaments';
 import { teamsApi, type Team } from '../../api/teams';
 import { matchesApi, type Match, type MatchCreate, type ParticipantCreate } from '../../api/matches';
+import { studentsApi, type Student } from '../../api/members';
 
 // Component to display tournament information
 const TournamentInfo = ({
@@ -206,6 +207,8 @@ const TournamentCompetitors = ({
   onCompetitorsChange: () => void;
 }) => {
   const [availableTeams, setAvailableTeams] = useState<Team[]>([]);
+  const [availableStudents, setAvailableStudents] = useState<Student[]>([]);
+  const [studentSearchTerm, setStudentSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedCompetitorType, setSelectedCompetitorType] = useState<'team' | 'athlete'>('team');
   const [selectedTeamId, setSelectedTeamId] = useState('');
@@ -215,6 +218,7 @@ const TournamentCompetitors = ({
 
   useEffect(() => {
     loadAvailableTeams();
+    loadAvailableStudents();
   }, [tournament]);
 
   const loadAvailableTeams = async () => {
@@ -229,6 +233,23 @@ const TournamentCompetitors = ({
       setAvailableTeams(allTeams.filter(t => !teamIds.has(t.id)));
     } catch (err) {
       console.error('Failed to load teams:', err);
+    }
+  };
+
+  const loadAvailableStudents = async () => {
+    try {
+      const allStudents = await studentsApi.getAll();
+      // Filter out students already in tournament and only show members
+      const athleteIds = new Set(
+        tournament.competitors
+          .filter(c => c.competitor_type === 'athlete' && c.athlete)
+          .map(c => c.athlete.id)
+      );
+      setAvailableStudents(
+        allStudents.filter(s => s.is_member && !athleteIds.has(s.id))
+      );
+    } catch (err) {
+      console.error('Failed to load students:', err);
     }
   };
 
@@ -290,6 +311,7 @@ const TournamentCompetitors = ({
             setError('');
             setSelectedTeamId('');
             setSelectedAthleteId('');
+            setStudentSearchTerm('');
             setSelectedCompetitorType('team');
           }}
           className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
@@ -339,7 +361,7 @@ const TournamentCompetitors = ({
       {/* Add Competitor Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+          <div className="bg-white rounded-lg p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Adicionar Competidor</h2>
 
             {error && (
@@ -388,12 +410,37 @@ const TournamentCompetitors = ({
                   </label>
                   <input
                     type="text"
+                    value={studentSearchTerm}
+                    onChange={(e) => setStudentSearchTerm(e.target.value)}
+                    placeholder="Pesquisar por nome ou número..."
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 mb-2"
+                  />
+                  <select
                     value={selectedAthleteId}
                     onChange={(e) => setSelectedAthleteId(e.target.value)}
-                    placeholder="ID do Atleta"
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
-                  />
-                  <p className="mt-1 text-sm text-gray-500">Nota: Seleção de atletas será implementada em breve</p>
+                    size={Math.min(availableStudents.filter(s =>
+                      studentSearchTerm === '' ||
+                      s.full_name.toLowerCase().includes(studentSearchTerm.toLowerCase()) ||
+                      s.student_number.includes(studentSearchTerm)
+                    ).length + 1, 8)}
+                  >
+                    <option value="">Selecione um atleta</option>
+                    {availableStudents
+                      .filter(s =>
+                        studentSearchTerm === '' ||
+                        s.full_name.toLowerCase().includes(studentSearchTerm.toLowerCase()) ||
+                        s.student_number.includes(studentSearchTerm)
+                      )
+                      .map((student) => (
+                        <option key={student.id} value={student.id}>
+                          {student.full_name} ({student.student_number}) - {student.course.name}
+                        </option>
+                      ))}
+                  </select>
+                  {availableStudents.length === 0 && (
+                    <p className="mt-1 text-sm text-gray-500">Nenhum atleta disponível</p>
+                  )}
                 </div>
               )}
             </div>
