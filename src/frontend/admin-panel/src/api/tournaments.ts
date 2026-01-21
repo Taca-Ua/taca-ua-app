@@ -20,10 +20,10 @@ export interface Tournament {
   id: string;
   name: string;
   status: string;
+  modality: Modality;
 }
 
 export interface TournamentDetail extends Tournament {
-  modality: Modality;
   start_date: string;
   competitors: TournamentCompetitorDetail[];
   matches: Match[];

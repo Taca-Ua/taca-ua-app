@@ -39,6 +39,10 @@ class TournamentListCreateView(APIView):
     def get(self, request):
         """List all tournaments"""
         tournaments = tournaments_service_client.list_tournaments()
+
+        # Enrich tournament info
+        enricher_service.add_modality_to_tournaments(tournaments)
+
         serializer = TournamentListSerializer(tournaments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 

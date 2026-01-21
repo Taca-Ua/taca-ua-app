@@ -439,6 +439,18 @@ class ModalitiesService(BaseService):
         """
         self.delete(f"/modalities/{modality_id}")
 
+    def get_modalities_by_ids(self, modality_ids: List[str]) -> List[ModalityDTO]:
+        """Get multiple modalities by their IDs
+
+        Args:
+            modality_ids (List[str]): List of modality IDs
+
+        Returns:
+            List[ModalityDTO]: List of ModalityDTO objects representing the modalities
+        """
+        modalities_data = self.post("/modalities/batch-get", modality_ids)
+        return [ModalityDTO(**modality) for modality in modalities_data]
+
     # ==================== STUDENT METHODS ====================
     def list_students(self) -> List[StudentDTO]:
         """List all students

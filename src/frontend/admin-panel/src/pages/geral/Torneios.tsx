@@ -43,7 +43,9 @@ const TorneiosCreateModal = ({ isOpen, onClose, onCreate, modalities, setModalit
     const fetchTeamsByModality = async () => {
       if (!modalityId) return;
       try {
-        const allTeams = await teamsApi.getAll(modalityId);
+        const allTeams = await teamsApi.getAll({
+          modality_id: modalityId,
+        });
         setTeams(allTeams);
       }
       catch (err) {
@@ -231,7 +233,7 @@ const Torneios = () => {
               >
                 <div className="font-medium">{t.name}</div>
                 <div className="text-sm text-teal-600">
-                  {t.modality_name} {t.status}
+                  {t.modality.name} {t.status}
                 </div>
               </div>
             ))

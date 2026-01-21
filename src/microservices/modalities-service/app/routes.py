@@ -488,6 +488,15 @@ def delete_modality(modality_id: UUID, db: Session = Depends(get_db_session)):
     logger.info(f"Deleted modality: {modality_id}")
 
 
+@router.post("/modalities/batch-get", response_model=List[ModalityResponse])
+def get_modalities_by_ids(
+    modality_ids: List[UUID], db: Session = Depends(get_db_session)
+):
+    """Get multiple modalities by their IDs"""
+    modalities = db.query(Modality).filter(Modality.id.in_(modality_ids)).all()
+    return [modality.to_dict() for modality in modalities]
+
+
 # ==================== STUDENT ENDPOINTS ====================
 @router.get("/students", response_model=List[StudentResponse])
 def list_students(db: Session = Depends(get_db_session)):

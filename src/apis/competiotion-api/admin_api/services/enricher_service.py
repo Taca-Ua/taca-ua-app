@@ -211,5 +211,20 @@ class EnricherService:
 
         return lineup_entries
 
+    def add_modality_to_tournaments(self, tournaments: List[TournamentDTO]) -> None:
+        """Add modality details to a list of tournaments in place.
+
+        Args:
+            tournaments (List[TournamentDTO]): List of tournaments to enrich.
+        """
+        modality_ids = {tournament.modality_id for tournament in tournaments}
+        modalities_data = modalities_service_client.get_modalities_by_ids(
+            list(modality_ids)
+        )
+        modalities_data_map = {modality.id: modality for modality in modalities_data}
+
+        for tournament in tournaments:
+            tournament.modality = modalities_data_map.get(tournament.modality_id, None)
+
 
 enricher_service = EnricherService()

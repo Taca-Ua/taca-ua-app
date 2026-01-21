@@ -67,12 +67,12 @@ class TournamentListSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     name = serializers.CharField()
     status = serializers.ChoiceField(choices=STATUS_CHOICES)
+    modality = ModalityListSerializer()
 
 
 class TournamentDetailSerializer(TournamentListSerializer):
     """Serializer for tournament details"""
 
-    modality = ModalityListSerializer()
     start_date = serializers.DateTimeField(required=False, allow_null=True)
 
     competitors = TournamentCompetitorDetailSerializer(many=True)
