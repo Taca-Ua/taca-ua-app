@@ -152,7 +152,11 @@ const Jogos = () => {
                           >
                             <div className="flex justify-between items-center mb-2">
                               <span className="text-gray-800 font-bold text-lg">
-                                {match.participants.map(p => p.team?.name).join(' vs ')}
+                                {match.participants.map(p => {
+                                  if (p.team) return p.team.name;
+                                  if (p.athlete) return p.athlete.full_name;
+                                  return 'TBD';
+                                }).join(' vs ')}
                               </span>
                               <span className="text-teal-600 text-sm font-medium">
                                 {getStatusDisplay(match.status)}
@@ -255,11 +259,19 @@ const Jogos = () => {
                                     key={match.id}
                                     onClick={() => navigate(`/nucleo/jogos/${match.id}`)}
                                     className="text-xs bg-teal-100 hover:bg-teal-200 px-2 py-1 rounded cursor-pointer transition-colors"
-                                    title={`${time} - ${match.participants.map(p => p.team?.name).join(' vs ')}`}
+                                    title={`${time} - ${match.participants.map(p => {
+                                      if (p.team) return p.team.name;
+                                      if (p.athlete) return p.athlete.full_name;
+                                      return 'TBD';
+                                    }).join(' vs ')}`}
                                   >
                                     <div className="font-medium truncate">{time}</div>
                                     <div className="truncate text-gray-600">
-                                      {match.participants.map(p => p.team?.name).join(' vs ')}
+                                      {match.participants.map(p => {
+                                        if (p.team) return p.team.name;
+                                        if (p.athlete) return p.athlete.full_name;
+                                        return 'TBD';
+                                      }).join(' vs ')}
                                     </div>
                                   </div>
                                 );

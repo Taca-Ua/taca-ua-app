@@ -34,16 +34,32 @@ class EnricherService:
 
         # Fetch and enrich teams data
         team_ids = []
+        athlete_ids = []
         for competitor in tournament.competitors:
             if competitor.competitor_type == "team":
                 team_ids.append(competitor.competitor["team_id"])
+            elif competitor.competitor_type == "athlete":
+                athlete_ids.append(competitor.competitor["athlete_id"])
 
-        teams_data = modalities_service_client.get_teams_by_ids(team_ids)
-        teams_data_map = {team.id: team for team in teams_data}
+        teams_data_map = {}
+        athletes_data_map = {}
+        if team_ids:
+            teams_data = modalities_service_client.get_teams_by_ids(team_ids)
+            teams_data_map = {team.id: team for team in teams_data}
+
+        if athlete_ids:
+            athletes_data = modalities_service_client.get_students_by_ids(athlete_ids)
+            athletes_data_map = {athlete.id: athlete for athlete in athletes_data}
 
         for competitor in tournament.competitors:
             if competitor.competitor_type == "team":
-                competitor.team = teams_data_map.get(competitor.competitor["team_id"])
+                competitor.team = teams_data_map.get(
+                    competitor.competitor["team_id"], None
+                )
+            elif competitor.competitor_type == "athlete":
+                competitor.athlete = athletes_data_map.get(
+                    competitor.competitor["athlete_id"], None
+                )
 
         # Fetch and enrich matches data
         tournament_matches = matches_service_client.list_matches(
@@ -95,7 +111,7 @@ class EnricherService:
 
             for athlete_id, participants in athlete_ids_to_fetch.items():
                 for participant in participants:
-                    participant.athlete = students_data_map.get(athlete_id)
+                    participant.athlete = students_data_map.get(athlete_id, None)
 
         # Fetch all teams data in a single call
         if teams_ids_to_fetch:
@@ -106,7 +122,7 @@ class EnricherService:
 
             for team_id, participants in teams_ids_to_fetch.items():
                 for participant in participants:
-                    participant.team = teams_data_map.get(team_id)
+                    participant.team = teams_data_map.get(team_id, None)
 
         return matches
 
@@ -148,7 +164,7 @@ class EnricherService:
 
             for athlete_id, participants_list in athlete_ids_to_fetch.items():
                 for participant in participants_list:
-                    participant.athlete = students_data_map.get(athlete_id)
+                    participant.athlete = students_data_map.get(athlete_id, None)
 
         # Fetch all teams data in a single call
         if teams_ids_to_fetch:
@@ -159,7 +175,7 @@ class EnricherService:
 
             for team_id, participants_list in teams_ids_to_fetch.items():
                 for participant in participants_list:
-                    participant.team = teams_data_map.get(team_id)
+                    participant.team = teams_data_map.get(team_id, None)
 
         return participants
 
@@ -191,7 +207,7 @@ class EnricherService:
 
             for player_id, entries_list in player_ids_to_fetch.items():
                 for entry in entries_list:
-                    entry.player = students_data_map.get(player_id)
+                    entry.player = students_data_map.get(player_id, None)
 
         return lineup_entries
 

@@ -145,6 +145,7 @@ class MatchDetailView(APIView):
         """Get match details"""
         try:
             match = matches_service_client.get_match(match_id=match_id)
+            print("Match fetched:", match.__dict__["participants"])
 
             # Enrich participant data
             enricher_service.complete_matches_info([match])

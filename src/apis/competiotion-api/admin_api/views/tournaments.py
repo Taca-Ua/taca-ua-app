@@ -94,13 +94,13 @@ class TournamentDetailView(APIView):
         """Get tournament details by ID"""
         try:
             tournament = tournaments_service_client.get_tournament(tournament_id)
-            print("Tournament details:", tournament)
 
             # Enrich tournament info
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
-        enricher_service.complete_tournament_info(tournament=tournament)
+        enricher_service.complete_tournament_info(tournament)
+        print("Tournament details:", tournament.__dict__.get("competitors", None))
         serializer = TournamentDetailSerializer(tournament)
         return Response(serializer.data, status=status.HTTP_200_OK)
 

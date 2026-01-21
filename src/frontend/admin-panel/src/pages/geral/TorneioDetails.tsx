@@ -4,7 +4,6 @@ import Sidebar from '../../components/geral_navbar';
 import { tournamentsApi, type TournamentDetail, type TournamentUpdate, type TournamentCompetitor } from '../../api/tournaments';
 import { teamsApi, type Team } from '../../api/teams';
 import { matchesApi, type Match, type MatchCreate, type ParticipantCreate } from '../../api/matches';
-// import { type Student } from '../../api/members';
 
 // Component to display tournament information
 const TournamentInfo = ({
@@ -467,10 +466,25 @@ const TournamentMatches = ({
       setLoading(true);
       setError('');
 
-      const participants: ParticipantCreate[] = validParticipants.map(teamId => ({
-        participant_type: 'team',
-        team_id: teamId
-      }));
+      // Map selected IDs to ParticipantCreate objects, detecting the type from tournament.competitors
+      const participants: ParticipantCreate[] = validParticipants.map(competitorId => {
+        const competitor = tournament.competitors.find(c =>
+          (c.competitor_type === 'team' && c.team?.id === competitorId) ||
+          (c.competitor_type === 'athlete' && c.athlete?.id === competitorId)
+        );
+
+        if (competitor?.competitor_type === 'athlete') {
+          return {
+            participant_type: 'athlete',
+            athlete_id: competitorId
+          };
+        } else {
+          return {
+            participant_type: 'team',
+            team_id: competitorId
+          };
+        }
+      });
 
       const matchData: MatchCreate = {
         tournament_id: tournament.id,
@@ -575,9 +589,9 @@ const TournamentMatches = ({
             setShowCreateModal(true);
             resetForm();
           }}
-          disabled={tournament.competitors.filter(c => c.competitor_type === 'team').length < 2}
+          disabled={tournament.competitors.length < 2}
           className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          title={tournament.competitors.filter(c => c.competitor_type === 'team').length < 2 ? 'É necessário pelo menos 2 equipas' : ''}
+          title={tournament.competitors.length < 2 ? 'É necessário pelo menos 2 competidores' : ''}
         >
           + Criar Jogo
         </button>
@@ -671,13 +685,18 @@ const TournamentMatches = ({
                         className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
                       >
                         <option value="">Selecione um participante</option>
-                        {tournament.competitors
-                          .filter(c => c.competitor_type === 'team' && c.team)
-                          .map((competitor) => (
-                            <option key={competitor.team.id} value={competitor.team.id}>
-                              {competitor.team.name}
+                        {tournament.competitors.map((competitor) => {
+                          const isTeam = competitor.competitor_type === 'team';
+                          const id = isTeam ? competitor.team?.id : competitor.athlete?.id;
+                          const name = isTeam ? competitor.team?.name : competitor.athlete?.full_name;
+                          const label = isTeam ? name : `${name} (Atleta)`;
+
+                          return (
+                            <option key={`${competitor.competitor_type}-${id}`} value={id}>
+                              {label}
                             </option>
-                          ))}
+                          );
+                        })}
                       </select>
                       {selectedParticipants.length > 2 && (
                         <button
