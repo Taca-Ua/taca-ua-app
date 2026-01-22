@@ -168,6 +168,8 @@ class RabbitMQService:
         routing_key = message.routing_key
         processed = False
 
+        print(f"Received message with routing key: {routing_key}")
+
         # Find all matching handlers
         try:
             for event_pattern, handlers in self.event_handlers.items():

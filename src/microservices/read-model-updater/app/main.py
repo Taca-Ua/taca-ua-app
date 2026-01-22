@@ -2,18 +2,10 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
-from taca_logging import StructlogMiddleware, configure_logging, get_logger
-from taca_messaging.rabbitmq_service import RabbitMQService
+from taca_logging import StructlogMiddleware
 
-# Configure structured logging
-configure_logging(
-    service_name="read-model-updater",
-    log_level="INFO",
-)
-logger = get_logger("read-model-updater")
-
-# Register event handlers
-rabbitmq_service = RabbitMQService(service_name="read-model-updater")
+from .events import rabbitmq_service
+from .logger import logger
 
 
 @asynccontextmanager

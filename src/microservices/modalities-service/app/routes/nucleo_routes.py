@@ -1,0 +1,150 @@
+from datetime import datetime, timezone
+from typing import List
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+from taca_events import EventType
+
+from ..database import get_db_session
+from ..event_helpers import emit_event
+from ..logger import logger
+from ..models import Nucleo
+from ..schemas import NucleoCreate, NucleoResponse, NucleoUpdate
+
+router = APIRouter()
+
+# Default user ID for operations (replace with actual auth later)
+DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000"
+
+
+@router.get("/nucleos", response_model=List[NucleoResponse])
+def list_nucleos(db: Session = Depends(get_db_session)):
+    """List all nucleos"""
+    nucleos = db.query(Nucleo).all()
+    return [nucleo.to_dict() for nucleo in nucleos]
+
+
+@router.post(
+    "/nucleos", response_model=NucleoResponse, status_code=status.HTTP_201_CREATED
+)
+def create_nucleo(nucleo_data: NucleoCreate, db: Session = Depends(get_db_session)):
+    """Create a new nucleo"""
+    try:
+        nucleo = Nucleo(
+            name=nucleo_data.name,
+            abbreviation=nucleo_data.abbreviation,
+            created_by=DEFAULT_USER_ID,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+        )
+        db.add(nucleo)
+        db.flush()  # Get the ID without committing
+
+        # Emit event via outbox
+        emit_event(
+            db=db,
+            event_type=EventType.NUCLEO_CREATED,
+            aggregate_type="nucleo",
+            aggregate_id=nucleo.id,
+            data={
+                "nucleo_id": str(nucleo.id),
+                "name": nucleo.name,
+                "abbreviation": nucleo.abbreviation,
+                "created_at": nucleo.created_at.isoformat(),
+            },
+        )
+
+        db.commit()
+        db.refresh(nucleo)
+        logger.info(
+            "entity_created",
+            entity_type="nucleo",
+            entity_id=str(nucleo.id),
+            name=nucleo.name,
+        )
+        return nucleo.to_dict()
+    except IntegrityError as e:
+        db.rollback()
+        logger.error(
+            "integrity_error",
+            entity_type="nucleo",
+            error="duplicate_abbreviation",
+            details=str(e),
+        )
+        raise HTTPException(
+            status_code=400, detail="Nucleo with this abbreviation already exists"
+        )
+
+
+@router.get("/nucleos/{nucleo_id}", response_model=NucleoResponse)
+def get_nucleo(nucleo_id: UUID, db: Session = Depends(get_db_session)):
+    """Get a nucleo by ID"""
+    nucleo = db.query(Nucleo).filter(Nucleo.id == nucleo_id).first()
+    if not nucleo:
+        logger.warning(
+            "entity_not_found", entity_type="nucleo", entity_id=str(nucleo_id)
+        )
+        raise HTTPException(status_code=404, detail="Nucleo not found")
+    return nucleo.to_dict()
+
+
+@router.put("/nucleos/{nucleo_id}", response_model=NucleoResponse)
+def update_nucleo(
+    nucleo_id: UUID, nucleo_data: NucleoUpdate, db: Session = Depends(get_db_session)
+):
+    """Update a nucleo"""
+    nucleo = db.query(Nucleo).filter(Nucleo.id == nucleo_id).first()
+    if not nucleo:
+        raise HTTPException(status_code=404, detail="Nucleo not found")
+
+    if nucleo_data.name is not None:
+        nucleo.name = nucleo_data.name
+    if nucleo_data.abbreviation is not None:
+        nucleo.abbreviation = nucleo_data.abbreviation
+    nucleo.updated_at = datetime.now(timezone.utc)
+
+    try:
+        # Emit event via outbox
+        emit_event(
+            db=db,
+            event_type=EventType.NUCLEO_UPDATED,
+            aggregate_type="nucleo",
+            aggregate_id=nucleo.id,
+            data=nucleo.to_dict(),
+        )
+
+        db.commit()
+        db.refresh(nucleo)
+        logger.info(f"Updated nucleo: {nucleo.id}")
+        return nucleo.to_dict()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400, detail="Nucleo with this abbreviation already exists"
+        )
+
+
+@router.delete("/nucleos/{nucleo_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_nucleo(nucleo_id: UUID, db: Session = Depends(get_db_session)):
+    """Delete a nucleo"""
+    nucleo = db.query(Nucleo).filter(Nucleo.id == nucleo_id).first()
+    if not nucleo:
+        raise HTTPException(status_code=404, detail="Nucleo not found")
+
+    # Emit event via outbox before deleting
+    emit_event(
+        db=db,
+        event_type=EventType.NUCLEO_DELETED,
+        aggregate_type="nucleo",
+        aggregate_id=nucleo.id,
+        data={
+            "nucleo_id": str(nucleo.id),
+            "deleted_at": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+
+    db.delete(nucleo)
+    db.commit()
+    logger.info(f"Deleted nucleo: {nucleo_id}")

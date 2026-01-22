@@ -33,13 +33,13 @@ class StructlogMiddleware(BaseHTTPMiddleware):
 
         # Log request
         logger = structlog.get_logger()
-        logger.info(
-            "request_received",
-            action=action,
-            method=method,
-            path=path,
-            query_params=str(request.query_params) if request.query_params else None,
-        )
+        # logger.info(
+        #     "request_received",
+        #     action=action,
+        #     method=method,
+        #     path=path,
+        #     query_params=str(request.query_params) if request.query_params else None,
+        # )
 
         # Track timing
         start_time = time.time()

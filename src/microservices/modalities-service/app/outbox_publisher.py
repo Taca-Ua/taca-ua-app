@@ -75,7 +75,7 @@ class OutboxPublisher:
                 db.query(OutboxEvent)
                 .filter(
                     and_(
-                        not OutboxEvent.published,
+                        OutboxEvent.published == False,  # noqa: E712
                         OutboxEvent.retry_count < self.max_retries,
                     )
                 )
@@ -123,38 +123,41 @@ class OutboxPublisher:
         # Ensure RabbitMQ connection
         await rabbitmq_service.connect()
 
-        # Publish the event
+        # Extract routing key from event envelope
+        # Payload now contains the full event envelope
+        event_envelope = event.payload
+
+        # Get routing key (without version suffix for RabbitMQ)
+        from taca_events import EventType
+
+        routing_key = EventType.get_routing_key(event.event_type)
+
+        # Publish the complete event envelope
         await rabbitmq_service.publish_event(
-            event_name=event.event_type,
-            data=event.payload,
+            event_name=routing_key,
+            data=event_envelope,
         )
 
     def create_event(
         self,
         db: Session,
-        event_type: str,
-        aggregate_type: str,
-        aggregate_id: str,
-        payload: dict,
+        event_envelope: dict,
     ) -> OutboxEvent:
         """
-        Create a new outbox event (to be called from route handlers).
+        Create a new outbox event with standardized envelope.
 
         Args:
             db: Database session
-            event_type: Event type/routing key (e.g., 'nucleo.created')
-            aggregate_type: Type of aggregate (e.g., 'nucleo', 'course')
-            aggregate_id: ID of the aggregate
-            payload: Event payload data
+            event_envelope: Complete event envelope dict from EventBuilder
 
         Returns:
             Created OutboxEvent
         """
         event = OutboxEvent(
-            event_type=event_type,
-            aggregate_type=aggregate_type,
-            aggregate_id=aggregate_id,
-            payload=payload,
+            event_type=event_envelope["event_type"],
+            aggregate_type=event_envelope["aggregate_type"],
+            aggregate_id=event_envelope["aggregate_id"],
+            payload=event_envelope,  # Store complete envelope
             published=False,
             retry_count=0,
             created_at=datetime.now(timezone.utc),

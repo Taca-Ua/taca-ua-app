@@ -7,7 +7,15 @@ from taca_logging import StructlogMiddleware
 from .events import rabbitmq_service
 from .logger import logger
 from .outbox_publisher import outbox_publisher
-from .routes import router
+from .routes import (
+    course_router,
+    modality_router,
+    modality_type_router,
+    nucleo_router,
+    staff_router,
+    student_router,
+    team_router,
+)
 
 
 @asynccontextmanager
@@ -31,7 +39,13 @@ app.add_middleware(StructlogMiddleware)
 Instrumentator().instrument(app).expose(app)  # Prometheus metrics endpoint
 
 # Include routers
-app.include_router(router, tags=["modalities", "teams", "students"])
+app.include_router(course_router, tags=["courses"])
+app.include_router(modality_router, tags=["modalities"])
+app.include_router(modality_type_router, tags=["modality_types"])
+app.include_router(nucleo_router, tags=["nucleos"])
+app.include_router(staff_router, tags=["staff"])
+app.include_router(student_router, tags=["students"])
+app.include_router(team_router, tags=["teams"])
 
 
 @app.get("/")
