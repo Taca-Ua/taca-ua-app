@@ -12,6 +12,7 @@ from .base_service import BaseService
 
 @dataclass
 class CompetitorDTO:
+    id: UUID
     tournament_id: UUID
     competitor_type: str  # "team" or "athlete"
     competitor: Dict[str, UUID]  # {"team_id": UUID} or {"athlete_id": UUID}
@@ -139,8 +140,6 @@ class TournamentsService(BaseService):
         name: Optional[str] = None,
         start_date: Optional[str] = None,
         status: Optional[str] = None,
-        competitors_add: Optional[List[UUID]] = None,
-        competitors_remove: Optional[List[UUID]] = None,
     ) -> TournamentDTO:
         """
         Update a tournament
@@ -150,8 +149,6 @@ class TournamentsService(BaseService):
             name: New tournament name
             start_date: New start date (ISO format)
             status: New status (draft, active, finished)
-            competitors_add: Team IDs to add
-            competitors_remove: Team IDs to remove
 
         Returns:
             Updated tournament dictionary
@@ -163,12 +160,6 @@ class TournamentsService(BaseService):
             data["start_date"] = start_date
         if status is not None:
             data["status"] = status
-        if competitors_add is not None:
-            data["competitors_add"] = [competitor for competitor in competitors_add]
-        if competitors_remove is not None:
-            data["competitors_remove"] = [
-                competitor for competitor in competitors_remove
-            ]
 
         print("Update tournament data:", data)
         tournament_data = self.put(f"/tournaments/{tournament_id}", data=data)
@@ -206,6 +197,46 @@ class TournamentsService(BaseService):
         }
 
         tournament_data = self.post(f"/tournaments/{tournament_id}/finish", data=data)
+        return TournamentDTO(**tournament_data)
+
+    def add_competitors(
+        self, tournament_id: UUID, competitors_data: List[Dict[str, Any]]
+    ) -> TournamentDTO:
+        """
+        Add competitors to a tournament
+
+        Args:
+            tournament_id: Tournament ID
+            competitors_data: List of competitor data dicts
+
+        Returns:
+            Updated tournament dictionary
+        """
+        data = [competitor for competitor in competitors_data]
+
+        tournament_data = self.put(
+            f"/tournaments/{tournament_id}/competitors/add", data=data
+        )
+        return TournamentDTO(**tournament_data)
+
+    def remove_competitors(
+        self, tournament_id: UUID, competitors_ids: List[UUID]
+    ) -> TournamentDTO:
+        """
+        Remove competitors from a tournament
+
+        Args:
+            tournament_id: Tournament ID
+            competitors_ids: List of competitor IDs to remove
+
+        Returns:
+            Updated tournament dictionary
+        """
+        data = [str(competitor_id) for competitor_id in competitors_ids]
+
+        tournament_data = self.put(
+            f"/tournaments/{tournament_id}/competitors/remove", data=data
+        )
         return TournamentDTO(**tournament_data)
 
 

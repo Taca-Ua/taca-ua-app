@@ -54,7 +54,12 @@ def create_course(course_data: CourseCreate, db: Session = Depends(get_db_sessio
             event_type=EventType.COURSE_CREATED,
             aggregate_type="course",
             aggregate_id=course.id,
-            data=course.to_dict(),
+            data={
+                "course_id": str(course.id),
+                "nucleo_id": str(course.nucleo_id),
+                "name": course.name,
+                "abbreviation": course.abbreviation,
+            },
         )
 
         db.commit()
@@ -104,7 +109,14 @@ def update_course(
             event_type=EventType.COURSE_UPDATED,
             aggregate_type="course",
             aggregate_id=course.id,
-            data=course.to_dict(),
+            data={
+                "course_id": str(course.id),
+                "changes": {
+                    "name": course.name,
+                    "abbreviation": course.abbreviation,
+                    "nucleo_id": str(course.nucleo_id),
+                },
+            },
         )
 
         db.commit()
@@ -131,7 +143,9 @@ def delete_course(course_id: UUID, db: Session = Depends(get_db_session)):
         event_type=EventType.COURSE_DELETED,
         aggregate_type="course",
         aggregate_id=course.id,
-        data={"id": str(course.id), "name": course.name},
+        data={
+            "course_id": str(course.id),
+        },
     )
 
     db.delete(course)

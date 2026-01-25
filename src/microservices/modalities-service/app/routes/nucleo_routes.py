@@ -52,7 +52,6 @@ def create_nucleo(nucleo_data: NucleoCreate, db: Session = Depends(get_db_sessio
                 "nucleo_id": str(nucleo.id),
                 "name": nucleo.name,
                 "abbreviation": nucleo.abbreviation,
-                "created_at": nucleo.created_at.isoformat(),
             },
         )
 
@@ -112,7 +111,13 @@ def update_nucleo(
             event_type=EventType.NUCLEO_UPDATED,
             aggregate_type="nucleo",
             aggregate_id=nucleo.id,
-            data=nucleo.to_dict(),
+            data={
+                "nucleo_id": str(nucleo.id),
+                "changes": {
+                    "name": nucleo_data.name,
+                    "abbreviation": nucleo_data.abbreviation,
+                },
+            },
         )
 
         db.commit()
@@ -141,7 +146,6 @@ def delete_nucleo(nucleo_id: UUID, db: Session = Depends(get_db_session)):
         aggregate_id=nucleo.id,
         data={
             "nucleo_id": str(nucleo.id),
-            "deleted_at": datetime.now(timezone.utc).isoformat(),
         },
     )
 

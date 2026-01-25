@@ -46,7 +46,6 @@ All events use a standard envelope structure:
 | `match.created.v1` | New match created | matches-service | read-model-updater |
 | `match.updated.v1` | Match details updated | matches-service | read-model-updater |
 | `match.deleted.v1` | Match deleted | matches-service | read-model-updater |
-| `match.finished.v1` | Match completed with results | matches-service | read-model-updater |
 | `match.participant.added.v1` | Participant added to match | matches-service | read-model-updater |
 | `match.participant.removed.v1` | Participant removed from match | matches-service | read-model-updater |
 | `match.result.updated.v1` | Match scores updated | matches-service | read-model-updater |
@@ -136,7 +135,7 @@ All events use a standard envelope structure:
 
 2. Match Played
    matches-service: match.result.updated (during game)
-   matches-service: match.finished
+   matches-service: match.updated (post-game)
    └─> read-model-updater: updates final standings
 
 3. Match Deleted

@@ -8,6 +8,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from taca_events import EventType
 
 from . import schemas
 from .database import get_db_session
@@ -307,7 +308,7 @@ def update_match(
     # Emit event
     emit_event(
         db,
-        event_type=EventTypes.MATCH_UPDATED,
+        event_type=EventType.MATCH_UPDATED,
         aggregate_type="match",
         aggregate_id=match.id,
         data=changes,
@@ -430,108 +431,35 @@ def add_participant(
         team_id=participant_data.team_id,
         athlete_id=participant_data.athlete_id,
     )
-
     db.add(participant)
+    db.flush()  # Get participant.id
+
+    # Emit event
+    emit_event(
+        db,
+        event_type=EventType.MATCH_PARTICIPANT_ADDED,
+        aggregate_type="match",
+        aggregate_id=match_id,
+        data={
+            "match_id": str(match_id),
+            "participant_type": participant_type.value,
+            "team_id": (
+                str(participant_data.team_id) if participant_data.team_id else None
+            ),
+            "athlete_id": (
+                str(participant_data.athlete_id)
+                if participant_data.athlete_id
+                else None
+            ),
+        },
+    )
+
     db.commit()
     db.refresh(participant)
 
     logger.info(
         "Participant added successfully",
         extra={"match_id": str(match_id), "participant_id": str(participant.id)},
-    )
-
-    # Emit event
-    emit_event(
-        db,
-        event_type=EventTypes.PARTICIPANT_ADDED,
-        aggregate_type="match",
-        aggregate_id=match.id,
-        data={
-            "participant_id": str(participant.id),
-            "participant_type": participant.participant_type.value,
-            "team_id": str(participant.team_id) if participant.team_id else None,
-            "athlete_id": (
-                str(participant.athlete_id) if participant.athlete_id else None
-            ),
-        },
-    )
-
-    return participant
-
-
-@router.put(
-    "/matches/{match_id}/participants/{participant_id}",
-    response_model=schemas.MatchParticipantResponse,
-)
-def update_participant_result(
-    match_id: UUID,
-    participant_id: UUID,
-    result_data: schemas.MatchParticipantUpdate,
-    background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db_session),
-):
-    """Update a participant's result (score, position, metadata)."""
-    logger.info(
-        "Updating participant result",
-        extra={
-            "match_id": str(match_id),
-            "participant_id": str(participant_id),
-            "score": result_data.score,
-            "position": result_data.position,
-        },
-    )
-
-    participant = (
-        db.query(MatchParticipant)
-        .filter(
-            MatchParticipant.id == participant_id,
-            MatchParticipant.match_id == match_id,
-        )
-        .first()
-    )
-
-    if not participant:
-        logger.warning(
-            "Participant not found",
-            extra={"match_id": str(match_id), "participant_id": str(participant_id)},
-        )
-        raise HTTPException(status_code=404, detail="Participant not found")
-
-    changes = {}
-    if result_data.score is not None:
-        participant.score = result_data.score
-        changes["score"] = result_data.score
-
-    if result_data.position is not None:
-        participant.position = result_data.position
-        changes["position"] = result_data.position
-
-    if result_data.result_metadata is not None:
-        participant.result_metadata = result_data.result_metadata
-        changes["result_metadata"] = result_data.result_metadata
-
-    db.commit()
-    db.refresh(participant)
-
-    logger.info(
-        "Participant result updated successfully",
-        extra={
-            "match_id": str(match_id),
-            "participant_id": str(participant_id),
-            "changes": changes,
-        },
-    )
-
-    # Emit event
-    emit_event(
-        db,
-        event_type=EventTypes.RESULT_UPDATED,
-        aggregate_type="match",
-        aggregate_id=match_id,
-        data={
-            "participant_id": str(participant_id),
-            **changes,
-        },
     )
 
     return participant
@@ -576,23 +504,25 @@ def remove_participant(
             status_code=409, detail="Cannot modify participants for finished match"
         )
 
+    emit_event(
+        db,
+        event_type=EventType.MATCH_PARTICIPANT_REMOVED,
+        aggregate_type="match",
+        aggregate_id=match_id,
+        data={
+            "match_id": str(match_id),
+            "participant_id": str(participant_id),
+        },
+    )
+
     db.delete(participant)
+
     db.commit()
 
     logger.info(
         "Participant removed successfully",
         extra={"match_id": str(match_id), "participant_id": str(participant_id)},
     )
-
-    # Emit event
-    emit_event(
-        db,
-        event_type=EventTypes.PARTICIPANT_REMOVED,
-        aggregate_type="match",
-        aggregate_id=match_id,
-        data={"participant_id": str(participant_id)},
-    )
-
     return None
 
 
@@ -665,6 +595,25 @@ def assign_lineup(
         db.add(lineup)
         created_lineups.append(lineup)
 
+    emit_event(
+        db,
+        event_type=EventType.MATCH_LINEUP_ASSIGNED,
+        aggregate_type="match",
+        aggregate_id=match_id,
+        data={
+            "match_id": str(match_id),
+            "team_id": str(lineup_data.team_id),
+            "lineup": [
+                {
+                    "player_id": str(player_data["player_id"]),
+                    "jersey_number": player_data["jersey_number"],
+                    "is_starter": player_data.get("is_starter", True),
+                }
+                for player_data in lineup_data.players
+            ],
+        },
+    )
+
     db.commit()
 
     logger.info(
@@ -673,26 +622,6 @@ def assign_lineup(
             "match_id": str(match_id),
             "team_id": str(lineup_data.team_id),
             "player_count": len(created_lineups),
-        },
-    )
-
-    # Emit event
-    emit_event(
-        db,
-        event_type=EventTypes.LINEUP_ASSIGNED,
-        aggregate_type="match",
-        aggregate_id=match.id,
-        data={
-            "team_id": str(lineup_data.team_id),
-            "player_count": len(created_lineups),
-            "players": [
-                {
-                    "player_id": str(lineup.player_id),
-                    "jersey_number": lineup.jersey_number,
-                    "is_starter": lineup.is_starter,
-                }
-                for lineup in created_lineups
-            ],
         },
     )
 
@@ -770,27 +699,26 @@ def add_comment(
         message=comment_data.message,
         created_by=comment_data.created_by,
     )
-
     db.add(comment)
+    db.flush()  # Get comment.id
+
+    emit_event(
+        db,
+        event_type=EventType.MATCH_COMMENT_ADDED,
+        aggregate_type="match",
+        aggregate_id=match_id,
+        data={
+            "comment_id": str(comment.id),
+            "match_id": str(match_id),
+            "message": comment.message,
+        },
+    )
     db.commit()
     db.refresh(comment)
 
     logger.info(
         "Comment added successfully",
         extra={"match_id": str(match_id), "comment_id": str(comment.id)},
-    )
-
-    # Emit event
-    emit_event(
-        db,
-        event_type=EventTypes.COMMENT_ADDED,
-        aggregate_type="match",
-        aggregate_id=match.id,
-        data={
-            "comment_id": str(comment.id),
-            "message": comment.message,
-            "created_by": str(comment.created_by),
-        },
     )
 
     return comment
@@ -855,21 +783,24 @@ def delete_comment(
         )
         raise HTTPException(status_code=404, detail="Comment not found")
 
+    # Emit event before deletion
+    emit_event(
+        db,
+        event_type=EventType.MATCH_COMMENT_DELETED,
+        aggregate_type="match",
+        aggregate_id=match_id,
+        data={
+            "comment_id": str(comment_id),
+            "match_id": str(match_id),
+        },
+    )
+
     db.delete(comment)
     db.commit()
 
     logger.info(
         "Comment deleted successfully",
         extra={"match_id": str(match_id), "comment_id": str(comment_id)},
-    )
-
-    # Emit event
-    emit_event(
-        db,
-        event_type=EventTypes.COMMENT_DELETED,
-        aggregate_type="match",
-        aggregate_id=match_id,
-        data={"comment_id": str(comment_id)},
     )
 
     return None
@@ -945,8 +876,21 @@ def update_match_results(
                 "participant_id": str(participant.id),
                 "score": participant.score,
                 "position": participant.position,
+                "results_metadata": participant.result_metadata,
             }
         )
+
+    # Emit event for result updates
+    emit_event(
+        db,
+        event_type=EventType.MATCH_RESULT_UPDATED,
+        aggregate_type="match",
+        aggregate_id=match_id,
+        data={
+            "match_id": str(match_id),
+            "results": updated_participants,
+        },
+    )
 
     # Update match status if provided
     if result_data.status:
@@ -959,6 +903,18 @@ def update_match_results(
                 status_code=400, detail=f"Invalid status: {result_data.status}"
             )
 
+    # Emit match updated event for status change
+    emit_event(
+        db,
+        event_type=EventType.MATCH_UPDATED,
+        aggregate_type="match",
+        aggregate_id=match_id,
+        data={
+            "match_id": str(match_id),
+            "status": match.status.value,
+        },
+    )
+
     match.updated_at = datetime.now(timezone.utc)
 
     db.commit()
@@ -970,18 +926,6 @@ def update_match_results(
             "match_id": str(match_id),
             "updated_count": len(updated_participants),
             "new_status": match.status.value,
-        },
-    )
-
-    # Emit event
-    emit_event(
-        db,
-        event_type=EventTypes.RESULTS_UPDATED,
-        aggregate_type="match",
-        aggregate_id=match.id,
-        data={
-            "status": match.status.value,
-            "participants": updated_participants,
         },
     )
 

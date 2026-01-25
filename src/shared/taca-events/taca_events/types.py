@@ -55,6 +55,8 @@ class EventType:
     TOURNAMENT_UPDATED = "tournament.updated.v1"
     TOURNAMENT_DELETED = "tournament.deleted.v1"
     TOURNAMENT_FINISHED = "tournament.finished.v1"
+    TOURNAMENT_COMPETITOR_ADDED = "tournament.competitor.added.v1"
+    TOURNAMENT_COMPETITOR_DELETED = "tournament.competitor.deleted.v1"
 
     # ==================== Matches Service Events ====================
 
@@ -62,7 +64,6 @@ class EventType:
     MATCH_CREATED = "match.created.v1"
     MATCH_UPDATED = "match.updated.v1"
     MATCH_DELETED = "match.deleted.v1"
-    MATCH_FINISHED = "match.finished.v1"
 
     # Match participant events
     MATCH_PARTICIPANT_ADDED = "match.participant.added.v1"

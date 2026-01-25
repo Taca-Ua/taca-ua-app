@@ -11,6 +11,7 @@ export interface TournamentCompetitor {
 }
 
 export interface TournamentCompetitorDetail {
+  id: string;
   competitor_type: 'team' | 'athlete';
   team: Team;
   athlete: Student;
@@ -77,4 +78,12 @@ export const tournamentsApi = {
   async finish(id: string, data: TournamentFinish): Promise<TournamentDetail> {
     return apiClient.post<TournamentDetail>(`/tournaments/${id}/finish/`, data);
   },
+
+  async addCompetitors(id: string, competitors: TournamentCompetitor[]): Promise<TournamentDetail> {
+    return apiClient.put<TournamentDetail>(`/tournaments/${id}/competitors/add/`, competitors );
+  },
+
+  async removeCompetitors(id: string, competitors_ids: string[]): Promise<TournamentDetail> {
+    return apiClient.put<TournamentDetail>(`/tournaments/${id}/competitors/remove/`, { competitors_ids });
+  }
 };

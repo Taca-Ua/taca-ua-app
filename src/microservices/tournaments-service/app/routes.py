@@ -8,8 +8,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from taca_events import EventType
 
 from .database import get_db_session
+from .event_helpers import emit_event
 from .logger import logger
 from .models import (
     CompetitorType,
@@ -17,8 +19,8 @@ from .models import (
     TournamentCompetitor,
     TournamentRankingPosition,
 )
-from .outbox_publisher import outbox_publisher
 from .schemas import (
+    CompetitorInput,
     TournamentCreate,
     TournamentFinish,
     TournamentResponse,
@@ -26,6 +28,74 @@ from .schemas import (
 )
 
 router = APIRouter()
+
+
+# ==================== Helpers ====================
+def add_competitor(db: Session, tournament_id: UUID, competitor_input: CompetitorInput):
+    """Add a competitor to a tournament.
+
+    Args:
+        db (Session): Database session
+        tournament_id (UUID): ID of the tournament
+        competitor_input (CompetitorInput): Competitor details
+
+    Returns:
+        None
+    """
+
+    competitor_type = (
+        CompetitorType.TEAM
+        if competitor_input.competitor_type == "team"
+        else CompetitorType.ATHLETE
+    )
+
+    # Check if competitor is not already in tournament
+    query = db.query(TournamentCompetitor).filter(
+        TournamentCompetitor.tournament_id == tournament_id,
+        TournamentCompetitor.competitor_type == competitor_type,
+    )
+
+    if competitor_type == CompetitorType.TEAM:
+        query = query.filter(TournamentCompetitor.team_id == competitor_input.team_id)
+    else:
+        query = query.filter(
+            TournamentCompetitor.athlete_id == competitor_input.athlete_id
+        )
+
+    existing = query.first()
+
+    if existing:
+        return  # Competitor already exists, skip adding
+
+    tournament_competitor = TournamentCompetitor(
+        tournament_id=tournament_id,
+        competitor_type=competitor_type,
+        team_id=(
+            competitor_input.team_id if competitor_type == CompetitorType.TEAM else None
+        ),
+        athlete_id=(
+            competitor_input.athlete_id
+            if competitor_type == CompetitorType.ATHLETE
+            else None
+        ),
+    )
+    db.add(tournament_competitor)
+    db.flush()
+
+    # Emit event for added competitor
+    emit_event(
+        db=db,
+        event_type=EventType.TOURNAMENT_COMPETITOR_ADDED,
+        aggregate_type="tournament_competitor",
+        aggregate_id=str(tournament_competitor.id),
+        data={
+            "tournament_id": str(tournament_id),
+            "competitor_type": competitor_input.competitor_type,
+            "competitor_entity_id": str(
+                competitor_input.team_id or competitor_input.athlete_id
+            ),
+        },
+    )
 
 
 # ==================== Tournament Endpoints ====================
@@ -82,39 +152,25 @@ async def create_tournament(
         db.add(tournament)
         db.flush()  # Get the ID before committing
 
+        # Emit event for tournament creation
+        emit_event(
+            db=db,
+            event_type=EventType.TOURNAMENT_CREATED,
+            aggregate_type="tournament",
+            aggregate_id=str(tournament.id),
+            data={
+                "tournament_id": str(tournament.id),
+                "modality_id": str(tournament.modality_id),
+                "name": tournament.name,
+                "start_date": tournament.start_date.isoformat(),
+                "status": tournament.status,
+            },
+        )
+
         # Add competitors if provided
         if data.competitors:
             for competitor_input in data.competitors:
-                competitor_type = (
-                    CompetitorType.TEAM
-                    if competitor_input.competitor_type == "team"
-                    else CompetitorType.ATHLETE
-                )
-
-                tournament_competitor = TournamentCompetitor(
-                    tournament_id=tournament.id,
-                    competitor_type=competitor_type,
-                    team_id=(
-                        competitor_input.team_id
-                        if competitor_type == CompetitorType.TEAM
-                        else None
-                    ),
-                    athlete_id=(
-                        competitor_input.athlete_id
-                        if competitor_type == CompetitorType.ATHLETE
-                        else None
-                    ),
-                )
-                db.add(tournament_competitor)
-
-        # Create outbox event
-        outbox_publisher.create_event(
-            db=db,
-            event_type="tournament.created",
-            aggregate_type="tournament",
-            aggregate_id=str(tournament.id),
-            payload=tournament.to_dict(),
-        )
+                add_competitor(db, tournament.id, competitor_input)
 
         db.commit()
         db.refresh(tournament)
@@ -151,68 +207,22 @@ async def update_tournament(
         if data.status is not None:
             tournament.status = data.status
 
-        # Handle competitor additions
-        print("Competitors to add:")
-        print(data.competitors_add)
-        if data.competitors_add:
-            for competitor_input in data.competitors_add:
-                competitor_type = (
-                    CompetitorType.TEAM
-                    if competitor_input.competitor_type == "team"
-                    else CompetitorType.ATHLETE
-                )
-
-                # Check if competitor is not already in tournament
-                query = db.query(TournamentCompetitor).filter(
-                    TournamentCompetitor.tournament_id == tournament_id,
-                    TournamentCompetitor.competitor_type == competitor_type,
-                )
-
-                if competitor_type == CompetitorType.TEAM:
-                    query = query.filter(
-                        TournamentCompetitor.team_id == competitor_input.team_id
-                    )
-                else:
-                    query = query.filter(
-                        TournamentCompetitor.athlete_id == competitor_input.athlete_id
-                    )
-
-                existing = query.first()
-
-                if not existing:
-                    tournament_competitor = TournamentCompetitor(
-                        tournament_id=tournament_id,
-                        competitor_type=competitor_type,
-                        team_id=(
-                            competitor_input.team_id
-                            if competitor_type == CompetitorType.TEAM
-                            else None
-                        ),
-                        athlete_id=(
-                            competitor_input.athlete_id
-                            if competitor_type == CompetitorType.ATHLETE
-                            else None
-                        ),
-                    )
-                    db.add(tournament_competitor)
-
-        # Handle competitor removals
-        if data.competitors_remove:
-            for competitor_id in data.competitors_remove:
-                db.query(TournamentCompetitor).filter(
-                    TournamentCompetitor.tournament_id == tournament_id,
-                    TournamentCompetitor.id == competitor_id,
-                ).delete()
-
         tournament.updated_at = datetime.now(timezone.utc)
 
         # Create outbox event
-        outbox_publisher.create_event(
+        emit_event(
             db=db,
-            event_type="tournament.updated",
+            event_type=EventType.TOURNAMENT_UPDATED,
             aggregate_type="tournament",
             aggregate_id=str(tournament.id),
-            payload=tournament.to_dict(),
+            data={
+                "tournament_id": str(tournament.id),
+                "changes": {
+                    "name": data.name,
+                    "start_date": data.start_date,
+                    "status": data.status,
+                },
+            },
         )
 
         db.commit()
@@ -240,13 +250,13 @@ async def delete_tournament(tournament_id: UUID, db: Session = Depends(get_db_se
         )
 
     try:
-        # Create outbox event before deleting
-        outbox_publisher.create_event(
+        # Emit event before deleting
+        emit_event(
             db=db,
-            event_type="tournament.deleted",
+            event_type=EventType.TOURNAMENT_DELETED,
             aggregate_type="tournament",
             aggregate_id=str(tournament.id),
-            payload={"id": str(tournament.id), "name": tournament.name},
+            data={"tournament_id": str(tournament.id)},
         )
 
         db.delete(tournament)
@@ -302,12 +312,14 @@ async def finish_tournament(
         tournament.updated_at = datetime.now(timezone.utc)
 
         # Create outbox event
-        outbox_publisher.create_event(
+        emit_event(
             db=db,
-            event_type="tournament.finished",
+            event_type=EventType.TOURNAMENT_FINISHED,
             aggregate_type="tournament",
             aggregate_id=str(tournament.id),
-            payload=tournament.to_dict(include_ranking=True),
+            data={
+                "tournament_id": str(tournament.id),
+            },
         )
 
         db.commit()
@@ -323,6 +335,87 @@ async def finish_tournament(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error finishing tournament: {str(e)}",
         )
+
+
+@router.put(
+    "/tournaments/{tournament_id}/competitors/add", response_model=TournamentResponse
+)
+async def add_competitors_to_tournament(
+    tournament_id: UUID,
+    competitors: List[CompetitorInput],
+    db: Session = Depends(get_db_session),
+):
+    """Add competitors to a tournament"""
+    tournament = db.query(Tournament).filter(Tournament.id == tournament_id).first()
+    if not tournament:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Tournament not found"
+        )
+
+    try:
+        for competitor_input in competitors:
+            add_competitor(db, tournament_id, competitor_input)
+
+        db.commit()
+        logger.info(f"Added competitors to tournament {tournament_id}")
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error adding competitors: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error adding competitors: {str(e)}",
+        )
+
+    return TournamentResponse(**tournament.to_dict(include_ranking=True))
+
+
+@router.put(
+    "/tournaments/{tournament_id}/competitors/remove", response_model=TournamentResponse
+)
+async def remove_competitors_from_tournament(
+    tournament_id: UUID,
+    competitor_ids: List[UUID],
+    db: Session = Depends(get_db_session),
+):
+    """Remove competitors from a tournament"""
+    tournament = db.query(Tournament).filter(Tournament.id == tournament_id).first()
+    if not tournament:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Tournament not found"
+        )
+
+    try:
+        for competitor_id in competitor_ids:
+            db.query(TournamentCompetitor).filter(
+                TournamentCompetitor.tournament_id == tournament_id,
+                TournamentCompetitor.id == competitor_id,
+            ).delete()
+            db.flush()
+
+            # Emit event for removed competitor
+            emit_event(
+                db=db,
+                event_type=EventType.TOURNAMENT_COMPETITOR_DELETED,
+                aggregate_type="tournament_competitor",
+                aggregate_id=str(competitor_id),
+                data={
+                    "competitor_id": str(competitor_id),
+                    "tournament_id": str(tournament_id),
+                },
+            )
+
+        db.commit()
+        logger.info(f"Removed competitors from tournament {tournament_id}")
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error removing competitors: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error removing competitors: {str(e)}",
+        )
+
+    return TournamentResponse(**tournament.to_dict(include_ranking=True))
 
 
 # ==================== Health Check ====================

@@ -64,6 +64,7 @@ class TournamentCompetitor(Base):
 
     def to_dict(self):
         resp = {
+            "id": str(self.id),
             "tournament_id": str(self.tournament_id),
             "competitor_type": self.competitor_type.value,
             "created_at": self.created_at.isoformat() if self.created_at else None,

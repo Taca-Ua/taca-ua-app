@@ -12,6 +12,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ..serializers.tournaments import (
+    TournamentCompetitorsDeleteSerializer,
+    TournamentCompetitorSerializer,
     TournamentCreateSerializer,
     TournamentDetailSerializer,
     TournamentFinishSerializer,
@@ -124,8 +126,6 @@ class TournamentDetailView(APIView):
                     else None
                 ),
                 status=serializer.validated_data.get("status"),
-                competitors_add=serializer.validated_data.get("competitors_add"),
-                competitors_remove=serializer.validated_data.get("competitors_remove"),
             )
 
             # Enrich tournament info
@@ -187,6 +187,68 @@ def tournament_finish(request, tournament_id):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    request=TournamentCompetitorSerializer(many=True),
+    responses={200: TournamentDetailSerializer},
+    description="Add competitors to a tournament",
+    tags=["Tournament Management"],
+)
+@api_view(["PUT"])
+def tournament_add_competitors(request, tournament_id):
+    """Add competitors to a tournament"""
+    serializer = TournamentCompetitorSerializer(data=request.data, many=True)
+    serializer.is_valid(raise_exception=True)
+
+    try:
+        # Call microservice
+        tournament = tournaments_service_client.add_competitors(
+            tournament_id=tournament_id,
+            competitors_data=serializer.validated_data,
+        )
+
+        # Enrich tournament info
+        enricher_service.complete_tournament_info(tournament)
+    except Exception as e:
+        return Response(
+            {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+    serializer = TournamentDetailSerializer(tournament)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    request=TournamentCompetitorsDeleteSerializer,
+    responses={200: TournamentDetailSerializer},
+    description="Remove competitors from a tournament",
+    tags=["Tournament Management"],
+)
+@api_view(["PUT"])
+def tournament_remove_competitors(request, tournament_id):
+    """Remove competitors from a tournament"""
+    serializer = TournamentCompetitorsDeleteSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    try:
+        competitors_ids = serializer.validated_data["competitors_ids"]
+
+        # Call microservice
+        tournament = tournaments_service_client.remove_competitors(
+            tournament_id=tournament_id,
+            competitors_ids=competitors_ids,
+        )
+
+        # Enrich tournament info
+        enricher_service.complete_tournament_info(tournament)
+    except Exception as e:
+        return Response(
+            {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+    serializer = TournamentDetailSerializer(tournament)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 urlpatterns = [
     path("", TournamentListCreateView.as_view(), name="tournament-list"),
     path(
@@ -198,5 +260,15 @@ urlpatterns = [
         "<uuid:tournament_id>/finish/",
         tournament_finish,
         name="tournament-finish",
+    ),
+    path(
+        "<uuid:tournament_id>/competitors/add/",
+        tournament_add_competitors,
+        name="tournament-add-competitors",
+    ),
+    path(
+        "<uuid:tournament_id>/competitors/remove/",
+        tournament_remove_competitors,
+        name="tournament-remove-competitors",
     ),
 ]

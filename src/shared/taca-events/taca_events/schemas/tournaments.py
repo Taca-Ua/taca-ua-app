@@ -7,7 +7,7 @@ TOURNAMENT_CREATED_V1 = {
     "type": "object",
     "title": "TournamentCreated v1",
     "description": "Event emitted when a new tournament is created",
-    "required": ["tournament_id", "modality_id", "season_id", "name", "created_at"],
+    "required": ["tournament_id", "modality_id", "name", "start_date", "status"],
     "properties": {
         "tournament_id": {
             "type": "string",
@@ -19,27 +19,15 @@ TOURNAMENT_CREATED_V1 = {
             "format": "uuid",
             "description": "ID of the modality (sport type)",
         },
-        "season_id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "ID of the season",
-        },
         "name": {"type": "string", "description": "Tournament name"},
-        "description": {"type": "string", "description": "Tournament description"},
         "start_date": {
             "type": "string",
             "format": "date",
             "description": "Tournament start date",
         },
-        "end_date": {
+        "status": {
             "type": "string",
-            "format": "date",
-            "description": "Tournament end date",
-        },
-        "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "description": "When the tournament was created",
+            "description": "Tournament status (e.g., draft, active, finished)",
         },
     },
     "additionalProperties": False,
@@ -50,7 +38,7 @@ TOURNAMENT_UPDATED_V1 = {
     "type": "object",
     "title": "TournamentUpdated v1",
     "description": "Event emitted when tournament details are updated",
-    "required": ["tournament_id", "changes", "updated_at"],
+    "required": ["tournament_id", "changes"],
     "properties": {
         "tournament_id": {"type": "string", "format": "uuid"},
         "changes": {
@@ -58,7 +46,6 @@ TOURNAMENT_UPDATED_V1 = {
             "description": "Fields that were changed",
             "minProperties": 1,
         },
-        "updated_at": {"type": "string", "format": "date-time"},
     },
     "additionalProperties": False,
 }
@@ -68,11 +55,9 @@ TOURNAMENT_DELETED_V1 = {
     "type": "object",
     "title": "TournamentDeleted v1",
     "description": "Event emitted when a tournament is deleted",
-    "required": ["tournament_id", "deleted_at"],
+    "required": ["tournament_id"],
     "properties": {
         "tournament_id": {"type": "string", "format": "uuid"},
-        "reason": {"type": "string", "description": "Reason for deletion"},
-        "deleted_at": {"type": "string", "format": "date-time"},
     },
     "additionalProperties": False,
 }
@@ -82,17 +67,56 @@ TOURNAMENT_FINISHED_V1 = {
     "type": "object",
     "title": "TournamentFinished v1",
     "description": "Event emitted when a tournament is completed",
-    "required": ["tournament_id", "modality_id", "season_id", "finished_at"],
+    "required": ["tournament_id"],
     "properties": {
         "tournament_id": {"type": "string", "format": "uuid"},
-        "modality_id": {"type": "string", "format": "uuid"},
-        "season_id": {"type": "string", "format": "uuid"},
-        "winner_team_id": {
-            "type": ["string", "null"],
+    },
+    "additionalProperties": False,
+}
+
+TOURNAMENT_COMPETITOR_ADDED_V1 = {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "title": "TournamentCompetitorAdded v1",
+    "description": "Event emitted when a competitor is added to a tournament",
+    "required": ["tournament_id", "competitor_type", "competitor_entity_id"],
+    "properties": {
+        "tournament_id": {
+            "type": "string",
             "format": "uuid",
-            "description": "ID of the winning team, null if no clear winner",
+            "description": "ID of the tournament to which the competitor was added",
         },
-        "finished_at": {"type": "string", "format": "date-time"},
+        "competitor_type": {
+            "type": "string",
+            "enum": ["team", "individual"],
+            "description": "Type of the competitor (team or individual)",
+        },
+        "competitor_entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID of the team or individual competitor entity",
+        },
+    },
+    "additionalProperties": False,
+}
+
+TOURNAMENT_COMPETITOR_DELETED_V1 = {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "title": "TournamentCompetitorDeleted v1",
+    "description": "Event emitted when a competitor is removed from a tournament",
+    "required": ["competitor_id", "tournament_id"],
+    "properties": {
+        "competitor_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the tournament competitor",
+        },
+        "tournament_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID of the tournament from which the competitor was removed",
+        },
     },
     "additionalProperties": False,
 }
@@ -103,4 +127,6 @@ TOURNAMENT_SCHEMAS = {
     "tournament.updated.v1": TOURNAMENT_UPDATED_V1,
     "tournament.deleted.v1": TOURNAMENT_DELETED_V1,
     "tournament.finished.v1": TOURNAMENT_FINISHED_V1,
+    "tournament.competitor.deleted.v1": TOURNAMENT_COMPETITOR_DELETED_V1,
+    "tournament.competitor.added.v1": TOURNAMENT_COMPETITOR_ADDED_V1,
 }

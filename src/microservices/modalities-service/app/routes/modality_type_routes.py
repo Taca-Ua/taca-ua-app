@@ -5,8 +5,10 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from taca_events import EventType
 
 from ..database import get_db_session
+from ..event_helpers import emit_event
 from ..logger import logger
 from ..models import ModalityType
 from ..schemas import ModalityTypeCreate, ModalityTypeResponse, ModalityTypeUpdate
@@ -43,6 +45,22 @@ def create_modality_type(
             updated_at=datetime.now(timezone.utc),
         )
         db.add(modality_type)
+        db.flush()  # To get the ID before commit
+
+        # Emit modality type created event
+        emit_event(
+            db=db,
+            event_type=EventType.MODALITY_TYPE_CREATED,
+            aggregate_type="modality_type",
+            aggregate_id=modality_type.id,
+            data={
+                "modality_type_id": str(modality_type.id),
+                "name": modality_type.name,
+                "description": modality_type.description,
+                "escaloes": modality_type.escaloes,
+            },
+        )
+
         db.commit()
         db.refresh(modality_type)
         logger.info(f"Created modality type: {modality_type.id}")
@@ -86,6 +104,18 @@ def update_modality_type(
         modality_type.escaloes = modality_type_data.escaloes_encoder()
     modality_type.updated_at = datetime.now(timezone.utc)
 
+    # Emit modality type updated event
+    emit_event(
+        db=db,
+        event_type=EventType.MODALITY_TYPE_UPDATED,
+        aggregate_type="modality_type",
+        aggregate_id=modality_type.id,
+        data={
+            "modality_type_id": str(modality_type.id),
+            "changes": modality_type_data.dict(exclude_unset=True),
+        },
+    )
+
     try:
         db.commit()
         db.refresh(modality_type)
@@ -108,6 +138,15 @@ def delete_modality_type(modality_type_id: UUID, db: Session = Depends(get_db_se
     )
     if not modality_type:
         raise HTTPException(status_code=404, detail="Modality type not found")
+
+    # Emit modality type deleted event
+    emit_event(
+        db=db,
+        event_type=EventType.MODALITY_TYPE_DELETED,
+        aggregate_type="modality_type",
+        aggregate_id=modality_type.id,
+        data={"modality_type_id": str(modality_type.id)},
+    )
 
     db.delete(modality_type)
     db.commit()

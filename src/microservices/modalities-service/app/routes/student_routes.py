@@ -55,7 +55,13 @@ def create_student(student_data: StudentCreate, db: Session = Depends(get_db_ses
             event_type=EventType.STUDENT_CREATED,
             aggregate_type="student",
             aggregate_id=student.id,
-            data=student.to_dict(),
+            data={
+                "student_id": str(student.id),
+                "full_name": student.full_name,
+                "course_id": str(student.course_id),
+                "student_number": student.student_number,
+                "is_member": student.is_member,
+            },
         )
 
         db.commit()
@@ -100,6 +106,23 @@ def update_student(
         student.is_member = student_data.is_member
     student.updated_at = datetime.now(timezone.utc)
 
+    # Emit event via outbox
+    emit_event(
+        db=db,
+        event_type=EventType.STUDENT_UPDATED,
+        aggregate_type="student",
+        aggregate_id=student.id,
+        data={
+            "student_id": str(student.id),
+            "changes": {
+                "full_name": student.full_name,
+                "course_id": str(student.course_id),
+                "student_number": student.student_number,
+                "is_member": student.is_member,
+            },
+        },
+    )
+
     try:
         db.commit()
         db.refresh(student)
@@ -118,6 +141,17 @@ def delete_student(student_id: UUID, db: Session = Depends(get_db_session)):
     student = db.query(Student).filter(Student.id == student_id).first()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
+
+    # Emit event via outbox before deletion
+    emit_event(
+        db=db,
+        event_type=EventType.STUDENT_DELETED,
+        aggregate_type="student",
+        aggregate_id=student.id,
+        data={
+            "student_id": str(student.id),
+        },
+    )
 
     db.delete(student)
     db.commit()

@@ -47,6 +47,7 @@ class TournamentCompetitorDetailSerializer(serializers.Serializer):
     Detailed information about a competitor subscribed to a tournament.
     """
 
+    id = serializers.UUIDField()
     competitor_type = serializers.ChoiceField(choices=COMPETITOR_TYPE_CHOICES)
     team = TeamListSerializer(required=False, allow_null=True)
     athlete = StudentListSerializer(required=False, allow_null=True)
@@ -99,9 +100,6 @@ class TournamentUpdateSerializer(serializers.Serializer):
     start_date = serializers.DateTimeField(required=False, allow_null=True)
     status = serializers.ChoiceField(choices=STATUS_CHOICES, required=False)
 
-    competitors_add = TournamentCompetitorSerializer(many=True, required=False)
-    competitors_remove = TournamentCompetitorSerializer(many=True, required=False)
-
 
 class TournamentFinishSerializer(serializers.Serializer):
     """Serializer for finishing a tournament"""
@@ -112,3 +110,12 @@ class TournamentFinishSerializer(serializers.Serializer):
         position = serializers.IntegerField(required=True)
 
     ranking_entries = TournamentFinishEntrySerializer(many=True)
+
+
+class TournamentCompetitorsDeleteSerializer(serializers.Serializer):
+    """Serializer for deleting competitors from a tournament"""
+
+    competitors_ids = serializers.ListField(
+        child=serializers.UUIDField(),
+        allow_empty=False,
+    )

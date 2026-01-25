@@ -38,37 +38,6 @@ class TestMatchSchemas:
         assert not is_valid
         assert any("tournament_id" in err for err in errors)
 
-    def test_match_finished_valid(self):
-        """Test valid match.finished event."""
-        data = {
-            "match_id": "550e8400-e29b-41d4-a716-446655440000",
-            "tournament_id": "550e8400-e29b-41d4-a716-446655440001",
-            "team_home_id": "550e8400-e29b-41d4-a716-446655440002",
-            "team_away_id": "550e8400-e29b-41d4-a716-446655440003",
-            "home_score": 3,
-            "away_score": 2,
-            "finished_at": "2026-01-21T20:00:00Z",
-            "winner_id": "550e8400-e29b-41d4-a716-446655440002",
-        }
-
-        is_valid, errors = validate_event_data(EventType.MATCH_FINISHED, data)
-        assert is_valid, f"Validation failed: {errors}"
-
-    def test_match_finished_negative_score(self):
-        """Test match.finished with invalid negative score."""
-        data = {
-            "match_id": "550e8400-e29b-41d4-a716-446655440000",
-            "tournament_id": "550e8400-e29b-41d4-a716-446655440001",
-            "team_home_id": "550e8400-e29b-41d4-a716-446655440002",
-            "team_away_id": "550e8400-e29b-41d4-a716-446655440003",
-            "home_score": -1,  # Invalid
-            "away_score": 2,
-            "finished_at": "2026-01-21T20:00:00Z",
-        }
-
-        is_valid, errors = validate_event_data(EventType.MATCH_FINISHED, data)
-        assert not is_valid
-
 
 class TestTournamentSchemas:
     """Test tournament event schemas."""

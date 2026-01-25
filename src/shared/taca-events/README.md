@@ -103,7 +103,6 @@ All events follow a standard envelope:
 
 ### Matches Service Events
 - `match.created.v1`, `match.updated.v1`, `match.deleted.v1`
-- `match.finished.v1`
 - `match.participant.added.v1`, `match.participant.removed.v1`
 - `match.result.updated.v1`
 - `match.lineup.assigned.v1`

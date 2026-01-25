@@ -5,8 +5,10 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from taca_events import EventType
 
 from ..database import get_db_session
+from ..event_helpers import emit_event
 from ..logger import logger
 from ..models import Staff
 from ..schemas import StaffCreate, StaffResponse, StaffUpdate
@@ -46,6 +48,22 @@ def create_staff(staff_data: StaffCreate, db: Session = Depends(get_db_session))
             updated_at=datetime.now(timezone.utc),
         )
         db.add(staff)
+        db.flush()  # Get staff.id before commit
+
+        # Emit staff.created event
+        emit_event(
+            db=db,
+            event_type=EventType.STAFF_CREATED,
+            aggregate_type="staff",
+            aggregate_id=staff.id,
+            data={
+                "staff_id": str(staff.id),
+                "full_name": staff.full_name,
+                "staff_number": staff.staff_number,
+                "contact": staff.contact,
+            },
+        )
+
         db.commit()
         db.refresh(staff)
         logger.info(f"Created staff: {staff.id}")
@@ -84,6 +102,22 @@ def update_staff(
         staff.contact = staff_data.contact
     staff.updated_at = datetime.now(timezone.utc)
 
+    # Emit staff.updated event
+    emit_event(
+        db=db,
+        event_type=EventType.STAFF_UPDATED,
+        aggregate_type="staff",
+        aggregate_id=staff.id,
+        data={
+            "staff_id": str(staff.id),
+            "changes": {
+                "full_name": staff.full_name,
+                "staff_number": staff.staff_number,
+                "contact": staff.contact,
+            },
+        },
+    )
+
     try:
         db.commit()
         db.refresh(staff)
@@ -103,6 +137,17 @@ def delete_staff(staff_id: UUID, db: Session = Depends(get_db_session)):
     staff = db.query(Staff).filter(Staff.id == staff_id).first()
     if not staff:
         raise HTTPException(status_code=404, detail="Staff member not found")
+
+    # Emit staff.deleted event
+    emit_event(
+        db=db,
+        event_type=EventType.STAFF_DELETED,
+        aggregate_type="staff",
+        aggregate_id=staff.id,
+        data={
+            "staff_id": str(staff.id),
+        },
+    )
 
     db.delete(staff)
     db.commit()

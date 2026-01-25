@@ -43,7 +43,7 @@ class CompetitorInput(BaseModel):
 class CompetitorResponse(BaseModel):
     """Schema for competitor response"""
 
-    # id: UUID
+    id: UUID
     tournament_id: UUID
     competitor_type: str
     competitor: dict  # Contains either {"team_id": UUID} or {"athlete_id": UUID}

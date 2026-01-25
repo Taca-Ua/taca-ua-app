@@ -5,8 +5,10 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from taca_events import EventType
 
 from ..database import get_db_session
+from ..event_helpers import emit_event
 from ..logger import logger
 from ..models import Modality, ModalityType
 from ..schemas import ModalityCreate, ModalityResponse, ModalityUpdate
@@ -50,6 +52,20 @@ def create_modality(
         )
         db.add(modality)
         db.commit()
+
+        # Emit event via outbox
+        emit_event(
+            db=db,
+            event_type=EventType.MODALITY_CREATED,
+            aggregate_type="modality",
+            aggregate_id=modality.id,
+            data={
+                "modality_id": str(modality.id),
+                "modality_type_id": str(modality.modality_type_id),
+                "name": modality.name,
+            },
+        )
+
         db.refresh(modality)
         logger.info(f"Created modality: {modality.id}")
         return modality.to_dict()
@@ -93,6 +109,21 @@ def update_modality(
         modality.modality_type_id = modality_data.modality_type_id
     modality.updated_at = datetime.now(timezone.utc)
 
+    # Emit event via outbox
+    emit_event(
+        db=db,
+        event_type=EventType.MODALITY_UPDATED,
+        aggregate_type="modality",
+        aggregate_id=modality.id,
+        data={
+            "modality_id": str(modality.id),
+            "changes": {
+                "name": modality.name,
+                "modality_type_id": str(modality.modality_type_id),
+            },
+        },
+    )
+
     try:
         db.commit()
         db.refresh(modality)
@@ -111,6 +142,17 @@ def delete_modality(modality_id: UUID, db: Session = Depends(get_db_session)):
     modality = db.query(Modality).filter(Modality.id == modality_id).first()
     if not modality:
         raise HTTPException(status_code=404, detail="Modality not found")
+
+    # Emit event via outbox
+    emit_event(
+        db=db,
+        event_type=EventType.MODALITY_DELETED,
+        aggregate_type="modality",
+        aggregate_id=modality.id,
+        data={
+            "modality_id": str(modality.id),
+        },
+    )
 
     db.delete(modality)
     db.commit()

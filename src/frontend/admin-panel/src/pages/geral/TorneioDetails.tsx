@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
-import { tournamentsApi, type TournamentDetail, type TournamentUpdate, type TournamentCompetitor } from '../../api/tournaments';
+import { tournamentsApi, type TournamentDetail, type TournamentUpdate, type TournamentCompetitor, type TournamentCompetitorDetail } from '../../api/tournaments';
 import { teamsApi, type Team } from '../../api/teams';
 import { matchesApi, type Match, type MatchCreate, type ParticipantCreate } from '../../api/matches';
 import { studentsApi, type Student } from '../../api/members';
@@ -271,9 +271,7 @@ const TournamentCompetitors = ({
         ? { competitor_type: 'team', team_id: selectedTeamId }
         : { competitor_type: 'athlete', athlete_id: selectedAthleteId };
 
-      await tournamentsApi.update(tournament.id, {
-        competitors_add: [competitor]
-      });
+      await tournamentsApi.addCompetitors(tournament.id, [competitor]);
       setShowAddModal(false);
       setSelectedTeamId('');
       setSelectedAthleteId('');
@@ -285,13 +283,11 @@ const TournamentCompetitors = ({
     }
   };
 
-  const handleRemoveCompetitor = async (competitor: TournamentCompetitor, name: string) => {
+  const handleRemoveCompetitor = async (competitor: TournamentCompetitorDetail, name: string) => {
     if (!window.confirm(`Remover "${name}" do torneio?`)) return;
 
     try {
-      await tournamentsApi.update(tournament.id, {
-        competitors_remove: [competitor]
-      });
+      await tournamentsApi.removeCompetitors(tournament.id, [competitor.id]);
       onCompetitorsChange();
     } catch (err) {
       console.error('Failed to remove competitor:', err);
@@ -328,9 +324,6 @@ const TournamentCompetitors = ({
             const isTeam = competitor.competitor_type === 'team';
             const name = isTeam ? competitor.team?.name : competitor.athlete?.full_name;
             const subtitle = isTeam ? competitor.team?.course?.name : competitor.athlete?.course?.name;
-            const competitorObj: TournamentCompetitor = isTeam
-              ? { competitor_type: 'team', team_id: competitor.team?.id }
-              : { competitor_type: 'athlete', athlete_id: competitor.athlete?.id };
 
             return (
               <div
@@ -347,7 +340,7 @@ const TournamentCompetitors = ({
                   {subtitle && <p className="text-sm text-gray-600">{subtitle}</p>}
                 </div>
                 <button
-                  onClick={() => handleRemoveCompetitor(competitorObj, name || 'Desconhecido')}
+                  onClick={() => handleRemoveCompetitor(competitor, name || 'Desconhecido')}
                   className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-md text-sm transition-colors"
                 >
                   Remover

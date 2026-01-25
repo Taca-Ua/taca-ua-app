@@ -55,7 +55,12 @@ def create_team(team_data: TeamCreate, db: Session = Depends(get_db_session)):
         event_type=EventType.TEAM_CREATED,
         aggregate_type="team",
         aggregate_id=team.id,
-        data=team.to_dict(),
+        data={
+            "team_id": str(team.id),
+            "name": team.name,
+            "modality_id": str(team.modality_id),
+            "course_id": str(team.course_id),
+        },
     )
 
     db.commit()
@@ -134,7 +139,14 @@ def update_team(
         event_type=EventType.TEAM_UPDATED,
         aggregate_type="team",
         aggregate_id=team.id,
-        data=team.to_dict(include_players=True),
+        data={
+            "team_id": str(team.id),
+            "changes": {
+                "name": team_data.name,
+                "modality_id": str(team_data.modality_id),
+                "course_id": str(team_data.course_id),
+            },
+        },
     )
 
     db.commit()
@@ -149,6 +161,15 @@ def delete_team(team_id: UUID, db: Session = Depends(get_db_session)):
     team = db.query(Team).filter(Team.id == team_id).first()
     if not team:
         raise HTTPException(status_code=404, detail="Team not found")
+
+    # Emit team deleted event before deletion
+    emit_event(
+        db=db,
+        event_type=EventType.TEAM_DELETED,
+        aggregate_type="team",
+        aggregate_id=team.id,
+        data={"team_id": str(team.id)},
+    )
 
     db.delete(team)
     db.commit()

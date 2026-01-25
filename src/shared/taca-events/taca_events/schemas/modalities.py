@@ -9,12 +9,11 @@ NUCLEO_CREATED_V1 = {
     "type": "object",
     "title": "NucleoCreated v1",
     "description": "Event emitted when a new nucleo (organizational unit) is created",
-    "required": ["nucleo_id", "name", "abbreviation", "created_at"],
+    "required": ["nucleo_id", "name", "abbreviation"],
     "properties": {
         "nucleo_id": {"type": "string", "format": "uuid"},
         "name": {"type": "string", "description": "Nucleo name"},
         "abbreviation": {"type": "string", "description": "Nucleo abbreviation"},
-        "created_at": {"type": "string", "format": "date-time"},
     },
     "additionalProperties": False,
 }
@@ -23,11 +22,10 @@ NUCLEO_UPDATED_V1 = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "title": "NucleoUpdated v1",
-    "required": ["nucleo_id", "changes", "updated_at"],
+    "required": ["nucleo_id", "changes"],
     "properties": {
         "nucleo_id": {"type": "string", "format": "uuid"},
         "changes": {"type": "object", "minProperties": 1},
-        "updated_at": {"type": "string", "format": "date-time"},
     },
     "additionalProperties": False,
 }
@@ -36,10 +34,9 @@ NUCLEO_DELETED_V1 = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "title": "NucleoDeleted v1",
-    "required": ["nucleo_id", "deleted_at"],
+    "required": ["nucleo_id"],
     "properties": {
         "nucleo_id": {"type": "string", "format": "uuid"},
-        "deleted_at": {"type": "string", "format": "date-time"},
     },
     "additionalProperties": False,
 }
@@ -51,13 +48,12 @@ COURSE_CREATED_V1 = {
     "type": "object",
     "title": "CourseCreated v1",
     "description": "Event emitted when a new course is created",
-    "required": ["course_id", "nucleo_id", "name", "created_at"],
+    "required": ["course_id", "nucleo_id", "name", "abbreviation"],
     "properties": {
         "course_id": {"type": "string", "format": "uuid"},
         "nucleo_id": {"type": "string", "format": "uuid"},
         "name": {"type": "string"},
-        "description": {"type": "string"},
-        "created_at": {"type": "string", "format": "date-time"},
+        "abbreviation": {"type": "string"},
     },
     "additionalProperties": False,
 }
@@ -66,11 +62,10 @@ COURSE_UPDATED_V1 = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "title": "CourseUpdated v1",
-    "required": ["course_id", "changes", "updated_at"],
+    "required": ["course_id", "changes"],
     "properties": {
         "course_id": {"type": "string", "format": "uuid"},
         "changes": {"type": "object", "minProperties": 1},
-        "updated_at": {"type": "string", "format": "date-time"},
     },
     "additionalProperties": False,
 }
@@ -79,10 +74,9 @@ COURSE_DELETED_V1 = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "title": "CourseDeleted v1",
-    "required": ["course_id", "deleted_at"],
+    "required": ["course_id"],
     "properties": {
         "course_id": {"type": "string", "format": "uuid"},
-        "deleted_at": {"type": "string", "format": "date-time"},
     },
     "additionalProperties": False,
 }
@@ -94,15 +88,12 @@ MODALITY_TYPE_CREATED_V1 = {
     "type": "object",
     "title": "ModalityTypeCreated v1",
     "description": "Event emitted when a new modality type (sport type) is created",
-    "required": ["modality_type_id", "name", "created_at"],
+    "required": ["modality_type_id", "name", "description", "escaloes"],
     "properties": {
         "modality_type_id": {"type": "string", "format": "uuid"},
-        "name": {
-            "type": "string",
-            "description": "Sport name (e.g., Football, Basketball)",
-        },
+        "name": {"type": "string"},
         "description": {"type": "string"},
-        "created_at": {"type": "string", "format": "date-time"},
+        "escaloes": {"type": "object"},
     },
     "additionalProperties": False,
 }
@@ -111,11 +102,10 @@ MODALITY_TYPE_UPDATED_V1 = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "title": "ModalityTypeUpdated v1",
-    "required": ["modality_type_id", "changes", "updated_at"],
+    "required": ["modality_type_id", "changes"],
     "properties": {
         "modality_type_id": {"type": "string", "format": "uuid"},
         "changes": {"type": "object", "minProperties": 1},
-        "updated_at": {"type": "string", "format": "date-time"},
     },
     "additionalProperties": False,
 }
@@ -124,10 +114,9 @@ MODALITY_TYPE_DELETED_V1 = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "title": "ModalityTypeDeleted v1",
-    "required": ["modality_type_id", "deleted_at"],
+    "required": ["modality_type_id"],
     "properties": {
         "modality_type_id": {"type": "string", "format": "uuid"},
-        "deleted_at": {"type": "string", "format": "date-time"},
     },
     "additionalProperties": False,
 }
@@ -139,13 +128,11 @@ MODALITY_CREATED_V1 = {
     "type": "object",
     "title": "ModalityCreated v1",
     "description": "Event emitted when a new modality is created",
-    "required": ["modality_id", "modality_type_id", "season_id", "created_at"],
+    "required": ["modality_id", "modality_type_id"],
     "properties": {
         "modality_id": {"type": "string", "format": "uuid"},
         "modality_type_id": {"type": "string", "format": "uuid"},
-        "season_id": {"type": "string", "format": "uuid"},
         "name": {"type": "string"},
-        "created_at": {"type": "string", "format": "date-time"},
     },
     "additionalProperties": False,
 }
@@ -154,11 +141,10 @@ MODALITY_UPDATED_V1 = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "title": "ModalityUpdated v1",
-    "required": ["modality_id", "changes", "updated_at"],
+    "required": ["modality_id", "changes"],
     "properties": {
         "modality_id": {"type": "string", "format": "uuid"},
         "changes": {"type": "object", "minProperties": 1},
-        "updated_at": {"type": "string", "format": "date-time"},
     },
     "additionalProperties": False,
 }
@@ -167,10 +153,9 @@ MODALITY_DELETED_V1 = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "title": "ModalityDeleted v1",
-    "required": ["modality_id", "deleted_at"],
+    "required": ["modality_id"],
     "properties": {
         "modality_id": {"type": "string", "format": "uuid"},
-        "deleted_at": {"type": "string", "format": "date-time"},
     },
     "additionalProperties": False,
 }
@@ -187,7 +172,6 @@ STUDENT_CREATED_V1 = {
         "course_id",
         "student_number",
         "full_name",
-        "created_at",
     ],
     "properties": {
         "student_id": {"type": "string", "format": "uuid"},
@@ -198,7 +182,6 @@ STUDENT_CREATED_V1 = {
             "type": "boolean",
             "description": "Whether student is association member",
         },
-        "created_at": {"type": "string", "format": "date-time"},
     },
     "additionalProperties": False,
 }
@@ -211,7 +194,6 @@ STUDENT_UPDATED_V1 = {
     "properties": {
         "student_id": {"type": "string", "format": "uuid"},
         "changes": {"type": "object", "minProperties": 1},
-        "updated_at": {"type": "string", "format": "date-time"},
     },
     "additionalProperties": False,
 }
@@ -220,10 +202,9 @@ STUDENT_DELETED_V1 = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "title": "StudentDeleted v1",
-    "required": ["student_id", "deleted_at"],
+    "required": ["student_id"],
     "properties": {
         "student_id": {"type": "string", "format": "uuid"},
-        "deleted_at": {"type": "string", "format": "date-time"},
     },
     "additionalProperties": False,
 }
@@ -235,12 +216,12 @@ STAFF_CREATED_V1 = {
     "type": "object",
     "title": "StaffCreated v1",
     "description": "Event emitted when a new staff member is registered",
-    "required": ["staff_id", "full_name", "created_at"],
+    "required": ["staff_id", "full_name", "staff_number", "contact"],
     "properties": {
         "staff_id": {"type": "string", "format": "uuid"},
         "full_name": {"type": "string"},
-        "role": {"type": "string", "description": "Staff role"},
-        "created_at": {"type": "string", "format": "date-time"},
+        "staff_number": {"type": "string"},
+        "contact": {"type": "string"},
     },
     "additionalProperties": False,
 }
@@ -249,11 +230,10 @@ STAFF_UPDATED_V1 = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "title": "StaffUpdated v1",
-    "required": ["staff_id", "changes", "updated_at"],
+    "required": ["staff_id", "changes"],
     "properties": {
         "staff_id": {"type": "string", "format": "uuid"},
         "changes": {"type": "object", "minProperties": 1},
-        "updated_at": {"type": "string", "format": "date-time"},
     },
     "additionalProperties": False,
 }
@@ -262,10 +242,9 @@ STAFF_DELETED_V1 = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "title": "StaffDeleted v1",
-    "required": ["staff_id", "deleted_at"],
+    "required": ["staff_id"],
     "properties": {
         "staff_id": {"type": "string", "format": "uuid"},
-        "deleted_at": {"type": "string", "format": "date-time"},
     },
     "additionalProperties": False,
 }
@@ -277,18 +256,12 @@ TEAM_CREATED_V1 = {
     "type": "object",
     "title": "TeamCreated v1",
     "description": "Event emitted when a new team is created",
-    "required": ["team_id", "modality_id", "name", "created_at"],
+    "required": ["team_id", "modality_id", "course_id", "name"],
     "properties": {
         "team_id": {"type": "string", "format": "uuid"},
         "modality_id": {"type": "string", "format": "uuid"},
-        "course_id": {
-            "type": ["string", "null"],
-            "format": "uuid",
-            "description": "Course ID if team is course-specific",
-        },
+        "course_id": {"type": "string", "format": "uuid"},
         "name": {"type": "string"},
-        "description": {"type": "string"},
-        "created_at": {"type": "string", "format": "date-time"},
     },
     "additionalProperties": False,
 }
@@ -297,11 +270,10 @@ TEAM_UPDATED_V1 = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "title": "TeamUpdated v1",
-    "required": ["team_id", "changes", "updated_at"],
+    "required": ["team_id", "changes"],
     "properties": {
         "team_id": {"type": "string", "format": "uuid"},
         "changes": {"type": "object", "minProperties": 1},
-        "updated_at": {"type": "string", "format": "date-time"},
     },
     "additionalProperties": False,
 }
@@ -310,10 +282,9 @@ TEAM_DELETED_V1 = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "title": "TeamDeleted v1",
-    "required": ["team_id", "deleted_at"],
+    "required": ["team_id"],
     "properties": {
         "team_id": {"type": "string", "format": "uuid"},
-        "deleted_at": {"type": "string", "format": "date-time"},
     },
     "additionalProperties": False,
 }
@@ -323,20 +294,14 @@ TEAM_PLAYER_ADDED_V1 = {
     "type": "object",
     "title": "TeamPlayerAdded v1",
     "description": "Event emitted when a player is added to a team",
-    "required": ["team_id", "player_id", "added_at"],
+    "required": ["team_id", "student_id"],
     "properties": {
         "team_id": {"type": "string", "format": "uuid"},
-        "player_id": {
+        "student_id": {
             "type": "string",
             "format": "uuid",
-            "description": "ID of student or staff member",
+            "description": "ID of student",
         },
-        "player_type": {
-            "type": "string",
-            "enum": ["student", "staff"],
-            "description": "Type of player",
-        },
-        "added_at": {"type": "string", "format": "date-time"},
     },
     "additionalProperties": False,
 }
@@ -346,12 +311,10 @@ TEAM_PLAYER_REMOVED_V1 = {
     "type": "object",
     "title": "TeamPlayerRemoved v1",
     "description": "Event emitted when a player is removed from a team",
-    "required": ["team_id", "player_id", "removed_at"],
+    "required": ["team_id", "student_id"],
     "properties": {
         "team_id": {"type": "string", "format": "uuid"},
-        "player_id": {"type": "string", "format": "uuid"},
-        "reason": {"type": "string"},
-        "removed_at": {"type": "string", "format": "date-time"},
+        "student_id": {"type": "string", "format": "uuid"},
     },
     "additionalProperties": False,
 }
