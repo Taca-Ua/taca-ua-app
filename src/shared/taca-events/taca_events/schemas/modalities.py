@@ -2,6 +2,32 @@
 Modalities service event schemas.
 """
 
+# ==================== Inner Schemas ====================
+ESCALAO_V1 = {
+    "type": "object",
+    "title": "Escalao v1",
+    "description": "Escalao (number of participants) for a tournament of the modality type",
+    "required": ["escalao", "minParticipants", "maxParticipants", "points"],
+    "properties": {
+        "escalao": {"type": "string", "description": "Escalao code"},
+        "minParticipants": {
+            "type": ["integer", "null"],
+            "description": "Minimum number of participants for this escalao",
+        },
+        "maxParticipants": {
+            "type": ["integer", "null"],
+            "description": "Maximum number of participants for this escalao",
+        },
+        "points": {
+            "type": "array",
+            "description": "Points awarded for positions in this escalao",
+            "items": {"type": "integer", "description": "Points for a position"},
+        },
+    },
+    "additionalProperties": False,
+}
+
+
 # ==================== Nucleo Events ====================
 
 NUCLEO_CREATED_V1 = {
@@ -22,10 +48,11 @@ NUCLEO_UPDATED_V1 = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "title": "NucleoUpdated v1",
-    "required": ["nucleo_id", "changes"],
+    "required": ["nucleo_id"],
     "properties": {
         "nucleo_id": {"type": "string", "format": "uuid"},
-        "changes": {"type": "object", "minProperties": 1},
+        "name": {"type": "string", "description": "Nucleo name"},
+        "abbreviation": {"type": "string", "description": "Nucleo abbreviation"},
     },
     "additionalProperties": False,
 }
@@ -62,10 +89,12 @@ COURSE_UPDATED_V1 = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "title": "CourseUpdated v1",
-    "required": ["course_id", "changes"],
+    "required": ["course_id"],
     "properties": {
         "course_id": {"type": "string", "format": "uuid"},
-        "changes": {"type": "object", "minProperties": 1},
+        "name": {"type": "string"},
+        "abbreviation": {"type": "string"},
+        "nucleo_id": {"type": "string", "format": "uuid"},
     },
     "additionalProperties": False,
 }
@@ -93,7 +122,11 @@ MODALITY_TYPE_CREATED_V1 = {
         "modality_type_id": {"type": "string", "format": "uuid"},
         "name": {"type": "string"},
         "description": {"type": "string"},
-        "escaloes": {"type": "object"},
+        "escaloes": {
+            "type": "array",
+            "description": "List of escalao definitions",
+            "items": ESCALAO_V1,
+        },
     },
     "additionalProperties": False,
 }
@@ -102,10 +135,16 @@ MODALITY_TYPE_UPDATED_V1 = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "title": "ModalityTypeUpdated v1",
-    "required": ["modality_type_id", "changes"],
+    "required": ["modality_type_id"],
     "properties": {
         "modality_type_id": {"type": "string", "format": "uuid"},
-        "changes": {"type": "object", "minProperties": 1},
+        "name": {"type": "string"},
+        "description": {"type": "string"},
+        "escaloes": {
+            "type": "array",
+            "description": "List of escalao definitions",
+            "items": ESCALAO_V1,
+        },
     },
     "additionalProperties": False,
 }
@@ -141,10 +180,11 @@ MODALITY_UPDATED_V1 = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "title": "ModalityUpdated v1",
-    "required": ["modality_id", "changes"],
+    "required": ["modality_id"],
     "properties": {
         "modality_id": {"type": "string", "format": "uuid"},
-        "changes": {"type": "object", "minProperties": 1},
+        "name": {"type": "string"},
+        "modality_type_id": {"type": "string", "format": "uuid"},
     },
     "additionalProperties": False,
 }
@@ -190,10 +230,13 @@ STUDENT_UPDATED_V1 = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "title": "StudentUpdated v1",
-    "required": ["student_id", "changes", "updated_at"],
+    "required": ["student_id"],
     "properties": {
         "student_id": {"type": "string", "format": "uuid"},
-        "changes": {"type": "object", "minProperties": 1},
+        "name": {"type": "string"},
+        "course_id": {"type": "string", "format": "uuid"},
+        "student_number": {"type": "string"},
+        "is_member": {"type": "boolean"},
     },
     "additionalProperties": False,
 }
@@ -230,10 +273,12 @@ STAFF_UPDATED_V1 = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "title": "StaffUpdated v1",
-    "required": ["staff_id", "changes"],
+    "required": ["staff_id"],
     "properties": {
         "staff_id": {"type": "string", "format": "uuid"},
-        "changes": {"type": "object", "minProperties": 1},
+        "full_name": {"type": "string"},
+        "staff_number": {"type": "string"},
+        "contact": {"type": "string"},
     },
     "additionalProperties": False,
 }
@@ -270,10 +315,12 @@ TEAM_UPDATED_V1 = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "title": "TeamUpdated v1",
-    "required": ["team_id", "changes"],
+    "required": ["team_id"],
     "properties": {
         "team_id": {"type": "string", "format": "uuid"},
-        "changes": {"type": "object", "minProperties": 1},
+        "name": {"type": "string"},
+        "modality_id": {"type": "string", "format": "uuid"},
+        "course_id": {"type": "string", "format": "uuid"},
     },
     "additionalProperties": False,
 }

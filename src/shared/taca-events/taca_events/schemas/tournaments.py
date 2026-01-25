@@ -38,14 +38,12 @@ TOURNAMENT_UPDATED_V1 = {
     "type": "object",
     "title": "TournamentUpdated v1",
     "description": "Event emitted when tournament details are updated",
-    "required": ["tournament_id", "changes"],
+    "required": ["tournament_id"],
     "properties": {
         "tournament_id": {"type": "string", "format": "uuid"},
-        "changes": {
-            "type": "object",
-            "description": "Fields that were changed",
-            "minProperties": 1,
-        },
+        "name": {"type": "string"},
+        "start_date": {"type": "string", "format": "date"},
+        "status": {"type": "string"},
     },
     "additionalProperties": False,
 }

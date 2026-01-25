@@ -93,17 +93,22 @@ def update_student(
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
+    changes_made = {}
     if student_data.full_name is not None:
         student.full_name = student_data.full_name
+        changes_made["full_name"] = student_data.full_name
     if student_data.course_id is not None:
         course = db.query(Course).filter(Course.id == student_data.course_id).first()
         if not course:
             raise HTTPException(status_code=404, detail="Course not found")
         student.course_id = student_data.course_id
+        changes_made["course_id"] = student_data.course_id
     if student_data.student_number is not None:
         student.student_number = student_data.student_number
+        changes_made["student_number"] = student_data.student_number
     if student_data.is_member is not None:
         student.is_member = student_data.is_member
+        changes_made["is_member"] = student_data.is_member
     student.updated_at = datetime.now(timezone.utc)
 
     # Emit event via outbox
@@ -114,11 +119,10 @@ def update_student(
         aggregate_id=student.id,
         data={
             "student_id": str(student.id),
-            "changes": {
-                "full_name": student.full_name,
-                "course_id": str(student.course_id),
-                "student_number": student.student_number,
-                "is_member": student.is_member,
+            **{
+                k: v
+                for k, v in changes_made.items()
+                if k in ["full_name", "course_id", "student_number", "is_member"]
             },
         },
     )

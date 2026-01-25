@@ -94,12 +94,16 @@ def update_staff(
     if not staff:
         raise HTTPException(status_code=404, detail="Staff member not found")
 
+    changes_made = {}
     if staff_data.full_name is not None:
         staff.full_name = staff_data.full_name
+        changes_made["full_name"] = staff_data.full_name
     if staff_data.staff_number is not None:
         staff.staff_number = staff_data.staff_number
+        changes_made["staff_number"] = staff_data.staff_number
     if staff_data.contact is not None:
         staff.contact = staff_data.contact
+        changes_made["contact"] = staff_data.contact
     staff.updated_at = datetime.now(timezone.utc)
 
     # Emit staff.updated event
@@ -110,10 +114,10 @@ def update_staff(
         aggregate_id=staff.id,
         data={
             "staff_id": str(staff.id),
-            "changes": {
-                "full_name": staff.full_name,
-                "staff_number": staff.staff_number,
-                "contact": staff.contact,
+            **{
+                k: v
+                for k, v in changes_made.items()
+                if k in ["full_name", "staff_number", "contact"]
             },
         },
     )

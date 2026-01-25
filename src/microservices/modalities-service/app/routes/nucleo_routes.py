@@ -98,10 +98,13 @@ def update_nucleo(
     if not nucleo:
         raise HTTPException(status_code=404, detail="Nucleo not found")
 
+    changes_made = {}
     if nucleo_data.name is not None:
         nucleo.name = nucleo_data.name
+        changes_made["name"] = nucleo_data.name
     if nucleo_data.abbreviation is not None:
         nucleo.abbreviation = nucleo_data.abbreviation
+        changes_made["abbreviation"] = nucleo_data.abbreviation
     nucleo.updated_at = datetime.now(timezone.utc)
 
     try:
@@ -113,9 +116,10 @@ def update_nucleo(
             aggregate_id=nucleo.id,
             data={
                 "nucleo_id": str(nucleo.id),
-                "changes": {
-                    "name": nucleo_data.name,
-                    "abbreviation": nucleo_data.abbreviation,
+                **{
+                    key: value
+                    for key, value in changes_made.items()
+                    if key in ["name", "abbreviation"]
                 },
             },
         )

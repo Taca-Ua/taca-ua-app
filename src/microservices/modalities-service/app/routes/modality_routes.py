@@ -51,7 +51,7 @@ def create_modality(
             updated_at=datetime.now(timezone.utc),
         )
         db.add(modality)
-        db.commit()
+        db.flush()  # To get modality.id before commit
 
         # Emit event via outbox
         emit_event(
@@ -66,6 +66,7 @@ def create_modality(
             },
         )
 
+        db.commit()
         db.refresh(modality)
         logger.info(f"Created modality: {modality.id}")
         return modality.to_dict()
@@ -96,8 +97,10 @@ def update_modality(
     if not modality:
         raise HTTPException(status_code=404, detail="Modality not found")
 
+    changes_made = {}
     if modality_data.name is not None:
         modality.name = modality_data.name
+        changes_made["name"] = modality_data.name
     if modality_data.modality_type_id is not None:
         modality_type = (
             db.query(ModalityType)
@@ -107,6 +110,7 @@ def update_modality(
         if not modality_type:
             raise HTTPException(status_code=404, detail="Modality type not found")
         modality.modality_type_id = modality_data.modality_type_id
+        changes_made["modality_type_id"] = modality_data.modality_type_id
     modality.updated_at = datetime.now(timezone.utc)
 
     # Emit event via outbox
@@ -117,9 +121,10 @@ def update_modality(
         aggregate_id=modality.id,
         data={
             "modality_id": str(modality.id),
-            "changes": {
-                "name": modality.name,
-                "modality_type_id": str(modality.modality_type_id),
+            **{
+                k: v
+                for k, v in changes_made.items()
+                if k in ["name", "modality_type_id"]
             },
         },
     )

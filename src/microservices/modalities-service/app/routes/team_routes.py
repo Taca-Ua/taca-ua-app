@@ -87,8 +87,10 @@ def update_team(
     if not team:
         raise HTTPException(status_code=404, detail="Team not found")
 
+    changes_made = {}
     if team_data.name is not None:
         team.name = team_data.name
+        changes_made["name"] = team_data.name
     if team_data.modality_id is not None:
         modality = (
             db.query(Modality).filter(Modality.id == team_data.modality_id).first()
@@ -96,11 +98,29 @@ def update_team(
         if not modality:
             raise HTTPException(status_code=404, detail="Modality not found")
         team.modality_id = team_data.modality_id
+        changes_made["modality_id"] = str(team_data.modality_id)
     if team_data.course_id is not None:
         course = db.query(Course).filter(Course.id == team_data.course_id).first()
         if not course:
             raise HTTPException(status_code=404, detail="Course not found")
         team.course_id = team_data.course_id
+        changes_made["course_id"] = str(team_data.course_id)
+
+    # Emit team updated event
+    emit_event(
+        db=db,
+        event_type=EventType.TEAM_UPDATED,
+        aggregate_type="team",
+        aggregate_id=team.id,
+        data={
+            "team_id": str(team.id),
+            **{
+                k: v
+                for k, v in changes_made.items()
+                if k in ["name", "modality_id", "course_id"]
+            },
+        },
+    )
 
     # Handle adding/removing players
     if team_data.players_add:
@@ -132,22 +152,6 @@ def update_team(
                 )
 
     team.updated_at = datetime.now(timezone.utc)
-
-    # Emit team updated event
-    emit_event(
-        db=db,
-        event_type=EventType.TEAM_UPDATED,
-        aggregate_type="team",
-        aggregate_id=team.id,
-        data={
-            "team_id": str(team.id),
-            "changes": {
-                "name": team_data.name,
-                "modality_id": str(team_data.modality_id),
-                "course_id": str(team_data.course_id),
-            },
-        },
-    )
 
     db.commit()
     db.refresh(team)

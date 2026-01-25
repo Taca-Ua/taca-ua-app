@@ -107,3 +107,13 @@ def handle_nucleo_deleted(event_data: Dict[str, Any]):
     # 2. Handle cascading updates appropriately
 
     logger.debug("nucleo_deleted_processed", nucleo_id=event_data.get("nucleo_id"))
+
+
+@rabbitmq_service.event_handler("#")
+def handle_all_events(event_data: Dict[str, Any]):
+    """
+    Catch-all handler for all events.
+
+    This can be used for logging or monitoring purposes.
+    """
+    logger.info("event_caught_in_catch_all", event_data=event_data)

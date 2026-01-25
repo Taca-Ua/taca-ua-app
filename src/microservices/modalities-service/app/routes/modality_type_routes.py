@@ -96,12 +96,16 @@ def update_modality_type(
     if not modality_type:
         raise HTTPException(status_code=404, detail="Modality type not found")
 
+    changes_made = {}
     if modality_type_data.name is not None:
         modality_type.name = modality_type_data.name
+        changes_made["name"] = modality_type_data.name
     if modality_type_data.description is not None:
         modality_type.description = modality_type_data.description
+        changes_made["description"] = modality_type_data.description
     if modality_type_data.escaloes is not None:
         modality_type.escaloes = modality_type_data.escaloes_encoder()
+        changes_made["escaloes"] = modality_type_data.escaloes
     modality_type.updated_at = datetime.now(timezone.utc)
 
     # Emit modality type updated event
@@ -112,7 +116,11 @@ def update_modality_type(
         aggregate_id=modality_type.id,
         data={
             "modality_type_id": str(modality_type.id),
-            "changes": modality_type_data.dict(exclude_unset=True),
+            **{
+                k: v
+                for k, v in changes_made.items()
+                if k in ["name", "description", "escaloes"]
+            },
         },
     )
 

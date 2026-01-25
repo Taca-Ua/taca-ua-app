@@ -91,15 +91,19 @@ def update_course(
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
 
+    changes_made = {}
     if course_data.name is not None:
         course.name = course_data.name
+        changes_made["name"] = course_data.name
     if course_data.abbreviation is not None:
         course.abbreviation = course_data.abbreviation
+        changes_made["abbreviation"] = course_data.abbreviation
     if course_data.nucleo_id is not None:
         nucleo = db.query(Nucleo).filter(Nucleo.id == course_data.nucleo_id).first()
         if not nucleo:
             raise HTTPException(status_code=404, detail="Nucleo not found")
         course.nucleo_id = course_data.nucleo_id
+        changes_made["nucleo_id"] = str(course_data.nucleo_id)
     course.updated_at = datetime.now(timezone.utc)
 
     try:
@@ -111,10 +115,10 @@ def update_course(
             aggregate_id=course.id,
             data={
                 "course_id": str(course.id),
-                "changes": {
-                    "name": course.name,
-                    "abbreviation": course.abbreviation,
-                    "nucleo_id": str(course.nucleo_id),
+                **{
+                    k: v
+                    for k, v in changes_made.items()
+                    if k in ["name", "abbreviation", "nucleo_id"]
                 },
             },
         )

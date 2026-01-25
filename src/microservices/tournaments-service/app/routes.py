@@ -198,39 +198,41 @@ async def update_tournament(
             status_code=status.HTTP_404_NOT_FOUND, detail="Tournament not found"
         )
 
-    try:
-        # Update fields
-        if data.name is not None:
-            tournament.name = data.name
-        if data.start_date is not None:
-            tournament.start_date = data.start_date
-        if data.status is not None:
-            tournament.status = data.status
+    # Update fields
+    changes_made = {}
+    if data.name is not None:
+        tournament.name = data.name
+        changes_made["name"] = data.name
+    if data.start_date is not None:
+        tournament.start_date = data.start_date
+        changes_made["start_date"] = data.start_date.isoformat()
+    if data.status is not None:
+        tournament.status = data.status
+        changes_made["status"] = data.status
 
-        tournament.updated_at = datetime.now(timezone.utc)
+    tournament.updated_at = datetime.now(timezone.utc)
 
-        # Create outbox event
-        emit_event(
-            db=db,
-            event_type=EventType.TOURNAMENT_UPDATED,
-            aggregate_type="tournament",
-            aggregate_id=str(tournament.id),
-            data={
-                "tournament_id": str(tournament.id),
-                "changes": {
-                    "name": data.name,
-                    "start_date": data.start_date,
-                    "status": data.status,
-                },
+    # Create outbox event
+    emit_event(
+        db=db,
+        event_type=EventType.TOURNAMENT_UPDATED,
+        aggregate_type="tournament",
+        aggregate_id=str(tournament.id),
+        data={
+            "tournament_id": str(tournament.id),
+            **{
+                k: v
+                for k, v in changes_made.items()
+                if k in ["name", "start_date", "status"]
             },
-        )
+        },
+    )
 
+    try:
         db.commit()
         db.refresh(tournament)
-
         logger.info(f"Updated tournament {tournament.id}")
         return TournamentResponse(**tournament.to_dict(include_ranking=True))
-
     except Exception as e:
         db.rollback()
         logger.error(f"Error updating tournament: {e}", exc_info=True)
