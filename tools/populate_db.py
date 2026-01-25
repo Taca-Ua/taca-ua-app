@@ -654,17 +654,19 @@ def populate_members(courses):
         }
         participants.append(participant)
 
+    participants_resp = []
     for participant in participants:
         response = requests.post(f"{API_URL}/students/", json=participant)
         if response.status_code == 201:
             print(f"Created member: {participant['full_name']}")
+            participants_resp.append(response.json())
         else:
             print(
                 f"Failed to create member: {participant['full_name']}, Status Code: {response.status_code}, Response: {response.text}"
             )
             raise Exception("Failed to populate members.")
 
-    return participants
+    return participants_resp if participants_resp else participants
 
 
 def delete_all_members():

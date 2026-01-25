@@ -84,7 +84,7 @@ class CourseDetailView(APIView):
             course_id,
             name=serializer.validated_data.get("name"),
             abbreviation=serializer.validated_data.get("abbreviation"),
-            nucleo_id=serializer.validated_data.get("nucleo_id"),
+            nucleo_id=str(serializer.validated_data.get("nucleo_id")),
         )
 
         serializer = CourseDetailSerializer(course)

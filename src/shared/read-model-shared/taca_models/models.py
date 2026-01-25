@@ -21,7 +21,7 @@ class GameState(enum.Enum):
 
     SCHEDULED = "scheduled"
     FINISHED = "finished"
-    CANCELED = "canceled"
+    CANCELED = "cancelled"
 
 
 # Target models (READ/WRITE) - for updating views

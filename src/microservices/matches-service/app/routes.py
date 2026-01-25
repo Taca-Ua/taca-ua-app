@@ -12,7 +12,7 @@ from taca_events import EventType
 
 from . import schemas
 from .database import get_db_session
-from .event_helpers import EventTypes, emit_event
+from .event_helpers import emit_event
 from .logger import logger
 from .models import (
     Comment,
@@ -148,7 +148,6 @@ def create_match(
         created_by=match_data.created_by,
         status=MatchStatus.SCHEDULED,
     )
-
     db.add(match)
     db.flush()  # Get match.id before adding participants
 
@@ -187,36 +186,35 @@ def create_match(
         )
         db.add(participant)
 
+    # Emit event
+    emit_event(
+        db,
+        event_type=EventType.MATCH_CREATED,
+        aggregate_type="match",
+        aggregate_id=match.id,
+        data={
+            "match_id": str(match.id),
+            "tournament_id": str(match.tournament_id) if match.tournament_id else None,
+            "location": match.location,
+            "status": match.status.value,
+            "start_time": match.start_time.isoformat(),
+            "participants": [
+                {
+                    "participant_id": str(p.id),
+                    "participant_type": p.participant_type.value,
+                    "participant_entity_id": str(p.team_id or p.athlete_id),
+                }
+                for p in match.participants
+            ],
+        },
+    )
+
     db.commit()
     db.refresh(match)
 
     logger.info(
         "Match created successfully",
         extra={"match_id": str(match.id), "status": match.status.value},
-    )
-
-    # Emit event
-    emit_event(
-        db,
-        event_type=EventTypes.MATCH_CREATED,
-        aggregate_type="match",
-        aggregate_id=match.id,
-        data={
-            "tournament_id": str(match.tournament_id) if match.tournament_id else None,
-            "location": match.location,
-            "start_time": match.start_time.isoformat(),
-            "status": match.status.value,
-            "created_by": str(match.created_by),
-            "participants": [
-                {
-                    "id": str(p.id),
-                    "participant_type": p.participant_type.value,
-                    "team_id": str(p.team_id) if p.team_id else None,
-                    "athlete_id": str(p.athlete_id) if p.athlete_id else None,
-                }
-                for p in match.participants
-            ],
-        },
     )
 
     return match
@@ -275,20 +273,20 @@ def update_match(
             detail="Cannot update a finished match",
         )
 
-    changes = {}
+    changes_made = {}
     if match_data.location is not None:
         match.location = match_data.location
-        changes["location"] = match_data.location
+        changes_made["location"] = match_data.location
 
     if match_data.start_time is not None:
         match.start_time = match_data.start_time
-        changes["start_time"] = match_data.start_time.isoformat()
+        changes_made["start_time"] = match_data.start_time.isoformat()
 
     if match_data.status is not None:
         try:
             status_enum = MatchStatus(match_data.status)
             match.status = status_enum
-            changes["status"] = match_data.status
+            changes_made["status"] = match_data.status
         except ValueError:
             logger.error("Invalid status value", extra={"status": match_data.status})
             raise HTTPException(
@@ -297,21 +295,27 @@ def update_match(
 
     match.updated_at = datetime.now(timezone.utc)
 
+    emit_event(
+        db,
+        event_type=EventType.MATCH_UPDATED,
+        aggregate_type="match",
+        aggregate_id=match_id,
+        data={
+            "match_id": str(match_id),
+            **{
+                k: v
+                for k, v in changes_made.items()
+                if k in ["location", "start_time", "status"]
+            },
+        },
+    )
+
     db.commit()
     db.refresh(match)
 
     logger.info(
         "Match updated successfully",
-        extra={"match_id": str(match_id), "changes": changes},
-    )
-
-    # Emit event
-    emit_event(
-        db,
-        event_type=EventType.MATCH_UPDATED,
-        aggregate_type="match",
-        aggregate_id=match.id,
-        data=changes,
+        extra={"match_id": str(match_id), "changes": changes_made},
     )
 
     return match
@@ -340,19 +344,21 @@ def delete_match(
         )
         raise HTTPException(status_code=409, detail="Cannot delete a finished match")
 
+    # Emit event before deletion
+    emit_event(
+        db,
+        event_type=EventType.MATCH_DELETED,
+        aggregate_type="match",
+        aggregate_id=match_id,
+        data={
+            "match_id": str(match_id),
+        },
+    )
+
     db.delete(match)
     db.commit()
 
     logger.info("Match deleted successfully", extra={"match_id": str(match_id)})
-
-    # Emit event
-    emit_event(
-        db,
-        event_type=EventTypes.MATCH_DELETED,
-        aggregate_type="match",
-        aggregate_id=match_id,
-        data={},
-    )
 
     return None
 
@@ -442,14 +448,10 @@ def add_participant(
         aggregate_id=match_id,
         data={
             "match_id": str(match_id),
+            "participant_id": str(participant.id),
             "participant_type": participant_type.value,
-            "team_id": (
-                str(participant_data.team_id) if participant_data.team_id else None
-            ),
-            "athlete_id": (
-                str(participant_data.athlete_id)
-                if participant_data.athlete_id
-                else None
+            "participant_entity_id": str(
+                participant_data.team_id or participant_data.athlete_id
             ),
         },
     )

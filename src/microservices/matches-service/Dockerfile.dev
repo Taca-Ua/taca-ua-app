@@ -9,13 +9,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/shared/taca-messaging /tmp/taca-messaging
 RUN pip install --no-cache-dir -e /tmp/taca-messaging
 
-# Install shared modules package
-COPY src/shared/read-model-shared /tmp/read-model-shared
-RUN pip install --no-cache-dir -e /tmp/read-model-shared
-
 # Install logging package
 COPY src/shared/taca-logging /tmp/taca-logging
 RUN pip install --no-cache-dir -e /tmp/taca-logging
+
+# Install events package
+COPY src/shared/taca-events /tmp/taca-events
+RUN pip install --no-cache-dir -e /tmp/taca-events
 
 COPY src/microservices/matches-service .
 

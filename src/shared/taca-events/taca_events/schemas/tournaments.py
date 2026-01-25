@@ -86,13 +86,13 @@ TOURNAMENT_COMPETITOR_ADDED_V1 = {
         },
         "competitor_type": {
             "type": "string",
-            "enum": ["team", "individual"],
-            "description": "Type of the competitor (team or individual)",
+            "enum": ["team", "athlete"],
+            "description": "Type of the competitor (team or athlete)",
         },
         "competitor_entity_id": {
             "type": "string",
             "format": "uuid",
-            "description": "ID of the team or individual competitor entity",
+            "description": "ID of the team or athlete competitor entity",
         },
     },
     "additionalProperties": False,

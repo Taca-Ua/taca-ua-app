@@ -105,10 +105,11 @@ def update_modality_type(
         changes_made["description"] = modality_type_data.description
     if modality_type_data.escaloes is not None:
         modality_type.escaloes = modality_type_data.escaloes_encoder()
-        changes_made["escaloes"] = modality_type_data.escaloes
+        changes_made["escaloes"] = [i.to_dict() for i in modality_type_data.escaloes]
     modality_type.updated_at = datetime.now(timezone.utc)
 
     # Emit modality type updated event
+    print(changes_made)
     emit_event(
         db=db,
         event_type=EventType.MODALITY_TYPE_UPDATED,

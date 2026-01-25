@@ -110,7 +110,7 @@ def update_modality(
         if not modality_type:
             raise HTTPException(status_code=404, detail="Modality type not found")
         modality.modality_type_id = modality_data.modality_type_id
-        changes_made["modality_type_id"] = modality_data.modality_type_id
+        changes_made["modality_type_id"] = str(modality_data.modality_type_id)
     modality.updated_at = datetime.now(timezone.utc)
 
     # Emit event via outbox

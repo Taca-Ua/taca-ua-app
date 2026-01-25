@@ -19,16 +19,16 @@ _MATCH_RESULT_ITEM_V1 = {
     "properties": {
         "participant_id": {"type": "string", "format": "uuid"},
         "score": {
-            "type": "integer",
+            "type": ["integer", "null"],
             "minimum": 0,
             "description": "Score of the participant",
         },
         "position": {
-            "type": "string",
+            "type": ["integer", "null"],
             "description": "Position of the participant in the match",
         },
         "results_metadata": {
-            "type": "object",
+            "type": ["object", "null"],
             "description": "Additional metadata about the participant's results",
         },
     },
@@ -62,13 +62,35 @@ MATCH_CREATED_V1 = {
         "location": {"type": "string", "description": "Match location/venue"},
         "status": {
             "type": "string",
-            "enum": ["scheduled", "in_progress", "completed", "canceled"],
+            "enum": ["scheduled", "in_progress", "completed", "cancelled"],
             "description": "Current status of the match",
         },
         "start_time": {
             "type": "string",
             "format": "date-time",
             "description": "Scheduled start time of the match",
+        },
+        "participants": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "participant_id",
+                    "participant_type",
+                    "participant_entity_id",
+                ],
+                "properties": {
+                    "participant_id": {"type": "string", "format": "uuid"},
+                    "participant_type": {
+                        "type": "string",
+                        "enum": ["team", "athlete"],
+                        "description": "Type of participant",
+                    },
+                    "participant_entity_id": {"type": "string", "format": "uuid"},
+                },
+                "additionalProperties": False,
+            },
+            "description": "List of participants in the match",
         },
     },
     "additionalProperties": False,
@@ -94,7 +116,7 @@ MATCH_UPDATED_V1 = {
         },
         "status": {
             "type": "string",
-            "enum": ["scheduled", "in_progress", "completed", "canceled"],
+            "enum": ["scheduled", "in_progress", "finished", "cancelled"],
             "description": "Updated status of the match",
         },
     },
@@ -122,9 +144,15 @@ MATCH_PARTICIPANT_ADDED_V1 = {
     "type": "object",
     "title": "MatchParticipantAdded v1",
     "description": "Event emitted when a participant is added to a match",
-    "required": ["match_id", "participant_id", "team_id", "added_at"],
+    "required": [
+        "match_id",
+        "participant_id",
+        "participant_type",
+        "participant_entity_id",
+    ],
     "properties": {
         "match_id": {"type": "string", "format": "uuid"},
+        "participant_id": {"type": "string", "format": "uuid"},
         "participant_type": {
             "type": "string",
             "enum": ["team", "athlete"],
@@ -157,7 +185,7 @@ MATCH_RESULT_UPDATED_V1 = {
     "type": "object",
     "title": "MatchResultUpdated v1",
     "description": "Event emitted when match results/scores are updated",
-    "required": ["match_id", "home_score", "away_score", "updated_at"],
+    "required": ["match_id", "results"],
     "properties": {
         "match_id": {"type": "string", "format": "uuid"},
         "results": {
