@@ -20,12 +20,12 @@ export class ApiClient {
     return {};
   }
 
-  async get<T>(endpoint: string, params?: Record<string, string>): Promise<T> {
+  async get<T>(endpoint: string, params?: unknown): Promise<T> {
     let fullUrl = `${this.baseUrl}${endpoint}`;
 
     // If params exist, append them as query string
     if (params) {
-      const searchParams = new URLSearchParams(params);
+      const searchParams = new URLSearchParams(params as Record<string, string>);
       fullUrl += `?${searchParams.toString()}`;
     }
 

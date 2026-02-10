@@ -8,6 +8,7 @@ from admin_api.serializers.file_serializers import (
     FileUploadSerializer,
 )
 from admin_api.services.minio_service import MinioService
+from django.urls import path
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -135,3 +136,9 @@ class FileDeleteView(APIView):
             return Response(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+urlpatterns = [
+    path("upload/", FileUploadView.as_view(), name="file-upload"),
+    path("delete/", FileDeleteView.as_view(), name="file-delete"),
+]

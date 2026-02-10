@@ -10,9 +10,9 @@ class NucleosListSerializer(serializers.Serializer):
     name = serializers.CharField()
     abbreviation = serializers.CharField()
 
-    created_by = serializers.UUIDField()
-    created_at = serializers.DateTimeField()
-    updated_at = serializers.DateTimeField()
+
+class NucleosDetailSerializer(NucleosListSerializer):
+    pass
 
 
 class NucleosCreateSerializer(serializers.Serializer):

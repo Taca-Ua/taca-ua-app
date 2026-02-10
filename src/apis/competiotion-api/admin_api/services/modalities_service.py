@@ -3,9 +3,128 @@ Service for communicating with modalities-service microservice
 """
 
 import os
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass, field
+from typing import List, Optional
+from uuid import UUID
 
 from .base_service import BaseService
+
+
+# DTOs
+@dataclass
+class NucleoDTO:
+    id: UUID
+    name: str
+    abbreviation: str
+    created_by: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
+@dataclass
+class CourseDTO:
+    id: UUID
+    name: str
+    abbreviation: str
+    nucleo: NucleoDTO
+    created_by: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+    def __post_init__(self):
+        if not isinstance(self.nucleo, NucleoDTO):
+            self.nucleo = NucleoDTO(**self.nucleo)
+
+
+@dataclass
+class _EscalaDTO:
+    escalao: str
+    points: List[int] = field(default_factory=list)
+    minParticipants: Optional[int] = None
+    maxParticipants: Optional[int] = None
+
+
+@dataclass
+class ModalityTypeDTO:
+    id: UUID
+    name: str
+    description: str
+    escaloes: List[_EscalaDTO]
+    created_by: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+    def __post_init__(self):
+        self.escaloes = [
+            escalao if isinstance(escalao, _EscalaDTO) else _EscalaDTO(**escalao)
+            for escalao in self.escaloes
+        ]
+
+
+@dataclass
+class ModalityDTO:
+    id: UUID
+    name: str
+    modality_type: ModalityTypeDTO
+    created_by: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+    def __post_init__(self):
+        if not isinstance(self.modality_type, ModalityTypeDTO):
+            self.modality_type = ModalityTypeDTO(**self.modality_type)
+
+
+@dataclass
+class StudentDTO:
+    id: UUID
+    full_name: str
+    course: CourseDTO
+    is_member: bool
+    student_number: Optional[str] = None
+    contact: Optional[str] = None
+    created_by: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+    def __post_init__(self):
+        if not isinstance(self.course, CourseDTO):
+            self.course = CourseDTO(**self.course)
+
+
+@dataclass
+class StaffDTO:
+    id: UUID
+    full_name: str
+    staff_number: Optional[str] = None
+    contact: Optional[str] = None
+    created_by: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
+@dataclass
+class TeamDTO:
+    id: UUID
+    name: str
+    modality: ModalityDTO
+    course: CourseDTO
+    players: List[StudentDTO]
+    created_by: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+    def __post_init__(self):
+        if not isinstance(self.modality, ModalityDTO):
+            self.modality = ModalityDTO(**self.modality)
+
+        if not isinstance(self.course, CourseDTO):
+            self.course = CourseDTO(**self.course)
+
+        self.players = [
+            player if isinstance(player, StudentDTO) else StudentDTO(**player)
+            for player in self.players
+        ]
 
 
 class ModalitiesService(BaseService):
@@ -17,191 +136,221 @@ class ModalitiesService(BaseService):
         )
         super().__init__(base_url)
 
-    # ==================== Course Management ====================
-
-    def create_course(
-        self,
-        name: str,
-        abbreviation: str,
-        created_by: str,
-        description: Optional[str] = None,
-        logo_url: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """
-        Create a new course
-
-        Args:
-            name: Course name
-            abbreviation: Course abbreviation (must be unique)
-            created_by: UUID of the user creating
-            description: Optional course description
-            logo_url: Optional course logo URL
+    # ==================== NUCLEO METHODS ====================
+    def list_nucleos(self) -> List[NucleoDTO]:
+        """List all nucleos
 
         Returns:
-            Created course data
+            List[NucleoDTO]: List of NucleoDTO objects
+        """
+        nucleos_data = self.get("/nucleos")
+        return [NucleoDTO(**nucleo) for nucleo in nucleos_data]
+
+    def create_nucleo(self, name: str, abbreviation: str) -> NucleoDTO:
+        """Create a new nucleo
+
+        Args:
+            name (str): Name of the nucleo
+            abbreviation (str): Abbreviation of the nucleo
+
+        Returns:
+            NucleoDTO: Created NucleoDTO object
         """
         data = {
             "name": name,
             "abbreviation": abbreviation,
-            "created_by": created_by,
         }
+        nucleo_data = self.post("/nucleos", data)
+        return NucleoDTO(**nucleo_data)
 
-        if description is not None:
-            data["description"] = description
-        if logo_url is not None:
-            data["logo_url"] = logo_url
-
-        return self.post("/courses", data)
-
-    def list_courses(
-        self, search: Optional[str] = None, limit: int = 50, offset: int = 0
-    ) -> Dict[str, Any]:
-        """
-        List courses with optional search
+    def get_nucleo(self, nucleo_id: str) -> NucleoDTO:
+        """Get a nucleo by ID
 
         Args:
-            search: Optional search term for name or abbreviation
-            limit: Maximum number of results
-            offset: Pagination offset
+            nucleo_id (str): ID of the nucleo
 
         Returns:
-            Dictionary with courses list, total, limit, offset
+            NucleoDTO: NucleoDTO object representing the nucleo
         """
-        params = {"limit": limit, "offset": offset}
+        nucleo_data = self.get(f"/nucleos/{nucleo_id}")
+        return NucleoDTO(**nucleo_data)
 
-        if search:
-            params["search"] = search
-
-        return self.get("/courses", params=params)
-
-    def get_course(self, course_id: str) -> Dict[str, Any]:
-        """
-        Get course details
+    def update_nucleo(
+        self, nucleo_id: str, name: str = None, abbreviation: str = None
+    ) -> NucleoDTO:
+        """Update a nucleo
 
         Args:
-            course_id: UUID of the course
+            nucleo_id (str): ID of the nucleo
+            name (str, optional): New name of the nucleo. Defaults to None.
+            abbreviation (str, optional): New abbreviation of the nucleo. Defaults to None.
 
         Returns:
-            Course data
+            NucleoDTO: Updated NucleoDTO object
         """
-        return self.get(f"/courses/{course_id}")
-
-    def update_course(
-        self,
-        course_id: str,
-        updated_by: str,
-        name: Optional[str] = None,
-        abbreviation: Optional[str] = None,
-        description: Optional[str] = None,
-        logo_url: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """
-        Update a course
-
-        Args:
-            course_id: UUID of the course
-            updated_by: UUID of the user updating
-            name: Optional new name
-            abbreviation: Optional new abbreviation
-            description: Optional new description
-            logo_url: Optional new logo URL
-
-        Returns:
-            Updated course data
-        """
-        data = {"updated_by": updated_by}
+        data = {}
 
         if name is not None:
             data["name"] = name
         if abbreviation is not None:
             data["abbreviation"] = abbreviation
-        if description is not None:
-            data["description"] = description
-        if logo_url is not None:
-            data["logo_url"] = logo_url
 
-        return self.put(f"/courses/{course_id}", data)
+        nucleo_data = self.put(f"/nucleos/{nucleo_id}", data)
+        return NucleoDTO(**nucleo_data)
 
-    def delete_course(self, course_id: str) -> Dict[str, Any]:
-        """
-        Delete a course (and all associated teams and students)
+    def delete_nucleo(self, nucleo_id: str) -> None:
+        """Delete a nucleo
 
         Args:
-            course_id: UUID of the course
+            nucleo_id (str): ID of the nucleo to delete
+        """
+        self.delete(f"/nucleos/{nucleo_id}")
+
+    # ==================== COURSE METHODS ====================
+    def list_courses(self) -> List[CourseDTO]:
+        """List all courses
 
         Returns:
-            Empty dict on success
+            List[CourseDTO]: List of CourseDTO objects
         """
-        return self.delete(f"/courses/{course_id}")
+        courses_data = self.get("/courses")
+        return [CourseDTO(**course) for course in courses_data]
 
-    # ==================== Modality Type Management ====================
-    def list_modality_types(self) -> List[Dict[str, Any]]:
-        """
-        List all modality types
+    def create_course(self, name: str, abbreviation: str, nucleo_id: str) -> CourseDTO:
+        """Create a new course
+
+        Args:
+            name (str): Name of the course
+            abbreviation (str): Abbreviation of the course
+            nucleo_id (str): ID of the nucleo the course belongs to
 
         Returns:
-            List of modality types
+            CourseDTO: Created CourseDTO object
         """
-        return self.get("/modality-types")
+        data = {
+            "name": name,
+            "abbreviation": abbreviation,
+            "nucleo_id": nucleo_id,
+        }
+        course_data = self.post("/courses", data)
+        return CourseDTO(**course_data)
+
+    def get_course(self, course_id: str) -> CourseDTO:
+        """Get a course by ID
+
+        Args:
+            course_id (str): ID of the course
+
+        Returns:
+            CourseDTO: CourseDTO object representing the course
+        """
+        course_data = self.get(f"/courses/{course_id}")
+        return CourseDTO(**course_data)
+
+    def update_course(
+        self,
+        course_id: str,
+        name: str = None,
+        abbreviation: str = None,
+        nucleo_id: str = None,
+    ) -> CourseDTO:
+        """Update a course
+
+        Args:
+            course_id (str): ID of the course
+            name (str, optional): New name of the course. Defaults to None.
+            abbreviation (str, optional): New abbreviation of the course. Defaults to None.
+            nucleo_id (str, optional): New ID of the nucleo the course belongs to. Defaults to None.
+
+        Returns:
+            CourseDTO: Updated CourseDTO object
+        """
+        data = {}
+        if name is not None:
+            data["name"] = name
+        if abbreviation is not None:
+            data["abbreviation"] = abbreviation
+        if nucleo_id is not None:
+            data["nucleo_id"] = nucleo_id
+
+        course_data = self.put(f"/courses/{course_id}", data)
+        return CourseDTO(**course_data)
+
+    def delete_course(self, course_id: str) -> None:
+        """Delete a course
+
+        Args:
+            course_id (str): ID of the course to delete
+        """
+        self.delete(f"/courses/{course_id}")
+
+    # ==================== MODALITY TYPE METHODS ====================
+    def list_modality_types(self) -> List[ModalityTypeDTO]:
+        """List all modality types
+
+        Returns:
+            List[ModalityTypeDTO]: List of ModalityTypeDTO objects
+        """
+        modality_types_data = self.get("/modality-types")
+        return [
+            ModalityTypeDTO(**modality_type) for modality_type in modality_types_data
+        ]
 
     def create_modality_type(
-        self,
-        name: str,
-        description: Optional[str],
-        escaloes: List[Dict[str, Any]],
-    ) -> Dict[str, Any]:
-        """
-        Create a new modality type
+        self, name: str, description: str = "", escaloes: List[str] = None
+    ) -> ModalityTypeDTO:
+        """Create a new modality type
 
         Args:
-            name: Modality type name
-            description: Optional description
-            escaloes: List of escaloes
+            name (str): Name of the modality type
+            description (str, optional): Description of the modality type. Defaults to "".
+            escaloes (List[str], optional): List of escaloes. Defaults to None.
 
         Returns:
-            Created modality type data
+            ModalityTypeDTO: Created ModalityTypeDTO object
         """
+        if escaloes is None:
+            escaloes = []
+
         data = {
             "name": name,
             "description": description,
             "escaloes": escaloes,
         }
+        modality_type_data = self.post("/modality-types", data)
+        return ModalityTypeDTO(**modality_type_data)
 
-        return self.post("/modality-types", data)
-
-    def get_modality_type(self, modality_id: str) -> Dict[str, Any]:
-        """
-        Get modality type details
+    def get_modality_type(self, modality_type_id: str) -> ModalityTypeDTO:
+        """Get a modality type by ID
 
         Args:
-            modality_id: UUID of the modality type
+            modality_type_id (str): ID of the modality type
 
         Returns:
-            Modality type data
+            ModalityTypeDTO: ModalityTypeDTO object representing the modality type
         """
-        return self.get(f"/modality-types/{modality_id}")
+        modality_type_data = self.get(f"/modality-types/{modality_type_id}")
+        return ModalityTypeDTO(**modality_type_data)
 
     def update_modality_type(
         self,
         modality_type_id: str,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        escaloes: Optional[List[Dict[str, Any]]] = None,
-    ) -> Dict[str, Any]:
-        """
-        Update a modality type
+        escaloes: Optional[List[str]] = None,
+    ) -> ModalityTypeDTO:
+        """Update a modality type
 
         Args:
-            modality_type_id: UUID of the modality type
-            name: Optional new name
-            description: Optional new description
-            escaloes: Optional new escaloes list
+            modality_type_id (str): ID of the modality type
+            name (Optional[str], optional): New name of the modality type. Defaults to None.
+            description (Optional[str], optional): New description of the modality type. Defaults to None.
+            escaloes (Optional[List[str]], optional): New list of escaloes. Defaults to None.
 
         Returns:
-            Updated modality type data
+            ModalityTypeDTO: Updated ModalityTypeDTO object
         """
         data = {}
-
         if name is not None:
             data["name"] = name
         if description is not None:
@@ -209,357 +358,378 @@ class ModalitiesService(BaseService):
         if escaloes is not None:
             data["escaloes"] = escaloes
 
-        return self.put(f"/modality-types/{modality_type_id}", data)
+        modality_type_data = self.put(f"/modality-types/{modality_type_id}", data)
+        return ModalityTypeDTO(**modality_type_data)
 
-    def delete_modality_type(self, modality_type_id: str) -> Dict[str, Any]:
-        """
-        Delete a modality type
-
-        Args:
-            modality_type_id: UUID of the modality type
-
-        Returns:
-            Empty dict on success
-        """
-        return self.delete(f"/modality-types/{modality_type_id}")
-
-    # ==================== Modality Management ====================
-
-    def create_modality(
-        self,
-        name: str,
-        type: str,
-        created_by: str,
-        scoring_schema: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
-        """
-        Create a new modality
+    def delete_modality_type(self, modality_type_id: str) -> None:
+        """Delete a modality type
 
         Args:
-            name: Modality name
-            type: Type (coletiva, individual, mista)
-            created_by: UUID of the user creating
-            scoring_schema: Optional scoring schema (JSON)
+            modality_type_id (str): ID of the modality type
+        """
+        self.delete(f"/modality-types/{modality_type_id}")
+
+    # ==================== MODALITY METHODS ====================
+    def list_modalities(self) -> List[ModalityDTO]:
+        """List all modalities
 
         Returns:
-            Created modality data
+            List[ModalityDTO]: List of ModalityDTO objects representing the modalities
         """
-        data = {"name": name, "type": type, "created_by": created_by}
+        modalities_data = self.get("/modalities")
+        return [ModalityDTO(**modality) for modality in modalities_data]
 
-        if scoring_schema is not None:
-            data["scoring_schema"] = scoring_schema
-
-        return self.post("/modalities", data)
-
-    def list_modalities(
-        self, type: Optional[str] = None, limit: int = 50, offset: int = 0
-    ) -> List[Dict[str, Any]]:
-        """
-        List modalities with optional filters
+    def create_modality(self, name: str, modality_type_id: str) -> ModalityDTO:
+        """Create a new modality
 
         Args:
-            type: Filter by type
-            limit: Maximum number of results
-            offset: Pagination offset
+            name (str): Name of the modality
+            modality_type_id (str): ID of the modality type
 
         Returns:
-            List of modalities
+            ModalityDTO: Created ModalityDTO object
         """
-        params = {"limit": limit, "offset": offset}
+        data = {"name": name, "modality_type_id": modality_type_id}
+        modality_data = self.post("/modalities", data)
+        return ModalityDTO(**modality_data)
 
-        if type:
-            params["type"] = type
-
-        return self.get("/modalities", params=params)
-
-    def get_modality(self, modality_id: str) -> Dict[str, Any]:
-        """
-        Get modality details
+    def get_modality(self, modality_id: str) -> ModalityDTO:
+        """Get a modality by ID
 
         Args:
-            modality_id: UUID of the modality
+            modality_id (str): ID of the modality
 
         Returns:
-            Modality data
+            ModalityDTO: ModalityDTO object representing the modality
         """
-        return self.get(f"/modalities/{modality_id}")
+        modality_data = self.get(f"/modalities/{modality_id}")
+        return ModalityDTO(**modality_data)
 
     def update_modality(
         self,
         modality_id: str,
-        updated_by: str,
         name: Optional[str] = None,
-        type: Optional[str] = None,
-        scoring_schema: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
-        """
-        Update a modality
+        modality_type_id: Optional[str] = None,
+    ) -> ModalityDTO:
+        """Update a modality
 
         Args:
-            modality_id: UUID of the modality
-            updated_by: UUID of the user updating
-            name: Optional new name
-            type: Optional new type
-            scoring_schema: Optional new scoring schema
+            modality_id (str): ID of the modality
+            name (Optional[str], optional): New name of the modality. Defaults to None.
+            modality_type_id (Optional[str], optional): New modality type ID. Defaults to None.
 
         Returns:
-            Updated modality data
+            ModalityDTO: Updated ModalityDTO object
         """
-        data = {"updated_by": updated_by}
 
+        data = {}
         if name is not None:
             data["name"] = name
-        if type is not None:
-            data["type"] = type
-        if scoring_schema is not None:
-            data["scoring_schema"] = scoring_schema
+        if modality_type_id is not None:
+            data["modality_type_id"] = modality_type_id
 
-        return self.put(f"/modalities/{modality_id}", data)
+        modality_data = self.put(f"/modalities/{modality_id}", data)
+        return ModalityDTO(**modality_data)
 
-    def delete_modality(self, modality_id: str) -> Dict[str, Any]:
-        """
-        Delete a modality
+    def delete_modality(self, modality_id: str) -> None:
+        """Delete a modality
 
         Args:
-            modality_id: UUID of the modality
+            modality_id (str): ID of the modality
+        """
+        self.delete(f"/modalities/{modality_id}")
+
+    def get_modalities_by_ids(self, modality_ids: List[str]) -> List[ModalityDTO]:
+        """Get multiple modalities by their IDs
+
+        Args:
+            modality_ids (List[str]): List of modality IDs
 
         Returns:
-            Empty dict on success
+            List[ModalityDTO]: List of ModalityDTO objects representing the modalities
         """
-        return self.delete(f"/modalities/{modality_id}")
+        modalities_data = self.post("/modalities/batch-get", modality_ids)
+        return [ModalityDTO(**modality) for modality in modalities_data]
 
-    # ==================== Team Management ====================
+    # ==================== STUDENT METHODS ====================
+    def list_students(self) -> List[StudentDTO]:
+        """List all students
 
-    def create_team(
+        Returns:
+            List[StudentDTO]: List of StudentDTO objects representing the students
+        """
+        students_data = self.get("/students")
+        return [StudentDTO(**student) for student in students_data]
+
+    def create_student(
         self,
-        modality_id: str,
-        course_id: str,
-        created_by: str,
-        name: Optional[str] = None,
-        players: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
-        """
-        Create a new team
+        full_name: str,
+        student_number: str,
+        is_member: bool = False,
+        course_id: str = None,
+    ) -> StudentDTO:
+        """Create a new student
 
         Args:
-            modality_id: UUID of the modality
-            course_id: UUID of the course
-            created_by: UUID of the user creating
-            name: Optional team name (auto-generated if not provided)
-            players: Optional list of student UUIDs
+            full_name (str): Full name of the student
+            student_number (str): Student number
+            is_member (bool, optional): Whether the student is a member. Defaults to False.
+            course_id (str, optional): ID of the course. Defaults to None.
 
         Returns:
-            Created team data
+            StudentDTO: Created StudentDTO object
         """
         data = {
+            "full_name": full_name,
+            "student_number": student_number,
+            "is_member": is_member,
+            "course_id": course_id,
+        }
+        student_data = self.post("/students", data)
+        return StudentDTO(**student_data)
+
+    def get_student(self, student_id: str) -> StudentDTO:
+        """Get a student by ID
+
+        Args:
+            student_id (str): ID of the student
+
+        Returns:
+            StudentDTO: StudentDTO object representing the student
+        """
+        student_data = self.get(f"/students/{student_id}")
+        return StudentDTO(**student_data)
+
+    def update_student(
+        self,
+        student_id: str,
+        full_name: Optional[str] = None,
+        course_id: Optional[str] = None,
+        student_number: Optional[str] = None,
+        is_member: Optional[bool] = None,
+    ) -> StudentDTO:
+        """Update a student
+
+        Args:
+            student_id (str): ID of the student
+            full_name (Optional[str], optional): Full name of the student. Defaults to None.
+            course_id (Optional[str], optional): ID of the course. Defaults to None.
+            student_number (Optional[str], optional): Student number. Defaults to None.
+            is_member (Optional[bool], optional): Whether the student is a member. Defaults to None.
+
+        Returns:
+            StudentDTO: Updated StudentDTO object
+        """
+        data = {}
+        if full_name is not None:
+            data["full_name"] = full_name
+        if course_id is not None:
+            data["course_id"] = course_id
+        if student_number is not None:
+            data["student_number"] = student_number
+        if is_member is not None:
+            data["is_member"] = is_member
+
+        student_data = self.put(f"/students/{student_id}", data)
+        return StudentDTO(**student_data)
+
+    def delete_student(self, student_id: str) -> None:
+        """Delete a student
+
+        Args:
+            student_id (str): ID of the student
+        """
+        self.delete(f"/students/{student_id}")
+
+    def get_students_by_ids(self, student_ids: List[str]) -> List[StudentDTO]:
+        """Get multiple students by their IDs
+
+        Args:
+            student_ids (List[str]): List of student IDs
+
+        Returns:
+            List[StudentDTO]: List of StudentDTO objects representing the students
+        """
+        students_data = self.post("/students/batch-get", student_ids)
+        return [StudentDTO(**student) for student in students_data]
+
+    # ==================== STAFF METHODS ====================
+    def list_staff(self) -> List[StaffDTO]:
+        """List all staff members
+
+        Returns:
+            List[StaffDTO]: List of StaffDTO objects representing the staff members
+        """
+        staff_data = self.get("/staff")
+        return [StaffDTO(**staff) for staff in staff_data]
+
+    def create_staff(
+        self, full_name: str, staff_number: str = None, contact: str = None
+    ) -> StaffDTO:
+        """Create a new staff member
+
+        Args:
+            full_name (str): Full name of the staff member
+            staff_number (str, optional): Staff number. Defaults to None.
+            contact (str, optional): Contact information. Defaults to None.
+
+        Returns:
+            StaffDTO: StaffDTO object representing the created staff member
+        """
+        data = {
+            "full_name": full_name,
+            "staff_number": staff_number,
+            "contact": contact,
+        }
+        staff_data = self.post("/staff", data)
+        return StaffDTO(**staff_data)
+
+    def get_staff(self, staff_id: str) -> StaffDTO:
+        """Get a staff member by ID
+
+        Args:
+            staff_id (str): ID of the staff member
+
+        Returns:
+            StaffDTO: StaffDTO object representing the staff member
+        """
+        staff_data = self.get(f"/staff/{staff_id}")
+        return StaffDTO(**staff_data)
+
+    def update_staff(
+        self,
+        staff_id: str,
+        full_name: Optional[str] = None,
+        staff_number: Optional[str] = None,
+        contact: Optional[str] = None,
+    ) -> StaffDTO:
+        """Update a staff member
+
+        Args:
+            staff_id (str): ID of the staff member
+            full_name (Optional[str], optional): Full name of the staff member. Defaults to None.
+            staff_number (Optional[str], optional): Staff number. Defaults to None.
+            contact (Optional[str], optional): Contact information. Defaults to None.
+
+        Returns:
+            StaffDTO: Updated StaffDTO object
+        """
+        data = {}
+        if full_name is not None:
+            data["full_name"] = full_name
+        if staff_number is not None:
+            data["staff_number"] = staff_number
+        if contact is not None:
+            data["contact"] = contact
+
+        staff_data = self.put(f"/staff/{staff_id}", data)
+        return StaffDTO(**staff_data)
+
+    def delete_staff(self, staff_id: str) -> None:
+        """Delete a staff member
+
+        Args:
+            staff_id (str): ID of the staff member
+        """
+        self.delete(f"/staff/{staff_id}")
+
+    # ==================== TEAM METHODS ====================
+    def list_teams(self) -> List[TeamDTO]:
+        """List all teams
+
+        Returns:
+            List[TeamDTO]: List of TeamDTO objects representing the teams
+        """
+        teams_data = self.get("/teams")
+        return [TeamDTO(**team) for team in teams_data]
+
+    def create_team(self, name: str, modality_id: str, course_id: str) -> TeamDTO:
+        """Create a new team
+
+        Args:
+            name (str): Name of the team
+            modality_id (str): ID of the modality
+            course_id (str): ID of the course
+
+        Returns:
+            TeamDTO: TeamDTO object representing the created team
+        """
+        data = {
+            "name": name,
             "modality_id": modality_id,
             "course_id": course_id,
-            "created_by": created_by,
         }
+        return TeamDTO(**self.post("/teams", data))
 
-        if name is not None:
-            data["name"] = name
-        if players is not None:
-            data["players"] = players
-
-        return self.post("/teams", data)
-
-    def list_teams(
-        self,
-        modality_id: Optional[str] = None,
-        course_id: Optional[str] = None,
-        tournament_id: Optional[str] = None,
-        limit: int = 50,
-        offset: int = 0,
-    ) -> List[Dict[str, Any]]:
-        """
-        List teams with optional filters
+    def get_team(self, team_id: str) -> TeamDTO:
+        """Get a team by ID
 
         Args:
-            modality_id: Filter by modality
-            course_id: Filter by course
-            tournament_id: Filter by tournament
-            limit: Maximum number of results
-            offset: Pagination offset
+            team_id (str): ID of the team
 
         Returns:
-            List of teams
+            TeamDTO: TeamDTO object representing the team
         """
-        params = {"limit": limit, "offset": offset}
+        team_data = self.get(f"/teams/{team_id}")
+        return TeamDTO(**team_data)
 
-        if modality_id:
-            params["modality_id"] = modality_id
-        if course_id:
-            params["course_id"] = course_id
-        if tournament_id:
-            params["tournament_id"] = tournament_id
-
-        return self.get("/teams", params=params)
-
-    def get_team(self, team_id: str) -> Dict[str, Any]:
-        """
-        Get team details
+    def get_teams_by_ids(self, team_ids: List[str]) -> List[TeamDTO]:
+        """Get multiple teams by their IDs
 
         Args:
-            team_id: UUID of the team
+            team_ids (List[str]): List of team IDs
 
         Returns:
-            Team data
+            List[TeamDTO]: List of TeamDTO objects
         """
-        return self.get(f"/teams/{team_id}")
+        teams_data = self.post("/teams/batch-get", team_ids)
+        return [TeamDTO(**team) for team in teams_data]
 
     def update_team(
         self,
         team_id: str,
-        updated_by: str,
         name: Optional[str] = None,
+        modality_id: Optional[str] = None,
+        course_id: Optional[str] = None,
         players_add: Optional[List[str]] = None,
         players_remove: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
-        """
-        Update a team
+    ) -> TeamDTO:
+        """Update a team
 
         Args:
-            team_id: UUID of the team
-            updated_by: UUID of the user updating
-            name: Optional new name
-            players_add: Optional list of player UUIDs to add
-            players_remove: Optional list of player UUIDs to remove
+            team_id (str): ID of the team
+            name (Optional[str], optional): Name of the team. Defaults to None.
+            modality_id (Optional[str], optional): ID of the modality. Defaults to None.
+            course_id (Optional[str], optional): ID of the course. Defaults to None.
+            players_add (Optional[List[str]], optional): List of player IDs to add. Defaults to None.
+            players_remove (Optional[List[str]], optional): List of player IDs to remove. Defaults to None.
 
         Returns:
-            Updated team data
+            TeamDTO: Updated TeamDTO object
         """
-        data = {"updated_by": updated_by}
-
+        data = {}
         if name is not None:
             data["name"] = name
+        if modality_id is not None:
+            data["modality_id"] = modality_id
+        if course_id is not None:
+            data["course_id"] = course_id
         if players_add is not None:
             data["players_add"] = players_add
         if players_remove is not None:
             data["players_remove"] = players_remove
 
-        return self.put(f"/teams/{team_id}", data)
+        team_data = self.put(f"/teams/{team_id}", data)
+        return TeamDTO(**team_data)
 
-    def delete_team(self, team_id: str) -> Dict[str, Any]:
-        """
-        Delete a team
-
-        Args:
-            team_id: UUID of the team
-
-        Returns:
-            Empty dict on success
-        """
-        return self.delete(f"/teams/{team_id}")
-
-    # ==================== Student Management ====================
-
-    def create_student(
-        self,
-        course_id: str,
-        full_name: str,
-        student_number: str,
-        created_by: str,
-        email: Optional[str] = None,
-        is_member: bool = False,
-    ) -> Dict[str, Any]:
-        """
-        Create a new student
+    def delete_team(self, team_id: str) -> None:
+        """Delete a team
 
         Args:
-            course_id: UUID of the course
-            full_name: Student's full name
-            student_number: Unique student number
-            created_by: UUID of the user creating
-            email: Optional email
-            is_member: Whether student is a member
-
-        Returns:
-            Created student data
+            team_id (str): ID of the team
         """
-        data = {
-            "course_id": course_id,
-            "full_name": full_name,
-            "student_number": student_number,
-            "created_by": created_by,
-            "is_member": is_member,
-        }
+        self.delete(f"/teams/{team_id}")
 
-        if email is not None:
-            data["email"] = email
 
-        return self.post("/students", data)
-
-    def list_students(
-        self,
-        course_id: str,
-        is_member: Optional[bool] = None,
-        search: Optional[str] = None,
-        limit: int = 50,
-        offset: int = 0,
-    ) -> List[Dict[str, Any]]:
-        """
-        List students with optional filters
-
-        Args:
-            course_id: Course UUID (required in practice)
-            is_member: Filter by member status
-            search: Search by name or student number
-            limit: Maximum number of results
-            offset: Pagination offset
-
-        Returns:
-            List of students
-        """
-        params = {"course_id": course_id, "limit": limit, "offset": offset}
-
-        if is_member is not None:
-            params["is_member"] = is_member
-        if search:
-            params["search"] = search
-
-        return self.get("/students", params=params)
-
-    def get_student(self, student_id: str) -> Dict[str, Any]:
-        """
-        Get student details
-
-        Args:
-            student_id: UUID of the student
-
-        Returns:
-            Student data
-        """
-        return self.get(f"/students/{student_id}")
-
-    def update_student(
-        self,
-        student_id: str,
-        updated_by: str,
-        full_name: Optional[str] = None,
-        email: Optional[str] = None,
-        is_member: Optional[bool] = None,
-    ) -> Dict[str, Any]:
-        """
-        Update a student
-
-        Args:
-            student_id: UUID of the student
-            updated_by: UUID of the user updating
-            full_name: Optional new full name
-            email: Optional new email
-            is_member: Optional new member status
-
-        Returns:
-            Updated student data
-        """
-        data = {"updated_by": updated_by}
-
-        if full_name is not None:
-            data["full_name"] = full_name
-        if email is not None:
-            data["email"] = email
-        if is_member is not None:
-            data["is_member"] = is_member
-
-        return self.put(f"/students/{student_id}", data)
+# Singleton instance
+modalities_service_client = ModalitiesService()

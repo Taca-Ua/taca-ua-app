@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 
+from admin_api.logging_config import configure_logging
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -49,6 +51,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django_prometheus.middleware.PrometheusBeforeMiddleware",
+    "admin_api.middleware.StructlogMiddleware",  # Add structured logging context
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -110,6 +113,7 @@ DATABASES = {
         "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "password"),
         "HOST": os.environ.get("POSTGRES_HOST", "postgres"),
         "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+        "OPTIONS": {"options": "-c search_path=general"},
     }
 }
 
@@ -158,7 +162,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # REST Framework settings
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_ROUTER_TRAILING_SLASH": False,
 }
+APPEND_SLASH = True
 
 # DRF Spectacular settings
 SPECTACULAR_SETTINGS = {
@@ -182,4 +188,10 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB
 
 MINIO_PUBLIC_ENDPOINT = os.environ.get(
     "MINIO_PUBLIC_ENDPOINT", "http://localhost/files"
+)
+
+# Initialize structured logging
+configure_logging(
+    service_name="competition-api",
+    log_level=os.environ.get("LOG_LEVEL", "INFO"),
 )

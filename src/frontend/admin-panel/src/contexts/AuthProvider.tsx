@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isLoading = false;
 
   const login = async (username: string, password: string) => {
-    const response = await fetch('/api/admin/auth/login', {
+    const response = await fetch('/api/admin/auth/login/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     // Call logout endpoint (optional, for session cleanup)
     if (token) {
-      fetch('/api/admin/auth/logout', {
+      fetch('/api/admin/auth/logout/', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

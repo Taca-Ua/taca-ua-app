@@ -2,116 +2,134 @@
 Match management views
 """
 
-from typing import List
+from uuid import UUID
 
+import structlog
+from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from rest_framework import serializers, status
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ..models import Lineup, Match, Student, Team, Tournament
-from ..serializers import (  # MatchCreateSerializer,; MatchListSerializer,; MatchUpdateSerializer,
-    MatchCommentSerializer,
-    MatchLineupSerializer,
-    MatchResultSerializer,
+from ..serializers.matches import (
+    CommentCreateSerializer,
+    CommentDetailSerializer,
+    LineupAssignSerializer,
+    LineupDetailSerializer,
+    MatchCreateSerializer,
+    MatchDetailSerializer,
+    MatchListSerializer,
+    MatchResultsUpdateSerializer,
+    MatchUpdateSerializer,
+    ParticipantCreateSerializer,
+    ParticipantDetailSerializer,
 )
+from ..services.enricher_service import enricher_service
+from ..services.matches_service import matches_service_client
+
+logger = structlog.get_logger(__name__)
 
 
-class MatchListSerializer(serializers.Serializer):
-    id = serializers.UUIDField()
-    team_home_name = serializers.CharField()
-    team_away_name = serializers.CharField()
-    team_home_id = serializers.UUIDField(required=False)
-    team_away_id = serializers.UUIDField(required=False)
-    location = serializers.CharField()
-    start_time = serializers.DateTimeField()
-    status = serializers.CharField()
-
-    home_score = serializers.IntegerField(required=False)
-    away_score = serializers.IntegerField(required=False)
-
-
-class MatchCreateSerializer(serializers.Serializer):
-    tournament_id = serializers.UUIDField()
-    team_home_id = serializers.UUIDField()
-    team_away_id = serializers.UUIDField()
-    location = serializers.CharField()
-    start_time = serializers.DateTimeField()
-
-
-class MatchUpdateSerializer(serializers.Serializer):
-    location = serializers.CharField(required=False)
-    start_time = serializers.DateTimeField(required=False)
-    status = serializers.CharField(required=False)
-    home_score = serializers.IntegerField(required=False)
-    away_score = serializers.IntegerField(required=False)
+# ============= Match CRUD Views =============
 
 
 @extend_schema_view(
     get=extend_schema(
         responses=MatchListSerializer(many=True),
-        description="List matches involving the authenticated nucleo's teams (filtered by course_id)",
+        description="List all matches with optional filters",
         tags=["Match Management"],
     ),
     post=extend_schema(
         request=MatchCreateSerializer,
-        responses=MatchListSerializer,
-        description="Create a new match",
+        responses=MatchDetailSerializer,
+        description="Create a new match with participants",
         tags=["Match Management"],
     ),
 )
 class MatchListCreateView(APIView):
+    """List and create matches"""
+
     def get(self, request):
-        matchs = Match.objects.all()
-        return Response(
-            [match.to_json() for match in matchs], status=status.HTTP_200_OK
-        )
+        """List matches with optional filters"""
+        # Extract query parameters for filtering
+        tournament_id = request.query_params.get("tournament_id")
+        team_id = request.query_params.get("team_id")
+        athlete_id = request.query_params.get("athlete_id")
+        status_filter = request.query_params.get("status")
+        date = request.query_params.get("date")
+        date_from = request.query_params.get("date_from")
+        date_to = request.query_params.get("date_to")
 
-    def post(self, request):
-        serializer = MatchCreateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        # Create the match
-        match = Match.objects.create(
-            team_home=Team.objects.get(id=serializer.validated_data["team_home_id"]),
-            team_away=Team.objects.get(id=serializer.validated_data["team_away_id"]),
-            location=serializer.validated_data["location"],
-            start_time=serializer.validated_data["start_time"],
-            created_by="00000000-0000-0000-0000-000000000000",
-        )
-
-        # Add the match to the tournament's matches
         try:
-            tournament = Tournament.objects.get(
-                id=serializer.validated_data["tournament_id"]
+            matches = matches_service_client.list_matches(
+                tournament_id=UUID(tournament_id) if tournament_id else None,
+                team_id=UUID(team_id) if team_id else None,
+                athlete_id=UUID(athlete_id) if athlete_id else None,
+                status=status_filter,
+                date=date,
+                date_from=date_from,
+                date_to=date_to,
             )
-            tournament.matches.add(match)
-            tournament.save()
-        except Tournament.DoesNotExist:
-            match.delete()  # Clean up the created match
-            return Response(
-                {"detail": "Tournament not found."}, status=status.HTTP_400_BAD_REQUEST
-            )
+
+            # Enrich participant data with team/athlete details
+            enricher_service.complete_matches_info(matches)
+
+            serializer = MatchListSerializer(matches, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
-            match.delete()  # Clean up the created match
+            logger.error("Failed to list matches", error=str(e))
             return Response(
                 {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-        return Response(match.to_json(), status=status.HTTP_201_CREATED)
+    def post(self, request):
+        """Create a new match"""
+        serializer = MatchCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Prepare participants if provided
+        participants = []
+        if serializer.validated_data.get("participants"):
+            for participant_data in serializer.validated_data["participants"]:
+                participant = {"participant_type": participant_data["participant_type"]}
+                if participant_data.get("team_id"):
+                    participant["team_id"] = str(participant_data["team_id"])
+                if participant_data.get("athlete_id"):
+                    participant["athlete_id"] = str(participant_data["athlete_id"])
+                participants.append(participant)
+
+        try:
+            match = matches_service_client.create_match(
+                tournament_id=serializer.validated_data.get("tournament_id"),
+                location=serializer.validated_data["location"],
+                start_time=serializer.validated_data["start_time"].isoformat(),
+                created_by=UUID("00000000-0000-0000-0000-000000000000"),  # TODO: Auth
+                participants=participants if participants else None,
+            )
+
+            # Enrich participant data
+            enricher_service.complete_matches_info([match])
+
+            response_serializer = MatchDetailSerializer(match)
+            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            logger.error("Failed to create match", error=str(e))
+            return Response(
+                {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 @extend_schema_view(
     get=extend_schema(
-        responses=MatchListSerializer,
-        description="Get a specific match by ID",
+        responses=MatchDetailSerializer,
+        description="Get detailed information about a specific match",
         tags=["Match Management"],
     ),
     put=extend_schema(
         request=MatchUpdateSerializer,
-        responses=MatchListSerializer,
-        description="Update a match",
+        responses=MatchDetailSerializer,
+        description="Update match metadata (location, start time, status)",
         tags=["Match Management"],
     ),
     delete=extend_schema(
@@ -121,133 +139,368 @@ class MatchListCreateView(APIView):
     ),
 )
 class MatchDetailView(APIView):
+    """Retrieve, update, or delete a match"""
 
     def get(self, request, match_id):
-        match = Match.objects.get(id=match_id)
+        """Get match details"""
+        try:
+            match = matches_service_client.get_match(match_id=match_id)
+            print("Match fetched:", match.__dict__["participants"])
 
-        return Response(match.to_json(), status=status.HTTP_200_OK)
+            # Enrich participant data
+            enricher_service.complete_matches_info([match])
+
+            serializer = MatchDetailSerializer(match)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error("Failed to get match", match_id=str(match_id), error=str(e))
+            return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
     def put(self, request, match_id):
+        """Update match metadata"""
         serializer = MatchUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        match = Match.objects.get(id=match_id)
-
+        update_data = {}
         if "location" in serializer.validated_data:
-            match.location = serializer.validated_data["location"]
+            update_data["location"] = serializer.validated_data["location"]
         if "start_time" in serializer.validated_data:
-            match.start_time = serializer.validated_data["start_time"]
+            update_data["start_time"] = serializer.validated_data[
+                "start_time"
+            ].isoformat()
         if "status" in serializer.validated_data:
-            match.status = serializer.validated_data["status"]
+            update_data["status"] = serializer.validated_data["status"]
 
-        # scores must be provided together
-        if not all(
-            field in serializer.validated_data for field in ("home_score", "away_score")
-        ):
-            raise serializers.ValidationError(
-                "Both home_score and away_score must be provided together."
+        try:
+            match = matches_service_client.update_match(
+                match_id=match_id, **update_data
             )
-        else:
-            match.home_score = serializer.validated_data["home_score"]
-            match.away_score = serializer.validated_data["away_score"]
 
-        match.save()
-        return Response(match.to_json(), status=status.HTTP_200_OK)
+            # Enrich participant data
+            enricher_service.complete_matches_info([match])
+
+            response_serializer = MatchDetailSerializer(match)
+            return Response(response_serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error("Failed to update match", match_id=str(match_id), error=str(e))
+            return Response(
+                {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     def delete(self, request, match_id):
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-@extend_schema(
-    request=MatchResultSerializer,
-    responses=MatchListSerializer,
-    description="Register match result",
-    tags=["Match Management"],
-)
-@api_view(["POST"])
-def match_result(request, match_id):
-    serializer = MatchResultSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    return Response({}, status=status.HTTP_200_OK)
-
-
-@extend_schema(
-    request=MatchLineupSerializer,
-    responses={200: None},
-    description="Assign players to match lineup",
-    tags=["Match Management"],
-)
-@api_view(["POST"])
-def match_lineup(request, match_id):
-    serializer = MatchLineupSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-
-    try:
-        match = Match.objects.get(id=match_id)
-        team = Team.objects.get(id=serializer.validated_data["team_id"])
-    except Match.DoesNotExist:
-        return Response(
-            {"detail": "Match not found."}, status=status.HTTP_404_NOT_FOUND
-        )
-    except Team.DoesNotExist:
-        return Response({"detail": "Team not found."}, status=status.HTTP_404_NOT_FOUND)
-
-    # Clear existing lineup for the team in this match
-    Lineup.objects.filter(match=match, team=team).delete()
-
-    lineups: List[Lineup] = []
-    for player_data in serializer.validated_data["players"]:
+        """Delete a match"""
         try:
-            player = Student.objects.get(id=player_data["player_id"])
-        except Student.DoesNotExist:
-            return Response(
-                {"detail": f"Player with ID {player_data['player_id']} not found."},
-                status=status.HTTP_404_NOT_FOUND,
+            matches_service_client.delete_match(match_id=match_id)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            logger.error("Failed to delete match", match_id=str(match_id), error=str(e))
+            return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+
+
+# ============= Participant Management Views =============
+
+
+@extend_schema_view(
+    post=extend_schema(
+        request=ParticipantCreateSerializer,
+        responses=ParticipantDetailSerializer,
+        description="Add a participant (team or athlete) to a match",
+        tags=["Match Management"],
+    ),
+)
+class ParticipantAddView(APIView):
+    """Add a participant to a match"""
+
+    def post(self, request, match_id):
+        """Add participant to match"""
+        serializer = ParticipantCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            participant = matches_service_client.add_participant(
+                match_id=match_id,
+                participant_type=serializer.validated_data["participant_type"],
+                team_id=serializer.validated_data.get("team_id"),
+                athlete_id=serializer.validated_data.get("athlete_id"),
             )
 
-        lineup = Lineup.objects.create(
-            match=match,
-            team=team,
-            player=player,
-            jersey_number=player_data["jersey_number"],
-            is_starter=player_data["is_starter"],
-        )
-        lineups.append(lineup)
+            # Enrich participant data
+            enricher_service.complete_participant_info([participant])
 
-    return Response(
-        [
-            {
-                "id": lineup.id,
-                "match_id": lineup.match.id,
-                "team_id": lineup.team.id,
-                "player_id": lineup.player.id,
-                "jersey_number": lineup.jersey_number,
-                "is_starter": lineup.is_starter,
-            }
-            for lineup in lineups
-        ],
-        status=status.HTTP_200_OK,
-    )
+            response_serializer = ParticipantDetailSerializer(participant)
+            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            logger.error(
+                "Failed to add participant", match_id=str(match_id), error=str(e)
+            )
+            return Response(
+                {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 @extend_schema(
-    request=MatchCommentSerializer,
-    responses={201: None},
-    description="Add comments to match",
+    responses={204: None},
+    description="Remove a participant from a match",
     tags=["Match Management"],
 )
-@api_view(["POST"])
-def match_comments(request, match_id):
-    serializer = MatchCommentSerializer(data=request.data)
+@api_view(["DELETE"])
+def remove_participant(request, match_id, participant_id):
+    """Remove participant from match"""
+    try:
+        matches_service_client.remove_participant(
+            match_id=match_id, participant_id=participant_id
+        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        logger.error(
+            "Failed to remove participant",
+            match_id=str(match_id),
+            participant_id=str(participant_id),
+            error=str(e),
+        )
+        return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+
+
+# ============= Match Results Views =============
+
+
+@extend_schema(
+    request=MatchResultsUpdateSerializer,
+    responses=MatchDetailSerializer,
+    description="Update match results for all participants (scores and/or positions)",
+    tags=["Match Management"],
+)
+@api_view(["PUT"])
+def update_match_results(request, match_id):
+    """Update match results"""
+    serializer = MatchResultsUpdateSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    return Response({}, status=status.HTTP_201_CREATED)
+
+    # Prepare participant results
+    participant_results = []
+    for result_data in serializer.validated_data["participant_results"]:
+        result = {"participant_id": str(result_data["participant_id"])}
+        if result_data.get("score") is not None:
+            result["score"] = result_data["score"]
+        if result_data.get("position") is not None:
+            result["position"] = result_data["position"]
+        if result_data.get("result_metadata"):
+            result["result_metadata"] = result_data["result_metadata"]
+        participant_results.append(result)
+
+    try:
+        match = matches_service_client.update_match_results(
+            match_id=match_id,
+            participant_results=participant_results,
+            status=serializer.validated_data.get("status", "finished"),
+        )
+
+        # Enrich participant data
+        enricher_service.complete_matches_info([match])
+
+        response_serializer = MatchDetailSerializer(match)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        logger.error(
+            "Failed to update match results", match_id=str(match_id), error=str(e)
+        )
+        return Response(
+            {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+# ============= Lineup Management Views =============
+
+
+@extend_schema_view(
+    get=extend_schema(
+        responses=LineupDetailSerializer(many=True),
+        description="Get lineup for a match, optionally filtered by team",
+        tags=["Match Management"],
+    ),
+    post=extend_schema(
+        request=LineupAssignSerializer,
+        responses={"message": "string"},
+        description="Assign lineup for a team in a match",
+        tags=["Match Management"],
+    ),
+)
+class LineupView(APIView):
+    """Get or assign lineup for a match"""
+
+    def get(self, request, match_id):
+        """Get lineup for match"""
+        team_id = request.query_params.get("team_id")
+
+        try:
+            lineup = matches_service_client.get_lineup(
+                match_id=match_id, team_id=UUID(team_id) if team_id else None
+            )
+
+            # Enrich player data
+            enricher_service.complete_lineup_info(lineup)
+
+            serializer = LineupDetailSerializer(lineup, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error("Failed to get lineup", match_id=str(match_id), error=str(e))
+            return Response(
+                {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def post(self, request, match_id):
+        """Assign lineup for a team"""
+        serializer = LineupAssignSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Convert serializer data to service format
+        players = [
+            {
+                "player_id": str(player_data["player_id"]),
+                "jersey_number": player_data["jersey_number"],
+                "is_starter": player_data.get("is_starter", True),
+            }
+            for player_data in serializer.validated_data["players"]
+        ]
+
+        try:
+            result = matches_service_client.assign_lineup(
+                match_id=match_id,
+                team_id=serializer.validated_data["team_id"],
+                players=players,
+            )
+            return Response(result, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error(
+                "Failed to assign lineup", match_id=str(match_id), error=str(e)
+            )
+            return Response(
+                {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+# ============= Comment Management Views =============
+
+
+@extend_schema_view(
+    get=extend_schema(
+        responses=CommentDetailSerializer(many=True),
+        description="Get all comments for a match",
+        tags=["Match Management"],
+    ),
+    post=extend_schema(
+        request=CommentCreateSerializer,
+        responses=CommentDetailSerializer,
+        description="Add a comment to a match",
+        tags=["Match Management"],
+    ),
+)
+class CommentView(APIView):
+    """Get or add comments for a match"""
+
+    def get(self, request, match_id):
+        """Get all comments for match"""
+        try:
+            comments = matches_service_client.get_comments(match_id=match_id)
+            serializer = CommentDetailSerializer(comments, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error("Failed to get comments", match_id=str(match_id), error=str(e))
+            return Response(
+                {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def post(self, request, match_id):
+        """Add comment to match"""
+        serializer = CommentCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            comment = matches_service_client.add_comment(
+                match_id=match_id,
+                message=serializer.validated_data["message"],
+                created_by=UUID("00000000-0000-0000-0000-000000000000"),  # TODO: Auth
+            )
+            response_serializer = CommentDetailSerializer(comment)
+            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            logger.error("Failed to add comment", match_id=str(match_id), error=str(e))
+            return Response(
+                {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+@extend_schema(
+    responses={204: None},
+    description="Delete a comment from a match",
+    tags=["Match Management"],
+)
+@api_view(["DELETE"])
+def delete_comment(request, match_id, comment_id):
+    """Delete a comment"""
+    try:
+        matches_service_client.delete_comment(match_id=match_id, comment_id=comment_id)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        logger.error(
+            "Failed to delete comment",
+            match_id=str(match_id),
+            comment_id=str(comment_id),
+            error=str(e),
+        )
+        return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+
+
+# ============= Additional Endpoints =============
 
 
 @extend_schema(
     responses={200: {"type": "string", "format": "binary"}},
-    description="Generate match sheet PDF",
+    description="Generate match sheet PDF (not implemented yet)",
     tags=["Match Management"],
 )
 @api_view(["GET"])
 def match_sheet(request, match_id):
-    return Response({"message": "PDF generation not implemented"})
+    """Generate match sheet PDF"""
+    return Response(
+        {"message": "PDF generation not implemented"},
+        status=status.HTTP_501_NOT_IMPLEMENTED,
+    )
+
+
+# ============= URL Patterns =============
+
+
+urlpatterns = [
+    # Match CRUD
+    path("", MatchListCreateView.as_view(), name="match-list-create"),
+    path("<uuid:match_id>/", MatchDetailView.as_view(), name="match-detail"),
+    # Participant management
+    path(
+        "<uuid:match_id>/participants/",
+        ParticipantAddView.as_view(),
+        name="match-add-participant",
+    ),
+    path(
+        "<uuid:match_id>/participants/<uuid:participant_id>/",
+        remove_participant,
+        name="match-remove-participant",
+    ),
+    # Match results
+    path(
+        "<uuid:match_id>/results/",
+        update_match_results,
+        name="match-update-results",
+    ),
+    # Lineup management
+    path("<uuid:match_id>/lineup/", LineupView.as_view(), name="match-lineup"),
+    # Comment management
+    path("<uuid:match_id>/comments/", CommentView.as_view(), name="match-comments"),
+    path(
+        "<uuid:match_id>/comments/<uuid:comment_id>/",
+        delete_comment,
+        name="match-delete-comment",
+    ),
+    # Additional features
+    path("<uuid:match_id>/sheet/", match_sheet, name="match-sheet"),
+]

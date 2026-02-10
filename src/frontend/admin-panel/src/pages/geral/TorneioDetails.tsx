@@ -1,345 +1,138 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
-import { tournamentsApi, type TournamentDetail, type TournamentUpdate } from '../../api/tournaments';
+import { tournamentsApi, type TournamentDetail, type TournamentUpdate, type TournamentCompetitor, type TournamentCompetitorDetail } from '../../api/tournaments';
 import { teamsApi, type Team } from '../../api/teams';
-import { matchesApi, type Match, type MatchCreate } from '../../api/matches';
+import { matchesApi, type Match, type MatchCreate, type ParticipantCreate } from '../../api/matches';
+import { studentsApi, type Student } from '../../api/members';
 
-const TorneioDetails = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-
-  const [tournament, setTournament] = useState<TournamentDetail | null>(null);
-  const [allTeams, setAllTeams] = useState<Team[]>([]);
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  const [isEditModal, setIsEditModal] = useState(false);
-  const [isAddTeamModal, setIsAddTeamModal] = useState(false);
-  const [isAddMatchModal, setIsAddMatchModal] = useState(false);
-  const [isRankingModal, setIsRankingModal] = useState(false);
-
-  // Campos edição
-  const [editName, setEditName] = useState('');
-  const [editStartDate, setEditStartDate] = useState('');
-
-  // Novo team
-  const [selectedTeamId, setSelectedTeamId] = useState('');
-
-  // Novo match
-  const [matchTeamHome, setMatchTeamHome] = useState('');
-  const [matchTeamAway, setMatchTeamAway] = useState('');
-  const [matchLocation, setMatchLocation] = useState('');
-  const [matchStartTime, setMatchStartTime] = useState('');
-
-  // Rankings
-  const [rankings, setRankings] = useState<{ position: number; team_id: string }[]>([]);
-
-  const fetchData = async () => {
-    if (!id) return;
-
-    try {
-      setLoading(true);
-      const [tournamentData, teamsData] = await Promise.all([
-        tournamentsApi.getById(id),
-        teamsApi.getAll(true), // Get all teams
-      ]);
-      setTournament(tournamentData);
-      setAllTeams(teamsData);
-      // Filter matches for this tournament
-    //   const tournamentMatches = matchesData.filter(m => String(m.tournament_id) === id);
-      const tournamentMatches = tournamentData.matches;
-      setMatches(tournamentMatches);
-      setError('');
-    } catch (err) {
-      console.error('Failed to fetch data:', err);
-      setError('Erro ao carregar dados');
-    } finally {
-      setLoading(false);
+// Component to display tournament information
+const TournamentInfo = ({
+  tournament,
+  onEdit,
+  onDelete
+}: {
+  tournament: TournamentDetail;
+  onEdit: () => void;
+  onDelete: () => void;
+}) => {
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'draft': return 'bg-yellow-100 text-yellow-800';
+      case 'finished': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [id]);
-
-  // Get teams filtered by tournament modality
-  const availableTeams = useMemo(() => {
-    if (!tournament) return [];
-    return allTeams.filter(team => team.modality_name === tournament.modality_name);
-  }, [tournament, allTeams]);
-
-  // Get current tournament teams
-  const tournamentTeams = useMemo(() => {
-    if (!tournament?.teams) return [];
-    return tournament.teams.map(t => allTeams.find(team => team.id === t.id)).filter(Boolean) as Team[];
-  }, [tournament, allTeams]);
-
-  const openEdit = () => {
-    if (!tournament) return;
-    setEditName(tournament.name);
-    setEditStartDate(tournament.start_date ?? '');
-    setIsEditModal(true);
-  };
-
-  const saveEdit = async () => {
-    if (!tournament) return;
-
-    try {
-      const updateData: TournamentUpdate = {
-        name: editName,
-        start_date: editStartDate || undefined,
-      };
-      const updated = await tournamentsApi.update(tournament.id, updateData);
-      setTournament(updated);
-      setIsEditModal(false);
-      setError('');
-    } catch (err) {
-      console.error('Failed to update tournament:', err);
-      setError('Erro ao atualizar torneio');
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'active': return 'Ativo';
+      case 'draft': return 'Rascunho';
+      case 'finished': return 'Finalizado';
+      default: return status;
     }
   };
-
-  const deleteTournament = async () => {
-    if (!tournament) return;
-    if (!window.confirm("Tem certeza que deseja eliminar este torneio?")) return;
-
-    try {
-      await tournamentsApi.delete(tournament.id);
-      navigate('/geral/torneios');
-    } catch (err) {
-      console.error('Failed to delete tournament:', err);
-      setError('Erro ao eliminar torneio');
-    }
-  };
-
-  const activateTournament = async () => {
-    if (!tournament) return;
-    if (!window.confirm("Ativar torneio? Isso permitirá que jogos sejam jogados.")) return;
-
-    try {
-      const updateData: TournamentUpdate = { status: 'active' };
-      const updated = await tournamentsApi.update(tournament.id, updateData);
-      setTournament(updated);
-      setError('');
-    } catch (err) {
-      console.error('Failed to activate tournament:', err);
-      setError('Erro ao ativar torneio');
-    }
-  };
-
-  const openRankingModal = () => {
-    if (!tournament) return;
-    // Initialize rankings array based on ranking_positions
-    const numPositions = tournament.ranking_positions || tournamentTeams.length;
-    const initialRankings = Array.from({ length: numPositions }, (_, i) => ({
-      position: i + 1,
-      team_id: '',
-    }));
-    setRankings(initialRankings);
-    setIsRankingModal(true);
-  };
-
-  const finishTournament = async () => {
-    if (!tournament) return;
-
-    // Check if we need to collect rankings
-    if (tournament.ranking_positions && tournament.ranking_positions > 0) {
-      openRankingModal();
-    } else {
-      // Finish without rankings
-      if (!window.confirm("Finalizar torneio? Isso bloqueará edições.")) return;
-
-      try {
-        const finished = await tournamentsApi.finish(tournament.id);
-        setTournament(finished);
-        setError('');
-      } catch (err) {
-        console.error('Failed to finish tournament:', err);
-        setError('Erro ao finalizar torneio');
-      }
-    }
-  };
-
-const submitRankings = async () => {
-	if (!tournament) return;
-
-	// Allow empty positions — only validate duplicates among filled positions
-	const teamIds = rankings.map(r => r.team_id).filter(id => id);
-	const uniqueTeamIds = new Set(teamIds);
-	if (teamIds.length !== uniqueTeamIds.size) {
-		alert('Cada equipa só pode aparecer uma vez no ranking.');
-		return;
-	}
-
-	// filter out empty rankings
-	const filteredRankings = rankings
-		.filter(r => r.team_id)
-		.map(r => ({ team_id: r.team_id, position: r.position }));
-
-	try {
-		const finished = await tournamentsApi.finish(tournament.id, filteredRankings);
-		setTournament(finished);
-		setIsRankingModal(false);
-		setError('');
-	} catch (err) {
-		console.error('Failed to finish tournament:', err);
-		setError('Erro ao finalizar torneio');
-	}
-};
-
-  const addTeam = async () => {
-    if (!tournament || !selectedTeamId) return;
-
-    // Check if team is already added
-    if (tournament.teams?.some(t => t.id === selectedTeamId)) {
-      alert('Esta equipa já foi adicionada ao torneio.');
-      return;
-    }
-
-    try {
-      const updateData: TournamentUpdate = {
-        teams_add: [selectedTeamId],
-      };
-      const updated = await tournamentsApi.update(tournament.id, updateData);
-      setTournament(updated);
-      setSelectedTeamId('');
-      setIsAddTeamModal(false);
-      setError('');
-    } catch (err) {
-      console.error('Failed to add team:', err);
-      setError('Erro ao adicionar equipa');
-    }
-  };
-
-  const removeTeam = async (teamId: string) => {
-    if (!tournament) return;
-    if (!window.confirm("Remover esta equipa do torneio?")) return;
-
-    try {
-      const updateData: TournamentUpdate = {
-        teams_remove: [teamId],
-      };
-      const updated = await tournamentsApi.update(tournament.id, updateData);
-      setTournament(updated);
-      setError('');
-    } catch (err) {
-      console.error('Failed to remove team:', err);
-      setError('Erro ao remover equipa');
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    const labels: Record<string, string> = {
-      scheduled: 'Agendado',
-      in_progress: 'Em Curso',
-      finished: 'Terminado',
-      cancelled: 'Cancelado',
-    };
-    return labels[status] || status;
-  };
-
-  const handleCreateMatch = async () => {
-    if (!tournament || !matchTeamHome || !matchTeamAway || !matchLocation || !matchStartTime) {
-      alert('Todos os campos são obrigatórios');
-      return;
-    }
-
-    if (matchTeamHome === matchTeamAway) {
-      alert('As equipas devem ser diferentes');
-      return;
-    }
-
-    try {
-      const newMatchData: MatchCreate = {
-        tournament_id: String(tournament.id),
-        team_home_id: String(matchTeamHome),
-        team_away_id: String(matchTeamAway),
-        location: matchLocation,
-        start_time: matchStartTime,
-      };
-
-      const newMatch = await matchesApi.create(newMatchData);
-      setMatches([...matches, newMatch]);
-
-      // Reset form
-      setMatchTeamHome('');
-      setMatchTeamAway('');
-      setMatchLocation('');
-      setMatchStartTime('');
-      setIsAddMatchModal(false);
-      setError('');
-    } catch (err) {
-      console.error('Failed to create match:', err);
-      setError('Erro ao criar jogo');
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Sidebar />
-        <div className="p-10 text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-teal-500 border-r-transparent"></div>
-          <p className="mt-2 text-gray-600">A carregar...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!tournament) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Sidebar />
-        <div className="p-10 text-center text-red-600">Torneio não encontrado.</div>
-      </div>
-    );
-  }
-
-  const isLocked = tournament.status === 'finished';
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Sidebar />
+    <div className="bg-white rounded-lg shadow-md p-6 space-y-4">
+      <h2 className="text-xl font-bold text-gray-800 mb-4">Informação do Torneio</h2>
 
-      <div className="p-8 max-w-7xl mx-auto">
+      <div>
+        <label className="block text-teal-500 font-medium mb-2">Nome</label>
+        <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
+          {tournament.name}
+        </div>
+      </div>
 
-        {/* Header */}
-        <div className="flex justify-between mb-8 items-center">
-          <h1 className="text-3xl font-bold text-gray-800">Gestão do Torneio</h1>
+      <div>
+        <label className="block text-teal-500 font-medium mb-2">Modalidade</label>
+        <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
+          {tournament.modality.name}
+        </div>
+      </div>
 
-          <div className="flex gap-3">
+      <div>
+        <label className="block text-teal-500 font-medium mb-2">Estado</label>
+        <div className="w-full px-4 py-3 bg-gray-100 rounded-md">
+          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBadgeColor(tournament.status)}`}>
+            {getStatusText(tournament.status)}
+          </span>
+        </div>
+      </div>
 
-            {/* Ativar - only if status is 'draft' */}
-            {tournament.status === 'draft' && (
-              <button
-                onClick={activateTournament}
-                className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-md"
-              >
-                Ativar Torneio
-              </button>
-            )}
-
-            {/* Finalizar - only if status is 'active' */}
-            {tournament.status === 'active' && (
-              <button
-                onClick={finishTournament}
-                className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-md"
-              >
-                Finalizar Torneio
-              </button>
-            )}
-
-            {/* Eliminar */}
-            <button
-              onClick={deleteTournament}
-              className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-md"
-            >
-              Eliminar
-            </button>
+      {tournament.start_date && (
+        <div>
+          <label className="block text-teal-500 font-medium mb-2">Data de Início</label>
+          <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
+            {new Date(tournament.start_date).toLocaleDateString('pt-PT')}
           </div>
         </div>
+      )}
+
+      <div className="flex gap-4 pt-4">
+        <button
+          onClick={onEdit}
+          className="flex-1 px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
+        >
+          Editar
+        </button>
+        <button
+          onClick={onDelete}
+          className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium transition-colors"
+        >
+          Eliminar
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Component for editing tournament
+const EditTournamentModal = ({
+  tournament,
+  onClose,
+  onSave
+}: {
+  tournament: TournamentDetail;
+  onClose: () => void;
+  onSave: (data: TournamentUpdate) => Promise<void>;
+}) => {
+  const [name, setName] = useState(tournament.name);
+  const [startDate, setStartDate] = useState(
+    tournament.start_date ? tournament.start_date.split('T')[0] : ''
+  );
+  const [status, setStatus] = useState<'draft' | 'active' | 'finished'>(
+    tournament.status as 'draft' | 'active' | 'finished'
+  );
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!name.trim()) {
+      setError('Nome é obrigatório');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      await onSave({
+        name: name.trim(),
+        start_date: startDate || undefined,
+        status
+      });
+      onClose();
+    } catch (err) {
+      setError('Erro ao atualizar torneio');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <h2 className="text-2xl font-bold mb-6 text-gray-800">Editar Torneio</h2>
 
         {error && (
           <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
@@ -347,477 +140,789 @@ const submitRankings = async () => {
           </div>
         )}
 
-        {/* Draft Warning */}
-        {tournament.status === 'draft' && (
-          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-300 text-yellow-800 rounded-md">
-            <strong>⚠️ Torneio em Rascunho:</strong> Este torneio está em modo de rascunho.
-            Ative o torneio para permitir a criação de jogos.
-          </div>
-        )}
-
-        {/* Finished Info */}
-        {isLocked && (
-          <div className="mb-6 p-4 bg-gray-100 border border-gray-300 text-gray-700 rounded-md">
-            <strong>🔒 Torneio Finalizado:</strong> Este torneio foi finalizado e não pode ser editado.
-          </div>
-        )}
-
-        {/* GRID */}
-        <div className={`grid gap-8 ${tournament.final_rankings && tournament.final_rankings.length > 0 ? 'grid-cols-4' : 'grid-cols-3'}`}>
-
-          {/* COL 1 - Detalhes */}
-          <div className="bg-white rounded-xl shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Detalhes</h2>
-
-            <div className="space-y-4">
-
-              <div>
-                <label className="font-medium text-teal-600">Nome</label>
-                <div className="bg-gray-100 p-3 rounded-md">{tournament.name}</div>
-              </div>
-
-              <div>
-                <label className="font-medium text-teal-600">Modalidade</label>
-                <div className="bg-gray-100 p-3 rounded-md">{tournament.modality_name}</div>
-              </div>
-
-              <div>
-                <label className="font-medium text-teal-600">Estado</label>
-                <div className="bg-gray-100 p-3 rounded-md capitalize">{tournament.status}</div>
-              </div>
-
-              <div>
-                <label className="font-medium text-teal-600">Data de início</label>
-                <div className="bg-gray-100 p-3 rounded-md">
-                  {tournament.start_date ? new Date(tournament.start_date).toLocaleDateString('pt-PT') : "Não definida"}
-                </div>
-              </div>
-
-              {!isLocked && (
-                <div className="pt-4">
-                  <button
-                    onClick={openEdit}
-                    className="w-full bg-teal-500 hover:bg-teal-600 text-white py-2 rounded-md"
-                  >
-                    Editar
-                  </button>
-                </div>
-              )}
-            </div>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-gray-700 font-medium mb-2">
+              Nome <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
+            />
           </div>
 
-          {/* COL 2 - Equipas */}
-          <div className="bg-white rounded-xl shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Equipas</h2>
-
-            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-              {tournamentTeams.length > 0 ? (
-                tournamentTeams.map((team) => (
-                  <div
-                    key={team.id}
-                    className="bg-gray-100 px-4 py-2 rounded-md text-gray-700 flex justify-between items-center"
-                  >
-                    <span>{team.name} ({team.course_name})</span>
-                    {!isLocked && (
-                      <button
-                        onClick={() => removeTeam(team.id)}
-                        className="text-red-500 hover:text-red-700 text-sm"
-                      >
-                        Remover
-                      </button>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-500 italic">Nenhuma equipa adicionada</p>
-              )}
-            </div>
-
-            {!isLocked && (
-              <div className="pt-4">
-                <button
-                  onClick={() => setIsAddTeamModal(true)}
-                  className="w-full bg-teal-500 hover:bg-teal-600 text-white py-2 rounded-md"
-                >
-                  + Adicionar Equipa
-                </button>
-              </div>
-            )}
+          <div>
+            <label className="block text-gray-700 font-medium mb-2">Data de Início</label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
+            />
           </div>
 
-          {/* COL 3 - Jogos */}
-          <div className="bg-white rounded-xl shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Jogos</h2>
-
-            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-              {matches.length > 0 ? (
-                matches.map(match => {
-                  return (
-                    <div
-                      key={match.id}
-                      onClick={() => navigate(`/geral/jogos/${match.id}`)}
-                      className="bg-gray-100 px-4 py-3 rounded-md hover:bg-gray-200 cursor-pointer"
-                    >
-                      <div className="flex justify-between items-center">
-                        <div className="text-sm font-medium">
-                          {match.team_home_name || `Equipa X`} vs {match.team_away_name || `Equipa Y`}
-                        </div>
-                        <span className={`text-xs px-2 py-1 rounded ${
-                          match.status === 'finished' ? 'bg-green-100 text-green-700' :
-                          match.status === 'in_progress' ? 'bg-yellow-100 text-yellow-700' :
-                          match.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                          'bg-blue-100 text-blue-700'
-                        }`}>
-                          {getStatusLabel(match.status)}
-                        </span>
-                      </div>
-                      {match.status === 'finished' && match.home_score !== null && match.away_score !== null && (
-                        <div className="text-xs text-gray-600 mt-1">
-                          Resultado: {match.home_score} - {match.away_score}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
-              ) : (
-                <p className="text-gray-500 italic">Nenhum jogo criado</p>
-              )}
-            </div>
-
-            {!isLocked && (
-              <div className="pt-4">
-                {tournament.status === 'draft' ? (
-                  <div>
-                    <button
-                      disabled
-                      className="w-full bg-gray-300 text-gray-500 py-2 rounded-md cursor-not-allowed"
-                      title="Ative o torneio para criar jogos"
-                    >
-                      + Novo Jogo
-                    </button>
-                    <p className="text-xs text-gray-500 mt-2 text-center">
-                      Ative o torneio primeiro
-                    </p>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setIsAddMatchModal(true)}
-                    className="w-full bg-teal-500 hover:bg-teal-600 text-white py-2 rounded-md"
-                  >
-                    + Novo Jogo
-                  </button>
-                )}
-              </div>
-            )}
+          <div>
+            <label className="block text-gray-700 font-medium mb-2">Estado</label>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value as 'draft' | 'active' | 'finished')}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
+            >
+              <option value="draft">Rascunho</option>
+              <option value="active">Ativo</option>
+              <option value="finished">Finalizado</option>
+            </select>
           </div>
+        </div>
 
-          {/* COL 4 - Rankings (only shown if tournament has final rankings) */}
-          {tournament.final_rankings && tournament.final_rankings.length > 0 && (
-            <div className="bg-white rounded-xl shadow p-6">
-              <h2 className="text-xl font-semibold mb-4">Classificação Final</h2>
-
-              <div className="space-y-2">
-                {tournament.final_rankings
-                  .sort((a, b) => a.position - b.position)
-                  .map((ranking) => (
-                    <div
-                      key={ranking.position}
-                      className="bg-gradient-to-r from-teal-50 to-white px-4 py-3 rounded-md border border-teal-100"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`font-bold text-lg ${
-                          ranking.position === 1 ? 'text-yellow-500' :
-                          ranking.position === 2 ? 'text-gray-400' :
-                          ranking.position === 3 ? 'text-amber-600' :
-                          'text-gray-600'
-                        }`}>
-                          {ranking.position}º
-                        </div>
-                        <div className="text-gray-700 font-medium">
-                          {ranking.team_name}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          )}
-
+        <div className="flex gap-4 mt-6">
+          <button
+            onClick={onClose}
+            disabled={saving}
+            className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={saving}
+            className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md disabled:opacity-50"
+          >
+            {saving ? 'A guardar...' : 'Guardar'}
+          </button>
         </div>
       </div>
+    </div>
+  );
+};
 
-      {/* ==================== MODAL EDITAR ==================== */}
-      {isEditModal && (
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center">
-          <div className="bg-white p-8 rounded-lg max-w-md w-full">
+// Component to manage competitors in tournament
+const TournamentCompetitors = ({
+  tournament,
+  onCompetitorsChange
+}: {
+  tournament: TournamentDetail;
+  onCompetitorsChange: () => void;
+}) => {
+  const [availableTeams, setAvailableTeams] = useState<Team[]>([]);
+  const [availableStudents, setAvailableStudents] = useState<Student[]>([]);
+  const [studentSearchTerm, setStudentSearchTerm] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedCompetitorType, setSelectedCompetitorType] = useState<'team' | 'athlete'>('team');
+  const [selectedTeamId, setSelectedTeamId] = useState('');
+  const [selectedAthleteId, setSelectedAthleteId] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-            <h2 className="text-2xl font-bold mb-6">Editar Torneio</h2>
+  useEffect(() => {
+    loadAvailableTeams();
+    loadAvailableStudents();
+  }, [tournament]);
 
-            <div className="space-y-4">
-              <div>
-                <label className="font-medium">Nome</label>
-                <input
-                  className="border w-full px-4 py-2 rounded-md"
-                  value={editName}
-                  onChange={e => setEditName(e.target.value)}
-                />
-              </div>
+  const loadAvailableTeams = async () => {
+    try {
+      const allTeams = await teamsApi.getAll({ modality_id: tournament.modality.id });
+      // Filter out teams already in tournament
+      const teamIds = new Set(
+        tournament.competitors
+          .filter(c => c.competitor_type === 'team' && c.team)
+          .map(c => c.team.id)
+      );
+      setAvailableTeams(allTeams.filter(t => !teamIds.has(t.id)));
+    } catch (err) {
+      console.error('Failed to load teams:', err);
+    }
+  };
 
-              <div>
-                <label className="font-medium">Data de início</label>
-                <input
-                  type="date"
-                  className="border w-full px-4 py-2 rounded-md"
-                  value={editStartDate}
-                  onChange={e => setEditStartDate(e.target.value)}
-                />
-              </div>
-            </div>
+  const loadAvailableStudents = async () => {
+    try {
+      const allStudents = await studentsApi.getAll();
+      // Filter out students already in tournament and only show members
+      const athleteIds = new Set(
+        tournament.competitors
+          .filter(c => c.competitor_type === 'athlete' && c.athlete)
+          .map(c => c.athlete.id)
+      );
+      setAvailableStudents(
+        allStudents.filter(s => s.is_member && !athleteIds.has(s.id))
+      );
+    } catch (err) {
+      console.error('Failed to load students:', err);
+    }
+  };
 
-            <div className="flex gap-4 mt-6">
-              <button
-                onClick={() => setIsEditModal(false)}
-                className="flex-1 bg-gray-300 py-2 rounded-md"
+  const handleAddCompetitor = async () => {
+    if (selectedCompetitorType === 'team' && !selectedTeamId) {
+      setError('Selecione uma equipa');
+      return;
+    }
+    if (selectedCompetitorType === 'athlete' && !selectedAthleteId) {
+      setError('Selecione um atleta');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+
+      const competitor: TournamentCompetitor = selectedCompetitorType === 'team'
+        ? { competitor_type: 'team', team_id: selectedTeamId }
+        : { competitor_type: 'athlete', athlete_id: selectedAthleteId };
+
+      await tournamentsApi.addCompetitors(tournament.id, [competitor]);
+      setShowAddModal(false);
+      setSelectedTeamId('');
+      setSelectedAthleteId('');
+      onCompetitorsChange();
+    } catch (err) {
+      setError('Erro ao adicionar competidor');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveCompetitor = async (competitor: TournamentCompetitorDetail, name: string) => {
+    if (!window.confirm(`Remover "${name}" do torneio?`)) return;
+
+    try {
+      await tournamentsApi.removeCompetitors(tournament.id, [competitor.id]);
+      onCompetitorsChange();
+    } catch (err) {
+      console.error('Failed to remove competitor:', err);
+      alert('Erro ao remover competidor');
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold text-gray-800">
+          Competidores Inscritos ({tournament.competitors.length})
+        </h2>
+        <button
+          onClick={() => {
+            setShowAddModal(true);
+            setError('');
+            setSelectedTeamId('');
+            setSelectedAthleteId('');
+            setStudentSearchTerm('');
+            setSelectedCompetitorType('team');
+          }}
+          className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
+        >
+          + Adicionar Competidor
+        </button>
+      </div>
+
+      {tournament.competitors.length === 0 ? (
+        <p className="text-gray-500 text-center py-8">Nenhum competidor inscrito</p>
+      ) : (
+        <div className="space-y-2 max-h-96 overflow-y-auto">
+          {tournament.competitors.map((competitor, idx) => {
+            const isTeam = competitor.competitor_type === 'team';
+            const name = isTeam ? competitor.team?.name : competitor.athlete?.full_name;
+            const subtitle = isTeam ? competitor.team?.course?.name : competitor.athlete?.course?.name;
+
+            return (
+              <div
+                key={`${competitor.competitor_type}-${isTeam ? competitor.team?.id : competitor.athlete?.id}-${idx}`}
+                className="flex justify-between items-center p-4 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
               >
-                Cancelar
-              </button>
-              <button
-                onClick={saveEdit}
-                className="flex-1 bg-teal-500 text-white py-2 rounded-md"
-              >
-                Guardar
-              </button>
-            </div>
-
-          </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-gray-800">{name}</p>
+                    <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-800">
+                      {isTeam ? 'Equipa' : 'Atleta'}
+                    </span>
+                  </div>
+                  {subtitle && <p className="text-sm text-gray-600">{subtitle}</p>}
+                </div>
+                <button
+                  onClick={() => handleRemoveCompetitor(competitor, name || 'Desconhecido')}
+                  className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-md text-sm transition-colors"
+                >
+                  Remover
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {/* ==================== MODAL ADD TEAM ==================== */}
-      {!isLocked && isAddTeamModal && (
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
-          <div className="bg-white p-8 rounded-lg max-w-md w-full">
+      {/* Add Competitor Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-6 text-gray-800">Adicionar Competidor</h2>
 
-            <h2 className="text-2xl font-bold mb-6">Adicionar Equipa</h2>
+            {error && (
+              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
+                {error}
+              </div>
+            )}
 
-            <div>
-              <label className="block font-medium mb-2">Selecionar Equipa</label>
-              <select
-                className="border w-full px-4 py-2 rounded-md bg-white"
-                value={selectedTeamId}
-                onChange={e => setSelectedTeamId(e.target.value)}
-              >
-                <option value="">Selecionar equipa...</option>
-                {availableTeams
-                  .filter(team => !tournament?.teams?.some(t => t.id === team.id))
-                  .map(team => (
-                    <option key={team.id} value={team.id}>
-                      {team.name} ({team.course_name})
-                    </option>
-                  ))}
-              </select>
-              {availableTeams.filter(team => !tournament?.teams?.some(t => t.id === team.id)).length === 0 && (
-                <p className="text-sm text-gray-500 mt-2 italic">
-                  {availableTeams.length === 0
-                    ? 'Nenhuma equipa disponível para esta modalidade'
-                    : 'Todas as equipas desta modalidade já foram adicionadas'
-                  }
-                </p>
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">
+                  Tipo <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={selectedCompetitorType}
+                  onChange={(e) => setSelectedCompetitorType(e.target.value as 'team' | 'athlete')}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
+                >
+                  <option value="team">Equipa</option>
+                  <option value="athlete">Atleta</option>
+                </select>
+              </div>
+
+              {selectedCompetitorType === 'team' ? (
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">
+                    Equipa <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={selectedTeamId}
+                    onChange={(e) => setSelectedTeamId(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
+                  >
+                    <option value="">Selecione uma equipa</option>
+                    {availableTeams.map((team) => (
+                      <option key={team.id} value={team.id}>
+                        {team.name} - {team.course.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">
+                    Atleta <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={studentSearchTerm}
+                    onChange={(e) => setStudentSearchTerm(e.target.value)}
+                    placeholder="Pesquisar por nome ou número..."
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 mb-2"
+                  />
+                  <select
+                    value={selectedAthleteId}
+                    onChange={(e) => setSelectedAthleteId(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
+                    size={Math.min(availableStudents.filter(s =>
+                      studentSearchTerm === '' ||
+                      s.full_name.toLowerCase().includes(studentSearchTerm.toLowerCase()) ||
+                      s.student_number.includes(studentSearchTerm)
+                    ).length + 1, 8)}
+                  >
+                    <option value="">Selecione um atleta</option>
+                    {availableStudents
+                      .filter(s =>
+                        studentSearchTerm === '' ||
+                        s.full_name.toLowerCase().includes(studentSearchTerm.toLowerCase()) ||
+                        s.student_number.includes(studentSearchTerm)
+                      )
+                      .map((student) => (
+                        <option key={student.id} value={student.id}>
+                          {student.full_name} ({student.student_number}) - {student.course.name}
+                        </option>
+                      ))}
+                  </select>
+                  {availableStudents.length === 0 && (
+                    <p className="mt-1 text-sm text-gray-500">Nenhum atleta disponível</p>
+                  )}
+                </div>
               )}
             </div>
 
-            <div className="flex gap-4 mt-6">
+            <div className="flex gap-4">
               <button
-                onClick={() => {
-                  setIsAddTeamModal(false);
-                  setSelectedTeamId('');
-                }}
-                className="flex-1 bg-gray-300 hover:bg-gray-400 py-2 rounded-md transition-colors"
+                onClick={() => setShowAddModal(false)}
+                disabled={loading}
+                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md disabled:opacity-50"
               >
                 Cancelar
               </button>
               <button
-                onClick={addTeam}
-                disabled={!selectedTeamId}
-                className="flex-1 bg-teal-500 hover:bg-teal-600 text-white py-2 rounded-md transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                onClick={handleAddCompetitor}
+                disabled={loading}
+                className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md disabled:opacity-50"
               >
-                Adicionar
+                {loading ? 'A adicionar...' : 'Adicionar'}
               </button>
             </div>
-
           </div>
         </div>
       )}
+    </div>
+  );
+};
 
-      {/* ==================== MODAL ADD MATCH ==================== */}
-      {!isLocked && isAddMatchModal && (
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
-          <div className="bg-white p-8 rounded-lg max-w-md w-full">
+// Component to manage matches
+const TournamentMatches = ({
+  tournament,
+  onMatchesChange
+}: {
+  tournament: TournamentDetail;
+  onMatchesChange: () => void;
+}) => {
+  const navigate = useNavigate();
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedParticipants, setSelectedParticipants] = useState<string[]>(['', '']);
+  const [location, setLocation] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-            <h2 className="text-2xl font-bold mb-6">Criar Novo Jogo</h2>
+  const handleCreateMatch = async () => {
+    // Validate at least 2 participants
+    const validParticipants = selectedParticipants.filter(p => p.trim() !== '');
+    if (validParticipants.length < 2) {
+      setError('Selecione pelo menos 2 participantes');
+      return;
+    }
+
+    // Check for duplicates
+    const uniqueParticipants = new Set(validParticipants);
+    if (uniqueParticipants.size !== validParticipants.length) {
+      setError('Os participantes devem ser diferentes');
+      return;
+    }
+
+    if (!location.trim()) {
+      setError('Local é obrigatório');
+      return;
+    }
+
+    if (!startTime) {
+      setError('Data e hora são obrigatórias');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+
+      // Map selected IDs to ParticipantCreate objects, detecting the type from tournament.competitors
+      const participants: ParticipantCreate[] = validParticipants.map(competitorId => {
+        const competitor = tournament.competitors.find(c =>
+          (c.competitor_type === 'team' && c.team?.id === competitorId) ||
+          (c.competitor_type === 'athlete' && c.athlete?.id === competitorId)
+        );
+
+        if (competitor?.competitor_type === 'athlete') {
+          return {
+            participant_type: 'athlete',
+            athlete_id: competitorId
+          };
+        } else {
+          return {
+            participant_type: 'team',
+            team_id: competitorId
+          };
+        }
+      });
+
+      const matchData: MatchCreate = {
+        tournament_id: tournament.id,
+        location: location.trim(),
+        start_time: startTime,
+        participants
+      };
+
+      await matchesApi.create(matchData);
+      setShowCreateModal(false);
+      resetForm();
+      onMatchesChange();
+    } catch (err) {
+      setError('Erro ao criar jogo');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setSelectedParticipants(['', '']);
+    setLocation('');
+    setStartTime('');
+    setError('');
+  };
+
+  const addParticipantSlot = () => {
+    setSelectedParticipants([...selectedParticipants, '']);
+  };
+
+  const removeParticipantSlot = (index: number) => {
+    if (selectedParticipants.length > 2) {
+      setSelectedParticipants(selectedParticipants.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateParticipant = (index: number, value: string) => {
+    const updated = [...selectedParticipants];
+    updated[index] = value;
+    setSelectedParticipants(updated);
+  };
+
+  const handleDeleteMatch = async (matchId: string) => {
+    if (!window.confirm('Tem certeza que deseja eliminar este jogo?')) return;
+
+    try {
+      await matchesApi.delete(matchId);
+      onMatchesChange();
+    } catch (err) {
+      console.error('Failed to delete match:', err);
+      alert('Erro ao eliminar jogo');
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'scheduled': return 'Agendado';
+      case 'in_progress': return 'Em Progresso';
+      case 'finished': return 'Finalizado';
+      case 'cancelled': return 'Cancelado';
+      default: return status;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'scheduled': return 'bg-blue-100 text-blue-800';
+      case 'in_progress': return 'bg-green-100 text-green-800';
+      case 'finished': return 'bg-gray-100 text-gray-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getParticipantNames = (participants: Match['participants']): string => {
+    const names = participants.map(p => {
+      if (p.participant_type === 'team' && p.team) {
+        return p.team.name;
+      } else if (p.participant_type === 'athlete' && p.athlete) {
+        return p.athlete.full_name;
+      }
+      return 'Desconhecido';
+    });
+    return names.join(' vs ');
+  };
+
+  const getParticipantScores = (participants: Match['participants']): string | null => {
+    if (participants.every(p => p.score !== null && p.score !== undefined)) {
+      return participants.map(p => p.score).join(' - ');
+    }
+    return null;
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold text-gray-800">
+          Jogos ({tournament.matches.length})
+        </h2>
+        <button
+          onClick={() => {
+            setShowCreateModal(true);
+            resetForm();
+          }}
+          disabled={tournament.competitors.length < 2}
+          className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          title={tournament.competitors.length < 2 ? 'É necessário pelo menos 2 competidores' : ''}
+        >
+          + Criar Jogo
+        </button>
+      </div>
+
+      {tournament.matches.length === 0 ? (
+        <p className="text-gray-500 text-center py-8">Nenhum jogo criado</p>
+      ) : (
+        <div className="space-y-3">
+          {tournament.matches.map((match) => (
+            <div
+              key={match.id}
+              className="p-4 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
+            >
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex-1">
+                  <div className="font-medium text-gray-800 mb-2">
+                    {getParticipantNames(match.participants)}
+                  </div>
+
+                  {getParticipantScores(match.participants) && (
+                    <div className="text-lg font-bold text-teal-600 mb-2">
+                      {getParticipantScores(match.participants)}
+                    </div>
+                  )}
+
+                  <div className="flex gap-4 text-sm text-gray-600">
+                    <span>📍 {match.location}</span>
+                    <span>🕒 {new Date(match.start_time).toLocaleString('pt-PT')}</span>
+                  </div>
+
+                  <div className="mt-2">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(match.status)}`}>
+                      {getStatusText(match.status)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => navigate(`/geral/jogos/${match.id}`)}
+                    className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-sm transition-colors"
+                  >
+                    Ver
+                  </button>
+                  <button
+                    onClick={() => handleDeleteMatch(match.id)}
+                    className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-md text-sm transition-colors"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Create Match Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-6 text-gray-800">Criar Jogo</h2>
 
             {error && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
                 {error}
               </div>
             )}
 
             <div className="space-y-4">
-              {/* Team Home */}
               <div>
-                <label className="block font-medium mb-2">Equipa Casa <span className="text-red-500">*</span></label>
-                <select
-                  className="border w-full px-4 py-2 rounded-md bg-white"
-                  value={matchTeamHome}
-                  onChange={e => setMatchTeamHome(e.target.value)}
-                >
-                  <option value="">Selecionar equipa...</option>
-                  {tournamentTeams.map(team => (
-                    <option key={team.id} value={team.id}>
-                      {team.name} ({team.course_name})
-                    </option>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-gray-700 font-medium">
+                    Participantes <span className="text-red-500">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={addParticipantSlot}
+                    className="text-sm px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors"
+                  >
+                    + Adicionar Participante
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {selectedParticipants.map((participantId, index) => (
+                    <div key={index} className="flex gap-2">
+                      <select
+                        value={participantId}
+                        onChange={(e) => updateParticipant(index, e.target.value)}
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
+                      >
+                        <option value="">Selecione um participante</option>
+                        {tournament.competitors.map((competitor) => {
+                          const isTeam = competitor.competitor_type === 'team';
+                          const id = isTeam ? competitor.team?.id : competitor.athlete?.id;
+                          const name = isTeam ? competitor.team?.name : competitor.athlete?.full_name;
+                          const label = isTeam ? name : `${name} (Atleta)`;
+
+                          return (
+                            <option key={`${competitor.competitor_type}-${id}`} value={id}>
+                              {label}
+                            </option>
+                          );
+                        })}
+                      </select>
+                      {selectedParticipants.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => removeParticipantSlot(index)}
+                          className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors"
+                          title="Remover participante"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
                   ))}
-                </select>
+                </div>
+                <p className="text-sm text-gray-500 mt-1">
+                  Mínimo de 2 participantes necessários
+                </p>
               </div>
 
-              {/* Team Away */}
               <div>
-                <label className="block font-medium mb-2">Equipa Visitante <span className="text-red-500">*</span></label>
-                <select
-                  className="border w-full px-4 py-2 rounded-md bg-white"
-                  value={matchTeamAway}
-                  onChange={e => setMatchTeamAway(e.target.value)}
-                >
-                  <option value="">Selecionar equipa...</option>
-                  {tournamentTeams.map(team => (
-                    <option key={team.id} value={team.id}>
-                      {team.name} ({team.course_name})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Location */}
-              <div>
-                <label className="block font-medium mb-2">Local <span className="text-red-500">*</span></label>
+                <label className="block text-gray-700 font-medium mb-2">
+                  Local <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
-                  className="border w-full px-4 py-2 rounded-md"
-                  value={matchLocation}
-                  onChange={e => setMatchLocation(e.target.value)}
-                  placeholder="Ex: Campo Universitário"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="Ex: Campo Municipal"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
                 />
               </div>
 
-              {/* Start Time */}
               <div>
-                <label className="block font-medium mb-2">Data e Hora <span className="text-red-500">*</span></label>
+                <label className="block text-gray-700 font-medium mb-2">
+                  Data e Hora <span className="text-red-500">*</span>
+                </label>
                 <input
-                  type="date"
-                  className="border w-full px-4 py-2 rounded-md"
-                  value={matchStartTime}
-                  onChange={e => setMatchStartTime(e.target.value)}
+                  type="datetime-local"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
                 />
               </div>
             </div>
 
             <div className="flex gap-4 mt-6">
               <button
-                onClick={() => {
-                  setIsAddMatchModal(false);
-                  setMatchTeamHome('');
-                  setMatchTeamAway('');
-                  setMatchLocation('');
-                  setMatchStartTime('');
-                  setError('');
-                }}
-                className="flex-1 bg-gray-300 hover:bg-gray-400 py-2 rounded-md transition-colors"
+                onClick={() => setShowCreateModal(false)}
+                disabled={loading}
+                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md disabled:opacity-50"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleCreateMatch}
-                disabled={!matchTeamHome || !matchTeamAway || !matchLocation || !matchStartTime}
-                className="flex-1 bg-teal-500 hover:bg-teal-600 text-white py-2 rounded-md transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                disabled={loading}
+                className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md disabled:opacity-50"
               >
-                Criar Jogo
+                {loading ? 'A criar...' : 'Criar'}
               </button>
             </div>
-
           </div>
         </div>
       )}
+    </div>
+  );
+};
 
-      {/* ==================== MODAL RANKING ==================== */}
-      {isRankingModal && (
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 overflow-y-auto">
-          <div className="bg-white p-8 rounded-lg max-w-2xl w-full my-8 mx-4">
+// Main component
+const TorneioDetails = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
 
-            <h2 className="text-2xl font-bold mb-4">Classificação Final do Torneio</h2>
-            <p className="text-gray-600 mb-6">
-              Selecione a equipa para cada posição da classificação final.
-            </p>
+  const [tournament, setTournament] = useState<TournamentDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [showEditModal, setShowEditModal] = useState(false);
 
-            {error && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
-                {error}
-              </div>
-            )}
+  useEffect(() => {
+    loadTournament();
+  }, [id]);
 
-            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 mb-6">
-              {rankings.map((ranking, index) => (
-                <div key={ranking.position} className="flex items-center gap-4">
-                  <div className={`font-bold text-lg w-12 text-center ${
-                    ranking.position === 1 ? 'text-yellow-500' :
-                    ranking.position === 2 ? 'text-gray-400' :
-                    ranking.position === 3 ? 'text-amber-600' :
-                    'text-gray-600'
-                  }`}>
-                    {ranking.position}º
-                  </div>
-                  <select
-                    className="flex-1 border px-4 py-2 rounded-md bg-white"
-                    value={ranking.team_id}
-                    onChange={e => {
-                      const newRankings = [...rankings];
-                      newRankings[index].team_id = e.target.value;
-                      setRankings(newRankings);
-                    }}
-                  >
-                    <option value="">Selecionar equipa...</option>
-                    {tournamentTeams.map(team => (
-                      <option key={team.id} value={team.id}>
-                        {team.name} ({team.course_name})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ))}
+  const loadTournament = async () => {
+    if (!id) return;
+
+    try {
+      setLoading(true);
+      const data = await tournamentsApi.getById(id);
+      setTournament(data);
+    } catch (err) {
+      console.error('Failed to fetch tournament:', err);
+      alert('Erro ao carregar torneio');
+      navigate('/geral/torneios');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdate = async (data: TournamentUpdate) => {
+    if (!id) return;
+
+    const updated = await tournamentsApi.update(id, data);
+    setTournament(updated);
+  };
+
+  const handleDelete = async () => {
+    if (!id || !tournament) return;
+
+    if (window.confirm(`Tem certeza que deseja eliminar "${tournament.name}"?`)) {
+      try {
+        await tournamentsApi.delete(id);
+        navigate('/geral/torneios');
+      } catch (err) {
+        console.error('Failed to delete tournament:', err);
+        alert('Erro ao eliminar torneio');
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Sidebar />
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!tournament) return null;
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Sidebar />
+
+      <div className="p-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="mb-8 flex justify-between items-center">
+            <h1 className="text-3xl font-bold text-gray-800">Detalhes do Torneio</h1>
+            <button
+              onClick={() => navigate('/geral/torneios')}
+              className="px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+            >
+              Voltar
+            </button>
+          </div>
+
+          {/* Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Tournament Info */}
+            <div>
+              <TournamentInfo
+                tournament={tournament}
+                onEdit={() => setShowEditModal(true)}
+                onDelete={handleDelete}
+              />
             </div>
 
-            <div className="flex gap-4 mt-6">
-              <button
-                onClick={() => {
-                  setIsRankingModal(false);
-                  setRankings([]);
-                  setError('');
-                }}
-                className="flex-1 bg-gray-300 hover:bg-gray-400 py-2 rounded-md transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={submitRankings}
-                className="flex-1 bg-teal-500 hover:bg-teal-600 text-white py-2 rounded-md transition-colors"
-              >
-                Finalizar Torneio
-              </button>
+            {/* Competitors */}
+            <div>
+              <TournamentCompetitors
+                tournament={tournament}
+                onCompetitorsChange={loadTournament}
+              />
             </div>
+          </div>
 
+          {/* Matches - Full Width */}
+          <div className="mt-6">
+            <TournamentMatches
+              tournament={tournament}
+              onMatchesChange={loadTournament}
+            />
           </div>
         </div>
-      )}
+      </div>
 
+      {/* Edit Modal */}
+      {showEditModal && (
+        <EditTournamentModal
+          tournament={tournament}
+          onClose={() => setShowEditModal(false)}
+          onSave={handleUpdate}
+        />
+      )}
     </div>
   );
 };

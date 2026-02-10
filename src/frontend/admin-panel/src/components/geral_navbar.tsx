@@ -84,6 +84,14 @@ export default function Sidebar() {
               </Link>
 
               <Link
+                to="/geral/formatos-prova"
+                className="block text-gray-700 hover:text-teal-600 font-medium transition"
+                onClick={() => setIsOpen(false)}
+              >
+                Formatos de Prova
+              </Link>
+
+              <Link
                 to="/geral/modalidades"
                 className="block text-gray-700 hover:text-teal-600 font-medium transition"
                 onClick={() => setIsOpen(false)}
@@ -121,14 +129,6 @@ export default function Sidebar() {
                 onClick={() => setIsOpen(false)}
               >
                 Regulamentos
-              </Link>
-
-              <Link
-                to="/geral/formatos-pontuacao"
-                className="block text-gray-700 hover:text-teal-600 font-medium transition"
-                onClick={() => setIsOpen(false)}
-              >
-                Formatos de Pontuação
               </Link>
 
               <Link

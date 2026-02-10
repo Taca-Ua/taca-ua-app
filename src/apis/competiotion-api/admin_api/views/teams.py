@@ -2,20 +2,26 @@
 Team management views
 """
 
-from datetime import datetime, timezone
-
+from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ..models import Course, Modality, Team
-from ..serializers import TeamCreateSerializer, TeamListSerializer, TeamUpdateSerializer
+from ..serializers.teams import (
+    TeamCreateSerializer,
+    TeamDetailSerializer,
+    TeamListRequestSerializer,
+    TeamListSerializer,
+    TeamUpdateSerializer,
+)
+from ..services.modalities_service import modalities_service_client
 
 
 @extend_schema_view(
     get=extend_schema(
+        parameters=[TeamListRequestSerializer],
         responses=TeamListSerializer(many=True),
         description="List teams with optional filters (modality_id, course_id, tournament_id)",
         tags=["Team Management"],
@@ -29,52 +35,42 @@ from ..serializers import TeamCreateSerializer, TeamListSerializer, TeamUpdateSe
 )
 class TeamListCreateView(APIView):
     def get(self, request: Request):
-        teams = Team.objects.all()
+        # Serialize input data
+        serializer = TeamListRequestSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
 
-        return Response(
-            [
-                {
-                    "id": team.id,
-                    "modality_name": team.modality.name,
-                    "course_name": team.course.name,
-                    "name": team.name,
-                }
-                for team in teams
-            ]
-        )
+        # TODO: Pass filters to the modalities service client
+        teams = modalities_service_client.list_teams()
+
+        # Serialize output data
+        serializer = TeamListSerializer(teams, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request: Request):
+        # Serialize input data
         serializer = TeamCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        team = Team.objects.create(
+        team = modalities_service_client.create_team(
             name=serializer.validated_data.get("name"),
-            modality_id=serializer.validated_data["modality_id"],
-            course_id=serializer.validated_data["course_id"],
-            created_by="00000000-0000-0000-0000-000000000000",
-            created_at=datetime.now(timezone.utc),
+            modality_id=str(serializer.validated_data["modality_id"]),
+            course_id=str(serializer.validated_data["course_id"]),
         )
 
-        return Response(
-            {
-                "id": team.id,
-                "modality_name": team.modality.name,
-                "course_name": team.course.name,
-                "name": team.name,
-            },
-            status=status.HTTP_201_CREATED,
-        )
+        # Serialize output data
+        serializer = TeamListSerializer(team)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
     get=extend_schema(
-        responses=TeamListSerializer,
+        responses=TeamDetailSerializer,
         description="Get a team by ID",
         tags=["Team Management"],
     ),
     put=extend_schema(
         request=TeamUpdateSerializer,
-        responses=TeamListSerializer,
+        responses=TeamDetailSerializer,
         description="Update a team (name, add/remove players)",
         tags=["Team Management"],
     ),
@@ -86,53 +82,52 @@ class TeamListCreateView(APIView):
 )
 class TeamDetailView(APIView):
     def get(self, request, team_id):
+        team = modalities_service_client.get_team(team_id)
 
-        team = Team.objects.get(id=team_id)
-
-        return Response(
-            {
-                "id": team.id,
-                "modality_name": team.modality.name,
-                "course_name": team.course.name,
-                "name": team.name,
-                "players": [player.to_json() for player in team.players.all()],
-            }
-        )
+        # Serialize output data
+        serializer = TeamDetailSerializer(team)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, team_id):
+        # Serialize input data
         serializer = TeamUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        team = Team.objects.get(id=team_id)
-
-        if "name" in serializer.validated_data:
-            team.name = serializer.validated_data["name"]
-        if "modality_id" in serializer.validated_data:
-            modality = Modality.objects.get(id=serializer.validated_data["modality_id"])
-            team.modality = modality
-        if "course_id" in serializer.validated_data:
-            course = Course.objects.get(id=serializer.validated_data["course_id"])
-            team.course = course
-        if "players_add" in serializer.validated_data:
-            for player_id in serializer.validated_data["players_add"]:
-                team.players.add(player_id)
-        if "players_remove" in serializer.validated_data:
-            for player_id in serializer.validated_data["players_remove"]:
-                team.players.remove(player_id)
-        team.save()
-
-        return Response(
-            {
-                "id": team.id,
-                "modality_name": team.modality.name,
-                "course_name": team.course.name,
-                "name": team.name,
-                "players": [player.to_json() for player in team.players.all()],
-            }
+        team = modalities_service_client.update_team(
+            team_id,
+            name=serializer.validated_data.get("name"),
+            modality_id=(
+                str(serializer.validated_data["modality_id"])
+                if "modality_id" in serializer.validated_data
+                else None
+            ),
+            course_id=(
+                str(serializer.validated_data["course_id"])
+                if "course_id" in serializer.validated_data
+                else None
+            ),
+            players_add=(
+                [str(pid) for pid in serializer.validated_data["players_add"]]
+                if "players_add" in serializer.validated_data
+                else None
+            ),
+            players_remove=(
+                [str(pid) for pid in serializer.validated_data["players_remove"]]
+                if "players_remove" in serializer.validated_data
+                else None
+            ),
         )
 
-    def delete(self, request, team_id):
+        # Serialize output data
+        serializer = TeamDetailSerializer(team)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-        team = Team.objects.get(id=team_id)
-        team.delete()
+    def delete(self, request, team_id):
+        modalities_service_client.delete_team(team_id)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+urlpatterns = [
+    path("", TeamListCreateView.as_view(), name="team-list"),
+    path("<uuid:team_id>/", TeamDetailView.as_view(), name="team-detail"),
+]

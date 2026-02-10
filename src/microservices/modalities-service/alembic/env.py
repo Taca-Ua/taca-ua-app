@@ -86,16 +86,6 @@ def run_migrations_online() -> None:
             target_metadata=target_metadata,
             version_table_schema="modalities",
             include_schemas=True,
-            include_name=lambda name, type_, parent_names: (
-                # Only include objects in the 'modalities' schema
-                type_ == "schema"
-                and name == "modalities"
-            )
-            or (
-                # For tables, only include those in the 'modalities' schema
-                type_ == "table"
-                and parent_names.get("schema_name") == "modalities"
-            ),
         )
 
         with context.begin_transaction():

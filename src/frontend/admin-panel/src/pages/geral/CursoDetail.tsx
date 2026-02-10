@@ -16,7 +16,6 @@ const CursoDetail = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editedName, setEditedName] = useState('');
   const [editedAbbreviation, setEditedAbbreviation] = useState('');
-  const [editedDescription, setEditedDescription] = useState('');
   const [editedNucleoId, setEditedNucleoId] = useState('');
 
   useEffect(() => {
@@ -57,15 +56,9 @@ const CursoDetail = () => {
     if (!course) return;
     setEditedName(course.name);
     setEditedAbbreviation(course.abbreviation);
-    setEditedDescription(course.description || '');
-    setEditedNucleoId(getNucleoIdFromName(course.nucleo));
+    setEditedNucleoId(course.nucleo.id);
     setError('');
     setIsEditModalOpen(true);
-  };
-
-  const getNucleoIdFromName = (nucleoName: string): string => {
-	const nucleo = nucleos.find((n) => n.name === nucleoName);
-	return nucleo ? nucleo.id : '';
   };
 
   const handleSave = async () => {
@@ -86,7 +79,6 @@ const CursoDetail = () => {
       const updatedCourse = await coursesApi.update(String(id), {
         name: editedName,
         abbreviation: editedAbbreviation,
-        description: editedDescription.trim() || undefined,
         nucleo_id: editedNucleoId,
       });
       setCourse(updatedCourse);
@@ -147,7 +139,7 @@ const CursoDetail = () => {
               <label className="block text-teal-500 font-medium mb-2">Logo</label>
               <div className="flex items-center gap-4">
                 <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-teal-500">
-                  {course.logo_url ? (
+                  {/* {course.logo_url ? (
                     <img
                       src={course.logo_url}
                       alt={course.name}
@@ -157,9 +149,9 @@ const CursoDetail = () => {
                         e.currentTarget.parentElement!.innerHTML = `<span class="text-teal-600 font-bold text-2xl">${course.abbreviation}</span>`;
                       }}
                     />
-                  ) : (
+                  ) : ( */}
                     <span className="text-teal-600 font-bold text-2xl">{course.abbreviation}</span>
-                  )}
+                  {/* )} */}
                 </div>
               </div>
             </div>
@@ -180,21 +172,11 @@ const CursoDetail = () => {
               </div>
             </div>
 
-            {/* Description */}
-            {course.description && (
-              <div>
-                <label className="block text-teal-500 font-medium mb-2">Descrição</label>
-                <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
-                  {course.description}
-                </div>
-              </div>
-            )}
-
             {/* Nucleo */}
             <div>
               <label className="block text-teal-500 font-medium mb-2">Núcleo</label>
               <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
-                {course.nucleo ? course.nucleo : 'N/A'}
+                {course.nucleo.name}
               </div>
             </div>
 
@@ -257,17 +239,6 @@ const CursoDetail = () => {
                   placeholder="Ex: MECT, LEI, LECI"
                   required
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-                />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">Descrição</label>
-                <textarea
-                  value={editedDescription}
-                  onChange={(e) => setEditedDescription(e.target.value)}
-                  placeholder="Digite a descrição (opcional)"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 min-h-[80px]"
                 />
               </div>
 

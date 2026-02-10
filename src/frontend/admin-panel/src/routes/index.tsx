@@ -27,7 +27,7 @@ import DashboardNucleo from '../pages/nucleo/DashboardNucleo';
 import Membros from '../pages/nucleo/Membros';
 import MemberDetail from '../pages/nucleo/MemberDetail';
 import Equipas from '../pages/nucleo/Equipas';
-import TeamDetail from '../pages/nucleo/TeamDetail';
+import TeamDetailPage from '../pages/nucleo/TeamDetail';
 import Jogos from '../pages/nucleo/Jogos';
 import MatchDetail from '../pages/nucleo/MatchDetail';
 
@@ -99,7 +99,7 @@ export const router = createBrowserRouter([
     element: <ProtectedRoute requiredRole="geral"><Regulamentos /></ProtectedRoute>,
   },
   {
-    path: '/geral/formatos-pontuacao',
+    path: '/geral/formatos-prova',
     element: <ProtectedRoute requiredRole="geral"><FormatosPontuacao /></ProtectedRoute>,
   },
   {
@@ -136,7 +136,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/nucleo/equipas/:id',
-    element: <ProtectedRoute requiredRole="nucleo"><TeamDetail /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="nucleo"><TeamDetailPage /></ProtectedRoute>,
   },
   {
     path: '/nucleo/jogos',

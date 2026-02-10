@@ -38,7 +38,7 @@ Representa um jogo/partida:
 - `team_b_id` (uuid) - ID da equipa B
 - `scheduled_at` (timestamp) - Data/hora agendada
 - `location` (text) - Local do jogo
-- `state` (enum) - Estado: `scheduled`, `finished`, `canceled`
+- `state` (enum) - Estado: `scheduled`, `finished`, `cancelled`
 - `created_at`, `updated_at` (timestamp)
 
 #### `matches.result`

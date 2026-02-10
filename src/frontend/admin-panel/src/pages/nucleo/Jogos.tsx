@@ -140,7 +140,6 @@ const Jogos = () => {
               {/* List View */}
               {viewMode === 'list' && (
                 <div className="bg-white rounded-lg shadow-md p-6">
-                  <h2 className="text-2xl font-bold mb-6 text-gray-800">Jogos</h2>
                   <div className="space-y-3">
                     {matches.length > 0 ? (
                       matches.map((match) => {
@@ -153,7 +152,11 @@ const Jogos = () => {
                           >
                             <div className="flex justify-between items-center mb-2">
                               <span className="text-gray-800 font-bold text-lg">
-                                {match.team_home_name} vs {match.team_away_name}
+                                {match.participants.map(p => {
+                                  if (p.team) return p.team.name;
+                                  if (p.athlete) return p.athlete.full_name;
+                                  return 'TBD';
+                                }).join(' vs ')}
                               </span>
                               <span className="text-teal-600 text-sm font-medium">
                                 {getStatusDisplay(match.status)}
@@ -169,11 +172,11 @@ const Jogos = () => {
                               <span>
                                 <span className="font-medium">Local:</span> {match.location}
                               </span>
-                              {match.home_score !== null && match.away_score !== null && (
+                              {/* {match.home_score !== null && match.away_score !== null && (
                                 <span>
                                   <span className="font-medium">Resultado:</span> {match.home_score} - {match.away_score}
                                 </span>
-                              )}
+                              )} */}
                             </div>
                           </div>
                         );
@@ -256,11 +259,19 @@ const Jogos = () => {
                                     key={match.id}
                                     onClick={() => navigate(`/nucleo/jogos/${match.id}`)}
                                     className="text-xs bg-teal-100 hover:bg-teal-200 px-2 py-1 rounded cursor-pointer transition-colors"
-                                    title={`${time} - ${match.team_home_name} vs ${match.team_away_name}`}
+                                    title={`${time} - ${match.participants.map(p => {
+                                      if (p.team) return p.team.name;
+                                      if (p.athlete) return p.athlete.full_name;
+                                      return 'TBD';
+                                    }).join(' vs ')}`}
                                   >
                                     <div className="font-medium truncate">{time}</div>
                                     <div className="truncate text-gray-600">
-                                      {match.team_home_name} vs {match.team_away_name}
+                                      {match.participants.map(p => {
+                                        if (p.team) return p.team.name;
+                                        if (p.athlete) return p.athlete.full_name;
+                                        return 'TBD';
+                                      }).join(' vs ')}
                                     </div>
                                   </div>
                                 );

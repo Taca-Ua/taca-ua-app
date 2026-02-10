@@ -1,25 +1,719 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
-import { matchesApi, type Match, type MatchUpdate } from '../../api/matches';
+import {
+  matchesApi,
+  type MatchDetail,
+  type MatchUpdate,
+  type MatchResultsUpdate,
+  type ParticipantResult,
+  type LineupDetail,
+  type CommentDetail,
+  type CommentCreate
+} from '../../api/matches';
+
+// ==================== Private Components ====================
+
+// Match Header Component
+const MatchHeader = ({ match }: { match: MatchDetail }) => {
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      scheduled: { label: 'Agendado', color: 'bg-blue-100 text-blue-800' },
+      in_progress: { label: 'Em Curso', color: 'bg-yellow-100 text-yellow-800' },
+      finished: { label: 'Terminado', color: 'bg-green-100 text-green-800' },
+      cancelled: { label: 'Cancelado', color: 'bg-red-100 text-red-800' },
+    };
+
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.scheduled;
+
+    return (
+      <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${config.color}`}>
+        {config.label}
+      </span>
+    );
+  };
+
+  const participants = match.participants || [];
+
+  const getName = (participant: typeof participants[0]) => {
+    if (!participant) return 'TBD';
+    return participant.team?.name || participant.athlete?.full_name || 'TBD';
+  };
+
+  const getScore = (participant: typeof participants[0]) => {
+    return participant?.score ?? null;
+  };
+
+  const hasScores = match.status === 'finished' && participants.some(p => p.score !== null && p.score !== undefined);
+
+  // For 2 participants, use traditional layout
+  if (participants.length === 2) {
+    return (
+      <div className="bg-gradient-to-r from-teal-500 to-teal-600 text-white p-8">
+        <div className="flex justify-between items-center gap-8 mb-4">
+          <div className="flex-1 text-right">
+            <h2 className="text-2xl font-bold">{getName(participants[0])}</h2>
+          </div>
+
+          <div className="flex-shrink-0 text-center">
+            {hasScores ? (
+              <div className="text-5xl font-bold">
+                {getScore(participants[0])} - {getScore(participants[1])}
+              </div>
+            ) : (
+              <div className="text-3xl font-bold opacity-75">VS</div>
+            )}
+          </div>
+
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold">{getName(participants[1])}</h2>
+          </div>
+        </div>
+
+        <div className="text-center">
+          {getStatusBadge(match.status)}
+        </div>
+      </div>
+    );
+  }
+
+  // For multiple participants, use grid layout
+  return (
+    <div className="bg-gradient-to-r from-teal-500 to-teal-600 text-white p-8">
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-center mb-4">Participantes</h2>
+        <div className={`grid gap-4 ${participants.length === 3 ? 'grid-cols-3' : participants.length === 4 ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}`}>
+          {participants.map((participant, index) => (
+            <div key={participant.id} className="text-center p-4 bg-white bg-opacity-10 rounded-lg">
+              <div className="text-lg font-bold mb-2">{getName(participant)}</div>
+              {hasScores && (
+                <div className="text-3xl font-bold">{getScore(participant) ?? '-'}</div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="text-center">
+        {getStatusBadge(match.status)}
+      </div>
+    </div>
+  );
+};
+
+// Match Info Component
+const MatchInfo = ({
+  match,
+  isEditing,
+  formData,
+  setFormData,
+  onSave,
+  onCancel,
+  saving
+}: {
+  match: MatchDetail;
+  isEditing: boolean;
+  formData: { location: string; startTime: string; status: string };
+  setFormData: (data: any) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  saving: boolean;
+}) => {
+  const formatDateTime = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleString('pt-PT', {
+        dateStyle: 'long',
+        timeStyle: 'short',
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
+  if (!isEditing) {
+    return (
+      <div className="space-y-4">
+        <div className="border-b pb-3">
+          <label className="block text-sm font-medium text-gray-500 mb-1">Local</label>
+          <p className="text-lg text-gray-800">{match.location}</p>
+        </div>
+
+        <div className="border-b pb-3">
+          <label className="block text-sm font-medium text-gray-500 mb-1">Data e Hora</label>
+          <p className="text-lg text-gray-800">{formatDateTime(match.start_time)}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); onSave(); }} className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Estado <span className="text-red-500">*</span>
+        </label>
+        <select
+          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+          value={formData.status}
+          onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+        >
+          <option value="scheduled">Agendado</option>
+          <option value="in_progress">Em Curso</option>
+          <option value="finished">Terminado</option>
+          <option value="cancelled">Cancelado</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Local <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+          value={formData.location}
+          onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+          placeholder="Ex: Campo Municipal"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Data e Hora <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="datetime-local"
+          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+          value={formData.startTime}
+          onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+          required
+        />
+      </div>
+
+      <div className="flex gap-3 pt-4 border-t">
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={saving}
+          className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md font-medium transition-colors disabled:opacity-50"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          disabled={saving}
+          className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors disabled:opacity-50 flex items-center justify-center"
+        >
+          {saving ? (
+            <>
+              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              A Guardar...
+            </>
+          ) : (
+            'Guardar'
+          )}
+        </button>
+      </div>
+    </form>
+  );
+};
+
+// Results Section Component
+const ResultsSection = ({
+  match,
+  onUpdate
+}: {
+  match: MatchDetail;
+  onUpdate: () => void;
+}) => {
+  const [isEditingResults, setIsEditingResults] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [results, setResults] = useState<{ [key: string]: { score: string; position: string } }>({});
+
+  useEffect(() => {
+    const initialResults: { [key: string]: { score: string; position: string } } = {};
+    match.participants.forEach(p => {
+      initialResults[p.id] = {
+        score: p.score?.toString() || '',
+        position: p.position?.toString() || '',
+      };
+    });
+    setResults(initialResults);
+  }, [match.participants]);
+
+  const handleSaveResults = async () => {
+    try {
+      setSaving(true);
+      setError('');
+
+      const participant_results: ParticipantResult[] = match.participants.map(p => ({
+        participant_id: p.id,
+        score: results[p.id]?.score ? Number(results[p.id].score) : undefined,
+        position: results[p.id]?.position ? Number(results[p.id].position) : undefined,
+      }));
+
+      const updateData: MatchResultsUpdate = {
+        participant_results,
+        status: 'finished',
+      };
+
+      await matchesApi.updateMatchResults(match.id, updateData);
+      setIsEditingResults(false);
+      onUpdate();
+    } catch (err) {
+      console.error('Error updating results:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao atualizar resultados');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const getName = (participant: typeof match.participants[0]) => {
+    return participant.team?.name || participant.athlete?.full_name || 'Participante';
+  };
+
+  if (match.status !== 'finished' && !isEditingResults) {
+    return (
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold text-gray-800">Resultados</h3>
+          <button
+            onClick={() => setIsEditingResults(true)}
+            className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md text-sm font-medium transition-colors"
+          >
+            Publicar Resultados
+          </button>
+        </div>
+        <p className="text-gray-600">Os resultados ainda não foram publicados.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-bold text-gray-800">Resultados</h3>
+        {!isEditingResults && match.status === 'finished' && (
+          <button
+            onClick={() => setIsEditingResults(true)}
+            className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md text-sm font-medium transition-colors"
+          >
+            Editar Resultados
+          </button>
+        )}
+      </div>
+
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm">
+          {error}
+        </div>
+      )}
+
+      {!isEditingResults ? (
+        <div className="space-y-4">
+          {match.participants.map((participant) => (
+            <div key={participant.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+              <span className="font-semibold text-gray-800">{getName(participant)}</span>
+              <div className="flex gap-6">
+                {participant.score !== null && participant.score !== undefined && (
+                  <div className="text-right">
+                    <div className="text-sm text-gray-500">Pontuação</div>
+                    <div className="text-2xl font-bold text-teal-600">{participant.score}</div>
+                  </div>
+                )}
+                {participant.position !== null && participant.position !== undefined && (
+                  <div className="text-right">
+                    <div className="text-sm text-gray-500">Posição</div>
+                    <div className="text-2xl font-bold text-teal-600">{participant.position}º</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {match.participants.map((participant) => (
+            <div key={participant.id} className="p-4 bg-gray-50 rounded-lg">
+              <div className="font-semibold text-gray-800 mb-3">{getName(participant)}</div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Pontuação</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
+                    value={results[participant.id]?.score || ''}
+                    onChange={(e) => setResults({
+                      ...results,
+                      [participant.id]: { ...results[participant.id], score: e.target.value }
+                    })}
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Posição</label>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
+                    value={results[participant.id]?.position || ''}
+                    onChange={(e) => setResults({
+                      ...results,
+                      [participant.id]: { ...results[participant.id], position: e.target.value }
+                    })}
+                    placeholder="1"
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+
+          <div className="flex gap-3 pt-4 border-t">
+            <button
+              type="button"
+              onClick={() => {
+                setIsEditingResults(false);
+                setError('');
+              }}
+              disabled={saving}
+              className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md font-medium transition-colors disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleSaveResults}
+              disabled={saving}
+              className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors disabled:opacity-50"
+            >
+              {saving ? 'A Guardar...' : 'Guardar Resultados'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Lineups Section Component
+const LineupsSection = ({ match }: { match: MatchDetail }) => {
+  const [lineups, setLineups] = useState<LineupDetail[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetchLineups();
+  }, [match.id]);
+
+  const fetchLineups = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const data = await matchesApi.getLineups(match.id);
+      setLineups(data);
+    } catch (err) {
+      console.error('Error loading lineups:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao carregar convocatórias');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Create a map of team_id to team object from match participants
+  const teamMap = match.participants.reduce((acc, participant) => {
+    if (participant.team) {
+      acc[participant.team.id] = participant.team;
+    }
+    return acc;
+  }, {} as { [key: string]: typeof match.participants[0]['team'] });
+
+  // Group lineups by team
+  const lineupsByTeam = lineups.reduce((acc, lineup) => {
+    if (!acc[lineup.team_id]) {
+      acc[lineup.team_id] = [];
+    }
+    acc[lineup.team_id].push(lineup);
+    return acc;
+  }, {} as { [key: string]: LineupDetail[] });
+
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <h3 className="text-xl font-bold text-gray-800 mb-4">Convocatórias</h3>
+
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
+        </div>
+      ) : error ? (
+        <div className="p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm">
+          {error}
+        </div>
+      ) : lineups.length === 0 ? (
+        <p className="text-gray-600">Nenhuma convocatória definida.</p>
+      ) : (
+        <div className="space-y-6">
+          {Object.entries(lineupsByTeam).map(([teamId, teamLineups]) => {
+            const starters = teamLineups.filter(l => l.is_starter);
+            const bench = teamLineups.filter(l => !l.is_starter);
+            const team = teamMap[teamId];
+
+            return (
+              <div key={teamId} className="border-l-4 border-teal-500 pl-4">
+                <h4 className="font-semibold text-lg text-gray-800 mb-3">
+                  {team?.name || `Equipa ${teamId.substring(0, 8)}`}
+                </h4>
+
+                {starters.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-sm font-medium text-gray-600 mb-2">Titulares</p>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {starters.map(lineup => (
+                        <div key={lineup.id} className="flex items-center gap-2 p-2 bg-teal-50 rounded">
+                          <span className="flex-shrink-0 w-8 h-8 bg-teal-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                            {lineup.jersey_number}
+                          </span>
+                          <span className="text-sm text-gray-800 truncate">
+                            {lineup.player?.full_name || 'Jogador'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {bench.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 mb-2">Suplentes</p>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {bench.map(lineup => (
+                        <div key={lineup.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                          <span className="flex-shrink-0 w-8 h-8 bg-gray-400 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                            {lineup.jersey_number}
+                          </span>
+                          <span className="text-sm text-gray-800 truncate">
+                            {lineup.player?.full_name || 'Jogador'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Comments Section Component
+const CommentsSection = ({ matchId }: { matchId: string }) => {
+  const [comments, setComments] = useState<CommentDetail[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [newComment, setNewComment] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetchComments();
+  }, [matchId]);
+
+  const fetchComments = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const data = await matchesApi.getComments(matchId);
+      setComments(data);
+    } catch (err) {
+      console.error('Error loading comments:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao carregar comentários');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddComment = async () => {
+    if (!newComment.trim()) return;
+
+    try {
+      setSubmitting(true);
+      setError('');
+      const commentData: CommentCreate = { message: newComment.trim() };
+      const addedComment = await matchesApi.addComment(matchId, commentData);
+      setComments([...comments, addedComment]);
+      setNewComment('');
+    } catch (err) {
+      console.error('Error adding comment:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao adicionar comentário');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!confirm('Tem a certeza que deseja eliminar este comentário?')) return;
+
+    try {
+      setError('');
+      await matchesApi.deleteComment(matchId, commentId);
+      setComments(comments.filter(c => c.id !== commentId));
+    } catch (err) {
+      console.error('Error deleting comment:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao eliminar comentário');
+    }
+  };
+
+  const formatCommentDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleString('pt-PT', {
+        dateStyle: 'short',
+        timeStyle: 'short',
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <h3 className="text-xl font-bold text-gray-800 mb-4">Comentários</h3>
+
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm">
+          {error}
+        </div>
+      )}
+
+      {/* Add Comment Form */}
+      <div className="mb-6">
+        <textarea
+          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
+          rows={3}
+          placeholder="Adicionar um comentário..."
+          value={newComment}
+          onChange={(e) => setNewComment(e.target.value)}
+        ></textarea>
+        <button
+          onClick={handleAddComment}
+          disabled={submitting || !newComment.trim()}
+          className="mt-2 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {submitting ? 'A Adicionar...' : 'Adicionar Comentário'}
+        </button>
+      </div>
+
+      {/* Comments List */}
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
+        </div>
+      ) : comments.length === 0 ? (
+        <p className="text-gray-600 text-center py-4">Nenhum comentário ainda.</p>
+      ) : (
+        <div className="space-y-4">
+          {comments.map((comment) => (
+            <div key={comment.id} className="p-4 bg-gray-50 rounded-lg">
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-teal-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                    {comment.created_by.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm text-gray-800">{comment.created_by}</p>
+                    <p className="text-xs text-gray-500">{formatCommentDate(comment.created_at)}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleDeleteComment(comment.id)}
+                  className="text-red-600 hover:text-red-700 p-1"
+                  title="Eliminar comentário"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-gray-700 whitespace-pre-wrap">{comment.message}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Delete Modal Component
+const DeleteModal = ({
+  show,
+  onClose,
+  onConfirm
+}: {
+  show: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}) => {
+  if (!show) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 animate-fade-in">
+        <div className="flex items-center mb-4">
+          <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mr-4">
+            <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-bold text-gray-900">Confirmar Eliminação</h3>
+        </div>
+
+        <p className="text-gray-600 mb-6">
+          Tem a certeza que deseja eliminar este jogo? Esta ação não pode ser revertida e todos os dados associados serão permanentemente removidos.
+        </p>
+
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md font-medium transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium transition-colors"
+          >
+            Sim, Eliminar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ==================== Main Component ====================
 
 const JogoDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [match, setMatch] = useState<Match | null>(null);
+  const [match, setMatch] = useState<MatchDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
   // Edit mode state
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [formData, setFormData] = useState({
     location: '',
     startTime: '',
     status: 'scheduled' as 'scheduled' | 'in_progress' | 'finished' | 'cancelled',
-    homeScore: '',
-    awayScore: '',
   });
 
   // Delete confirmation
@@ -39,8 +733,6 @@ const JogoDetails = () => {
         location: matchData.location,
         startTime: toInputDateTime(matchData.start_time),
         status: matchData.status,
-        homeScore: matchData.home_score?.toString() || '',
-        awayScore: matchData.away_score?.toString() || '',
       });
     } catch (err) {
       console.error('Error loading match:', err);
@@ -53,35 +745,6 @@ const JogoDetails = () => {
   useEffect(() => {
     fetchMatch();
   }, [id]);
-
-  const validateForm = (): boolean => {
-    if (!formData.location.trim()) {
-      setError('O local é obrigatório');
-      return false;
-    }
-
-    if (!formData.startTime.trim()) {
-      setError('A data e hora são obrigatórias');
-      return false;
-    }
-
-    if (formData.status === 'finished') {
-      if (formData.homeScore === '' || formData.awayScore === '') {
-        setError('Os resultados são obrigatórios quando o jogo está terminado');
-        return false;
-      }
-
-      const homeScore = Number(formData.homeScore);
-      const awayScore = Number(formData.awayScore);
-
-      if (isNaN(homeScore) || isNaN(awayScore) || homeScore < 0 || awayScore < 0) {
-        setError('Os resultados devem ser números positivos');
-        return false;
-      }
-    }
-
-    return true;
-  };
 
   const toInputDateTime = (dateString: string | undefined | null) => {
     if (!dateString) return '';
@@ -96,8 +759,18 @@ const JogoDetails = () => {
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
-  const handleSave = async () => {
-    if (!match || !validateForm()) return;
+  const handleSaveInfo = async () => {
+    if (!match) return;
+
+    if (!formData.location.trim()) {
+      setError('O local é obrigatório');
+      return;
+    }
+
+    if (!formData.startTime.trim()) {
+      setError('A data e hora são obrigatórias');
+      return;
+    }
 
     try {
       setSaving(true);
@@ -109,27 +782,15 @@ const JogoDetails = () => {
         status: formData.status,
       };
 
-      // Include scores for finished matches
-      if (formData.status === 'finished') {
-        updateData.home_score = Number(formData.homeScore);
-        updateData.away_score = Number(formData.awayScore);
-      } else {
-        // Clear scores if status is not finished
-        updateData.home_score = null;
-        updateData.away_score = null;
-      }
-
       const updatedMatch = await matchesApi.update(match.id, updateData);
       setMatch(updatedMatch);
-      setIsEditing(false);
+      setIsEditingInfo(false);
 
       // Update form data with the response
       setFormData({
         location: updatedMatch.location,
         startTime: toInputDateTime(updatedMatch.start_time),
         status: updatedMatch.status,
-        homeScore: updatedMatch.home_score?.toString() || '',
-        awayScore: updatedMatch.away_score?.toString() || '',
       });
     } catch (err) {
       console.error('Error updating match:', err);
@@ -137,6 +798,18 @@ const JogoDetails = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleCancelEdit = () => {
+    if (!match) return;
+
+    setFormData({
+      location: match.location,
+      startTime: toInputDateTime(match.start_time),
+      status: match.status,
+    });
+    setIsEditingInfo(false);
+    setError('');
   };
 
   const handleDelete = async () => {
@@ -153,45 +826,23 @@ const JogoDetails = () => {
     }
   };
 
-  const handleCancelEdit = () => {
+  const handleDownloadSheet = async () => {
     if (!match) return;
 
-    setFormData({
-      location: match.location,
-      startTime: toInputDateTime(match.start_time),
-      status: match.status,
-      homeScore: match.home_score?.toString() || '',
-      awayScore: match.away_score?.toString() || '',
-    });
-    setIsEditing(false);
-    setError('');
-  };
-
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      scheduled: { label: 'Agendado', color: 'bg-blue-100 text-blue-800' },
-      in_progress: { label: 'Em Curso', color: 'bg-yellow-100 text-yellow-800' },
-      finished: { label: 'Terminado', color: 'bg-green-100 text-green-800' },
-      cancelled: { label: 'Cancelado', color: 'bg-red-100 text-red-800' },
-    };
-
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.scheduled;
-
-    return (
-      <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${config.color}`}>
-        {config.label}
-      </span>
-    );
-  };
-
-  const formatDateTime = (dateString: string) => {
     try {
-      return new Date(dateString).toLocaleString('pt-PT', {
-        dateStyle: 'long',
-        timeStyle: 'short',
-      });
-    } catch {
-      return dateString;
+      setError('');
+      const blob = await matchesApi.getMatchSheet(match.id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `jogo_${match.id}_ficha.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Error downloading match sheet:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao fazer download da ficha de jogo');
     }
   };
 
@@ -231,7 +882,7 @@ const JogoDetails = () => {
     <div className="min-h-screen bg-gray-50">
       <Sidebar />
 
-      <div className="p-8 max-w-4xl mx-auto">
+      <div className="p-8 max-w-6xl mx-auto">
         {/* Back Button */}
         <button
           onClick={() => navigate(-1)}
@@ -258,264 +909,84 @@ const JogoDetails = () => {
           </div>
         )}
 
-        {/* Main Card */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          {/* Match Header */}
-          <div className="bg-gradient-to-r from-teal-500 to-teal-600 text-white p-8">
-            <div className="flex justify-between items-center gap-8 mb-4">
-              <div className="flex-1 text-right">
-                <h2 className="text-2xl font-bold">{match.team_home_name}</h2>
-              </div>
+        {/* Match Header */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+          <MatchHeader match={match} />
+        </div>
 
-              <div className="flex-shrink-0 text-center">
-                {match.status === 'finished' && match.home_score !== null && match.away_score !== null ? (
-                  <div className="text-5xl font-bold">
-                    {match.home_score} - {match.away_score}
-                  </div>
-                ) : (
-                  <div className="text-3xl font-bold opacity-75">VS</div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Match Info & Actions */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* Match Info Card */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-gray-800">Informações</h3>
+                {!isEditingInfo && (
+                  <button
+                    onClick={() => setIsEditingInfo(true)}
+                    className="text-teal-600 hover:text-teal-700 p-1"
+                    title="Editar"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
                 )}
               </div>
 
-              <div className="flex-1">
-                <h2 className="text-2xl font-bold">{match.team_away_name}</h2>
-              </div>
+              <MatchInfo
+                match={match}
+                isEditing={isEditingInfo}
+                formData={formData}
+                setFormData={setFormData}
+                onSave={handleSaveInfo}
+                onCancel={handleCancelEdit}
+                saving={saving}
+              />
             </div>
 
-            <div className="text-center">
-              {getStatusBadge(match.status)}
+            {/* Action Buttons */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-xl font-bold text-gray-800 mb-4">Ações</h3>
+              <div className="space-y-3">
+                <button
+                  onClick={handleDownloadSheet}
+                  className="w-full px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-md font-medium transition-colors flex items-center justify-center"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Baixar Ficha de Jogo
+                </button>
+
+                <button
+                  onClick={() => setShowDeleteModal(true)}
+                  className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium transition-colors flex items-center justify-center"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Eliminar Jogo
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Match Details / Edit Form */}
-          <div className="p-8">
-            {!isEditing ? (
-              <div className="space-y-6">
-                {/* Location */}
-                <div className="border-b pb-4">
-                  <label className="block text-sm font-medium text-gray-500 mb-1">Local</label>
-                  <p className="text-lg text-gray-800">{match.location}</p>
-                </div>
-
-                {/* Date and Time */}
-                <div className="border-b pb-4">
-                  <label className="block text-sm font-medium text-gray-500 mb-1">Data e Hora</label>
-                  <p className="text-lg text-gray-800">{formatDateTime(match.start_time)}</p>
-                </div>
-
-                {/* Status */}
-                <div className="border-b pb-4">
-                  <label className="block text-sm font-medium text-gray-500 mb-1">Estado</label>
-                  <div>{getStatusBadge(match.status)}</div>
-                </div>
-
-                {/* Score Details (if finished) */}
-                {match.status === 'finished' && match.home_score !== null && match.away_score !== null && (
-                  <div className="bg-gray-50 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Resultado Final</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="text-center">
-                        <p className="text-sm text-gray-600 mb-1">{match.team_home_name}</p>
-                        <p className="text-3xl font-bold text-teal-600">{match.home_score}</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-sm text-gray-600 mb-1">{match.team_away_name}</p>
-                        <p className="text-3xl font-bold text-teal-600">{match.away_score}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex gap-4 pt-4">
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="flex-1 px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors flex items-center justify-center"
-                  >
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    Editar Jogo
-                  </button>
-                  <button
-                    onClick={() => setShowDeleteModal(true)}
-                    className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium transition-colors flex items-center justify-center"
-                  >
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    Eliminar
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-6">
-                {/* Teams Display (non-editable) */}
-                <div className="bg-gray-50 rounded-lg p-6 text-center">
-                  <div className="flex justify-center items-center gap-6 mb-2">
-                    <span className="text-lg font-semibold text-gray-800">{match.team_home_name}</span>
-                    <span className="text-xl font-bold text-gray-400">VS</span>
-                    <span className="text-lg font-semibold text-gray-800">{match.team_away_name}</span>
-                  </div>
-                  <p className="text-xs text-gray-500">As equipas não podem ser alteradas</p>
-                </div>
-
-                {/* Status */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Estado <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                    value={formData.status}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      status: e.target.value as 'scheduled' | 'in_progress' | 'finished' | 'cancelled',
-                      // Clear scores if status changed from finished to something else
-                      homeScore: e.target.value !== 'finished' ? '' : formData.homeScore,
-                      awayScore: e.target.value !== 'finished' ? '' : formData.awayScore,
-                    })}
-                  >
-                    <option value="scheduled">Agendado</option>
-                    <option value="in_progress">Em Curso</option>
-                    <option value="finished">Terminado</option>
-                    <option value="cancelled">Cancelado</option>
-                  </select>
-                </div>
-
-                {/* Scores (only for finished matches) */}
-                {formData.status === 'finished' && (
-                  <div className="grid grid-cols-2 gap-4 p-4 bg-teal-50 rounded-lg">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        {match.team_home_name} <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                        value={formData.homeScore}
-                        onChange={(e) => setFormData({ ...formData, homeScore: e.target.value })}
-                        placeholder="0"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        {match.team_away_name} <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                        value={formData.awayScore}
-                        onChange={(e) => setFormData({ ...formData, awayScore: e.target.value })}
-                        placeholder="0"
-                        required
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Location */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Local <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                    value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    placeholder="Ex: Campo Municipal"
-                    required
-                  />
-                </div>
-
-                {/* Date and Time */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Data e Hora <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="datetime-local"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                    value={formData.startTime}
-                    onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                    required
-                  />
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-4 pt-4 border-t">
-                  <button
-                    type="button"
-                    onClick={handleCancelEdit}
-                    disabled={saving}
-                    className="flex-1 px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="flex-1 px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                  >
-                    {saving ? (
-                      <>
-                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        A Guardar...
-                      </>
-                    ) : (
-                      'Guardar Alterações'
-                    )}
-                  </button>
-                </div>
-              </form>
-            )}
+          {/* Right Column - Results, Lineups, Comments */}
+          <div className="lg:col-span-2 space-y-6">
+            <ResultsSection match={match} onUpdate={fetchMatch} />
+            <LineupsSection match={match} />
+            <CommentsSection matchId={match.id} />
           </div>
         </div>
       </div>
 
       {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 animate-fade-in">
-            <div className="flex items-center mb-4">
-              <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mr-4">
-                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900">Confirmar Eliminação</h3>
-            </div>
-
-            <p className="text-gray-600 mb-6">
-              Tem a certeza que deseja eliminar este jogo? Esta ação não pode ser revertida e todos os dados associados serão permanentemente removidos.
-            </p>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md font-medium transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleDelete}
-                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium transition-colors"
-              >
-                Sim, Eliminar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteModal
+        show={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 };

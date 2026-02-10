@@ -21,7 +21,7 @@ const CourseEntry = (course: Course) => {
         </span>
       </div>
       <span className="text-gray-600 text-sm">
-        Núcleo: {course.nucleo || 'N/A'}
+        Núcleo: {course.nucleo.name}
       </span>
     </div>
   );
@@ -31,7 +31,6 @@ const Cursos = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newCourseName, setNewCourseName] = useState('');
   const [newCourseAbbreviation, setNewCourseAbbreviation] = useState('');
-  const [newCourseDescription, setNewCourseDescription] = useState('');
   const [selectedNucleoId, setSelectedNucleoId] = useState('');
 
   const [courses, setCourses] = useState<Course[]>([]);
@@ -92,7 +91,6 @@ const Cursos = () => {
       const newCourse = await coursesApi.create({
         name: newCourseName,
         abbreviation: newCourseAbbreviation,
-        description: newCourseDescription.trim() || undefined,
         nucleo_id: selectedNucleoId,
       });
 
@@ -102,7 +100,6 @@ const Cursos = () => {
       // Reset
       setNewCourseName('');
       setNewCourseAbbreviation('');
-      setNewCourseDescription('');
       setSelectedNucleoId('');
       setIsModalOpen(false);
     } catch (err) {
@@ -201,19 +198,6 @@ const Cursos = () => {
                 />
               </div>
 
-              {/* Description */}
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">
-                  Descrição
-                </label>
-                <textarea
-                  value={newCourseDescription}
-                  onChange={(e) => setNewCourseDescription(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 min-h-[80px]"
-                  placeholder="Digite a descrição (opcional)"
-                />
-              </div>
-
               {/* Nucleo */}
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
@@ -241,7 +225,6 @@ const Cursos = () => {
                   setIsModalOpen(false);
                   setNewCourseName('');
                   setNewCourseAbbreviation('');
-                  setNewCourseDescription('');
                   setSelectedNucleoId('');
                   setError('');
                 }}

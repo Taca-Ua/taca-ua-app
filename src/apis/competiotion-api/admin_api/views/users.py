@@ -2,12 +2,13 @@
 User management views
 """
 
+from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ..serializers import (
+from ..serializers.users import (
     NucleoAdminCreateSerializer,
     NucleoAdminListSerializer,
     NucleoAdminUpdateSerializer,
@@ -365,3 +366,23 @@ class AdministratorDetailView(APIView):
             {"error": "Administrator not found"},
             status=status.HTTP_404_NOT_FOUND,
         )
+
+
+urlpatterns = [
+    path("", AdministratorListCreateView.as_view(), name="administrator-list"),
+    path(
+        "<int:admin_id>/",
+        AdministratorDetailView.as_view(),
+        name="administrator-detail",
+    ),
+    path(
+        "users/nucleo/",
+        NucleoAdminListCreateView.as_view(),
+        name="nucleo-admin-list",
+    ),
+    path(
+        "users/nucleo/<int:user_id>/",
+        NucleoAdminDetailView.as_view(),
+        name="nucleo-admin-detail",
+    ),
+]

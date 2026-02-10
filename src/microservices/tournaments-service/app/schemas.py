@@ -6,73 +6,136 @@ from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, field_validator
+
+# ==================== Tournament Schemas ====================
 
 
-# Request Schemas
-class TournamentCreate(BaseModel):
-    """Schema for creating a tournament."""
+class CompetitorInput(BaseModel):
+    """Schema for competitor input (team or athlete)"""
 
-    modality_id: UUID
-    name: str
-    season_id: UUID
-    rules: Optional[dict] = None
-    teams: Optional[List[UUID]] = None
-    start_date: Optional[datetime] = None
-    created_by: UUID
+    competitor_type: str  # "team" or "athlete"
+    team_id: Optional[UUID] = None
+    athlete_id: Optional[UUID] = None
 
+    @field_validator("competitor_type")
+    @classmethod
+    def validate_competitor_type(cls, v):
+        if v not in ["team", "athlete"]:
+            raise ValueError('competitor_type must be "team" or "athlete"')
+        return v
 
-class TournamentUpdate(BaseModel):
-    """Schema for updating a tournament."""
+    @field_validator("team_id")
+    @classmethod
+    def validate_team_id(cls, v, info):
+        if info.data.get("competitor_type") == "team" and v is None:
+            raise ValueError('team_id is required when competitor_type is "team"')
+        return v
 
-    name: Optional[str] = None
-    rules: Optional[dict] = None
-    teams: Optional[List[UUID]] = None
-    start_date: Optional[datetime] = None
-    updated_by: UUID
-
-
-class TournamentTeamsAdd(BaseModel):
-    """Schema for adding teams to a tournament."""
-
-    team_ids: List[UUID] = Field(..., min_length=1)
-
-
-class TournamentTeamsRemove(BaseModel):
-    """Schema for removing teams from a tournament."""
-
-    team_ids: List[UUID] = Field(..., min_length=1)
+    @field_validator("athlete_id")
+    @classmethod
+    def validate_athlete_id(cls, v, info):
+        if info.data.get("competitor_type") == "athlete" and v is None:
+            raise ValueError('athlete_id is required when competitor_type is "athlete"')
+        return v
 
 
-class TournamentFinish(BaseModel):
-    """Schema for finishing a tournament."""
-
-    finished_by: UUID
-
-
-# Response Schemas
-class TournamentResponse(BaseModel):
-    """Schema for tournament response."""
+class CompetitorResponse(BaseModel):
+    """Schema for competitor response"""
 
     id: UUID
-    modality_id: UUID
-    name: str
-    season_id: UUID
-    status: str
-    rules: Optional[dict] = None
-    start_date: Optional[datetime] = None
+    tournament_id: UUID
+    competitor_type: str
+    competitor: dict  # Contains either {"team_id": UUID} or {"athlete_id": UUID}
     created_at: datetime
-    updated_at: Optional[datetime] = None
-    finished_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
 
 
-class TournamentListResponse(BaseModel):
-    """Schema for tournament list response."""
+class TournamentCreate(BaseModel):
+    """Schema for creating a tournament"""
 
-    tournaments: List[TournamentResponse]
-    total: int
-    limit: int
-    offset: int
+    name: str
+    modality_id: UUID
+    competitors: Optional[List[CompetitorInput]] = None
+    start_date: Optional[datetime]
+    created_by: Optional[UUID] = None
+
+
+class TournamentUpdate(BaseModel):
+    """Schema for updating a tournament"""
+
+    name: Optional[str] = None
+    start_date: Optional[datetime] = None
+    status: Optional[str] = None
+    competitors_add: List[CompetitorInput] = None
+    competitors_remove: List[UUID] = None  # competitor IDs to remove
+
+
+class TournamentRankingPositionSchema(BaseModel):
+    """Schema for tournament ranking position"""
+
+    id: UUID
+    tournament_id: UUID
+    team_id: UUID
+    position: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class TournamentResponse(BaseModel):
+    """Schema for tournament response"""
+
+    id: UUID
+    name: str
+    status: str
+    modality_id: UUID
+    start_date: Optional[datetime]
+    competitors: List[CompetitorResponse]
+
+    created_by: UUID
+    created_at: datetime
+    updated_at: Optional[datetime]
+    finished_at: Optional[datetime]
+    finished_by: Optional[UUID]
+    ranking_positions: Optional[List[TournamentRankingPositionSchema]] = None
+
+    class Config:
+        from_attributes = True
+
+
+class TournamentFinish(BaseModel):
+    """Schema for finishing a tournament"""
+
+    class TournamentFinishEntry(BaseModel):
+        """Schema for tournament finish entry"""
+
+        team_id: UUID
+        position: int
+
+    ranking_entries: List[TournamentFinishEntry]
+    finished_by: UUID
+
+
+# ==================== Outbox Schemas ====================
+
+
+class OutboxEventResponse(BaseModel):
+    """Schema for outbox event response"""
+
+    id: UUID
+    event_type: str
+    aggregate_type: str
+    aggregate_id: UUID
+    payload: dict
+    published: bool
+    published_at: Optional[datetime]
+    created_at: datetime
+    retry_count: int
+    last_error: Optional[str]
+
+    class Config:
+        from_attributes = True

@@ -8,18 +8,116 @@ from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from taca_events import EventType
 
 from . import schemas
 from .database import get_db_session
-from .events import (
-    publish_match_cancelled,
-    publish_match_created,
-    publish_match_finished,
-    publish_match_updated,
+from .event_helpers import emit_event
+from .logger import logger
+from .models import (
+    Comment,
+    Lineup,
+    Match,
+    MatchParticipant,
+    MatchStatus,
+    ParticipantType,
 )
-from .models import Comment, Lineup, Match, MatchStatus
 
 router = APIRouter()
+
+
+@router.get("/matches")
+def list_matches(
+    tournament_id: Optional[UUID] = Query(None),
+    team_id: Optional[UUID] = Query(None),
+    athlete_id: Optional[UUID] = Query(None),
+    date: Optional[str] = Query(None),
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db_session),
+):
+    """List matches with optional filters."""
+    logger.info(
+        "Listing matches",
+        extra={
+            "tournament_id": str(tournament_id) if tournament_id else None,
+            "team_id": str(team_id) if team_id else None,
+            "athlete_id": str(athlete_id) if athlete_id else None,
+            "status": status,
+            "limit": limit,
+            "offset": offset,
+        },
+    )
+
+    query = db.query(Match)
+
+    if tournament_id:
+        query = query.filter(Match.tournament_id == tournament_id)
+
+    if team_id or athlete_id:
+        # Join with participants to filter by team or athlete
+        query = query.join(MatchParticipant)
+        if team_id:
+            query = query.filter(MatchParticipant.team_id == team_id)
+        if athlete_id:
+            query = query.filter(MatchParticipant.athlete_id == athlete_id)
+
+    if date:
+        try:
+            date_obj = datetime.fromisoformat(date)
+            query = query.filter(Match.start_time >= date_obj)
+            query = query.filter(
+                Match.start_time < date_obj.replace(hour=23, minute=59, second=59)
+            )
+        except ValueError:
+            logger.warning("Invalid date format", extra={"date": date})
+            raise HTTPException(status_code=400, detail=f"Invalid date format: {date}")
+
+    if date_from:
+        try:
+            date_from_obj = datetime.fromisoformat(date_from)
+            query = query.filter(Match.start_time >= date_from_obj)
+        except ValueError:
+            logger.warning("Invalid date_from format", extra={"date_from": date_from})
+            raise HTTPException(
+                status_code=400, detail=f"Invalid date_from format: {date_from}"
+            )
+
+    if date_to:
+        try:
+            date_to_obj = datetime.fromisoformat(date_to)
+            query = query.filter(Match.start_time <= date_to_obj)
+        except ValueError:
+            logger.warning("Invalid date_to format", extra={"date_to": date_to})
+            raise HTTPException(
+                status_code=400, detail=f"Invalid date_to format: {date_to}"
+            )
+
+    if status:
+        try:
+            status_enum = MatchStatus(status)
+            query = query.filter(Match.status == status_enum)
+        except ValueError:
+            logger.warning("Invalid status", extra={"status": status})
+            raise HTTPException(status_code=400, detail=f"Invalid status: {status}")
+
+    total = query.count()
+    matches = query.offset(offset).limit(limit).all()
+
+    logger.info(
+        "Matches listed successfully",
+        extra={"total": total, "returned": len(matches)},
+    )
+
+    return {
+        "matches": [schemas.MatchResponse.from_orm(m) for m in matches],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
 
 
 @router.post("/matches", response_model=schemas.MatchResponse, status_code=201)
@@ -28,25 +126,115 @@ def create_match(
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db_session),
 ):
-    """Create a new match."""
-    # TODO: Verify teams belong to tournament
-    # TODO: Check for schedule conflicts
+    """Create a new match with participants."""
+    logger.info(
+        "Creating match",
+        extra={
+            "tournament_id": (
+                str(match_data.tournament_id) if match_data.tournament_id else None
+            ),
+            "location": match_data.location,
+            "start_time": match_data.start_time.isoformat(),
+            "created_by": str(match_data.created_by),
+            "participant_count": len(match_data.participants),
+        },
+    )
 
+    # Create match
     match = Match(
         tournament_id=match_data.tournament_id,
-        team_home_id=match_data.team_home_id,
-        team_away_id=match_data.team_away_id,
         location=match_data.location,
         start_time=match_data.start_time,
         created_by=match_data.created_by,
         status=MatchStatus.SCHEDULED,
     )
-
     db.add(match)
+    db.flush()  # Get match.id before adding participants
+
+    # Create participants
+    for participant_data in match_data.participants:
+        try:
+            participant_type = ParticipantType(participant_data.participant_type)
+        except ValueError:
+            logger.error(
+                "Invalid participant type",
+                extra={"participant_type": participant_data.participant_type},
+            )
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid participant type: {participant_data.participant_type}",
+            )
+
+        # Validate participant has appropriate ID
+        if participant_type == ParticipantType.TEAM and not participant_data.team_id:
+            raise HTTPException(
+                status_code=400, detail="Team participant must have team_id"
+            )
+        if (
+            participant_type == ParticipantType.ATHLETE
+            and not participant_data.athlete_id
+        ):
+            raise HTTPException(
+                status_code=400, detail="Athlete participant must have athlete_id"
+            )
+
+        participant = MatchParticipant(
+            match_id=match.id,
+            participant_type=participant_type,
+            team_id=participant_data.team_id,
+            athlete_id=participant_data.athlete_id,
+        )
+        db.add(participant)
+
+    # Emit event
+    emit_event(
+        db,
+        event_type=EventType.MATCH_CREATED,
+        aggregate_type="match",
+        aggregate_id=match.id,
+        data={
+            "match_id": str(match.id),
+            "tournament_id": str(match.tournament_id) if match.tournament_id else None,
+            "location": match.location,
+            "status": match.status.value,
+            "start_time": match.start_time.isoformat(),
+            "participants": [
+                {
+                    "participant_id": str(p.id),
+                    "participant_type": p.participant_type.value,
+                    "participant_entity_id": str(p.team_id or p.athlete_id),
+                }
+                for p in match.participants
+            ],
+        },
+    )
+
     db.commit()
     db.refresh(match)
 
-    background_tasks.add_task(publish_match_created, match)
+    logger.info(
+        "Match created successfully",
+        extra={"match_id": str(match.id), "status": match.status.value},
+    )
+
+    return match
+
+
+@router.get("/matches/{match_id}", response_model=schemas.MatchResponse)
+def get_match(
+    match_id: UUID,
+    db: Session = Depends(get_db_session),
+):
+    """Get a match by ID."""
+    logger.info("Fetching match", extra={"match_id": str(match_id)})
+
+    match = db.query(Match).filter(Match.id == match_id).first()
+
+    if not match:
+        logger.warning("Match not found", extra={"match_id": str(match_id)})
+        raise HTTPException(status_code=404, detail="Match not found")
+
+    logger.info("Match fetched successfully", extra={"match_id": str(match_id)})
     return match
 
 
@@ -58,288 +246,79 @@ def update_match(
     db: Session = Depends(get_db_session),
 ):
     """Update a match."""
+    logger.info(
+        "Updating match",
+        extra={
+            "match_id": str(match_id),
+            "location": match_data.location,
+            "start_time": (
+                match_data.start_time.isoformat() if match_data.start_time else None
+            ),
+            "status": match_data.status,
+        },
+    )
+
     match = db.query(Match).filter(Match.id == match_id).first()
 
     if not match:
+        logger.warning("Match not found for update", extra={"match_id": str(match_id)})
         raise HTTPException(status_code=404, detail="Match not found")
 
     if match.status == MatchStatus.FINISHED:
+        logger.warning(
+            "Attempted to update finished match", extra={"match_id": str(match_id)}
+        )
         raise HTTPException(
             status_code=409,
             detail="Cannot update a finished match",
         )
 
-    changes = {}
+    changes_made = {}
     if match_data.location is not None:
         match.location = match_data.location
-        changes["location"] = match_data.location
+        changes_made["location"] = match_data.location
+
     if match_data.start_time is not None:
         match.start_time = match_data.start_time
-        changes["start_time"] = match_data.start_time
-    if match_data.team_home_id is not None:
-        match.team_home_id = match_data.team_home_id
-        changes["team_home_id"] = match_data.team_home_id
-    if match_data.team_away_id is not None:
-        match.team_away_id = match_data.team_away_id
-        changes["team_away_id"] = match_data.team_away_id
+        changes_made["start_time"] = match_data.start_time.isoformat()
+
+    if match_data.status is not None:
+        try:
+            status_enum = MatchStatus(match_data.status)
+            match.status = status_enum
+            changes_made["status"] = match_data.status
+        except ValueError:
+            logger.error("Invalid status value", extra={"status": match_data.status})
+            raise HTTPException(
+                status_code=400, detail=f"Invalid status: {match_data.status}"
+            )
 
     match.updated_at = datetime.now(timezone.utc)
 
-    db.commit()
-    db.refresh(match)
-
-    background_tasks.add_task(publish_match_updated, match, changes)
-    return match
-
-
-@router.post("/matches/{match_id}/result")
-def register_result(
-    match_id: UUID,
-    result_data: schemas.MatchResult,
-    background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db_session),
-):
-    """Register result for a match."""
-    match = db.query(Match).filter(Match.id == match_id).first()
-
-    if not match:
-        raise HTTPException(status_code=404, detail="Match not found")
-
-    if match.status == MatchStatus.FINISHED:
-        raise HTTPException(status_code=409, detail="Match already finished")
-
-    match.home_score = result_data.home_score
-    match.away_score = result_data.away_score
-    match.additional_details = result_data.additional_details
-    match.status = MatchStatus.FINISHED
-    match.updated_at = datetime.now(timezone.utc)
-
-    db.commit()
-    db.refresh(match)
-
-    background_tasks.add_task(publish_match_finished, match)
-
-    return match
-
-
-@router.post("/matches/{match_id}/lineup")
-def assign_lineup(
-    match_id: UUID,
-    lineup_data: schemas.MatchLineup,
-    background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db_session),
-):
-    """Assign lineup for a team in a match."""
-    match = db.query(Match).filter(Match.id == match_id).first()
-
-    if not match:
-        raise HTTPException(status_code=404, detail="Match not found")
-
-    if match.status == MatchStatus.FINISHED:
-        raise HTTPException(
-            status_code=409, detail="Cannot modify lineup for finished match"
-        )
-
-    # Verify team is part of the match
-    if lineup_data.team_id not in [match.team_home_id, match.team_away_id]:
-        raise HTTPException(status_code=422, detail="Team is not part of this match")
-
-    # Delete existing lineup for this team
-    db.query(Lineup).filter(
-        Lineup.match_id == match_id, Lineup.team_id == lineup_data.team_id
-    ).delete()
-
-    # Add new lineup
-    for player_data in lineup_data.players:
-        lineup = Lineup(
-            match_id=match_id,
-            team_id=lineup_data.team_id,
-            player_id=player_data.player_id,
-            jersey_number=player_data.jersey_number,
-            is_starter=player_data.is_starter,
-        )
-        db.add(lineup)
-
-    db.commit()
-
-    background_tasks.add_task(publish_match_updated, match, "Lineup assigned")
-    return {
-        "message": "Lineup assigned successfully",
-        "player_count": len(lineup_data.players),
-    }
-
-
-@router.post(
-    "/matches/{match_id}/comments",
-    response_model=schemas.CommentResponse,
-    status_code=201,
-)
-def add_comment(
-    match_id: UUID,
-    comment_data: schemas.MatchComment,
-    background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db_session),
-):
-    """Add a comment to a match."""
-    match = db.query(Match).filter(Match.id == match_id).first()
-
-    if not match:
-        raise HTTPException(status_code=404, detail="Match not found")
-
-    comment = Comment(
-        match_id=match_id,
-        message=comment_data.message,
-        author_id=comment_data.author_id,
-        created_at=comment_data.created_at or datetime.now(timezone.utc),
-    )
-
-    db.add(comment)
-    db.commit()
-    db.refresh(comment)
-
-    background_tasks.add_task(
-        publish_match_updated, match, {"comment": comment_data.message}
-    )
-    return comment
-
-
-@router.get("/matches/{match_id}", response_model=schemas.MatchResponse)
-def get_match(
-    match_id: UUID,
-    db: Session = Depends(get_db_session),
-):
-    """Get a match by ID."""
-    match = db.query(Match).filter(Match.id == match_id).first()
-
-    if not match:
-        raise HTTPException(status_code=404, detail="Match not found")
-
-    return match
-
-
-@router.get("/matches")
-def list_matches(
-    tournament_id: Optional[UUID] = Query(None),
-    modality_id: Optional[UUID] = Query(None),
-    team_id: Optional[UUID] = Query(None),
-    course_id: Optional[UUID] = Query(None),
-    date: Optional[str] = Query(None),
-    date_from: Optional[str] = Query(None),
-    date_to: Optional[str] = Query(None),
-    status: Optional[str] = Query(None),
-    limit: int = Query(50, ge=1, le=100),
-    offset: int = Query(0, ge=0),
-    db: Session = Depends(get_db_session),
-):
-    """List matches with optional filters."""
-    query = db.query(Match)
-
-    if tournament_id:
-        query = query.filter(Match.tournament_id == tournament_id)
-    if team_id:
-        query = query.filter(
-            (Match.team_home_id == team_id) | (Match.team_away_id == team_id)
-        )
-    if date:
-        # Filter by specific date
-        try:
-            date_obj = datetime.fromisoformat(date)
-            query = query.filter(Match.start_time >= date_obj)
-            query = query.filter(
-                Match.start_time < date_obj.replace(hour=23, minute=59, second=59)
-            )
-        except ValueError:
-            raise HTTPException(status_code=400, detail=f"Invalid date format: {date}")
-    if date_from:
-        try:
-            date_from_obj = datetime.fromisoformat(date_from)
-            query = query.filter(Match.start_time >= date_from_obj)
-        except ValueError:
-            raise HTTPException(
-                status_code=400, detail=f"Invalid date_from format: {date_from}"
-            )
-    if date_to:
-        try:
-            date_to_obj = datetime.fromisoformat(date_to)
-            query = query.filter(Match.start_time <= date_to_obj)
-        except ValueError:
-            raise HTTPException(
-                status_code=400, detail=f"Invalid date_to format: {date_to}"
-            )
-    if status:
-        try:
-            status_enum = MatchStatus(status)
-            query = query.filter(Match.status == status_enum)
-        except ValueError:
-            raise HTTPException(status_code=400, detail=f"Invalid status: {status}")
-
-    # TODO: Implement course_id and modality_id filtering (requires joins or caching)
-
-    total = query.count()
-    matches = query.offset(offset).limit(limit).all()
-
-    return {
-        "matches": matches,
-        "total": total,
-        "limit": limit,
-        "offset": offset,
-    }
-
-
-@router.get("/matches/{match_id}/sheet")
-def generate_match_sheet(
-    match_id: UUID,
-    format: str = Query("pdf", pattern="^(pdf|json)$"),
-    db: Session = Depends(get_db_session),
-):
-    """Generate match sheet (PDF or JSON)."""
-    match = db.query(Match).filter(Match.id == match_id).first()
-
-    if not match:
-        raise HTTPException(status_code=404, detail="Match not found")
-
-    # Get lineups
-    lineups = db.query(Lineup).filter(Lineup.match_id == match_id).all()
-
-    # Get comments
-    comments = db.query(Comment).filter(Comment.match_id == match_id).all()
-
-    if format == "json":
-        return {
-            "match": {
-                "id": str(match.id),
-                "tournament_id": str(match.tournament_id),
-                "team_home_id": str(match.team_home_id),
-                "team_away_id": str(match.team_away_id),
-                "location": match.location,
-                "start_time": match.start_time.isoformat(),
-                "status": match.status.value,
-                "home_score": match.home_score,
-                "away_score": match.away_score,
+    emit_event(
+        db,
+        event_type=EventType.MATCH_UPDATED,
+        aggregate_type="match",
+        aggregate_id=match_id,
+        data={
+            "match_id": str(match_id),
+            **{
+                k: v
+                for k, v in changes_made.items()
+                if k in ["location", "start_time", "status"]
             },
-            "lineups": [
-                {
-                    "team_id": str(li.team_id),
-                    "player_id": str(li.player_id),
-                    "jersey_number": li.jersey_number,
-                    "is_starter": li.is_starter,
-                }
-                for li in lineups
-            ],
-            "comments": [
-                {
-                    "message": c.message,
-                    "author_id": str(c.author_id),
-                    "created_at": c.created_at.isoformat(),
-                }
-                for c in comments
-            ],
-        }
-    else:
-        # TODO: Generate PDF
-        raise HTTPException(
-            status_code=501, detail="PDF generation not implemented yet"
-        )
+        },
+    )
+
+    db.commit()
+    db.refresh(match)
+
+    logger.info(
+        "Match updated successfully",
+        extra={"match_id": str(match_id), "changes": changes_made},
+    )
+
+    return match
 
 
 @router.delete("/matches/{match_id}", status_code=204)
@@ -349,16 +328,607 @@ def delete_match(
     db: Session = Depends(get_db_session),
 ):
     """Delete a match."""
+    logger.info("Deleting match", extra={"match_id": str(match_id)})
+
     match = db.query(Match).filter(Match.id == match_id).first()
 
     if not match:
+        logger.warning(
+            "Match not found for deletion", extra={"match_id": str(match_id)}
+        )
         raise HTTPException(status_code=404, detail="Match not found")
 
     if match.status == MatchStatus.FINISHED:
+        logger.warning(
+            "Attempted to delete finished match", extra={"match_id": str(match_id)}
+        )
         raise HTTPException(status_code=409, detail="Cannot delete a finished match")
+
+    # Emit event before deletion
+    emit_event(
+        db,
+        event_type=EventType.MATCH_DELETED,
+        aggregate_type="match",
+        aggregate_id=match_id,
+        data={
+            "match_id": str(match_id),
+        },
+    )
 
     db.delete(match)
     db.commit()
 
-    background_tasks.add_task(publish_match_cancelled, str(match_id), "Deleted by user")
+    logger.info("Match deleted successfully", extra={"match_id": str(match_id)})
+
     return None
+
+
+# Participant routes
+@router.post(
+    "/matches/{match_id}/participants",
+    response_model=schemas.MatchParticipantResponse,
+    status_code=201,
+)
+def add_participant(
+    match_id: UUID,
+    participant_data: schemas.MatchParticipantCreate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db_session),
+):
+    """Add a participant to a match."""
+    logger.info(
+        "Adding participant to match",
+        extra={
+            "match_id": str(match_id),
+            "participant_type": participant_data.participant_type,
+            "team_id": (
+                str(participant_data.team_id) if participant_data.team_id else None
+            ),
+            "athlete_id": (
+                str(participant_data.athlete_id)
+                if participant_data.athlete_id
+                else None
+            ),
+        },
+    )
+
+    match = db.query(Match).filter(Match.id == match_id).first()
+
+    if not match:
+        logger.warning(
+            "Match not found for adding participant", extra={"match_id": str(match_id)}
+        )
+        raise HTTPException(status_code=404, detail="Match not found")
+
+    if match.status == MatchStatus.FINISHED:
+        logger.warning(
+            "Attempted to add participant to finished match",
+            extra={"match_id": str(match_id)},
+        )
+        raise HTTPException(
+            status_code=409, detail="Cannot modify participants for finished match"
+        )
+
+    try:
+        participant_type = ParticipantType(participant_data.participant_type)
+    except ValueError:
+        logger.error(
+            "Invalid participant type",
+            extra={"participant_type": participant_data.participant_type},
+        )
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid participant type: {participant_data.participant_type}",
+        )
+
+    # Validate participant has appropriate ID
+    if participant_type == ParticipantType.TEAM and not participant_data.team_id:
+        raise HTTPException(
+            status_code=400, detail="Team participant must have team_id"
+        )
+    if participant_type == ParticipantType.ATHLETE and not participant_data.athlete_id:
+        raise HTTPException(
+            status_code=400, detail="Athlete participant must have athlete_id"
+        )
+
+    participant = MatchParticipant(
+        match_id=match_id,
+        participant_type=participant_type,
+        team_id=participant_data.team_id,
+        athlete_id=participant_data.athlete_id,
+    )
+    db.add(participant)
+    db.flush()  # Get participant.id
+
+    # Emit event
+    emit_event(
+        db,
+        event_type=EventType.MATCH_PARTICIPANT_ADDED,
+        aggregate_type="match",
+        aggregate_id=match_id,
+        data={
+            "match_id": str(match_id),
+            "participant_id": str(participant.id),
+            "participant_type": participant_type.value,
+            "participant_entity_id": str(
+                participant_data.team_id or participant_data.athlete_id
+            ),
+        },
+    )
+
+    db.commit()
+    db.refresh(participant)
+
+    logger.info(
+        "Participant added successfully",
+        extra={"match_id": str(match_id), "participant_id": str(participant.id)},
+    )
+
+    return participant
+
+
+@router.delete("/matches/{match_id}/participants/{participant_id}", status_code=204)
+def remove_participant(
+    match_id: UUID,
+    participant_id: UUID,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db_session),
+):
+    """Remove a participant from a match."""
+    logger.info(
+        "Removing participant from match",
+        extra={"match_id": str(match_id), "participant_id": str(participant_id)},
+    )
+
+    participant = (
+        db.query(MatchParticipant)
+        .filter(
+            MatchParticipant.id == participant_id,
+            MatchParticipant.match_id == match_id,
+        )
+        .first()
+    )
+
+    if not participant:
+        logger.warning(
+            "Participant not found for removal",
+            extra={"match_id": str(match_id), "participant_id": str(participant_id)},
+        )
+        raise HTTPException(status_code=404, detail="Participant not found")
+
+    match = db.query(Match).filter(Match.id == match_id).first()
+    if match and match.status == MatchStatus.FINISHED:
+        logger.warning(
+            "Attempted to remove participant from finished match",
+            extra={"match_id": str(match_id)},
+        )
+        raise HTTPException(
+            status_code=409, detail="Cannot modify participants for finished match"
+        )
+
+    emit_event(
+        db,
+        event_type=EventType.MATCH_PARTICIPANT_REMOVED,
+        aggregate_type="match",
+        aggregate_id=match_id,
+        data={
+            "match_id": str(match_id),
+            "participant_id": str(participant_id),
+        },
+    )
+
+    db.delete(participant)
+
+    db.commit()
+
+    logger.info(
+        "Participant removed successfully",
+        extra={"match_id": str(match_id), "participant_id": str(participant_id)},
+    )
+    return None
+
+
+# Lineup routes
+@router.post("/matches/{match_id}/lineup", status_code=201)
+def assign_lineup(
+    match_id: UUID,
+    lineup_data: schemas.LineupBatchCreate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db_session),
+):
+    """Assign lineup for a team in a match."""
+    logger.info(
+        "Assigning lineup",
+        extra={
+            "match_id": str(match_id),
+            "team_id": str(lineup_data.team_id),
+            "player_count": len(lineup_data.players),
+        },
+    )
+
+    match = db.query(Match).filter(Match.id == match_id).first()
+
+    if not match:
+        logger.warning("Match not found for lineup", extra={"match_id": str(match_id)})
+        raise HTTPException(status_code=404, detail="Match not found")
+
+    if match.status == MatchStatus.FINISHED:
+        logger.warning(
+            "Attempted to assign lineup to finished match",
+            extra={"match_id": str(match_id)},
+        )
+        raise HTTPException(
+            status_code=409, detail="Cannot modify lineup for finished match"
+        )
+
+    # Verify team is a participant in the match
+    team_participant = (
+        db.query(MatchParticipant)
+        .filter(
+            MatchParticipant.match_id == match_id,
+            MatchParticipant.team_id == lineup_data.team_id,
+            MatchParticipant.participant_type == ParticipantType.TEAM,
+        )
+        .first()
+    )
+
+    if not team_participant:
+        logger.warning(
+            "Team is not a participant in match",
+            extra={"match_id": str(match_id), "team_id": str(lineup_data.team_id)},
+        )
+        raise HTTPException(status_code=422, detail="Team is not part of this match")
+
+    # Delete existing lineup for this team
+    db.query(Lineup).filter(
+        Lineup.match_id == match_id, Lineup.team_id == lineup_data.team_id
+    ).delete()
+
+    # Add new lineup
+    created_lineups = []
+    for player_data in lineup_data.players:
+        lineup = Lineup(
+            match_id=match_id,
+            team_id=lineup_data.team_id,
+            player_id=UUID(player_data["player_id"]),
+            jersey_number=player_data["jersey_number"],
+            is_starter=player_data.get("is_starter", True),
+        )
+        db.add(lineup)
+        created_lineups.append(lineup)
+
+    emit_event(
+        db,
+        event_type=EventType.MATCH_LINEUP_ASSIGNED,
+        aggregate_type="match",
+        aggregate_id=match_id,
+        data={
+            "match_id": str(match_id),
+            "team_id": str(lineup_data.team_id),
+            "lineup": [
+                {
+                    "player_id": str(player_data["player_id"]),
+                    "jersey_number": player_data["jersey_number"],
+                    "is_starter": player_data.get("is_starter", True),
+                }
+                for player_data in lineup_data.players
+            ],
+        },
+    )
+
+    db.commit()
+
+    logger.info(
+        "Lineup assigned successfully",
+        extra={
+            "match_id": str(match_id),
+            "team_id": str(lineup_data.team_id),
+            "player_count": len(created_lineups),
+        },
+    )
+
+    return {
+        "message": "Lineup assigned successfully",
+        "player_count": len(created_lineups),
+    }
+
+
+@router.get("/matches/{match_id}/lineup", response_model=list[schemas.LineupResponse])
+def get_lineup(
+    match_id: UUID,
+    team_id: Optional[UUID] = Query(None),
+    db: Session = Depends(get_db_session),
+):
+    """Get lineup for a match, optionally filtered by team."""
+    logger.info(
+        "Fetching lineup",
+        extra={
+            "match_id": str(match_id),
+            "team_id": str(team_id) if team_id else None,
+        },
+    )
+
+    match = db.query(Match).filter(Match.id == match_id).first()
+
+    if not match:
+        logger.warning("Match not found for lineup", extra={"match_id": str(match_id)})
+        raise HTTPException(status_code=404, detail="Match not found")
+
+    query = db.query(Lineup).filter(Lineup.match_id == match_id)
+
+    if team_id:
+        query = query.filter(Lineup.team_id == team_id)
+
+    lineups = query.all()
+
+    logger.info(
+        "Lineup fetched successfully",
+        extra={"match_id": str(match_id), "lineup_count": len(lineups)},
+    )
+
+    return lineups
+
+
+# Comment routes
+@router.post(
+    "/matches/{match_id}/comments",
+    response_model=schemas.CommentResponse,
+    status_code=201,
+)
+def add_comment(
+    match_id: UUID,
+    comment_data: schemas.CommentCreate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db_session),
+):
+    """Add a comment to a match."""
+    logger.info(
+        "Adding comment to match",
+        extra={
+            "match_id": str(match_id),
+            "created_by": str(comment_data.created_by),
+        },
+    )
+
+    match = db.query(Match).filter(Match.id == match_id).first()
+
+    if not match:
+        logger.warning("Match not found for comment", extra={"match_id": str(match_id)})
+        raise HTTPException(status_code=404, detail="Match not found")
+
+    comment = Comment(
+        match_id=match_id,
+        message=comment_data.message,
+        created_by=comment_data.created_by,
+    )
+    db.add(comment)
+    db.flush()  # Get comment.id
+
+    emit_event(
+        db,
+        event_type=EventType.MATCH_COMMENT_ADDED,
+        aggregate_type="match",
+        aggregate_id=match_id,
+        data={
+            "comment_id": str(comment.id),
+            "match_id": str(match_id),
+            "message": comment.message,
+        },
+    )
+    db.commit()
+    db.refresh(comment)
+
+    logger.info(
+        "Comment added successfully",
+        extra={"match_id": str(match_id), "comment_id": str(comment.id)},
+    )
+
+    return comment
+
+
+@router.get(
+    "/matches/{match_id}/comments", response_model=list[schemas.CommentResponse]
+)
+def get_comments(
+    match_id: UUID,
+    db: Session = Depends(get_db_session),
+):
+    """Get all comments for a match."""
+    logger.info("Fetching comments", extra={"match_id": str(match_id)})
+
+    match = db.query(Match).filter(Match.id == match_id).first()
+
+    if not match:
+        logger.warning(
+            "Match not found for comments", extra={"match_id": str(match_id)}
+        )
+        raise HTTPException(status_code=404, detail="Match not found")
+
+    comments = (
+        db.query(Comment)
+        .filter(Comment.match_id == match_id)
+        .order_by(Comment.created_at.desc())
+        .all()
+    )
+
+    logger.info(
+        "Comments fetched successfully",
+        extra={"match_id": str(match_id), "comment_count": len(comments)},
+    )
+
+    return comments
+
+
+@router.delete("/matches/{match_id}/comments/{comment_id}", status_code=204)
+def delete_comment(
+    match_id: UUID,
+    comment_id: UUID,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db_session),
+):
+    """Delete a comment."""
+    logger.info(
+        "Deleting comment",
+        extra={"match_id": str(match_id), "comment_id": str(comment_id)},
+    )
+
+    comment = (
+        db.query(Comment)
+        .filter(Comment.id == comment_id, Comment.match_id == match_id)
+        .first()
+    )
+
+    if not comment:
+        logger.warning(
+            "Comment not found",
+            extra={"match_id": str(match_id), "comment_id": str(comment_id)},
+        )
+        raise HTTPException(status_code=404, detail="Comment not found")
+
+    # Emit event before deletion
+    emit_event(
+        db,
+        event_type=EventType.MATCH_COMMENT_DELETED,
+        aggregate_type="match",
+        aggregate_id=match_id,
+        data={
+            "comment_id": str(comment_id),
+            "match_id": str(match_id),
+        },
+    )
+
+    db.delete(comment)
+    db.commit()
+
+    logger.info(
+        "Comment deleted successfully",
+        extra={"match_id": str(match_id), "comment_id": str(comment_id)},
+    )
+
+    return None
+
+
+# Batch result update
+@router.put("/matches/{match_id}/results", response_model=schemas.MatchResponse)
+def update_match_results(
+    match_id: UUID,
+    result_data: schemas.MatchResultUpdate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db_session),
+):
+    """Update results for multiple participants and optionally finish the match."""
+    logger.info(
+        "Updating match results",
+        extra={
+            "match_id": str(match_id),
+            "participant_count": len(result_data.participant_results),
+            "new_status": result_data.status,
+        },
+    )
+
+    match = db.query(Match).filter(Match.id == match_id).first()
+
+    if not match:
+        logger.warning("Match not found for results", extra={"match_id": str(match_id)})
+        raise HTTPException(status_code=404, detail="Match not found")
+
+    if match.status == MatchStatus.FINISHED:
+        logger.warning(
+            "Attempted to update results for finished match",
+            extra={"match_id": str(match_id)},
+        )
+        raise HTTPException(status_code=409, detail="Match already finished")
+
+    # Update each participant's result
+    updated_participants = []
+    for participant_result in result_data.participant_results:
+        participant = (
+            db.query(MatchParticipant)
+            .filter(
+                MatchParticipant.id == participant_result.participant_id,
+                MatchParticipant.match_id == match_id,
+            )
+            .first()
+        )
+
+        if not participant:
+            logger.warning(
+                "Participant not found in result update",
+                extra={
+                    "match_id": str(match_id),
+                    "participant_id": str(participant_result.participant_id),
+                },
+            )
+            raise HTTPException(
+                status_code=404,
+                detail=f"Participant {participant_result.participant_id} not found",
+            )
+
+        if participant_result.score is not None:
+            participant.score = participant_result.score
+
+        if participant_result.position is not None:
+            participant.position = participant_result.position
+
+        if participant_result.result_metadata is not None:
+            participant.result_metadata = participant_result.result_metadata
+
+        updated_participants.append(
+            {
+                "participant_id": str(participant.id),
+                "score": participant.score,
+                "position": participant.position,
+                "results_metadata": participant.result_metadata,
+            }
+        )
+
+    # Emit event for result updates
+    emit_event(
+        db,
+        event_type=EventType.MATCH_RESULT_UPDATED,
+        aggregate_type="match",
+        aggregate_id=match_id,
+        data={
+            "match_id": str(match_id),
+            "results": updated_participants,
+        },
+    )
+
+    # Update match status if provided
+    if result_data.status:
+        try:
+            status_enum = MatchStatus(result_data.status)
+            match.status = status_enum
+        except ValueError:
+            logger.error("Invalid status value", extra={"status": result_data.status})
+            raise HTTPException(
+                status_code=400, detail=f"Invalid status: {result_data.status}"
+            )
+
+    # Emit match updated event for status change
+    emit_event(
+        db,
+        event_type=EventType.MATCH_UPDATED,
+        aggregate_type="match",
+        aggregate_id=match_id,
+        data={
+            "match_id": str(match_id),
+            "status": match.status.value,
+        },
+    )
+
+    match.updated_at = datetime.now(timezone.utc)
+
+    db.commit()
+    db.refresh(match)
+
+    logger.info(
+        "Match results updated successfully",
+        extra={
+            "match_id": str(match_id),
+            "updated_count": len(updated_participants),
+            "new_status": match.status.value,
+        },
+    )
+
+    return match

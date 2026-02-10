@@ -1,24 +1,20 @@
-"""
-Modality management serializers
-"""
-
 from rest_framework import serializers
 
-MODALITY_TYPES = [
-    "coletiva recorrente",
-    "coletiva pontual",
-    "individual",
-    "pares",
-    "individual/pares",
-]
+from .modality_types import ModalityTypeListSerializer, ModalityTypeMinimalSerializer
 
 
 class ModalityListSerializer(serializers.Serializer):
     """Serializer for listing modalities"""
 
-    id = serializers.IntegerField(read_only=True)
+    id = serializers.UUIDField()
     name = serializers.CharField()
-    modality_type = serializers.CharField()
+    modality_type = ModalityTypeMinimalSerializer()
+
+
+class ModalityDetailSerializer(ModalityListSerializer):
+    """Serializer for modality details"""
+
+    modality_type = ModalityTypeListSerializer()
 
 
 class ModalityCreateSerializer(serializers.Serializer):

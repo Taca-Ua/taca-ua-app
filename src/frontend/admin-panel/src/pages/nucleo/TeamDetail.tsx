@@ -1,25 +1,223 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import NucleoSidebar from '../../components/nucleo_navbar';
-import { teamsApi, type Team, type Player } from '../../api/teams';
-import { participantsApi, type Participant } from '../../api/members';
-import { modalitiesApi, type Modality } from '../../api/modalities';
-import { coursesApi, type Course } from '../../api/courses';
+import { teamsApi, type TeamDetail } from '../../api/teams';
+import { studentsApi, type Student } from '../../api/members';
 
-const TeamDetail = () => {
+const TeamDetailsEditModal = ({
+  team,
+  setTeam,
+  onClose,
+} : {
+  team: TeamDetail;
+  setTeam: React.Dispatch<React.SetStateAction<TeamDetail | undefined>>;
+  onClose: () => void;
+}) => {
+  const [editedName, setEditedName] = useState(team.name);
+
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSave = async () => {
+    if (!editedName.trim()) {
+      alert('Por favor, preencha o nome da equipa.');
+      return;
+    }
+
+    try {
+      setError(null);
+      const teamData = await teamsApi.update(team.id, {
+        name: editedName,
+      });
+
+      // Refresh team data
+      if (teamData) {
+        setTeam(teamData);
+      }
+
+      onClose();
+    } catch (err) {
+      console.error('Error updating team:', err);
+      setError('Erro ao atualizar equipa');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
+      <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
+        <h2 className="text-2xl font-bold mb-6 text-gray-800">Editar Equipa</h2>
+
+        {/* Error Banner */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+            {error}
+          </div>
+        )}
+
+        <div className="space-y-4">
+          {/* Team Name */}
+          <div>
+            <label htmlFor="editName" className="block text-gray-700 font-medium mb-2">
+              Nome da Equipa <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="editName"
+              value={editedName}
+              onChange={(e) => setEditedName(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+              placeholder="Digite o nome da equipa"
+            />
+          </div>
+        </div>
+
+        {/* Modal Actions */}
+        <div className="flex gap-4 mt-6">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSave}
+            className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
+          >
+            Guardar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const TeamParticipantsEdditModal = ({
+  team,
+  setTeam,
+  onClose,
+} : {
+  team: TeamDetail;
+  setTeam: React.Dispatch<React.SetStateAction<TeamDetail | undefined>>;
+  onClose: () => void;
+}) => {
+  const [availableParticipants, setAvailableParticipants] = useState<Student[]>([]);
+  const [editedParticipantsList, setEditedParticipantsList] = useState<Student[]>(team.players);
+
+  const originalParticipantsList = [...team.players];
+
+  // Fetch all participants for that course
+  useEffect(() => {
+    const fetchParticipants = async () => {
+      try {
+        const participantsData = await studentsApi.getAll({
+          course_id: team.course.id,
+        });
+        setAvailableParticipants(participantsData);
+      } catch (err) {
+        console.error('Error fetching participants:', err);
+      }
+    };
+
+    fetchParticipants();
+  }, []);
+
+  const handleSave = async () => {
+    console.log('Original Participants:', originalParticipantsList);
+    console.log('Edited Participants:', editedParticipantsList);
+
+    // Logic to save added participants to the team
+    const playersToAdd = editedParticipantsList
+      .filter(ep => !originalParticipantsList.some(op => op.id === ep.id))
+      .map(p => p.id);
+
+    const playersToRemove = originalParticipantsList
+      .filter(op => !editedParticipantsList.some(ep => ep.id === op.id))
+      .map(p => p.id);
+
+    console.log('Players to add:', playersToAdd);
+    console.log('Players to remove:', playersToRemove);
+
+    try {
+      const newTeam = await teamsApi.update(team.id, {
+        players_add: playersToAdd,
+        players_remove: playersToRemove,
+      });
+      setTeam(newTeam);
+    } catch (err) {
+      console.error('Error updating team participants:', err);
+    }
+
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
+      <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
+        <h2 className="text-2xl font-bold mb-6 text-gray-800">Adicionar Membro</h2>
+
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="selectMember" className="block text-gray-700 font-medium mb-2">
+              Selecionar Membros <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="selectMember"
+              onChange={(e) => {
+                const selectedId = e.target.value;
+                const selectedParticipant = availableParticipants.find(p => p.id === selectedId);
+                console.log('Selected Participant:', availableParticipants);
+                if (selectedParticipant) {
+                  setEditedParticipantsList([...editedParticipantsList, selectedParticipant]);
+                }
+              }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+            >
+              <option value="">-- Selecionar Membro --</option>
+              {availableParticipants.map(participant => (
+                <option
+                  key={participant.id}
+                  value={participant.id}
+                  disabled={editedParticipantsList.some(p => p.id === participant.id)}
+                >
+                  {participant.full_name} (Nº {participant.student_number})
+                </option>
+              ))}
+            </select>
+
+            {availableParticipants.length === 0 && (
+              <p className="text-sm text-gray-500 mt-2">Todos os membros já estão na equipa.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Modal Actions */}
+        <div className="flex gap-4 mt-6">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSave}
+            className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
+          >
+            Adicionar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const TeamDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [team, setTeam] = useState<Team>();
-  const [participants, setParticipants] = useState<Participant[]>([]);
-  const [modalities, setModalities] = useState<Modality[]>([]);
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [team, setTeam] = useState<TeamDetail>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [editedName, setEditedName] = useState('');
-  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
 
   // Fetch team data, participants, modalities, and courses
   useEffect(() => {
@@ -28,11 +226,8 @@ const TeamDetail = () => {
         setLoading(true);
         setError(null);
 
-        const [teamData, fetchedParticipants, fetchedModalities, fetchedCourses] = await Promise.all([
+        const [teamData] = await Promise.all([
           teamsApi.get(id!),
-          participantsApi.getAll(),
-          modalitiesApi.getAll(),
-          coursesApi.getAll(),
         ]);
 
         const foundTeam = teamData;
@@ -44,9 +239,6 @@ const TeamDetail = () => {
         }
 
         setTeam(foundTeam);
-        setParticipants(fetchedParticipants);
-        setModalities(fetchedModalities);
-        setCourses(fetchedCourses);
       } catch (err) {
         console.error('Error fetching data:', err);
         setError('Erro ao carregar dados');
@@ -86,47 +278,8 @@ const TeamDetail = () => {
     );
   }
 
-  const teamMembers = participants.filter((participant: Player) => team.players.some(player => player.id === participant.id));
-  const availableMembers = participants.filter((participant: Player) => !team.players.some(player => player.id === participant.id));
-
-  const getModalityName = (modalityId: string) => {
-    const modality = modalities.find((m: Modality) => m.id === modalityId);
-    return modality ? modality.name : `Modalidade ${modalityId}`;
-  };
-
-  const getCourseName = (courseId: string) => {
-    const course = courses.find((c: Course) => c.id === courseId);
-    return course ? course.name : `Curso ${courseId}`;
-  };
-
   const handleEdit = () => {
-    setEditedName(team.name);
     setIsEditModalOpen(true);
-  };
-
-  const handleSave = async () => {
-    if (!editedName.trim()) {
-      alert('Por favor, preencha o nome da equipa.');
-      return;
-    }
-
-    try {
-      setError(null);
-      await teamsApi.update(team.id, {
-        name: editedName,
-      });
-
-      // Refresh team data
-      const teamData = await teamsApi.get(team.id);
-      if (teamData) {
-        setTeam(teamData);
-      }
-
-      setIsEditModalOpen(false);
-    } catch (err) {
-      console.error('Error updating team:', err);
-      setError('Erro ao atualizar equipa');
-    }
   };
 
   const handleDelete = () => {
@@ -145,51 +298,16 @@ const TeamDetail = () => {
     }
   };
 
-  const handleAddMember = async () => {
-    if (selectedMemberId === null) {
-      alert('Por favor, selecione um membro.');
-      return;
-    }
-
-    try {
-      setError(null);
-      await teamsApi.update(team.id, {
-        players_add: [selectedMemberId],
-      });
-
-      // Refresh team data
-      const teamData = await teamsApi.get(team.id);
-      if (teamData) {
-        setTeam(teamData);
-      }
-
-      setSelectedMemberId(null);
-      setIsAddMemberModalOpen(false);
-    } catch (err) {
-      console.error('Error adding member:', err);
-      setError('Erro ao adicionar membro');
-    }
-  };
-
   const handleRemoveMember = async (memberId: string) => {
-    if (!window.confirm('Tem certeza que deseja remover este membro da equipa?')) {
-      return;
-    }
-
     try {
       setError(null);
-      await teamsApi.update(team.id, {
+      const newTeam = await teamsApi.update(team.id, {
         players_remove: [memberId],
       });
-
-      // Refresh team data
-      const teamData = await teamsApi.get(team.id);
-      if (teamData) {
-        setTeam(teamData);
-      }
+      setTeam(newTeam);
     } catch (err) {
-      console.error('Error removing member:', err);
-      setError('Erro ao remover membro');
+      console.error('Error removing member from team:', err);
+      setError('Erro ao remover membro da equipa');
     }
   };
 
@@ -238,7 +356,7 @@ const TeamDetail = () => {
                     Modalidade
                   </label>
                   <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
-                    {getModalityName(team.modality_name)}
+                    {team.modality.name}
                   </div>
                 </div>
 
@@ -247,7 +365,7 @@ const TeamDetail = () => {
                     Curso
                   </label>
                   <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
-                    {getCourseName(team.course_name)}
+                    {team.course.name}
                   </div>
                 </div>
 
@@ -292,8 +410,8 @@ const TeamDetail = () => {
               </div>
 
               <div className="space-y-3 max-h-[600px] overflow-y-auto">
-                {teamMembers.length > 0 ? (
-                  teamMembers.map((member: Participant) => (
+                {team.players.length > 0 ? (
+                  team.players.map((member: Student) => (
                     <div
                       key={member.id}
                       className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
@@ -306,7 +424,7 @@ const TeamDetail = () => {
                         </div>
                         <div>
                           <p className="text-gray-800 font-medium">{member.full_name}</p>
-                          <p className="text-sm text-gray-500">Nº {member.student_number}</p>
+                          {/* <p className="text-sm text-gray-500">Nº {member.student_number}</p> */}
                         </div>
                       </div>
                       <button
@@ -330,122 +448,20 @@ const TeamDetail = () => {
 
       {/* Edit Team Modal */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800">Editar Equipa</h2>
-
-            <div className="space-y-4">
-              {/* Team Name */}
-              <div>
-                <label htmlFor="editName" className="block text-gray-700 font-medium mb-2">
-                  Nome da Equipa <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="editName"
-                  value={editedName}
-                  onChange={(e) => setEditedName(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  placeholder="Digite o nome da equipa"
-                />
-              </div>
-
-              {/* Modality (read-only) */}
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">
-                  Modalidade
-                </label>
-                <div className="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-600">
-                  {getModalityName(team.modality_name)}
-                </div>
-                <p className="text-sm text-gray-500 mt-1">A modalidade não pode ser alterada</p>
-              </div>
-
-              {/* Course (read-only) */}
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">
-                  Curso
-                </label>
-                <div className="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-600">
-                  {getCourseName(team.course_name)}
-                </div>
-                <p className="text-sm text-gray-500 mt-1">O curso não pode ser alterado</p>
-              </div>
-            </div>
-
-            {/* Modal Actions */}
-            <div className="flex gap-4 mt-6">
-              <button
-                onClick={() => {
-                  setIsEditModalOpen(false);
-                  setEditedName('');
-                }}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSave}
-                className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
-              >
-                Guardar
-              </button>
-            </div>
-          </div>
-        </div>
+        <TeamDetailsEditModal
+          team={team}
+          setTeam={setTeam}
+          onClose={() => setIsEditModalOpen(false)}
+        />
       )}
 
       {/* Add Member Modal */}
       {isAddMemberModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800">Adicionar Membro</h2>
-
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="selectMember" className="block text-gray-700 font-medium mb-2">
-                  Selecionar Membro <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="selectMember"
-                  value={selectedMemberId || ''}
-                  onChange={(e) => setSelectedMemberId(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                  <option value="">Selecionar Membro</option>
-                  {availableMembers.map((member: Participant) => (
-                    <option key={member.id} value={member.id}>
-                      {member.full_name} - Nº {member.student_number}
-                    </option>
-                  ))}
-                </select>
-                {availableMembers.length === 0 && (
-                  <p className="text-sm text-gray-500 mt-2">Todos os membros já estão na equipa.</p>
-                )}
-              </div>
-            </div>
-
-            {/* Modal Actions */}
-            <div className="flex gap-4 mt-6">
-              <button
-                onClick={() => {
-                  setIsAddMemberModalOpen(false);
-                  setSelectedMemberId(null);
-                }}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleAddMember}
-                className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
-                disabled={availableMembers.length === 0}
-              >
-                Adicionar
-              </button>
-            </div>
-          </div>
-        </div>
+        <TeamParticipantsEdditModal
+          team={team}
+          setTeam={setTeam}
+          onClose={() => setIsAddMemberModalOpen(false)}
+        />
       )}
 
       {/* Delete Confirmation Modal */}
@@ -479,4 +495,4 @@ const TeamDetail = () => {
   );
 };
 
-export default TeamDetail;
+export default TeamDetailPage;

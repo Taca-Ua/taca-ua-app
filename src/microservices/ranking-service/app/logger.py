@@ -1,13 +1,14 @@
-import logging
+"""
+Logging configuration for ranking-service
+"""
 
-import logging_loki
+from taca_logging import configure_logging, get_logger
 
-# Logging setup
-handler = logging_loki.LokiHandler(
-    url="http://loki:3100/loki/api/v1/push",
-    tags={"application": "ranking-service", "job": "ranking-service"},
-    version="1",
+# Configure structured logging
+configure_logging(
+    service_name="ranking-service",
+    log_level="INFO",
 )
-logger = logging.getLogger("ranking-service")
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
+
+# Export logger for use in other modules
+logger = get_logger("ranking-service")

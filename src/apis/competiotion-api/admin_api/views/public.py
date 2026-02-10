@@ -1,6 +1,7 @@
 from collections import defaultdict
 from typing import List
 
+from django.urls import path
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
 from rest_framework.decorators import api_view
@@ -277,3 +278,17 @@ def get_tournament_public(request, tournament_id):
         },
         status=status.HTTP_200_OK,
     )
+
+
+urlpatterns = [
+    path("matches/", calendar, name="public-calendar"),
+    path("modalities/", modality_list, name="public-modality-list"),
+    path("rankings/general/", rankings_general, name="public-rankings-general"),
+    path("seasons/", public_season_list, name="public-season-list"),
+    path("tournaments/", tournaments_public, name="public-tournament-list"),
+    path(
+        "tournaments/<uuid:tournament_id>/",
+        get_tournament_public,
+        name="public-tournament-detail",
+    ),
+]
