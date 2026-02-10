@@ -19,7 +19,12 @@ async def lifespan(app: FastAPI):
     logger.info("service_stopped", action="shutdown")
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    title="Read Model Updater Service",
+    description="Maintains materialized views for public read access",
+    version="1.0.0",
+    lifespan=lifespan,
+)
 
 # Add structured logging middleware
 app.add_middleware(StructlogMiddleware)
@@ -29,4 +34,8 @@ Instrumentator().instrument(app).expose(app)  # Prometheus metrics endpoint
 
 @app.get("/")
 def read_root():
-    return {"Service": "Read Model Updater"}
+    return {
+        "service": "Read Model Updater",
+        "version": "1.0.0",
+        "description": "Maintains materialized views and provides read endpoints",
+    }
