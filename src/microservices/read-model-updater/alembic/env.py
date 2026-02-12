@@ -9,6 +9,10 @@ from sqlalchemy import engine_from_config, pool, text
 # Add the app directory to the Python path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+# Add the shared taca_models package to the Python path
+shared_models_path = str(Path(__file__).resolve().parent.parent.parent.parent / "shared" / "read-model-shared")
+sys.path.insert(0, shared_models_path)
+
 # Import models - Read Model Updater manages public_read schema
 from taca_models import Base
 
