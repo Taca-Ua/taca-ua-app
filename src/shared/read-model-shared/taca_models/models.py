@@ -9,38 +9,37 @@ All models are read/write projections maintained by the read-model-updater servi
 
 import enum
 from datetime import datetime
-from typing import Optional
 
-from sqlalchemy import (
-    Boolean,
-    Column,
-    DateTime,
-    ForeignKey,
-    Integer,
-    JSON,
-    String,
-    Text,
-)
+from sqlalchemy import JSON, Boolean, Column, Date, DateTime
+from sqlalchemy import Enum as SQLEnum
+from sqlalchemy import ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from .metadata import Base
 
+# ==================== Enums ====================
 
-# ==================== ENUMS ====================
+
+class ParticipantType(str, enum.Enum):
+    """Type of participant in matches/tournaments."""
+
+    TEAM = "team"
+    ATHLETE = "athlete"
 
 
-class MatchStatus(enum.Enum):
-    """Match status enum"""
+class MatchStatus(str, enum.Enum):
+    """Status of a match."""
 
     SCHEDULED = "scheduled"
     IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
     FINISHED = "finished"
     CANCELLED = "cancelled"
 
 
-class TournamentStatus(enum.Enum):
-    """Tournament status enum"""
+class TournamentStatus(str, enum.Enum):
+    """Status of a tournament."""
 
     DRAFT = "draft"
     ACTIVE = "active"
@@ -48,46 +47,47 @@ class TournamentStatus(enum.Enum):
     CANCELLED = "cancelled"
 
 
-class ParticipantType(enum.Enum):
-    """Participant type enum"""
-
-    TEAM = "team"
-    ATHLETE = "athlete"
-
-
-# ==================== CORE ENTITIES ====================
+# ==================== Core Read Models ====================
 
 
 class Nucleo(Base):
-    """Organizational unit (nucleo) projection"""
+    """Organizational unit (nucleo) - populated from modalities service events."""
 
     __tablename__ = "nucleos"
     __table_args__ = {"schema": "public_read"}
 
-    id = Column(UUID(as_uuid=True), primary_key=True)
-    name = Column(String(100), nullable=False)
-    abbreviation = Column(String(10), nullable=False)
+    nucleo_id = Column(UUID(as_uuid=True), primary_key=True)
+    name = Column(String, nullable=False)
+    abbreviation = Column(String, nullable=False)
+
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=True)
-    is_deleted = Column(Boolean, default=False)
+    updated_at = Column(
+        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+    deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
     courses = relationship("Course", back_populates="nucleo")
 
 
 class Course(Base):
-    """Course projection"""
+    """Course linked to a nucleo - populated from modalities service events."""
 
     __tablename__ = "courses"
     __table_args__ = {"schema": "public_read"}
 
-    id = Column(UUID(as_uuid=True), primary_key=True)
-    nucleo_id = Column(UUID(as_uuid=True), ForeignKey("public_read.nucleos.id"))
-    name = Column(String(100), nullable=False)
-    abbreviation = Column(String(10), nullable=False)
+    course_id = Column(UUID(as_uuid=True), primary_key=True)
+    nucleo_id = Column(
+        UUID(as_uuid=True), ForeignKey("public_read.nucleos.nucleo_id"), nullable=False
+    )
+    name = Column(String, nullable=False)
+    abbreviation = Column(String, nullable=False)
+
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=True)
-    is_deleted = Column(Boolean, default=False)
+    updated_at = Column(
+        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+    deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
     nucleo = relationship("Nucleo", back_populates="courses")
@@ -96,37 +96,45 @@ class Course(Base):
 
 
 class ModalityType(Base):
-    """Sport/modality type projection"""
+    """Sport type with escaloes configuration - populated from modalities service events."""
 
     __tablename__ = "modality_types"
     __table_args__ = {"schema": "public_read"}
 
-    id = Column(UUID(as_uuid=True), primary_key=True)
-    name = Column(String(100), nullable=False)
-    description = Column(Text)
-    escaloes = Column(JSON, nullable=False)  # List of escalao definitions
+    modality_type_id = Column(UUID(as_uuid=True), primary_key=True)
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=False)
+    escaloes = Column(JSON, nullable=False)  # Array of escalao definitions
+
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=True)
-    is_deleted = Column(Boolean, default=False)
+    updated_at = Column(
+        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+    deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
     modalities = relationship("Modality", back_populates="modality_type")
 
 
 class Modality(Base):
-    """Modality projection"""
+    """Instance of a modality type - populated from modalities service events."""
 
     __tablename__ = "modalities"
     __table_args__ = {"schema": "public_read"}
 
-    id = Column(UUID(as_uuid=True), primary_key=True)
+    modality_id = Column(UUID(as_uuid=True), primary_key=True)
     modality_type_id = Column(
-        UUID(as_uuid=True), ForeignKey("public_read.modality_types.id")
+        UUID(as_uuid=True),
+        ForeignKey("public_read.modality_types.modality_type_id"),
+        nullable=False,
     )
-    name = Column(String(100))
+    name = Column(String, nullable=True)
+
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=True)
-    is_deleted = Column(Boolean, default=False)
+    updated_at = Column(
+        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+    deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
     modality_type = relationship("ModalityType", back_populates="modalities")
@@ -135,99 +143,140 @@ class Modality(Base):
 
 
 class Student(Base):
-    """Student projection"""
+    """Student information - populated from modalities service events."""
 
     __tablename__ = "students"
-    __table_args__ = {"schema": "public_read"}
+    __table_args__ = (
+        UniqueConstraint("student_number", name="uq_student_number"),
+        {"schema": "public_read"},
+    )
 
-    id = Column(UUID(as_uuid=True), primary_key=True)
-    course_id = Column(UUID(as_uuid=True), ForeignKey("public_read.courses.id"))
-    student_number = Column(String(50), nullable=False, unique=True)
-    full_name = Column(String(255), nullable=False)
-    is_member = Column(Boolean, default=False)
+    student_id = Column(UUID(as_uuid=True), primary_key=True)
+    course_id = Column(
+        UUID(as_uuid=True), ForeignKey("public_read.courses.course_id"), nullable=False
+    )
+    student_number = Column(String, nullable=False, unique=True)
+    full_name = Column(String, nullable=False)
+    is_member = Column(Boolean, nullable=False, default=False)
+
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=True)
-    is_deleted = Column(Boolean, default=False)
+    updated_at = Column(
+        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+    deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
     course = relationship("Course", back_populates="students")
     team_memberships = relationship("TeamPlayer", back_populates="student")
-    match_lineups = relationship("MatchLineup", back_populates="player")
 
 
 class Staff(Base):
-    """Staff projection"""
+    """Staff member information - populated from modalities service events."""
 
     __tablename__ = "staff"
-    __table_args__ = {"schema": "public_read"}
+    __table_args__ = (
+        UniqueConstraint("staff_number", name="uq_staff_number"),
+        {"schema": "public_read"},
+    )
 
-    id = Column(UUID(as_uuid=True), primary_key=True)
-    staff_number = Column(String(50), nullable=False, unique=True)
-    full_name = Column(String(255), nullable=False)
-    contact = Column(String(255), nullable=False)
+    staff_id = Column(UUID(as_uuid=True), primary_key=True)
+    full_name = Column(String, nullable=False)
+    staff_number = Column(String, nullable=False, unique=True)
+    contact = Column(String, nullable=False)
+
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=True)
-    is_deleted = Column(Boolean, default=False)
+    updated_at = Column(
+        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+    deleted_at = Column(DateTime, nullable=True)
 
 
 class Team(Base):
-    """Team projection"""
+    """Team information - populated from modalities service events."""
 
     __tablename__ = "teams"
     __table_args__ = {"schema": "public_read"}
 
-    id = Column(UUID(as_uuid=True), primary_key=True)
-    modality_id = Column(UUID(as_uuid=True), ForeignKey("public_read.modalities.id"))
-    course_id = Column(UUID(as_uuid=True), ForeignKey("public_read.courses.id"))
-    name = Column(String(100), nullable=False)
+    team_id = Column(UUID(as_uuid=True), primary_key=True)
+    modality_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("public_read.modalities.modality_id"),
+        nullable=False,
+    )
+    course_id = Column(
+        UUID(as_uuid=True), ForeignKey("public_read.courses.course_id"), nullable=False
+    )
+    name = Column(String, nullable=False)
+
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=True)
-    is_deleted = Column(Boolean, default=False)
+    updated_at = Column(
+        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+    deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
     modality = relationship("Modality", back_populates="teams")
     course = relationship("Course", back_populates="teams")
     players = relationship("TeamPlayer", back_populates="team")
-    tournament_participations = relationship("TournamentCompetitor", back_populates="team")
-    home_matches = relationship("Match", foreign_keys="Match.team_home_id")
-    away_matches = relationship("Match", foreign_keys="Match.team_away_id")
+    tournament_entries = relationship(
+        "TournamentCompetitor",
+        foreign_keys="[TournamentCompetitor.competitor_entity_id]",
+        primaryjoin="and_(Team.team_id==foreign(TournamentCompetitor.competitor_entity_id), TournamentCompetitor.competitor_type=='team')",
+        viewonly=True,
+    )
 
 
 class TeamPlayer(Base):
-    """Team player association projection"""
+    """Team-Student association - populated from team.player_added/removed events."""
 
     __tablename__ = "team_players"
-    __table_args__ = {"schema": "public_read"}
+    __table_args__ = (
+        Index("ix_team_players_team_id", "team_id"),
+        Index("ix_team_players_student_id", "student_id"),
+        UniqueConstraint("team_id", "student_id", name="uq_team_student"),
+        {"schema": "public_read"},
+    )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    team_id = Column(UUID(as_uuid=True), ForeignKey("public_read.teams.id"))
-    student_id = Column(UUID(as_uuid=True), ForeignKey("public_read.students.id"))
+    team_id = Column(
+        UUID(as_uuid=True), ForeignKey("public_read.teams.team_id"), nullable=False
+    )
+    student_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("public_read.students.student_id"),
+        nullable=False,
+    )
+
     added_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     removed_at = Column(DateTime, nullable=True)
-    is_active = Column(Boolean, default=True)
 
     # Relationships
     team = relationship("Team", back_populates="players")
     student = relationship("Student", back_populates="team_memberships")
 
 
-# ==================== TOURNAMENT ENTITIES ====================
-
-
 class Tournament(Base):
-    """Tournament projection"""
+    """Tournament information - populated from tournaments service events."""
 
     __tablename__ = "tournaments"
     __table_args__ = {"schema": "public_read"}
 
-    id = Column(UUID(as_uuid=True), primary_key=True)
-    modality_id = Column(UUID(as_uuid=True), ForeignKey("public_read.modalities.id"))
-    name = Column(String(255), nullable=False)
-    start_date = Column(DateTime, nullable=False)
-    status = Column(String(20), nullable=False)
+    tournament_id = Column(UUID(as_uuid=True), primary_key=True)
+    modality_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("public_read.modalities.modality_id"),
+        nullable=False,
+    )
+    name = Column(String, nullable=False)
+    start_date = Column(Date, nullable=False)
+    status = Column(String, nullable=False)
+
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=True)
-    is_deleted = Column(Boolean, default=False)
+    updated_at = Column(
+        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+    deleted_at = Column(DateTime, nullable=True)
+    finished_at = Column(DateTime, nullable=True)
 
     # Relationships
     modality = relationship("Modality", back_populates="tournaments")
@@ -236,50 +285,62 @@ class Tournament(Base):
 
 
 class TournamentCompetitor(Base):
-    """Tournament competitor association projection"""
+    """Competitor in a tournament - populated from tournament.competitor events."""
 
     __tablename__ = "tournament_competitors"
-    __table_args__ = {"schema": "public_read"}
+    __table_args__ = (
+        Index("ix_tournament_competitors_tournament_id", "tournament_id"),
+        Index("ix_tournament_competitors_entity_id", "competitor_entity_id"),
+        UniqueConstraint(
+            "tournament_id", "competitor_entity_id", name="uq_tournament_competitor"
+        ),
+        {"schema": "public_read"},
+    )
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    tournament_id = Column(UUID(as_uuid=True), ForeignKey("public_read.tournaments.id"))
-    competitor_type = Column(String(10))  # 'team' or 'athlete'
-    competitor_entity_id = Column(UUID(as_uuid=True))  # team_id or student_id
+    competitor_id = Column(UUID(as_uuid=True), primary_key=True)
+    tournament_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("public_read.tournaments.tournament_id"),
+        nullable=False,
+    )
+    competitor_type = Column(SQLEnum(ParticipantType), nullable=False)
+    competitor_entity_id = Column(
+        UUID(as_uuid=True), nullable=False
+    )  # team_id or student_id
+
     added_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    removed_at = Column(DateTime, nullable=True)
-    is_active = Column(Boolean, default=True)
+    deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
     tournament = relationship("Tournament", back_populates="competitors")
-    team = relationship("Team", back_populates="tournament_participations", 
-                       foreign_keys="[TournamentCompetitor.competitor_entity_id]",
-                       primaryjoin="and_(TournamentCompetitor.competitor_entity_id==Team.id, TournamentCompetitor.competitor_type=='team')")
-
-
-# ==================== MATCH ENTITIES ====================
 
 
 class Match(Base):
-    """Match projection"""
+    """Match information - populated from matches service events."""
 
     __tablename__ = "matches"
-    __table_args__ = {"schema": "public_read"}
-
-    id = Column(UUID(as_uuid=True), primary_key=True)
-    tournament_id = Column(
-        UUID(as_uuid=True), ForeignKey("public_read.tournaments.id"), nullable=True
+    __table_args__ = (
+        Index("ix_matches_tournament_id", "tournament_id"),
+        Index("ix_matches_status", "status"),
+        Index("ix_matches_start_time", "start_time"),
+        {"schema": "public_read"},
     )
-    location = Column(Text, nullable=False)
+
+    match_id = Column(UUID(as_uuid=True), primary_key=True)
+    tournament_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("public_read.tournaments.tournament_id"),
+        nullable=False,
+    )
+    location = Column(String, nullable=False)
+    status = Column(SQLEnum(MatchStatus), nullable=False)
     start_time = Column(DateTime, nullable=False)
-    status = Column(String(20), nullable=False)
-    # Denormalized team info for easy querying
-    team_home_id = Column(UUID(as_uuid=True))
-    team_away_id = Column(UUID(as_uuid=True))
-    team_home_name = Column(String(100))
-    team_away_name = Column(String(100))
+
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=True)
-    is_deleted = Column(Boolean, default=False)
+    updated_at = Column(
+        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+    deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
     tournament = relationship("Tournament", back_populates="matches")
@@ -290,155 +351,306 @@ class Match(Base):
 
 
 class MatchParticipant(Base):
-    """Match participant projection"""
+    """Participant in a match - populated from match.participant events."""
 
     __tablename__ = "match_participants"
-    __table_args__ = {"schema": "public_read"}
+    __table_args__ = (
+        Index("ix_match_participants_match_id", "match_id"),
+        Index("ix_match_participants_entity_id", "participant_entity_id"),
+        UniqueConstraint("match_id", "participant_id", name="uq_match_participant"),
+        {"schema": "public_read"},
+    )
 
-    id = Column(UUID(as_uuid=True), primary_key=True)
-    match_id = Column(UUID(as_uuid=True), ForeignKey("public_read.matches.id"))
-    participant_type = Column(String(10))  # 'team' or 'athlete'
-    participant_entity_id = Column(UUID(as_uuid=True))  # team_id or student_id
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    match_id = Column(
+        UUID(as_uuid=True), ForeignKey("public_read.matches.match_id"), nullable=False
+    )
+    participant_id = Column(UUID(as_uuid=True), nullable=False, unique=True)
+    participant_type = Column(SQLEnum(ParticipantType), nullable=False)
+    participant_entity_id = Column(
+        UUID(as_uuid=True), nullable=False
+    )  # team_id or student_id
+
     added_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     removed_at = Column(DateTime, nullable=True)
-    is_active = Column(Boolean, default=True)
 
     # Relationships
     match = relationship("Match", back_populates="participants")
+    result = relationship("MatchResult", back_populates="participant", uselist=False)
 
 
 class MatchResult(Base):
-    """Match result projection"""
+    """Result for a match participant - populated from match.result.updated events."""
 
     __tablename__ = "match_results"
-    __table_args__ = {"schema": "public_read"}
+    __table_args__ = (
+        Index("ix_match_results_match_id", "match_id"),
+        Index("ix_match_results_participant_id", "participant_id"),
+        UniqueConstraint("match_id", "participant_id", name="uq_match_result"),
+        {"schema": "public_read"},
+    )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    match_id = Column(UUID(as_uuid=True), ForeignKey("public_read.matches.id"))
-    participant_id = Column(UUID(as_uuid=True), nullable=False)  # from participant table
+    match_id = Column(
+        UUID(as_uuid=True), ForeignKey("public_read.matches.match_id"), nullable=False
+    )
+    participant_id = Column(UUID(as_uuid=True), nullable=False)
     score = Column(Integer, nullable=True)
     position = Column(Integer, nullable=True)
     results_metadata = Column(JSON, nullable=True)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    updated_at = Column(
+        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     # Relationships
     match = relationship("Match", back_populates="results")
+    participant = relationship(
+        "MatchParticipant",
+        foreign_keys=[participant_id],
+        primaryjoin="MatchResult.participant_id==MatchParticipant.participant_id",
+        back_populates="result",
+    )
 
 
 class MatchLineup(Base):
-    """Match lineup projection"""
+    """Lineup for a team in a match - populated from match.lineup.assigned events."""
 
     __tablename__ = "match_lineups"
-    __table_args__ = {"schema": "public_read"}
+    __table_args__ = (
+        Index("ix_match_lineups_match_id", "match_id"),
+        Index("ix_match_lineups_team_id", "team_id"),
+        UniqueConstraint("match_id", "team_id", "player_id", name="uq_match_lineup"),
+        {"schema": "public_read"},
+    )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    match_id = Column(UUID(as_uuid=True), ForeignKey("public_read.matches.id"))
+    match_id = Column(
+        UUID(as_uuid=True), ForeignKey("public_read.matches.match_id"), nullable=False
+    )
     team_id = Column(UUID(as_uuid=True), nullable=False)
-    player_id = Column(UUID(as_uuid=True), ForeignKey("public_read.students.id"))
+    player_id = Column(UUID(as_uuid=True), nullable=False)
     jersey_number = Column(Integer, nullable=False)
-    is_starter = Column(Boolean, nullable=False, default=False)
+    is_starter = Column(Boolean, nullable=False, default=True)
+
     assigned_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
     # Relationships
     match = relationship("Match", back_populates="lineups")
-    player = relationship("Student", back_populates="match_lineups")
 
 
 class MatchComment(Base):
-    """Match comment projection"""
+    """Comment on a match - populated from match.comment events."""
 
     __tablename__ = "match_comments"
-    __table_args__ = {"schema": "public_read"}
+    __table_args__ = (
+        Index("ix_match_comments_match_id", "match_id"),
+        {"schema": "public_read"},
+    )
 
-    id = Column(UUID(as_uuid=True), primary_key=True)
-    match_id = Column(UUID(as_uuid=True), ForeignKey("public_read.matches.id"))
+    comment_id = Column(UUID(as_uuid=True), primary_key=True)
+    match_id = Column(
+        UUID(as_uuid=True), ForeignKey("public_read.matches.match_id"), nullable=False
+    )
     message = Column(Text, nullable=False)
-    created_by = Column(UUID(as_uuid=True), nullable=True)  # user who created comment
+
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     deleted_at = Column(DateTime, nullable=True)
-    is_deleted = Column(Boolean, default=False)
 
     # Relationships
     match = relationship("Match", back_populates="comments")
 
 
-# ==================== VIEW MODELS (Legacy Support) ====================
+# ==================== Materialized Views ====================
+# These are reconstructed via joins from core read models
 
 
-class GamesView(Base):
-    """Enhanced games view with more detail"""
+class TeamDetailView(Base):
+    """
+    Materialized view: Team with course, nucleo, and modality details.
+    Rebuilt when Team, Course, Nucleo, or Modality events are processed.
+    """
 
-    __tablename__ = "games_view"
-    __table_args__ = {"schema": "public_read"}
+    __tablename__ = "mv_team_details"
+    __table_args__ = (
+        Index("ix_mv_team_details_course_id", "course_id"),
+        Index("ix_mv_team_details_modality_id", "modality_id"),
+        {"schema": "public_read"},
+    )
 
-    game_id = Column(UUID(as_uuid=True), primary_key=True)
-    # Tournament info
-    tournament_id = Column(UUID(as_uuid=True))
-    tournament_name = Column(Text)
-    tournament_status = Column(Text)
+    team_id = Column(UUID(as_uuid=True), primary_key=True)
+    team_name = Column(String, nullable=False)
+
+    # Course info
+    course_id = Column(UUID(as_uuid=True), nullable=False)
+    course_name = Column(String, nullable=False)
+    course_abbreviation = Column(String, nullable=False)
+
+    # Nucleo info
+    nucleo_id = Column(UUID(as_uuid=True), nullable=False)
+    nucleo_name = Column(String, nullable=False)
+    nucleo_abbreviation = Column(String, nullable=False)
+
     # Modality info
-    modality_id = Column(UUID(as_uuid=True))
-    modality_name = Column(Text)
-    modality_type_name = Column(Text)
-    # Team info
-    team_a_id = Column(UUID(as_uuid=True))
-    team_a_name = Column(Text)
-    team_a_course = Column(Text)
-    team_b_id = Column(UUID(as_uuid=True))
-    team_b_name = Column(Text)
-    team_b_course = Column(Text)
-    # Match details
-    location = Column(Text)
-    score = Column(Text)  # "X-Y" format or custom
-    scheduled_at = Column(DateTime)
-    state = Column(Text)
-    # Metadata
-    created_at = Column(DateTime)
-    updated_at = Column(DateTime)
+    modality_id = Column(UUID(as_uuid=True), nullable=False)
+    modality_name = Column(String, nullable=True)
+    modality_type_id = Column(UUID(as_uuid=True), nullable=False)
+    modality_type_name = Column(String, nullable=False)
+
+    # Player count
+    player_count = Column(Integer, nullable=False, default=0)
+
+    updated_at = Column(
+        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
 
-class TournamentView(Base):
-    """Enhanced tournament view with more detail"""
+class StudentDetailView(Base):
+    """
+    Materialized view: Student with course and nucleo details.
+    Rebuilt when Student, Course, or Nucleo events are processed.
+    """
 
-    __tablename__ = "tournament_view"
-    __table_args__ = {"schema": "public_read"}
+    __tablename__ = "mv_student_details"
+    __table_args__ = (
+        Index("ix_mv_student_details_course_id", "course_id"),
+        Index("ix_mv_student_details_student_number", "student_number"),
+        {"schema": "public_read"},
+    )
+
+    student_id = Column(UUID(as_uuid=True), primary_key=True)
+    student_number = Column(String, nullable=False)
+    full_name = Column(String, nullable=False)
+    is_member = Column(Boolean, nullable=False, default=False)
+
+    # Course info
+    course_id = Column(UUID(as_uuid=True), nullable=False)
+    course_name = Column(String, nullable=False)
+    course_abbreviation = Column(String, nullable=False)
+
+    # Nucleo info
+    nucleo_id = Column(UUID(as_uuid=True), nullable=False)
+    nucleo_name = Column(String, nullable=False)
+    nucleo_abbreviation = Column(String, nullable=False)
+
+    # Team count
+    team_count = Column(Integer, nullable=False, default=0)
+
+    updated_at = Column(
+        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+
+class TournamentDetailView(Base):
+    """
+    Materialized view: Tournament with modality and competitor details.
+    Rebuilt when Tournament, Modality, or TournamentCompetitor events are processed.
+    """
+
+    __tablename__ = "mv_tournament_details"
+    __table_args__ = (
+        Index("ix_mv_tournament_details_modality_id", "modality_id"),
+        Index("ix_mv_tournament_details_status", "status"),
+        Index("ix_mv_tournament_details_start_date", "start_date"),
+        {"schema": "public_read"},
+    )
 
     tournament_id = Column(UUID(as_uuid=True), primary_key=True)
-    name = Column(Text)
-    status = Column(Text)
-    start_date = Column(DateTime)
+    tournament_name = Column(String, nullable=False)
+    start_date = Column(Date, nullable=False)
+    status = Column(String, nullable=False)
+
     # Modality info
-    modality_id = Column(UUID(as_uuid=True))
-    modality_name = Column(Text)
-    modality_type_name = Column(Text)
-    # Stats
-    total_competitors = Column(Integer)
-    total_matches = Column(Integer)
-    completed_matches = Column(Integer)
-    # Metadata
-    created_at = Column(DateTime)
-    updated_at = Column(DateTime)
+    modality_id = Column(UUID(as_uuid=True), nullable=False)
+    modality_name = Column(String, nullable=True)
+    modality_type_id = Column(UUID(as_uuid=True), nullable=False)
+    modality_type_name = Column(String, nullable=False)
+
+    # Statistics
+    competitor_count = Column(Integer, nullable=False, default=0)
+    match_count = Column(Integer, nullable=False, default=0)
+
+    updated_at = Column(
+        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
 
-class RankingView(Base):
-    """Enhanced ranking view with team details"""
+class MatchDetailView(Base):
+    """
+    Materialized view: Match with tournament, participants, and result details.
+    Rebuilt when Match, Tournament, MatchParticipant, or MatchResult events are processed.
+    """
 
-    __tablename__ = "ranking_view"
-    __table_args__ = {"schema": "public_read"}
+    __tablename__ = "mv_match_details"
+    __table_args__ = (
+        Index("ix_mv_match_details_tournament_id", "tournament_id"),
+        Index("ix_mv_match_details_status", "status"),
+        Index("ix_mv_match_details_start_time", "start_time"),
+        {"schema": "public_read"},
+    )
+
+    match_id = Column(UUID(as_uuid=True), primary_key=True)
+    location = Column(String, nullable=False)
+    status = Column(String, nullable=False)
+    start_time = Column(DateTime, nullable=False)
+
+    # Tournament info
+    tournament_id = Column(UUID(as_uuid=True), nullable=False)
+    tournament_name = Column(String, nullable=False)
+
+    # Modality info
+    modality_id = Column(UUID(as_uuid=True), nullable=False)
+    modality_name = Column(String, nullable=True)
+
+    # Participants and results (stored as JSON for flexibility)
+    participants = Column(
+        JSON, nullable=False, default=list
+    )  # Array of participant details
+    results = Column(JSON, nullable=True)  # Array of results with scores/positions
+
+    # Statistics
+    participant_count = Column(Integer, nullable=False, default=0)
+    comment_count = Column(Integer, nullable=False, default=0)
+
+    updated_at = Column(
+        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+
+class TournamentStandingsView(Base):
+    """
+    Materialized view: Tournament standings/rankings.
+    Rebuilt when MatchResult or TournamentCompetitor events are processed.
+    """
+
+    __tablename__ = "mv_tournament_standings"
+    __table_args__ = (
+        Index("ix_mv_tournament_standings_tournament_id", "tournament_id"),
+        Index("ix_mv_tournament_standings_rank", "tournament_id", "rank"),
+        UniqueConstraint(
+            "tournament_id", "competitor_entity_id", name="uq_tournament_standings"
+        ),
+        {"schema": "public_read"},
+    )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     tournament_id = Column(UUID(as_uuid=True), nullable=False)
-    team_id = Column(UUID(as_uuid=True), nullable=False)
-    team_name = Column(Text, nullable=False)
-    course_name = Column(Text)
-    course_abbreviation = Column(Text)
-    nucleo_name = Column(Text)
-    # Ranking data
-    points = Column(Integer, default=0)
-    position = Column(Integer)
-    matches_played = Column(Integer, default=0)
-    matches_won = Column(Integer, default=0)
-    matches_lost = Column(Integer, default=0)
-    matches_drawn = Column(Integer, default=0)
-    # Metadata
-    updated_at = Column(DateTime, default=datetime.utcnow)
+    competitor_type = Column(String, nullable=False)
+    competitor_entity_id = Column(UUID(as_uuid=True), nullable=False)
+    competitor_name = Column(String, nullable=False)
+
+    # Statistics
+    matches_played = Column(Integer, nullable=False, default=0)
+    wins = Column(Integer, nullable=False, default=0)
+    losses = Column(Integer, nullable=False, default=0)
+    draws = Column(Integer, nullable=False, default=0)
+    points = Column(Integer, nullable=False, default=0)
+    total_score = Column(Integer, nullable=False, default=0)
+    rank = Column(Integer, nullable=True)
+
+    # Additional metadata
+    statistics_metadata = Column(JSON, nullable=True)
+
+    updated_at = Column(
+        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
