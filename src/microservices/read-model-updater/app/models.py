@@ -7,11 +7,58 @@ the read-only views in the public_read schema.
 All models are now imported from the shared taca_models package.
 """
 
-# Re-export models from shared package for backwards compatibility
-from taca_models import GamesView, RankingView, TournamentView
+# Re-export all models from shared package
+from taca_models import (  # Enums; Core Read Models; Materialized Views
+    Course,
+    Match,
+    MatchComment,
+    MatchDetailView,
+    MatchLineup,
+    MatchParticipant,
+    MatchResult,
+    MatchStatus,
+    Modality,
+    ModalityType,
+    Nucleo,
+    ParticipantType,
+    Staff,
+    Student,
+    StudentDetailView,
+    Team,
+    TeamDetailView,
+    TeamPlayer,
+    Tournament,
+    TournamentCompetitor,
+    TournamentDetailView,
+    TournamentStandingsView,
+    TournamentStatus,
+)
 
 __all__ = [
-    "GamesView",
-    "RankingView",
-    "TournamentView",
+    # Enums
+    "ParticipantType",
+    "MatchStatus",
+    "TournamentStatus",
+    # Core Read Models
+    "Nucleo",
+    "Course",
+    "ModalityType",
+    "Modality",
+    "Student",
+    "Staff",
+    "Team",
+    "TeamPlayer",
+    "Tournament",
+    "TournamentCompetitor",
+    "Match",
+    "MatchParticipant",
+    "MatchResult",
+    "MatchLineup",
+    "MatchComment",
+    # Materialized Views
+    "TeamDetailView",
+    "StudentDetailView",
+    "TournamentDetailView",
+    "MatchDetailView",
+    "TournamentStandingsView",
 ]

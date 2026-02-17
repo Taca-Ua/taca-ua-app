@@ -6,13 +6,60 @@ and read/write access to public_read schema views.
 """
 
 from .metadata import Base
-from .models import GamesView, RankingView, TournamentView
+from .models import (  # Enums; Core Read Models; Materialized Views
+    Course,
+    Match,
+    MatchComment,
+    MatchDetailView,
+    MatchLineup,
+    MatchParticipant,
+    MatchResult,
+    MatchStatus,
+    Modality,
+    ModalityType,
+    Nucleo,
+    ParticipantType,
+    Staff,
+    Student,
+    StudentDetailView,
+    Team,
+    TeamDetailView,
+    TeamPlayer,
+    Tournament,
+    TournamentCompetitor,
+    TournamentDetailView,
+    TournamentStandingsView,
+    TournamentStatus,
+)
 
 __all__ = [
     "Base",
-    "GamesView",
-    "RankingView",
-    "TournamentView",
+    # Enums
+    "ParticipantType",
+    "MatchStatus",
+    "TournamentStatus",
+    # Core Read Models
+    "Nucleo",
+    "Course",
+    "ModalityType",
+    "Modality",
+    "Student",
+    "Staff",
+    "Team",
+    "TeamPlayer",
+    "Tournament",
+    "TournamentCompetitor",
+    "Match",
+    "MatchParticipant",
+    "MatchResult",
+    "MatchLineup",
+    "MatchComment",
+    # Materialized Views
+    "TeamDetailView",
+    "StudentDetailView",
+    "TournamentDetailView",
+    "MatchDetailView",
+    "TournamentStandingsView",
 ]
 
 __version__ = "0.1.0"
