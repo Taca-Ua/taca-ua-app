@@ -5,6 +5,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from taca_logging import StructlogMiddleware
 
 from .events import rabbitmq_service
+from .internal_controller import router as internal_router
 from .logger import logger
 from .outbox_publisher import outbox_publisher
 from .routes import (
@@ -46,6 +47,7 @@ app.include_router(nucleo_router, tags=["nucleos"])
 app.include_router(staff_router, tags=["staff"])
 app.include_router(student_router, tags=["students"])
 app.include_router(team_router, tags=["teams"])
+app.include_router(internal_router)
 
 
 @app.get("/")
