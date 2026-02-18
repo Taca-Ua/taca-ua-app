@@ -13,6 +13,10 @@ RUN pip install --no-cache-dir -e /tmp/taca-messaging
 COPY src/shared/taca-logging /tmp/taca-logging
 RUN pip install --no-cache-dir -e /tmp/taca-logging
 
+# Install storage package 
+COPY src/shared/taca-storage /tmp/taca-storage
+RUN pip install --no-cache-dir -e /tmp/taca-storage
+
 COPY src/apis/competiotion-api .
 
 CMD ["sh", "-c", "python manage.py runserver 0.0.0.0:8000"]

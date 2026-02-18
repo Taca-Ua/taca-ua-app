@@ -17,6 +17,10 @@ RUN pip install --no-cache-dir -e /tmp/taca-logging
 COPY src/shared/taca-events /tmp/taca-events
 RUN pip install --no-cache-dir -e /tmp/taca-events
 
+# Install storage package
+COPY src/shared/taca-storage /tmp/taca-storage
+RUN pip install --no-cache-dir -e /tmp/taca-storage
+
 COPY src/microservices/modalities-service .
 
 # Run migrations and start the service in dev mode

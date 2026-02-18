@@ -1,18 +1,16 @@
 import logging
-import uuid
 from typing import Optional
 from django.core.files.uploadedfile import UploadedFile
-from .minio_service import MinioService
-
 from django.utils import timezone
+
+from taca_storage import FileService as SharedFileService
 
 logger = logging.getLogger(__name__)
 
 class FileService:
     def __init__(self):
-        self.minio = MinioService()
-        # Definimos um bucket padrão (pode vir de env vars)
-        self.default_bucket = "taca-ua-files"
+        # Instanciamos o serviço do pacote compartilhado
+        self.shared_service = SharedFileService()
 
     def upload_file(
         self,
@@ -21,37 +19,41 @@ class FileService:
         metadata: Optional[dict] = None,
     ) -> dict:
         """
-        Upload real para o MinIO integrando a lógica de negócio
+        Adaptador para Django que utiliza o serviço de storage compartilhado.
         """
         try:
-            
-            file_hash, object_name, public_url = self.minio.upload_file(
+            # Delegamos o upload para o pacote shared
+            # Passamos os atributos brutos do arquivo que o shared entende
+            result = self.shared_service.upload_file(
                 file_data=file,
-                bucket_name=self.default_bucket,
-                original_filename=file.name,
-                content_type=file.content_type
+                file_name=file.name,
+                content_type=file.content_type,
+                file_size=file.size
             )
-
+            
+            # Mantemos o retorno compatível com o que a sua View espera,
+            # mas agora os dados vêm do motor universal.
             return {
-                "file_id": file_hash,
-                "file_name": file.name,
-                "file_url": public_url,
-                "file_size": file.size,
-                "mime_type": file.content_type,
-                "uploaded_at": timezone.now().isoformat(), 
+                "file_id": result["file_id"],
+                "file_name": result["file_name"],
+                "file_url": result["file_url"],
+                "file_size": result["file_size"],
+                "mime_type": result["mime_type"],
+                "uploaded_at": timezone.now().isoformat(), # Mantemos o timezone do Django aqui
             }
         except Exception as e:
-            logger.error(f"Erro ao fazer upload para o MinIO: {str(e)}")
+            logger.error(f"Erro no adaptador de upload: {str(e)}")
             raise e
 
     def get_file_url(self, file_id: str) -> str:
-        # Se os arquivos forem públicos, o MinioService já gera a URL no upload
-        # Caso precise buscar novamente:
-        return self.minio.get_public_url(self.default_bucket, file_id)
+        # O file_id aqui é o nome do objeto (hash.extensao)
+        return self.shared_service.minio.get_public_url(
+            self.shared_service.default_bucket, 
+            file_id
+        )
 
     def delete_file(self, file_id: str) -> bool:
-        try:
-            self.minio.delete_file(self.default_bucket, file_id)
-            return True
-        except Exception:
-            return False
+        """
+        Deleta o arquivo usando o motor compartilhado.
+        """
+        return self.shared_service.delete_file(file_id)
