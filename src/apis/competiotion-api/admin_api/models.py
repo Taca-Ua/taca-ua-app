@@ -660,3 +660,36 @@ class Journey(models.Model):
 
     def __str__(self):
         return f"Journey {self.number}"
+
+
+# ==================== REGULATIONS MODELS ====================
+
+class Regulation(models.Model):
+    """
+    Represents a sport regulation document.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.TextField()
+    description = models.TextField(null=True, blank=True)
+    
+    file_url = models.URLField(max_length=500)
+    
+    # Relacionamento com a Modalidade
+    modality = models.ForeignKey(
+        Modality, 
+        on_delete=models.CASCADE, 
+        related_name="regulations",
+        null=True, 
+        blank=True
+    )
+
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "regulation"
+        verbose_name = "Regulation"
+        verbose_name_plural = "Regulations"
+
+    def __str__(self):
+        return self.title

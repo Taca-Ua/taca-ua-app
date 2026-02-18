@@ -5,6 +5,8 @@ Maps endpoints according to API_ENDPOINTS.md specification
 
 from django.urls import include, path
 
+from .views.regulations import RegulationListCreateView, RegulationDetailView
+
 from .views.users import (
     AdministratorDetailView,
     AdministratorListCreateView,
@@ -44,7 +46,17 @@ urlpatterns = [
     # Course Management (RF2)
     path("courses/", include("admin_api.views.courses")),
     # Regulation Management (RF2.3)
-    path("regulations/", include("admin_api.views.regulations")),
+    path(
+        "regulations/", 
+        RegulationListCreateView.as_view(), 
+        name="regulation-list"
+    ),
+    path(
+        "regulations/<uuid:regulation_id>/", 
+        RegulationDetailView.as_view(), 
+        name="regulation-detail"
+    ),
+    
     # Modality Management (RF3)
     path("modalities/", include("admin_api.views.modalities")),
     path("modality-types/", include("admin_api.views.modality_types")),
