@@ -1,15 +1,13 @@
 """
-Regulation management views
+Regulation management views - Refactored to use Service Layer
 """
 
-from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ..models import Regulation
-from ..services.file_service import FileService
+from ..services.regulation_service import RegulationService
 from ..serializers.regulations import (
     RegulationCreateSerializer,
     RegulationListSerializer,
@@ -31,7 +29,7 @@ from ..serializers.regulations import (
 )
 class RegulationListCreateView(APIView):
     def get(self, request):
-        regulations = Regulation.objects.all()
+        regulations = RegulationService.list_regulations()
         serializer = RegulationListSerializer(regulations, many=True)
         return Response(serializer.data)
 
@@ -39,19 +37,12 @@ class RegulationListCreateView(APIView):
         serializer = RegulationCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        file_service = FileService()
         try:
-            # Upload real para o MinIO
-            upload_data = file_service.upload_file(
-                file=serializer.validated_data.pop('file')
-            )
-            
-            # Persistência no Postgres
-            regulation = Regulation.objects.create(
-                title=serializer.validated_data.get('title'),
+            regulation = RegulationService.create_regulation(
+                title=serializer.validated_data['title'],
+                file=serializer.validated_data.pop('file'),
                 description=serializer.validated_data.get('description', ''),
-                modality_id=serializer.validated_data.get('modality_id'),
-                file_url=upload_data['file_url']
+                modality_id=serializer.validated_data.get('modality_id')
             )
             
             output_serializer = RegulationListSerializer(regulation)
@@ -59,7 +50,7 @@ class RegulationListCreateView(APIView):
             
         except Exception as e:
             return Response(
-                {"error": f"Failed to upload or save regulation: {str(e)}"}, 
+                {"error": f"Operation failed: {str(e)}"}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
@@ -84,21 +75,27 @@ class RegulationListCreateView(APIView):
 )
 class RegulationDetailView(APIView):
     def get(self, request, regulation_id):
-        regulation = get_object_or_404(Regulation, id=regulation_id)
+        regulation = RegulationService.get_regulation(regulation_id)
         serializer = RegulationListSerializer(regulation)
         return Response(serializer.data)
 
     def put(self, request, regulation_id):
-        regulation = get_object_or_404(Regulation, id=regulation_id)
+        regulation = RegulationService.get_regulation(regulation_id)
         serializer = RegulationUpdateSerializer(regulation, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         
+        # Metadados simples podem ser salvos via serializer
         serializer.save()
         
         output_serializer = RegulationListSerializer(regulation)
         return Response(output_serializer.data)
 
     def delete(self, request, regulation_id):
-        regulation = get_object_or_404(Regulation, id=regulation_id)
-        regulation.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            RegulationService.delete_regulation(regulation_id)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to delete: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
