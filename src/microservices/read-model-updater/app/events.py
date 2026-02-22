@@ -3,6 +3,8 @@ Event handling for read-model-updater.
 Publishes and consumes events via RabbitMQ.
 """
 
+import uuid
+from datetime import date, datetime, timezone
 from typing import Any, Dict
 
 from taca_events import RoutingKeys
@@ -10,177 +12,50 @@ from taca_messaging.rabbitmq_service import RabbitMQService
 
 from .database import get_db
 from .logger import logger
+from .models import (
+    Course,
+    Match,
+    MatchComment,
+    MatchLineup,
+    MatchParticipant,
+    MatchResult,
+    MatchStatus,
+    Modality,
+    ModalityType,
+    Nucleo,
+    ParticipantType,
+    Staff,
+    Student,
+    Team,
+    TeamPlayer,
+    Tournament,
+    TournamentCompetitor,
+)
 
 # Initialize RabbitMQ service for read-model-updater
 rabbitmq_service = RabbitMQService(service_name="read-model-updater", logger=logger)
 
 
-# ==================== Tournament Events ====================
+# ==================== Helpers ====================
 
 
-@rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_CREATED)
-def handle_tournament_created(event_data: Dict[str, Any]):
-    """
-    Handle tournament created event.
-
-    Updates TournamentView with new tournament data.
-    """
-    tournament_id = event_data.get("tournament_id")
-    logger.info(
-        "event_received", event_type="tournament.created", tournament_id=tournament_id
-    )
-
-    with get_db() as db:
-        # Placeholder for actual DB operations to create TournamentView entry
-        print(db)  # To avoid "unused variable" warning
-        pass
+def _parse_dt(value: Any) -> datetime:
+    """Parse an ISO 8601 datetime string to a naive UTC datetime."""
+    if isinstance(value, datetime):
+        if value.tzinfo is not None:
+            return value.astimezone(timezone.utc).replace(tzinfo=None)
+        return value
+    dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    if dt.tzinfo is not None:
+        return dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
 
 
-@rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_UPDATED)
-def handle_tournament_updated(event_data: Dict[str, Any]):
-    """
-    Handle tournament updated event.
-
-    Updates TournamentView with changed tournament data.
-    """
-    tournament_id = event_data.get("tournament_id")
-    logger.info(
-        "event_received", event_type="tournament.updated", tournament_id=tournament_id
-    )
-
-
-@rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_DELETED)
-def handle_tournament_deleted(event_data: Dict[str, Any]):
-    """
-    Handle tournament deleted event.
-
-    Removes tournament from TournamentView and cascades to related views.
-    """
-    tournament_id = event_data.get("tournament_id")
-    logger.info(
-        "event_received", event_type="tournament.deleted", tournament_id=tournament_id
-    )
-
-
-@rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_COMPETITOR_ADDED)
-def handle_tournament_competitor_added(event_data: Dict[str, Any]):
-    """
-    Handle tournament competitor added event.
-
-    Increments team_count in TournamentView.
-    """
-    tournament_id = event_data.get("tournament_id")
-    logger.info(
-        "event_received",
-        event_type="tournament.competitor.added",
-        tournament_id=tournament_id,
-    )
-
-
-@rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_COMPETITOR_DELETED)
-def handle_tournament_competitor_deleted(event_data: Dict[str, Any]):
-    """
-    Handle tournament competitor deleted event.
-
-    Decrements team_count in TournamentView.
-    """
-    tournament_id = event_data.get("tournament_id")
-    logger.info(
-        "event_received",
-        event_type="tournament.competitor.deleted",
-        tournament_id=tournament_id,
-    )
-
-
-# ==================== Match Events ====================
-
-
-@rabbitmq_service.event_handler(RoutingKeys.MATCH_CREATED)
-def handle_match_created(event_data: Dict[str, Any]):
-    """
-    Handle match created event.
-
-    Creates GamesView entry and GameParticipantView entries for all participants.
-    """
-    match_id = event_data.get("match_id")
-    logger.info("event_received", event_type="match.created", match_id=match_id)
-
-
-@rabbitmq_service.event_handler(RoutingKeys.MATCH_UPDATED)
-def handle_match_updated(event_data: Dict[str, Any]):
-    """
-    Handle match updated event.
-
-    Updates GamesView with changed match data.
-    """
-    match_id = event_data.get("match_id")
-    logger.info("event_received", event_type="match.updated", match_id=match_id)
-
-
-@rabbitmq_service.event_handler(RoutingKeys.MATCH_DELETED)
-def handle_match_deleted(event_data: Dict[str, Any]):
-    """
-    Handle match deleted event.
-
-    Removes match and its participants from views.
-    """
-    match_id = event_data.get("match_id")
-    logger.info("event_received", event_type="match.deleted", match_id=match_id)
-
-
-@rabbitmq_service.event_handler(RoutingKeys.MATCH_RESULT_UPDATED)
-def handle_match_result_updated(event_data: Dict[str, Any]):
-    """
-    Handle match result updated event.
-
-    Updates GameParticipantView with scores/positions for all participants.
-    """
-    match_id = event_data.get("match_id")
-    results = event_data.get("results", [])
-    logger.info(
-        "event_received",
-        event_type="match.result.updated",
-        match_id=match_id,
-        results_count=len(results),
-    )
-
-
-# ==================== Modality Events ====================
-
-
-@rabbitmq_service.event_handler(RoutingKeys.MODALITY_UPDATED)
-def handle_modality_updated(event_data: Dict[str, Any]):
-    """
-    Handle modality updated event.
-
-    Updates modality name in all related views.
-    """
-    modality_id = event_data.get("modality_id")
-    logger.info(
-        "event_received", event_type="modality.updated", modality_id=modality_id
-    )
-
-
-@rabbitmq_service.event_handler(RoutingKeys.TEAM_UPDATED)
-def handle_team_updated(event_data: Dict[str, Any]):
-    """
-    Handle team updated event.
-
-    Updates team name in all related views.
-    """
-    team_id = event_data.get("team_id")
-    logger.info("event_received", event_type="team.updated", team_id=team_id)
-
-
-@rabbitmq_service.event_handler(RoutingKeys.COURSE_UPDATED)
-def handle_course_updated(event_data: Dict[str, Any]):
-    """
-    Handle course updated event.
-
-    Updates course name in all related views.
-    """
-    course_id = event_data.get("course_id")
-    logger.info("event_received", event_type="course.updated", course_id=course_id)
+def _parse_date(value: Any) -> date:
+    """Parse an ISO 8601 date string to a date object."""
+    if isinstance(value, date) and not isinstance(value, datetime):
+        return value
+    return date.fromisoformat(str(value)[:10])
 
 
 # ==================== Nucleo Events ====================
@@ -188,32 +63,884 @@ def handle_course_updated(event_data: Dict[str, Any]):
 
 @rabbitmq_service.event_handler(RoutingKeys.NUCLEO_CREATED)
 def handle_nucleo_created(event_data: Dict[str, Any]):
-    """
-    Handle nucleo created event.
-    """
-    logger.info(
-        "event_received",
-        event_type="nucleo.created",
-        nucleo_id=event_data.get("nucleo_id"),
-    )
+    """Handle nucleo created event."""
+    nucleo_id = uuid.UUID(event_data["nucleo_id"])
+    logger.info("event_received", event_type="nucleo.created", nucleo_id=str(nucleo_id))
+
+    with get_db() as db:
+        nucleo = Nucleo(
+            nucleo_id=nucleo_id,
+            name=event_data["name"],
+            abbreviation=event_data["abbreviation"],
+        )
+        db.add(nucleo)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.NUCLEO_UPDATED)
 def handle_nucleo_updated(event_data: Dict[str, Any]):
-    """
-    Handle nucleo updated event.
-    """
-    nucleo_id = event_data.get("nucleo_id") or event_data.get("id")
-    logger.info("event_received", event_type="nucleo.updated", nucleo_id=nucleo_id)
+    """Handle nucleo updated event."""
+    nucleo_id = uuid.UUID(event_data.get("nucleo_id") or event_data.get("id"))
+    logger.info("event_received", event_type="nucleo.updated", nucleo_id=str(nucleo_id))
+
+    with get_db() as db:
+        nucleo = db.query(Nucleo).filter(Nucleo.nucleo_id == nucleo_id).first()
+        if not nucleo:
+            logger.warning("nucleo_not_found", nucleo_id=str(nucleo_id))
+            return
+        if "name" in event_data:
+            nucleo.name = event_data["name"]
+        if "abbreviation" in event_data:
+            nucleo.abbreviation = event_data["abbreviation"]
+        nucleo.updated_at = datetime.utcnow()
 
 
 @rabbitmq_service.event_handler(RoutingKeys.NUCLEO_DELETED)
 def handle_nucleo_deleted(event_data: Dict[str, Any]):
-    """
-    Handle nucleo deleted event.
-    """
+    """Handle nucleo deleted event."""
+    nucleo_id = uuid.UUID(event_data["nucleo_id"])
+    logger.info("event_received", event_type="nucleo.deleted", nucleo_id=str(nucleo_id))
+
+    with get_db() as db:
+        nucleo = db.query(Nucleo).filter(Nucleo.nucleo_id == nucleo_id).first()
+        if not nucleo:
+            logger.warning("nucleo_not_found", nucleo_id=str(nucleo_id))
+            return
+        nucleo.deleted_at = datetime.utcnow()
+
+
+# ==================== Course Events ====================
+
+
+@rabbitmq_service.event_handler(RoutingKeys.COURSE_CREATED)
+def handle_course_created(event_data: Dict[str, Any]):
+    """Handle course created event."""
+    course_id = uuid.UUID(event_data["course_id"])
+    logger.info("event_received", event_type="course.created", course_id=str(course_id))
+
+    with get_db() as db:
+        course = Course(
+            course_id=course_id,
+            nucleo_id=uuid.UUID(event_data["nucleo_id"]),
+            name=event_data["name"],
+            abbreviation=event_data["abbreviation"],
+        )
+        db.add(course)
+
+
+@rabbitmq_service.event_handler(RoutingKeys.COURSE_UPDATED)
+def handle_course_updated(event_data: Dict[str, Any]):
+    """Handle course updated event."""
+    course_id = uuid.UUID(event_data["course_id"])
+    logger.info("event_received", event_type="course.updated", course_id=str(course_id))
+
+    with get_db() as db:
+        course = db.query(Course).filter(Course.course_id == course_id).first()
+        if not course:
+            logger.warning("course_not_found", course_id=str(course_id))
+            return
+        if "name" in event_data:
+            course.name = event_data["name"]
+        if "abbreviation" in event_data:
+            course.abbreviation = event_data["abbreviation"]
+        if "nucleo_id" in event_data:
+            course.nucleo_id = uuid.UUID(event_data["nucleo_id"])
+        course.updated_at = datetime.utcnow()
+
+
+@rabbitmq_service.event_handler(RoutingKeys.COURSE_DELETED)
+def handle_course_deleted(event_data: Dict[str, Any]):
+    """Handle course deleted event."""
+    course_id = uuid.UUID(event_data["course_id"])
+    logger.info("event_received", event_type="course.deleted", course_id=str(course_id))
+
+    with get_db() as db:
+        course = db.query(Course).filter(Course.course_id == course_id).first()
+        if not course:
+            logger.warning("course_not_found", course_id=str(course_id))
+            return
+        course.deleted_at = datetime.utcnow()
+
+
+# ==================== Modality Type Events ====================
+
+
+@rabbitmq_service.event_handler(RoutingKeys.MODALITY_TYPE_CREATED)
+def handle_modality_type_created(event_data: Dict[str, Any]):
+    """Handle modality type created event."""
+    modality_type_id = uuid.UUID(event_data["modality_type_id"])
     logger.info(
         "event_received",
-        event_type="nucleo.deleted",
-        nucleo_id=event_data.get("nucleo_id"),
+        event_type="modality_type.created",
+        modality_type_id=str(modality_type_id),
     )
+
+    with get_db() as db:
+        modality_type = ModalityType(
+            modality_type_id=modality_type_id,
+            name=event_data["name"],
+            description=event_data["description"],
+            escaloes=event_data["escaloes"],
+        )
+        db.add(modality_type)
+
+
+@rabbitmq_service.event_handler(RoutingKeys.MODALITY_TYPE_UPDATED)
+def handle_modality_type_updated(event_data: Dict[str, Any]):
+    """Handle modality type updated event."""
+    modality_type_id = uuid.UUID(event_data["modality_type_id"])
+    logger.info(
+        "event_received",
+        event_type="modality_type.updated",
+        modality_type_id=str(modality_type_id),
+    )
+
+    with get_db() as db:
+        modality_type = (
+            db.query(ModalityType)
+            .filter(ModalityType.modality_type_id == modality_type_id)
+            .first()
+        )
+        if not modality_type:
+            logger.warning(
+                "modality_type_not_found", modality_type_id=str(modality_type_id)
+            )
+            return
+        if "name" in event_data:
+            modality_type.name = event_data["name"]
+        if "description" in event_data:
+            modality_type.description = event_data["description"]
+        if "escaloes" in event_data:
+            modality_type.escaloes = event_data["escaloes"]
+        modality_type.updated_at = datetime.utcnow()
+
+
+@rabbitmq_service.event_handler(RoutingKeys.MODALITY_TYPE_DELETED)
+def handle_modality_type_deleted(event_data: Dict[str, Any]):
+    """Handle modality type deleted event."""
+    modality_type_id = uuid.UUID(event_data["modality_type_id"])
+    logger.info(
+        "event_received",
+        event_type="modality_type.deleted",
+        modality_type_id=str(modality_type_id),
+    )
+
+    with get_db() as db:
+        modality_type = (
+            db.query(ModalityType)
+            .filter(ModalityType.modality_type_id == modality_type_id)
+            .first()
+        )
+        if not modality_type:
+            logger.warning(
+                "modality_type_not_found", modality_type_id=str(modality_type_id)
+            )
+            return
+        modality_type.deleted_at = datetime.utcnow()
+
+
+# ==================== Modality Events ====================
+
+
+@rabbitmq_service.event_handler(RoutingKeys.MODALITY_CREATED)
+def handle_modality_created(event_data: Dict[str, Any]):
+    """Handle modality created event."""
+    modality_id = uuid.UUID(event_data["modality_id"])
+    logger.info(
+        "event_received", event_type="modality.created", modality_id=str(modality_id)
+    )
+
+    with get_db() as db:
+        modality = Modality(
+            modality_id=modality_id,
+            modality_type_id=uuid.UUID(event_data["modality_type_id"]),
+            name=event_data.get("name"),
+        )
+        db.add(modality)
+
+
+@rabbitmq_service.event_handler(RoutingKeys.MODALITY_UPDATED)
+def handle_modality_updated(event_data: Dict[str, Any]):
+    """Handle modality updated event."""
+    modality_id = uuid.UUID(event_data["modality_id"])
+    logger.info(
+        "event_received", event_type="modality.updated", modality_id=str(modality_id)
+    )
+
+    with get_db() as db:
+        modality = (
+            db.query(Modality).filter(Modality.modality_id == modality_id).first()
+        )
+        if not modality:
+            logger.warning("modality_not_found", modality_id=str(modality_id))
+            return
+        if "name" in event_data:
+            modality.name = event_data["name"]
+        if "modality_type_id" in event_data:
+            modality.modality_type_id = uuid.UUID(event_data["modality_type_id"])
+        modality.updated_at = datetime.utcnow()
+
+
+@rabbitmq_service.event_handler(RoutingKeys.MODALITY_DELETED)
+def handle_modality_deleted(event_data: Dict[str, Any]):
+    """Handle modality deleted event."""
+    modality_id = uuid.UUID(event_data["modality_id"])
+    logger.info(
+        "event_received", event_type="modality.deleted", modality_id=str(modality_id)
+    )
+
+    with get_db() as db:
+        modality = (
+            db.query(Modality).filter(Modality.modality_id == modality_id).first()
+        )
+        if not modality:
+            logger.warning("modality_not_found", modality_id=str(modality_id))
+            return
+        modality.deleted_at = datetime.utcnow()
+
+
+# ==================== Student Events ====================
+
+
+@rabbitmq_service.event_handler(RoutingKeys.STUDENT_CREATED)
+def handle_student_created(event_data: Dict[str, Any]):
+    """Handle student created event."""
+    student_id = uuid.UUID(event_data["student_id"])
+    logger.info(
+        "event_received", event_type="student.created", student_id=str(student_id)
+    )
+
+    with get_db() as db:
+        student = Student(
+            student_id=student_id,
+            course_id=uuid.UUID(event_data["course_id"]),
+            student_number=event_data["student_number"],
+            full_name=event_data["full_name"],
+            is_member=event_data.get("is_member", False),
+        )
+        db.add(student)
+
+
+@rabbitmq_service.event_handler(RoutingKeys.STUDENT_UPDATED)
+def handle_student_updated(event_data: Dict[str, Any]):
+    """Handle student updated event."""
+    student_id = uuid.UUID(event_data["student_id"])
+    logger.info(
+        "event_received", event_type="student.updated", student_id=str(student_id)
+    )
+
+    with get_db() as db:
+        student = db.query(Student).filter(Student.student_id == student_id).first()
+        if not student:
+            logger.warning("student_not_found", student_id=str(student_id))
+            return
+        if "name" in event_data:
+            student.full_name = event_data["name"]
+        if "course_id" in event_data:
+            student.course_id = uuid.UUID(event_data["course_id"])
+        if "student_number" in event_data:
+            student.student_number = event_data["student_number"]
+        if "is_member" in event_data:
+            student.is_member = event_data["is_member"]
+        student.updated_at = datetime.utcnow()
+
+
+@rabbitmq_service.event_handler(RoutingKeys.STUDENT_DELETED)
+def handle_student_deleted(event_data: Dict[str, Any]):
+    """Handle student deleted event."""
+    student_id = uuid.UUID(event_data["student_id"])
+    logger.info(
+        "event_received", event_type="student.deleted", student_id=str(student_id)
+    )
+
+    with get_db() as db:
+        student = db.query(Student).filter(Student.student_id == student_id).first()
+        if not student:
+            logger.warning("student_not_found", student_id=str(student_id))
+            return
+        student.deleted_at = datetime.utcnow()
+
+
+# ==================== Staff Events ====================
+
+
+@rabbitmq_service.event_handler(RoutingKeys.STAFF_CREATED)
+def handle_staff_created(event_data: Dict[str, Any]):
+    """Handle staff created event."""
+    staff_id = uuid.UUID(event_data["staff_id"])
+    logger.info("event_received", event_type="staff.created", staff_id=str(staff_id))
+
+    with get_db() as db:
+        staff = Staff(
+            staff_id=staff_id,
+            full_name=event_data["full_name"],
+            staff_number=event_data["staff_number"],
+            contact=event_data["contact"],
+        )
+        db.add(staff)
+
+
+@rabbitmq_service.event_handler(RoutingKeys.STAFF_UPDATED)
+def handle_staff_updated(event_data: Dict[str, Any]):
+    """Handle staff updated event."""
+    staff_id = uuid.UUID(event_data["staff_id"])
+    logger.info("event_received", event_type="staff.updated", staff_id=str(staff_id))
+
+    with get_db() as db:
+        staff = db.query(Staff).filter(Staff.staff_id == staff_id).first()
+        if not staff:
+            logger.warning("staff_not_found", staff_id=str(staff_id))
+            return
+        if "full_name" in event_data:
+            staff.full_name = event_data["full_name"]
+        if "staff_number" in event_data:
+            staff.staff_number = event_data["staff_number"]
+        if "contact" in event_data:
+            staff.contact = event_data["contact"]
+        staff.updated_at = datetime.utcnow()
+
+
+@rabbitmq_service.event_handler(RoutingKeys.STAFF_DELETED)
+def handle_staff_deleted(event_data: Dict[str, Any]):
+    """Handle staff deleted event."""
+    staff_id = uuid.UUID(event_data["staff_id"])
+    logger.info("event_received", event_type="staff.deleted", staff_id=str(staff_id))
+
+    with get_db() as db:
+        staff = db.query(Staff).filter(Staff.staff_id == staff_id).first()
+        if not staff:
+            logger.warning("staff_not_found", staff_id=str(staff_id))
+            return
+        staff.deleted_at = datetime.utcnow()
+
+
+# ==================== Team Events ====================
+
+
+@rabbitmq_service.event_handler(RoutingKeys.TEAM_CREATED)
+def handle_team_created(event_data: Dict[str, Any]):
+    """Handle team created event."""
+    team_id = uuid.UUID(event_data["team_id"])
+    logger.info("event_received", event_type="team.created", team_id=str(team_id))
+
+    with get_db() as db:
+        team = Team(
+            team_id=team_id,
+            modality_id=uuid.UUID(event_data["modality_id"]),
+            course_id=uuid.UUID(event_data["course_id"]),
+            name=event_data["name"],
+        )
+        db.add(team)
+
+
+@rabbitmq_service.event_handler(RoutingKeys.TEAM_UPDATED)
+def handle_team_updated(event_data: Dict[str, Any]):
+    """Handle team updated event."""
+    team_id = uuid.UUID(event_data["team_id"])
+    logger.info("event_received", event_type="team.updated", team_id=str(team_id))
+
+    with get_db() as db:
+        team = db.query(Team).filter(Team.team_id == team_id).first()
+        if not team:
+            logger.warning("team_not_found", team_id=str(team_id))
+            return
+        if "name" in event_data:
+            team.name = event_data["name"]
+        if "modality_id" in event_data:
+            team.modality_id = uuid.UUID(event_data["modality_id"])
+        if "course_id" in event_data:
+            team.course_id = uuid.UUID(event_data["course_id"])
+        team.updated_at = datetime.utcnow()
+
+
+@rabbitmq_service.event_handler(RoutingKeys.TEAM_DELETED)
+def handle_team_deleted(event_data: Dict[str, Any]):
+    """Handle team deleted event."""
+    team_id = uuid.UUID(event_data["team_id"])
+    logger.info("event_received", event_type="team.deleted", team_id=str(team_id))
+
+    with get_db() as db:
+        team = db.query(Team).filter(Team.team_id == team_id).first()
+        if not team:
+            logger.warning("team_not_found", team_id=str(team_id))
+            return
+        team.deleted_at = datetime.utcnow()
+
+
+@rabbitmq_service.event_handler(RoutingKeys.TEAM_PLAYER_ADDED)
+def handle_team_player_added(event_data: Dict[str, Any]):
+    """Handle team player added event."""
+    team_id = uuid.UUID(event_data["team_id"])
+    student_id = uuid.UUID(event_data["student_id"])
+    logger.info(
+        "event_received",
+        event_type="team.player_added",
+        team_id=str(team_id),
+        student_id=str(student_id),
+    )
+
+    with get_db() as db:
+        team_player = TeamPlayer(
+            team_id=team_id,
+            student_id=student_id,
+        )
+        db.add(team_player)
+
+
+@rabbitmq_service.event_handler(RoutingKeys.TEAM_PLAYER_REMOVED)
+def handle_team_player_removed(event_data: Dict[str, Any]):
+    """Handle team player removed event."""
+    team_id = uuid.UUID(event_data["team_id"])
+    student_id = uuid.UUID(event_data["student_id"])
+    logger.info(
+        "event_received",
+        event_type="team.player_removed",
+        team_id=str(team_id),
+        student_id=str(student_id),
+    )
+
+    with get_db() as db:
+        team_player = (
+            db.query(TeamPlayer)
+            .filter(
+                TeamPlayer.team_id == team_id,
+                TeamPlayer.student_id == student_id,
+                TeamPlayer.removed_at.is_(None),
+            )
+            .first()
+        )
+        if not team_player:
+            logger.warning(
+                "team_player_not_found",
+                team_id=str(team_id),
+                student_id=str(student_id),
+            )
+            return
+        team_player.removed_at = datetime.utcnow()
+
+
+# ==================== Tournament Events ====================
+
+
+@rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_CREATED)
+def handle_tournament_created(event_data: Dict[str, Any]):
+    """Handle tournament created event."""
+    tournament_id = uuid.UUID(event_data["tournament_id"])
+    logger.info(
+        "event_received",
+        event_type="tournament.created",
+        tournament_id=str(tournament_id),
+    )
+
+    with get_db() as db:
+        tournament = Tournament(
+            tournament_id=tournament_id,
+            modality_id=uuid.UUID(event_data["modality_id"]),
+            name=event_data["name"],
+            start_date=_parse_date(event_data["start_date"]),
+            status=event_data["status"],
+        )
+        db.add(tournament)
+
+
+@rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_UPDATED)
+def handle_tournament_updated(event_data: Dict[str, Any]):
+    """Handle tournament updated event."""
+    tournament_id = uuid.UUID(event_data["tournament_id"])
+    logger.info(
+        "event_received",
+        event_type="tournament.updated",
+        tournament_id=str(tournament_id),
+    )
+
+    with get_db() as db:
+        tournament = (
+            db.query(Tournament)
+            .filter(Tournament.tournament_id == tournament_id)
+            .first()
+        )
+        if not tournament:
+            logger.warning("tournament_not_found", tournament_id=str(tournament_id))
+            return
+        if "name" in event_data:
+            tournament.name = event_data["name"]
+        if "start_date" in event_data:
+            tournament.start_date = _parse_date(event_data["start_date"])
+        if "status" in event_data:
+            tournament.status = event_data["status"]
+        tournament.updated_at = datetime.utcnow()
+
+
+@rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_DELETED)
+def handle_tournament_deleted(event_data: Dict[str, Any]):
+    """Handle tournament deleted event.
+
+    Soft-deletes the tournament and cascades to competitors and matches.
+    """
+    tournament_id = uuid.UUID(event_data["tournament_id"])
+    logger.info(
+        "event_received",
+        event_type="tournament.deleted",
+        tournament_id=str(tournament_id),
+    )
+
+    with get_db() as db:
+        tournament = (
+            db.query(Tournament)
+            .filter(Tournament.tournament_id == tournament_id)
+            .first()
+        )
+        if not tournament:
+            logger.warning("tournament_not_found", tournament_id=str(tournament_id))
+            return
+        now = datetime.utcnow()
+        tournament.deleted_at = now
+        db.query(TournamentCompetitor).filter(
+            TournamentCompetitor.tournament_id == tournament_id,
+            TournamentCompetitor.deleted_at.is_(None),
+        ).update({"deleted_at": now})
+        db.query(Match).filter(
+            Match.tournament_id == tournament_id,
+            Match.deleted_at.is_(None),
+        ).update({"deleted_at": now})
+
+
+@rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_FINISHED)
+def handle_tournament_finished(event_data: Dict[str, Any]):
+    """Handle tournament finished event."""
+    tournament_id = uuid.UUID(event_data["tournament_id"])
+    logger.info(
+        "event_received",
+        event_type="tournament.finished",
+        tournament_id=str(tournament_id),
+    )
+
+    with get_db() as db:
+        tournament = (
+            db.query(Tournament)
+            .filter(Tournament.tournament_id == tournament_id)
+            .first()
+        )
+        if not tournament:
+            logger.warning("tournament_not_found", tournament_id=str(tournament_id))
+            return
+        now = datetime.utcnow()
+        tournament.status = "finished"
+        tournament.finished_at = now
+        tournament.updated_at = now
+
+
+@rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_COMPETITOR_ADDED)
+def handle_tournament_competitor_added(event_data: Dict[str, Any]):
+    """Handle tournament competitor added event."""
+    tournament_id = uuid.UUID(event_data["tournament_id"])
+    logger.info(
+        "event_received",
+        event_type="tournament.competitor.added",
+        tournament_id=str(tournament_id),
+    )
+
+    with get_db() as db:
+        competitor = TournamentCompetitor(
+            competitor_id=uuid.uuid4(),
+            tournament_id=tournament_id,
+            competitor_type=ParticipantType(event_data["competitor_type"]),
+            competitor_entity_id=uuid.UUID(event_data["competitor_entity_id"]),
+        )
+        db.add(competitor)
+
+
+@rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_COMPETITOR_DELETED)
+def handle_tournament_competitor_deleted(event_data: Dict[str, Any]):
+    """Handle tournament competitor deleted event."""
+    tournament_id = uuid.UUID(event_data["tournament_id"])
+    competitor_entity_id = event_data.get("competitor_entity_id")
+    logger.info(
+        "event_received",
+        event_type="tournament.competitor.deleted",
+        tournament_id=str(tournament_id),
+    )
+
+    with get_db() as db:
+        query = db.query(TournamentCompetitor).filter(
+            TournamentCompetitor.tournament_id == tournament_id,
+            TournamentCompetitor.deleted_at.is_(None),
+        )
+        if competitor_entity_id:
+            query = query.filter(
+                TournamentCompetitor.competitor_entity_id
+                == uuid.UUID(competitor_entity_id)
+            )
+        elif "competitor_id" in event_data:
+            query = query.filter(
+                TournamentCompetitor.competitor_id
+                == uuid.UUID(event_data["competitor_id"])
+            )
+        competitor = query.first()
+        if not competitor:
+            logger.warning(
+                "tournament_competitor_not_found", tournament_id=str(tournament_id)
+            )
+            return
+        competitor.deleted_at = datetime.utcnow()
+
+
+# ==================== Match Events ====================
+
+
+@rabbitmq_service.event_handler(RoutingKeys.MATCH_CREATED)
+def handle_match_created(event_data: Dict[str, Any]):
+    """Handle match created event.
+
+    Creates the Match record and any participants included in the event.
+    """
+    match_id = uuid.UUID(event_data["match_id"])
+    logger.info("event_received", event_type="match.created", match_id=str(match_id))
+
+    with get_db() as db:
+        match = Match(
+            match_id=match_id,
+            tournament_id=uuid.UUID(event_data["tournament_id"]),
+            location=event_data["location"],
+            status=MatchStatus(event_data["status"]),
+            start_time=_parse_dt(event_data["start_time"]),
+        )
+        db.add(match)
+        db.flush()
+
+        for participant_data in event_data.get("participants", []):
+            participant = MatchParticipant(
+                match_id=match_id,
+                participant_id=uuid.UUID(participant_data["participant_id"]),
+                participant_type=ParticipantType(participant_data["participant_type"]),
+                participant_entity_id=uuid.UUID(
+                    participant_data["participant_entity_id"]
+                ),
+            )
+            db.add(participant)
+
+
+@rabbitmq_service.event_handler(RoutingKeys.MATCH_UPDATED)
+def handle_match_updated(event_data: Dict[str, Any]):
+    """Handle match updated event."""
+    match_id = uuid.UUID(event_data["match_id"])
+    logger.info("event_received", event_type="match.updated", match_id=str(match_id))
+
+    with get_db() as db:
+        match = db.query(Match).filter(Match.match_id == match_id).first()
+        if not match:
+            logger.warning("match_not_found", match_id=str(match_id))
+            return
+        if "location" in event_data:
+            match.location = event_data["location"]
+        if "start_time" in event_data:
+            match.start_time = _parse_dt(event_data["start_time"])
+        if "status" in event_data:
+            match.status = MatchStatus(event_data["status"])
+        match.updated_at = datetime.utcnow()
+
+
+@rabbitmq_service.event_handler(RoutingKeys.MATCH_DELETED)
+def handle_match_deleted(event_data: Dict[str, Any]):
+    """Handle match deleted event.
+
+    Soft-deletes the match and cascades to participants.
+    """
+    match_id = uuid.UUID(event_data["match_id"])
+    logger.info("event_received", event_type="match.deleted", match_id=str(match_id))
+
+    with get_db() as db:
+        match = db.query(Match).filter(Match.match_id == match_id).first()
+        if not match:
+            logger.warning("match_not_found", match_id=str(match_id))
+            return
+        now = datetime.utcnow()
+        match.deleted_at = now
+        db.query(MatchParticipant).filter(
+            MatchParticipant.match_id == match_id,
+            MatchParticipant.removed_at.is_(None),
+        ).update({"removed_at": now})
+
+
+@rabbitmq_service.event_handler(RoutingKeys.MATCH_PARTICIPANT_ADDED)
+def handle_match_participant_added(event_data: Dict[str, Any]):
+    """Handle match participant added event."""
+    match_id = uuid.UUID(event_data["match_id"])
+    participant_id = uuid.UUID(event_data["participant_id"])
+    logger.info(
+        "event_received",
+        event_type="match.participant.added",
+        match_id=str(match_id),
+        participant_id=str(participant_id),
+    )
+
+    with get_db() as db:
+        participant = MatchParticipant(
+            match_id=match_id,
+            participant_id=participant_id,
+            participant_type=ParticipantType(event_data["participant_type"]),
+            participant_entity_id=uuid.UUID(event_data["participant_entity_id"]),
+        )
+        db.add(participant)
+
+
+@rabbitmq_service.event_handler(RoutingKeys.MATCH_PARTICIPANT_REMOVED)
+def handle_match_participant_removed(event_data: Dict[str, Any]):
+    """Handle match participant removed event."""
+    match_id = uuid.UUID(event_data["match_id"])
+    participant_id = uuid.UUID(event_data["participant_id"])
+    logger.info(
+        "event_received",
+        event_type="match.participant.removed",
+        match_id=str(match_id),
+        participant_id=str(participant_id),
+    )
+
+    with get_db() as db:
+        participant = (
+            db.query(MatchParticipant)
+            .filter(
+                MatchParticipant.match_id == match_id,
+                MatchParticipant.participant_id == participant_id,
+                MatchParticipant.removed_at.is_(None),
+            )
+            .first()
+        )
+        if not participant:
+            logger.warning(
+                "match_participant_not_found",
+                match_id=str(match_id),
+                participant_id=str(participant_id),
+            )
+            return
+        participant.removed_at = datetime.utcnow()
+
+
+@rabbitmq_service.event_handler(RoutingKeys.MATCH_RESULT_UPDATED)
+def handle_match_result_updated(event_data: Dict[str, Any]):
+    """Handle match result updated event.
+
+    Upserts a MatchResult row for each result entry in the event.
+    """
+    match_id = uuid.UUID(event_data["match_id"])
+    results = event_data.get("results", [])
+    logger.info(
+        "event_received",
+        event_type="match.result.updated",
+        match_id=str(match_id),
+        results_count=len(results),
+    )
+
+    with get_db() as db:
+        for result_data in results:
+            participant_id = uuid.UUID(result_data["participant_id"])
+            existing = (
+                db.query(MatchResult)
+                .filter(
+                    MatchResult.match_id == match_id,
+                    MatchResult.participant_id == participant_id,
+                )
+                .first()
+            )
+            if existing:
+                existing.score = result_data.get("score")
+                existing.position = result_data.get("position")
+                existing.results_metadata = result_data.get("results_metadata")
+                existing.updated_at = datetime.utcnow()
+            else:
+                result = MatchResult(
+                    match_id=match_id,
+                    participant_id=participant_id,
+                    score=result_data.get("score"),
+                    position=result_data.get("position"),
+                    results_metadata=result_data.get("results_metadata"),
+                )
+                db.add(result)
+
+
+@rabbitmq_service.event_handler(RoutingKeys.MATCH_LINEUP_ASSIGNED)
+def handle_match_lineup_assigned(event_data: Dict[str, Any]):
+    """Handle match lineup assigned event.
+
+    Upserts MatchLineup rows for each player in the lineup.
+    """
+    match_id = uuid.UUID(event_data["match_id"])
+    team_id = uuid.UUID(event_data["team_id"])
+    logger.info(
+        "event_received",
+        event_type="match.lineup.assigned",
+        match_id=str(match_id),
+        team_id=str(team_id),
+    )
+
+    with get_db() as db:
+        for player_data in event_data.get("lineup", []):
+            player_id = uuid.UUID(player_data["player_id"])
+            existing = (
+                db.query(MatchLineup)
+                .filter(
+                    MatchLineup.match_id == match_id,
+                    MatchLineup.team_id == team_id,
+                    MatchLineup.player_id == player_id,
+                )
+                .first()
+            )
+            if existing:
+                existing.jersey_number = player_data["jersey_number"]
+                existing.is_starter = player_data["is_starter"]
+            else:
+                lineup_entry = MatchLineup(
+                    match_id=match_id,
+                    team_id=team_id,
+                    player_id=player_id,
+                    jersey_number=player_data["jersey_number"],
+                    is_starter=player_data["is_starter"],
+                )
+                db.add(lineup_entry)
+
+
+@rabbitmq_service.event_handler(RoutingKeys.MATCH_COMMENT_ADDED)
+def handle_match_comment_added(event_data: Dict[str, Any]):
+    """Handle match comment added event."""
+    comment_id = uuid.UUID(event_data["comment_id"])
+    match_id = uuid.UUID(event_data["match_id"])
+    logger.info(
+        "event_received",
+        event_type="match.comment.added",
+        match_id=str(match_id),
+        comment_id=str(comment_id),
+    )
+
+    with get_db() as db:
+        comment = MatchComment(
+            comment_id=comment_id,
+            match_id=match_id,
+            message=event_data["message"],
+        )
+        db.add(comment)
+
+
+@rabbitmq_service.event_handler(RoutingKeys.MATCH_COMMENT_DELETED)
+def handle_match_comment_deleted(event_data: Dict[str, Any]):
+    """Handle match comment deleted event."""
+    comment_id = uuid.UUID(event_data["comment_id"])
+    match_id = uuid.UUID(event_data["match_id"])
+    logger.info(
+        "event_received",
+        event_type="match.comment.deleted",
+        match_id=str(match_id),
+        comment_id=str(comment_id),
+    )
+
+    with get_db() as db:
+        comment = (
+            db.query(MatchComment)
+            .filter(
+                MatchComment.comment_id == comment_id,
+                MatchComment.deleted_at.is_(None),
+            )
+            .first()
+        )
+        if not comment:
+            logger.warning("match_comment_not_found", comment_id=str(comment_id))
+            return
+        comment.deleted_at = datetime.now()
