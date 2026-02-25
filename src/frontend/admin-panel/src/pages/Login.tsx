@@ -1,7 +1,40 @@
 import { useNavigate } from 'react-router-dom';
+import { useKeycloak } from '../auth/KeycloakProvider';
+import { useEffect } from 'react';
 
 function Login() {
+  // Use the Keycloak hook to get authentication status and the login function.
+  const { login, authenticated, hasRole } = useKeycloak();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (authenticated) {
+
+      if (hasRole('admin_geral')) {
+        navigate('/geral/dashboard', { replace: true });
+        return;
+      }
+
+      if (hasRole('admin_nucleo')) { // <-- Asumiendo este es el nombre
+        navigate('/nucleo/dashboard', { replace: true });
+        return;
+      }
+
+      navigate('/unauthorized', { replace: true }); // <-- Usar la ruta completa
+    }
+  }, [authenticated, navigate, hasRole]);
+
+  const handleAdminLogin = () => {
+    login();
+  };
+
+  if (authenticated) {
+    return null;
+  }
+  // Note: Both 'Admin Geral' and 'Admin Núcleo' buttons trigger the same
+  // centralized Keycloak login process, as role validation happens after
+  // successful authentication.
+
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-cover bg-center relative"
@@ -14,7 +47,7 @@ function Login() {
 
       {/* Login Card */}
       <div className="relative z-10 bg-white rounded-lg shadow-2xl p-12 w-full max-w-xl mx-auto">
-        <h1 className="text-5xl font-bold text-center mb-8 text-gray-800">LOG IN</h1>
+        <h1 className="text-5xl font-bold text-center mb-8 text-gray-800">LOGIN</h1>
 
         <div className="border-t border-gray-300 mb-8"></div>
 
@@ -22,7 +55,7 @@ function Login() {
         <div className="grid grid-cols-2 gap-6 mb-8">
           {/* Admin Geral */}
           <button
-            onClick={() => navigate('/login/geral')}
+            onClick={handleAdminLogin} // Triggers Keycloak redirect
             className="bg-teal-500 hover:bg-teal-600 text-white rounded-lg p-8 transition-all duration-300 transform hover:scale-105 shadow-lg"
           >
             <div className="text-center">
@@ -33,7 +66,7 @@ function Login() {
 
           {/* Admin Núcleo */}
           <button
-            onClick={() => navigate('/login/nucleo')}
+            onClick={handleAdminLogin} // Triggers Keycloak redirect
             className="bg-teal-500 hover:bg-teal-600 text-white rounded-lg p-8 transition-all duration-300 transform hover:scale-105 shadow-lg"
           >
             <div className="text-center">

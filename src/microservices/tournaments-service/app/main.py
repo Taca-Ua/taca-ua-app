@@ -1,4 +1,6 @@
+import sys
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -8,6 +10,9 @@ from .events import rabbitmq_service
 from .logger import logger
 from .outbox_publisher import outbox_publisher
 from .routes import router
+
+# Add src directory to path for shared module imports
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
 
 @asynccontextmanager
@@ -42,3 +47,10 @@ app.include_router(router, tags=["tournaments"])
 @app.get("/")
 def read_root():
     return {"Service": "Tournaments Service", "version": "1.0.0"}
+
+
+@app.get("/tournaments")
+async def get_tournaments():
+    """Get all tournaments - internal microservice endpoint."""
+    logger.info("Tournaments retrieved")
+    return {"tournaments": []}

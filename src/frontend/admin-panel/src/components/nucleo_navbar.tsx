@@ -1,11 +1,16 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { useAuth } from "../hooks/useAuth";
+import { useKeycloak } from "../auth/KeycloakProvider";
 
 export default function NucleoSidebar() {
   const [isOpen, setIsOpen] = useState(false);
-  const { user, logout } = useAuth();
+  const { logout, keycloak } = useKeycloak();
   const navigate = useNavigate();
+
+  const userName = keycloak.tokenParsed?.name || keycloak.tokenParsed?.preferred_username;
+
+  const userFullName = keycloak.tokenParsed?.full_name;
+  const userCourseAbbreviation = keycloak.tokenParsed?.course_abbreviation;
 
   return (
     <nav className="bg-white shadow-sm w-full sticky top-0 z-50">
@@ -55,7 +60,7 @@ export default function NucleoSidebar() {
                   <span className="inline-block transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 delay-300">a</span>
                 </Link>
 
-                {/* BOTÓN DE CERRAR */}
+                {/* CLOSE BUTTON*/}
                 <button
                   onClick={() => setIsOpen(false)}
                   className="text-gray-600 hover:text-red-500 transition bg-white"
@@ -74,61 +79,64 @@ export default function NucleoSidebar() {
               {/* NAV */}
               <nav className="space-y-5 flex-1">
 
-              {/* Links for Nucleo Admin */}
+              {/* LINKS */}
               <Link
-                to="/nucleo/membros"
-                className="block text-gray-700 hover:text-teal-600 font-medium transition"
-                onClick={() => setIsOpen(false)}
+                  to="/nucleo/membros"
+                  className="block text-gray-700 hover:text-teal-600 font-medium transition"
+                  onClick={() => setIsOpen(false)}
               >
                 Membros
               </Link>
 
               <Link
-                to="/nucleo/equipas"
-                className="block text-gray-700 hover:text-teal-600 font-medium transition"
-                onClick={() => setIsOpen(false)}
+                  to="/nucleo/equipas"
+                  className="block text-gray-700 hover:text-teal-600 font-medium transition"
+                  onClick={() => setIsOpen(false)}
               >
                 Equipas
               </Link>
-
               <Link
-                to="/nucleo/jogos"
-                className="block text-gray-700 hover:text-teal-600 font-medium transition"
-                onClick={() => setIsOpen(false)}
-              >
-                Jogos
-              </Link>
-
-              {/* Final seccion */}
-              <div className="mt-auto pt-6 pb-6 border-t border-gray-200 space-y-4">
-                {user && (
-                  <div className="mb-4 p-3 bg-teal-50 rounded-lg">
-                    <p className="text-sm font-semibold text-teal-800">{user.full_name}</p>
-                    <p className="text-xs text-teal-600">{user.course_abbreviation}</p>
-                  </div>
-                )}
-
-                <a
-                  href="/"
-                  className="block text-gray-600 hover:text-teal-600 font-medium transition"
+                  to="/nucleo/jogos"
+                  className="block text-gray-700 hover:text-teal-600 font-medium transition"
+                  onClick={() => setIsOpen(false)}
                 >
-                  Página Pública
-                </a>
+                  Jogos
+                </Link>
 
-                <button
-                  onClick={() => {
-                    logout();
-                    setIsOpen(false);
-                    navigate('/login/nucleo');
-                  }}
-                  className="block text-left w-full text-gray-700 hover:text-red-600 font-medium transition"
-                >
-                  Logout
-                </button>
+                {/* Final Section */}
+                <div className="mt-auto pt-6 pb-6 border-t border-gray-200 space-y-4">
+                  {/* User Profile Display (Uses Keycloak claims) */}
+                  {userName && (
+                    <div className="mb-4 p-3 bg-teal-50 rounded-lg">
+                      <p className="text-sm font-semibold text-teal-800">{userFullName || userName}</p>
+                      <p className="text-xs text-teal-600">{userCourseAbbreviation || "Nucleo Admin"}</p>
+                    </div>
+                  )}
 
-              </div>
+                  <a
+                    href="/"
+                    className="block text-gray-600 hover:text-teal-600 font-medium transition"
+                  >
+                    Página Pública
+                  </a>
 
-            </nav>
+                  {/* LOGOUT BUTTON */}
+                  <button
+                    onClick={() => {
+                      // Call Keycloak's logout function
+                      logout();
+                      setIsOpen(false);
+                      // Keycloak handles the final redirect, so manual navigate
+                      // to '/login/nucleo' is usually unnecessary and redundant.
+                    }}
+                    className="block text-left w-full text-gray-700 hover:text-red-600 font-medium transition"
+                  >
+                    Logout
+                  </button>
+
+                </div>
+
+              </nav>
             </div>
           </aside>
         </div>

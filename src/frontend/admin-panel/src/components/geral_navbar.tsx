@@ -1,11 +1,13 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { useAuth } from "../hooks/useAuth";
+import { useKeycloak } from "../auth/KeycloakProvider";
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
-  const { logout, user } = useAuth();
+  const { logout, keycloak } = useKeycloak();
   const navigate = useNavigate();
+
+  const userName = keycloak.tokenParsed?.name || keycloak.tokenParsed?.preferred_username;
 
   return (
     <nav className="bg-white shadow-sm w-full sticky top-0 z-50">
@@ -26,7 +28,7 @@ export default function Sidebar() {
             </button>
           )}
 
-          {/* OVERLAY OSCURO */}
+          {/* DARK OVERLAY (for when sidebar is open)  */}
           {isOpen && (
             <div
               onClick={() => setIsOpen(false)}
@@ -55,7 +57,7 @@ export default function Sidebar() {
                   <span className="inline-block transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 delay-300">a</span>
                 </Link>
 
-                {/* BOTÓN DE CERRAR */}
+                {/* CLOSE BUTTON */}
                 <button
                   onClick={() => setIsOpen(false)}
                   className="text-gray-600 hover:text-red-500 transition bg-white"
@@ -76,93 +78,82 @@ export default function Sidebar() {
 
               {/* Links*/}
               <Link
-                to="/geral/administradores"
-                className="block text-gray-700 hover:text-teal-600 font-medium transition"
-                onClick={() => setIsOpen(false)}
+                  to="/geral/administradores"
+                  className="block text-gray-700 hover:text-teal-600 font-medium transition"
+                  onClick={() => setIsOpen(false)}
               >
-                Administradores
+                  Administradores
               </Link>
 
               <Link
-                to="/geral/formatos-prova"
-                className="block text-gray-700 hover:text-teal-600 font-medium transition"
-                onClick={() => setIsOpen(false)}
+                  to="/geral/modalidades"
+                  className="block text-gray-700 hover:text-teal-600 font-medium transition"
+                  onClick={() => setIsOpen(false)}
               >
-                Formatos de Prova
+                  Modalidades
               </Link>
 
               <Link
-                to="/geral/modalidades"
-                className="block text-gray-700 hover:text-teal-600 font-medium transition"
-                onClick={() => setIsOpen(false)}
-              >
-                Modalidades
-              </Link>
-
-              <Link
-                to="/geral/nucleos"
-                className="block text-gray-700 hover:text-teal-600 font-medium transition"
-                onClick={() => setIsOpen(false)}
-              >
-                Núcleo
-              </Link>
-
-			  <Link
-				to="/geral/cursos"
-				className="block text-gray-700 hover:text-teal-600 font-medium transition"
-				onClick={() => setIsOpen(false)}
-			  >
-				Cursos
-			  </Link>
-
-              <Link
-                to="/geral/torneios"
-                className="block text-gray-700 hover:text-teal-600 font-medium transition"
-                onClick={() => setIsOpen(false)}
-              >
-                Torneios
-              </Link>
-
-              <Link
-                to="/geral/regulamentos"
-                className="block text-gray-700 hover:text-teal-600 font-medium transition"
-                onClick={() => setIsOpen(false)}
-              >
-                Regulamentos
-              </Link>
-
-              <Link
-                to="/socios"
-                className="block text-gray-700 hover:text-teal-600 font-medium transition"
-                onClick={() => setIsOpen(false)}
-              >
-                Sócios
-              </Link>
-
-              {/* 📌 Final seccion */}
-              <div className="mt-auto pt-6 pb-6 border-t border-gray-200 space-y-4">
-
-                <a
-                  href="/"
-                  className="block text-gray-600 hover:text-teal-600 font-medium transition"
+                  to="/geral/nucleos"
+                  className="block text-gray-700 hover:text-teal-600 font-medium transition"
+                  onClick={() => setIsOpen(false)}
                 >
-                  Página Pública
-                </a>
+                  Núcleo
+                </Link>
 
-                <button
-                  onClick={() => {
-                    setIsOpen(false);
-                    logout();
-                    navigate('/login/geral');
-                  }}
-                  className="block text-left w-full hover:text-red-600 font-medium transition"
+                <Link
+                  to="/geral/torneios"
+                  className="block text-gray-700 hover:text-teal-600 font-medium transition"
+                  onClick={() => setIsOpen(false)}
                 >
-                  Logout {user?.full_name && `(${user.full_name})`}
-                </button>
+                  Torneios
+                </Link>
 
-              </div>
+                <Link
+                  to="/geral/regulamentos"
+                  className="block text-gray-700 hover:text-teal-600 font-medium transition"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Regulamentos
+                </Link>
 
-            </nav>
+                <Link
+                  to="/socios"
+                  className="block text-gray-700 hover:text-teal-600 font-medium transition"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Sócios
+                </Link>
+
+                {/* Bottom Section (Public Page Link and Logout) */}
+                <div className="mt-auto pt-6 pb-6 border-t border-gray-200 space-y-4">
+
+                  <a
+                    href="/"
+                    className="block text-gray-600 hover:text-teal-600 font-medium transition"
+                  >
+                    Página Pública
+                  </a>
+
+                  {/* LOGOUT BUTTON */}
+                  <button
+                    onClick={() => {
+                      setIsOpen(false);
+                      // 1. Call Keycloak's logout, which redirects the user
+                      //    to the Keycloak logout page.
+                      logout();
+                      // 2. The manual navigation is technically not needed
+                      //    because Keycloak handles the final redirect via the
+                      //    post_logout_redirect_uri setting.
+                    }}
+                    className="block text-left w-full hover:text-red-600 font-medium transition"
+                  >
+                    Logout {userName && `(${userName})`} {/* Use userName from Keycloak */}
+                  </button>
+
+                </div>
+
+              </nav>
             </div>
           </aside>
         </div>

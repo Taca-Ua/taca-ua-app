@@ -1,4 +1,6 @@
+import sys
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -6,6 +8,9 @@ from taca_logging import StructlogMiddleware, configure_logging, get_logger
 from taca_messaging.rabbitmq_service import RabbitMQService
 
 from .routes import all_routers
+
+# Add src directory to path for shared module imports
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
 # Configure structured logging
 configure_logging(
@@ -55,8 +60,9 @@ def read_root():
     return {"Service": "Public API"}
 
 
-@app.post("/send-event")
+@app.post("/api/public/send-event")
 async def send_event(msg: str):
+    """Send event - public endpoint for testing."""
     await rabbitmq_service.publish_event("test.event", {"message": msg})
-    logger.info("event_sent", event_type="test.event", message=msg)
-    return {"status": "sent"}
+    logger.info(f"Event sent: {msg}")
+    return {"status": "sent", "message": msg}
