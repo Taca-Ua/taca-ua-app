@@ -16,9 +16,9 @@ class RegulationService:
 
     @staticmethod
     def list_regulations() -> List[dict]:
-        """Busca a lista de regulamentos: GET /regulations"""
+        """Busca a lista de regulamentos: GET /regulations/"""
         try:
-            response = requests.get(RegulationService.BASE_URL, timeout=5)
+            response = requests.get(f"{RegulationService.BASE_URL}/", timeout=5)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
@@ -34,7 +34,7 @@ class RegulationService:
             return response.json()
         except requests.exceptions.RequestException as e:
             logger.error(f"Erro ao buscar regulamento {regulation_id}: {e}")
-            raise Exception("Regulamento não encontrado no microserviço.")
+            raise Exception(f"Regulamento {regulation_id} não encontrado no microserviço.")
 
     @staticmethod
     def create_regulation(
@@ -54,32 +54,34 @@ class RegulationService:
         }
         
         try:
-            response = requests.post(f"{RegulationService.BASE_URL}/internal", json=payload, timeout=10)
+            response = requests.post(
+                f"{RegulationService.BASE_URL}/internal", 
+                json=payload, 
+                timeout=10
+            )
             response.raise_for_status()
             return response.json()
             
         except requests.exceptions.RequestException as e:
-            # Rollback no MinIO se o microserviço falhar
             file_service.delete_file(upload_data["file_id"])
-            logger.error(f"Erro ao persistir no microserviço: {str(e)}")
+            logger.error(f"Erro ao persistir regulamento no microserviço: {str(e)}")
             raise Exception(f"Falha na criação do regulamento: {str(e)}")
 
     @staticmethod
     def delete_regulation(regulation_id: str) -> None:
-        """Deleção coordenada: DELETE /regulations/{id}"""
-        regulation = RegulationService.get_regulation(regulation_id)
-        # Extrai o nome do arquivo da URL para deletar no MinIO
-        file_name = regulation['file_url'].split('/')[-1]
-        
+        """Deleção coordenada: Remove no microserviço e depois no MinIO"""
         try:
-            # 1. Deletar no microserviço
+            regulation = RegulationService.get_regulation(regulation_id)
+            file_name = regulation['file_url'].split('/')[-1]
+            
             response = requests.delete(f"{RegulationService.BASE_URL}/{regulation_id}", timeout=5)
             response.raise_for_status()
             
-            # 2. Deletar no MinIO
             file_service = FileService()
             file_service.delete_file(file_name)
             
+            logger.info(f"Regulamento {regulation_id} e ficheiro {file_name} removidos com sucesso.")
+            
         except requests.exceptions.RequestException as e:
-            logger.error(f"Erro ao deletar regulamento: {e}")
-            raise Exception("Não foi possível deletar o regulamento.")
+            logger.error(f"Erro no processo de deleção do regulamento {regulation_id}: {e}")
+            raise Exception("Não foi possível completar a remoção do regulamento.")
