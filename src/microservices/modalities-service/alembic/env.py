@@ -38,6 +38,12 @@ target_metadata = Base.metadata
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
+def include_object(object, name, type_, reflected, compare_to):
+    # Regra de Ouro: Só lida com o que pertence ao schema 'modalities'
+    if type_ == "table":
+        return object.schema == "modalities"
+    return True
+
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
@@ -84,6 +90,7 @@ def run_migrations_online() -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
+            include_object=include_object,
             version_table_schema="modalities",
             include_schemas=True,
         )

@@ -223,3 +223,25 @@ class TeamResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+
+
+
+
+# ==================== REGULATION SCHEMAS ====================
+
+
+class RegulationInternalCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    file_url: str
+
+class RegulationResponse(BaseModel):
+    id: UUID
+    title: str
+    description: Optional[str]
+    file_url: str
+
+    class Config:
+        from_attributes = True

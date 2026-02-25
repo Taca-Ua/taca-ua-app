@@ -75,7 +75,7 @@ class OutboxPublisher:
                 db.query(OutboxEvent)
                 .filter(
                     and_(
-                        OutboxEvent.published == False,  # noqa: E712
+                        OutboxEvent.published == False, 
                         OutboxEvent.retry_count < self.max_retries,
                     )
                 )

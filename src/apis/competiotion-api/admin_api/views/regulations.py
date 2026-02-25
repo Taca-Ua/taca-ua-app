@@ -41,8 +41,7 @@ class RegulationListCreateView(APIView):
             regulation = RegulationService.create_regulation(
                 title=serializer.validated_data['title'],
                 file=serializer.validated_data.pop('file'),
-                description=serializer.validated_data.get('description', ''),
-                modality_id=serializer.validated_data.get('modality_id')
+                description=serializer.validated_data.get('description', '')
             )
             
             output_serializer = RegulationListSerializer(regulation)
@@ -84,7 +83,6 @@ class RegulationDetailView(APIView):
         serializer = RegulationUpdateSerializer(regulation, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         
-        # Metadados simples podem ser salvos via serializer
         serializer.save()
         
         output_serializer = RegulationListSerializer(regulation)
