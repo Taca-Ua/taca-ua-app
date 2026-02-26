@@ -82,9 +82,9 @@ const NucleoDetails = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50">
         <Sidebar />
-        <div className="flex justify-center items-center py-12">
+        <div className="flex-1 flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
         </div>
       </div>
@@ -94,12 +94,11 @@ const NucleoDetails = () => {
   if (!nucleus) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
 
-      <div className="p-8">
+      <div className="flex-1 p-8">
         <div className="max-w-4xl mx-auto">
-          {/* Header */}
           <div className="mb-8 flex justify-between items-center">
             <h1 className="text-3xl font-bold text-gray-800">Detalhes do Núcleo</h1>
             <button
@@ -110,10 +109,8 @@ const NucleoDetails = () => {
             </button>
           </div>
 
-          {/* Card */}
           <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
 
-            {/* Logo */}
             <div>
               <label className="block text-teal-500 font-medium mb-2">Logo</label>
               <div className="flex items-center gap-4">
@@ -123,7 +120,6 @@ const NucleoDetails = () => {
               </div>
             </div>
 
-            {/* Abbreviation */}
             <div>
               <label className="block text-teal-500 font-medium mb-2">Abreviatura</label>
               <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
@@ -131,23 +127,12 @@ const NucleoDetails = () => {
               </div>
             </div>
 
-            {/* Nome */}
             <div>
               <label className="block text-teal-500 font-medium mb-2">Nome</label>
               <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
                 {nucleus.name}
               </div>
             </div>
-
-            {/* Description */}
-            {/* {nucleus.description && (
-              <div>
-                <label className="block text-teal-500 font-medium mb-2">Descrição</label>
-                <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
-                  {nucleus.description}
-                </div>
-              </div>
-            )} */}
 
             <div className="flex gap-4 pt-4">
               <button
@@ -168,7 +153,6 @@ const NucleoDetails = () => {
         </div>
       </div>
 
-      {/* MODAL Edition */}
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
@@ -182,7 +166,6 @@ const NucleoDetails = () => {
             )}
 
             <div className="space-y-4">
-              {/* Abbreviation */}
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
                   Abreviatura <span className="text-red-500">*</span>
@@ -197,7 +180,6 @@ const NucleoDetails = () => {
                 />
               </div>
 
-              {/* NAME */}
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
                   Nome <span className="text-red-500">*</span>
@@ -211,39 +193,6 @@ const NucleoDetails = () => {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
               </div>
-
-              {/* Description */}
-              {/* <div>
-                <label className="block text-gray-700 font-medium mb-2">Descrição</label>
-                <textarea
-                  value={editedDescription}
-                  onChange={(e) => setEditedDescription(e.target.value)}
-                  placeholder="Digite a descrição"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 min-h-[80px]"
-                />
-              </div> */}
-
-              {/* Logo URL */}
-              {/* <div>
-                <label className="block text-gray-700 font-medium mb-2">Logo URL</label>
-                <input
-                  type="url"
-                  value={editedLogoUrl}
-                  onChange={(e) => setEditedLogoUrl(e.target.value)}
-                  placeholder="https://exemplo.com/logo.png"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-                />
-                {editedLogoUrl && (
-                  <div className="mt-2 flex items-center gap-2">
-                    <span className="text-gray-600 text-sm">Preview:</span>
-                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-teal-500">
-                      <img src={editedLogoUrl} alt="Preview" className="w-full h-full object-cover" onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }} />
-                    </div>
-                  </div>
-                )}
-              </div> */}
             </div>
 
             <div className="flex gap-4 mt-6">

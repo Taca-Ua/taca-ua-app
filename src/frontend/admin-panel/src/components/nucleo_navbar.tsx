@@ -7,132 +7,113 @@ export default function NucleoSidebar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  return (
-    <nav className="bg-white shadow-sm w-full sticky top-0 z-50">
-      <div className="w-full px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+  const navItems = [
+    { to: "/nucleo/membros", label: "Membros", short: "Mem" },
+    { to: "/nucleo/equipas", label: "Equipas", short: "Equ" },
+    { to: "/nucleo/jogos", label: "Jogos", short: "Jog" },
+  ];
 
-          {/* Button to open*/}
-          {!isOpen && (
+  return (
+    <>
+      <aside
+        className={`fixed top-0 left-0 h-screen bg-white shadow-xl border-r border-gray-200 z-50 transition-all duration-300 flex flex-col ${isOpen ? 'w-64' : 'w-16'}`}
+      >
+        <div className="flex items-center justify-between border-b border-gray-200 h-16 flex-shrink-0 px-3">
+          {isOpen ? (
+            <>
+              <Link
+                to="/nucleo/dashboard"
+                className="text-lg font-bold text-teal-600 hover:text-teal-700 truncate"
+              >
+                TaçaUA
+              </Link>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="text-gray-500 hover:text-red-500 transition ml-2 flex-shrink-0"
+                aria-label="Fechar menu"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </>
+          ) : (
             <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="flex flex-col top-4 left-4 items-center justify-center w-10 h-10 text-gray-700 hover:text-teal-600 focus:outline-none transition-all duration-300"
-              aria-label="Toggle menu"
-              type="button"
+              onClick={() => setIsOpen(true)}
+              className="w-full flex flex-col items-center justify-center gap-1 text-gray-600 hover:text-teal-600 transition"
+              aria-label="Abrir menu"
             >
-              <span className="block w-6 h-0.5 bg-current"></span>
-              <span className="block w-6 h-0.5 bg-current mt-1.5"></span>
-              <span className="block w-6 h-0.5 bg-current mt-1.5"></span>
+              <span className="block w-5 h-0.5 bg-current"></span>
+              <span className="block w-5 h-0.5 bg-current"></span>
+              <span className="block w-5 h-0.5 bg-current"></span>
             </button>
           )}
-
-          {/* OVERLAY OSCURO */}
-          {isOpen && (
-            <div
-              onClick={() => setIsOpen(false)}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 animate-in fade-in"
-            ></div>
-          )}
-
-          {/* SIDEBAR */}
-          <aside
-            className={`fixed top-0 left-0 h-full w-72 bg-white shadow-xl border-r border-gray-200 z-50
-                        transform transition-transform duration-300
-                        ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
-          >
-            <div className="p-6 h-full flex flex-col">
-              {/* HEADER */}
-              <div className="flex items-center justify-between mb-8">
-                <Link
-                  to="/nucleo/dashboard"
-                  className="text-xl font-bold text-teal-600 transition-all duration-300 ease-in-out hover:text-teal-700 group"
-                >
-                  <span className="inline-block transition-all duration-300 group-hover:scale-110 group-hover:-rotate-6">T</span>
-                  <span className="inline-block transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 delay-75">a</span>
-                  <span className="inline-block transition-all duration-300 group-hover:scale-110 group-hover:-rotate-6 delay-100">ç</span>
-                  <span className="inline-block transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 delay-150">a</span>
-                  <span className="inline-block transition-all duration-300 group-hover:scale-110 group-hover:-rotate-6 delay-200">U</span>
-                  <span className="inline-block transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 delay-300">a</span>
-                </Link>
-
-                {/* BOTÓN DE CERRAR */}
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="text-gray-600 hover:text-red-500 transition bg-white"
-                >
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* NAV */}
-              <nav className="space-y-5 flex-1">
-
-              {/* Links for Nucleo Admin */}
-              <Link
-                to="/nucleo/membros"
-                className="block text-gray-700 hover:text-teal-600 font-medium transition"
-                onClick={() => setIsOpen(false)}
-              >
-                Membros
-              </Link>
-
-              <Link
-                to="/nucleo/equipas"
-                className="block text-gray-700 hover:text-teal-600 font-medium transition"
-                onClick={() => setIsOpen(false)}
-              >
-                Equipas
-              </Link>
-
-              <Link
-                to="/nucleo/jogos"
-                className="block text-gray-700 hover:text-teal-600 font-medium transition"
-                onClick={() => setIsOpen(false)}
-              >
-                Jogos
-              </Link>
-
-              {/* Final seccion */}
-              <div className="mt-auto pt-6 pb-6 border-t border-gray-200 space-y-4">
-                {user && (
-                  <div className="mb-4 p-3 bg-teal-50 rounded-lg">
-                    <p className="text-sm font-semibold text-teal-800">{user.full_name}</p>
-                    <p className="text-xs text-teal-600">{user.course_abbreviation}</p>
-                  </div>
-                )}
-
-                <a
-                  href="/"
-                  className="block text-gray-600 hover:text-teal-600 font-medium transition"
-                >
-                  Página Pública
-                </a>
-
-                <button
-                  onClick={() => {
-                    logout();
-                    setIsOpen(false);
-                    navigate('/login/nucleo');
-                  }}
-                  className="block text-left w-full text-gray-700 hover:text-red-600 font-medium transition"
-                >
-                  Logout
-                </button>
-
-              </div>
-
-            </nav>
-            </div>
-          </aside>
         </div>
-      </div>
-    </nav>
+
+        <nav className="flex-1 overflow-y-auto py-2">
+          {navItems.map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              onClick={() => setIsOpen(false)}
+              className="flex items-center h-11 px-3 text-gray-700 hover:text-teal-600 hover:bg-teal-50 transition-colors"
+              title={!isOpen ? item.label : undefined}
+            >
+              {isOpen ? (
+                <span className="font-medium truncate">{item.label}</span>
+              ) : (
+                <span className="text-xs font-bold w-full text-center">{item.short}</span>
+              )}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="border-t border-gray-200 py-2 flex-shrink-0">
+          {isOpen ? (
+            <div className="px-3 space-y-1">
+              {user && (
+                <div className="py-2">
+                  <p className="text-sm font-semibold text-gray-800 truncate">{user.full_name}</p>
+                  {user.course_abbreviation && (
+                    <p className="text-xs text-teal-600">{user.course_abbreviation}</p>
+                  )}
+                </div>
+              )}
+              <a
+                href="/"
+                className="flex items-center h-10 text-gray-600 hover:text-teal-600 font-medium transition text-sm"
+              >
+                Página Pública
+              </a>
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  logout();
+                  navigate('/login/nucleo');
+                }}
+                className="flex items-center h-10 w-full text-left text-gray-700 hover:text-red-600 font-medium transition text-sm"
+              >
+                Logout
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => {
+                logout();
+                navigate('/login/nucleo');
+              }}
+              className="flex items-center justify-center h-11 w-full text-gray-500 hover:text-red-600 transition"
+              title="Logout"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
+          )}
+        </div>
+      </aside>
+
+      <div className="w-16 flex-shrink-0" />
+    </>
   );
 }

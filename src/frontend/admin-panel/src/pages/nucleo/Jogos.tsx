@@ -3,23 +3,33 @@ import { useNavigate } from 'react-router-dom';
 import NucleoSidebar from '../../components/nucleo_navbar';
 import { matchesApi } from '../../api/matches';
 import type { Match } from '../../api/matches';
+import { tournamentsApi } from '../../api/tournaments';
+import type { Tournament } from '../../api/tournaments';
 
 const Jogos = () => {
   const navigate = useNavigate();
   const [matches, setMatches] = useState<Match[]>([]);
+  const [tournamentMap, setTournamentMap] = useState<Record<string, Tournament>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  // Fetch matches from API
+  // Fetch matches and tournaments from API
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
-        const fetchedMatches = await matchesApi.getAll();
+        const [fetchedMatches, fetchedTournaments] = await Promise.all([
+          matchesApi.getAll(),
+          tournamentsApi.getAll(),
+        ]);
         setMatches(fetchedMatches);
+        const map: Record<string, Tournament> = {};
+        fetchedTournaments.forEach(t => { map[t.id] = t; });
+        setTournamentMap(map);
       } catch (err) {
         console.error('Failed to fetch data:', err);
         setError('Erro ao carregar jogos. Por favor, tente novamente.');
@@ -86,114 +96,137 @@ const Jogos = () => {
   const monthName = currentMonth.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' });
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <NucleoSidebar />
 
-      <div className="p-8">
+      <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-8 flex justify-between items-center">
+          <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <h1 className="text-3xl font-bold text-gray-800">Jogos</h1>
 
-            {/* View Mode Toggle */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setViewMode('list')}
-                className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                  viewMode === 'list'
-                    ? 'bg-teal-500 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
+            <div className="flex flex-wrap gap-2 items-center">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
               >
-                📋 Lista
-              </button>
-              <button
-                onClick={() => setViewMode('calendar')}
-                className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                  viewMode === 'calendar'
-                    ? 'bg-teal-500 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                📅 Calendário
-              </button>
+                <option value="all">Todos os estados</option>
+                <option value="scheduled">Agendado</option>
+                <option value="in_progress">Em curso</option>
+                <option value="finished">Terminado</option>
+                <option value="cancelled">Cancelado</option>
+              </select>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                    viewMode === 'list'
+                      ? 'bg-teal-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Lista
+                </button>
+                <button
+                  onClick={() => setViewMode('calendar')}
+                  className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                    viewMode === 'calendar'
+                      ? 'bg-teal-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Calendário
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Loading State */}
           {loading && (
             <div className="flex justify-center items-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
             </div>
           )}
 
-          {/* Error State */}
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-6">
               {error}
             </div>
           )}
 
-          {/* Content - Only show when not loading */}
           {!loading && !error && (
             <>
-              {/* List View */}
               {viewMode === 'list' && (
                 <div className="bg-white rounded-lg shadow-md p-6">
                   <div className="space-y-3">
-                    {matches.length > 0 ? (
-                      matches.map((match) => {
-                        const { date, time } = formatDateTime(match.start_time);
-                        return (
-                          <div
-                            key={match.id}
-                            onClick={() => navigate(`/nucleo/jogos/${match.id}`)}
-                            className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer transition-colors"
-                          >
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-gray-800 font-bold text-lg">
-                                {match.participants.map(p => {
-                                  if (p.team) return p.team.name;
-                                  if (p.athlete) return p.athlete.full_name;
-                                  return 'TBD';
-                                }).join(' vs ')}
-                              </span>
-                              <span className="text-teal-600 text-sm font-medium">
-                                {getStatusDisplay(match.status)}
-                              </span>
-                            </div>
-                            <div className="flex gap-6 text-sm text-gray-600">
-                              <span>
-                                <span className="font-medium">Data:</span> {date}
-                              </span>
-                              <span>
-                                <span className="font-medium">Hora:</span> {time}
-                              </span>
-                              <span>
-                                <span className="font-medium">Local:</span> {match.location}
-                              </span>
-                              {/* {match.home_score !== null && match.away_score !== null && (
-                                <span>
-                                  <span className="font-medium">Resultado:</span> {match.home_score} - {match.away_score}
+                    {(() => {
+                      const filteredMatches = statusFilter === 'all'
+                        ? matches
+                        : matches.filter(m => m.status === statusFilter);
+                      return filteredMatches.length > 0 ? (
+                        filteredMatches.map((match) => {
+                          const { date, time } = formatDateTime(match.start_time);
+                          const tournament = tournamentMap[match.tournament_id];
+                          return (
+                            <div
+                              key={match.id}
+                              onClick={() => navigate(`/nucleo/jogos/${match.id}`)}
+                              className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer transition-colors"
+                            >
+                              <div className="flex justify-between items-start mb-2">
+                                <span className="text-gray-800 font-bold text-lg">
+                                  {match.participants.map(p => {
+                                    if (p.team) return p.team.name;
+                                    if (p.athlete) return p.athlete.full_name;
+                                    return 'TBD';
+                                  }).join(' vs ')}
                                 </span>
-                              )} */}
+                                <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                                  match.status === 'scheduled' ? 'bg-blue-100 text-blue-700' :
+                                  match.status === 'in_progress' ? 'bg-yellow-100 text-yellow-700' :
+                                  match.status === 'finished' ? 'bg-green-100 text-green-700' :
+                                  'bg-red-100 text-red-700'
+                                }`}>
+                                  {getStatusDisplay(match.status)}
+                                </span>
+                              </div>
+                              {tournament && (
+                                <div className="flex gap-2 mb-2 text-sm">
+                                  <span className="text-teal-600 font-medium">{tournament.name}</span>
+                                  {tournament.modality && (
+                                    <>
+                                      <span className="text-gray-400">·</span>
+                                      <span className="text-gray-500">{tournament.modality.name}</span>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                              <div className="flex gap-6 text-sm text-gray-600">
+                                <span>
+                                  <span className="font-medium">Data:</span> {date}
+                                </span>
+                                <span>
+                                  <span className="font-medium">Hora:</span> {time}
+                                </span>
+                                <span>
+                                  <span className="font-medium">Local:</span> {match.location}
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <p className="text-gray-500 text-center py-8">
-                        Nenhum jogo encontrado.
-                      </p>
-                    )}
+                          );
+                        })
+                      ) : (
+                        <p className="text-gray-500 text-center py-8">
+                          Nenhum jogo encontrado.
+                        </p>
+                      );
+                    })()}
                   </div>
                 </div>
               )}
 
-              {/* Calendar View */}
               {viewMode === 'calendar' && (
                 <div className="bg-white rounded-lg shadow-md p-6">
-                  {/* Calendar Header */}
                   <div className="flex justify-between items-center mb-6">
                     <button
                       onClick={previousMonth}
@@ -212,16 +245,13 @@ const Jogos = () => {
                     </button>
                   </div>
 
-                  {/* Calendar Grid */}
                   <div className="grid grid-cols-7 gap-2">
-                    {/* Day headers */}
                     {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
                       <div key={day} className="text-center font-bold text-gray-600 py-2">
                         {day}
                       </div>
                     ))}
 
-                    {/* Calendar days */}
                     {(() => {
                       const { daysInMonth, startingDayOfWeek } = getDaysInMonth(currentMonth);
                       const days = [];

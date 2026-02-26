@@ -118,23 +118,21 @@ function DashboardGeral() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      <div className="p-8">
+      <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-4xl font-bold mb-4 text-gray-800">Dashboard - Administrador Geral</h1>
           <p className="text-gray-600 mb-8">
             Bem-vindo, <span className="font-semibold">{user?.full_name}</span>
           </p>
 
-          {/* Loading State */}
           {loading ? (
             <div className="flex justify-center items-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
             </div>
           ) : (
             <>
-              {/* Season Management - Critical Section */}
               <div className="bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 rounded-lg shadow-lg p-6 mb-8">
                 <div className="flex items-start gap-4">
                   <div className="text-4xl">🗓️</div>
@@ -186,7 +184,6 @@ function DashboardGeral() {
                 </div>
               </div>
 
-              {/* Stats Cards */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <div
                   onClick={() => navigate('/geral/modalidades')}
@@ -222,67 +219,11 @@ function DashboardGeral() {
                 </div>
               </div>
 
-              {/* Quick Actions */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-2xl font-bold mb-4 text-gray-800">Ações Rápidas</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  <button
-                    onClick={() => navigate('/geral/modalidades')}
-                    className="px-6 py-4 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors text-left"
-                  >
-                    <div className="text-lg font-bold mb-1">⚽ Gerir Modalidades</div>
-                    <div className="text-sm opacity-90">Ver e editar modalidades</div>
-                  </button>
-
-                  <button
-                    onClick={() => navigate('/geral/torneios')}
-                    className="px-6 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-md font-medium transition-colors text-left"
-                  >
-                    <div className="text-lg font-bold mb-1">🏆 Gerir Torneios</div>
-                    <div className="text-sm opacity-90">Criar e gerir torneios</div>
-                  </button>
-
-                  <button
-                    onClick={() => navigate('/geral/regulamentos')}
-                    className="px-6 py-4 bg-purple-500 hover:bg-purple-600 text-white rounded-md font-medium transition-colors text-left"
-                  >
-                    <div className="text-lg font-bold mb-1">📋 Regulamentos</div>
-                    <div className="text-sm opacity-90">Ver e editar regulamentos</div>
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <button
-                    onClick={() => navigate('/geral/nucleos')}
-                    className="px-6 py-4 bg-green-500 hover:bg-green-600 text-white rounded-md font-medium transition-colors text-left"
-                  >
-                    <div className="text-lg font-bold mb-1">🏫 Gerir Núcleos</div>
-                    <div className="text-sm opacity-90">Ver núcleos e cursos</div>
-                  </button>
-
-                  <button
-                    onClick={() => navigate('/geral/administradores')}
-                    className="px-6 py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-md font-medium transition-colors text-left"
-                  >
-                    <div className="text-lg font-bold mb-1">👥 Administradores</div>
-                    <div className="text-sm opacity-90">Gerir administradores</div>
-                  </button>
-
-                  <button
-                    onClick={() => window.open('/', '_blank')}
-                    className="px-6 py-4 bg-gray-500 hover:bg-gray-600 text-white rounded-md font-medium transition-colors text-left"
-                  >
-                    <div className="text-lg font-bold mb-1">🌐 Website Público</div>
-                    <div className="text-sm opacity-90">Ver site público</div>
-                  </button>
-                </div>
-              </div>
             </>
           )}
         </div>
       </div>
 
-      {/* Start Season Confirmation Modal */}
       {showStartModal && draftSeason && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-lg max-w-md w-full">
@@ -337,7 +278,6 @@ function DashboardGeral() {
         </div>
       )}
 
-      {/* Finish Season Confirmation Modal */}
       {showFinishModal && currentSeason && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-lg max-w-md w-full">

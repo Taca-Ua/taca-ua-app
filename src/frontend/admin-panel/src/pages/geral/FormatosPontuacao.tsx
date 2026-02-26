@@ -232,11 +232,10 @@ useEffect(() => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
 
-      <div className="p-8 max-w-7xl mx-auto">
-        {/* Header */}
+      <div className="flex-1 p-8 max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Formatos de Prova</h1>
 
@@ -254,7 +253,6 @@ useEffect(() => {
           </div>
         )}
 
-        {/* List */}
         <div className="bg-white rounded-lg shadow p-6 space-y-4">
           {loading ? (
             <div className="text-center py-8">
@@ -288,7 +286,6 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* ========== CREATE MODAL ========== */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 overflow-y-auto">
           <div className="bg-white p-8 rounded-lg w-full max-w-4xl my-8">
@@ -301,7 +298,6 @@ useEffect(() => {
             )}
 
             <div className="space-y-6">
-              {/* Name */}
               <div>
                 <label className="block font-medium mb-2">
                   Nome do Formato <span className="text-red-500">*</span>
@@ -315,7 +311,6 @@ useEffect(() => {
                 />
               </div>
 
-              {/* Description */}
               <div>
                 <label className="block font-medium mb-2">Descrição</label>
                 <textarea
@@ -327,7 +322,6 @@ useEffect(() => {
                 />
               </div>
 
-              {/* Escalões Section */}
               <div>
                 <div className="flex justify-between items-center mb-3">
                   <label className="block font-medium">
@@ -359,7 +353,6 @@ useEffect(() => {
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-                        {/* Escalão name */}
                         <div>
                           <label className="block text-sm font-medium mb-1">Nome do Escalão</label>
                           <input
@@ -371,7 +364,6 @@ useEffect(() => {
                           />
                         </div>
 
-                        {/* Min participants */}
                         <div>
                           <label className="block text-sm font-medium mb-1">Mín. Participantes</label>
                           <input
@@ -383,7 +375,6 @@ useEffect(() => {
                           />
                         </div>
 
-                        {/* Max participants */}
                         <div>
                           <label className="block text-sm font-medium mb-1">Máx. Participantes</label>
                           <input
@@ -396,7 +387,6 @@ useEffect(() => {
                         </div>
                       </div>
 
-                      {/* Points */}
                       <div>
                         <label className="block text-sm font-medium mb-1">
                           Pontuações (1º, 2º, 3º, ...) <span className="text-red-500">*</span>
@@ -418,7 +408,6 @@ useEffect(() => {
               </div>
             </div>
 
-            {/* Actions */}
             <div className="flex gap-4 mt-6">
               <button
                 className="flex-1 bg-gray-300 py-2 rounded-md hover:bg-gray-400 transition-colors"
@@ -443,7 +432,6 @@ useEffect(() => {
         </div>
       )}
 
-      {/* ========== VIEW/DETAILS MODAL ========== */}
       {isViewModalOpen && selectedFormat && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 overflow-y-auto">
           <div className="bg-white p-8 rounded-lg w-full max-w-5xl my-8">
@@ -466,7 +454,6 @@ useEffect(() => {
               </div>
             )}
 
-            {/* Escalões Table */}
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-3">Tabela de Prova</h3>
               <div className="overflow-x-auto">
@@ -521,7 +508,6 @@ useEffect(() => {
               </div>
             )}
 
-            {/* Actions */}
             <div className="flex gap-4 pt-4 border-t">
               <button
                 onClick={handleDeleteFormat}
@@ -546,7 +532,6 @@ useEffect(() => {
         </div>
       )}
 
-      {/* ========== EDIT MODAL ========== */}
       {isEditModalOpen && selectedFormat && (
 		<div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 overflow-y-auto">
           <div className="bg-white p-8 rounded-lg w-full max-w-4xl my-8">
@@ -559,7 +544,6 @@ useEffect(() => {
             )}
 
             <div className="space-y-6">
-              {/* Name */}
               <div>
                 <label className="block font-medium mb-2">
                   Nome do Formato <span className="text-red-500">*</span>
@@ -573,7 +557,6 @@ useEffect(() => {
                 />
               </div>
 
-              {/* Description */}
               <div>
                 <label className="block font-medium mb-2">Descrição</label>
                 <textarea
@@ -585,7 +568,6 @@ useEffect(() => {
                 />
               </div>
 
-              {/* Escalões Section */}
               <div>
                 <div className="flex justify-between items-center mb-3">
                   <label className="block font-medium">
@@ -611,7 +593,6 @@ useEffect(() => {
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-                        {/* Escalão name */}
                         <div>
                           <label className="block text-sm font-medium mb-1">Nome do Escalão</label>
                           <input
@@ -623,7 +604,6 @@ useEffect(() => {
                           />
                         </div>
 
-                        {/* Min participants */}
                         <div>
                           <label className="block text-sm font-medium mb-1">Mín. Participantes</label>
                           <input
@@ -635,7 +615,6 @@ useEffect(() => {
                           />
                         </div>
 
-                        {/* Max participants */}
                         <div>
                           <label className="block text-sm font-medium mb-1">Máx. Participantes</label>
                           <input
@@ -648,7 +627,6 @@ useEffect(() => {
                         </div>
                       </div>
 
-                      {/* Points */}
                       <div>
                         <label className="block text-sm font-medium mb-1">
                           Pontuações (1º, 2º, 3º, ...) <span className="text-red-500">*</span>
@@ -676,7 +654,6 @@ useEffect(() => {
               </div>
             </div>
 
-            {/* Actions */}
             <div className="flex gap-4 mt-6">
               <button
                 className="flex-1 bg-gray-300 py-2 rounded-md hover:bg-gray-400 transition-colors"

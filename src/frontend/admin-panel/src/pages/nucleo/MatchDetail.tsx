@@ -9,11 +9,12 @@ import {
   type PlayerLineup
 } from '../../api/matches';
 import type { Team } from '../../api/teams';
+import { tournamentsApi, type Tournament } from '../../api/tournaments';
 
 // ==================== Private Components ====================
 
 // Match Info Card Component
-const MatchInfoCard = ({ match }: { match: MatchDetail }) => {
+const MatchInfoCard = ({ match, tournament }: { match: MatchDetail; tournament: Tournament | null }) => {
   const formatDateTime = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -28,10 +29,10 @@ const MatchInfoCard = ({ match }: { match: MatchDetail }) => {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      scheduled: { label: '⏰ Agendado', color: 'bg-blue-100 text-blue-800' },
-      in_progress: { label: '▶️ Em Curso', color: 'bg-yellow-100 text-yellow-800' },
-      finished: { label: '✅ Terminado', color: 'bg-green-100 text-green-800' },
-      cancelled: { label: '❌ Cancelado', color: 'bg-red-100 text-red-800' },
+      scheduled: { label: 'Agendado', color: 'bg-blue-100 text-blue-800' },
+      in_progress: { label: 'Em Curso', color: 'bg-yellow-100 text-yellow-800' },
+      finished: { label: 'Terminado', color: 'bg-green-100 text-green-800' },
+      cancelled: { label: 'Cancelado', color: 'bg-red-100 text-red-800' },
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.scheduled;
@@ -48,7 +49,6 @@ const MatchInfoCard = ({ match }: { match: MatchDetail }) => {
 
   return (
     <div className="bg-white rounded-lg shadow-md p-8">
-      {/* Team Avatars */}
       <div className="flex justify-center items-center gap-8 mb-8">
         {participants.slice(0, 2).map((participant, idx) => (
           <div key={participant.id}>
@@ -69,11 +69,20 @@ const MatchInfoCard = ({ match }: { match: MatchDetail }) => {
         )}
       </div>
 
-      {/* Match Details */}
       <div>
         <h2 className="text-xl font-bold text-gray-800 mb-6">Detalhes do Jogo</h2>
 
         <div className="space-y-4">
+          {tournament && (
+            <div>
+              <label className="block text-gray-600 text-sm mb-1">Torneio</label>
+              <div className="text-gray-800 font-medium">{tournament.name}</div>
+              {tournament.modality && (
+                <div className="text-gray-500 text-sm">{tournament.modality.name}</div>
+              )}
+            </div>
+          )}
+
           <div>
             <label className="block text-gray-600 text-sm mb-1">Estado</label>
             <div>{getStatusBadge(match.status)}</div>
@@ -266,7 +275,6 @@ const LineupEditorModal = ({
           Editar Convocatória - {team.name}
         </h2>
 
-        {/* Search Bar */}
         <div className="mb-4">
           <input
             type="text"
@@ -277,7 +285,6 @@ const LineupEditorModal = ({
           />
         </div>
 
-        {/* Players List */}
         <div className="space-y-2 max-h-[500px] overflow-y-auto mb-6">
           {filteredPlayers.length > 0 ? (
             filteredPlayers.map((player) => {
@@ -329,7 +336,6 @@ const LineupEditorModal = ({
           )}
         </div>
 
-        {/* Modal Actions */}
         <div className="flex gap-4">
           <button
             onClick={handleCancel}
@@ -357,6 +363,7 @@ const MatchDetail = () => {
 
   const [match, setMatch] = useState<MatchDetail | null>(null);
   const [lineups, setLineups] = useState<LineupDetail[]>([]);
+  const [tournament, setTournament] = useState<Tournament | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -382,6 +389,16 @@ const MatchDetail = () => {
 
       setMatch(matchData);
       setLineups(lineupsData);
+
+      // Fetch tournament details
+      if (matchData.tournament_id) {
+        try {
+          const tournamentData = await tournamentsApi.getById(matchData.tournament_id);
+          setTournament(tournamentData);
+        } catch {
+          // Tournament not critical, ignore error
+        }
+      }
     } catch (err) {
       console.error('Error loading match data:', err);
       setError(err instanceof Error ? err.message : 'Erro ao carregar dados do jogo');
@@ -448,9 +465,9 @@ const MatchDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50">
         <NucleoSidebar />
-        <div className="flex justify-center items-center py-12">
+        <div className="flex-1 flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
         </div>
       </div>
@@ -459,9 +476,9 @@ const MatchDetail = () => {
 
   if (!match) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50">
         <NucleoSidebar />
-        <div className="p-8 max-w-4xl mx-auto">
+        <div className="flex-1 p-8 max-w-4xl mx-auto">
           <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded">
             <p className="font-bold">Jogo não encontrado</p>
             <p className="text-sm mt-1">O jogo que procura não existe ou foi removido.</p>
@@ -475,12 +492,11 @@ const MatchDetail = () => {
   const teamParticipants = match.participants.filter(p => p.team);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <NucleoSidebar />
 
-      <div className="p-8">
+      <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
-          {/* Back Button */}
           <button
             onClick={() => navigate(-1)}
             className="mb-6 flex items-center text-teal-600 hover:text-teal-700 font-medium transition-colors group"
@@ -496,7 +512,6 @@ const MatchDetail = () => {
             Voltar
           </button>
 
-          {/* Error Message */}
           {error && (
             <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-md flex items-start">
               <svg className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -507,11 +522,9 @@ const MatchDetail = () => {
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column - Match Info */}
             <div className="lg:col-span-1">
-              <MatchInfoCard match={match} />
+              <MatchInfoCard match={match} tournament={tournament} />
 
-              {/* Action Buttons */}
               <div className="mt-6 space-y-3">
                 <button
                   onClick={handleDownloadMatchSheet}
@@ -525,13 +538,12 @@ const MatchDetail = () => {
 
                 {!canEditLineups && (
                   <div className="px-4 py-3 bg-gray-100 text-gray-600 rounded-md text-sm text-center">
-                    ⚠️ Não pode editar convocatórias após o início do jogo
+                    Não pode editar convocatórias após o início do jogo
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Right Column - Team Lineups */}
             <div className="lg:col-span-2 space-y-6">
               {teamParticipants.length === 0 ? (
                 <div className="bg-white rounded-lg shadow-md p-8 text-center">
@@ -553,7 +565,6 @@ const MatchDetail = () => {
         </div>
       </div>
 
-      {/* Lineup Editor Modal */}
       <LineupEditorModal
         show={showLineupModal}
         team={editingParticipant?.team || null}

@@ -115,10 +115,10 @@ const Regulamentos = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
 
-      <div className="p-8 max-w-7xl mx-auto">
+      <div className="flex-1 p-8 max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Regulamentos</h1>
 
@@ -136,7 +136,6 @@ const Regulamentos = () => {
           </div>
         )}
 
-        {/* Filtros */}
         <div className="flex gap-6 mb-6">
           <div>
             <label className="block mb-1 font-medium text-gray-700">Modalidade</label>
@@ -153,7 +152,6 @@ const Regulamentos = () => {
           </div>
         </div>
 
-        {/* Lista */}
         <div className="bg-white rounded-lg shadow p-6 space-y-4">
           {loading ? (
             <div className="text-center py-8">
@@ -185,7 +183,6 @@ const Regulamentos = () => {
 
       </div>
 
-      {/* ========== MODAL UPLOAD ========== */}
       {isUploadModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-lg w-full max-w-md">
@@ -256,7 +253,6 @@ const Regulamentos = () => {
         </div>
       )}
 
-      {/* ========== MODAL VIEW/DETAILS ========== */}
       {isViewModalOpen && selectedRegulation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-lg w-full max-w-2xl">
