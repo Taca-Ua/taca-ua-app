@@ -23,6 +23,7 @@ from ..models import (
     Course,
     Match,
     MatchComment,
+    MatchDetailView,
     MatchLineup,
     MatchParticipant,
     MatchResult,
@@ -31,10 +32,21 @@ from ..models import (
     Nucleo,
     Staff,
     Student,
+    StudentDetailView,
     Team,
+    TeamDetailView,
     TeamPlayer,
     Tournament,
     TournamentCompetitor,
+    TournamentDetailView,
+    TournamentStandingsView,
+)
+from ..utils import (
+    rebuild_match_projection,
+    rebuild_student_projection,
+    rebuild_team_projection,
+    rebuild_tournament_projection,
+    rebuild_tournament_standings,
 )
 from .dto import CompleteSnapshot
 
@@ -101,6 +113,13 @@ class ProjectionRepository:
         try:
             # Clear tables in reverse dependency order to respect foreign keys
             # Order matters!
+
+            # 0. Clear materialized views first (no dependencies, but depend on core tables)
+            self.db.query(TournamentStandingsView).delete()
+            self.db.query(MatchDetailView).delete()
+            self.db.query(TournamentDetailView).delete()
+            self.db.query(StudentDetailView).delete()
+            self.db.query(TeamDetailView).delete()
 
             # 1. Clear match-related dependent tables first
             self.db.query(MatchComment).delete()
@@ -202,7 +221,19 @@ class ProjectionRepository:
             # if snapshot.ranking:
             #     total_records += self._rebuild_rankings(snapshot.ranking.rankings)
 
-            # Commit the transaction
+            # Commit the core tables first
+            self.db.commit()
+
+            # 4. Rebuild materialized views from core tables
+            logger.info("materialized_views_rebuild_started")
+            materialized_records = self._rebuild_materialized_views()
+            total_records += materialized_records
+            logger.info(
+                "materialized_views_rebuild_success",
+                materialized_records=materialized_records,
+            )
+
+            # Final commit
             self.db.commit()
 
             logger.info("projection_rebuild_success", total_records=total_records)
@@ -539,6 +570,88 @@ class ProjectionRepository:
         logger.debug("projection_rebuilt", table="match_comments", count=len(comments))
         return len(comments)
 
+    def _rebuild_materialized_views(self) -> int:
+        """
+        Rebuild all materialized views from core tables.
+
+        This method is called after core tables are populated from snapshots.
+        It rebuilds denormalized/optimized views for query performance.
+
+        Returns:
+            Number of materialized view records created
+        """
+        total_records = 0
+
+        try:
+            # Rebuild team detail views
+            teams = self.db.query(Team.team_id).filter(Team.deleted_at.is_(None)).all()
+            for (team_id,) in teams:
+                rebuild_team_projection(self.db, team_id)
+                total_records += 1
+            logger.debug(
+                "materialized_view_rebuilt", view="team_details", count=len(teams)
+            )
+
+            # Rebuild student detail views
+            students = (
+                self.db.query(Student.student_id)
+                .filter(Student.deleted_at.is_(None))
+                .all()
+            )
+            for (student_id,) in students:
+                rebuild_student_projection(self.db, student_id)
+                total_records += 1
+            logger.debug(
+                "materialized_view_rebuilt", view="student_details", count=len(students)
+            )
+
+            # Rebuild tournament detail views
+            tournaments = (
+                self.db.query(Tournament.tournament_id)
+                .filter(Tournament.deleted_at.is_(None))
+                .all()
+            )
+            for (tournament_id,) in tournaments:
+                rebuild_tournament_projection(self.db, tournament_id)
+                total_records += 1
+            logger.debug(
+                "materialized_view_rebuilt",
+                view="tournament_details",
+                count=len(tournaments),
+            )
+
+            # Rebuild match detail views
+            matches = (
+                self.db.query(Match.match_id).filter(Match.deleted_at.is_(None)).all()
+            )
+            for (match_id,) in matches:
+                rebuild_match_projection(self.db, match_id)
+                total_records += 1
+            logger.debug(
+                "materialized_view_rebuilt", view="match_details", count=len(matches)
+            )
+
+            # Rebuild tournament standings
+            for (tournament_id,) in tournaments:
+                rebuild_tournament_standings(self.db, tournament_id)
+                # Standings records counted separately as they're per-competitor
+            standings_count = self.db.query(TournamentStandingsView).count()
+            total_records += standings_count
+            logger.debug(
+                "materialized_view_rebuilt",
+                view="tournament_standings",
+                count=standings_count,
+            )
+
+            # Flush to ensure all writes are done
+            self.db.flush()
+
+        except Exception as e:
+            logger.error("materialized_views_rebuild_failed", error=str(e))
+            raise
+
+        return total_records
+
     def reset_sequences(self) -> None:
         """
         Reset all database sequences to match the current max IDs.
@@ -560,6 +673,7 @@ class ProjectionRepository:
                 ("public_read.match_participants", "id"),
                 ("public_read.match_results", "id"),
                 ("public_read.match_lineups", "id"),
+                ("public_read.mv_tournament_standings", "id"),  # Materialized view
             ]
 
             for table_name, id_column in tables_with_sequences:

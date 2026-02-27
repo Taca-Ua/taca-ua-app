@@ -295,7 +295,18 @@ class RebuildService:
         # This is useful for monitoring and debugging
 
         try:
-            from ..models import Match, Modality, Student, Team, Tournament
+            from ..models import (
+                Match,
+                MatchDetailView,
+                Modality,
+                Student,
+                StudentDetailView,
+                Team,
+                TeamDetailView,
+                Tournament,
+                TournamentDetailView,
+                TournamentStandingsView,
+            )
 
             match_count = self.db_session.query(Match).count()
             tournament_count = self.db_session.query(Tournament).count()
@@ -303,13 +314,29 @@ class RebuildService:
             student_count = self.db_session.query(Student).count()
             modality_count = self.db_session.query(Modality).count()
 
+            # Materialized view counts
+            team_detail_count = self.db_session.query(TeamDetailView).count()
+            student_detail_count = self.db_session.query(StudentDetailView).count()
+            tournament_detail_count = self.db_session.query(
+                TournamentDetailView
+            ).count()
+            match_detail_count = self.db_session.query(MatchDetailView).count()
+            standings_count = self.db_session.query(TournamentStandingsView).count()
+
             return {
-                "projections": {
+                "core_projections": {
                     "matches": match_count,
                     "tournaments": tournament_count,
                     "teams": team_count,
                     "students": student_count,
                     "modalities": modality_count,
+                },
+                "materialized_views": {
+                    "team_details": team_detail_count,
+                    "student_details": student_detail_count,
+                    "tournament_details": tournament_detail_count,
+                    "match_details": match_detail_count,
+                    "tournament_standings": standings_count,
                 },
                 "event_consumption_paused": getattr(
                     self.rabbitmq_service, "is_paused", lambda: False
