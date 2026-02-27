@@ -93,9 +93,9 @@ function Administradores() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50">
         <Sidebar />
-        <div className="flex justify-center items-center py-12">
+        <div className="flex-1 flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
         </div>
       </div>
@@ -103,9 +103,9 @@ function Administradores() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      <div className="p-8">
+      <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold text-gray-800">Administradores</h1>
@@ -118,7 +118,6 @@ function Administradores() {
             </button>
           </div>
 
-          {/* Administradores Gerais */}
           <div className="bg-white rounded-lg shadow-md p-6 mb-8">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Administradores Gerais</h2>
             <div className="space-y-3 max-h-96 overflow-y-auto">
@@ -137,7 +136,6 @@ function Administradores() {
             </div>
           </div>
 
-          {/* Administradores Núcleo */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Administradores Núcleo</h2>
             <div className="space-y-3 max-h-96 overflow-y-auto">
@@ -160,14 +158,12 @@ function Administradores() {
         </div>
       </div>
 
-      {/* Add Member Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Adicionar Administrador</h2>
 
             <div className="space-y-4">
-              {/* Username */}
               <div>
                 <label htmlFor="memberUserName" className="block text-gray-700 font-medium mb-2">
                   Username <span className="text-red-500">*</span>
@@ -182,7 +178,6 @@ function Administradores() {
                 />
               </div>
 
-               {/* Nome */}
                <div>
                 <label htmlFor="memberName" className="block text-gray-700 font-medium mb-2">
                   Nome <span className="text-red-500">*</span>
@@ -197,7 +192,6 @@ function Administradores() {
                 />
               </div>
 
-              {/* Password */}
               <div>
                 <label htmlFor="memberPassword" className="block text-gray-700 font-medium mb-2">
                   Password <span className="text-red-500">*</span>
@@ -212,7 +206,6 @@ function Administradores() {
                 />
               </div>
 
-              {/* Role */}
               <div>
                 <label htmlFor="memberRole" className="block text-gray-700 font-medium mb-2">
                   Tipo <span className="text-red-500">*</span>
@@ -228,7 +221,6 @@ function Administradores() {
                 </select>
               </div>
 
-              {/* Email */}
               <div>
                 <label htmlFor="email" className="block text-gray-700 font-medium mb-2">
                   Email <span className="text-red-500">*</span>
@@ -243,7 +235,6 @@ function Administradores() {
                 />
               </div>
 
-              {/* Núcleo */}
               {memberRole === 'nucleo' && (
                 <div>
                   <label htmlFor="courseId" className="block text-gray-700 font-medium mb-2">
@@ -266,14 +257,12 @@ function Administradores() {
               )}
             </div>
 
-            {/* Error Message */}
             {error && (
               <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
                 {error}
               </div>
             )}
 
-            {/* Botones */}
             <div className="flex gap-4 mt-6">
               <button
                 onClick={() => {

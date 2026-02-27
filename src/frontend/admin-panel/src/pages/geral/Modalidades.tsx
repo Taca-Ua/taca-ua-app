@@ -22,8 +22,8 @@ const MoadlitiesList = (modalities: Modality[]) => {
         className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer transition-colors flex justify-between items-center"
       >
         <span className="text-gray-800 font-medium">{mod.name}</span>
-        <span className="text-gray-600 text-sm capitalize">
-          Tipo: {mod.modality_type.name}
+        <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+          {mod.modality_type.name}
         </span>
       </div>
     );
@@ -113,7 +113,6 @@ const CreateModalityModal = ({
         )}
 
         <div className="space-y-4">
-          {/* Name */}
           <div>
             <label className="block text-gray-700 font-medium mb-2">
               Nome da Modalidade <span className="text-red-500">*</span>
@@ -127,7 +126,6 @@ const CreateModalityModal = ({
             />
           </div>
 
-          {/* Type */}
           <div>
             <label className="block text-gray-700 font-medium mb-2">
               Tipo <span className="text-red-500">*</span>
@@ -147,7 +145,6 @@ const CreateModalityModal = ({
           </div>
         </div>
 
-        {/* Actions */}
         <div className="flex gap-4 mt-6">
           <button
             onClick={() => {
@@ -175,6 +172,7 @@ const CreateModalityModal = ({
 const Modalities = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [modalities, setModalities] = useState<Modality[]>([]);
   const [modalityTypes, setModalityTypes] = useState<ModalityTypeMinimal[]>([]);
@@ -202,9 +200,9 @@ const Modalities = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50">
         <Sidebar />
-        <div className="flex justify-center items-center py-12">
+        <div className="flex-1 flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
         </div>
       </div>
@@ -212,13 +210,12 @@ const Modalities = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
 
-      <div className="p-8">
+      <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-8 flex justify-between items-center">
+          <div className="mb-6 flex justify-between items-center">
             <h1 className="text-3xl font-bold text-gray-800">Modalidades</h1>
             <button
               onClick={() => setIsModalOpen(true)}
@@ -229,14 +226,26 @@ const Modalities = () => {
             </button>
           </div>
 
-          {/* Modalities List */}
+          <div className="mb-6">
+            <input
+              type="text"
+              placeholder="Pesquisar modalidade..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+            />
+          </div>
+
           <div className="bg-white rounded-lg shadow-md p-6">
-            {MoadlitiesList(modalities)}
+            {MoadlitiesList(
+              [...modalities]
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .filter((m) => m.name.toLowerCase().includes(searchQuery.toLowerCase()))
+            )}
           </div>
         </div>
       </div>
 
-      {/* Add Modality Modal */}
       {isModalOpen && (
         <CreateModalityModal
           modalityTypes={modalityTypes}

@@ -43,24 +43,20 @@ function LoginGeral() {
         backgroundImage: 'url("https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=2090")',
       }}
     >
-      {/* Overlay */}
       <div className="absolute inset-0 bg-black bg-opacity-40"></div>
 
-      {/* Login Card */}
       <div className="relative z-10 bg-white rounded-lg shadow-2xl p-12 w-full max-w-md mx-auto">
         <h1 className="text-5xl font-bold text-center mb-2 text-gray-800">LOG IN</h1>
         <h2 className="text-2xl font-semibold text-center mb-8 text-teal-500">Administrador Geral</h2>
 
         <div className="border-t border-gray-300 mb-8"></div>
 
-        {/* Error Message */}
         {error && (
           <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
             {error}
           </div>
         )}
 
-        {/* Login Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label htmlFor="username" className="block text-center text-teal-500 font-semibold mb-2">
@@ -107,7 +103,6 @@ function LoginGeral() {
 
         <div className="border-t border-gray-300 mt-8 mb-6"></div>
 
-        {/* Back button */}
         <div className="text-center">
           <button
             onClick={() => navigate('/login')}

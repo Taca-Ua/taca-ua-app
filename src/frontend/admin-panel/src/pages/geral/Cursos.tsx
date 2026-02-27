@@ -7,22 +7,23 @@ import { nucleosApi, type Nucleo } from '../../api/nucleos';
 const CourseEntry = (course: Course) => {
   const navigate = useNavigate();
 
-  console.log('Rendering CourseEntry for:', course);
   return (
     <div
       key={course.id}
       onClick={() => navigate(`/geral/cursos/${course.id}`)}
       className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer transition-colors flex justify-between items-center"
     >
-      <div className="flex flex-col">
-        <span className="text-gray-800 font-medium">{course.name}</span>
-        <span className="text-gray-600 text-sm">
-          Abreviatura: {course.abbreviation}
-        </span>
+      <div className="flex items-center gap-4">
+        <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center border-2 border-teal-500 flex-shrink-0">
+          <span className="text-teal-600 font-bold text-xs">{course.abbreviation}</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-teal-600 font-bold text-lg">{course.abbreviation}</span>
+          <span className="text-gray-400">|</span>
+          <span className="text-gray-800 font-medium">{course.name}</span>
+        </div>
       </div>
-      <span className="text-gray-600 text-sm">
-        Núcleo: {course.nucleo.name}
-      </span>
+      <span className="text-gray-500 text-sm">{course.nucleo.name}</span>
     </div>
   );
 };
@@ -37,6 +38,7 @@ const Cursos = () => {
   const [nucleos, setNucleos] = useState<Nucleo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch courses on mount
   useEffect(() => {
@@ -110,7 +112,7 @@ const Cursos = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50">
         <Sidebar />
         <div className="flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
@@ -120,13 +122,12 @@ const Cursos = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
 
-      <div className="p-8">
+      <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-8 flex justify-between items-center">
+          <div className="mb-6 flex justify-between items-center">
             <h1 className="text-3xl font-bold text-gray-800">Cursos</h1>
             <button
               onClick={() => setIsModalOpen(true)}
@@ -137,11 +138,23 @@ const Cursos = () => {
             </button>
           </div>
 
-          {/* Courses List */}
+          <div className="mb-6">
+            <input
+              type="text"
+              placeholder="Pesquisar curso..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+            />
+          </div>
+
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="space-y-3">
               {courses.length > 0 ? (
-                courses.map((course) => (
+                [...courses]
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .filter((c) => c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.abbreviation.toLowerCase().includes(searchQuery.toLowerCase()))
+                  .map((course) => (
                   <CourseEntry
                     key={course.id}
                     {...course}
@@ -157,7 +170,6 @@ const Cursos = () => {
         </div>
       </div>
 
-      {/* Add Course Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
@@ -170,7 +182,6 @@ const Cursos = () => {
             )}
 
             <div className="space-y-4">
-              {/* Name */}
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
                   Nome do Curso <span className="text-red-500">*</span>
@@ -184,7 +195,6 @@ const Cursos = () => {
                 />
               </div>
 
-              {/* Abbreviation */}
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
                   Abreviatura <span className="text-red-500">*</span>
@@ -198,7 +208,6 @@ const Cursos = () => {
                 />
               </div>
 
-              {/* Nucleo */}
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
                   Núcleo <span className="text-red-500">*</span>
@@ -218,7 +227,6 @@ const Cursos = () => {
               </div>
             </div>
 
-            {/* Actions */}
             <div className="flex gap-4 mt-6">
               <button
                 onClick={() => {

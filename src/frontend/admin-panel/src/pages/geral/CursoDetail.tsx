@@ -104,9 +104,9 @@ const CursoDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50">
         <Sidebar />
-        <div className="flex justify-center items-center py-12">
+        <div className="flex-1 flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
         </div>
       </div>
@@ -116,12 +116,10 @@ const CursoDetail = () => {
   if (!course) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-
-      <div className="p-8">
+      <div className="flex-1 p-8">
         <div className="max-w-4xl mx-auto">
-          {/* Header */}
           <div className="mb-8 flex justify-between items-center">
             <h1 className="text-3xl font-bold text-gray-800">Detalhes do Curso</h1>
             <button
@@ -132,31 +130,16 @@ const CursoDetail = () => {
             </button>
           </div>
 
-          {/* Card */}
           <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
-            {/* Logo */}
             <div>
               <label className="block text-teal-500 font-medium mb-2">Logo</label>
               <div className="flex items-center gap-4">
                 <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-teal-500">
-                  {/* {course.logo_url ? (
-                    <img
-                      src={course.logo_url}
-                      alt={course.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.parentElement!.innerHTML = `<span class="text-teal-600 font-bold text-2xl">${course.abbreviation}</span>`;
-                      }}
-                    />
-                  ) : ( */}
                     <span className="text-teal-600 font-bold text-2xl">{course.abbreviation}</span>
-                  {/* )} */}
                 </div>
               </div>
             </div>
 
-            {/* Name */}
             <div>
               <label className="block text-teal-500 font-medium mb-2">Nome</label>
               <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
@@ -164,7 +147,6 @@ const CursoDetail = () => {
               </div>
             </div>
 
-            {/* Abbreviation */}
             <div>
               <label className="block text-teal-500 font-medium mb-2">Abreviatura</label>
               <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
@@ -172,7 +154,6 @@ const CursoDetail = () => {
               </div>
             </div>
 
-            {/* Nucleo */}
             <div>
               <label className="block text-teal-500 font-medium mb-2">Núcleo</label>
               <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
@@ -199,7 +180,6 @@ const CursoDetail = () => {
         </div>
       </div>
 
-      {/* MODAL Edition */}
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
@@ -212,7 +192,6 @@ const CursoDetail = () => {
             )}
 
             <div className="space-y-4">
-              {/* Name */}
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
                   Nome <span className="text-red-500">*</span>
@@ -227,7 +206,6 @@ const CursoDetail = () => {
                 />
               </div>
 
-              {/* Abbreviation */}
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
                   Abreviatura <span className="text-red-500">*</span>
@@ -242,7 +220,6 @@ const CursoDetail = () => {
                 />
               </div>
 
-              {/* Nucleo */}
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
                   Núcleo <span className="text-red-500">*</span>

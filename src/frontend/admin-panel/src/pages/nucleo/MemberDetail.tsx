@@ -64,9 +64,9 @@ function MemberDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50">
         <NucleoSidebar />
-        <div className="p-8">
+        <div className="flex-1 p-8">
           <div className="max-w-3xl mx-auto flex justify-center items-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
           </div>
@@ -77,9 +77,9 @@ function MemberDetail() {
 
   if (error || !member) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50">
         <NucleoSidebar />
-        <div className="p-8">
+        <div className="flex-1 p-8">
           <div className="max-w-3xl mx-auto">
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
               {error || 'Membro não encontrado'}
@@ -155,14 +155,12 @@ function MemberDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <NucleoSidebar />
-      <div className="p-8">
+      <div className="flex-1 p-8">
         <div className="max-w-3xl mx-auto">
           <div className="bg-white rounded-lg shadow-md p-8">
-            {/* Member Details - Read Only */}
             <div className="space-y-6">
-              {/* Type Badge */}
               <div>
                 <span className={`inline-block px-4 py-2 rounded-full text-sm font-medium ${
                   memberType === 'participant'
@@ -173,7 +171,6 @@ function MemberDetail() {
                 </span>
               </div>
 
-              {/* Name */}
               <div>
                 <label className="block text-teal-500 font-medium mb-2">
                   Nome
@@ -183,10 +180,8 @@ function MemberDetail() {
                 </div>
               </div>
 
-              {/* Participant-specific fields */}
               {memberType === 'participant' && (
                 <>
-                  {/* Student Number */}
                   <div>
                     <label className="block text-teal-500 font-medium mb-2">
                       Número de Estudante
@@ -196,7 +191,6 @@ function MemberDetail() {
                     </div>
                   </div>
 
-                  {/* Member Status */}
                   <div>
                     <label className="block text-teal-500 font-medium mb-2">
                       Estado de Membro
@@ -212,22 +206,19 @@ function MemberDetail() {
                     </div>
                   </div>
 
-                  {/* Course ID */}
                   <div>
                     <label className="block text-teal-500 font-medium mb-2">
                       Curso
                     </label>
                     <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
-                      {(member.data as StudentDetail).course.id}
+                      {(member.data as StudentDetail).course.name}
                     </div>
                   </div>
                 </>
               )}
 
-              {/* Staff-specific fields */}
               {memberType === 'staff' && (
                 <>
-                  {/* Staff Number */}
                   {(member.data as StaffDetail).staff_number && (
                     <div>
                       <label className="block text-teal-500 font-medium mb-2">
@@ -239,7 +230,6 @@ function MemberDetail() {
                     </div>
                   )}
 
-                  {/* Contact */}
                   {(member.data as StaffDetail).contact && (
                     <div>
                       <label className="block text-teal-500 font-medium mb-2">
@@ -254,7 +244,6 @@ function MemberDetail() {
               )}
             </div>
 
-            {/* Action Buttons */}
             <div className="flex gap-4 mt-8">
               <button
                 onClick={handleEdit}
@@ -273,14 +262,12 @@ function MemberDetail() {
         </div>
       </div>
 
-      {/* Edit Member Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Editar Membro</h2>
 
             <div className="space-y-4">
-              {/* Name Input */}
               <div>
                 <label htmlFor="editName" className="block text-gray-700 font-medium mb-2">
                   Nome <span className="text-red-500">*</span>
@@ -295,10 +282,8 @@ function MemberDetail() {
                 />
               </div>
 
-              {/* Participant-specific fields */}
               {memberType === 'participant' && (
                 <>
-                  {/* Student Number (read-only) */}
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">
                       Número de Estudante
@@ -308,7 +293,6 @@ function MemberDetail() {
                     </div>
                   </div>
 
-                  {/* Is Member Toggle */}
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">
                       Tipo
@@ -339,10 +323,8 @@ function MemberDetail() {
                 </>
               )}
 
-              {/* Staff-specific fields */}
               {memberType === 'staff' && (
                 <>
-                  {/* Staff Number (read-only) */}
                   {(member.data as StaffDetail).staff_number && (
                     <div>
                       <label className="block text-gray-700 font-medium mb-2">
@@ -354,7 +336,6 @@ function MemberDetail() {
                     </div>
                   )}
 
-                  {/* Contact Input */}
                   <div>
                     <label htmlFor="editContact" className="block text-gray-700 font-medium mb-2">
                       Contacto
@@ -372,7 +353,6 @@ function MemberDetail() {
               )}
             </div>
 
-            {/* Modal Actions */}
             <div className="flex gap-4 mt-6">
               <button
                 onClick={() => {
@@ -395,7 +375,6 @@ function MemberDetail() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
       {deleteConfirmOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">

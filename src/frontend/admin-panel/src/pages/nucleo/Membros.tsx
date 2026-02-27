@@ -172,14 +172,12 @@ function Membros() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <NucleoSidebar />
-      <div className="p-8">
+      <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
-          {/* Header with Filters and Add Button */}
           <div className="mb-6">
             <div className="flex flex-col sm:flex-row gap-4 mb-4">
-              {/* Search Bar */}
               <div className="flex-1">
                 <input
                   type="text"
@@ -190,7 +188,6 @@ function Membros() {
                 />
               </div>
 
-              {/* Type Filter */}
               <div className="sm:w-48">
                 <select
                   value={filterType}
@@ -203,7 +200,6 @@ function Membros() {
                 </select>
               </div>
 
-              {/* Add Button */}
               <button
                 onClick={() => setIsModalOpen(true)}
                 className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-2 rounded-md font-medium transition-colors flex items-center gap-2 justify-center sm:justify-start"
@@ -214,21 +210,18 @@ function Membros() {
             </div>
           </div>
 
-          {/* Loading State */}
           {loading && (
             <div className="flex justify-center items-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
             </div>
           )}
 
-          {/* Error State */}
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-6">
               {error}
             </div>
           )}
 
-          {/* Content - Only show when not loading */}
           {!loading && !error && (
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-2xl font-bold mb-6 text-gray-800">
@@ -269,14 +262,12 @@ function Membros() {
         </div>
       </div>
 
-      {/* Add Member Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Adicionar Membro</h2>
 
             <div className="space-y-4">
-              {/* Name Input */}
               <div>
                 <label htmlFor="memberName" className="block text-gray-700 font-medium mb-2">
                   Nome <span className="text-red-500">*</span>
@@ -291,7 +282,6 @@ function Membros() {
                 />
               </div>
 
-              {/* Type Select */}
               <div>
                 <label htmlFor="memberType" className="block text-gray-700 font-medium mb-2">
                   Tipo <span className="text-red-500">*</span>
@@ -307,7 +297,6 @@ function Membros() {
                 </select>
               </div>
 
-              {/* Participant Fields */}
               {memberType === 'participant' && (
                 <>
                   <div>
@@ -344,7 +333,6 @@ function Membros() {
                 </>
               )}
 
-              {/* Staff Fields */}
               {memberType === 'staff' && (
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">
@@ -375,7 +363,6 @@ function Membros() {
                     </label>
                   </div>
 
-                  {/* Contact or Staff Number Input */}
                   {identifierType === 'contact' ? (
                     <input
                       type="tel"
@@ -397,7 +384,6 @@ function Membros() {
               )}
             </div>
 
-            {/* Modal Actions */}
             <div className="flex gap-4 mt-6">
               <button
                 onClick={() => {

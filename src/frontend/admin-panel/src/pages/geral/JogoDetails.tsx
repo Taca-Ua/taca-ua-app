@@ -232,6 +232,7 @@ const ResultsSection = ({
 }) => {
   const [isEditingResults, setIsEditingResults] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [finalizing, setFinalizing] = useState(false);
   const [error, setError] = useState('');
   const [results, setResults] = useState<{ [key: string]: { score: string; position: string } }>({});
 
@@ -259,7 +260,7 @@ const ResultsSection = ({
 
       const updateData: MatchResultsUpdate = {
         participant_results,
-        status: 'finished',
+        // Do NOT auto-finish: status is not changed here
       };
 
       await matchesApi.updateMatchResults(match.id, updateData);
@@ -273,23 +274,80 @@ const ResultsSection = ({
     }
   };
 
+  const handleFinalizeMatch = async () => {
+    if (!window.confirm('Tem a certeza que deseja finalizar este jogo? O estado será alterado para "Terminado".')) return;
+    try {
+      setFinalizing(true);
+      setError('');
+      await matchesApi.update(match.id, { status: 'finished' });
+      onUpdate();
+    } catch (err) {
+      console.error('Error finalizing match:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao finalizar jogo');
+    } finally {
+      setFinalizing(false);
+    }
+  };
+
   const getName = (participant: typeof match.participants[0]) => {
     return participant.team?.name || participant.athlete?.full_name || 'Participante';
   };
+
+  const hasAnyResults = match.participants.some(p => p.score !== null && p.score !== undefined);
 
   if (match.status !== 'finished' && !isEditingResults) {
     return (
       <div className="bg-white rounded-lg shadow-md p-6">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-bold text-gray-800">Resultados</h3>
-          <button
-            onClick={() => setIsEditingResults(true)}
-            className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md text-sm font-medium transition-colors"
-          >
-            Publicar Resultados
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setIsEditingResults(true)}
+              className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md text-sm font-medium transition-colors"
+            >
+              {hasAnyResults ? 'Editar Resultados' : 'Publicar Resultados'}
+            </button>
+            {hasAnyResults && (
+              <button
+                onClick={handleFinalizeMatch}
+                disabled={finalizing}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+              >
+                {finalizing ? 'A finalizar...' : 'Finalizar Jogo'}
+              </button>
+            )}
+          </div>
         </div>
-        <p className="text-gray-600">Os resultados ainda não foram publicados.</p>
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm">
+            {error}
+          </div>
+        )}
+        {hasAnyResults ? (
+          <div className="space-y-4">
+            {match.participants.map((participant) => (
+              <div key={participant.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                <span className="font-semibold text-gray-800">{getName(participant)}</span>
+                <div className="flex gap-6">
+                  {participant.score !== null && participant.score !== undefined && (
+                    <div className="text-right">
+                      <div className="text-sm text-gray-500">Pontuação</div>
+                      <div className="text-2xl font-bold text-teal-600">{participant.score}</div>
+                    </div>
+                  )}
+                  {participant.position !== null && participant.position !== undefined && (
+                    <div className="text-right">
+                      <div className="text-sm text-gray-500">Posição</div>
+                      <div className="text-2xl font-bold text-teal-600">{participant.position}º</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-600">Os resultados ainda não foram publicados.</p>
+        )}
       </div>
     );
   }
@@ -592,7 +650,6 @@ const CommentsSection = ({ matchId }: { matchId: string }) => {
         </div>
       )}
 
-      {/* Add Comment Form */}
       <div className="mb-6">
         <textarea
           className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
@@ -610,7 +667,6 @@ const CommentsSection = ({ matchId }: { matchId: string }) => {
         </button>
       </div>
 
-      {/* Comments List */}
       {loading ? (
         <div className="flex justify-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
@@ -848,9 +904,9 @@ const JogoDetails = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50">
         <Sidebar />
-        <div className="flex justify-center items-center py-12">
+        <div className="flex-1 flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
         </div>
       </div>
@@ -859,9 +915,9 @@ const JogoDetails = () => {
 
   if (!match) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50">
         <Sidebar />
-        <div className="p-8 max-w-4xl mx-auto">
+        <div className="flex-1 p-8 max-w-4xl mx-auto">
           <div className="bg-white rounded-lg shadow-md p-8 text-center">
             <div className="text-6xl mb-4">⚽</div>
             <h2 className="text-2xl font-bold text-gray-800 mb-2">Jogo não encontrado</h2>
@@ -879,11 +935,10 @@ const JogoDetails = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
 
-      <div className="p-8 max-w-6xl mx-auto">
-        {/* Back Button */}
+      <div className="flex-1 p-8 max-w-6xl mx-auto">
         <button
           onClick={() => navigate(-1)}
           className="mb-6 flex items-center text-teal-600 hover:text-teal-700 font-medium transition-colors group"
@@ -899,7 +954,6 @@ const JogoDetails = () => {
           Voltar
         </button>
 
-        {/* Error Message */}
         {error && (
           <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-md flex items-start">
             <svg className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -909,15 +963,12 @@ const JogoDetails = () => {
           </div>
         )}
 
-        {/* Match Header */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
           <MatchHeader match={match} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Match Info & Actions */}
           <div className="lg:col-span-1 space-y-6">
-            {/* Match Info Card */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-bold text-gray-800">Informações</h3>
@@ -945,7 +996,6 @@ const JogoDetails = () => {
               />
             </div>
 
-            {/* Action Buttons */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h3 className="text-xl font-bold text-gray-800 mb-4">Ações</h3>
               <div className="space-y-3">
@@ -972,7 +1022,6 @@ const JogoDetails = () => {
             </div>
           </div>
 
-          {/* Right Column - Results, Lineups, Comments */}
           <div className="lg:col-span-2 space-y-6">
             <ResultsSection match={match} onUpdate={fetchMatch} />
             <LineupsSection match={match} />
@@ -981,7 +1030,6 @@ const JogoDetails = () => {
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
       <DeleteModal
         show={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}

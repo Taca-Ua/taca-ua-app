@@ -105,9 +105,9 @@ function AdminDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50">
         <Sidebar />
-        <div className="flex justify-center items-center py-12">
+        <div className="flex-1 flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
         </div>
       </div>
@@ -117,27 +117,23 @@ function AdminDetail() {
   if (!member) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      <div className="p-8 max-w-3xl mx-auto">
+      <div className="flex-1 p-8 max-w-3xl mx-auto">
         <div className="bg-white rounded-lg shadow-md p-8">
           <div className="space-y-6">
-            {/* UserName */}
             <div>
               <label className="block text-teal-500 font-medium mb-2">Username</label>
               <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800">{member.username}</div>
             </div>
-            {/* Name */}
             <div>
               <label className="block text-teal-500 font-medium mb-2">Nome</label>
               <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800">{member.full_name}</div>
             </div>
-            {/* Email */}
             <div>
               <label className="block text-teal-500 font-medium mb-2">Email</label>
               <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800">{member.email}</div>
             </div>
-            {/* Password */}
             <div>
               <label className="block text-teal-500 font-medium mb-2">Password</label>
               <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800 flex items-center justify-between">
@@ -162,7 +158,6 @@ function AdminDetail() {
                 </button>
               </div>
             </div>
-            {/* Type */}
             <div>
                 <label className="block text-teal-500 font-medium mb-2">
                   Tipo
@@ -171,7 +166,6 @@ function AdminDetail() {
                   {member.role === 'geral' ? 'Geral' : 'Núcleo'}
                 </div>
             </div>
-            {/* Nucleo */}
             {member.role === 'nucleo' && (
               <div>
                 <label className="block text-teal-500 font-medium mb-2">Núcleo</label>
@@ -203,7 +197,6 @@ function AdminDetail() {
             )}
 
             <div className="space-y-4">
-            {/* Username */}
             <div>
                 <label className="block text-gray-700 font-medium mb-2">Username <span className="text-red-500">*</span></label>
                 <input
@@ -215,7 +208,6 @@ function AdminDetail() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
                 />
             </div>
-            {/* Full Name */}
             <div>
                 <label className="block text-gray-700 font-medium mb-2">Nome <span className="text-red-500">*</span></label>
                 <input
@@ -227,7 +219,6 @@ function AdminDetail() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
                 />
             </div>
-            {/* Password */}
             <div>
                 <label className="block text-gray-700 font-medium mb-2">Password (deixe em branco para manter)</label>
                 <input
@@ -238,7 +229,6 @@ function AdminDetail() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
                 />
             </div>
-              {/* Email */}
             <div>
                 <label className="block text-gray-700 font-medium mb-2">Email <span className="text-red-500">*</span></label>
                 <input
@@ -251,7 +241,6 @@ function AdminDetail() {
                 />
             </div>
 
-            {/* Role Display (non-editable) */}
             <div>
                 <label className="block text-gray-700 font-medium mb-2">
                   Tipo
@@ -262,7 +251,6 @@ function AdminDetail() {
             </div>
 
 
-            {/* Nucleo */}
             {member.role === 'nucleo' && (
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">Núcleo <span className="text-red-500">*</span></label>
