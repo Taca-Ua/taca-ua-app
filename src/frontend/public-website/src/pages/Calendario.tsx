@@ -143,7 +143,7 @@ function Calendario() {
 
     // Build "A vs B vs C" format
     const participantNames = match.participants.map(
-      (p) => p.name || p.team_name || 'Participante'
+      (p) => p.participant_name || 'Participante'
     );
     return participantNames.join(' vs ');
   };
