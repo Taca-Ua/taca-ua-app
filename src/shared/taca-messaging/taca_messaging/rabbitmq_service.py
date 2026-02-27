@@ -55,6 +55,10 @@ class RabbitMQService:
         self.channel = None
         self.exchange = None
 
+        # Metrics
+        self.processed_messages = 0
+        self.failed_processed_messages = 0
+
         # Store event handlers: {event_name: [handler_func1, handler_func2, ...]}
         self.event_handlers: Dict[str, list[Callable]] = {}
 
@@ -119,10 +123,11 @@ class RabbitMQService:
 
         # Check if handler is async or sync
         if inspect.iscoroutinefunction(handler):
-            await handler(data)
+            await handler(data.get("data", None))
         else:
-            handler(data)
+            handler(data.get("data", None))
 
+        self.processed_messages += 1
         self.logger.info(
             f"Processed event '{message.routing_key}' with handler '{handler.__name__}'"
         )
@@ -185,11 +190,13 @@ class RabbitMQService:
                 self.logger.warning(f"No handlers matched routing key: {routing_key}")
                 await message.ack()  # Ack anyway to prevent requeue
         except json.JSONDecodeError as e:
+            self.failed_processed_messages += 1
             self.logger.error(f"Failed to decode message: {e}")
             await message.reject(requeue=False)  # Reject malformed messages
         except Exception as e:
+            self.failed_processed_messages += 1
             self.logger.error(f"Error processing message: {e}")
-            await message.reject(requeue=True)  # Requeue for retry
+            await message.reject(requeue=False)  # Requeue for retry
 
     def _matches_pattern(self, routing_key: str, pattern: str) -> bool:
         """
@@ -206,8 +213,6 @@ class RabbitMQService:
             .replace("*", r"[^\.]+")
             .replace("#", r"(.+)?")
         )
-
-        print(regex_pattern)
 
         return re.fullmatch(regex_pattern, routing_key) is not None
 

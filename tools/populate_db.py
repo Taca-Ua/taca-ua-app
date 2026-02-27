@@ -6,11 +6,23 @@ import requests
 API_URL = "http://localhost/api/admin"
 
 
-def populate_modalities_types():
+def populate_modalities_types(step_by_step=False, delete_existing=False):
     check = requests.get(f"{API_URL}/modality-types")
-    if check.status_code == 200 and len(check.json()) > 0:
+    if delete_existing and check.status_code == 200:
+        for modality_type in check.json():
+            del_response = requests.delete(
+                f"{API_URL}/modality-types/{modality_type['id']}/"
+            )
+            if del_response.status_code == 204:
+                print(f"Deleted modality type: {modality_type['name']}")
+            else:
+                print(
+                    f"Failed to delete modality type: {modality_type['name']}, Status Code: {del_response.status_code}, Response: {del_response.text}"
+                )
+                raise Exception("Failed to delete modality types.")
+    elif check.status_code == 200 and len(check.json()) > 0:
         print("Modality types already populated.")
-        return None
+        return {mt["name"]: mt["id"] for mt in check.json()}
 
     modalities_types = [
         {
@@ -191,6 +203,10 @@ def populate_modalities_types():
 
     ids = {}
     for modality_type in modalities_types:
+        if step_by_step:
+            input(
+                f"About to create modality type: {modality_type['name']}. Press Enter to continue..."
+            )
         response = requests.post(f"{API_URL}/modality-types/", json=modality_type)
         if response.status_code == 201:
             print(f"Created modality type: {modality_type['name']}")
@@ -830,7 +846,9 @@ def populate_matches(tournament, teams):
 def main():
     input("Press Enter to continue...")
 
-    modality_types_ids = populate_modalities_types()
+    modality_types_ids = populate_modalities_types(
+        step_by_step=True, delete_existing=True
+    )
     print("Populated Modality Types IDs:", modality_types_ids)
     input("Press Enter to continue...")
 

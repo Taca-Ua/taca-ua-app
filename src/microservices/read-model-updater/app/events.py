@@ -1,6 +1,8 @@
 """
 Event handling for read-model-updater.
 Publishes and consumes events via RabbitMQ.
+
+Supports pause/resume for rebuild operations.
 """
 
 import uuid
@@ -31,9 +33,98 @@ from .models import (
     Tournament,
     TournamentCompetitor,
 )
+from .utils import (
+    rebuild_all_students_for_course,
+    rebuild_all_teams_for_course,
+    rebuild_all_teams_for_modality,
+    rebuild_all_tournaments_for_modality,
+    rebuild_match_projection,
+    rebuild_student_projection,
+    rebuild_team_projection,
+    rebuild_tournament_projection,
+    rebuild_tournament_standings,
+)
 
-# Initialize RabbitMQ service for read-model-updater
-rabbitmq_service = RabbitMQService(service_name="read-model-updater", logger=logger)
+
+class PausableRabbitMQService(RabbitMQService):
+    """
+    Extended RabbitMQ service with pause/resume capabilities.
+
+    This is needed for the rebuild process to temporarily stop
+    event consumption while projections are being rebuilt.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._paused = False
+        self._original_on_message = None
+
+    def is_paused(self) -> bool:
+        """Check if event consumption is currently paused."""
+        return self._paused
+
+    async def pause_consumption(self) -> None:
+        """
+        Pause event consumption.
+
+        Events will be buffered in RabbitMQ queue but not processed
+        until consumption is resumed.
+        """
+        if self._paused:
+            self.logger.warning("event_consumption_already_paused")
+            return
+
+        self._paused = True
+
+        # Cancel the consumer to stop receiving messages
+        # Messages will remain in the queue
+        if self.channel and hasattr(self.channel, "_consumers"):
+            # Store consumer tags to cancel them
+            consumer_tags = (
+                list(self.channel._consumers.keys())
+                if hasattr(self.channel, "_consumers")
+                else []
+            )
+            for tag in consumer_tags:
+                try:
+                    await self.channel.cancel(tag)
+                    self.logger.info("consumer_cancelled", consumer_tag=tag)
+                except Exception as e:
+                    self.logger.error(
+                        "consumer_cancel_failed", consumer_tag=tag, error=str(e)
+                    )
+
+        self.logger.info(
+            "event_consumption_paused",
+            message="Events will queue but not be processed",
+        )
+
+    async def resume_consumption(self) -> None:
+        """
+        Resume event consumption.
+
+        Starts processing events from the queue again.
+        """
+        if not self._paused:
+            self.logger.warning("event_consumption_not_paused")
+            return
+
+        self._paused = False
+
+        # Restart consuming by calling start_consuming again
+        # This will re-bind to the queue and start processing
+        try:
+            await self.start_consuming()
+            self.logger.info("event_consumption_resumed")
+        except Exception as e:
+            self.logger.error("event_consumption_resume_failed", error=str(e))
+            raise
+
+
+# Initialize RabbitMQ service with pause/resume capabilities
+rabbitmq_service = PausableRabbitMQService(
+    service_name="read-model-updater", logger=logger
+)
 
 
 # ==================== Helpers ====================
@@ -93,6 +184,13 @@ def handle_nucleo_updated(event_data: Dict[str, Any]):
             nucleo.abbreviation = event_data["abbreviation"]
         nucleo.updated_at = datetime.utcnow()
 
+        # Rebuild affected projections
+        db.flush()
+        courses = db.query(Course.course_id).filter(Course.nucleo_id == nucleo_id).all()
+        for (course_id,) in courses:
+            rebuild_all_teams_for_course(db, course_id)
+            rebuild_all_students_for_course(db, course_id)
+
 
 @rabbitmq_service.event_handler(RoutingKeys.NUCLEO_DELETED)
 def handle_nucleo_deleted(event_data: Dict[str, Any]):
@@ -145,6 +243,11 @@ def handle_course_updated(event_data: Dict[str, Any]):
         if "nucleo_id" in event_data:
             course.nucleo_id = uuid.UUID(event_data["nucleo_id"])
         course.updated_at = datetime.utcnow()
+
+        # Rebuild affected projections
+        db.flush()
+        rebuild_all_teams_for_course(db, course_id)
+        rebuild_all_students_for_course(db, course_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.COURSE_DELETED)
@@ -278,6 +381,10 @@ def handle_modality_updated(event_data: Dict[str, Any]):
         if "modality_type_id" in event_data:
             modality.modality_type_id = uuid.UUID(event_data["modality_type_id"])
         modality.updated_at = datetime.utcnow()
+        db.flush()
+        # Rebuild affected projections
+        rebuild_all_teams_for_modality(db, modality_id)
+        rebuild_all_tournaments_for_modality(db, modality_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.MODALITY_DELETED)
@@ -318,6 +425,8 @@ def handle_student_created(event_data: Dict[str, Any]):
             is_member=event_data.get("is_member", False),
         )
         db.add(student)
+        db.flush()
+        rebuild_student_projection(db, student_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.STUDENT_UPDATED)
@@ -342,6 +451,8 @@ def handle_student_updated(event_data: Dict[str, Any]):
         if "is_member" in event_data:
             student.is_member = event_data["is_member"]
         student.updated_at = datetime.utcnow()
+        db.flush()
+        rebuild_student_projection(db, student_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.STUDENT_DELETED)
@@ -358,6 +469,8 @@ def handle_student_deleted(event_data: Dict[str, Any]):
             logger.warning("student_not_found", student_id=str(student_id))
             return
         student.deleted_at = datetime.utcnow()
+        db.flush()
+        rebuild_student_projection(db, student_id)
 
 
 # ==================== Staff Events ====================
@@ -430,6 +543,8 @@ def handle_team_created(event_data: Dict[str, Any]):
             name=event_data["name"],
         )
         db.add(team)
+        db.flush()
+        rebuild_team_projection(db, team_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.TEAM_UPDATED)
@@ -450,6 +565,8 @@ def handle_team_updated(event_data: Dict[str, Any]):
         if "course_id" in event_data:
             team.course_id = uuid.UUID(event_data["course_id"])
         team.updated_at = datetime.utcnow()
+        db.flush()
+        rebuild_team_projection(db, team_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.TEAM_DELETED)
@@ -464,6 +581,8 @@ def handle_team_deleted(event_data: Dict[str, Any]):
             logger.warning("team_not_found", team_id=str(team_id))
             return
         team.deleted_at = datetime.utcnow()
+        db.flush()
+        rebuild_team_projection(db, team_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.TEAM_PLAYER_ADDED)
@@ -484,6 +603,10 @@ def handle_team_player_added(event_data: Dict[str, Any]):
             student_id=student_id,
         )
         db.add(team_player)
+        db.flush()
+        # Rebuild both team and student projections
+        rebuild_team_projection(db, team_id)
+        rebuild_student_projection(db, student_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.TEAM_PLAYER_REMOVED)
@@ -516,6 +639,10 @@ def handle_team_player_removed(event_data: Dict[str, Any]):
             )
             return
         team_player.removed_at = datetime.utcnow()
+        db.flush()
+        # Rebuild both team and student projections
+        rebuild_team_projection(db, team_id)
+        rebuild_student_projection(db, student_id)
 
 
 # ==================== Tournament Events ====================
@@ -540,6 +667,8 @@ def handle_tournament_created(event_data: Dict[str, Any]):
             status=event_data["status"],
         )
         db.add(tournament)
+        db.flush()
+        rebuild_tournament_projection(db, tournament_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_UPDATED)
@@ -568,6 +697,8 @@ def handle_tournament_updated(event_data: Dict[str, Any]):
         if "status" in event_data:
             tournament.status = event_data["status"]
         tournament.updated_at = datetime.utcnow()
+        db.flush()
+        rebuild_tournament_projection(db, tournament_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_DELETED)
@@ -602,6 +733,8 @@ def handle_tournament_deleted(event_data: Dict[str, Any]):
             Match.tournament_id == tournament_id,
             Match.deleted_at.is_(None),
         ).update({"deleted_at": now})
+        db.flush()
+        rebuild_tournament_projection(db, tournament_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_FINISHED)
@@ -627,6 +760,8 @@ def handle_tournament_finished(event_data: Dict[str, Any]):
         tournament.status = "finished"
         tournament.finished_at = now
         tournament.updated_at = now
+        db.flush()
+        rebuild_tournament_projection(db, tournament_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_COMPETITOR_ADDED)
@@ -647,6 +782,10 @@ def handle_tournament_competitor_added(event_data: Dict[str, Any]):
             competitor_entity_id=uuid.UUID(event_data["competitor_entity_id"]),
         )
         db.add(competitor)
+        db.flush()
+        # Rebuild tournament projection and standings
+        rebuild_tournament_projection(db, tournament_id)
+        rebuild_tournament_standings(db, tournament_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_COMPETITOR_DELETED)
@@ -682,6 +821,10 @@ def handle_tournament_competitor_deleted(event_data: Dict[str, Any]):
             )
             return
         competitor.deleted_at = datetime.utcnow()
+        db.flush()
+        # Rebuild tournament projection and standings
+        rebuild_tournament_projection(db, tournament_id)
+        rebuild_tournament_standings(db, tournament_id)
 
 
 # ==================== Match Events ====================
@@ -718,6 +861,11 @@ def handle_match_created(event_data: Dict[str, Any]):
             )
             db.add(participant)
 
+        db.flush()
+        # Rebuild match projection and tournament projection (for match count)
+        rebuild_match_projection(db, match_id)
+        rebuild_tournament_projection(db, match.tournament_id)
+
 
 @rabbitmq_service.event_handler(RoutingKeys.MATCH_UPDATED)
 def handle_match_updated(event_data: Dict[str, Any]):
@@ -735,8 +883,18 @@ def handle_match_updated(event_data: Dict[str, Any]):
         if "start_time" in event_data:
             match.start_time = _parse_dt(event_data["start_time"])
         if "status" in event_data:
+            old_status = match.status
             match.status = MatchStatus(event_data["status"])
+            # If match is newly completed, rebuild standings
+            if old_status != MatchStatus.COMPLETED and match.status in [
+                MatchStatus.COMPLETED,
+                MatchStatus.FINISHED,
+            ]:
+                db.flush()
+                rebuild_tournament_standings(db, match.tournament_id)
         match.updated_at = datetime.utcnow()
+        db.flush()
+        rebuild_match_projection(db, match_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.MATCH_DELETED)
@@ -754,11 +912,16 @@ def handle_match_deleted(event_data: Dict[str, Any]):
             logger.warning("match_not_found", match_id=str(match_id))
             return
         now = datetime.utcnow()
+        tournament_id = match.tournament_id
         match.deleted_at = now
         db.query(MatchParticipant).filter(
             MatchParticipant.match_id == match_id,
             MatchParticipant.removed_at.is_(None),
         ).update({"removed_at": now})
+        db.flush()
+        # Rebuild match projection and tournament projection (for match count)
+        rebuild_match_projection(db, match_id)
+        rebuild_tournament_projection(db, tournament_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.MATCH_PARTICIPANT_ADDED)
@@ -781,6 +944,8 @@ def handle_match_participant_added(event_data: Dict[str, Any]):
             participant_entity_id=uuid.UUID(event_data["participant_entity_id"]),
         )
         db.add(participant)
+        db.flush()
+        rebuild_match_projection(db, match_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.MATCH_PARTICIPANT_REMOVED)
@@ -813,6 +978,8 @@ def handle_match_participant_removed(event_data: Dict[str, Any]):
             )
             return
         participant.removed_at = datetime.utcnow()
+        db.flush()
+        rebuild_match_projection(db, match_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.MATCH_RESULT_UPDATED)
@@ -855,6 +1022,13 @@ def handle_match_result_updated(event_data: Dict[str, Any]):
                     results_metadata=result_data.get("results_metadata"),
                 )
                 db.add(result)
+
+        db.flush()
+        # Rebuild match projection and tournament standings
+        match = db.query(Match).filter(Match.match_id == match_id).first()
+        if match:
+            rebuild_match_projection(db, match_id)
+            rebuild_tournament_standings(db, match.tournament_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.MATCH_LINEUP_ASSIGNED)
@@ -917,6 +1091,8 @@ def handle_match_comment_added(event_data: Dict[str, Any]):
             message=event_data["message"],
         )
         db.add(comment)
+        db.flush()
+        rebuild_match_projection(db, match_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.MATCH_COMMENT_DELETED)
@@ -944,3 +1120,5 @@ def handle_match_comment_deleted(event_data: Dict[str, Any]):
             logger.warning("match_comment_not_found", comment_id=str(comment_id))
             return
         comment.deleted_at = datetime.now()
+        db.flush()
+        rebuild_match_projection(db, match_id)
