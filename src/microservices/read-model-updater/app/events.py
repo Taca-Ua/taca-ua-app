@@ -33,6 +33,17 @@ from .models import (
     Tournament,
     TournamentCompetitor,
 )
+from .utils import (
+    rebuild_all_students_for_course,
+    rebuild_all_teams_for_course,
+    rebuild_all_teams_for_modality,
+    rebuild_all_tournaments_for_modality,
+    rebuild_match_projection,
+    rebuild_student_projection,
+    rebuild_team_projection,
+    rebuild_tournament_projection,
+    rebuild_tournament_standings,
+)
 
 
 class PausableRabbitMQService(RabbitMQService):
@@ -173,6 +184,13 @@ def handle_nucleo_updated(event_data: Dict[str, Any]):
             nucleo.abbreviation = event_data["abbreviation"]
         nucleo.updated_at = datetime.utcnow()
 
+        # Rebuild affected projections
+        db.flush()
+        courses = db.query(Course.course_id).filter(Course.nucleo_id == nucleo_id).all()
+        for (course_id,) in courses:
+            rebuild_all_teams_for_course(db, course_id)
+            rebuild_all_students_for_course(db, course_id)
+
 
 @rabbitmq_service.event_handler(RoutingKeys.NUCLEO_DELETED)
 def handle_nucleo_deleted(event_data: Dict[str, Any]):
@@ -225,6 +243,11 @@ def handle_course_updated(event_data: Dict[str, Any]):
         if "nucleo_id" in event_data:
             course.nucleo_id = uuid.UUID(event_data["nucleo_id"])
         course.updated_at = datetime.utcnow()
+
+        # Rebuild affected projections
+        db.flush()
+        rebuild_all_teams_for_course(db, course_id)
+        rebuild_all_students_for_course(db, course_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.COURSE_DELETED)
@@ -358,6 +381,10 @@ def handle_modality_updated(event_data: Dict[str, Any]):
         if "modality_type_id" in event_data:
             modality.modality_type_id = uuid.UUID(event_data["modality_type_id"])
         modality.updated_at = datetime.utcnow()
+        db.flush()
+        # Rebuild affected projections
+        rebuild_all_teams_for_modality(db, modality_id)
+        rebuild_all_tournaments_for_modality(db, modality_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.MODALITY_DELETED)
@@ -398,6 +425,8 @@ def handle_student_created(event_data: Dict[str, Any]):
             is_member=event_data.get("is_member", False),
         )
         db.add(student)
+        db.flush()
+        rebuild_student_projection(db, student_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.STUDENT_UPDATED)
@@ -422,6 +451,8 @@ def handle_student_updated(event_data: Dict[str, Any]):
         if "is_member" in event_data:
             student.is_member = event_data["is_member"]
         student.updated_at = datetime.utcnow()
+        db.flush()
+        rebuild_student_projection(db, student_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.STUDENT_DELETED)
@@ -438,6 +469,8 @@ def handle_student_deleted(event_data: Dict[str, Any]):
             logger.warning("student_not_found", student_id=str(student_id))
             return
         student.deleted_at = datetime.utcnow()
+        db.flush()
+        rebuild_student_projection(db, student_id)
 
 
 # ==================== Staff Events ====================
@@ -510,6 +543,8 @@ def handle_team_created(event_data: Dict[str, Any]):
             name=event_data["name"],
         )
         db.add(team)
+        db.flush()
+        rebuild_team_projection(db, team_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.TEAM_UPDATED)
@@ -530,6 +565,8 @@ def handle_team_updated(event_data: Dict[str, Any]):
         if "course_id" in event_data:
             team.course_id = uuid.UUID(event_data["course_id"])
         team.updated_at = datetime.utcnow()
+        db.flush()
+        rebuild_team_projection(db, team_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.TEAM_DELETED)
@@ -544,6 +581,8 @@ def handle_team_deleted(event_data: Dict[str, Any]):
             logger.warning("team_not_found", team_id=str(team_id))
             return
         team.deleted_at = datetime.utcnow()
+        db.flush()
+        rebuild_team_projection(db, team_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.TEAM_PLAYER_ADDED)
@@ -564,6 +603,10 @@ def handle_team_player_added(event_data: Dict[str, Any]):
             student_id=student_id,
         )
         db.add(team_player)
+        db.flush()
+        # Rebuild both team and student projections
+        rebuild_team_projection(db, team_id)
+        rebuild_student_projection(db, student_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.TEAM_PLAYER_REMOVED)
@@ -596,6 +639,10 @@ def handle_team_player_removed(event_data: Dict[str, Any]):
             )
             return
         team_player.removed_at = datetime.utcnow()
+        db.flush()
+        # Rebuild both team and student projections
+        rebuild_team_projection(db, team_id)
+        rebuild_student_projection(db, student_id)
 
 
 # ==================== Tournament Events ====================
@@ -620,6 +667,8 @@ def handle_tournament_created(event_data: Dict[str, Any]):
             status=event_data["status"],
         )
         db.add(tournament)
+        db.flush()
+        rebuild_tournament_projection(db, tournament_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_UPDATED)
@@ -648,6 +697,8 @@ def handle_tournament_updated(event_data: Dict[str, Any]):
         if "status" in event_data:
             tournament.status = event_data["status"]
         tournament.updated_at = datetime.utcnow()
+        db.flush()
+        rebuild_tournament_projection(db, tournament_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_DELETED)
@@ -682,6 +733,8 @@ def handle_tournament_deleted(event_data: Dict[str, Any]):
             Match.tournament_id == tournament_id,
             Match.deleted_at.is_(None),
         ).update({"deleted_at": now})
+        db.flush()
+        rebuild_tournament_projection(db, tournament_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_FINISHED)
@@ -707,6 +760,8 @@ def handle_tournament_finished(event_data: Dict[str, Any]):
         tournament.status = "finished"
         tournament.finished_at = now
         tournament.updated_at = now
+        db.flush()
+        rebuild_tournament_projection(db, tournament_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_COMPETITOR_ADDED)
@@ -727,6 +782,10 @@ def handle_tournament_competitor_added(event_data: Dict[str, Any]):
             competitor_entity_id=uuid.UUID(event_data["competitor_entity_id"]),
         )
         db.add(competitor)
+        db.flush()
+        # Rebuild tournament projection and standings
+        rebuild_tournament_projection(db, tournament_id)
+        rebuild_tournament_standings(db, tournament_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_COMPETITOR_DELETED)
@@ -762,6 +821,10 @@ def handle_tournament_competitor_deleted(event_data: Dict[str, Any]):
             )
             return
         competitor.deleted_at = datetime.utcnow()
+        db.flush()
+        # Rebuild tournament projection and standings
+        rebuild_tournament_projection(db, tournament_id)
+        rebuild_tournament_standings(db, tournament_id)
 
 
 # ==================== Match Events ====================
@@ -798,6 +861,11 @@ def handle_match_created(event_data: Dict[str, Any]):
             )
             db.add(participant)
 
+        db.flush()
+        # Rebuild match projection and tournament projection (for match count)
+        rebuild_match_projection(db, match_id)
+        rebuild_tournament_projection(db, match.tournament_id)
+
 
 @rabbitmq_service.event_handler(RoutingKeys.MATCH_UPDATED)
 def handle_match_updated(event_data: Dict[str, Any]):
@@ -815,8 +883,18 @@ def handle_match_updated(event_data: Dict[str, Any]):
         if "start_time" in event_data:
             match.start_time = _parse_dt(event_data["start_time"])
         if "status" in event_data:
+            old_status = match.status
             match.status = MatchStatus(event_data["status"])
+            # If match is newly completed, rebuild standings
+            if old_status != MatchStatus.COMPLETED and match.status in [
+                MatchStatus.COMPLETED,
+                MatchStatus.FINISHED,
+            ]:
+                db.flush()
+                rebuild_tournament_standings(db, match.tournament_id)
         match.updated_at = datetime.utcnow()
+        db.flush()
+        rebuild_match_projection(db, match_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.MATCH_DELETED)
@@ -834,11 +912,16 @@ def handle_match_deleted(event_data: Dict[str, Any]):
             logger.warning("match_not_found", match_id=str(match_id))
             return
         now = datetime.utcnow()
+        tournament_id = match.tournament_id
         match.deleted_at = now
         db.query(MatchParticipant).filter(
             MatchParticipant.match_id == match_id,
             MatchParticipant.removed_at.is_(None),
         ).update({"removed_at": now})
+        db.flush()
+        # Rebuild match projection and tournament projection (for match count)
+        rebuild_match_projection(db, match_id)
+        rebuild_tournament_projection(db, tournament_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.MATCH_PARTICIPANT_ADDED)
@@ -861,6 +944,8 @@ def handle_match_participant_added(event_data: Dict[str, Any]):
             participant_entity_id=uuid.UUID(event_data["participant_entity_id"]),
         )
         db.add(participant)
+        db.flush()
+        rebuild_match_projection(db, match_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.MATCH_PARTICIPANT_REMOVED)
@@ -893,6 +978,8 @@ def handle_match_participant_removed(event_data: Dict[str, Any]):
             )
             return
         participant.removed_at = datetime.utcnow()
+        db.flush()
+        rebuild_match_projection(db, match_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.MATCH_RESULT_UPDATED)
@@ -935,6 +1022,13 @@ def handle_match_result_updated(event_data: Dict[str, Any]):
                     results_metadata=result_data.get("results_metadata"),
                 )
                 db.add(result)
+
+        db.flush()
+        # Rebuild match projection and tournament standings
+        match = db.query(Match).filter(Match.match_id == match_id).first()
+        if match:
+            rebuild_match_projection(db, match_id)
+            rebuild_tournament_standings(db, match.tournament_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.MATCH_LINEUP_ASSIGNED)
@@ -997,6 +1091,8 @@ def handle_match_comment_added(event_data: Dict[str, Any]):
             message=event_data["message"],
         )
         db.add(comment)
+        db.flush()
+        rebuild_match_projection(db, match_id)
 
 
 @rabbitmq_service.event_handler(RoutingKeys.MATCH_COMMENT_DELETED)
@@ -1024,3 +1120,5 @@ def handle_match_comment_deleted(event_data: Dict[str, Any]):
             logger.warning("match_comment_not_found", comment_id=str(comment_id))
             return
         comment.deleted_at = datetime.now()
+        db.flush()
+        rebuild_match_projection(db, match_id)
