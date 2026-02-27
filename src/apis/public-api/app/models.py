@@ -6,10 +6,18 @@ These are projection views updated by the Read Model Updater service.
 Public API only reads from these views, never writes.
 """
 
-from taca_models import GamesView, RankingView, TournamentView
+from taca_models import (
+    MatchDetailView,
+    StudentDetailView,
+    TeamDetailView,
+    TournamentDetailView,
+    TournamentStandingsView,
+)
 
 __all__ = [
-    "GamesView",
-    "RankingView",
-    "TournamentView",
+    "TeamDetailView",
+    "StudentDetailView",
+    "TournamentDetailView",
+    "MatchDetailView",
+    "TournamentStandingsView",
 ]

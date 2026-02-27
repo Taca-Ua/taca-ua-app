@@ -1,11 +1,22 @@
+"""
+Public API for TACA competition data.
+
+This API exposes read-only access to materialized views containing
+aggregated competition data from multiple microservices.
+"""
+
 from contextlib import asynccontextmanager
+from datetime import datetime
+from typing import Optional
+from uuid import UUID
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, HTTPException, Query
 from prometheus_fastapi_instrumentator import Instrumentator
+from sqlalchemy.orm import Session
 from taca_logging import StructlogMiddleware, configure_logging, get_logger
-from taca_messaging.rabbitmq_service import RabbitMQService
 
-from .routes import all_routers
+from . import crud, schemas
+from .database import check_db_connection, get_db
 
 # Configure structured logging
 configure_logging(
@@ -14,18 +25,23 @@ configure_logging(
 )
 logger = get_logger("public-api")
 
-# Register event handlers
-rabbitmq_service = RabbitMQService(service_name="public-api")
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Start RabbitMQ consumer
-    await rabbitmq_service.start_consuming()
-    logger.info("service_started", action="startup")
+    """Application lifespan manager."""
+    # Startup
+    logger.info("service_starting", action="startup")
+
+    # Check database connection
+    if check_db_connection():
+        logger.info("database_connected", status="success")
+    else:
+        logger.error("database_connection_failed", status="error")
+
+    logger.info("service_started", status="ready")
     yield
-    # Shutdown: Disconnect RabbitMQ
-    await rabbitmq_service.disconnect()
+
+    # Shutdown
     logger.info("service_stopped", action="shutdown")
 
 
@@ -42,21 +58,467 @@ app = FastAPI(
 # Add structured logging middleware
 app.add_middleware(StructlogMiddleware)
 
-# Include all routers
-for router in all_routers:
-    app.include_router(router)
-
 # Prometheus metrics endpoint
 Instrumentator().instrument(app).expose(app)
 
 
-@app.get("/")
+# ==================== Health & Root ====================
+
+
+@app.get("/", response_model=schemas.HealthResponse)
 def read_root():
-    return {"Service": "Public API"}
+    """Root endpoint with service information."""
+    return schemas.HealthResponse(
+        status="healthy",
+        service="Public API",
+        timestamp=datetime.utcnow(),
+    )
 
 
-@app.post("/send-event")
-async def send_event(msg: str):
-    await rabbitmq_service.publish_event("test.event", {"message": msg})
-    logger.info("event_sent", event_type="test.event", message=msg)
-    return {"status": "sent"}
+@app.get("/health", response_model=schemas.HealthResponse)
+def health_check(db: Session = Depends(get_db)):
+    """
+    Health check endpoint.
+
+    Verifies that the API is running and can connect to the database.
+    """
+    try:
+        # Test database connection
+        db.execute("SELECT 1")
+        logger.info("health_check", status="healthy")
+        return schemas.HealthResponse(
+            status="healthy",
+            service="Public API",
+            timestamp=datetime.utcnow(),
+        )
+    except Exception as e:
+        logger.error("health_check", status="unhealthy", error=str(e))
+        raise HTTPException(status_code=503, detail="Service unavailable")
+
+
+# ==================== Team Endpoints ====================
+
+
+@app.get(
+    "/teams",
+    response_model=schemas.TeamDetailList,
+    summary="List all teams",
+    description="Get a paginated list of teams with optional filters",
+)
+def list_teams(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(50, ge=1, le=100, description="Items per page"),
+    course_id: Optional[UUID] = Query(None, description="Filter by course ID"),
+    nucleo_id: Optional[UUID] = Query(None, description="Filter by nucleo ID"),
+    modality_id: Optional[UUID] = Query(None, description="Filter by modality ID"),
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve a list of teams with pagination and optional filters.
+
+    - **page**: Page number (starts at 1)
+    - **page_size**: Number of items per page (max 100)
+    - **course_id**: Optional filter by course
+    - **nucleo_id**: Optional filter by nucleo
+    - **modality_id**: Optional filter by modality
+    """
+    skip = (page - 1) * page_size
+    teams, total = crud.get_teams(
+        db=db,
+        skip=skip,
+        limit=page_size,
+        course_id=course_id,
+        nucleo_id=nucleo_id,
+        modality_id=modality_id,
+    )
+
+    logger.info(
+        "teams_listed",
+        total=total,
+        page=page,
+        page_size=page_size,
+        filters={
+            "course_id": str(course_id) if course_id else None,
+            "nucleo_id": str(nucleo_id) if nucleo_id else None,
+            "modality_id": str(modality_id) if modality_id else None,
+        },
+    )
+
+    return schemas.TeamDetailList(
+        items=teams,
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+
+@app.get(
+    "/teams/{team_id}",
+    response_model=schemas.TeamDetail,
+    summary="Get team by ID",
+    description="Get detailed information about a specific team",
+)
+def get_team(
+    team_id: UUID,
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve detailed information about a specific team.
+
+    - **team_id**: Unique identifier of the team
+    """
+    team = crud.get_team_by_id(db=db, team_id=team_id)
+    if not team:
+        logger.warning("team_not_found", team_id=str(team_id))
+        raise HTTPException(status_code=404, detail="Team not found")
+
+    logger.info("team_retrieved", team_id=str(team_id))
+    return team
+
+
+# ==================== Student Endpoints ====================
+
+
+@app.get(
+    "/students",
+    response_model=schemas.StudentDetailList,
+    summary="List all students",
+    description="Get a paginated list of students with optional filters",
+)
+def list_students(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(50, ge=1, le=100, description="Items per page"),
+    course_id: Optional[UUID] = Query(None, description="Filter by course ID"),
+    nucleo_id: Optional[UUID] = Query(None, description="Filter by nucleo ID"),
+    is_member: Optional[bool] = Query(None, description="Filter by membership status"),
+    search: Optional[str] = Query(None, description="Search in student name or number"),
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve a list of students with pagination and optional filters.
+
+    - **page**: Page number (starts at 1)
+    - **page_size**: Number of items per page (max 100)
+    - **course_id**: Optional filter by course
+    - **nucleo_id**: Optional filter by nucleo
+    - **is_member**: Optional filter by membership status
+    - **search**: Optional search in name or student number
+    """
+    skip = (page - 1) * page_size
+    students, total = crud.get_students(
+        db=db,
+        skip=skip,
+        limit=page_size,
+        course_id=course_id,
+        nucleo_id=nucleo_id,
+        is_member=is_member,
+        search=search,
+    )
+
+    logger.info(
+        "students_listed",
+        total=total,
+        page=page,
+        page_size=page_size,
+        filters={
+            "course_id": str(course_id) if course_id else None,
+            "nucleo_id": str(nucleo_id) if nucleo_id else None,
+            "is_member": is_member,
+            "search": search,
+        },
+    )
+
+    return schemas.StudentDetailList(
+        items=students,
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+
+@app.get(
+    "/students/{student_id}",
+    response_model=schemas.StudentDetail,
+    summary="Get student by ID",
+    description="Get detailed information about a specific student",
+)
+def get_student(
+    student_id: UUID,
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve detailed information about a specific student.
+
+    - **student_id**: Unique identifier of the student
+    """
+    student = crud.get_student_by_id(db=db, student_id=student_id)
+    if not student:
+        logger.warning("student_not_found", student_id=str(student_id))
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    logger.info("student_retrieved", student_id=str(student_id))
+    return student
+
+
+@app.get(
+    "/students/by-number/{student_number}",
+    response_model=schemas.StudentDetail,
+    summary="Get student by number",
+    description="Get detailed information about a student by their student number",
+)
+def get_student_by_number(
+    student_number: str,
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve detailed information about a student by their student number.
+
+    - **student_number**: Student number
+    """
+    student = crud.get_student_by_number(db=db, student_number=student_number)
+    if not student:
+        logger.warning("student_not_found", student_number=student_number)
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    logger.info("student_retrieved", student_number=student_number)
+    return student
+
+
+# ==================== Tournament Endpoints ====================
+
+
+@app.get(
+    "/tournaments",
+    response_model=schemas.TournamentDetailList,
+    summary="List all tournaments",
+    description="Get a paginated list of tournaments with optional filters",
+)
+def list_tournaments(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(50, ge=1, le=100, description="Items per page"),
+    modality_id: Optional[UUID] = Query(None, description="Filter by modality ID"),
+    status: Optional[str] = Query(None, description="Filter by tournament status"),
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve a list of tournaments with pagination and optional filters.
+
+    - **page**: Page number (starts at 1)
+    - **page_size**: Number of items per page (max 100)
+    - **modality_id**: Optional filter by modality
+    - **status**: Optional filter by status (draft, active, finished, cancelled)
+    """
+    skip = (page - 1) * page_size
+    tournaments, total = crud.get_tournaments(
+        db=db,
+        skip=skip,
+        limit=page_size,
+        modality_id=modality_id,
+        status=status,
+    )
+
+    logger.info(
+        "tournaments_listed",
+        total=total,
+        page=page,
+        page_size=page_size,
+        filters={
+            "modality_id": str(modality_id) if modality_id else None,
+            "status": status,
+        },
+    )
+
+    return schemas.TournamentDetailList(
+        items=tournaments,
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+
+@app.get(
+    "/tournaments/{tournament_id}",
+    response_model=schemas.TournamentDetail,
+    summary="Get tournament by ID",
+    description="Get detailed information about a specific tournament",
+)
+def get_tournament(
+    tournament_id: UUID,
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve detailed information about a specific tournament.
+
+    - **tournament_id**: Unique identifier of the tournament
+    """
+    tournament = crud.get_tournament_by_id(db=db, tournament_id=tournament_id)
+    if not tournament:
+        logger.warning("tournament_not_found", tournament_id=str(tournament_id))
+        raise HTTPException(status_code=404, detail="Tournament not found")
+
+    logger.info("tournament_retrieved", tournament_id=str(tournament_id))
+    return tournament
+
+
+@app.get(
+    "/tournaments/{tournament_id}/standings",
+    response_model=schemas.TournamentStandingsList,
+    summary="Get tournament standings",
+    description="Get the current standings/rankings for a tournament",
+)
+def get_tournament_standings(
+    tournament_id: UUID,
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(50, ge=1, le=100, description="Items per page"),
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve the current standings for a specific tournament.
+
+    Results are ordered by rank (ascending).
+
+    - **tournament_id**: Unique identifier of the tournament
+    - **page**: Page number (starts at 1)
+    - **page_size**: Number of items per page (max 100)
+    """
+    # First check if tournament exists
+    tournament = crud.get_tournament_by_id(db=db, tournament_id=tournament_id)
+    if not tournament:
+        logger.warning("tournament_not_found", tournament_id=str(tournament_id))
+        raise HTTPException(status_code=404, detail="Tournament not found")
+
+    skip = (page - 1) * page_size
+    standings, total = crud.get_tournament_standings(
+        db=db,
+        tournament_id=tournament_id,
+        skip=skip,
+        limit=page_size,
+    )
+
+    logger.info(
+        "tournament_standings_retrieved",
+        tournament_id=str(tournament_id),
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+    return schemas.TournamentStandingsList(
+        items=standings,
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+
+# ==================== Match Endpoints ====================
+
+
+@app.get(
+    "/matches",
+    response_model=schemas.MatchDetailList,
+    summary="List all matches",
+    description="Get a paginated list of matches with optional filters",
+)
+def list_matches(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(50, ge=1, le=100, description="Items per page"),
+    tournament_id: Optional[UUID] = Query(None, description="Filter by tournament ID"),
+    status: Optional[str] = Query(None, description="Filter by match status"),
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve a list of matches with pagination and optional filters.
+
+    - **page**: Page number (starts at 1)
+    - **page_size**: Number of items per page (max 100)
+    - **tournament_id**: Optional filter by tournament
+    - **status**: Optional filter by status (scheduled, in_progress, completed, finished, cancelled)
+    """
+    skip = (page - 1) * page_size
+    matches, total = crud.get_matches(
+        db=db,
+        skip=skip,
+        limit=page_size,
+        tournament_id=tournament_id,
+        status=status,
+    )
+
+    logger.info(
+        "matches_listed",
+        total=total,
+        page=page,
+        page_size=page_size,
+        filters={
+            "tournament_id": str(tournament_id) if tournament_id else None,
+            "status": status,
+        },
+    )
+
+    return schemas.MatchDetailList(
+        items=matches,
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+
+@app.get(
+    "/matches/{match_id}",
+    response_model=schemas.MatchDetail,
+    summary="Get match by ID",
+    description="Get detailed information about a specific match",
+)
+def get_match(
+    match_id: UUID,
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve detailed information about a specific match.
+
+    Includes participants, results, and statistics.
+
+    - **match_id**: Unique identifier of the match
+    """
+    match = crud.get_match_by_id(db=db, match_id=match_id)
+    if not match:
+        logger.warning("match_not_found", match_id=str(match_id))
+        raise HTTPException(status_code=404, detail="Match not found")
+
+    logger.info("match_retrieved", match_id=str(match_id))
+    return match
+
+
+# ==================== Competitor Standings Endpoint ====================
+
+
+@app.get(
+    "/competitors/{competitor_id}/standings",
+    response_model=list[schemas.TournamentStanding],
+    summary="Get competitor standings",
+    description="Get all tournament standings for a specific competitor (team or athlete)",
+)
+def get_competitor_standings(
+    competitor_id: UUID,
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve all tournament standings for a specific competitor.
+
+    This can be used to see all tournaments a team or athlete has participated in
+    and their performance across those tournaments.
+
+    - **competitor_id**: Unique identifier of the competitor (team_id or student_id)
+    """
+    standings = crud.get_standings_by_competitor(
+        db=db,
+        competitor_entity_id=competitor_id,
+    )
+
+    logger.info(
+        "competitor_standings_retrieved",
+        competitor_id=str(competitor_id),
+        count=len(standings),
+    )
+
+    return standings
