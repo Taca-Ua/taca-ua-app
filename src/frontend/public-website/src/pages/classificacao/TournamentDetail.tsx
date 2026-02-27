@@ -283,7 +283,7 @@ function TournamentDetailPage() {
                                   key={idx}
                                   className="px-3 py-1 bg-gray-100 rounded-full text-sm"
                                 >
-                                  {participant.name || participant.team_name || 'Participante'}
+                                  {participant.participant_name || 'Participante'}
                                 </span>
                               ))}
                             </div>

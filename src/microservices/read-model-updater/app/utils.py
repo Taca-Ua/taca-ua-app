@@ -284,11 +284,27 @@ def rebuild_match_projection(session: Session, match_id: UUID) -> None:
 
     participants = []
     for p in participants_data:
+        if p.participant_type == "team":
+            entity = (
+                session.query(Team)
+                .filter(Team.team_id == p.participant_entity_id)
+                .first()
+            )
+            participant_name = entity.name if entity else "Unknown Team"
+        else:  # athlete/student
+            entity = (
+                session.query(Student)
+                .filter(Student.student_id == p.participant_entity_id)
+                .first()
+            )
+            participant_name = entity.full_name if entity else "Unknown Athlete"
+
         participants.append(
             {
                 "participant_id": str(p.participant_id),
                 "participant_type": p.participant_type.value,
                 "participant_entity_id": str(p.participant_entity_id),
+                "participant_name": participant_name,
             }
         )
 
