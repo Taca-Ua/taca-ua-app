@@ -363,6 +363,11 @@ def rebuild_tournament_standings(session: Session, tournament_id: UUID) -> None:
     - TournamentCompetitor added/removed
     - Match completed
     """
+    # Always delete current standings before rebuild
+    session.query(TournamentStandingsView).filter(
+        TournamentStandingsView.tournament_id == tournament_id
+    ).delete()
+
     # Get all active competitors in the tournament
     competitors = (
         session.query(TournamentCompetitor)
@@ -374,10 +379,6 @@ def rebuild_tournament_standings(session: Session, tournament_id: UUID) -> None:
     )
 
     if not competitors:
-        # Delete all standings for this tournament if no competitors
-        session.query(TournamentStandingsView).filter(
-            TournamentStandingsView.tournament_id == tournament_id
-        ).delete()
         return
 
     # Get all completed matches for this tournament
