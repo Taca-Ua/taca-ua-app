@@ -18,9 +18,8 @@ from typing import Any, Dict, List
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from .dto import CompleteSnapshot
-from .logger import logger
-from .models import (
+from ..logger import logger
+from ..models import (
     Course,
     Match,
     MatchComment,
@@ -37,6 +36,7 @@ from .models import (
     Tournament,
     TournamentCompetitor,
 )
+from .dto import CompleteSnapshot
 
 
 class ProjectionRepository:
@@ -223,7 +223,13 @@ class ProjectionRepository:
             return 0
 
         for data in nucleos:
-            nucleo = Nucleo(**data)
+            nucleo = Nucleo(
+                nucleo_id=data["id"],
+                name=data["name"],
+                abbreviation=data["abbreviation"],
+                created_at=data.get("created_at"),
+                updated_at=data.get("updated_at"),
+            )
             self.db.add(nucleo)
 
         self.db.flush()
@@ -236,7 +242,14 @@ class ProjectionRepository:
             return 0
 
         for data in courses:
-            course = Course(**data)
+            course = Course(
+                course_id=data["id"],
+                nucleo_id=data["nucleo_id"],
+                name=data["name"],
+                abbreviation=data["abbreviation"],
+                created_at=data.get("created_at"),
+                updated_at=data.get("updated_at"),
+            )
             self.db.add(course)
 
         self.db.flush()
@@ -249,7 +262,14 @@ class ProjectionRepository:
             return 0
 
         for data in modality_types:
-            modality_type = ModalityType(**data)
+            modality_type = ModalityType(
+                modality_type_id=data["id"],
+                name=data["name"],
+                description=data["description"],
+                escaloes=data["escaloes"],
+                created_at=data.get("created_at"),
+                updated_at=data.get("updated_at"),
+            )
             self.db.add(modality_type)
 
         self.db.flush()
@@ -264,7 +284,13 @@ class ProjectionRepository:
             return 0
 
         for data in modalities:
-            modality = Modality(**data)
+            modality = Modality(
+                modality_id=data["id"],
+                modality_type_id=data["modality_type_id"],
+                name=data.get("name"),
+                created_at=data.get("created_at"),
+                updated_at=data.get("updated_at"),
+            )
             self.db.add(modality)
 
         self.db.flush()
@@ -277,7 +303,15 @@ class ProjectionRepository:
             return 0
 
         for data in students:
-            student = Student(**data)
+            student = Student(
+                student_id=data["id"],
+                course_id=data["course_id"],
+                student_number=data["student_number"],
+                full_name=data["full_name"],
+                is_member=data["is_member"],
+                created_at=data.get("created_at"),
+                updated_at=data.get("updated_at"),
+            )
             self.db.add(student)
 
         self.db.flush()
@@ -290,7 +324,14 @@ class ProjectionRepository:
             return 0
 
         for data in staff:
-            staff_member = Staff(**data)
+            staff_member = Staff(
+                staff_id=data["id"],
+                full_name=data["full_name"],
+                staff_number=data["staff_number"],
+                contact=data["contact"],
+                created_at=data.get("created_at"),
+                updated_at=data.get("updated_at"),
+            )
             self.db.add(staff_member)
 
         self.db.flush()
@@ -303,7 +344,14 @@ class ProjectionRepository:
             return 0
 
         for data in teams:
-            team = Team(**data)
+            team = Team(
+                team_id=data["id"],
+                modality_id=data["modality_id"],
+                course_id=data["course_id"],
+                name=data["name"],
+                created_at=data.get("created_at"),
+                updated_at=data.get("updated_at"),
+            )
             self.db.add(team)
 
         self.db.flush()
@@ -316,7 +364,11 @@ class ProjectionRepository:
             return 0
 
         for data in team_players:
-            team_player = TeamPlayer(**data)
+            # TeamPlayer has auto-increment id, so we don't pass it
+            team_player = TeamPlayer(
+                team_id=data["team_id"],
+                student_id=data["student_id"],
+            )
             self.db.add(team_player)
 
         self.db.flush()
@@ -331,7 +383,16 @@ class ProjectionRepository:
             return 0
 
         for data in tournaments:
-            tournament = Tournament(**data)
+            tournament = Tournament(
+                tournament_id=data["id"],
+                modality_id=data["modality_id"],
+                name=data["name"],
+                start_date=data["start_date"],
+                status=data["status"],
+                created_at=data.get("created_at"),
+                updated_at=data.get("updated_at"),
+                finished_at=data.get("finished_at"),
+            )
             self.db.add(tournament)
 
         self.db.flush()
@@ -344,7 +405,16 @@ class ProjectionRepository:
             return 0
 
         for data in competitors:
-            competitor = TournamentCompetitor(**data)
+            # Map team_id or athlete_id to competitor_entity_id
+            competitor_entity_id = data.get("team_id") or data.get("athlete_id")
+
+            competitor = TournamentCompetitor(
+                competitor_id=data["id"],
+                tournament_id=data["tournament_id"],
+                competitor_type=data["competitor_type"],
+                competitor_entity_id=competitor_entity_id,
+                added_at=data.get("created_at"),
+            )
             self.db.add(competitor)
 
         self.db.flush()
@@ -361,7 +431,16 @@ class ProjectionRepository:
         datetime_fields = ["start_time", "created_at", "updated_at", "deleted_at"]
         for data in matches:
             parsed_data = self._parse_datetime_fields(data, datetime_fields)
-            match = Match(**parsed_data)
+            match = Match(
+                match_id=parsed_data["match_id"],
+                tournament_id=parsed_data.get("tournament_id"),
+                location=parsed_data["location"],
+                status=parsed_data["status"],
+                start_time=parsed_data.get("start_time"),
+                created_at=parsed_data.get("created_at"),
+                updated_at=parsed_data.get("updated_at"),
+                deleted_at=parsed_data.get("deleted_at"),
+            )
             self.db.add(match)
 
         self.db.flush()
@@ -376,7 +455,15 @@ class ProjectionRepository:
         datetime_fields = ["added_at", "removed_at"]
         for data in participants:
             parsed_data = self._parse_datetime_fields(data, datetime_fields)
-            participant = MatchParticipant(**parsed_data)
+            # MatchParticipant has auto-increment id, so we don't pass it
+            participant = MatchParticipant(
+                match_id=parsed_data["match_id"],
+                participant_id=parsed_data["participant_id"],
+                participant_type=parsed_data["participant_type"],
+                participant_entity_id=parsed_data["participant_entity_id"],
+                added_at=parsed_data.get("added_at"),
+                removed_at=parsed_data.get("removed_at"),
+            )
             self.db.add(participant)
 
         self.db.flush()
@@ -393,7 +480,15 @@ class ProjectionRepository:
         datetime_fields = ["updated_at"]
         for data in results:
             parsed_data = self._parse_datetime_fields(data, datetime_fields)
-            result = MatchResult(**parsed_data)
+            # MatchResult has auto-increment id, so we don't pass it
+            result = MatchResult(
+                match_id=parsed_data["match_id"],
+                participant_id=parsed_data["participant_id"],
+                score=parsed_data.get("score"),
+                position=parsed_data.get("position"),
+                results_metadata=parsed_data.get("results_metadata"),
+                updated_at=parsed_data.get("updated_at"),
+            )
             self.db.add(result)
 
         self.db.flush()
@@ -408,7 +503,15 @@ class ProjectionRepository:
         datetime_fields = ["assigned_at"]
         for data in lineups:
             parsed_data = self._parse_datetime_fields(data, datetime_fields)
-            lineup = MatchLineup(**parsed_data)
+            # MatchLineup has auto-increment id, so we don't pass it
+            lineup = MatchLineup(
+                match_id=parsed_data["match_id"],
+                team_id=parsed_data["team_id"],
+                player_id=parsed_data["player_id"],
+                jersey_number=parsed_data["jersey_number"],
+                is_starter=parsed_data["is_starter"],
+                assigned_at=parsed_data.get("assigned_at"),
+            )
             self.db.add(lineup)
 
         self.db.flush()
@@ -423,7 +526,13 @@ class ProjectionRepository:
         datetime_fields = ["created_at", "deleted_at"]
         for data in comments:
             parsed_data = self._parse_datetime_fields(data, datetime_fields)
-            comment = MatchComment(**parsed_data)
+            comment = MatchComment(
+                comment_id=parsed_data["comment_id"],
+                match_id=parsed_data["match_id"],
+                message=parsed_data["message"],
+                created_at=parsed_data.get("created_at"),
+                deleted_at=parsed_data.get("deleted_at"),
+            )
             self.db.add(comment)
 
         self.db.flush()
@@ -437,28 +546,20 @@ class ProjectionRepository:
         This ensures that new inserts after rebuild don't conflict
         with existing IDs.
 
-        Note: This is PostgreSQL-specific. Adjust for other databases.
+        Note: Only needed for tables with auto-increment integer IDs.
+        Most tables use UUID primary keys and don't have sequences.
+        This is PostgreSQL-specific. Adjust for other databases.
         """
         logger.info("projection_reset_sequences_started")
 
         try:
-            # Get all tables with auto-increment IDs
+            # Only tables with auto-increment integer IDs need sequence resets
+            # Most tables use UUID primary keys which don't have sequences
             tables_with_sequences = [
-                ("public_read.nucleos", "id"),
-                ("public_read.courses", "id"),
-                ("public_read.modality_types", "id"),
-                ("public_read.modalities", "id"),
-                ("public_read.students", "id"),
-                ("public_read.staff", "id"),
-                ("public_read.teams", "id"),
                 ("public_read.team_players", "id"),
-                ("public_read.tournaments", "id"),
-                ("public_read.tournament_competitors", "id"),
-                ("public_read.matches", "id"),
                 ("public_read.match_participants", "id"),
                 ("public_read.match_results", "id"),
                 ("public_read.match_lineups", "id"),
-                ("public_read.match_comments", "id"),
             ]
 
             for table_name, id_column in tables_with_sequences:

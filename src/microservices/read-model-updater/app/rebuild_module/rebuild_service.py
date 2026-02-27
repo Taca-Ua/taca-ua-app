@@ -20,8 +20,8 @@ import time
 
 from sqlalchemy.orm import Session
 
+from ..logger import logger
 from .dto import CompleteSnapshot, RebuildResult
-from .logger import logger
 from .projection_repository import ProjectionRepository
 from .snapshot_client import SnapshotClient, SnapshotFetchError
 
@@ -295,7 +295,7 @@ class RebuildService:
         # This is useful for monitoring and debugging
 
         try:
-            from .models import Match, Modality, Student, Team, Tournament
+            from ..models import Match, Modality, Student, Team, Tournament
 
             match_count = self.db_session.query(Match).count()
             tournament_count = self.db_session.query(Tournament).count()

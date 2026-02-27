@@ -17,7 +17,8 @@ from typing import Any, Dict, Optional
 
 import httpx
 
-from .config import Config
+from ..config import Config
+from ..logger import logger
 from .dto import (
     CompleteSnapshot,
     MatchesSnapshot,
@@ -25,7 +26,6 @@ from .dto import (
     RankingSnapshot,
     TournamentSnapshot,
 )
-from .logger import logger
 
 
 class SnapshotFetchError(Exception):

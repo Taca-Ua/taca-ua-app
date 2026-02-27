@@ -18,7 +18,7 @@ from .config import Config
 from .database import get_db_session
 from .events import rabbitmq_service
 from .logger import logger
-from .rebuild_service import RebuildService
+from .rebuild_module.rebuild_service import RebuildService
 
 router = APIRouter(prefix="/internal", tags=["internal"])
 
