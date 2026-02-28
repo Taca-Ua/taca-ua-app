@@ -9,8 +9,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/shared/taca-messaging /tmp/taca-messaging
 RUN pip install --no-cache-dir /tmp/taca-messaging && rm -rf /tmp/taca-messaging
 
-
-COPY src/shared/ ./shared
 COPY src/microservices/ranking-service .
 
 # Run migrations and start the service

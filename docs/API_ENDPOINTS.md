@@ -46,8 +46,6 @@ A Competition API apenas **recebe comandos** (write-model), que depois sao proce
 
 **Prefixo base**: `/api/admin`
 
-⚠️ **Nota sobre autenticação**: Apenas a Competition API (Django) valida tokens Keycloak. Os microservices internos e a Public API **não** usam Keycloak — comunicam internamente via RabbitMQ ou são públicos.
-
 ---
 
 ## 1. Gestão de Utilizadores e Autenticação (RF1)
@@ -424,12 +422,11 @@ Response: Nova época criada com `status: "draft"`
 Usada por:
 
 * **Utilizadores públicos**
-* **Sem autenticação** (todos os endpoints são públicos)
+* **Sem autenticação**
 * Apenas **leitura** da *read-model store* (Postgres + Redis).
 
 **Prefixo**: `/api/public`
 Sem autenticação.
-✅ **Todos os endpoints são públicos** — não requerem autenticação nem tokens.
 
 ---
 

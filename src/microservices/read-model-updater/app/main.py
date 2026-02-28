@@ -1,6 +1,4 @@
-import sys
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -9,9 +7,6 @@ from taca_logging import StructlogMiddleware
 from .events import rabbitmq_service
 from .logger import logger
 from .rebuild_controller import router as rebuild_router
-
-# Add src directory to path for shared module imports
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
 
 @asynccontextmanager
@@ -48,10 +43,3 @@ def read_root():
         "version": "1.0.0",
         "description": "Maintains materialized views and provides read endpoints",
     }
-
-
-@app.get("/models")
-async def get_read_models():
-    """Get read models - internal microservice endpoint."""
-    logger.info("Read models retrieved")
-    return {"models": []}
