@@ -246,6 +246,16 @@ services:
       - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/keycloak
       - KEYCLOAK_REALM=taca-ua
       - KEYCLOAK_CLIENT_ID=api-client
+      # Domain Service URLs for Snapshot Fetching (Docker service name DNS)
+      - MATCHES_SERVICE_URL=http://matches-service:8000
+      - TOURNAMENT_SERVICE_URL=http://tournaments-service:8000
+      - MODALITIES_SERVICE_URL=http://modalities-service:8000
+      - RANKING_SERVICE_URL=http://ranking-service:8000
+      # Security token for internal rebuild endpoint
+      - INTERNAL_API_TOKEN=${INTERNAL_API_TOKEN:-change-me-in-production}
+      # Snapshot configuration
+      - SNAPSHOT_REQUEST_TIMEOUT=30
+      - SNAPSHOT_MAX_RETRIES=3
     depends_on:
       rabbitmq:
         condition: service_healthy

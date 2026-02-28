@@ -25,18 +25,23 @@ function Login() {
         backgroundImage: 'url("https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=2090")',
       }}
     >
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+      <div className="absolute inset-0 bg-black bg-opacity-40"></div>
 
-      <div className="relative z-10 bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl p-10 w-full max-w-md mx-4 text-center">
-        <div className="mb-8">
-          <h1 className="text-4xl font-black text-teal-600 tracking-tight">TaçaUa</h1>
-          <p className="text-gray-500 mt-2 font-medium">Portal de Administração</p>
-        </div>
+      <div className="relative z-10 bg-white rounded-lg shadow-2xl p-12 w-full max-w-xl mx-auto">
+        <h1 className="text-5xl font-bold text-center mb-8 text-gray-800">LOG IN</h1>
 
-        <div className="space-y-6">
-          <p className="text-sm text-gray-600">
-            Utilize as suas credenciais para acessar o painel de administração.
-          </p>
+        <div className="border-t border-gray-300 mb-8"></div>
+
+        <div className="grid grid-cols-2 gap-6 mb-8">
+          <button
+            onClick={() => navigate('/login/geral')}
+            className="bg-teal-500 hover:bg-teal-600 text-white rounded-lg p-8 transition-all duration-300 transform hover:scale-105 shadow-lg"
+          >
+            <div className="text-center">
+              <h2 className="text-2xl font-bold mb-2">Admin</h2>
+              <h3 className="text-2xl font-bold">Geral</h3>
+            </div>
+          </button>
 
           <button
             onClick={() => login()}
@@ -54,6 +59,7 @@ function Login() {
             <div className="flex-grow border-t border-gray-300"></div>
           </div>
 
+        <div className="text-center">
           <a
             href="/"
             className="text-sm text-teal-700 hover:text-teal-900 font-semibold transition-colors"

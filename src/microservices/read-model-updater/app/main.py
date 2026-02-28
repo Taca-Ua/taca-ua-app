@@ -8,6 +8,7 @@ from taca_logging import StructlogMiddleware
 
 from .events import rabbitmq_service
 from .logger import logger
+from .rebuild_controller import router as rebuild_router
 
 # Add src directory to path for shared module imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
@@ -33,6 +34,9 @@ app = FastAPI(
 
 # Add structured logging middleware
 app.add_middleware(StructlogMiddleware)
+
+# Include rebuild router for internal rebuild operations
+app.include_router(rebuild_router)
 
 Instrumentator().instrument(app).expose(app)  # Prometheus metrics endpoint
 

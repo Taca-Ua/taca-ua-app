@@ -77,7 +77,6 @@ const ModalidadeDetailEditModal = ({
         )}
 
         <div className="space-y-4">
-          {/* Name */}
           <div>
             <label className="block text-gray-700 font-medium mb-2">
               Nome <span className="text-red-500">*</span>
@@ -91,7 +90,6 @@ const ModalidadeDetailEditModal = ({
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
             />
           </div>
-          {/* Type */}
           <div>
             <label className="block text-gray-700 font-medium mb-2">
               Tipo <span className="text-red-500">*</span>
@@ -176,9 +174,9 @@ function ModalidadeDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50">
         <Sidebar />
-        <div className="flex justify-center items-center py-12">
+        <div className="flex-1 flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
         </div>
       </div>
@@ -188,19 +186,16 @@ function ModalidadeDetail() {
   if (!modality) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
 
-      {/* Content */}
-      <div className="p-8 max-w-3xl mx-auto">
+      <div className="flex-1 p-8 max-w-3xl mx-auto">
         <div className="bg-white rounded-lg shadow-md p-8">
           <div className="space-y-6">
-            {/* Name */}
             <div>
               <label className="block text-teal-500 font-medium mb-2">Nome</label>
               <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800">{modality.name}</div>
             </div>
-            {/* Type */}
             <div>
               <label className="block text-teal-500 font-medium mb-2">Tipo</label>
               <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800 capitalize">{modality.modality_type.name}</div>

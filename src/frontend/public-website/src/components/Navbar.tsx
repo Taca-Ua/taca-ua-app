@@ -12,8 +12,8 @@ function Navbar() {
           {/* Logo and Navigation Links - Left Side */}
           <div className="flex items-center space-x-8">
             {/* Logo */}
-            <Link 
-              to="/" 
+            <Link
+              to="/"
               className="text-xl font-bold text-teal-600 transition-all duration-300 ease-in-out hover:text-teal-700 group"
             >
               <span className="inline-block transition-all duration-300 group-hover:scale-110 group-hover:-rotate-6">T</span>
@@ -33,33 +33,40 @@ function Navbar() {
                   className="relative text-gray-700 hover:text-teal-600 font-medium transition-all duration-300 ease-in-out flex items-center gap-1 py-2"
                 >
                   Classificação
-                  <svg 
+                  <svg
                     className={`w-4 h-4 transition-transform duration-300 ${isClassificacaoOpen ? 'rotate-180' : ''}`}
-                    fill="none" 
-                    stroke="currentColor" 
+                    fill="none"
+                    stroke="currentColor"
                     viewBox="0 0 24 24"
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                   <span className="absolute left-0 bottom-0 w-0 h-0.5 bg-teal-600 transition-all duration-300 ease-in-out group-hover:w-full"></span>
                 </button>
-                
+
                 {/* Dropdown Menu */}
                 {isClassificacaoOpen && (
                   <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-md shadow-lg py-2 border border-gray-100 z-50">
                     <Link
-                      to="/classificacao/geral"
+                      to="/torneios"
                       className="block px-4 py-2 text-gray-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
                       onClick={() => setIsClassificacaoOpen(false)}
                     >
-                      Geral
+                      Torneios
                     </Link>
                     <Link
-                      to="/classificacao/modalidade"
+                      to="/equipas"
                       className="block px-4 py-2 text-gray-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
                       onClick={() => setIsClassificacaoOpen(false)}
                     >
-                      Modalidade
+                      Equipas
+                    </Link>
+                    <Link
+                      to="/estudantes"
+                      className="block px-4 py-2 text-gray-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+                      onClick={() => setIsClassificacaoOpen(false)}
+                    >
+                      Estudantes
                     </Link>
                   </div>
                 )}
@@ -110,21 +117,28 @@ function Navbar() {
                 <div className="px-5 py-3">
                   <div className="text-gray-700 font-semibold mb-2 text-base">Classificação</div>
                   <Link
-                    to="/classificacao/geral"
+                    to="/torneios"
                     className="block pl-5 py-3 text-base text-gray-600 hover:text-teal-600 transition-colors rounded hover:bg-teal-50"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    Geral
+                    Torneios
                   </Link>
                   <Link
-                    to="/classificacao/modalidade"
+                    to="/equipas"
                     className="block pl-5 py-3 text-base text-gray-600 hover:text-teal-600 transition-colors rounded hover:bg-teal-50"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    Modalidade
+                    Equipas
+                  </Link>
+                  <Link
+                    to="/estudantes"
+                    className="block pl-5 py-3 text-base text-gray-600 hover:text-teal-600 transition-colors rounded hover:bg-teal-50"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Estudantes
                   </Link>
                 </div>
-                
+
                 <Link
                   to="/calendario"
                   className="block px-5 py-3 text-base text-gray-700 hover:bg-teal-50 hover:text-teal-600 transition-colors rounded mx-2"
@@ -138,7 +152,7 @@ function Navbar() {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Regulamentos
-                </Link>                
+                </Link>
               </div>
             )}
           </div>

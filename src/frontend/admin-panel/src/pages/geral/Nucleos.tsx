@@ -13,10 +13,10 @@ const Nucleo = () => {
   const [nuclei, setNuclei] = useState<Nucleo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
 
 
-  // Fetch courses on mount
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -35,7 +35,6 @@ const Nucleo = () => {
     fetchData();
   }, []);
 
-  // Agregar nuevo núcleo
   const handleAddNucleus = async () => {
     if (!newNucleusAbbreviation.trim()) {
       setError('Por favor, preencha a abreviatura do núcleo.');
@@ -55,8 +54,6 @@ const Nucleo = () => {
 
       setNuclei([...nuclei, newNucleus]);
       setError('');
-
-      // Reset
       setNewNucleusAbbreviation('');
       setNewNucleusName('');
       setIsModalOpen(false);
@@ -68,9 +65,9 @@ const Nucleo = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50">
         <Sidebar />
-        <div className="flex justify-center items-center py-12">
+        <div className="flex-1 flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
         </div>
       </div>
@@ -78,13 +75,12 @@ const Nucleo = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
 
-      <div className="p-8">
+      <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-8 flex justify-between items-center">
+          <div className="mb-6 flex justify-between items-center">
             <h1 className="text-3xl font-bold text-gray-800">Núcleos</h1>
             <button
               onClick={() => setIsModalOpen(true)}
@@ -95,20 +91,29 @@ const Nucleo = () => {
             </button>
           </div>
 
-          {/* Nuclei List */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800">Núcleos</h2>
+          <div className="mb-6">
+            <input
+              type="text"
+              placeholder="Pesquisar núcleo..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+            />
+          </div>
 
+          <div className="bg-white rounded-lg shadow-md p-6">
             <div className="space-y-3">
               {nuclei.length > 0 ? (
-                nuclei.map((n) => (
+                [...nuclei]
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .filter((n) => n.name.toLowerCase().includes(searchQuery.toLowerCase()) || n.abbreviation.toLowerCase().includes(searchQuery.toLowerCase()))
+                  .map((n) => (
                   <div
                     key={n.id}
                     onClick={() => navigate(`/geral/nucleos/${n.id}`)}
                     className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer transition-colors flex justify-between items-center"
                   >
                     <div className="flex items-center gap-4">
-                      {/* Logo */}
                       <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-teal-500 flex-shrink-0">
 						<span className="text-teal-600 font-bold text-sm">{n.abbreviation}</span>
                       </div>
@@ -130,7 +135,6 @@ const Nucleo = () => {
         </div>
       </div>
 
-      {/* Add Nucleus Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
@@ -143,7 +147,6 @@ const Nucleo = () => {
             )}
 
             <div className="space-y-4">
-              {/* Abbreviation */}
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
                   Abreviatura <span className="text-red-500">*</span>
@@ -157,7 +160,6 @@ const Nucleo = () => {
                 />
               </div>
 
-              {/* Name */}
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
                   Nome do Núcleo <span className="text-red-500">*</span>
@@ -170,29 +172,8 @@ const Nucleo = () => {
                   placeholder="Digite o nome completo"
                 />
               </div>
-
-              {/* Description */}
-              {/* <div>
-                <label className="block text-gray-700 font-medium mb-2">
-                  Descrição
-                </label>
-                <textarea
-                  value={newDescription}
-                  onChange={(e) => setNewDescription(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 min-h-[80px]"
-                  placeholder="Digite a descrição do núcleo"
-                />
-              </div> */}
-
-              {/* Logo URL */}
-              {/* <div>
-                <label className="block text-gray-700 font-medium mb-2">
-                  Logo URL
-                </label>
-              </div> */}
             </div>
 
-            {/* Actions */}
             <div className="flex gap-4 mt-6">
               <button
                 onClick={() => {

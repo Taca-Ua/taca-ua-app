@@ -351,7 +351,6 @@ const TournamentCompetitors = ({
         </div>
       )}
 
-      {/* Add Competitor Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -659,8 +658,8 @@ const TournamentMatches = ({
                   )}
 
                   <div className="flex gap-4 text-sm text-gray-600">
-                    <span>📍 {match.location}</span>
-                    <span>🕒 {new Date(match.start_time).toLocaleString('pt-PT')}</span>
+                    <span>{match.location}</span>
+                    <span>{new Date(match.start_time).toLocaleString('pt-PT')}</span>
                   </div>
 
                   <div className="mt-2">
@@ -690,7 +689,6 @@ const TournamentMatches = ({
         </div>
       )}
 
-      {/* Create Match Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -857,9 +855,9 @@ const TorneioDetails = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50">
         <Sidebar />
-        <div className="flex justify-center items-center py-12">
+        <div className="flex-1 flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
         </div>
       </div>
@@ -869,12 +867,11 @@ const TorneioDetails = () => {
   if (!tournament) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
 
-      <div className="p-8">
+      <div className="flex-1 p-8">
         <div className="max-w-6xl mx-auto">
-          {/* Header */}
           <div className="mb-8 flex justify-between items-center">
             <h1 className="text-3xl font-bold text-gray-800">Detalhes do Torneio</h1>
             <button
@@ -885,9 +882,7 @@ const TorneioDetails = () => {
             </button>
           </div>
 
-          {/* Content Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Tournament Info */}
             <div>
               <TournamentInfo
                 tournament={tournament}
@@ -896,7 +891,6 @@ const TorneioDetails = () => {
               />
             </div>
 
-            {/* Competitors */}
             <div>
               <TournamentCompetitors
                 tournament={tournament}
@@ -905,7 +899,6 @@ const TorneioDetails = () => {
             </div>
           </div>
 
-          {/* Matches - Full Width */}
           <div className="mt-6">
             <TournamentMatches
               tournament={tournament}
@@ -915,7 +908,6 @@ const TorneioDetails = () => {
         </div>
       </div>
 
-      {/* Edit Modal */}
       {showEditModal && (
         <EditTournamentModal
           tournament={tournament}

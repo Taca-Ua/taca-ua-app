@@ -13,7 +13,10 @@ RUN pip install --no-cache-dir /tmp/taca-messaging && rm -rf /tmp/taca-messaging
 COPY src/shared/read-model-shared /tmp/read-model-shared
 RUN pip install --no-cache-dir /tmp/read-model-shared && rm -rf /tmp/read-model-shared
 
-COPY src/shared/ ./shared
+# Install logging package
+COPY src/shared/taca-logging /tmp/taca-logging
+RUN pip install --no-cache-dir /tmp/taca-logging && rm -rf /tmp/taca-logging
+
 COPY src/apis/public-api .
 
 # Run migrations and start the service

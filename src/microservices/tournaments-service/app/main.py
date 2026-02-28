@@ -7,6 +7,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from taca_logging import StructlogMiddleware
 
 from .events import rabbitmq_service
+from .internal_controller import router as internal_router
 from .logger import logger
 from .outbox_publisher import outbox_publisher
 from .routes import router
@@ -42,6 +43,7 @@ Instrumentator().instrument(app).expose(app)  # Prometheus metrics endpoint
 
 # Include routers
 app.include_router(router, tags=["tournaments"])
+app.include_router(internal_router)
 
 
 @app.get("/")

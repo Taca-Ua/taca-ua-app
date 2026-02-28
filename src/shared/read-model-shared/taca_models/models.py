@@ -394,7 +394,11 @@ class MatchResult(Base):
     match_id = Column(
         UUID(as_uuid=True), ForeignKey("public_read.matches.match_id"), nullable=False
     )
-    participant_id = Column(UUID(as_uuid=True), nullable=False)
+    participant_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("public_read.match_participants.participant_id"),
+        nullable=False,
+    )
     score = Column(Integer, nullable=True)
     position = Column(Integer, nullable=True)
     results_metadata = Column(JSON, nullable=True)
@@ -405,12 +409,7 @@ class MatchResult(Base):
 
     # Relationships
     match = relationship("Match", back_populates="results")
-    participant = relationship(
-        "MatchParticipant",
-        foreign_keys=[participant_id],
-        primaryjoin="MatchResult.participant_id==MatchParticipant.participant_id",
-        back_populates="result",
-    )
+    participant = relationship("MatchParticipant", back_populates="result")
 
 
 class MatchLineup(Base):
