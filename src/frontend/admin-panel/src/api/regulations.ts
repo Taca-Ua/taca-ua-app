@@ -1,3 +1,4 @@
+import keycloak from '../lib/keycloak';
 import { apiClient } from './client';
 
 export interface Regulation {
@@ -42,8 +43,17 @@ export const regulationsApi = {
       formData.append('description', data.description);
     }
 
-    // Use fetch directly for file upload
-    const token = localStorage.getItem('auth_token');
+    // Use fetch directly for multipart/form-data upload (apiClient uses JSON headers)
+    let token = keycloak.token ?? null;
+    if (keycloak.authenticated) {
+      try {
+        await keycloak.updateToken(30);
+        token = keycloak.token ?? null;
+      } catch {
+        keycloak.login();
+        throw new Error('Session expired, please log in again');
+      }
+    }
     const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
     const response = await fetch('/api/admin/regulations', {

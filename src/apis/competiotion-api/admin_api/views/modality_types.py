@@ -10,6 +10,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from ..decorators import RoleRequiredMixin
 from ..serializers.modality_types import (
     ModalityTypeCreateSerializer,
     ModalityTypeDetailSerializer,
@@ -33,7 +34,10 @@ from ..services.modalities_service import modalities_service_client
         tags=["Modality Management"],
     ),
 )
-class ModalityTypeListCreateView(APIView):
+class ModalityTypeListCreateView(RoleRequiredMixin, APIView):
+
+    required_roles = ["general_admin"]
+
     def get(self, request: Request):
         modality_types = modalities_service_client.list_modality_types()
 

@@ -13,7 +13,83 @@ from ..serializers.users import (
     NucleoAdminListSerializer,
     NucleoAdminUpdateSerializer,
 )
-from .auth import MOCK_USERS
+
+# ---------------------------------------------------------------------------
+# Temporary in-memory user store.  This will be removed once user management
+# is fully delegated to Keycloak (Keycloak Admin REST API).
+# ---------------------------------------------------------------------------
+MOCK_USERS = {
+    "admin_mect": {
+        "id": 1,
+        "username": "admin_mect",
+        "password": "password123",
+        "email": "admin@mect.ua.pt",
+        "course_id": 1,
+        "course_abbreviation": "MECT",
+        "full_name": "Jo\u00e3o Silva",
+        "role": "nucleo",
+    },
+    "admin_lei": {
+        "id": 2,
+        "username": "admin_lei",
+        "password": "password123",
+        "email": "admin@lei.ua.pt",
+        "course_id": 2,
+        "course_abbreviation": "LEI",
+        "full_name": "Maria Santos",
+        "role": "nucleo",
+    },
+    "admin_leci": {
+        "id": 3,
+        "username": "admin_leci",
+        "password": "password123",
+        "email": "admin@leci.ua.pt",
+        "course_id": 3,
+        "course_abbreviation": "LECI",
+        "full_name": "Pedro Oliveira",
+        "role": "nucleo",
+    },
+    "admin_biomed": {
+        "id": 4,
+        "username": "admin_biomed",
+        "password": "password123",
+        "email": "admin@biomed.ua.pt",
+        "course_id": 4,
+        "course_abbreviation": "BIOMED",
+        "full_name": "Ana Costa",
+        "role": "nucleo",
+    },
+    "admin_mmat": {
+        "id": 5,
+        "username": "admin_mmat",
+        "password": "password123",
+        "email": "admin@mmat.ua.pt",
+        "course_id": 5,
+        "course_abbreviation": "MMAT",
+        "full_name": "Carlos Ferreira",
+        "role": "nucleo",
+    },
+    "admin_geral": {
+        "id": 100,
+        "username": "admin_geral",
+        "password": "password123",
+        "email": "geral@taca.ua.pt",
+        "course_id": None,
+        "course_abbreviation": None,
+        "full_name": "Administrador Geral",
+        "role": "geral",
+    },
+    "admin_taca": {
+        "id": 101,
+        "username": "admin_taca",
+        "password": "password123",
+        "email": "admin@taca.ua.pt",
+        "course_id": None,
+        "course_abbreviation": None,
+        "full_name": "Admin TACA",
+        "role": "geral",
+    },
+}
 
 
 @extend_schema_view(

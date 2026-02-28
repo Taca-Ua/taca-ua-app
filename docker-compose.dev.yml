@@ -138,6 +138,14 @@ services:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
       - MINIO_USE_SSL=false
+      # Keycloak — internal Docker network (JWKS fetch, no nginx hop)
+      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/keycloak
+      - KEYCLOAK_REALM=${KEYCLOAK_REALM:-taca-ua}
+      # Issuer must match the ``iss`` claim in tokens, which Keycloak stamps
+      # using the public URL seen by the browser (through nginx).
+      - KEYCLOAK_ISSUER=http://localhost/keycloak/realms/${KEYCLOAK_REALM:-taca-ua}
+      # Optional: uncomment to enforce audience (``aud``) verification.
+      # - KEYCLOAK_AUDIENCE=competition-api-gateway
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -146,6 +154,8 @@ services:
       postgres:
         condition: service_healthy
       minio:
+        condition: service_started
+      keycloak:
         condition: service_started
 
   public-api:

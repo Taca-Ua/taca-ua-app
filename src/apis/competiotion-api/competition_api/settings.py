@@ -51,7 +51,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django_prometheus.middleware.PrometheusBeforeMiddleware",
-    "admin_api.middleware.StructlogMiddleware",  # Add structured logging context
+    "admin_api.middleware.StructlogMiddleware",  # Structured logging context
+    "admin_api.middleware.KeycloakJWTMiddleware",  # JWT validation & user/role extraction
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -190,7 +191,57 @@ MINIO_PUBLIC_ENDPOINT = os.environ.get(
     "MINIO_PUBLIC_ENDPOINT", "http://localhost/files"
 )
 
+# ---------------------------------------------------------------------------
+# Keycloak / JWT Configuration
+# ---------------------------------------------------------------------------
+
+# Internal URL used to reach Keycloak over the Docker network (never exposed to
+# clients).  Includes KC_HTTP_RELATIVE_PATH (/keycloak) set in docker-compose.
+KEYCLOAK_INTERNAL_URL = os.environ.get(
+    "KEYCLOAK_INTERNAL_URL", "http://keycloak:8080/keycloak"
+)
+
+# Realm name — must match the realm configured in Keycloak.
+KEYCLOAK_REALM = os.environ.get("KEYCLOAK_REALM", "taca-ua")
+
+# JWKS endpoint — fetched over the internal Docker network (no nginx hop).
+KEYCLOAK_JWKS_URI = (
+    f"{KEYCLOAK_INTERNAL_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/certs"
+)
+
+# Expected ``iss`` claim in the JWT.  Tokens are issued by Keycloak using the
+# external URL seen by the browser (through nginx), so this must be the public
+# base URL — NOT the internal Docker URL.
+KEYCLOAK_ISSUER = os.environ.get(
+    "KEYCLOAK_ISSUER",
+    f"{KEYCLOAK_INTERNAL_URL}/realms/{KEYCLOAK_REALM}",  # fallback for local dev without nginx
+)
+
+# Accepted signing algorithms.  Keycloak defaults to RS256.
+KEYCLOAK_ALGORITHMS = ["RS256"]
+
+# Optional: set to the Keycloak client_id (or resource server name) to enforce
+# audience verification.  The bearer-only client for this API is
+# "competition-api-gateway".  Tokens are issued by "frontend-admin" and do not
+# contain "competition-api-gateway" in their ``aud`` claim unless an explicit
+# audience mapper is configured in Keycloak, so verification is off by default.
+KEYCLOAK_AUDIENCE = os.environ.get("KEYCLOAK_AUDIENCE", None)
+
+# Paths that bypass JWT validation entirely (no Authorization header required).
+# Add any public / infrastructure endpoints here.
+KEYCLOAK_EXEMPT_PATHS = [
+    "/api/admin/schema/",  # OpenAPI schema
+    "/api/admin/docs/",  # Swagger UI
+    "/api/admin/redoc/",  # ReDoc UI
+    "/api/admin/auth/",  # Keycloak-based login helpers (if any)
+    "/metrics",  # Prometheus scrape endpoint
+    "/health/",  # Health-check
+    "/admin/",  # Django admin (uses its own session auth)
+]
+
+# ---------------------------------------------------------------------------
 # Initialize structured logging
+# ---------------------------------------------------------------------------
 configure_logging(
     service_name="competition-api",
     log_level=os.environ.get("LOG_LEVEL", "INFO"),
