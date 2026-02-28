@@ -146,6 +146,11 @@ services:
       - KEYCLOAK_ISSUER=http://localhost/keycloak/realms/${KEYCLOAK_REALM:-taca-ua}
       # Optional: uncomment to enforce audience (``aud``) verification.
       # - KEYCLOAK_AUDIENCE=competition-api-gateway
+      # Dev auth bypass — set to "true" to skip Keycloak JWT validation.
+      # Send header  X-Dev-Auth-Token: <DEV_AUTH_BYPASS_TOKEN>  to authenticate.
+      - DEV_AUTH_BYPASS_ENABLED=${DEV_AUTH_BYPASS_ENABLED:-false}
+      - DEV_AUTH_BYPASS_TOKEN=${DEV_AUTH_BYPASS_TOKEN:-}
+      - DEV_AUTH_BYPASS_ROLES=${DEV_AUTH_BYPASS_ROLES:-general_admin}
     depends_on:
       rabbitmq:
         condition: service_healthy

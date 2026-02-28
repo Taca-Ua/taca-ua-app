@@ -5,13 +5,17 @@ import requests
 
 API_URL = "http://localhost/api/admin"
 
+HEADERS = {
+    "X-Dev-Auth-Token": "super-secret-dev-token",
+}
+
 
 def populate_modalities_types(step_by_step=False, delete_existing=False):
-    check = requests.get(f"{API_URL}/modality-types")
+    check = requests.get(f"{API_URL}/modality-types", headers=HEADERS)
     if delete_existing and check.status_code == 200:
         for modality_type in check.json():
             del_response = requests.delete(
-                f"{API_URL}/modality-types/{modality_type['id']}/"
+                f"{API_URL}/modality-types/{modality_type['id']}/", headers=HEADERS
             )
             if del_response.status_code == 204:
                 print(f"Deleted modality type: {modality_type['name']}")
@@ -207,7 +211,9 @@ def populate_modalities_types(step_by_step=False, delete_existing=False):
             input(
                 f"About to create modality type: {modality_type['name']}. Press Enter to continue..."
             )
-        response = requests.post(f"{API_URL}/modality-types/", json=modality_type)
+        response = requests.post(
+            f"{API_URL}/modality-types/", json=modality_type, headers=HEADERS
+        )
         if response.status_code == 201:
             print(f"Created modality type: {modality_type['name']}")
             ids[modality_type["name"]] = response.json().get("id", None)
@@ -222,13 +228,13 @@ def populate_modalities_types(step_by_step=False, delete_existing=False):
 
 def populate_modalidades(modality_types_dict=None):
     if modality_types_dict is None:
-        data = requests.get(f"{API_URL}/modality-types/")
+        data = requests.get(f"{API_URL}/modality-types/", headers=HEADERS)
         modality_types = data.json()
         modality_types_dict = {mt["name"]: mt["id"] for mt in modality_types}
 
     print("Modality Types Dict:", modality_types_dict)
 
-    check = requests.get(f"{API_URL}/modalities")
+    check = requests.get(f"{API_URL}/modalities", headers=HEADERS)
     if check.status_code == 200 and len(check.json()) > 0:
         print("Modalities already populated.")
         return check.json()
@@ -380,7 +386,9 @@ def populate_modalidades(modality_types_dict=None):
 
     resp_modalidades = []
     for modalidade in modalidades:
-        response = requests.post(f"{API_URL}/modalities/", json=modalidade)
+        response = requests.post(
+            f"{API_URL}/modalities/", json=modalidade, headers=HEADERS
+        )
         if response.status_code == 201:
             print(f"Created modality: {modalidade['name']}")
             resp_modalidades.append(response.json())
@@ -394,7 +402,7 @@ def populate_modalidades(modality_types_dict=None):
 
 
 def populate_nucleos():
-    check = requests.get(f"{API_URL}/nucleos/")
+    check = requests.get(f"{API_URL}/nucleos/", headers=HEADERS)
     if check.status_code == 200 and len(check.json()) > 0:
         print("Nucleos already populated.")
         return check.json()
@@ -439,7 +447,7 @@ def populate_nucleos():
 
     resp_nucleos = []
     for nucleo in nucleos:
-        response = requests.post(f"{API_URL}/nucleos/", json=nucleo)
+        response = requests.post(f"{API_URL}/nucleos/", json=nucleo, headers=HEADERS)
         if response.status_code == 201:
             print(f"Created nucleo: {nucleo['name']}")
             resp_nucleos.append(response.json())
@@ -453,7 +461,7 @@ def populate_nucleos():
 
 
 def populate_courses(nucleos):
-    check = requests.get(f"{API_URL}/courses/")
+    check = requests.get(f"{API_URL}/courses/", headers=HEADERS)
     if check.status_code == 200 and len(check.json()) > 0:
         print("Courses already populated.")
         return check.json()
@@ -581,7 +589,7 @@ def populate_courses(nucleos):
     print("Courses to be created:", [course["abbreviation"] for course in courses])
     resp = []
     for course in courses:
-        response = requests.post(f"{API_URL}/courses/", json=course)
+        response = requests.post(f"{API_URL}/courses/", json=course, headers=HEADERS)
         if response.status_code == 201:
             print(f"Created course: {course['name']}")
             resp.append(response.json())
@@ -597,14 +605,16 @@ def populate_courses(nucleos):
 
 
 def delete_all_courses():
-    response = requests.get(f"{API_URL}/courses/")
+    response = requests.get(f"{API_URL}/courses/", headers=HEADERS)
     if response.status_code != 200:
         print("Failed to fetch courses for deletion.")
         return
 
     courses = response.json()
     for course in courses:
-        del_response = requests.delete(f"{API_URL}/courses/{course['id']}/")
+        del_response = requests.delete(
+            f"{API_URL}/courses/{course['id']}/", headers=HEADERS
+        )
         if del_response.status_code == 204:
             print(f"Deleted course: {course['name']}")
         else:
@@ -615,7 +625,7 @@ def delete_all_courses():
 
 
 def populate_members(courses):
-    response = requests.get(f"{API_URL}/students")
+    response = requests.get(f"{API_URL}/students", headers=HEADERS)
     if response.status_code == 200 and len(response.json()) > 0:
         print("Members already populated.")
         return response.json()
@@ -672,7 +682,9 @@ def populate_members(courses):
 
     participants_resp = []
     for participant in participants:
-        response = requests.post(f"{API_URL}/students/", json=participant)
+        response = requests.post(
+            f"{API_URL}/students/", json=participant, headers=HEADERS
+        )
         if response.status_code == 201:
             print(f"Created member: {participant['full_name']}")
             participants_resp.append(response.json())
@@ -686,7 +698,7 @@ def populate_members(courses):
 
 
 def delete_all_members():
-    response = requests.get(f"{API_URL}/students")
+    response = requests.get(f"{API_URL}/students", headers=HEADERS)
     if response.status_code != 200:
         print("Failed to fetch members for deletion.")
         print(response.text)
@@ -694,7 +706,9 @@ def delete_all_members():
 
     members = response.json()
     for member in members:
-        del_response = requests.delete(f"{API_URL}/students/{member['id']}/")
+        del_response = requests.delete(
+            f"{API_URL}/students/{member['id']}/", headers=HEADERS
+        )
         if del_response.status_code == 204:
             print(f"Deleted member: {member['full_name']}")
         else:
@@ -705,7 +719,7 @@ def delete_all_members():
 
 
 def populate_teams(courses, modality):
-    response = requests.get(f"{API_URL}/teams/")
+    response = requests.get(f"{API_URL}/teams/", headers=HEADERS)
     if response.status_code == 200 and len(response.json()) > 0:
         print("Teams already populated.")
         return response.json()
@@ -719,7 +733,7 @@ def populate_teams(courses, modality):
 
     resp_teams = []
     for team in [_generate_team_data(i) for i in range(1, 6)]:
-        response = requests.post(f"{API_URL}/teams/", json=team)
+        response = requests.post(f"{API_URL}/teams/", json=team, headers=HEADERS)
         if response.status_code == 201:
             print(f"Created team: {team['name']}")
             resp_teams.append(response.json())
@@ -733,7 +747,7 @@ def populate_teams(courses, modality):
 
 
 def delete_all_teams():
-    response = requests.get(f"{API_URL}/teams/")
+    response = requests.get(f"{API_URL}/teams/", headers=HEADERS)
     if response.status_code != 200:
         print("Failed to fetch teams for deletion.")
         print(response.text)
@@ -741,7 +755,9 @@ def delete_all_teams():
 
     teams = response.json()
     for team in teams:
-        del_response = requests.delete(f"{API_URL}/teams/{team['id']}/")
+        del_response = requests.delete(
+            f"{API_URL}/teams/{team['id']}/", headers=HEADERS
+        )
         if del_response.status_code == 204:
             print(f"Deleted team: {team['name']}")
         else:
@@ -762,6 +778,7 @@ def fill_teams_with_members(teams, members):
         response = requests.put(
             f"{API_URL}/teams/{team['id']}/",
             json={"players_add": players_add},
+            headers=HEADERS,
         )
 
         if response.status_code == 200:
@@ -774,7 +791,7 @@ def fill_teams_with_members(teams, members):
 
 
 def populate_tournament(modality, teams):
-    response = requests.get(f"{API_URL}/tournaments/")
+    response = requests.get(f"{API_URL}/tournaments/", headers=HEADERS)
     if (
         response.status_code == 200
         and len(response.json()) > 0
@@ -790,7 +807,9 @@ def populate_tournament(modality, teams):
         "start_date": "2026-01-12T13:30:54.823Z",
     }
 
-    response = requests.post(f"{API_URL}/tournaments/", json=tournament)
+    response = requests.post(
+        f"{API_URL}/tournaments/", json=tournament, headers=HEADERS
+    )
     if response.status_code == 201:
         print(f"Created tournament: {tournament['name']}")
     else:
@@ -803,7 +822,9 @@ def populate_tournament(modality, teams):
 
 
 def populate_matches(tournament, teams):
-    response = requests.get(f"{API_URL}/tournaments/{tournament['id']}/")
+    response = requests.get(
+        f"{API_URL}/tournaments/{tournament['id']}/", headers=HEADERS
+    )
     if response.status_code == 200 and len(response.json().get("matches", [])) > 0:
         print(f"Matches for tournament '{tournament['name']}' already populated.")
         return response.json().get("matches", [])
@@ -828,7 +849,7 @@ def populate_matches(tournament, teams):
     matches = [generate_match_data(tournament) for _ in range(10)]
     resp_matches = []
     for match in matches:
-        response = requests.post(f"{API_URL}/matches/", json=match)
+        response = requests.post(f"{API_URL}/matches/", json=match, headers=HEADERS)
         if response.status_code == 201:
             print(
                 f"Created match between: {match['team_home_id']} and {match['team_away_id']}"
@@ -844,8 +865,6 @@ def populate_matches(tournament, teams):
 
 
 def main():
-    input("Press Enter to continue...")
-
     modality_types_ids = populate_modalities_types(
         step_by_step=True, delete_existing=True
     )

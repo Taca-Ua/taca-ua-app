@@ -5,42 +5,13 @@ Maps endpoints according to API_ENDPOINTS.md specification
 
 from django.urls import include, path
 
-from .views.users import (
-    AdministratorDetailView,
-    AdministratorListCreateView,
-    NucleoAdminDetailView,
-    NucleoAdminListCreateView,
-)
-
 app_name = "admin_api"
 
 urlpatterns = [
-    # Authentication (temporary!)
+    # Authentication (Keycloak)
     path("auth/", include("admin_api.views.auth")),
     # File Management
     path("files/", include("admin_api.views.file_views")),
-    # Administrator Management
-    path(
-        "administrators/",
-        AdministratorListCreateView.as_view(),
-        name="administrator-list",
-    ),
-    path(
-        "administrators/<admin_id>/",
-        AdministratorDetailView.as_view(),
-        name="administrator-detail",
-    ),
-    # User Management (RF1)
-    path(
-        "users/nucleo/",
-        NucleoAdminListCreateView.as_view(),
-        name="nucleo-admin-list",
-    ),
-    path(
-        "users/nucleo/<user_id>/",
-        NucleoAdminDetailView.as_view(),
-        name="nucleo-admin-detail",
-    ),
     # Course Management (RF2)
     path("courses/", include("admin_api.views.courses")),
     # Regulation Management (RF2.3)

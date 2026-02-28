@@ -240,6 +240,29 @@ KEYCLOAK_EXEMPT_PATHS = [
 ]
 
 # ---------------------------------------------------------------------------
+# DEV Auth Bypass
+# ---------------------------------------------------------------------------
+# WARNING: Only for local development / scripted testing.  Never set
+# DEV_AUTH_BYPASS_ENABLED=true in production.
+#
+# To use, send the header:  X-Dev-Auth-Token: <DEV_AUTH_BYPASS_TOKEN>
+# The request is then treated as authenticated with the configured roles.
+#
+# Example env block in docker-compose.dev.yml:
+#   DEV_AUTH_BYPASS_ENABLED: "true"
+#   DEV_AUTH_BYPASS_TOKEN: "super-secret-dev-token"
+#   DEV_AUTH_BYPASS_ROLES: "general_admin"   # comma-separated
+
+DEV_AUTH_BYPASS_ENABLED: bool = (
+    os.environ.get("DEV_AUTH_BYPASS_ENABLED", "false").lower() == "true"
+)
+DEV_AUTH_BYPASS_TOKEN: str = os.environ.get("DEV_AUTH_BYPASS_TOKEN", "")
+_raw_roles = os.environ.get("DEV_AUTH_BYPASS_ROLES", "general_admin")
+DEV_AUTH_BYPASS_ROLES: list[str] = [
+    r.strip() for r in _raw_roles.split(",") if r.strip()
+]
+
+# ---------------------------------------------------------------------------
 # Initialize structured logging
 # ---------------------------------------------------------------------------
 configure_logging(

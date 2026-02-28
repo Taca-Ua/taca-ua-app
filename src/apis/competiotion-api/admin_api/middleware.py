@@ -35,6 +35,12 @@ class KeycloakJWTMiddleware:
 
     Behaviour
     ---------
+    * If ``DEV_AUTH_BYPASS_ENABLED=true`` and the request carries the header
+      ``X-Dev-Auth-Token: <DEV_AUTH_BYPASS_TOKEN>`` the JWT check is **skipped**
+      entirely.  ``request.user_id`` is set to ``"dev-bypass-user"`` and
+      ``request.roles`` is set to the value of ``DEV_AUTH_BYPASS_ROLES``
+      (comma-separated string, defaults to ``"general_admin"``).
+      **Never enable this in production.**
     * If the ``Authorization: Bearer <token>`` header is **present**:
       - A valid token → ``request.user_id`` and ``request.roles`` are set.
       - An invalid/expired token → **401 Unauthorized** is returned immediately.
@@ -57,6 +63,27 @@ class KeycloakJWTMiddleware:
             request.user_id = None
             request.roles = []
             return self.get_response(request)
+
+        # -------------------------------------------------------------------
+        # DEV AUTH BYPASS — controlled by environment variables only.
+        # Enable with:  DEV_AUTH_BYPASS_ENABLED=true
+        #               DEV_AUTH_BYPASS_TOKEN=<any-secret-string>
+        #               DEV_AUTH_BYPASS_ROLES=general_admin,nucleo_admin  (optional)
+        # Then pass the header:  X-Dev-Auth-Token: <secret-string>
+        # -------------------------------------------------------------------
+        if getattr(settings, "DEV_AUTH_BYPASS_ENABLED", False):
+            bypass_token = getattr(settings, "DEV_AUTH_BYPASS_TOKEN", "")
+            incoming = request.META.get("HTTP_X_DEV_AUTH_TOKEN", "")
+            if bypass_token and incoming == bypass_token:
+                request.user_id = "dev-bypass-user"
+                request.roles = getattr(
+                    settings, "DEV_AUTH_BYPASS_ROLES", ["general_admin"]
+                )
+                logger.warning(
+                    "DEV AUTH BYPASS active for path %s — do NOT use in production",
+                    request.path,
+                )
+                return self.get_response(request)
 
         auth_header: str = request.META.get("HTTP_AUTHORIZATION", "")
 
