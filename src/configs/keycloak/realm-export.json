@@ -87,5 +87,37 @@
         }
       ]
     }
+  ],
+  "users": [
+    {
+      "username": "admin_geral",
+      "firstName": "Bertram",
+      "lastName": "Gilfoyle",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password123!",
+          "value": "admin",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["general_admin"]
+    },
+    {
+        "username": "admin_nucleo",
+        "firstName": "Dinesh",
+        "lastName": "Chugtai",
+        "enabled": true,
+        "emailVerified": true,
+        "credentials": [
+            {
+            "type": "password123!",
+            "value": "admin",
+            "temporary": false
+            }
+        ],
+        "realmRoles": ["nucleo_admin"]
+    }
   ]
 }

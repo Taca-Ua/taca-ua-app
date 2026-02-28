@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
-import { nucleosApi, type Nucleo } from '../../api/nucleos';
+import { nucleosApi, type Nucleo as NucleoData } from '../../api/nucleos';
 
 const Nucleo = () => {
   const navigate = useNavigate();
@@ -10,7 +10,7 @@ const Nucleo = () => {
   const [newNucleusAbbreviation, setNewNucleusAbbreviation] = useState('');
   const [newNucleusName, setNewNucleusName] = useState('');
 
-  const [nuclei, setNuclei] = useState<Nucleo[]>([]);
+  const [nuclei, setNuclei] = useState<NucleoData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');

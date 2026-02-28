@@ -79,12 +79,12 @@ services:
       KC_HOSTNAME_STRICT_HTTPS: "false"
     volumes:
       - ./src/configs/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/keycloak/health/ready"]
-      interval: 15s
-      timeout: 10s
-      retries: 10
-      start_period: 60s
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:8080/keycloak/health/ready"]
+    #   interval: 15s
+    #   timeout: 10s
+    #   retries: 10
+    #   start_period: 60s
 
 # Observability
   prometheus:
@@ -301,6 +301,14 @@ services:
       - /app/node_modules
     environment:
       - CHOKIDAR_USEPOLLING=true
+      # Keycloak is accessed through the nginx reverse proxy.
+      # The browser hits /keycloak/ which nginx forwards to keycloak:8080/keycloak/
+      - VITE_KEYCLOAK_URL=http://localhost/keycloak
+      - VITE_KEYCLOAK_REALM=${KEYCLOAK_REALM:-taca-ua}
+      - VITE_KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-frontend-admin}
+    # depends_on:
+    #   keycloak:
+    #     condition: service_healthy
 
   public-website:
     build:

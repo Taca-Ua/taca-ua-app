@@ -1,17 +1,17 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 // Common pages
-import Login from '../pages/Login';
 import NotFound from '../pages/NotFound';
+import Unauthorized from '../pages/Unauthorized';
 
 // Geral admin pages
-import LoginGeral from '../pages/geral/LoginGeral';
 import DashboardGeral from '../pages/geral/DashboardGeral';
 import Administradores from '../pages/geral/Administradores';
 import AdminDetail from '../pages/geral/AdministradorDetail';
 import Modalities from '../pages/geral/Modalidades';
 import ModalityDetails from '../pages/geral/ModalidadeDetail';
-import Nucleo from '../pages/geral/Nucleos';
+import NucleoListPage from '../pages/geral/Nucleos';
 import NucleoDetails from '../pages/geral/NucleoDetails';
 import Cursos from '../pages/geral/Cursos';
 import CursoDetail from '../pages/geral/CursoDetail';
@@ -22,37 +22,48 @@ import TorneioDetails from '../pages/geral/TorneioDetails';
 import JogoDetails from '../pages/geral/JogoDetails';
 
 // Nucleo admin pages
-import LoginNucleo from '../pages/nucleo/LoginNucleo';
 import DashboardNucleo from '../pages/nucleo/DashboardNucleo';
 import Membros from '../pages/nucleo/Membros';
 import MemberDetail from '../pages/nucleo/MemberDetail';
 import Equipas from '../pages/nucleo/Equipas';
 import TeamDetailPage from '../pages/nucleo/TeamDetail';
 import Jogos from '../pages/nucleo/Jogos';
-import MatchDetail from '../pages/nucleo/MatchDetail';
+import MatchDetailPage from '../pages/nucleo/MatchDetail';
 
 // Components
 import ProtectedRoute from '../components/ProtectedRoute';
 
+/**
+ * Post-login landing: redirect each authenticated user to their own
+ * dashboard based on the Keycloak realm role they hold.
+ */
+const RootRedirect = () => {
+  const { adminRole, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600" />
+      </div>
+    );
+  }
+
+  if (adminRole === 'general_admin') return <Navigate to="/geral/dashboard" replace />;
+  if (adminRole === 'nucleo_admin') return <Navigate to="/nucleo/dashboard" replace />;
+  return <Navigate to="/unauthorized" replace />;
+};
+
 export const router = createBrowserRouter([
   // ============================================
-  // Authentication Routes
+  // Root redirect (Keycloak handles login itself)
   // ============================================
   {
     path: '/',
-    element: <Login />,
+    element: <RootRedirect />,
   },
   {
-    path: '/login',
-    element: <Login />,
-  },
-  {
-    path: '/login/geral',
-    element: <LoginGeral />,
-  },
-  {
-    path: '/login/nucleo',
-    element: <LoginNucleo />,
+    path: '/unauthorized',
+    element: <Unauthorized />,
   },
 
   // ============================================
@@ -80,7 +91,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/geral/nucleos',
-    element: <ProtectedRoute requiredRole="geral"><Nucleo /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="geral"><NucleoListPage /></ProtectedRoute>,
   },
   {
     path: '/geral/nucleos/:id',
@@ -144,7 +155,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/nucleo/jogos/:id',
-    element: <ProtectedRoute requiredRole="nucleo"><MatchDetail /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="nucleo"><MatchDetailPage /></ProtectedRoute>,
   },
 
   // ============================================
