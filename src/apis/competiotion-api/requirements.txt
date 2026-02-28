@@ -9,3 +9,6 @@ structlog>=24.1.0
 django-structlog>=8.1.0
 minio==7.2.7
 filetype==1.2.0
+djangorestframework-simplejwt==5.5.1
+python-keycloak==3.8.0
+httpx==0.24.0

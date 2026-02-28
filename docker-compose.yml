@@ -89,12 +89,14 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:22.0.0
-    command: start-dev
+    command: start-dev --http-relative-path /keycloak
     environment:
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_PROXY: edge
       KC_HTTP_RELATIVE_PATH: /keycloak
-      KC_PROXY_HEADERS: xforwarded
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
 
   # Observability
   prometheus:
@@ -151,6 +153,10 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - DATABASE_URL=${DATABASE_URL}
+      - KEYCLOAK_URL=http://localhost/keycloak
+      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/keycloak
+      - KEYCLOAK_REALM=taca-ua
+      - KEYCLOAK_CLIENT_ID=api-client
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -170,6 +176,10 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - DATABASE_URL=${DATABASE_URL}
+      - KEYCLOAK_URL=http://localhost/keycloak
+      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/keycloak
+      - KEYCLOAK_REALM=taca-ua
+      - KEYCLOAK_CLIENT_ID=api-client
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -188,6 +198,10 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - DATABASE_URL=${DATABASE_URL}
+      - KEYCLOAK_URL=http://localhost/keycloak
+      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/keycloak
+      - KEYCLOAK_REALM=taca-ua
+      - KEYCLOAK_CLIENT_ID=api-client
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -206,6 +220,10 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - DATABASE_URL=${DATABASE_URL}
+      - KEYCLOAK_URL=http://localhost/keycloak
+      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/keycloak
+      - KEYCLOAK_REALM=taca-ua
+      - KEYCLOAK_CLIENT_ID=api-client
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -224,6 +242,10 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - DATABASE_URL=${DATABASE_URL}
+      - KEYCLOAK_URL=http://localhost/keycloak
+      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/keycloak
+      - KEYCLOAK_REALM=taca-ua
+      - KEYCLOAK_CLIENT_ID=api-client
       # Domain Service URLs for Snapshot Fetching (Docker service name DNS)
       - MATCHES_SERVICE_URL=http://matches-service:8000
       - TOURNAMENT_SERVICE_URL=http://tournaments-service:8000
@@ -252,6 +274,10 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - DATABASE_URL=${DATABASE_URL}
+      - KEYCLOAK_URL=http://localhost/keycloak
+      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/keycloak
+      - KEYCLOAK_REALM=taca-ua
+      - KEYCLOAK_CLIENT_ID=api-client
     depends_on:
       rabbitmq:
         condition: service_healthy

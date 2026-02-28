@@ -1,4 +1,6 @@
+import sys
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -17,6 +19,9 @@ from .routes import (
     student_router,
     team_router,
 )
+
+# Add src directory to path for shared module imports
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
 
 @asynccontextmanager
@@ -53,3 +58,10 @@ app.include_router(internal_router)
 @app.get("/")
 def read_root():
     return {"Service": "Modalities Service"}
+
+
+@app.get("/modalities")
+async def get_modalities():
+    """Get all modalities - internal microservice endpoint."""
+    logger.info("Modalities retrieved")
+    return {"modalities": []}

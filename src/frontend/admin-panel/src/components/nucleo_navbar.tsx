@@ -1,10 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { useAuth } from "../hooks/useAuth";
+import { useKeycloak } from "../auth/KeycloakProvider";
 
 export default function NucleoSidebar() {
   const [isOpen, setIsOpen] = useState(false);
-  const { user, logout } = useAuth();
+  const { logout, keycloak } = useKeycloak();
   const navigate = useNavigate();
 
   const navItems = [

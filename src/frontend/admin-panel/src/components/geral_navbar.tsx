@@ -1,10 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { useAuth } from "../hooks/useAuth";
+import { useKeycloak } from "../auth/KeycloakProvider";
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
-  const { logout, user } = useAuth();
+  const { logout, keycloak } = useKeycloak();
   const navigate = useNavigate();
 
   const navItems = [
