@@ -6,7 +6,7 @@ export interface Admin {
   email: string;
   first_name: string;
   last_name: string;
-  roles: string[];
+  role: string;
   enabled: boolean;
 }
 
@@ -19,7 +19,7 @@ export interface AdminCreate {
   password: string;
   first_name: string;
   last_name: string;
-  roles: string[];
+  role: string;
 }
 
 export interface AdminUpdate {
@@ -44,19 +44,19 @@ export const administratorsApi = {
     return apiClient.post<Admin>('/admins/', data);
   },
 
-  async getById(administratorId: number): Promise<AdminDetails> {
+  async getById(administratorId: string): Promise<AdminDetails> {
     return apiClient.get<AdminDetails>(`/admins/${administratorId}/`);
   },
 
-  async update(administratorId: number, data: AdminUpdate): Promise<Admin> {
+  async update(administratorId: string, data: AdminUpdate): Promise<Admin> {
     return apiClient.put<Admin>(`/admins/${administratorId}/`, data);
   },
 
-  async changePassword(administratorId: number, data: AdminPasswordChange): Promise<void> {
-    return apiClient.post(`/admins/${administratorId}/change-password/`, data);
+  async changePassword(administratorId: string, data: AdminPasswordChange): Promise<void> {
+    return apiClient.post(`/admins/${administratorId}/password/`, data);
   },
 
-  async delete(administratorId: number): Promise<void> {
+  async delete(administratorId: string): Promise<void> {
     return apiClient.delete(`/admins/${administratorId}/`);
   },
 };

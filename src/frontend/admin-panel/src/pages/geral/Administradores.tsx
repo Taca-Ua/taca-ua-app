@@ -10,7 +10,7 @@ function Administradores() {
   const [memberFirstName, setMemberFirstName] = useState('');
   const [memberLastName, setMemberLastName] = useState('');
   const [memberPassword, setMemberPassword] = useState('');
-  const [memberRole, setMemberRole] = useState<'geral' | 'nucleo'>('geral');
+  const [memberRole, setMemberRole] = useState<'general_admin' | 'nucleo_admin'>('general_admin');
   const [email, setEmail] = useState('');
 
   const [members, setMembers] = useState<Admin[]>([]);
@@ -35,8 +35,8 @@ function Administradores() {
     fetchData();
   }, []);
 
-  const AdminG = members.filter(m => m.roles.includes('geral'));
-  const AdminN = members.filter(m => m.roles.includes('nucleo'));
+  const AdminG = members.filter(m => m.role === 'general_admin');
+  const AdminN = members.filter(m => m.role === 'nucleo_admin');
 
   const handleAddMember = async () => {
     if (!memberUserName.trim()) {
@@ -67,7 +67,7 @@ function Administradores() {
         first_name: memberFirstName,
         last_name: memberLastName,
         email,
-        roles: [memberRole],
+        role: memberRole,
       });
 
       setMembers([...members, newAdmin]);
@@ -75,7 +75,7 @@ function Administradores() {
       setMemberFirstName('');
       setMemberLastName('');
       setMemberPassword('');
-      setMemberRole('geral');
+      setMemberRole('general_admin');
       setEmail('');
       setError('');
       setIsModalOpen(false);
@@ -219,11 +219,11 @@ function Administradores() {
                 <select
                   id="memberRole"
                   value={memberRole}
-                  onChange={(e) => setMemberRole(e.target.value as 'geral' | 'nucleo')}
+                  onChange={(e) => setMemberRole(e.target.value as 'general_admin' | 'nucleo_admin')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
-                  <option value="geral">Administrador Geral</option>
-                  <option value="nucleo">Administrador Núcleo</option>
+                  <option value="general_admin">Administrador Geral</option>
+                  <option value="nucleo_admin">Administrador Núcleo</option>
                 </select>
               </div>
 
@@ -256,7 +256,7 @@ function Administradores() {
                   setMemberFirstName('');
                   setMemberLastName('');
                   setMemberPassword('');
-                  setMemberRole('geral');
+                  setMemberRole('general_admin');
                   setEmail('');
                   setError('');
                 }}

@@ -23,7 +23,7 @@ function AdminDetail() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const adminData = await administratorsApi.getById(Number(id));
+        const adminData = await administratorsApi.getById(String(id));
         setMember(adminData);
         setError('');
       } catch (err) {
@@ -66,7 +66,7 @@ function AdminDetail() {
     }
 
     try {
-      const updatedAdmin = await administratorsApi.update(Number(id), {
+      const updatedAdmin = await administratorsApi.update(String(id), {
         email: editedEmail,
         first_name: editedFirstName,
         last_name: editedLastName,
@@ -88,7 +88,7 @@ function AdminDetail() {
     }
 
     try {
-      await administratorsApi.changePassword(Number(id), {
+      await administratorsApi.changePassword(String(id), {
         new_password: newPassword,
         temporary: false,
       });
@@ -105,7 +105,7 @@ function AdminDetail() {
   const handleDelete = async () => {
     if (window.confirm('Tem certeza que deseja eliminar este administrador?')) {
       try {
-        await administratorsApi.delete(Number(id));
+        await administratorsApi.delete(String(id));
         navigate('/geral/administradores');
       } catch (err) {
         console.error('Failed to delete administrator:', err);
@@ -160,9 +160,8 @@ function AdminDetail() {
                   Tipo
                 </label>
                 <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
-                  {member.roles.includes('geral') && member.roles.includes('nucleo') ? 'Geral & Núcleo' :
-                   member.roles.includes('geral') ? 'Geral' :
-                   member.roles.includes('nucleo') ? 'Núcleo' : 'N/A'}
+                  {member.role === 'general_admin' ? 'Geral' :
+                   member.role === 'nucleo_admin' ? 'Núcleo' : 'N/A'}
                 </div>
             </div>
           </div>
@@ -250,9 +249,8 @@ function AdminDetail() {
                   Tipo
                 </label>
                 <div className="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-600">
-                  {member.roles.includes('geral') && member.roles.includes('nucleo') ? 'Geral & Núcleo' :
-                   member.roles.includes('geral') ? 'Geral' :
-                   member.roles.includes('nucleo') ? 'Núcleo' : 'N/A'}
+                  {member.role === 'general_admin' ? 'Geral' :
+                   member.role === 'nucleo_admin' ? 'Núcleo' : 'N/A'}
                 </div>
                 <p className="text-xs text-gray-500 mt-1">O tipo não pode ser alterado</p>
             </div>

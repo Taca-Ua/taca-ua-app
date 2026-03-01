@@ -19,8 +19,10 @@ class KeycloakAdminService:
 
     def __init__(self):
         """Initialize the Keycloak Admin client."""
+        # python-keycloak >= 3.x requires server_url to end with a slash.
+        server_url = settings.KEYCLOAK_ADMIN_SERVER_URL.rstrip("/") + "/"
         self.keycloak_admin = KeycloakAdmin(
-            server_url=settings.KEYCLOAK_ADMIN_SERVER_URL,
+            server_url=server_url,
             username=settings.KEYCLOAK_ADMIN_USERNAME,
             password=settings.KEYCLOAK_ADMIN_PASSWORD,
             realm_name=settings.KEYCLOAK_ADMIN_REALM,
@@ -46,7 +48,7 @@ class KeycloakAdminService:
             password: The password for the admin account
             first_name: First name of the admin
             last_name: Last name of the admin
-            role: The role to assign ("admin_geral" or "admin_nucleo")
+            role: The role to assign ("general_admin" or "nucleo_admin")
 
         Returns:
             dict: User information including the user ID
@@ -55,9 +57,9 @@ class KeycloakAdminService:
             KeycloakError: If user creation fails
             ValueError: If an invalid role is provided
         """
-        if role not in ["admin_geral", "admin_nucleo"]:
+        if role not in ["general_admin", "nucleo_admin"]:
             raise ValueError(
-                f"Invalid role: {role}. Must be 'admin_geral' or 'admin_nucleo'"
+                f"Invalid role: {role}. Must be 'general_admin' or 'nucleo_admin'"
             )
 
         try:
@@ -148,16 +150,16 @@ class KeycloakAdminService:
             admin_roles = [
                 role["name"]
                 for role in roles
-                if role["name"] in ["admin_geral", "admin_nucleo"]
+                if role["name"] in ["general_admin", "nucleo_admin"]
             ]
 
             return {
                 "id": user["id"],
                 "username": user["username"],
-                "email": user["email"],
+                "email": user.get("email", ""),
                 "first_name": user.get("firstName", ""),
                 "last_name": user.get("lastName", ""),
-                "roles": admin_roles,
+                "role": admin_roles[0] if admin_roles else None,
                 "enabled": user["enabled"],
             }
 
@@ -167,7 +169,7 @@ class KeycloakAdminService:
 
     def list_admins(self) -> list[dict]:
         """
-        List all admin users (users with admin_geral or admin_nucleo roles).
+        List all admin users (users with general_admin or nucleo_admin roles).
 
         Returns:
             list[dict]: List of admin users with their information
@@ -179,7 +181,7 @@ class KeycloakAdminService:
             all_admins = []
 
             # Get users with each admin role
-            for role_name in ["admin_geral", "admin_nucleo"]:
+            for role_name in ["general_admin", "nucleo_admin"]:
                 try:
                     users = self.keycloak_admin.get_realm_role_members(role_name)
                     for user in users:
@@ -191,7 +193,7 @@ class KeycloakAdminService:
                             admin_roles = [
                                 role["name"]
                                 for role in roles
-                                if role["name"] in ["admin_geral", "admin_nucleo"]
+                                if role["name"] in ["general_admin", "nucleo_admin"]
                             ]
 
                             all_admins.append(
@@ -201,7 +203,7 @@ class KeycloakAdminService:
                                     "email": user.get("email", ""),
                                     "first_name": user.get("firstName", ""),
                                     "last_name": user.get("lastName", ""),
-                                    "roles": admin_roles,
+                                    "role": admin_roles[0] if admin_roles else None,
                                     "enabled": user["enabled"],
                                 }
                             )

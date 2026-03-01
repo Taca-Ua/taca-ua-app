@@ -13,10 +13,9 @@ class AdminListSerializer(serializers.Serializer):
     email = serializers.EmailField(read_only=True)
     first_name = serializers.CharField(read_only=True)
     last_name = serializers.CharField(read_only=True)
-    roles = serializers.ListField(
-        child=serializers.CharField(),
+    role = serializers.CharField(
         read_only=True,
-        help_text="Admin roles assigned to the user",
+        help_text="Admin role assigned to the user",
     )
     enabled = serializers.BooleanField(
         read_only=True, help_text="Whether the account is enabled"
@@ -58,7 +57,7 @@ class AdminCreateSerializer(serializers.Serializer):
         help_text="Last name of the admin",
     )
     role = serializers.ChoiceField(
-        choices=["admin_geral", "admin_nucleo"],
+        choices=["general_admin", "nucleo_admin"],
         required=True,
         help_text="Role to assign to the admin ('admin_geral' or 'admin_nucleo')",
     )

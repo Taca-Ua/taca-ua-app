@@ -231,13 +231,16 @@ KEYCLOAK_AUDIENCE = os.environ.get("KEYCLOAK_AUDIENCE", None)
 # Keycloak Admin API Configuration
 # ---------------------------------------------------------------------------
 # Configuration for Keycloak Admin API to manage admin users
-KEYCLOAK_ADMIN_SERVER_URL = os.environ.get(
-    "KEYCLOAK_ADMIN_SERVER_URL", KEYCLOAK_INTERNAL_URL
+# python-keycloak >= 3.x requires a trailing slash on server_url
+KEYCLOAK_ADMIN_SERVER_URL = (
+    os.environ.get("KEYCLOAK_ADMIN_SERVER_URL", KEYCLOAK_INTERNAL_URL).rstrip("/") + "/"
 )
 KEYCLOAK_ADMIN_USERNAME = os.environ.get("KEYCLOAK_ADMIN_USERNAME", "admin")
 KEYCLOAK_ADMIN_PASSWORD = os.environ.get("KEYCLOAK_ADMIN_PASSWORD", "admin")
-KEYCLOAK_ADMIN_REALM = os.environ.get("KEYCLOAK_ADMIN_REALM", "taca-ua")
-KEYCLOAK_ADMIN_USER_REALM = os.environ.get("KEYCLOAK_ADMIN_USER_REALM", KEYCLOAK_REALM)
+# realm_name: the realm to operate on (where taca-ua users/roles live)
+KEYCLOAK_ADMIN_REALM = os.environ.get("KEYCLOAK_ADMIN_REALM", KEYCLOAK_REALM)
+# user_realm_name: the realm the admin credentials belong to (Keycloak superuser is in "master")
+KEYCLOAK_ADMIN_USER_REALM = os.environ.get("KEYCLOAK_ADMIN_USER_REALM", "master")
 KEYCLOAK_ADMIN_VERIFY_SSL = (
     os.environ.get("KEYCLOAK_ADMIN_VERIFY_SSL", "true").lower() == "true"
 )

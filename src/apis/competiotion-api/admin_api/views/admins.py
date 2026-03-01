@@ -9,7 +9,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ..decorators import require_roles
+from ..decorators import RoleRequiredMixin
 from ..serializers.admins import (
     AdminCreateSerializer,
     AdminDetailSerializer,
@@ -23,7 +23,7 @@ from ..services.keycloak_admin_service import keycloak_admin_service
 @extend_schema_view(
     get=extend_schema(
         responses=AdminListSerializer(many=True),
-        description="List all admin users with 'admin_geral' or 'admin_nucleo' roles",
+        description="List all admin users with 'general_admin' or 'admin_nucleo' roles",
         tags=["Admin Management"],
     ),
     post=extend_schema(
@@ -33,11 +33,13 @@ from ..services.keycloak_admin_service import keycloak_admin_service
         tags=["Admin Management"],
     ),
 )
-class AdminListCreateView(APIView):
+class AdminListCreateView(RoleRequiredMixin, APIView):
     """
     View for listing and creating admin users.
-    Requires 'admin_geral' role.
+    Requires 'general_admin' role.
     """
+
+    required_roles = ["general_admin"]
 
     def get(self, request):
         """List all admin users."""
@@ -51,7 +53,6 @@ class AdminListCreateView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-    @require_roles("admin_geral")
     def post(self, request):
         """Create a new admin user."""
         serializer = AdminCreateSerializer(data=request.data)
@@ -100,13 +101,14 @@ class AdminListCreateView(APIView):
         tags=["Admin Management"],
     ),
 )
-class AdminDetailView(APIView):
+class AdminDetailView(RoleRequiredMixin, APIView):
     """
     View for retrieving, updating, and deleting individual admin users.
-    Requires 'admin_geral' role.
+    Requires 'general_admin' role.
     """
 
-    @require_roles("admin_geral")
+    required_roles = ["general_admin"]
+
     def get(self, request, user_id):
         """Retrieve an admin user by ID."""
         try:
@@ -119,7 +121,6 @@ class AdminDetailView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-    @require_roles("admin_geral")
     def put(self, request, user_id):
         """Update an admin user."""
         serializer = AdminUpdateSerializer(data=request.data)
@@ -143,7 +144,6 @@ class AdminDetailView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-    @require_roles("admin_geral")
     def delete(self, request, user_id):
         """Delete an admin user."""
         try:
@@ -162,13 +162,14 @@ class AdminDetailView(APIView):
     description="Change an admin user's password",
     tags=["Admin Management"],
 )
-class AdminPasswordChangeView(APIView):
+class AdminPasswordChangeView(RoleRequiredMixin, APIView):
     """
     View for changing an admin user's password.
-    Requires 'admin_geral' role.
+    Requires 'general_admin' role.
     """
 
-    @require_roles("admin_geral")
+    required_roles = ["general_admin"]
+
     def post(self, request, user_id):
         """Change an admin user's password."""
         serializer = AdminPasswordChangeSerializer(data=request.data)
