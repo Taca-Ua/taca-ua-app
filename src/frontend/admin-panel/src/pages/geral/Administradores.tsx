@@ -1,21 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
-import { administratorsApi, type Administrator } from '../../api/administrators';
-import { coursesApi, type Course } from '../../api/courses';
+import { administratorsApi, type Admin } from '../../api/administrators';
 
 function Administradores() {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [memberUserName, setMemberUserName] = useState('');
-  const [memberName, setMemberName] = useState('');
+  const [memberFirstName, setMemberFirstName] = useState('');
+  const [memberLastName, setMemberLastName] = useState('');
   const [memberPassword, setMemberPassword] = useState('');
   const [memberRole, setMemberRole] = useState<'geral' | 'nucleo'>('geral');
   const [email, setEmail] = useState('');
-  const [courseId, setCourseId] = useState<number | ''>('');
 
-  const [members, setMembers] = useState<Administrator[]>([]);
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [members, setMembers] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -23,12 +21,8 @@ function Administradores() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [adminsData, coursesData] = await Promise.all([
-          administratorsApi.getAll(),
-          coursesApi.getAll(),
-        ]);
+        const adminsData = await administratorsApi.getAll();
         setMembers(adminsData);
-        setCourses(coursesData);
         setError('');
       } catch (err) {
         console.error('Failed to fetch data:', err);
@@ -41,16 +35,20 @@ function Administradores() {
     fetchData();
   }, []);
 
-  const AdminG = members.filter(m => m.role === 'geral');
-  const AdminN = members.filter(m => m.role === 'nucleo');
+  const AdminG = members.filter(m => m.roles.includes('geral'));
+  const AdminN = members.filter(m => m.roles.includes('nucleo'));
 
   const handleAddMember = async () => {
     if (!memberUserName.trim()) {
       setError('Username é obrigatório');
       return;
     }
-    if (!memberName.trim()) {
-      setError('Nome é obrigatório');
+    if (!memberFirstName.trim()) {
+      setError('Primeiro nome é obrigatório');
+      return;
+    }
+    if (!memberLastName.trim()) {
+      setError('Último nome é obrigatório');
       return;
     }
     if (!email.trim()) {
@@ -61,28 +59,24 @@ function Administradores() {
       setError('Password é obrigatória');
       return;
     }
-    if (memberRole === 'nucleo' && !courseId) {
-      setError('Núcleo é obrigatório para administrador de núcleo');
-      return;
-    }
 
     try {
       const newAdmin = await administratorsApi.create({
         username: memberUserName,
         password: memberPassword,
-        full_name: memberName,
+        first_name: memberFirstName,
+        last_name: memberLastName,
         email,
-        role: memberRole,
-        course_id: memberRole === 'nucleo' ? Number(courseId) : undefined,
+        roles: [memberRole],
       });
 
       setMembers([...members, newAdmin]);
       setMemberUserName('');
-      setMemberName('');
+      setMemberFirstName('');
+      setMemberLastName('');
       setMemberPassword('');
       setMemberRole('geral');
       setEmail('');
-      setCourseId('');
       setError('');
       setIsModalOpen(false);
     } catch (err) {
@@ -121,15 +115,15 @@ function Administradores() {
           <div className="bg-white rounded-lg shadow-md p-6 mb-8">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Administradores Gerais</h2>
             <div className="space-y-3 max-h-96 overflow-y-auto">
-              {AdminG.map((AdminG) => (
+              {AdminG.map((admin) => (
                 <div
-                  key={AdminG.id}
-                  onClick={() => navigate(`/geral/administradores/${AdminG.id}`)}
+                  key={admin.id}
+                  onClick={() => navigate(`/geral/administradores/${admin.id}`)}
                   className="bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors cursor-pointer"
                 >
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-800 font-medium">{AdminG.username}</span>
-                    <span className="text-gray-600 text-sm">Email: {AdminG.email}</span>
+                    <span className="text-gray-800 font-medium">{admin.username}</span>
+                    <span className="text-gray-600 text-sm">{admin.first_name} {admin.last_name} - {admin.email}</span>
                   </div>
                 </div>
               ))}
@@ -139,17 +133,15 @@ function Administradores() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Administradores Núcleo</h2>
             <div className="space-y-3 max-h-96 overflow-y-auto">
-              {AdminN.map((AdminN) => (
+              {AdminN.map((admin) => (
                 <div
-                  key={AdminN.id}
-                  onClick={() => navigate(`/geral/administradores/${AdminN.id}`)}
+                  key={admin.id}
+                  onClick={() => navigate(`/geral/administradores/${admin.id}`)}
                   className="bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors cursor-pointer"
                 >
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-800 font-medium">{AdminN.username}</span>
-                    <span className="text-gray-600 text-sm">
-                      Email: {AdminN.email} | Núcleo: {AdminN.course_abbreviation || 'N/A'}
-                    </span>
+                    <span className="text-gray-800 font-medium">{admin.username}</span>
+                    <span className="text-gray-600 text-sm">{admin.first_name} {admin.last_name} - {admin.email}</span>
                   </div>
                 </div>
               ))}
@@ -178,17 +170,31 @@ function Administradores() {
                 />
               </div>
 
-               <div>
-                <label htmlFor="memberName" className="block text-gray-700 font-medium mb-2">
-                  Nome <span className="text-red-500">*</span>
+              <div>
+                <label htmlFor="memberFirstName" className="block text-gray-700 font-medium mb-2">
+                  Primeiro Nome <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  id="memberName"
-                  value={memberName}
-                  onChange={(e) => setMemberName(e.target.value)}
+                  id="memberFirstName"
+                  value={memberFirstName}
+                  onChange={(e) => setMemberFirstName(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  placeholder="Digite o nome completo"
+                  placeholder="Digite o primeiro nome"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="memberLastName" className="block text-gray-700 font-medium mb-2">
+                  Último Nome <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="memberLastName"
+                  value={memberLastName}
+                  onChange={(e) => setMemberLastName(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  placeholder="Digite o último nome"
                 />
               </div>
 
@@ -226,7 +232,7 @@ function Administradores() {
                   Email <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="text"
+                  type="email"
                   id="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -234,27 +240,6 @@ function Administradores() {
                   placeholder="Digite o email (ex: admin@ua.pt)"
                 />
               </div>
-
-              {memberRole === 'nucleo' && (
-                <div>
-                  <label htmlFor="courseId" className="block text-gray-700 font-medium mb-2">
-                    Núcleo <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    id="courseId"
-                    value={courseId}
-                    onChange={(e) => setCourseId(e.target.value ? Number(e.target.value) : '')}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  >
-                    <option value="">Selecionar Curso</option>
-                    {courses.map((course) => (
-                      <option key={course.id} value={course.id}>
-                        {course.abbreviation} - {course.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
             </div>
 
             {error && (
@@ -268,11 +253,11 @@ function Administradores() {
                 onClick={() => {
                   setIsModalOpen(false);
                   setMemberUserName('');
-                  setMemberName('');
+                  setMemberFirstName('');
+                  setMemberLastName('');
                   setMemberPassword('');
                   setMemberRole('geral');
                   setEmail('');
-                  setCourseId('');
                   setError('');
                 }}
                 className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"

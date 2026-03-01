@@ -1,51 +1,62 @@
 import { apiClient } from './client';
 
-export interface Administrator {
-  id: number;
+export interface Admin {
+  id: string;
   username: string;
-  full_name: string;
   email: string;
-  role: 'geral' | 'nucleo';
-  course_id: number | null;
-  course_abbreviation: string | null;
-  password?: string; // Only returned in detail view
+  first_name: string;
+  last_name: string;
+  roles: string[];
+  enabled: boolean;
 }
 
-export interface AdministratorCreate {
+export interface AdminDetails extends Admin {
+}
+
+export interface AdminCreate {
   username: string;
+  email: string;
   password: string;
-  full_name: string;
-  email: string;
-  role: 'geral' | 'nucleo';
-  course_id?: number;
+  first_name: string;
+  last_name: string;
+  roles: string[];
 }
 
-export interface AdministratorUpdate {
-  username?: string;
-  full_name?: string;
+export interface AdminUpdate {
   email?: string;
-  password?: string;
-  course_id?: number;
+  first_name?: string;
+  last_name?: string;
+  enabled?: boolean;
 }
+
+export interface AdminPasswordChange {
+  new_password: string;
+  temporary: boolean;
+}
+
 
 export const administratorsApi = {
-  async getAll(): Promise<Administrator[]> {
-    return apiClient.get<Administrator[]>('/administrators');
+  async getAll(): Promise<Admin[]> {
+    return apiClient.get<Admin[]>('/admins/');
   },
 
-  async getById(administratorId: number): Promise<Administrator> {
-    return apiClient.get<Administrator>(`/administrators/${administratorId}`);
+  async create(data: AdminCreate): Promise<Admin> {
+    return apiClient.post<Admin>('/admins/', data);
   },
 
-  async create(data: AdministratorCreate): Promise<Administrator> {
-    return apiClient.post<Administrator>('/administrators', data);
+  async getById(administratorId: number): Promise<AdminDetails> {
+    return apiClient.get<AdminDetails>(`/admins/${administratorId}/`);
   },
 
-  async update(administratorId: number, data: AdministratorUpdate): Promise<Administrator> {
-    return apiClient.put<Administrator>(`/administrators/${administratorId}`, data);
+  async update(administratorId: number, data: AdminUpdate): Promise<Admin> {
+    return apiClient.put<Admin>(`/admins/${administratorId}/`, data);
+  },
+
+  async changePassword(administratorId: number, data: AdminPasswordChange): Promise<void> {
+    return apiClient.post(`/admins/${administratorId}/change-password/`, data);
   },
 
   async delete(administratorId: number): Promise<void> {
-    return apiClient.delete(`/administrators/${administratorId}`);
+    return apiClient.delete(`/admins/${administratorId}/`);
   },
 };

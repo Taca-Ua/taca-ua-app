@@ -10,6 +10,8 @@ app_name = "admin_api"
 urlpatterns = [
     # Authentication (Keycloak)
     path("auth/", include("admin_api.views.auth")),
+    # Admin User Management
+    path("admins/", include("admin_api.views.admins")),
     # File Management
     path("files/", include("admin_api.views.file_views")),
     # Course Management (RF2)

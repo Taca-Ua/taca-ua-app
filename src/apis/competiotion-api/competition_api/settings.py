@@ -227,6 +227,21 @@ KEYCLOAK_ALGORITHMS = ["RS256"]
 # audience mapper is configured in Keycloak, so verification is off by default.
 KEYCLOAK_AUDIENCE = os.environ.get("KEYCLOAK_AUDIENCE", None)
 
+# ---------------------------------------------------------------------------
+# Keycloak Admin API Configuration
+# ---------------------------------------------------------------------------
+# Configuration for Keycloak Admin API to manage admin users
+KEYCLOAK_ADMIN_SERVER_URL = os.environ.get(
+    "KEYCLOAK_ADMIN_SERVER_URL", KEYCLOAK_INTERNAL_URL
+)
+KEYCLOAK_ADMIN_USERNAME = os.environ.get("KEYCLOAK_ADMIN_USERNAME", "admin")
+KEYCLOAK_ADMIN_PASSWORD = os.environ.get("KEYCLOAK_ADMIN_PASSWORD", "admin")
+KEYCLOAK_ADMIN_REALM = os.environ.get("KEYCLOAK_ADMIN_REALM", "taca-ua")
+KEYCLOAK_ADMIN_USER_REALM = os.environ.get("KEYCLOAK_ADMIN_USER_REALM", KEYCLOAK_REALM)
+KEYCLOAK_ADMIN_VERIFY_SSL = (
+    os.environ.get("KEYCLOAK_ADMIN_VERIFY_SSL", "true").lower() == "true"
+)
+
 # Paths that bypass JWT validation entirely (no Authorization header required).
 # Add any public / infrastructure endpoints here.
 KEYCLOAK_EXEMPT_PATHS = [
