@@ -9,6 +9,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from ..decorators import RoleRequiredMixin
 from ..serializers.teams import (
     TeamCreateSerializer,
     TeamDetailSerializer,
@@ -33,7 +34,7 @@ from ..services.modalities_service import modalities_service_client
         tags=["Team Management"],
     ),
 )
-class TeamListCreateView(APIView):
+class TeamListCreateView(RoleRequiredMixin, APIView):
     def get(self, request: Request):
         # Serialize input data
         serializer = TeamListRequestSerializer(data=request.query_params)
@@ -80,7 +81,7 @@ class TeamListCreateView(APIView):
         tags=["Team Management"],
     ),
 )
-class TeamDetailView(APIView):
+class TeamDetailView(RoleRequiredMixin, APIView):
     def get(self, request, team_id):
         team = modalities_service_client.get_team(team_id)
 

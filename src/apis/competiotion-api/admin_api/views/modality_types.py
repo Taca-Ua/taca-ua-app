@@ -10,7 +10,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ..decorators import RoleRequiredMixin
+from ..decorators import RoleRequiredMixin, require_auth
 from ..serializers.modality_types import (
     ModalityTypeCreateSerializer,
     ModalityTypeDetailSerializer,
@@ -75,7 +75,7 @@ class ModalityTypeListCreateView(RoleRequiredMixin, APIView):
         tags=["Modality Management"],
     ),
 )
-class ModalityTypeDetailView(APIView):
+class ModalityTypeDetailView(RoleRequiredMixin, APIView):
     def get(self, request, modality_type_id):
         modality_type = modalities_service_client.get_modality_type(modality_type_id)
 
@@ -110,6 +110,7 @@ class ModalityTypeDetailView(APIView):
     tags=["Modality Management"],
 )
 @api_view(["GET"])
+@require_auth
 def list_modality_types(request: Request):
     modality_types = modalities_service_client.list_modality_types()
 

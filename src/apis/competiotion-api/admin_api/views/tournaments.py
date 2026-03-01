@@ -11,6 +11,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from ..decorators import RoleRequiredMixin, require_auth
 from ..serializers.tournaments import (
     TournamentCompetitorsDeleteSerializer,
     TournamentCompetitorSerializer,
@@ -37,7 +38,7 @@ from ..services.tournaments_service import tournaments_service_client
         tags=["Tournament Management"],
     ),
 )
-class TournamentListCreateView(APIView):
+class TournamentListCreateView(RoleRequiredMixin, APIView):
     def get(self, request):
         """List all tournaments"""
         tournaments = tournaments_service_client.list_tournaments()
@@ -95,7 +96,7 @@ class TournamentListCreateView(APIView):
         tags=["Tournament Management"],
     ),
 )
-class TournamentDetailView(APIView):
+class TournamentDetailView(RoleRequiredMixin, APIView):
     def get(self, request, tournament_id):
         """Get tournament details by ID"""
         try:
@@ -157,6 +158,7 @@ class TournamentDetailView(APIView):
     tags=["Tournament Management"],
 )
 @api_view(["POST"])
+@require_auth
 def tournament_finish(request, tournament_id):
     """Mark a tournament as finished"""
     serializer = TournamentFinishSerializer(data=request.data)
@@ -194,6 +196,7 @@ def tournament_finish(request, tournament_id):
     tags=["Tournament Management"],
 )
 @api_view(["PUT"])
+@require_auth
 def tournament_add_competitors(request, tournament_id):
     """Add competitors to a tournament"""
     serializer = TournamentCompetitorSerializer(data=request.data, many=True)
@@ -224,6 +227,7 @@ def tournament_add_competitors(request, tournament_id):
     tags=["Tournament Management"],
 )
 @api_view(["PUT"])
+@require_auth
 def tournament_remove_competitors(request, tournament_id):
     """Remove competitors from a tournament"""
     serializer = TournamentCompetitorsDeleteSerializer(data=request.data)

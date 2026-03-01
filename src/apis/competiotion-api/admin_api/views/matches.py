@@ -12,6 +12,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from ..decorators import RoleRequiredMixin, require_auth
 from ..serializers.matches import (
     CommentCreateSerializer,
     CommentDetailSerializer,
@@ -47,7 +48,7 @@ logger = structlog.get_logger(__name__)
         tags=["Match Management"],
     ),
 )
-class MatchListCreateView(APIView):
+class MatchListCreateView(RoleRequiredMixin, APIView):
     """List and create matches"""
 
     def get(self, request):
@@ -138,7 +139,7 @@ class MatchListCreateView(APIView):
         tags=["Match Management"],
     ),
 )
-class MatchDetailView(APIView):
+class MatchDetailView(RoleRequiredMixin, APIView):
     """Retrieve, update, or delete a match"""
 
     def get(self, request, match_id):
@@ -208,7 +209,7 @@ class MatchDetailView(APIView):
         tags=["Match Management"],
     ),
 )
-class ParticipantAddView(APIView):
+class ParticipantAddView(RoleRequiredMixin, APIView):
     """Add a participant to a match"""
 
     def post(self, request, match_id):
@@ -244,6 +245,7 @@ class ParticipantAddView(APIView):
     tags=["Match Management"],
 )
 @api_view(["DELETE"])
+@require_auth
 def remove_participant(request, match_id, participant_id):
     """Remove participant from match"""
     try:
@@ -271,6 +273,7 @@ def remove_participant(request, match_id, participant_id):
     tags=["Match Management"],
 )
 @api_view(["PUT"])
+@require_auth
 def update_match_results(request, match_id):
     """Update match results"""
     serializer = MatchResultsUpdateSerializer(data=request.data)
@@ -325,7 +328,7 @@ def update_match_results(request, match_id):
         tags=["Match Management"],
     ),
 )
-class LineupView(APIView):
+class LineupView(RoleRequiredMixin, APIView):
     """Get or assign lineup for a match"""
 
     def get(self, request, match_id):
@@ -395,7 +398,7 @@ class LineupView(APIView):
         tags=["Match Management"],
     ),
 )
-class CommentView(APIView):
+class CommentView(RoleRequiredMixin, APIView):
     """Get or add comments for a match"""
 
     def get(self, request, match_id):
@@ -436,6 +439,7 @@ class CommentView(APIView):
     tags=["Match Management"],
 )
 @api_view(["DELETE"])
+@require_auth
 def delete_comment(request, match_id, comment_id):
     """Delete a comment"""
     try:
@@ -460,6 +464,7 @@ def delete_comment(request, match_id, comment_id):
     tags=["Match Management"],
 )
 @api_view(["GET"])
+@require_auth
 def match_sheet(request, match_id):
     """Generate match sheet PDF"""
     return Response(

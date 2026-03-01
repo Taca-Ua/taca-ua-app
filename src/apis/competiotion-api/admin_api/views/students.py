@@ -8,6 +8,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from ..decorators import RoleRequiredMixin
 from ..serializers.students import (
     StudentCreateSerializer,
     StudentDetailSerializer,
@@ -32,7 +33,7 @@ from ..services.modalities_service import modalities_service_client
         tags=["Student Management"],
     ),
 )
-class StudentListCreateView(APIView):
+class StudentListCreateView(RoleRequiredMixin, APIView):
     def get(self, request):
         serializer = StudentListRequestSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
@@ -75,7 +76,7 @@ class StudentListCreateView(APIView):
         tags=["Student Management"],
     ),
 )
-class StudentDetailView(APIView):
+class StudentDetailView(RoleRequiredMixin, APIView):
     def get(self, request, student_id):
         student = modalities_service_client.get_student(student_id)
 

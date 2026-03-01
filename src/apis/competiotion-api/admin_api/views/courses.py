@@ -9,6 +9,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from ..decorators import RoleRequiredMixin
 from ..serializers.courses import (
     CourseCreateSerializer,
     CourseDetailSerializer,
@@ -31,7 +32,7 @@ from ..services.modalities_service import modalities_service_client
         tags=["Course Management"],
     ),
 )
-class CourseListCreateView(APIView):
+class CourseListCreateView(RoleRequiredMixin, APIView):
     def get(self, request: Request):
         courses = modalities_service_client.list_courses()
 
@@ -70,7 +71,7 @@ class CourseListCreateView(APIView):
         tags=["Course Management"],
     ),
 )
-class CourseDetailView(APIView):
+class CourseDetailView(RoleRequiredMixin, APIView):
     def get(self, request, course_id):
         course = modalities_service_client.get_course(course_id)
         serializer = CourseDetailSerializer(course)

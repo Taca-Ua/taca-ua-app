@@ -33,6 +33,4 @@ urlpatterns = [
     path("matches/", include("admin_api.views.matches")),
     # Season Management (RF2.4)
     path("seasons/", include("admin_api.views.seasons")),
-    # Public API
-    path("public/", include("admin_api.views.public")),
 ]

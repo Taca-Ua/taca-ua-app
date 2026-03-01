@@ -9,6 +9,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from ..decorators import RoleRequiredMixin
 from ..logging_decorators import log_action
 from ..serializers.modalities import (
     ModalityCreateSerializer,
@@ -33,7 +34,7 @@ from ..services.modalities_service import modalities_service_client
         tags=["Modality Management"],
     ),
 )
-class ModalityListCreateView(APIView):
+class ModalityListCreateView(RoleRequiredMixin, APIView):
     @log_action("list_modalities")
     def get(self, request: Request):
         modalities = modalities_service_client.list_modalities()
@@ -77,7 +78,7 @@ class ModalityListCreateView(APIView):
         tags=["Modality Management"],
     ),
 )
-class ModalityDetailView(APIView):
+class ModalityDetailView(RoleRequiredMixin, APIView):
     @log_action("get_modality")
     def get(self, request, modality_id):
         modality = modalities_service_client.get_modality(modality_id)
