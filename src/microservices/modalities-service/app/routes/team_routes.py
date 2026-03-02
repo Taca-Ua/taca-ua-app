@@ -9,7 +9,7 @@ from taca_events import EventType
 from ..database import get_db_session
 from ..event_helpers import emit_event
 from ..logger import logger
-from ..models import Course, Modality, Student, Team
+from ..models import Course, Modality, Nucleo, Student, Team
 from ..schemas import TeamCreate, TeamResponse, TeamUpdate
 
 router = APIRouter()
@@ -19,9 +19,18 @@ DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000"
 
 
 @router.get("/teams", response_model=List[TeamResponse])
-def list_teams(db: Session = Depends(get_db_session)):
+def list_teams(admin_id: str = None, db: Session = Depends(get_db_session)):
     """List all teams"""
-    teams = db.query(Team).all()
+    query = db.query(Team)
+    # need to check if the team belongs to a course that belongs to a nucleo managed by the admin_id
+    print(f"Filtering teams for admin_id: {admin_id}")
+    if admin_id:
+        query = (
+            query.join(Team.course)
+            .join(Course.nucleo)
+            .filter(Nucleo.admins_ids.any(admin_id))
+        )
+    teams = query.all()
     return [team.to_dict() for team in teams]
 
 
