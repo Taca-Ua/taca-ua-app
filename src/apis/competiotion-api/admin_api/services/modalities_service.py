@@ -496,13 +496,16 @@ class ModalitiesService(BaseService):
         return [ModalityDTO(**modality) for modality in modalities_data]
 
     # ==================== STUDENT METHODS ====================
-    def list_students(self) -> List[StudentDTO]:
+    def list_students(self, admin_id: str = None) -> List[StudentDTO]:
         """List all students
 
         Returns:
             List[StudentDTO]: List of StudentDTO objects representing the students
         """
-        students_data = self.get("/students")
+        params = {}
+        if admin_id is not None:
+            params["admin_id"] = admin_id
+        students_data = self.get("/students", params=params)
         return [StudentDTO(**student) for student in students_data]
 
     def create_student(

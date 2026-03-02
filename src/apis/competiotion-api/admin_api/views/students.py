@@ -38,7 +38,9 @@ class StudentListCreateView(RoleRequiredMixin, APIView):
         serializer = StudentListRequestSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
-        all_students = modalities_service_client.list_students()
+        all_students = modalities_service_client.list_students(
+            admin_id=request.user_id if "nucleo_admin" in request.roles else None,
+        )
 
         serializer = StudentListSerializer(all_students, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

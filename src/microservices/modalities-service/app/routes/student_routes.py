@@ -10,7 +10,7 @@ from taca_events import EventType
 from ..database import get_db_session
 from ..event_helpers import emit_event
 from ..logger import logger
-from ..models import Course, Student
+from ..models import Course, Nucleo, Student
 from ..schemas import StudentCreate, StudentResponse, StudentUpdate
 
 router = APIRouter()
@@ -20,9 +20,16 @@ DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000"
 
 
 @router.get("/students", response_model=List[StudentResponse])
-def list_students(db: Session = Depends(get_db_session)):
+def list_students(admin_id: str = None, db: Session = Depends(get_db_session)):
     """List all students"""
-    students = db.query(Student).all()
+    students = db.query(Student)
+    if admin_id is not None:
+        students = (
+            students.join(Student.course)
+            .join(Course.nucleo)
+            .filter(Nucleo.admins_ids.any(admin_id))
+        )
+    students = students.all()
     return [student.to_dict() for student in students]
 
 
