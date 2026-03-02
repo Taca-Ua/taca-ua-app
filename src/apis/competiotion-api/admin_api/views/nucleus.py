@@ -9,6 +9,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from ..decorators import RoleRequiredMixin
 from ..serializers.nucleus import (
     NucleosCreateSerializer,
     NucleosDetailSerializer,
@@ -31,7 +32,7 @@ from ..services.modalities_service import modalities_service_client
         tags=["Nucleo Management"],
     ),
 )
-class NucleoListCreateView(APIView):
+class NucleoListCreateView(RoleRequiredMixin, APIView):
     def get(self, request: Request):
         nucleos = modalities_service_client.list_nucleos()
 
@@ -72,7 +73,7 @@ class NucleoListCreateView(APIView):
         tags=["Nucleo Management"],
     ),
 )
-class NucleoDetailView(APIView):
+class NucleoDetailView(RoleRequiredMixin, APIView):
     def get(self, request, nucleo_id):
         nucleo = modalities_service_client.get_nucleo(nucleo_id)
 

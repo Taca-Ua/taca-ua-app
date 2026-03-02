@@ -12,6 +12,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from ..decorators import RoleRequiredMixin, require_auth
 from ..serializers.matches import (
     CommentCreateSerializer,
     CommentDetailSerializer,
@@ -27,6 +28,7 @@ from ..serializers.matches import (
 )
 from ..services.enricher_service import enricher_service
 from ..services.matches_service import matches_service_client
+from ..services.modalities_service import modalities_service_client
 
 logger = structlog.get_logger(__name__)
 
@@ -47,7 +49,7 @@ logger = structlog.get_logger(__name__)
         tags=["Match Management"],
     ),
 )
-class MatchListCreateView(APIView):
+class MatchListCreateView(RoleRequiredMixin, APIView):
     """List and create matches"""
 
     def get(self, request):
@@ -61,6 +63,14 @@ class MatchListCreateView(APIView):
         date_from = request.query_params.get("date_from")
         date_to = request.query_params.get("date_to")
 
+        allowed_team_ids = None
+        if "nucleo_admin" in request.roles:
+            # If user is a nucleo admin, filter matches to only include their teams
+            allowed_teams = modalities_service_client.list_teams(
+                admin_id=request.user_id
+            )
+            allowed_team_ids = {str(team.id) for team in allowed_teams}
+
         try:
             matches = matches_service_client.list_matches(
                 tournament_id=UUID(tournament_id) if tournament_id else None,
@@ -71,6 +81,23 @@ class MatchListCreateView(APIView):
                 date_from=date_from,
                 date_to=date_to,
             )
+
+            # If user is a nucleo admin, filter matches to only include those with their teams and show just their teams in participants
+            if allowed_team_ids is not None:
+                filtered_matches = []
+                for match in matches:
+                    # Filter participants to only include those with allowed teams
+                    filtered_participants = []
+                    for participant in match.participants:
+                        if participant.team_id in allowed_team_ids:
+                            filtered_participants.append(participant)
+
+                    # Only include the match if it has any participants after filtering
+                    if filtered_participants:
+                        match.participants = filtered_participants
+                        filtered_matches.append(match)
+
+                matches = filtered_matches
 
             # Enrich participant data with team/athlete details
             enricher_service.complete_matches_info(matches)
@@ -138,14 +165,29 @@ class MatchListCreateView(APIView):
         tags=["Match Management"],
     ),
 )
-class MatchDetailView(APIView):
+class MatchDetailView(RoleRequiredMixin, APIView):
     """Retrieve, update, or delete a match"""
 
     def get(self, request, match_id):
         """Get match details"""
         try:
+            allowed_team_ids = None
+            if "nucleo_admin" in request.roles:
+                # If user is a nucleo admin, filter matches to only include their teams
+                allowed_teams = modalities_service_client.list_teams(
+                    admin_id=request.user_id
+                )
+                allowed_team_ids = {str(team.id) for team in allowed_teams}
+
             match = matches_service_client.get_match(match_id=match_id)
-            print("Match fetched:", match.__dict__["participants"])
+
+            # filter match participants if user is a nucleo admin
+            if allowed_team_ids is not None:
+                filtered_participants = []
+                for participant in match.participants:
+                    if participant.team_id in allowed_team_ids:
+                        filtered_participants.append(participant)
+                match.participants = filtered_participants
 
             # Enrich participant data
             enricher_service.complete_matches_info([match])
@@ -208,7 +250,7 @@ class MatchDetailView(APIView):
         tags=["Match Management"],
     ),
 )
-class ParticipantAddView(APIView):
+class ParticipantAddView(RoleRequiredMixin, APIView):
     """Add a participant to a match"""
 
     def post(self, request, match_id):
@@ -244,6 +286,7 @@ class ParticipantAddView(APIView):
     tags=["Match Management"],
 )
 @api_view(["DELETE"])
+@require_auth
 def remove_participant(request, match_id, participant_id):
     """Remove participant from match"""
     try:
@@ -271,6 +314,7 @@ def remove_participant(request, match_id, participant_id):
     tags=["Match Management"],
 )
 @api_view(["PUT"])
+@require_auth
 def update_match_results(request, match_id):
     """Update match results"""
     serializer = MatchResultsUpdateSerializer(data=request.data)
@@ -325,7 +369,7 @@ def update_match_results(request, match_id):
         tags=["Match Management"],
     ),
 )
-class LineupView(APIView):
+class LineupView(RoleRequiredMixin, APIView):
     """Get or assign lineup for a match"""
 
     def get(self, request, match_id):
@@ -395,7 +439,7 @@ class LineupView(APIView):
         tags=["Match Management"],
     ),
 )
-class CommentView(APIView):
+class CommentView(RoleRequiredMixin, APIView):
     """Get or add comments for a match"""
 
     def get(self, request, match_id):
@@ -436,6 +480,7 @@ class CommentView(APIView):
     tags=["Match Management"],
 )
 @api_view(["DELETE"])
+@require_auth
 def delete_comment(request, match_id, comment_id):
     """Delete a comment"""
     try:
@@ -460,6 +505,7 @@ def delete_comment(request, match_id, comment_id):
     tags=["Match Management"],
 )
 @api_view(["GET"])
+@require_auth
 def match_sheet(request, match_id):
     """Generate match sheet PDF"""
     return Response(

@@ -1,11 +1,10 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 
 export default function NucleoSidebar() {
   const [isOpen, setIsOpen] = useState(false);
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { username, logout } = useAuth();
 
   const navItems = [
     { to: "/nucleo/membros", label: "Membros", short: "Mem" },
@@ -71,12 +70,9 @@ export default function NucleoSidebar() {
         <div className="border-t border-gray-200 py-2 flex-shrink-0">
           {isOpen ? (
             <div className="px-3 space-y-1">
-              {user && (
+              {username && (
                 <div className="py-2">
-                  <p className="text-sm font-semibold text-gray-800 truncate">{user.full_name}</p>
-                  {user.course_abbreviation && (
-                    <p className="text-xs text-teal-600">{user.course_abbreviation}</p>
-                  )}
+                  <p className="text-sm font-semibold text-gray-800 truncate">{username}</p>
                 </div>
               )}
               <a
@@ -89,7 +85,6 @@ export default function NucleoSidebar() {
                 onClick={() => {
                   setIsOpen(false);
                   logout();
-                  navigate('/login/nucleo');
                 }}
                 className="flex items-center h-10 w-full text-left text-gray-700 hover:text-red-600 font-medium transition text-sm"
               >
@@ -100,7 +95,6 @@ export default function NucleoSidebar() {
             <button
               onClick={() => {
                 logout();
-                navigate('/login/nucleo');
               }}
               className="flex items-center justify-center h-11 w-full text-gray-500 hover:text-red-600 transition"
               title="Logout"

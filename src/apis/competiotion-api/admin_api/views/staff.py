@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from ..decorators import RoleRequiredMixin
 from ..serializers.staff import (
     StaffCreateSerializer,
     StaffDetailSerializer,
@@ -26,7 +27,7 @@ from ..services.modalities_service import modalities_service_client
         tags=["Staff Management"],
     ),
 )
-class StaffListCreateView(APIView):
+class StaffListCreateView(RoleRequiredMixin, APIView):
     def get(self, request):
         all_staff = modalities_service_client.list_staff()
 
@@ -65,7 +66,7 @@ class StaffListCreateView(APIView):
         tags=["Staff Management"],
     ),
 )
-class StaffDetailView(APIView):
+class StaffDetailView(RoleRequiredMixin, APIView):
     def get(self, request, staff_id):
         staff_member = modalities_service_client.get_staff(staff_id)
 

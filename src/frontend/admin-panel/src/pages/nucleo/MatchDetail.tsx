@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import NucleoSidebar from '../../components/nucleo_navbar';
 import {
   matchesApi,
-  type MatchDetail,
+  type MatchDetail as MatchDetailData,
   type LineupDetail,
   type LineupAssign,
   type PlayerLineup
@@ -14,7 +14,7 @@ import { tournamentsApi, type Tournament } from '../../api/tournaments';
 // ==================== Private Components ====================
 
 // Match Info Card Component
-const MatchInfoCard = ({ match, tournament }: { match: MatchDetail; tournament: Tournament | null }) => {
+const MatchInfoCard = ({ match, tournament }: { match: MatchDetailData; tournament: Tournament | null }) => {
   const formatDateTime = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -139,7 +139,7 @@ const TeamLineupCard = ({
   canEdit,
   onEdit
 }: {
-  participant: MatchDetail['participants'][0];
+  participant: MatchDetailData['participants'][0];
   lineups: LineupDetail[];
   canEdit: boolean;
   onEdit: () => void;
@@ -361,7 +361,7 @@ const MatchDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [match, setMatch] = useState<MatchDetail | null>(null);
+  const [match, setMatch] = useState<MatchDetailData | null>(null);
   const [lineups, setLineups] = useState<LineupDetail[]>([]);
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [loading, setLoading] = useState(true);
@@ -369,7 +369,7 @@ const MatchDetail = () => {
 
   // Modal state
   const [showLineupModal, setShowLineupModal] = useState(false);
-  const [editingParticipant, setEditingParticipant] = useState<MatchDetail['participants'][0] | null>(null);
+  const [editingParticipant, setEditingParticipant] = useState<MatchDetailData['participants'][0] | null>(null);
 
   useEffect(() => {
     fetchMatchData();
@@ -407,7 +407,7 @@ const MatchDetail = () => {
     }
   };
 
-  const handleOpenLineupEditor = (participant: MatchDetail['participants'][0]) => {
+  const handleOpenLineupEditor = (participant: MatchDetailData['participants'][0]) => {
     if (!participant.team) {
       alert('Este participante não é uma equipa.');
       return;

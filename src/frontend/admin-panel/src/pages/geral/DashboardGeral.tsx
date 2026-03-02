@@ -9,7 +9,8 @@ import { useAuth } from '../../hooks/useAuth';
 
 function DashboardGeral() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  // username is used in the welcome greeting below
+  const { username } = useAuth();
   const [stats, setStats] = useState({
     modalities: 0,
     courses: 0,
@@ -124,7 +125,7 @@ function DashboardGeral() {
         <div className="max-w-7xl mx-auto">
           <h1 className="text-4xl font-bold mb-4 text-gray-800">Dashboard - Administrador Geral</h1>
           <p className="text-gray-600 mb-8">
-            Bem-vindo, <span className="font-semibold">{user?.full_name}</span>
+            Bem-vindo, <span className="font-semibold">{username ?? 'Administrador'}</span>
           </p>
 
           {loading ? (

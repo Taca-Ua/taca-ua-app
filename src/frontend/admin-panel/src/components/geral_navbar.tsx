@@ -1,11 +1,10 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
-  const { logout, user } = useAuth();
-  const navigate = useNavigate();
+  const { logout, username } = useAuth();
 
   const navItems = [
     { to: "/geral/administradores", label: "Administradores", short: "Adm" },
@@ -76,8 +75,8 @@ export default function Sidebar() {
         <div className="border-t border-gray-200 py-2 flex-shrink-0">
           {isOpen ? (
             <div className="px-3 space-y-1">
-              {user?.full_name && (
-                <p className="text-xs text-gray-500 truncate py-1">{user.full_name}</p>
+              {username && (
+                <p className="text-xs text-gray-500 truncate py-1">{username}</p>
               )}
               <a
                 href="/"
@@ -89,7 +88,6 @@ export default function Sidebar() {
                 onClick={() => {
                   setIsOpen(false);
                   logout();
-                  navigate('/login/geral');
                 }}
                 className="flex items-center h-10 w-full text-left text-gray-700 hover:text-red-600 font-medium transition text-sm"
               >
@@ -100,7 +98,6 @@ export default function Sidebar() {
             <button
               onClick={() => {
                 logout();
-                navigate('/login/geral');
               }}
               className="flex items-center justify-center h-11 w-full text-gray-500 hover:text-red-600 transition"
               title="Logout"
