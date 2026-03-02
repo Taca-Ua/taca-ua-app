@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
 import { administratorsApi, type Admin } from '../../api/administrators';
+import { nucleosApi, type Nucleo } from '../../api/nucleos';
 
 function Administradores() {
   const navigate = useNavigate();
@@ -14,6 +15,8 @@ function Administradores() {
   const [email, setEmail] = useState('');
 
   const [members, setMembers] = useState<Admin[]>([]);
+  const [allNucleos, setAllNucleos] = useState<Nucleo[]>([]);
+  const [selectedNucleos, setSelectedNucleos] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -21,8 +24,12 @@ function Administradores() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const adminsData = await administratorsApi.getAll();
+        const [adminsData, nucleosData] = await Promise.all([
+          administratorsApi.getAll(),
+          nucleosApi.getAll(),
+        ]);
         setMembers(adminsData);
+        setAllNucleos(nucleosData);
         setError('');
       } catch (err) {
         console.error('Failed to fetch data:', err);
@@ -68,6 +75,7 @@ function Administradores() {
         last_name: memberLastName,
         email,
         role: memberRole,
+        nucleos: memberRole === 'nucleo_admin' ? selectedNucleos : [],
       });
 
       setMembers([...members, newAdmin]);
@@ -77,6 +85,7 @@ function Administradores() {
       setMemberPassword('');
       setMemberRole('general_admin');
       setEmail('');
+      setSelectedNucleos([]);
       setError('');
       setIsModalOpen(false);
     } catch (err) {
@@ -219,13 +228,48 @@ function Administradores() {
                 <select
                   id="memberRole"
                   value={memberRole}
-                  onChange={(e) => setMemberRole(e.target.value as 'general_admin' | 'nucleo_admin')}
+                  onChange={(e) => {
+                    setMemberRole(e.target.value as 'general_admin' | 'nucleo_admin');
+                    setSelectedNucleos([]);
+                  }}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <option value="general_admin">Administrador Geral</option>
                   <option value="nucleo_admin">Administrador Núcleo</option>
                 </select>
               </div>
+
+              {memberRole === 'nucleo_admin' && (
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">
+                    Núcleos
+                  </label>
+                  <div className="border border-gray-300 rounded-md max-h-40 overflow-y-auto p-2 space-y-1">
+                    {allNucleos.length === 0 ? (
+                      <p className="text-gray-500 text-sm p-2">Nenhum núcleo disponível</p>
+                    ) : (
+                      allNucleos.map((nucleo) => (
+                        <label key={nucleo.id} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-50 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedNucleos.includes(nucleo.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedNucleos([...selectedNucleos, nucleo.id]);
+                              } else {
+                                setSelectedNucleos(selectedNucleos.filter(id => id !== nucleo.id));
+                              }
+                            }}
+                            className="accent-teal-500"
+                          />
+                          <span className="text-gray-800">{nucleo.name}</span>
+                          <span className="text-gray-500 text-sm">({nucleo.abbreviation})</span>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label htmlFor="email" className="block text-gray-700 font-medium mb-2">
@@ -258,6 +302,7 @@ function Administradores() {
                   setMemberPassword('');
                   setMemberRole('general_admin');
                   setEmail('');
+                  setSelectedNucleos([]);
                   setError('');
                 }}
                 className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"

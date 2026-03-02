@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import { type Nucleo } from "./nucleos";
 
 export interface Admin {
   id: string;
@@ -11,6 +12,7 @@ export interface Admin {
 }
 
 export interface AdminDetails extends Admin {
+    nucleos: Nucleo[];
 }
 
 export interface AdminCreate {
@@ -20,6 +22,7 @@ export interface AdminCreate {
   first_name: string;
   last_name: string;
   role: string;
+  nucleos: string[]; // Array of Nucleo IDs
 }
 
 export interface AdminUpdate {
@@ -27,6 +30,7 @@ export interface AdminUpdate {
   first_name?: string;
   last_name?: string;
   enabled?: boolean;
+  nucleos?: string[]; // Array of Nucleo IDs
 }
 
 export interface AdminPasswordChange {

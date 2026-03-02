@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Sidebar from '../../components/geral_navbar';
 import { administratorsApi, type AdminDetails } from '../../api/administrators';
+import { nucleosApi, type Nucleo } from '../../api/nucleos';
 
 function AdminDetail() {
   const { id } = useParams();
@@ -18,6 +19,8 @@ function AdminDetail() {
   const [editedEmail, setEditedEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [editedEnabled, setEditedEnabled] = useState(true);
+  const [allNucleos, setAllNucleos] = useState<Nucleo[]>([]);
+  const [editedNucleos, setEditedNucleos] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -47,11 +50,15 @@ function AdminDetail() {
     setEditedLastName(member.last_name);
     setEditedEmail(member.email);
     setEditedEnabled(member.enabled);
+    setEditedNucleos(member.nucleos.map(n => n.id));
     setError('');
+    // Fetch all nucleos for the selector
+    nucleosApi.getAll().then(setAllNucleos).catch(console.error);
     setIsModalOpen(true);
   };
 
   const handleSave = async () => {
+    if (!member) return;
     if (!editedEmail.trim()) {
       setError('Email é obrigatório');
       return;
@@ -66,13 +73,16 @@ function AdminDetail() {
     }
 
     try {
-      const updatedAdmin = await administratorsApi.update(String(id), {
+      await administratorsApi.update(String(id), {
         email: editedEmail,
         first_name: editedFirstName,
         last_name: editedLastName,
         enabled: editedEnabled,
+        nucleos: member.role === 'nucleo_admin' ? editedNucleos : undefined,
       });
-      setMember(updatedAdmin);
+      // Re-fetch to get updated nucleos
+      const refreshed = await administratorsApi.getById(String(id));
+      setMember(refreshed);
       setError('');
       setIsModalOpen(false);
     } catch (err) {
@@ -164,6 +174,28 @@ function AdminDetail() {
                    member.role === 'nucleo_admin' ? 'Núcleo' : 'N/A'}
                 </div>
             </div>
+
+            {member.role === 'nucleo_admin' && (
+              <div>
+                <label className="block text-teal-500 font-medium mb-2">Núcleos</label>
+                <div className="bg-gray-100 px-4 py-3 rounded-md">
+                  {member.nucleos.length === 0 ? (
+                    <span className="text-gray-500">Nenhum núcleo associado</span>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {member.nucleos.map(nucleo => (
+                        <span
+                          key={nucleo.id}
+                          className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-teal-100 text-teal-800 font-medium"
+                        >
+                          {nucleo.name} <span className="ml-1 text-teal-600">({nucleo.abbreviation})</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-4 mt-8">
@@ -254,6 +286,36 @@ function AdminDetail() {
                 </div>
                 <p className="text-xs text-gray-500 mt-1">O tipo não pode ser alterado</p>
             </div>
+
+            {member.role === 'nucleo_admin' && (
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">Núcleos</label>
+                <div className="border border-gray-300 rounded-md max-h-40 overflow-y-auto p-2 space-y-1">
+                  {allNucleos.length === 0 ? (
+                    <p className="text-gray-500 text-sm p-2">A carregar núcleos...</p>
+                  ) : (
+                    allNucleos.map((nucleo) => (
+                      <label key={nucleo.id} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-50 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={editedNucleos.includes(nucleo.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setEditedNucleos([...editedNucleos, nucleo.id]);
+                            } else {
+                              setEditedNucleos(editedNucleos.filter(nid => nid !== nucleo.id));
+                            }
+                          }}
+                          className="accent-teal-500"
+                        />
+                        <span className="text-gray-800">{nucleo.name}</span>
+                        <span className="text-gray-500 text-sm">({nucleo.abbreviation})</span>
+                      </label>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
             </div>
 
             <div className="flex gap-4 mt-6">
