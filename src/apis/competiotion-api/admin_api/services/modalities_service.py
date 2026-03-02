@@ -248,13 +248,16 @@ class ModalitiesService(BaseService):
         }
 
     # ==================== COURSE METHODS ====================
-    def list_courses(self) -> List[CourseDTO]:
+    def list_courses(self, admin_id: str = None) -> List[CourseDTO]:
         """List all courses
 
         Returns:
             List[CourseDTO]: List of CourseDTO objects
         """
-        courses_data = self.get("/courses")
+        params = {}
+        if admin_id is not None:
+            params["admin_id"] = admin_id
+        courses_data = self.get("/courses", params=params)
         return [CourseDTO(**course) for course in courses_data]
 
     def create_course(self, name: str, abbreviation: str, nucleo_id: str) -> CourseDTO:

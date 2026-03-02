@@ -20,9 +20,12 @@ DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000"
 
 
 @router.get("/courses", response_model=List[CourseResponse])
-def list_courses(db: Session = Depends(get_db_session)):
+def list_courses(admin_id: str = None, db: Session = Depends(get_db_session)):
     """List all courses"""
-    courses = db.query(Course).all()
+    query = db.query(Course)
+    if admin_id is not None:
+        query = query.join(Course.nucleo).filter(Nucleo.admins_ids.any(admin_id))
+    courses = query.all()
     return [course.to_dict() for course in courses]
 
 
