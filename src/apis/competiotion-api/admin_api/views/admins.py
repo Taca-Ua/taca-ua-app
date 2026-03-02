@@ -18,6 +18,7 @@ from ..serializers.admins import (
     AdminUpdateSerializer,
 )
 from ..services.keycloak_admin_service import keycloak_admin_service
+from ..services.modalities_service import modalities_service_client
 
 
 @extend_schema_view(
@@ -67,6 +68,9 @@ class AdminListCreateView(RoleRequiredMixin, APIView):
                 last_name=serializer.validated_data["last_name"],
                 role=serializer.validated_data["role"],
             )
+            admin["nucleos"] = modalities_service_client.associate_admin_with_nucleos(
+                admin["id"], serializer.validated_data.get("nucleos", [])
+            )
 
             response_serializer = AdminDetailSerializer(admin)
             return Response(response_serializer.data, status=status.HTTP_201_CREATED)
@@ -113,6 +117,7 @@ class AdminDetailView(RoleRequiredMixin, APIView):
         """Retrieve an admin user by ID."""
         try:
             admin = keycloak_admin_service.get_admin(user_id)
+            admin["nucleos"] = modalities_service_client.list_nucleos_by_admin(user_id)
             serializer = AdminDetailSerializer(admin)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except KeycloakError as e:
@@ -133,6 +138,9 @@ class AdminDetailView(RoleRequiredMixin, APIView):
                 first_name=serializer.validated_data.get("first_name"),
                 last_name=serializer.validated_data.get("last_name"),
                 enabled=serializer.validated_data.get("enabled"),
+            )
+            admin["nucleos"] = modalities_service_client.associate_admin_with_nucleos(
+                user_id, serializer.validated_data.get("nucleos", [])
             )
 
             response_serializer = AdminDetailSerializer(admin)

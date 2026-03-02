@@ -4,6 +4,8 @@ Admin user serializers for Keycloak integration
 
 from rest_framework import serializers
 
+from .nucleus import NucleosListSerializer
+
 
 class AdminListSerializer(serializers.Serializer):
     """Serializer for listing admin users"""
@@ -25,6 +27,10 @@ class AdminListSerializer(serializers.Serializer):
 class AdminDetailSerializer(AdminListSerializer):
     """Serializer for detailed admin user view"""
 
+    nucleos = NucleosListSerializer(
+        many=True,
+        help_text="List of nucleus associated with the admin (if applicable)",
+    )
     pass
 
 
@@ -61,6 +67,12 @@ class AdminCreateSerializer(serializers.Serializer):
         required=True,
         help_text="Role to assign to the admin ('admin_geral' or 'admin_nucleo')",
     )
+    nucleos = serializers.ListField(
+        child=serializers.CharField(),
+        required=True,
+        allow_empty=True,
+        help_text="List of nucleus IDs to associate with the admin (only for 'admin_nucleo' role)",
+    )
 
 
 class AdminUpdateSerializer(serializers.Serializer):
@@ -83,6 +95,12 @@ class AdminUpdateSerializer(serializers.Serializer):
     enabled = serializers.BooleanField(
         required=False,
         help_text="Enable or disable the account",
+    )
+    nucleos = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_empty=True,
+        help_text="Updated list of nucleus IDs to associate with the admin (only for 'admin_nucleo' role)",
     )
 
 

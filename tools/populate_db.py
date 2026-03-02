@@ -401,11 +401,25 @@ def populate_modalidades(modality_types_dict=None):
     return resp_modalidades
 
 
-def populate_nucleos():
+def populate_nucleos(*, delete_existing=False):
     check = requests.get(f"{API_URL}/nucleos/", headers=HEADERS)
     if check.status_code == 200 and len(check.json()) > 0:
         print("Nucleos already populated.")
-        return check.json()
+
+        if delete_existing:
+            for nucleo in check.json():
+                del_response = requests.delete(
+                    f"{API_URL}/nucleos/{nucleo['id']}/", headers=HEADERS
+                )
+                if del_response.status_code == 204:
+                    print(f"Deleted nucleo: {nucleo['name']}")
+                else:
+                    print(
+                        f"Failed to delete nucleo: {nucleo['name']}, Status Code: {del_response.status_code}, Response: {del_response.text}"
+                    )
+                    raise Exception("Failed to delete nucleos.")
+        else:
+            return check.json()
 
     nucleos = [
         {"name": "NEAP", "abbreviation": "NEAP"},
@@ -866,7 +880,7 @@ def populate_matches(tournament, teams):
 
 def main():
     modality_types_ids = populate_modalities_types(
-        step_by_step=True, delete_existing=True
+        step_by_step=True, delete_existing=False
     )
     print("Populated Modality Types IDs:", modality_types_ids)
     input("Press Enter to continue...")
@@ -875,7 +889,7 @@ def main():
     print("Populated Modalities:", [mod["name"] for mod in modalities])
     input("Press Enter to continue...")
 
-    nucleos = populate_nucleos()
+    nucleos = populate_nucleos(delete_existing=False)
     print("Populated Nucleos:", [nucleo["name"] for nucleo in nucleos])
     input("Press Enter to continue...")
 

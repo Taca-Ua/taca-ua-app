@@ -34,7 +34,9 @@ from ..services.modalities_service import modalities_service_client
 )
 class CourseListCreateView(RoleRequiredMixin, APIView):
     def get(self, request: Request):
-        courses = modalities_service_client.list_courses()
+        courses = modalities_service_client.list_courses(
+            admin_id=str(request.user_id) if "nucleo_admin" in request.roles else None
+        )
 
         serializer = CourseListSerializer(courses, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

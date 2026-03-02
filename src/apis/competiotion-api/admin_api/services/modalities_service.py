@@ -4,7 +4,7 @@ Service for communicating with modalities-service microservice
 
 import os
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Dict, List, Optional
 from uuid import UUID
 
 from .base_service import BaseService
@@ -16,6 +16,7 @@ class NucleoDTO:
     id: UUID
     name: str
     abbreviation: str
+    admins_ids: List[str] = field(default_factory=list)
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -206,14 +207,57 @@ class ModalitiesService(BaseService):
         """
         self.delete(f"/nucleos/{nucleo_id}")
 
+    def list_nucleos_by_admin(self, admin_id: str) -> List[NucleoDTO]:
+        """List all nucleos associated with a specific admin user ID
+
+        Args:
+            admin_id (str): Admin user ID
+
+        Returns:
+            List[NucleoDTO]: List of NucleoDTO objects representing the nucleos associated with the admin
+        """
+        nucleos_data = self.get(f"/nucleos/admin/{admin_id}")
+        return [NucleoDTO(**nucleo) for nucleo in nucleos_data]
+
+    def associate_admin_with_nucleos(
+        self, admin_id: str, nucleo_ids: List[str]
+    ) -> None:
+        """Associate an admin user with multiple nucleos
+
+        Args:
+            admin_id (str): Admin user ID
+            nucleo_ids (List[str]): List of nucleo IDs to associate with the admin
+        """
+        self.put(f"/nucleos/admin/{admin_id}/associate/", nucleo_ids)
+
+    def list_nucleos_by_batch_admin_ids(
+        self, admin_ids: List[str]
+    ) -> Dict[str, List[NucleoDTO]]:
+        """List all nucleos associated with a batch of admin user IDs
+
+        Args:
+            admin_ids (List[str]): List of admin user IDs
+
+        Returns:
+            Dict[str, List[NucleoDTO]]: Dictionary mapping each admin ID to a list of NucleoDTO objects representing the associated nucleos
+        """
+        nucleos_data = self.post("/nucleos/batch-admin", admin_ids)
+        return {
+            admin_id: [NucleoDTO(**nucleo) for nucleo in nucleos]
+            for admin_id, nucleos in nucleos_data.items()
+        }
+
     # ==================== COURSE METHODS ====================
-    def list_courses(self) -> List[CourseDTO]:
+    def list_courses(self, admin_id: str = None) -> List[CourseDTO]:
         """List all courses
 
         Returns:
             List[CourseDTO]: List of CourseDTO objects
         """
-        courses_data = self.get("/courses")
+        params = {}
+        if admin_id is not None:
+            params["admin_id"] = admin_id
+        courses_data = self.get("/courses", params=params)
         return [CourseDTO(**course) for course in courses_data]
 
     def create_course(self, name: str, abbreviation: str, nucleo_id: str) -> CourseDTO:
@@ -452,13 +496,16 @@ class ModalitiesService(BaseService):
         return [ModalityDTO(**modality) for modality in modalities_data]
 
     # ==================== STUDENT METHODS ====================
-    def list_students(self) -> List[StudentDTO]:
+    def list_students(self, admin_id: str = None) -> List[StudentDTO]:
         """List all students
 
         Returns:
             List[StudentDTO]: List of StudentDTO objects representing the students
         """
-        students_data = self.get("/students")
+        params = {}
+        if admin_id is not None:
+            params["admin_id"] = admin_id
+        students_data = self.get("/students", params=params)
         return [StudentDTO(**student) for student in students_data]
 
     def create_student(
@@ -634,13 +681,16 @@ class ModalitiesService(BaseService):
         self.delete(f"/staff/{staff_id}")
 
     # ==================== TEAM METHODS ====================
-    def list_teams(self) -> List[TeamDTO]:
-        """List all teams
+    def list_teams(self, admin_id: str = None) -> List[TeamDTO]:
+        """List teams - optionally filtered by admin user ID
 
         Returns:
             List[TeamDTO]: List of TeamDTO objects representing the teams
         """
-        teams_data = self.get("/teams")
+        if admin_id is not None:
+            teams_data = self.get(f"/teams?admin_id={admin_id}")
+        else:
+            teams_data = self.get("/teams")
         return [TeamDTO(**team) for team in teams_data]
 
     def create_team(self, name: str, modality_id: str, course_id: str) -> TeamDTO:

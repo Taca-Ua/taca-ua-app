@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 import sqlalchemy as sa
 from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, String, Table, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -50,6 +50,7 @@ class Nucleo(Base):
     updated_at = Column(
         DateTime(timezone=True), onupdate=lambda: datetime.now(timezone.utc)
     )
+    admins_ids = Column(ARRAY(Text), nullable=False, server_default="{}")
 
     # Relationships
     courses = relationship("Course", back_populates="nucleo")
@@ -62,6 +63,7 @@ class Nucleo(Base):
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "admins_ids": self.admins_ids,
         }
 
 
