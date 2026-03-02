@@ -215,7 +215,7 @@ function AdminDetail() {
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+          <div className="bg-white rounded-lg p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Editar Administrador</h2>
 
             {error && (
@@ -224,13 +224,25 @@ function AdminDetail() {
               </div>
             )}
 
-            <div className="space-y-4">
+            <div className="overflow-y-auto flex-1 pr-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
                 <label className="block text-gray-700 font-medium mb-2">Username</label>
                 <div className="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-600">
                   {editedUserName}
                 </div>
                 <p className="text-xs text-gray-500 mt-1">O username não pode ser alterado</p>
+            </div>
+            <div>
+                <label className="block text-gray-700 font-medium mb-2">Email <span className="text-red-500">*</span></label>
+                <input
+                  type="email"
+                  value={editedEmail}
+                  onChange={(e) => setEditedEmail(e.target.value)}
+                  placeholder="Digite o email"
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
+                />
             </div>
             <div>
                 <label className="block text-gray-700 font-medium mb-2">Primeiro Nome <span className="text-red-500">*</span></label>
@@ -250,17 +262,6 @@ function AdminDetail() {
                   value={editedLastName}
                   onChange={(e) => setEditedLastName(e.target.value)}
                   placeholder="Digite o último nome"
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
-                />
-            </div>
-            <div>
-                <label className="block text-gray-700 font-medium mb-2">Email <span className="text-red-500">*</span></label>
-                <input
-                  type="email"
-                  value={editedEmail}
-                  onChange={(e) => setEditedEmail(e.target.value)}
-                  placeholder="Digite o email"
                   required
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
                 />
@@ -287,9 +288,10 @@ function AdminDetail() {
                 </div>
                 <p className="text-xs text-gray-500 mt-1">O tipo não pode ser alterado</p>
             </div>
+            </div>
 
             {member.role === 'nucleo_admin' && (
-              <div>
+              <div className="mt-4">
                 <label className="block text-gray-700 font-medium mb-2">Núcleos</label>
                 <div className="border border-gray-300 rounded-md max-h-40 overflow-y-auto p-2 space-y-1">
                   {allNucleos.length === 0 ? (
@@ -319,7 +321,7 @@ function AdminDetail() {
             )}
             </div>
 
-            <div className="flex gap-4 mt-6">
+            <div className="flex gap-4 mt-6 flex-shrink-0">
               <button
                 onClick={() => {
                   setIsModalOpen(false);

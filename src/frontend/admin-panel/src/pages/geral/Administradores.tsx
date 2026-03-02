@@ -161,10 +161,11 @@ function Administradores() {
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
+          <div className="bg-white rounded-lg p-8 max-w-4xl w-full mx-4 animate-slideUp max-h-[90vh] overflow-hidden flex flex-col">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Adicionar Administrador</h2>
 
-            <div className="space-y-4">
+            <div className="overflow-y-auto flex-1 pr-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="memberUserName" className="block text-gray-700 font-medium mb-2">
                   Username <span className="text-red-500">*</span>
@@ -178,7 +179,19 @@ function Administradores() {
                   placeholder="Digite o username"
                 />
               </div>
-
+              <div>
+                <label htmlFor="email" className="block text-gray-700 font-medium mb-2">
+                  Email <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  placeholder="Digite o email (ex: admin@ua.pt)"
+                />
+              </div>
               <div>
                 <label htmlFor="memberFirstName" className="block text-gray-700 font-medium mb-2">
                   Primeiro Nome <span className="text-red-500">*</span>
@@ -220,7 +233,6 @@ function Administradores() {
                   placeholder="Digite a password"
                 />
               </div>
-
               <div>
                 <label htmlFor="memberRole" className="block text-gray-700 font-medium mb-2">
                   Tipo <span className="text-red-500">*</span>
@@ -238,9 +250,10 @@ function Administradores() {
                   <option value="nucleo_admin">Administrador Núcleo</option>
                 </select>
               </div>
+            </div>
 
               {memberRole === 'nucleo_admin' && (
-                <div>
+                <div className="mt-4">
                   <label className="block text-gray-700 font-medium mb-2">
                     Núcleos
                   </label>
@@ -270,20 +283,6 @@ function Administradores() {
                   </div>
                 </div>
               )}
-
-              <div>
-                <label htmlFor="email" className="block text-gray-700 font-medium mb-2">
-                  Email <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  placeholder="Digite o email (ex: admin@ua.pt)"
-                />
-              </div>
             </div>
 
             {error && (
@@ -292,7 +291,7 @@ function Administradores() {
               </div>
             )}
 
-            <div className="flex gap-4 mt-6">
+            <div className="flex gap-4 mt-6 flex-shrink-0">
               <button
                 onClick={() => {
                   setIsModalOpen(false);
