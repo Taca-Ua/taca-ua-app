@@ -1,8 +1,9 @@
 from datetime import datetime, timezone
-from typing import List
+from typing import Dict, List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from taca_events import EventType
@@ -156,3 +157,58 @@ def delete_nucleo(nucleo_id: UUID, db: Session = Depends(get_db_session)):
     db.delete(nucleo)
     db.commit()
     logger.info(f"Deleted nucleo: {nucleo_id}")
+
+
+@router.get("/nucleos/admin/{admin_id}", response_model=List[NucleoResponse])
+def list_nucleos_by_admin(admin_id: UUID, db: Session = Depends(get_db_session)):
+    """List all nucleos associated with a specific admin user ID"""
+    str_admin_id = str(admin_id)
+    nucleos = db.query(Nucleo).filter(Nucleo.admins_ids.contains([str_admin_id])).all()
+    print(f"Found {len(nucleos)} nucleos for admin {admin_id}")
+    return [nucleo.to_dict() for nucleo in nucleos]
+
+
+@router.put(
+    "/nucleos/admin/{admin_id}/associate/",
+    status_code=status.HTTP_200_OK,
+)
+def associate_admin_with_nucleos(
+    admin_id: UUID,
+    nucleo_ids: List[UUID],
+    db: Session = Depends(get_db_session),
+):
+    """Remove previous associations and associate an admin user with multiple nucleos"""
+    # First, remove the admin ID from all nucleos that currently have it
+    str_admin_id = str(admin_id)
+    db.query(Nucleo).filter(Nucleo.admins_ids.contains([str_admin_id])).update(
+        {Nucleo.admins_ids: func.array_remove(Nucleo.admins_ids, str_admin_id)},
+        synchronize_session=False,
+    )
+
+    # Then, add the admin ID to the specified nucleos
+    str_nucleo_ids = [str(nucleo_id) for nucleo_id in nucleo_ids]
+    db.query(Nucleo).filter(Nucleo.id.in_(str_nucleo_ids)).update(
+        {Nucleo.admins_ids: func.array_append(Nucleo.admins_ids, str_admin_id)},
+        synchronize_session=False,
+    )
+
+    db.commit()
+    return {"message": "Admin associations updated successfully"}
+
+
+@router.post("/nucleos/batch-admin", response_model=Dict[str, List[NucleoResponse]])
+def list_nucleos_by_batch_admin_ids(
+    admin_ids: List[UUID], db: Session = Depends(get_db_session)
+):
+    """List all nucleos associated with a batch of admin user IDs"""
+    str_admin_ids = [str(admin_id) for admin_id in admin_ids]
+    nucleos = db.query(Nucleo).filter(Nucleo.admins_ids.overlap(str_admin_ids)).all()
+
+    # return a dictionary mapping admin ID to a list of associated nucleos
+    resp = {str(admin_id): [] for admin_id in admin_ids}
+    str_admin_ids = set(str_admin_ids)  # Convert to set for faster lookup
+    for nucleo in nucleos:
+        for admin_id in nucleo.admins_ids:
+            if admin_id in str_admin_ids:
+                resp[admin_id].append(nucleo.to_dict())
+    return resp

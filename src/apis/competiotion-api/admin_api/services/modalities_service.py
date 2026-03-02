@@ -4,7 +4,7 @@ Service for communicating with modalities-service microservice
 
 import os
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Dict, List, Optional
 from uuid import UUID
 
 from .base_service import BaseService
@@ -16,6 +16,7 @@ class NucleoDTO:
     id: UUID
     name: str
     abbreviation: str
+    admins_ids: List[str] = field(default_factory=list)
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -205,6 +206,46 @@ class ModalitiesService(BaseService):
             nucleo_id (str): ID of the nucleo to delete
         """
         self.delete(f"/nucleos/{nucleo_id}")
+
+    def list_nucleos_by_admin(self, admin_id: str) -> List[NucleoDTO]:
+        """List all nucleos associated with a specific admin user ID
+
+        Args:
+            admin_id (str): Admin user ID
+
+        Returns:
+            List[NucleoDTO]: List of NucleoDTO objects representing the nucleos associated with the admin
+        """
+        nucleos_data = self.get(f"/nucleos/admin/{admin_id}")
+        return [NucleoDTO(**nucleo) for nucleo in nucleos_data]
+
+    def associate_admin_with_nucleos(
+        self, admin_id: str, nucleo_ids: List[str]
+    ) -> None:
+        """Associate an admin user with multiple nucleos
+
+        Args:
+            admin_id (str): Admin user ID
+            nucleo_ids (List[str]): List of nucleo IDs to associate with the admin
+        """
+        self.put(f"/nucleos/admin/{admin_id}/associate/", nucleo_ids)
+
+    def list_nucleos_by_batch_admin_ids(
+        self, admin_ids: List[str]
+    ) -> Dict[str, List[NucleoDTO]]:
+        """List all nucleos associated with a batch of admin user IDs
+
+        Args:
+            admin_ids (List[str]): List of admin user IDs
+
+        Returns:
+            Dict[str, List[NucleoDTO]]: Dictionary mapping each admin ID to a list of NucleoDTO objects representing the associated nucleos
+        """
+        nucleos_data = self.post("/nucleos/batch-admin", admin_ids)
+        return {
+            admin_id: [NucleoDTO(**nucleo) for nucleo in nucleos]
+            for admin_id, nucleos in nucleos_data.items()
+        }
 
     # ==================== COURSE METHODS ====================
     def list_courses(self) -> List[CourseDTO]:

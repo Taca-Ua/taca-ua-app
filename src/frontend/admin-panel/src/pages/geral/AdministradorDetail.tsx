@@ -73,6 +73,7 @@ function AdminDetail() {
     }
 
     try {
+      console.log('Saving with nucleos:', editedNucleos);
       await administratorsApi.update(String(id), {
         email: editedEmail,
         first_name: editedFirstName,
