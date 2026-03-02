@@ -28,6 +28,7 @@ from ..serializers.matches import (
 )
 from ..services.enricher_service import enricher_service
 from ..services.matches_service import matches_service_client
+from ..services.modalities_service import modalities_service_client
 
 logger = structlog.get_logger(__name__)
 
@@ -62,6 +63,14 @@ class MatchListCreateView(RoleRequiredMixin, APIView):
         date_from = request.query_params.get("date_from")
         date_to = request.query_params.get("date_to")
 
+        allowed_team_ids = None
+        if "nucleo_admin" in request.roles:
+            # If user is a nucleo admin, filter matches to only include their teams
+            allowed_teams = modalities_service_client.list_teams(
+                admin_id=request.user_id
+            )
+            allowed_team_ids = {str(team.id) for team in allowed_teams}
+
         try:
             matches = matches_service_client.list_matches(
                 tournament_id=UUID(tournament_id) if tournament_id else None,
@@ -72,6 +81,23 @@ class MatchListCreateView(RoleRequiredMixin, APIView):
                 date_from=date_from,
                 date_to=date_to,
             )
+
+            # If user is a nucleo admin, filter matches to only include those with their teams and show just their teams in participants
+            if allowed_team_ids is not None:
+                filtered_matches = []
+                for match in matches:
+                    # Filter participants to only include those with allowed teams
+                    filtered_participants = []
+                    for participant in match.participants:
+                        if participant.team_id in allowed_team_ids:
+                            filtered_participants.append(participant)
+
+                    # Only include the match if it has any participants after filtering
+                    if filtered_participants:
+                        match.participants = filtered_participants
+                        filtered_matches.append(match)
+
+                matches = filtered_matches
 
             # Enrich participant data with team/athlete details
             enricher_service.complete_matches_info(matches)
@@ -145,8 +171,23 @@ class MatchDetailView(RoleRequiredMixin, APIView):
     def get(self, request, match_id):
         """Get match details"""
         try:
+            allowed_team_ids = None
+            if "nucleo_admin" in request.roles:
+                # If user is a nucleo admin, filter matches to only include their teams
+                allowed_teams = modalities_service_client.list_teams(
+                    admin_id=request.user_id
+                )
+                allowed_team_ids = {str(team.id) for team in allowed_teams}
+
             match = matches_service_client.get_match(match_id=match_id)
-            print("Match fetched:", match.__dict__["participants"])
+
+            # filter match participants if user is a nucleo admin
+            if allowed_team_ids is not None:
+                filtered_participants = []
+                for participant in match.participants:
+                    if participant.team_id in allowed_team_ids:
+                        filtered_participants.append(participant)
+                match.participants = filtered_participants
 
             # Enrich participant data
             enricher_service.complete_matches_info([match])
