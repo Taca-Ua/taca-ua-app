@@ -5,6 +5,7 @@ Match management views
 from uuid import UUID
 
 import structlog
+from django.http import HttpResponse
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
@@ -26,6 +27,7 @@ from ..serializers.matches import (
     ParticipantCreateSerializer,
     ParticipantDetailSerializer,
 )
+from ..services.document_generation import document_generation_service
 from ..services.enricher_service import enricher_service
 from ..services.matches_service import matches_service_client
 from ..services.modalities_service import modalities_service_client
@@ -501,17 +503,74 @@ def delete_comment(request, match_id, comment_id):
 
 @extend_schema(
     responses={200: {"type": "string", "format": "binary"}},
-    description="Generate match sheet PDF (not implemented yet)",
+    description="Generate match sheet PDF",
     tags=["Match Management"],
 )
 @api_view(["GET"])
 @require_auth
 def match_sheet(request, match_id):
     """Generate match sheet PDF"""
-    return Response(
-        {"message": "PDF generation not implemented"},
-        status=status.HTTP_501_NOT_IMPLEMENTED,
-    )
+    try:
+        match = matches_service_client.get_match(match_id=match_id)
+        match = enricher_service.complete_matches_info([match])[0]
+
+        if "nucleo_admin" in request.roles and match.status == "scheduled":
+            # retuern 403 if user is a nucleo admin and match is still scheduled (not started), to avoid showing teams/athletes not in their nucleo
+            return Response(
+                {
+                    "detail": "Forbidden: Cannot generate match sheet for scheduled match"
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        pdf_content = document_generation_service.generate_match_report(match)
+
+        response = HttpResponse(pdf_content, content_type="application/pdf")
+        response["Content-Disposition"] = (
+            f'attachment; filename="match_sheet_{match_id}.pdf"'
+        )
+        return response
+    except Exception as e:
+        logger.error(
+            "Failed to generate match sheet PDF", match_id=str(match_id), error=str(e)
+        )
+        return Response(
+            {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@extend_schema(
+    responses={200: {"type": "string", "format": "binary"}},
+    description="Generate match sheet PDF for a specific team",
+    tags=["Match Management"],
+)
+@api_view(["GET"])
+@require_auth
+def match_team_sheet(request, match_id, team_id):
+    """
+    Generate match sheet PDF for a specific team in a match.
+    """
+
+    try:
+        pdf_content = document_generation_service.generate_match_team_report(
+            match_id, team_id
+        )
+
+        response = HttpResponse(pdf_content, content_type="application/pdf")
+        response["Content-Disposition"] = (
+            f'attachment; filename="match_team_sheet_{match_id}_{team_id}.pdf"'
+        )
+        return response
+    except Exception as e:
+        logger.error(
+            "Failed to generate team-specific match sheet PDF",
+            match_id=str(match_id),
+            team_id=str(team_id),
+            error=str(e),
+        )
+        return Response(
+            {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 # ============= URL Patterns =============
@@ -549,4 +608,9 @@ urlpatterns = [
     ),
     # Additional features
     path("<uuid:match_id>/sheet/", match_sheet, name="match-sheet"),
+    path(
+        "<uuid:match_id>/team/<uuid:team_id>/sheet/",
+        match_team_sheet,
+        name="match-team-sheet",
+    ),
 ]

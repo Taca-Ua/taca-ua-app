@@ -880,7 +880,7 @@ def populate_matches(tournament, teams):
 
 def main():
     modality_types_ids = populate_modalities_types(
-        step_by_step=True, delete_existing=False
+        step_by_step=False, delete_existing=False
     )
     print("Populated Modality Types IDs:", modality_types_ids)
     input("Press Enter to continue...")

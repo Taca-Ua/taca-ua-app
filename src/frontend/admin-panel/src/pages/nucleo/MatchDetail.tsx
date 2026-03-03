@@ -137,12 +137,14 @@ const TeamLineupCard = ({
   participant,
   lineups,
   canEdit,
-  onEdit
+  onEdit,
+  onDownloadSheet,
 }: {
   participant: MatchDetailData['participants'][0];
   lineups: LineupDetail[];
   canEdit: boolean;
   onEdit: () => void;
+  onDownloadSheet: () => void;
 }) => {
   const teamName = participant.team?.name || participant.athlete?.full_name || 'Participante';
   const teamLineups = lineups.filter(l => l.team_id === participant.team?.id);
@@ -153,14 +155,25 @@ const TeamLineupCard = ({
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-bold text-gray-800">{teamName}</h3>
-        {canEdit && (
+        <div className="flex gap-2">
           <button
-            onClick={onEdit}
-            className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md text-sm font-medium transition-colors"
+            onClick={onDownloadSheet}
+            className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-md text-sm font-medium transition-colors flex items-center gap-1"
           >
-            Editar Convocatória
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Ficha de Equipa
           </button>
-        )}
+          {canEdit && (
+            <button
+              onClick={onEdit}
+              className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md text-sm font-medium transition-colors"
+            >
+              Editar Convocatória
+            </button>
+          )}
+        </div>
       </div>
 
       {teamLineups.length === 0 ? (
@@ -443,23 +456,34 @@ const MatchDetail = () => {
     }
   };
 
-  const handleDownloadMatchSheet = async () => {
+const handleDownloadMatchSheet = async () => {
     if (!match) return;
 
     try {
-      setError('');
-      const blob = await matchesApi.getMatchSheet(match.id);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `ficha-jogo-${match.id}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+        setError('');
+        const blob = await matchesApi.getMatchSheet(match.id);
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        // Optionally revoke after some time
+        setTimeout(() => window.URL.revokeObjectURL(url), 10000);
     } catch (err) {
-      console.error('Error downloading match sheet:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao descarregar ficha de jogo');
+        console.error('Error downloading match sheet:', err);
+        setError(err instanceof Error ? err.message : 'Erro ao descarregar ficha de jogo');
+    }
+};
+
+  const handleDownloadTeamSheet = async (teamId: string) => {
+    if (!match) return;
+
+    try {
+        setError('');
+        const blob = await matchesApi.getMatchTeamSheet(match.id, teamId);
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+    } catch (err) {
+        console.error('Error downloading team sheet:', err);
+        setError(err instanceof Error ? err.message : 'Erro ao descarregar ficha de equipa');
     }
   };
 
@@ -528,10 +552,15 @@ const MatchDetail = () => {
               <div className="mt-6 space-y-3">
                 <button
                   onClick={handleDownloadMatchSheet}
-                  className="w-full px-4 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-md font-medium transition-colors flex items-center justify-center"
+                  disabled={match.status === 'scheduled'}
+                  className={`w-full px-4 py-3 rounded-md font-medium transition-colors flex items-center justify-center ${
+                  match.status === 'scheduled'
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-orange-500 hover:bg-orange-600 text-white'
+                  }`}
                 >
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                   Descarregar Ficha de Jogo
                 </button>
@@ -557,6 +586,7 @@ const MatchDetail = () => {
                     lineups={lineups}
                     canEdit={canEditLineups}
                     onEdit={() => handleOpenLineupEditor(participant)}
+                    onDownloadSheet={() => handleDownloadTeamSheet(participant.team!.id)}
                   />
                 ))
               )}
