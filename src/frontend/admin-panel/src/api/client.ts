@@ -48,13 +48,20 @@ export class ApiClient {
   }
 
   async post<T>(endpoint: string, data: unknown): Promise<T> {
+    const isFormData = data instanceof FormData;
+
+    const headers: Record<string, string> = {
+      ...this.getAuthHeader(),
+    };
+
+    if (!isFormData) {
+      headers['Content-Type'] = 'application/json';
+    }
+
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...this.getAuthHeader(),
-      },
-      body: JSON.stringify(data),
+      headers,
+      body: isFormData ? (data as FormData) : JSON.stringify(data),
     });
 
     if (!response.ok) {
