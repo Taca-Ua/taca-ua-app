@@ -229,14 +229,16 @@ class EnricherService:
 
         return participants
 
-    def complete_lineup_info(self, lineup_entries: List[LineupDTO]) -> List[LineupDTO]:
+    def complete_lineup_info(
+        self, lineup_entries: List[LineupDTO]
+    ) -> List[LineupCompletedDTO]:
         """Enrich a list of lineup entries with detailed player information.
         The changes are made in place to the input lineup list.
 
         Args:
             lineup_entries (List[LineupDTO]): List of lineup entries to be enriched.
         Returns:
-            List[LineupDTO]: List of enriched lineup entries.
+            List[LineupCompletedDTO]: List of enriched lineup entries.
         """
         player_ids_to_fetch = {}
 

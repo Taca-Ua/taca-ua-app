@@ -175,4 +175,27 @@ export const matchesApi = {
 
     return response.blob();
   },
+
+  async getMatchTeamSheet(matchId: string, teamId: string): Promise<Blob> {
+    let token = keycloak.token ?? null;
+    if (keycloak.authenticated) {
+      try {
+        await keycloak.updateToken(30);
+        token = keycloak.token ?? null;
+      } catch {
+        keycloak.login();
+        throw new Error('Session expired, please log in again');
+      }
+    }
+
+    const response = await fetch(`/api/admin/matches/${matchId}/team/${teamId}/sheet/`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to download match team sheet');
+    }
+
+    return response.blob();
+  },
 };

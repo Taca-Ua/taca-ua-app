@@ -503,7 +503,7 @@ def delete_comment(request, match_id, comment_id):
 
 @extend_schema(
     responses={200: {"type": "string", "format": "binary"}},
-    description="Generate match sheet PDF (not implemented yet)",
+    description="Generate match sheet PDF",
     tags=["Match Management"],
 )
 @api_view(["GET"])
@@ -533,6 +533,40 @@ def match_sheet(request, match_id):
     except Exception as e:
         logger.error(
             "Failed to generate match sheet PDF", match_id=str(match_id), error=str(e)
+        )
+        return Response(
+            {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@extend_schema(
+    responses={200: {"type": "string", "format": "binary"}},
+    description="Generate match sheet PDF for a specific team",
+    tags=["Match Management"],
+)
+@api_view(["GET"])
+@require_auth
+def match_team_sheet(request, match_id, team_id):
+    """
+    Generate match sheet PDF for a specific team in a match.
+    """
+
+    try:
+        pdf_content = document_generation_service.generate_match_team_report(
+            match_id, team_id
+        )
+
+        response = HttpResponse(pdf_content, content_type="application/pdf")
+        response["Content-Disposition"] = (
+            f'attachment; filename="match_team_sheet_{match_id}_{team_id}.pdf"'
+        )
+        return response
+    except Exception as e:
+        logger.error(
+            "Failed to generate team-specific match sheet PDF",
+            match_id=str(match_id),
+            team_id=str(team_id),
+            error=str(e),
         )
         return Response(
             {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -574,4 +608,9 @@ urlpatterns = [
     ),
     # Additional features
     path("<uuid:match_id>/sheet/", match_sheet, name="match-sheet"),
+    path(
+        "<uuid:match_id>/team/<uuid:team_id>/sheet/",
+        match_team_sheet,
+        name="match-team-sheet",
+    ),
 ]

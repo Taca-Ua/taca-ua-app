@@ -484,6 +484,19 @@ const LineupsSection = ({ match }: { match: MatchDetail }) => {
     }
   };
 
+  const handleDownloadTeamSheet = async (teamId: string) => {
+    try {
+      setError('');
+      const blob = await matchesApi.getMatchTeamSheet(match.id, teamId);
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+    } catch (err) {
+      console.error('Error downloading team sheet:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao descarregar ficha de equipa');
+    }
+  };
+
   // Create a map of team_id to team object from match participants
   const teamMap = match.participants.reduce((acc, participant) => {
     if (participant.team) {
@@ -524,9 +537,20 @@ const LineupsSection = ({ match }: { match: MatchDetail }) => {
 
             return (
               <div key={teamId} className="border-l-4 border-teal-500 pl-4">
-                <h4 className="font-semibold text-lg text-gray-800 mb-3">
-                  {team?.name || `Equipa ${teamId.substring(0, 8)}`}
-                </h4>
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="font-semibold text-lg text-gray-800">
+                    {team?.name || `Equipa ${teamId.substring(0, 8)}`}
+                  </h4>
+                  <button
+                    onClick={() => handleDownloadTeamSheet(teamId)}
+                    className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-md text-sm font-medium transition-colors flex items-center gap-1"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Ficha de Equipa
+                  </button>
+                </div>
 
                 {starters.length > 0 && (
                   <div className="mb-3">
