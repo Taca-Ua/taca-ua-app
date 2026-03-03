@@ -511,7 +511,20 @@ def delete_comment(request, match_id, comment_id):
 def match_sheet(request, match_id):
     """Generate match sheet PDF"""
     try:
-        pdf_content = document_generation_service.generate_match_report(match_id)
+        match = matches_service_client.get_match(match_id=match_id)
+        match = enricher_service.complete_matches_info([match])[0]
+
+        if "nucleo_admin" in request.roles and match.status == "scheduled":
+            # retuern 403 if user is a nucleo admin and match is still scheduled (not started), to avoid showing teams/athletes not in their nucleo
+            return Response(
+                {
+                    "detail": "Forbidden: Cannot generate match sheet for scheduled match"
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        pdf_content = document_generation_service.generate_match_report(match)
+
         response = HttpResponse(pdf_content, content_type="application/pdf")
         response["Content-Disposition"] = (
             f'attachment; filename="match_sheet_{match_id}.pdf"'

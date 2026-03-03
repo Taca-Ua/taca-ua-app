@@ -10,7 +10,7 @@ from reportlab.lib.units import mm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from .enricher_service import MatchCompletedDTO, enricher_service
-from .matches_service import CommentDTO, LineupDTO, matches_service_client
+from .matches_service import CommentDTO, LineupDTO, MatchDTO, matches_service_client
 
 # ── Colours matching the team sheet style ──────────────────────────────
 HEADER_BG = colors.HexColor("#1F4E79")  # dark blue title bar
@@ -26,14 +26,12 @@ class MatchReportDTO(MatchCompletedDTO):
     lineups: list[LineupDTO] = None
 
 
-def _build_match_report_dto(match_id: str) -> MatchReportDTO:
-    match = matches_service_client.get_match(match_id)
-    match = enricher_service.complete_matches_info([match])[0]
+def _build_match_report_dto(match: MatchDTO) -> MatchReportDTO:
     res = MatchReportDTO(**match.__dict__)
 
-    res.comments = matches_service_client.get_comments(match_id)
+    res.comments = matches_service_client.get_comments(match.id)
 
-    linups = matches_service_client.get_lineup(match_id)
+    linups = matches_service_client.get_lineup(match.id)
     enricher_service.complete_lineup_info(linups)
     res.lineups = linups
 
@@ -79,7 +77,7 @@ class DocumentGenerationService:
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ]
 
-    def generate_match_report(self, match_id: str) -> bytes:
+    def generate_match_report(self, match: MatchDTO) -> bytes:
         """Generate a PDF report for a match
 
         Args:
@@ -89,7 +87,7 @@ class DocumentGenerationService:
             bytes: PDF file content
         """
         # Build match report DTO with lineups
-        match = _build_match_report_dto(match_id)
+        match = _build_match_report_dto(match)
 
         # Create a BytesIO buffer to hold the PDF
         buffer = BytesIO()
