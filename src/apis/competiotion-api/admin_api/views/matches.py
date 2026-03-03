@@ -5,6 +5,7 @@ Match management views
 from uuid import UUID
 
 import structlog
+from django.http import HttpResponse
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
@@ -26,6 +27,7 @@ from ..serializers.matches import (
     ParticipantCreateSerializer,
     ParticipantDetailSerializer,
 )
+from ..services.document_generation import document_generation_service
 from ..services.enricher_service import enricher_service
 from ..services.matches_service import matches_service_client
 from ..services.modalities_service import modalities_service_client
@@ -508,10 +510,24 @@ def delete_comment(request, match_id, comment_id):
 @require_auth
 def match_sheet(request, match_id):
     """Generate match sheet PDF"""
-    return Response(
-        {"message": "PDF generation not implemented"},
-        status=status.HTTP_501_NOT_IMPLEMENTED,
-    )
+    try:
+        # Fetch match details
+        match = matches_service_client.get_match(match_id=match_id)
+        match = enricher_service.complete_matches_info([match])[0]
+
+        pdf_content = document_generation_service.generate_match_report(match)
+        response = HttpResponse(pdf_content, content_type="application/pdf")
+        response["Content-Disposition"] = (
+            f'attachment; filename="match_sheet_{match_id}.pdf"'
+        )
+        return response
+    except Exception as e:
+        logger.error(
+            "Failed to generate match sheet PDF", match_id=str(match_id), error=str(e)
+        )
+        return Response(
+            {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 # ============= URL Patterns =============

@@ -165,7 +165,7 @@ export const matchesApi = {
       }
     }
 
-    const response = await fetch(`/api/admin/matches/${matchId}/sheet`, {
+    const response = await fetch(`/api/admin/matches/${matchId}/sheet/`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
 

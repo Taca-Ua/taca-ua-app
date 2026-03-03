@@ -14,3 +14,4 @@ PyJWT[crypto]>=2.8.0
 requests>=2.31.0
 # Keycloak Admin API
 python-keycloak>=3.0.0
+reportlab==4.4.9

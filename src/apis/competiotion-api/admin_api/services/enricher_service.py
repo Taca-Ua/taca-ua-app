@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import List
 
 from .matches_service import (
@@ -6,8 +7,23 @@ from .matches_service import (
     MatchParticipantDTO,
     matches_service_client,
 )
-from .modalities_service import modalities_service_client
+from .modalities_service import StudentDTO, TeamDTO, modalities_service_client
 from .tournaments_service import TournamentDTO
+
+
+@dataclass
+class MatchParticipantCompletedDTO(MatchParticipantDTO):
+    """Data Transfer Object representing a match participant with enriched team/athlete details."""
+
+    team: TeamDTO = None
+    athlete: StudentDTO = None
+
+
+@dataclass
+class MatchCompletedDTO(MatchDTO):
+    """Data Transfer Object representing a match with enriched participant details."""
+
+    participants: List[MatchParticipantCompletedDTO]
 
 
 class EnricherService:
@@ -71,7 +87,7 @@ class EnricherService:
 
         return tournament
 
-    def complete_matches_info(self, matches: List[MatchDTO]) -> List[MatchDTO]:
+    def complete_matches_info(self, matches: List[MatchDTO]) -> List[MatchCompletedDTO]:
         """Enrich a list of matches with detailed participant information.
         The changes are made in place to the input matches list.
 
@@ -79,7 +95,7 @@ class EnricherService:
                 matches (List[MatchDTO]): List of match data to be enriched.
 
         Returns:
-                List[MatchDTO]: List of enriched match data.
+                List[MatchCompletedDTO]: List of enriched match data.
         """
 
         athlete_ids_to_fetch = {}
@@ -112,6 +128,7 @@ class EnricherService:
             for athlete_id, participants in athlete_ids_to_fetch.items():
                 for participant in participants:
                     participant.athlete = students_data_map.get(athlete_id, None)
+                    participant.team = None
 
         # Fetch all teams data in a single call
         if teams_ids_to_fetch:
@@ -122,13 +139,27 @@ class EnricherService:
 
             for team_id, participants in teams_ids_to_fetch.items():
                 for participant in participants:
+                    participant.athlete = None
                     participant.team = teams_data_map.get(team_id, None)
+
+        # Convert matches to MatchCompletedDTO with enriched participant details
+        for match in matches:
+            match.participants = [
+                MatchParticipantCompletedDTO(
+                    **{
+                        **participant.__dict__,
+                        "team": participant.team,
+                        "athlete": participant.athlete,
+                    },
+                )
+                for participant in match.participants
+            ]
 
         return matches
 
     def complete_participant_info(
         self, participants: List[MatchParticipantDTO]
-    ) -> List[MatchParticipantDTO]:
+    ) -> List[MatchParticipantCompletedDTO]:
         """Enrich a list of participants with detailed team/athlete information.
         The changes are made in place to the input participants list.
 
@@ -136,7 +167,7 @@ class EnricherService:
             participants (List[MatchParticipantDTO]): List of participant data to be enriched.
 
         Returns:
-            List[MatchParticipantDTO]: List of enriched participant data.
+            List[MatchParticipantCompletedDTO]: List of enriched participant data.
         """
         athlete_ids_to_fetch = {}
         teams_ids_to_fetch = {}
@@ -165,6 +196,7 @@ class EnricherService:
             for athlete_id, participants_list in athlete_ids_to_fetch.items():
                 for participant in participants_list:
                     participant.athlete = students_data_map.get(athlete_id, None)
+                    participant.team = None
 
         # Fetch all teams data in a single call
         if teams_ids_to_fetch:
@@ -175,7 +207,18 @@ class EnricherService:
 
             for team_id, participants_list in teams_ids_to_fetch.items():
                 for participant in participants_list:
+                    participant.athlete = None
                     participant.team = teams_data_map.get(team_id, None)
+
+        # Convert participants to MatchParticipantCompletedDTO with enriched team/athlete details
+        for i, participant in enumerate(participants):
+            participants[i] = MatchParticipantCompletedDTO(
+                **{
+                    **participant.__dict__,
+                    "team": participant.team,
+                    "athlete": participant.athlete,
+                },
+            )
 
         return participants
 

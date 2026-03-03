@@ -886,19 +886,15 @@ const JogoDetails = () => {
     if (!match) return;
 
     try {
-      setError('');
-      const blob = await matchesApi.getMatchSheet(match.id);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `jogo_${match.id}_ficha.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+        setError('');
+        const blob = await matchesApi.getMatchSheet(match.id);
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        // Optionally revoke after some time
+        setTimeout(() => window.URL.revokeObjectURL(url), 10000);
     } catch (err) {
-      console.error('Error downloading match sheet:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao fazer download da ficha de jogo');
+        console.error('Error downloading match sheet:', err);
+        setError(err instanceof Error ? err.message : 'Erro ao descarregar ficha de jogo');
     }
   };
 
