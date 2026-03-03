@@ -511,11 +511,7 @@ def delete_comment(request, match_id, comment_id):
 def match_sheet(request, match_id):
     """Generate match sheet PDF"""
     try:
-        # Fetch match details
-        match = matches_service_client.get_match(match_id=match_id)
-        match = enricher_service.complete_matches_info([match])[0]
-
-        pdf_content = document_generation_service.generate_match_report(match)
+        pdf_content = document_generation_service.generate_match_report(match_id)
         response = HttpResponse(pdf_content, content_type="application/pdf")
         response["Content-Disposition"] = (
             f'attachment; filename="match_sheet_{match_id}.pdf"'

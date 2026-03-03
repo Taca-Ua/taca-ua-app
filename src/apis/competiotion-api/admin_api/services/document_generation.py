@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import datetime
 from io import BytesIO
 
@@ -8,7 +9,8 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-from .enricher_service import MatchCompletedDTO
+from .enricher_service import MatchCompletedDTO, enricher_service
+from .matches_service import CommentDTO, LineupDTO, matches_service_client
 
 # ── Colours matching the team sheet style ──────────────────────────────
 HEADER_BG = colors.HexColor("#1F4E79")  # dark blue title bar
@@ -16,6 +18,26 @@ ROW_DARK = colors.HexColor("#D6E4F0")  # light-blue alternating rows
 COL_LABEL = colors.HexColor("#2E75B6")  # medium-blue label cells
 WHITE = colors.white
 BLACK = colors.black
+
+
+@dataclass
+class MatchReportDTO(MatchCompletedDTO):
+    comments: list[CommentDTO] = None
+    lineups: list[LineupDTO] = None
+
+
+def _build_match_report_dto(match_id: str) -> MatchReportDTO:
+    match = matches_service_client.get_match(match_id)
+    match = enricher_service.complete_matches_info([match])[0]
+    res = MatchReportDTO(**match.__dict__)
+
+    res.comments = matches_service_client.get_comments(match_id)
+
+    linups = matches_service_client.get_lineup(match_id)
+    enricher_service.complete_lineup_info(linups)
+    res.lineups = linups
+
+    return res
 
 
 class DocumentGenerationService:
@@ -57,15 +79,18 @@ class DocumentGenerationService:
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ]
 
-    def generate_match_report(self, match: MatchCompletedDTO) -> bytes:
+    def generate_match_report(self, match_id: str) -> bytes:
         """Generate a PDF report for a match
 
         Args:
-            match: MatchCompletedDTO with enriched participant data
+            match_id: The ID of the match to generate a report for
 
         Returns:
             bytes: PDF file content
         """
+        # Build match report DTO with lineups
+        match = _build_match_report_dto(match_id)
+
         # Create a BytesIO buffer to hold the PDF
         buffer = BytesIO()
 
@@ -236,8 +261,17 @@ class DocumentGenerationService:
             )
             story.append(team_header_tbl)
 
-            # Players sub-table
-            players = team.players if team and team.players else []
+            # Lineup sub-table - filter lineups for this team
+            team_lineups = (
+                [
+                    lineup
+                    for lineup in (match.lineups or [])
+                    if lineup.team_id == team.id
+                ]
+                if team
+                else []
+            )
+
             player_header_row = [
                 self._P("#", style_label),
                 self._P("Nome", style_label),
@@ -245,25 +279,44 @@ class DocumentGenerationService:
                 self._P("Nº Estudante", style_label),
             ]
             player_rows = [player_header_row]
-            for idx, player in enumerate(players, start=1):
+
+            for idx, lineup in enumerate(team_lineups, start=1):
+                athlete = lineup.player if hasattr(lineup, "player") else None
+                full_name = (
+                    athlete.full_name
+                    if athlete and hasattr(athlete, "full_name")
+                    else "N/A"
+                )
                 course_name = (
-                    player.course.abbreviation
-                    if player.course and player.course.abbreviation
+                    athlete.course.abbreviation
+                    if athlete
+                    and hasattr(athlete, "course")
+                    and athlete.course
+                    and hasattr(athlete.course, "abbreviation")
                     else "-"
                 )
+                student_number = (
+                    athlete.student_number
+                    if athlete and hasattr(athlete, "student_number")
+                    else "-"
+                )
+                jersy_number = (
+                    lineup.jersey_number if hasattr(lineup, "jersey_number") else "-"
+                )
+
                 player_rows.append(
                     [
-                        self._P(str(idx), style_center),
-                        self._P(player.full_name or "N/A", style_normal),
+                        self._P(jersy_number, style_center),
+                        self._P(full_name, style_normal),
                         self._P(course_name, style_center),
-                        self._P(player.student_number or "-", style_center),
+                        self._P(student_number or "-", style_center),
                     ]
                 )
 
             if len(player_rows) == 1:
-                # No players registered
+                # No lineup registered
                 player_rows.append(
-                    [self._P("Sem jogadores registados", style_normal), "", "", ""]
+                    [self._P("Sem convocatória registada", style_normal), "", "", ""]
                 )
 
             players_tbl = Table(player_rows, colWidths=player_col_w)
@@ -291,10 +344,23 @@ class DocumentGenerationService:
         )
         story.append(notes_tbl)
 
-        # Empty space for notes
-        notes_body = [[""], [""], [""], [""]]
+        # Comments/Observations body
+        comments = match.comments or []
+        if comments:
+            notes_body = []
+            for comment in comments:
+                comment_text = (
+                    comment.message if hasattr(comment, "message") else str(comment)
+                )
+                notes_body.append([self._P(comment_text, style_normal)])
+        else:
+            # Empty space for notes if no comments
+            notes_body = [[""], [""], [""], [""]]
+
         notes_body_tbl = Table(
-            notes_body, colWidths=[TABLE_W], rowHeights=[15 * mm] * 4
+            notes_body,
+            colWidths=[TABLE_W],
+            rowHeights=None if comments else [15 * mm] * 4,
         )
         notes_body_tbl.setStyle(TableStyle(self._base_ts()))
         story.append(notes_body_tbl)

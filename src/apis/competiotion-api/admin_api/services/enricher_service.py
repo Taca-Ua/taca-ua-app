@@ -26,6 +26,13 @@ class MatchCompletedDTO(MatchDTO):
     participants: List[MatchParticipantCompletedDTO]
 
 
+@dataclass
+class LineupCompletedDTO(LineupDTO):
+    """Data Transfer Object representing a lineup entry with enriched player details."""
+
+    player: StudentDTO = None
+
+
 class EnricherService:
     """Service responsible for enriching data combining information from multiple services."""
 
@@ -251,6 +258,15 @@ class EnricherService:
             for player_id, entries_list in player_ids_to_fetch.items():
                 for entry in entries_list:
                     entry.player = students_data_map.get(player_id, None)
+
+        # Convert entries to LineupCompletedDTO with enriched player details
+        for i, entry in enumerate(lineup_entries):
+            lineup_entries[i] = LineupCompletedDTO(
+                **{
+                    **entry.__dict__,
+                    "player": entry.player,
+                },
+            )
 
         return lineup_entries
 
