@@ -13,6 +13,10 @@ function Administradores() {
   const [memberPassword, setMemberPassword] = useState('');
   const [memberRole, setMemberRole] = useState<'general_admin' | 'nucleo_admin'>('general_admin');
   const [email, setEmail] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [nucleoSearch, setNucleoSearch] = useState('');
 
   const [members, setMembers] = useState<Admin[]>([]);
   const [allNucleos, setAllNucleos] = useState<Nucleo[]>([]);
@@ -66,6 +70,14 @@ function Administradores() {
       setError('Password é obrigatória');
       return;
     }
+    if (!confirmPassword.trim()) {
+      setError('Confirmação de password é obrigatória');
+      return;
+    }
+    if (memberPassword !== confirmPassword) {
+      setError('As passwords não coincidem');
+      return;
+    }
 
     try {
       const newAdmin = await administratorsApi.create({
@@ -83,9 +95,13 @@ function Administradores() {
       setMemberFirstName('');
       setMemberLastName('');
       setMemberPassword('');
+      setConfirmPassword('');
+      setShowPassword(false);
+      setShowConfirmPassword(false);
       setMemberRole('general_admin');
       setEmail('');
       setSelectedNucleos([]);
+      setNucleoSearch('');
       setError('');
       setIsModalOpen(false);
     } catch (err) {
@@ -224,16 +240,45 @@ function Administradores() {
                 <label htmlFor="memberPassword" className="block text-gray-700 font-medium mb-2">
                   Password <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="password"
-                  id="memberPassword"
-                  value={memberPassword}
-                  onChange={(e) => setMemberPassword(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  placeholder="Digite a password"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    id="memberPassword"
+                    value={memberPassword}
+                    onChange={(e) => setMemberPassword(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 pr-10"
+                    placeholder="Digite a password"
+                  />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" tabIndex={-1}>
+                    {showPassword
+                      ? <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+                      : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    }
+                  </button>
+                </div>
               </div>
               <div>
+                <label htmlFor="memberConfirmPassword" className="block text-gray-700 font-medium mb-2">
+                  Confirmar Password <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    id="memberConfirmPassword"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 pr-10"
+                    placeholder="Confirme a password"
+                  />
+                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" tabIndex={-1}>
+                    {showConfirmPassword
+                      ? <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+                      : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    }
+                  </button>
+                </div>
+              </div>
+              <div className="md:col-span-2">
                 <label htmlFor="memberRole" className="block text-gray-700 font-medium mb-2">
                   Tipo <span className="text-red-500">*</span>
                 </label>
@@ -243,6 +288,7 @@ function Administradores() {
                   onChange={(e) => {
                     setMemberRole(e.target.value as 'general_admin' | 'nucleo_admin');
                     setSelectedNucleos([]);
+                    setNucleoSearch('');
                   }}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
@@ -257,11 +303,21 @@ function Administradores() {
                   <label className="block text-gray-700 font-medium mb-2">
                     Núcleos
                   </label>
+                  <input
+                    type="text"
+                    value={nucleoSearch}
+                    onChange={(e) => setNucleoSearch(e.target.value)}
+                    placeholder="Pesquisar núcleo..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 mb-2"
+                  />
                   <div className="border border-gray-300 rounded-md max-h-40 overflow-y-auto p-2 space-y-1">
                     {allNucleos.length === 0 ? (
                       <p className="text-gray-500 text-sm p-2">Nenhum núcleo disponível</p>
                     ) : (
-                      allNucleos.map((nucleo) => (
+                      [...allNucleos]
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .filter(n => n.name.toLowerCase().includes(nucleoSearch.toLowerCase()) || n.abbreviation.toLowerCase().includes(nucleoSearch.toLowerCase()))
+                        .map((nucleo) => (
                         <label key={nucleo.id} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-50 cursor-pointer">
                           <input
                             type="checkbox"
@@ -299,9 +355,13 @@ function Administradores() {
                   setMemberFirstName('');
                   setMemberLastName('');
                   setMemberPassword('');
+                  setConfirmPassword('');
+                  setShowPassword(false);
+                  setShowConfirmPassword(false);
                   setMemberRole('general_admin');
                   setEmail('');
                   setSelectedNucleos([]);
+                  setNucleoSearch('');
                   setError('');
                 }}
                 className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"

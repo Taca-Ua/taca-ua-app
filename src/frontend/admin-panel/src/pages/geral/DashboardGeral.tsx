@@ -5,6 +5,7 @@ import { modalitiesApi } from '../../api/modalities';
 import { teamsApi } from '../../api/teams';
 import { tournamentsApi } from '../../api/tournaments';
 import { seasonsApi, type Season } from '../../api/seasons';
+import { nucleosApi } from '../../api/nucleos';
 import { useAuth } from '../../hooks/useAuth';
 
 function DashboardGeral() {
@@ -31,15 +32,13 @@ function DashboardGeral() {
         setLoading(true);
 
         // Fetch all data in parallel
-        const [modalities, tournaments, teams, seasons] = await Promise.all([
+        const [modalities, tournaments, teams, seasons, nucleos] = await Promise.all([
           modalitiesApi.getAll(),
           tournamentsApi.getAll(),
           teamsApi.getAll(), // Get teams from all courses
           seasonsApi.getAll(),
+          nucleosApi.getAll(),
         ]);
-
-        // Count unique courses from teams
-        const uniqueCourses = new Set(teams.map(t => t.course.id));
 
         // Count active tournaments
         const activeTournaments = tournaments.filter(t => t.status === 'active').length;
@@ -53,7 +52,7 @@ function DashboardGeral() {
 
         setStats({
           modalities: modalities.length,
-          courses: uniqueCourses.size,
+          courses: nucleos.length,
           tournaments: tournaments.length,
           activeTournaments,
           teams: teams.length,

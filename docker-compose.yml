@@ -95,6 +95,8 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_HTTP_RELATIVE_PATH: /keycloak
       KC_PROXY_HEADERS: xforwarded
+    volumes:
+      - ./src/configs/keycloak/themes:/opt/keycloak/themes:ro
 
   # Observability
   prometheus:

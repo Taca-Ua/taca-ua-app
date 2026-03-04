@@ -463,10 +463,12 @@ const TournamentCompetitors = ({
 // Component to manage matches
 const TournamentMatches = ({
   tournament,
-  onMatchesChange
+  onMatchesChange,
+  onMatchDeleted
 }: {
   tournament: TournamentDetail;
   onMatchesChange: () => void;
+  onMatchDeleted: (matchId: string) => void;
 }) => {
   const navigate = useNavigate();
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -475,6 +477,7 @@ const TournamentMatches = ({
   const [startTime, setStartTime] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [matchStatusFilter, setMatchStatusFilter] = useState<string>('all');
 
   const handleCreateMatch = async () => {
     // Validate at least 2 participants
@@ -571,7 +574,7 @@ const TournamentMatches = ({
 
     try {
       await matchesApi.delete(matchId);
-      onMatchesChange();
+      onMatchDeleted(matchId);
     } catch (err) {
       console.error('Failed to delete match:', err);
       alert('Erro ao eliminar jogo');
@@ -617,33 +620,53 @@ const TournamentMatches = ({
     return null;
   };
 
+  const filteredMatches = tournament.matches.filter(match =>
+    matchStatusFilter === 'all' || match.status === matchStatusFilter
+  );
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800">
           Jogos ({tournament.matches.length})
         </h2>
-        <button
-          onClick={() => {
-            setShowCreateModal(true);
-            resetForm();
-          }}
-          disabled={tournament.competitors.length < 2}
-          className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          title={tournament.competitors.length < 2 ? 'É necessário pelo menos 2 competidores' : ''}
-        >
-          + Criar Jogo
-        </button>
+        <div className="flex items-center gap-3">
+          <select
+            value={matchStatusFilter}
+            onChange={(e) => setMatchStatusFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+          >
+            <option value="all">Todos os estados</option>
+            <option value="scheduled">Agendados</option>
+            <option value="in_progress">Em Progresso</option>
+            <option value="finished">Finalizados</option>
+            <option value="cancelled">Cancelados</option>
+          </select>
+          <button
+            onClick={() => {
+              setShowCreateModal(true);
+              resetForm();
+            }}
+            disabled={tournament.competitors.length < 2}
+            className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title={tournament.competitors.length < 2 ? 'É necessário pelo menos 2 competidores' : ''}
+          >
+            + Criar Jogo
+          </button>
+        </div>
       </div>
 
       {tournament.matches.length === 0 ? (
         <p className="text-gray-500 text-center py-8">Nenhum jogo criado</p>
+      ) : filteredMatches.length === 0 ? (
+        <p className="text-gray-500 text-center py-8">Nenhum jogo com o estado selecionado</p>
       ) : (
         <div className="space-y-3">
-          {tournament.matches.map((match) => (
+          {filteredMatches.map((match) => (
             <div
               key={match.id}
-              className="p-4 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
+              onClick={() => navigate(`/geral/jogos/${match.id}`)}
+              className="p-4 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
             >
               <div className="flex justify-between items-start mb-2">
                 <div className="flex-1">
@@ -659,7 +682,7 @@ const TournamentMatches = ({
 
                   <div className="flex gap-4 text-sm text-gray-600">
                     <span>{match.location}</span>
-                    <span>{new Date(match.start_time).toLocaleString('pt-PT')}</span>
+                    <span>{new Date(match.start_time).toLocaleString('pt-PT', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
 
                   <div className="mt-2">
@@ -669,13 +692,7 @@ const TournamentMatches = ({
                   </div>
                 </div>
 
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => navigate(`/geral/jogos/${match.id}`)}
-                    className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-sm transition-colors"
-                  >
-                    Ver
-                  </button>
+                <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => handleDeleteMatch(match.id)}
                     className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-md text-sm transition-colors"
@@ -903,6 +920,7 @@ const TorneioDetails = () => {
             <TournamentMatches
               tournament={tournament}
               onMatchesChange={loadTournament}
+              onMatchDeleted={(matchId) => setTournament(prev => prev ? { ...prev, matches: prev.matches.filter(m => m.id !== matchId) } : null)}
             />
           </div>
         </div>

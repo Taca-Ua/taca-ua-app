@@ -79,6 +79,7 @@ services:
       KC_HOSTNAME_STRICT_HTTPS: "false"
     volumes:
       - ./src/configs/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+      - ./src/configs/keycloak/themes:/opt/keycloak/themes:ro
     # healthcheck:
     #   test: ["CMD", "curl", "-f", "http://localhost:8080/keycloak/health/ready"]
     #   interval: 15s

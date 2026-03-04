@@ -159,6 +159,17 @@ function MemberDetail() {
       <NucleoSidebar />
       <div className="flex-1 p-8">
         <div className="max-w-3xl mx-auto">
+          <div className="mb-6 flex items-center">
+            <button
+              onClick={() => navigate('/nucleo/membros')}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md font-medium transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Voltar
+            </button>
+          </div>
           <div className="bg-white rounded-lg shadow-md p-8">
             <div className="space-y-6">
               <div>

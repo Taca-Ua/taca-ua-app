@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
 import { nucleosApi, type Nucleo } from '../../api/nucleos';
+import { coursesApi, type Course } from '../../api/courses';
 
 const NucleoDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -10,6 +11,7 @@ const NucleoDetails = () => {
   const [nucleus, setNucleus] = useState<Nucleo>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [nucleoCourses, setNucleoCourses] = useState<Course[]>([]);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editedAbbreviation, setEditedAbbreviation] = useState('');
@@ -21,6 +23,8 @@ const NucleoDetails = () => {
         setLoading(true);
         const data = await nucleosApi.getById(String(id));
         setNucleus(data);
+        const allCourses = await coursesApi.getAll();
+        setNucleoCourses(allCourses.filter(c => c.nucleo.id === String(id)));
         setError('');
       } catch (err) {
         console.error('Failed to fetch núcleo:', err);
@@ -133,6 +137,25 @@ const NucleoDetails = () => {
                 {nucleus.name}
               </div>
             </div>
+
+            {nucleoCourses.length > 0 && (
+              <div>
+                <label className="block text-teal-500 font-medium mb-2">Cursos Associados</label>
+                <div className="bg-gray-100 px-4 py-3 rounded-md">
+                  <div className="flex flex-wrap gap-2">
+                    {nucleoCourses.map(course => (
+                      <span
+                        key={course.id}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800 font-medium"
+                      >
+                        {course.name}
+                        <span className="ml-1 text-blue-600">({course.abbreviation})</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="flex gap-4 pt-4">
               <button
