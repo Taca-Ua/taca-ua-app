@@ -39,6 +39,7 @@ from .utils import (
     rebuild_all_teams_for_course,
     rebuild_all_teams_for_modality,
     rebuild_all_tournaments_for_modality,
+    rebuild_general_ranking,
     rebuild_match_projection,
     rebuild_student_projection,
     rebuild_team_projection,
@@ -315,6 +316,8 @@ def handle_modality_type_updated(event_data: Dict[str, Any]):
             modality_type.description = event_data["description"]
         if "escaloes" in event_data:
             modality_type.escaloes = event_data["escaloes"]
+
+        rebuild_general_ranking(db)
         modality_type.updated_at = datetime.utcnow()
 
 
@@ -784,6 +787,9 @@ def handle_tournament_finished(event_data: Dict[str, Any]):
 
         db.flush()
         rebuild_tournament_projection(db, tournament_id)
+
+        # Rebuild general ranking since tournament rankings changed
+        rebuild_general_ranking(db)
 
         logger.info(
             "tournament_rankings_stored",

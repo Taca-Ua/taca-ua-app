@@ -8,6 +8,7 @@ and read/write access to public_read schema views.
 from .metadata import Base
 from .models import (  # Enums; Core Read Models; Materialized Views
     Course,
+    GeneralRankingView,
     Match,
     MatchComment,
     MatchDetailView,
@@ -62,6 +63,7 @@ __all__ = [
     "TournamentDetailView",
     "MatchDetailView",
     "TournamentStandingsView",
+    "GeneralRankingView",
 ]
 
 __version__ = "0.1.0"
