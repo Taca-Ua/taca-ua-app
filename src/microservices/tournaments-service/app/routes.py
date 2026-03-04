@@ -321,6 +321,10 @@ async def finish_tournament(
             aggregate_id=str(tournament.id),
             data={
                 "tournament_id": str(tournament.id),
+                "ranking_entries": [
+                    {"team_id": str(entry.team_id), "position": entry.position}
+                    for entry in data.ranking_entries
+                ],
             },
         )
 

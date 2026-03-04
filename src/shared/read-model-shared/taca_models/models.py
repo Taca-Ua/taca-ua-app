@@ -315,6 +315,32 @@ class TournamentCompetitor(Base):
     tournament = relationship("Tournament", back_populates="competitors")
 
 
+class TournamentRanking(Base):
+    """Final ranking entries for a finished tournament - populated from tournament.finished event."""
+
+    __tablename__ = "tournament_rankings"
+    __table_args__ = (
+        Index("ix_tournament_rankings_tournament_id", "tournament_id"),
+        Index("ix_tournament_rankings_position", "tournament_id", "position"),
+        UniqueConstraint("tournament_id", "team_id", name="uq_tournament_ranking"),
+        {"schema": "public_read"},
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    tournament_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("public_read.tournaments.tournament_id"),
+        nullable=False,
+    )
+    team_id = Column(UUID(as_uuid=True), nullable=False)
+    position = Column(Integer, nullable=False)
+
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    # Relationships
+    tournament = relationship("Tournament", foreign_keys=[tournament_id])
+
+
 class Match(Base):
     """Match information - populated from matches service events."""
 

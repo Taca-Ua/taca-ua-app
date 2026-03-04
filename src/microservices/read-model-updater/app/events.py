@@ -32,6 +32,7 @@ from .models import (
     TeamPlayer,
     Tournament,
     TournamentCompetitor,
+    TournamentRanking,
 )
 from .utils import (
     rebuild_all_students_for_course,
@@ -741,10 +742,13 @@ def handle_tournament_deleted(event_data: Dict[str, Any]):
 def handle_tournament_finished(event_data: Dict[str, Any]):
     """Handle tournament finished event."""
     tournament_id = uuid.UUID(event_data["tournament_id"])
+    ranking_entries = event_data.get("ranking_entries", [])
+
     logger.info(
         "event_received",
         event_type="tournament.finished",
         tournament_id=str(tournament_id),
+        ranking_entries_count=len(ranking_entries),
     )
 
     with get_db() as db:
@@ -756,12 +760,36 @@ def handle_tournament_finished(event_data: Dict[str, Any]):
         if not tournament:
             logger.warning("tournament_not_found", tournament_id=str(tournament_id))
             return
+
         now = datetime.utcnow()
         tournament.status = "finished"
         tournament.finished_at = now
         tournament.updated_at = now
         db.flush()
+
+        # Delete existing ranking entries for this tournament (if any)
+        db.query(TournamentRanking).filter(
+            TournamentRanking.tournament_id == tournament_id
+        ).delete()
+
+        # Create new ranking entries
+        for entry in ranking_entries:
+            ranking = TournamentRanking(
+                tournament_id=tournament_id,
+                team_id=uuid.UUID(entry["team_id"]),
+                position=entry["position"],
+                created_at=now,
+            )
+            db.add(ranking)
+
+        db.flush()
         rebuild_tournament_projection(db, tournament_id)
+
+        logger.info(
+            "tournament_rankings_stored",
+            tournament_id=str(tournament_id),
+            ranking_entries_count=len(ranking_entries),
+        )
 
 
 @rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_COMPETITOR_ADDED)

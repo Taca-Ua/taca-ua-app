@@ -39,6 +39,7 @@ from ..models import (
     Tournament,
     TournamentCompetitor,
     TournamentDetailView,
+    TournamentRanking,
     TournamentStandingsView,
 )
 from ..utils import (
@@ -130,6 +131,7 @@ class ProjectionRepository:
 
             # 2. Clear tournament-related tables
             self.db.query(TournamentCompetitor).delete()
+            self.db.query(TournamentRanking).delete()
             self.db.query(Tournament).delete()
 
             # 3. Clear team and player tables
@@ -205,6 +207,9 @@ class ProjectionRepository:
                 )
                 total_records += self._rebuild_tournament_competitors(
                     snapshot.tournament.competitors
+                )
+                total_records += self._rebuild_tournament_rankings(
+                    snapshot.tournament.rankings
                 )
 
             # 3. Rebuild matches (depends on tournaments and teams)
@@ -453,6 +458,26 @@ class ProjectionRepository:
             "projection_rebuilt", table="tournament_competitors", count=len(competitors)
         )
         return len(competitors)
+
+    def _rebuild_tournament_rankings(self, rankings: List[Any]) -> int:
+        """Rebuild TournamentRanking table."""
+        if not rankings:
+            return 0
+
+        for data in rankings:
+            ranking = TournamentRanking(
+                tournament_id=data["tournament_id"],
+                team_id=data["team_id"],
+                position=data["position"],
+                created_at=data.get("created_at"),
+            )
+            self.db.add(ranking)
+
+        self.db.flush()
+        logger.debug(
+            "projection_rebuilt", table="tournament_rankings", count=len(rankings)
+        )
+        return len(rankings)
 
     def _rebuild_matches(self, matches: List[Any]) -> int:
         """Rebuild Match table."""

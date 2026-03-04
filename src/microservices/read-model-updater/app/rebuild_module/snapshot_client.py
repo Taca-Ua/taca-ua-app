@@ -206,9 +206,12 @@ class SnapshotClient:
             if data is None:
                 return None
 
+            print("Fetched tournament snapshot data:", data)  # Debug log
+
             return TournamentSnapshot(
                 tournaments=data.get("tournaments", []),
                 competitors=data.get("competitors", []),
+                rankings=data.get("ranking_positions", []),
             )
         except SnapshotFetchError:
             raise

@@ -28,6 +28,7 @@ from .models import (  # Enums; Core Read Models; Materialized Views
     Tournament,
     TournamentCompetitor,
     TournamentDetailView,
+    TournamentRanking,
     TournamentStandingsView,
     TournamentStatus,
 )
@@ -49,6 +50,7 @@ __all__ = [
     "TeamPlayer",
     "Tournament",
     "TournamentCompetitor",
+    "TournamentRanking",
     "Match",
     "MatchParticipant",
     "MatchResult",
