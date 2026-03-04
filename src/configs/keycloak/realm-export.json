@@ -1,6 +1,7 @@
 {
   "realm": "taca-ua",
   "enabled": true,
+  "loginTheme": "taca-ua",
   "sslRequired": "none",
   "registrationAllowed": false,
   "loginWithEmailAllowed": true,
