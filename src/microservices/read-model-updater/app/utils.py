@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from .models import (
     Course,
+    GeneralRankingView,
     Match,
     MatchComment,
     MatchDetailView,
@@ -28,6 +29,7 @@ from .models import (
     Tournament,
     TournamentCompetitor,
     TournamentDetailView,
+    TournamentRanking,
     TournamentStandingsView,
 )
 
@@ -583,3 +585,230 @@ def rebuild_all_matches_for_tournament(session: Session, tournament_id: UUID) ->
     )
     for (match_id,) in matches:
         rebuild_match_projection(session, match_id)
+
+
+# ==================== General Ranking View ====================
+
+
+def rebuild_general_ranking(session: Session) -> None:
+    """
+    Rebuild mv_general_ranking for all courses.
+
+    This calculates points earned by each course based on tournament final rankings.
+    Points are determined by the modality_type's escaloes configuration, which
+    defines point awards based on position and participant count.
+
+    Call when:
+    - TournamentRanking entries are created/updated
+    - During full projection rebuild
+
+    Algorithm:
+    1. For each finished tournament with rankings:
+       - Determine the escalao based on participant count
+       - For each ranking entry, calculate points based on position
+       - Aggregate points to the team's course
+    2. Rank courses by total points
+    """
+    # Clear existing general ranking data
+    session.query(GeneralRankingView).delete()
+
+    # Dictionary to accumulate points per course
+    # course_id -> {points, tournament_count, course_name, course_abbr, nucleo_id, nucleo_name, nucleo_abbr}
+    course_points = {}
+
+    # Get distinct tournament IDs that are finished and have rankings
+    # We do this in two steps to avoid DISTINCT with JSON columns
+    tournament_ids = (
+        session.query(Tournament.tournament_id)
+        .join(
+            TournamentRanking,
+            Tournament.tournament_id == TournamentRanking.tournament_id,
+        )
+        .filter(Tournament.status == "finished")
+        .distinct()
+        .all()
+    )
+
+    # Now load each tournament with its relationships
+    tournaments_with_rankings = []
+    for (tournament_id,) in tournament_ids:
+        tournament = (
+            session.query(Tournament)
+            .filter(Tournament.tournament_id == tournament_id)
+            .options(
+                joinedload(Tournament.modality).joinedload(Modality.modality_type),
+            )
+            .first()
+        )
+        if tournament:
+            tournaments_with_rankings.append(tournament)
+
+    for tournament in tournaments_with_rankings:
+        modality_type = tournament.modality.modality_type
+        escaloes = modality_type.escaloes
+
+        # Determine participant count for this tournament
+        # If competitors are teams, count total athletes across all teams
+        # If competitors are athletes, count total athletes
+        competitor_type_result = (
+            session.query(TournamentCompetitor.competitor_type)
+            .filter(
+                TournamentCompetitor.tournament_id == tournament.tournament_id,
+                TournamentCompetitor.deleted_at.is_(None),
+            )
+            .first()
+        )
+
+        if not competitor_type_result:
+            continue  # No competitors, skip this tournament
+
+        competitor_type = competitor_type_result[0]
+
+        if competitor_type == "team":
+            # Count total active athletes across all teams in tournament
+            participant_count = (
+                session.query(func.count(TeamPlayer.id))
+                .join(
+                    TournamentCompetitor,
+                    TournamentCompetitor.competitor_entity_id == TeamPlayer.team_id,
+                )
+                .filter(
+                    TournamentCompetitor.tournament_id == tournament.tournament_id,
+                    TournamentCompetitor.deleted_at.is_(None),
+                    TournamentCompetitor.competitor_type == "team",
+                    TeamPlayer.removed_at.is_(None),
+                )
+                .scalar()
+                or 0
+            )
+        else:  # athlete
+            # Count number of athlete competitors
+            participant_count = (
+                session.query(func.count(TournamentCompetitor.competitor_id))
+                .filter(
+                    TournamentCompetitor.tournament_id == tournament.tournament_id,
+                    TournamentCompetitor.deleted_at.is_(None),
+                    TournamentCompetitor.competitor_type == "athlete",
+                )
+                .scalar()
+                or 0
+            )
+
+        # Find the appropriate escalao based on participant count
+        selected_escalao = None
+        for escalao in escaloes:
+            min_part = escalao.get("minParticipants")
+            max_part = escalao.get("maxParticipants")
+
+            # Check if participant count falls within this escalao's range
+            if min_part is None and max_part is None:
+                selected_escalao = escalao
+                break
+            elif min_part is None and participant_count <= max_part:
+                selected_escalao = escalao
+                break
+            elif max_part is None and participant_count >= min_part:
+                selected_escalao = escalao
+                break
+            elif min_part <= participant_count <= max_part:
+                selected_escalao = escalao
+                break
+
+        if not selected_escalao:
+            continue  # No matching escalao, skip this tournament
+
+        points_array = selected_escalao.get("points", [])
+
+        # Get all ranking entries for this tournament
+        rankings = (
+            session.query(TournamentRanking)
+            .join(Team, TournamentRanking.team_id == Team.team_id)
+            .join(Course, Team.course_id == Course.course_id)
+            .options(
+                joinedload(TournamentRanking.tournament),
+            )
+            .filter(TournamentRanking.tournament_id == tournament.tournament_id)
+            .all()
+        )
+
+        # Track which courses participated in this tournament
+        tournament_courses = set()
+
+        for ranking in rankings:
+            # Get team and course info
+            team = session.query(Team).filter(Team.team_id == ranking.team_id).first()
+            if not team:
+                continue
+
+            course = (
+                session.query(Course)
+                .options(joinedload(Course.nucleo))
+                .filter(Course.course_id == team.course_id)
+                .first()
+            )
+            if not course:
+                continue
+
+            tournament_courses.add(course.course_id)
+
+            # Calculate points for this position
+            position_index = ranking.position - 1  # Convert to 0-based index
+            if 0 <= position_index < len(points_array):
+                points = points_array[position_index]
+            else:
+                points = 0  # No points if position is beyond defined points
+
+            # Initialize course entry if not exists
+            if course.course_id not in course_points:
+                nucleo = course.nucleo
+                course_points[course.course_id] = {
+                    "course_id": course.course_id,
+                    "course_name": course.name,
+                    "course_abbreviation": course.abbreviation,
+                    "nucleo_id": nucleo.nucleo_id if nucleo else None,
+                    "nucleo_name": nucleo.name if nucleo else "",
+                    "nucleo_abbreviation": nucleo.abbreviation if nucleo else "",
+                    "points": 0,
+                    "tournaments_participated": 0,
+                }
+
+            # Add points to course
+            course_points[course.course_id]["points"] += points
+
+        # Increment tournament count for participating courses
+        for course_id in tournament_courses:
+            if course_id in course_points:
+                course_points[course_id]["tournaments_participated"] += 1
+
+    # Sort courses by points (descending) and assign ranks
+    sorted_courses = sorted(
+        course_points.values(), key=lambda x: x["points"], reverse=True
+    )
+
+    rank = 1
+    for idx, course_data in enumerate(sorted_courses):
+        # Assign rank (handle ties)
+        if idx > 0 and course_data["points"] == sorted_courses[idx - 1]["points"]:
+            # Same points as previous, keep same rank
+            course_data["rank"] = sorted_courses[idx - 1]["rank"]
+        else:
+            course_data["rank"] = rank
+
+        # Create GeneralRankingView entry
+        ranking_view = GeneralRankingView(
+            course_id=course_data["course_id"],
+            course_name=course_data["course_name"],
+            course_abbreviation=course_data["course_abbreviation"],
+            nucleo_id=course_data["nucleo_id"],
+            nucleo_name=course_data["nucleo_name"],
+            nucleo_abbreviation=course_data["nucleo_abbreviation"],
+            points=course_data["points"],
+            rank=course_data["rank"],
+            tournaments_participated=course_data["tournaments_participated"],
+            updated_at=datetime.utcnow(),
+        )
+        session.add(ranking_view)
+
+        rank += 1
+
+    session.flush()

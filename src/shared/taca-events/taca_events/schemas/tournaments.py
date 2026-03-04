@@ -65,9 +65,22 @@ TOURNAMENT_FINISHED_V1 = {
     "type": "object",
     "title": "TournamentFinished v1",
     "description": "Event emitted when a tournament is completed",
-    "required": ["tournament_id"],
+    "required": ["tournament_id", "ranking_entries"],
     "properties": {
         "tournament_id": {"type": "string", "format": "uuid"},
+        "ranking_entries": {
+            "type": "array",
+            "description": "Final ranking of teams in the tournament",
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["team_id", "position"],
+                "properties": {
+                    "team_id": {"type": "string", "format": "uuid"},
+                    "position": {"type": "integer"},
+                },
+            },
+        },
     },
     "additionalProperties": False,
 }

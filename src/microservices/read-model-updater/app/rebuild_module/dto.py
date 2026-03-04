@@ -86,11 +86,12 @@ class TournamentSnapshot:
     """
     Snapshot data from Tournament service.
 
-    Contains tournaments and their competitors.
+    Contains tournaments, their competitors, and final rankings.
     """
 
     tournaments: List[Dict[str, Any]]
     competitors: List[Dict[str, Any]]
+    rankings: List[Dict[str, Any]]
 
 
 @dataclass
@@ -162,7 +163,11 @@ class CompleteSnapshot:
             )
 
         if self.tournament:
-            count += len(self.tournament.tournaments) + len(self.tournament.competitors)
+            count += (
+                len(self.tournament.tournaments)
+                + len(self.tournament.competitors)
+                + len(self.tournament.rankings)
+            )
 
         if self.modalities:
             count += (

@@ -315,6 +315,32 @@ class TournamentCompetitor(Base):
     tournament = relationship("Tournament", back_populates="competitors")
 
 
+class TournamentRanking(Base):
+    """Final ranking entries for a finished tournament - populated from tournament.finished event."""
+
+    __tablename__ = "tournament_rankings"
+    __table_args__ = (
+        Index("ix_tournament_rankings_tournament_id", "tournament_id"),
+        Index("ix_tournament_rankings_position", "tournament_id", "position"),
+        UniqueConstraint("tournament_id", "team_id", name="uq_tournament_ranking"),
+        {"schema": "public_read"},
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    tournament_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("public_read.tournaments.tournament_id"),
+        nullable=False,
+    )
+    team_id = Column(UUID(as_uuid=True), nullable=False)
+    position = Column(Integer, nullable=False)
+
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    # Relationships
+    tournament = relationship("Tournament", foreign_keys=[tournament_id])
+
+
 class Match(Base):
     """Match information - populated from matches service events."""
 
@@ -649,6 +675,47 @@ class TournamentStandingsView(Base):
 
     # Additional metadata
     statistics_metadata = Column(JSON, nullable=True)
+
+    updated_at = Column(
+        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+
+class GeneralRankingView(Base):
+    """
+    Materialized view: General ranking across all courses.
+
+    Calculates points earned by each course based on tournament final rankings.
+    Points are determined by the modality_type's escaloes configuration, which
+    defines point awards based on position and participant count.
+
+    Rebuilt when TournamentRanking entries are created/updated.
+    """
+
+    __tablename__ = "mv_general_ranking"
+    __table_args__ = (
+        Index("ix_mv_general_ranking_rank", "rank"),
+        Index("ix_mv_general_ranking_course_id", "course_id"),
+        UniqueConstraint("course_id", name="uq_general_ranking_course"),
+        {"schema": "public_read"},
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    course_id = Column(UUID(as_uuid=True), nullable=False)
+    course_name = Column(String, nullable=False)
+    course_abbreviation = Column(String, nullable=False)
+
+    # Nucleo information
+    nucleo_id = Column(UUID(as_uuid=True), nullable=False)
+    nucleo_name = Column(String, nullable=False)
+    nucleo_abbreviation = Column(String, nullable=False)
+
+    # Rankings
+    points = Column(Integer, nullable=False, default=0)
+    rank = Column(Integer, nullable=True)
+
+    # Metadata
+    tournaments_participated = Column(Integer, nullable=False, default=0)
 
     updated_at = Column(
         DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow

@@ -436,3 +436,63 @@ def get_competitor_standings(
     )
 
     return standings
+
+
+# ==================== General Ranking Endpoints ====================
+
+
+@router.get(
+    "/ranking/general",
+    response_model=schemas.GeneralRankingList,
+    summary="Get general ranking",
+    description="Get the general ranking of all courses based on tournament performance",
+)
+def get_general_ranking(
+    nucleo_id: Optional[UUID] = Query(None, description="Optional filter by nucleo ID"),
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve the general ranking of courses.
+
+    The ranking is calculated based on points earned in tournaments.
+    Points are awarded based on final positions in tournaments according to
+    the modality type's escaloes configuration.
+
+    - **nucleo_id**: Optional filter to show ranking only for a specific nucleo
+    """
+    rankings, total = crud.get_general_ranking(db=db, nucleo_id=nucleo_id)
+
+    logger.info(
+        "general_ranking_retrieved",
+        total=total,
+        filters={"nucleo_id": str(nucleo_id) if nucleo_id else None},
+    )
+
+    return schemas.GeneralRankingList(
+        items=rankings,
+        total=total,
+    )
+
+
+@router.get(
+    "/ranking/general/course/{course_id}",
+    response_model=schemas.GeneralRanking,
+    summary="Get course ranking",
+    description="Get ranking information for a specific course",
+)
+def get_course_ranking(
+    course_id: UUID,
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve ranking information for a specific course.
+
+    - **course_id**: Unique identifier of the course
+    """
+    ranking = crud.get_course_ranking(db=db, course_id=course_id)
+    if not ranking:
+        logger.warning("course_ranking_not_found", course_id=str(course_id))
+        raise HTTPException(status_code=404, detail="Course ranking not found")
+
+    logger.info("course_ranking_retrieved", course_id=str(course_id))
+    return ranking

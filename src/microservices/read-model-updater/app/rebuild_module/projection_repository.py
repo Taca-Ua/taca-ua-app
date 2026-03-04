@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 from ..logger import logger
 from ..models import (
     Course,
+    GeneralRankingView,
     Match,
     MatchComment,
     MatchDetailView,
@@ -39,9 +40,11 @@ from ..models import (
     Tournament,
     TournamentCompetitor,
     TournamentDetailView,
+    TournamentRanking,
     TournamentStandingsView,
 )
 from ..utils import (
+    rebuild_general_ranking,
     rebuild_match_projection,
     rebuild_student_projection,
     rebuild_team_projection,
@@ -115,6 +118,7 @@ class ProjectionRepository:
             # Order matters!
 
             # 0. Clear materialized views first (no dependencies, but depend on core tables)
+            self.db.query(GeneralRankingView).delete()
             self.db.query(TournamentStandingsView).delete()
             self.db.query(MatchDetailView).delete()
             self.db.query(TournamentDetailView).delete()
@@ -130,6 +134,7 @@ class ProjectionRepository:
 
             # 2. Clear tournament-related tables
             self.db.query(TournamentCompetitor).delete()
+            self.db.query(TournamentRanking).delete()
             self.db.query(Tournament).delete()
 
             # 3. Clear team and player tables
@@ -205,6 +210,9 @@ class ProjectionRepository:
                 )
                 total_records += self._rebuild_tournament_competitors(
                     snapshot.tournament.competitors
+                )
+                total_records += self._rebuild_tournament_rankings(
+                    snapshot.tournament.rankings
                 )
 
             # 3. Rebuild matches (depends on tournaments and teams)
@@ -454,6 +462,26 @@ class ProjectionRepository:
         )
         return len(competitors)
 
+    def _rebuild_tournament_rankings(self, rankings: List[Any]) -> int:
+        """Rebuild TournamentRanking table."""
+        if not rankings:
+            return 0
+
+        for data in rankings:
+            ranking = TournamentRanking(
+                tournament_id=data["tournament_id"],
+                team_id=data["team_id"],
+                position=data["position"],
+                created_at=data.get("created_at"),
+            )
+            self.db.add(ranking)
+
+        self.db.flush()
+        logger.debug(
+            "projection_rebuilt", table="tournament_rankings", count=len(rankings)
+        )
+        return len(rankings)
+
     def _rebuild_matches(self, matches: List[Any]) -> int:
         """Rebuild Match table."""
         if not matches:
@@ -643,6 +671,16 @@ class ProjectionRepository:
                 count=standings_count,
             )
 
+            # Rebuild general ranking
+            rebuild_general_ranking(self.db)
+            general_ranking_count = self.db.query(GeneralRankingView).count()
+            total_records += general_ranking_count
+            logger.debug(
+                "materialized_view_rebuilt",
+                view="general_ranking",
+                count=general_ranking_count,
+            )
+
             # Flush to ensure all writes are done
             self.db.flush()
 
@@ -674,6 +712,7 @@ class ProjectionRepository:
                 ("public_read.match_results", "id"),
                 ("public_read.match_lineups", "id"),
                 ("public_read.mv_tournament_standings", "id"),  # Materialized view
+                ("public_read.mv_general_ranking", "id"),  # Materialized view
             ]
 
             for table_name, id_column in tables_with_sequences:
