@@ -48,6 +48,13 @@ function Navbar() {
                 {isClassificacaoOpen && (
                   <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-md shadow-lg py-2 border border-gray-100 z-50">
                     <Link
+                      to="/ranking"
+                      className="block px-4 py-2 text-gray-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+                      onClick={() => setIsClassificacaoOpen(false)}
+                    >
+                      Ranking Geral
+                    </Link>
+                    <Link
                       to="/torneios"
                       className="block px-4 py-2 text-gray-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
                       onClick={() => setIsClassificacaoOpen(false)}
@@ -116,6 +123,13 @@ function Navbar() {
                 {/* Classificação with submenu */}
                 <div className="px-5 py-3">
                   <div className="text-gray-700 font-semibold mb-2 text-base">Classificação</div>
+                  <Link
+                    to="/ranking"
+                    className="block pl-5 py-3 text-base text-gray-600 hover:text-teal-600 transition-colors rounded hover:bg-teal-50"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Ranking Geral
+                  </Link>
                   <Link
                     to="/torneios"
                     className="block pl-5 py-3 text-base text-gray-600 hover:text-teal-600 transition-colors rounded hover:bg-teal-50"
