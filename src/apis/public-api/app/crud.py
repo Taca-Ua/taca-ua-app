@@ -11,6 +11,7 @@ from uuid import UUID
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from taca_models import (
+    GeneralRankingView,
     MatchDetailView,
     StudentDetailView,
     TeamDetailView,
@@ -350,4 +351,60 @@ def get_standings_by_competitor(
         db.query(TournamentStandingsView)
         .filter(TournamentStandingsView.competitor_entity_id == competitor_entity_id)
         .all()
+    )
+
+
+# ==================== General Ranking View Operations ====================
+
+
+def get_general_ranking(
+    db: Session,
+    nucleo_id: Optional[UUID] = None,
+) -> tuple[list[GeneralRankingView], int]:
+    """
+    Get general ranking of all courses, ordered by points and rank.
+
+    Args:
+        db: Database session
+        nucleo_id: Optional filter by nucleo ID
+
+    Returns:
+        Tuple of (list of rankings, total count)
+    """
+    query = db.query(GeneralRankingView)
+
+    # Apply filters
+    if nucleo_id:
+        query = query.filter(GeneralRankingView.nucleo_id == nucleo_id)
+
+    # Order by rank (nulls last) and points descending
+    query = query.order_by(
+        GeneralRankingView.rank.asc().nullslast(),
+        GeneralRankingView.points.desc(),
+    )
+
+    # Get total count
+    total = query.count()
+
+    # Get all rankings
+    rankings = query.all()
+
+    return rankings, total
+
+
+def get_course_ranking(db: Session, course_id: UUID) -> Optional[GeneralRankingView]:
+    """
+    Get ranking information for a specific course.
+
+    Args:
+        db: Database session
+        course_id: Course identifier
+
+    Returns:
+        Ranking information or None if not found
+    """
+    return (
+        db.query(GeneralRankingView)
+        .filter(GeneralRankingView.course_id == course_id)
+        .first()
     )

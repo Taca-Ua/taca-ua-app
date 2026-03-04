@@ -7,6 +7,7 @@ Public API only reads from these views, never writes.
 """
 
 from taca_models import (
+    GeneralRankingView,
     MatchDetailView,
     StudentDetailView,
     TeamDetailView,
@@ -20,4 +21,5 @@ __all__ = [
     "TournamentDetailView",
     "MatchDetailView",
     "TournamentStandingsView",
+    "GeneralRankingView",
 ]

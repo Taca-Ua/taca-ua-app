@@ -235,3 +235,40 @@ class ErrorResponse(BaseModel):
 
     error: str = Field(..., description="Error message")
     detail: Optional[str] = Field(None, description="Detailed error information")
+
+
+# ==================== GeneralRankingView Schemas ====================
+
+
+class GeneralRanking(BaseModel):
+    """Schema for general ranking view response."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int = Field(..., description="Unique identifier for the ranking entry")
+
+    # Course info
+    course_id: UUID = Field(..., description="Course identifier")
+    course_name: str = Field(..., description="Full name of the course")
+    course_abbreviation: str = Field(..., description="Course abbreviation")
+
+    # Nucleo info
+    nucleo_id: UUID = Field(..., description="Nucleo identifier")
+    nucleo_name: str = Field(..., description="Full name of the nucleo")
+    nucleo_abbreviation: str = Field(..., description="Nucleo abbreviation")
+
+    # Ranking data
+    points: int = Field(..., ge=0, description="Total points earned by the course")
+    rank: Optional[int] = Field(None, ge=1, description="Position in the ranking")
+    tournaments_participated: int = Field(
+        ..., ge=0, description="Number of tournaments participated"
+    )
+
+    updated_at: datetime = Field(..., description="Last update timestamp")
+
+
+class GeneralRankingList(BaseModel):
+    """Schema for list of general rankings."""
+
+    items: list[GeneralRanking] = Field(..., description="List of course rankings")
+    total: int = Field(..., ge=0, description="Total number of courses ranked")
