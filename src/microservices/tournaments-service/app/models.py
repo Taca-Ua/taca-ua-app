@@ -137,11 +137,13 @@ class Tournament(Base):
 
 
 class TournamentRankingPosition(Base):
-    """Represents the ranking position of a team in a tournament"""
+    """Represents the ranking position of a competitor in a tournament"""
 
     __tablename__ = "tournament_ranking_position"
     __table_args__ = (
-        sa.UniqueConstraint("tournament_id", "team_id", name="uq_tournament_team"),
+        sa.UniqueConstraint(
+            "tournament_id", "competitor_id", name="uq_tournament_competitor"
+        ),
         {"schema": "tournaments"},
     )
 
@@ -152,7 +154,7 @@ class TournamentRankingPosition(Base):
         nullable=False,
         index=True,
     )
-    team_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    competitor_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     position = Column(Integer, nullable=False)
     created_at = Column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
@@ -165,7 +167,7 @@ class TournamentRankingPosition(Base):
         return {
             "id": str(self.id),
             "tournament_id": str(self.tournament_id),
-            "team_id": str(self.team_id),
+            "competitor_id": str(self.competitor_id),
             "position": self.position,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }

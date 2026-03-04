@@ -779,7 +779,7 @@ def handle_tournament_finished(event_data: Dict[str, Any]):
         for entry in ranking_entries:
             ranking = TournamentRanking(
                 tournament_id=tournament_id,
-                team_id=uuid.UUID(entry["team_id"]),
+                competitor_id=uuid.UUID(entry["competitor_id"]),
                 position=entry["position"],
                 created_at=now,
             )

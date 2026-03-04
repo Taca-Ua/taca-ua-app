@@ -48,10 +48,14 @@ class TournamentDTO:
         self.competitors = [
             CompetitorDTO(**competitor) for competitor in self.competitors
         ]
-        self.ranking_positions = [
-            _TournamentRankingPositionDTO(**position)
-            for position in self.ranking_positions
-        ]
+        self.ranking_positions = (
+            [
+                _TournamentRankingPositionDTO(**position)
+                for position in self.ranking_positions
+            ]
+            if self.ranking_positions
+            else []
+        )
 
 
 class TournamentsService(BaseService):
@@ -185,7 +189,7 @@ class TournamentsService(BaseService):
 
         Args:
             tournament_id: Tournament ID
-            ranking_entries: List of dicts with team_id and position
+            ranking_entries: List of dicts with competitor_id and position
             finished_by: ID of the user finishing the tournament
 
         Returns:

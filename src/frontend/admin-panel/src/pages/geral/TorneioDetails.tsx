@@ -11,11 +11,13 @@ const TournamentInfo = ({
   tournament,
   onEdit,
   onDelete,
+  onActivate,
   onFinish
 }: {
   tournament: TournamentDetail;
   onEdit: () => void;
   onDelete: () => void;
+  onActivate: () => void;
   onFinish: () => void;
 }) => {
   const getStatusBadgeColor = (status: string) => {
@@ -87,6 +89,17 @@ const TournamentInfo = ({
         </button>
       </div>
 
+      {tournament.status === 'draft' && (
+        <div className="pt-4 border-t mt-4">
+          <button
+            onClick={onActivate}
+            className="w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-md font-medium transition-colors"
+          >
+            Ativar Torneio
+          </button>
+        </div>
+      )}
+
       {tournament.status === 'active' && (
         <div className="pt-4 border-t mt-4">
           <button
@@ -115,9 +128,6 @@ const EditTournamentModal = ({
   const [startDate, setStartDate] = useState(
     tournament.start_date ? tournament.start_date.split('T')[0] : ''
   );
-  const [status, setStatus] = useState<'draft' | 'active' | 'finished'>(
-    tournament.status as 'draft' | 'active' | 'finished'
-  );
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -131,8 +141,7 @@ const EditTournamentModal = ({
       setSaving(true);
       await onSave({
         name: name.trim(),
-        start_date: startDate || undefined,
-        status
+        start_date: startDate || undefined
       });
       onClose();
     } catch (err) {
@@ -174,19 +183,6 @@ const EditTournamentModal = ({
               onChange={(e) => setStartDate(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
             />
-          </div>
-
-          <div>
-            <label className="block text-gray-700 font-medium mb-2">Estado</label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as 'draft' | 'active' | 'finished')}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
-            >
-              <option value="draft">Rascunho</option>
-              <option value="active">Ativo</option>
-              <option value="finished">Finalizado</option>
-            </select>
           </div>
         </div>
 
@@ -1037,6 +1033,7 @@ const TorneioDetails = () => {
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showFinishModal, setShowFinishModal] = useState(false);
+  const [activating, setActivating] = useState(false);
 
   useEffect(() => {
     loadTournament();
@@ -1063,6 +1060,23 @@ const TorneioDetails = () => {
 
     const updated = await tournamentsApi.update(id, data);
     setTournament(updated);
+  };
+
+  const handleActivate = async () => {
+    if (!id || !tournament) return;
+
+    if (window.confirm(`Ativar o torneio "${tournament.name}"? O torneio passará a estar ativo e visível.`)) {
+      try {
+        setActivating(true);
+        const updated = await tournamentsApi.update(id, { status: 'active' });
+        setTournament(updated);
+      } catch (err) {
+        console.error('Failed to activate tournament:', err);
+        alert('Erro ao ativar torneio');
+      } finally {
+        setActivating(false);
+      }
+    }
   };
 
   const handleDelete = async () => {
@@ -1121,6 +1135,7 @@ const TorneioDetails = () => {
                 tournament={tournament}
                 onEdit={() => setShowEditModal(true)}
                 onDelete={handleDelete}
+                onActivate={handleActivate}
                 onFinish={() => setShowFinishModal(true)}
               />
             </div>

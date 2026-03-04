@@ -116,7 +116,7 @@ async def list_tournaments(
         query = query.filter(Tournament.modality_id == modality_id)
 
     tournaments = query.all()
-    return [TournamentResponse(**t.to_dict(include_ranking=True)) for t in tournaments]
+    return [TournamentResponse(**t.to_dict(include_ranking=False)) for t in tournaments]
 
 
 @router.get("/tournaments/{tournament_id}", response_model=TournamentResponse)
@@ -128,7 +128,7 @@ async def get_tournament(tournament_id: UUID, db: Session = Depends(get_db_sessi
             status_code=status.HTTP_404_NOT_FOUND, detail="Tournament not found"
         )
 
-    return TournamentResponse(**tournament.to_dict(include_ranking=True))
+    return TournamentResponse(**tournament.to_dict(include_ranking=False))
 
 
 @router.post(
@@ -176,7 +176,7 @@ async def create_tournament(
         db.refresh(tournament)
 
         logger.info(f"Created tournament {tournament.id}: {tournament.name}")
-        return TournamentResponse(**tournament.to_dict(include_ranking=True))
+        return TournamentResponse(**tournament.to_dict(include_ranking=False))
 
     except Exception as e:
         db.rollback()
@@ -232,7 +232,7 @@ async def update_tournament(
         db.commit()
         db.refresh(tournament)
         logger.info(f"Updated tournament {tournament.id}")
-        return TournamentResponse(**tournament.to_dict(include_ranking=True))
+        return TournamentResponse(**tournament.to_dict(include_ranking=False))
     except Exception as e:
         db.rollback()
         logger.error(f"Error updating tournament: {e}", exc_info=True)
@@ -302,7 +302,7 @@ async def finish_tournament(
         for entry in data.ranking_entries:
             ranking_position = TournamentRankingPosition(
                 tournament_id=tournament_id,
-                team_id=entry.team_id,
+                competitor_id=entry.competitor_id,
                 position=entry.position,
             )
             db.add(ranking_position)
@@ -322,7 +322,10 @@ async def finish_tournament(
             data={
                 "tournament_id": str(tournament.id),
                 "ranking_entries": [
-                    {"team_id": str(entry.team_id), "position": entry.position}
+                    {
+                        "competitor_id": str(entry.competitor_id),
+                        "position": entry.position,
+                    }
                     for entry in data.ranking_entries
                 ],
             },
@@ -332,7 +335,7 @@ async def finish_tournament(
         db.refresh(tournament)
 
         logger.info(f"Finished tournament {tournament.id}")
-        return TournamentResponse(**tournament.to_dict(include_ranking=True))
+        return TournamentResponse(**tournament.to_dict(include_ranking=False))
 
     except Exception as e:
         db.rollback()
@@ -373,7 +376,7 @@ async def add_competitors_to_tournament(
             detail=f"Error adding competitors: {str(e)}",
         )
 
-    return TournamentResponse(**tournament.to_dict(include_ranking=True))
+    return TournamentResponse(**tournament.to_dict(include_ranking=False))
 
 
 @router.put(
@@ -421,7 +424,7 @@ async def remove_competitors_from_tournament(
             detail=f"Error removing competitors: {str(e)}",
         )
 
-    return TournamentResponse(**tournament.to_dict(include_ranking=True))
+    return TournamentResponse(**tournament.to_dict(include_ranking=False))
 
 
 # ==================== Health Check ====================
