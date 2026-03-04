@@ -722,11 +722,6 @@ def rebuild_general_ranking(session: Session) -> None:
         # Get all ranking entries for this tournament
         rankings = (
             session.query(TournamentRanking)
-            .join(Team, TournamentRanking.team_id == Team.team_id)
-            .join(Course, Team.course_id == Course.course_id)
-            .options(
-                joinedload(TournamentRanking.tournament),
-            )
             .filter(TournamentRanking.tournament_id == tournament.tournament_id)
             .all()
         )
@@ -735,17 +730,40 @@ def rebuild_general_ranking(session: Session) -> None:
         tournament_courses = set()
 
         for ranking in rankings:
-            # Get team and course info
-            team = session.query(Team).filter(Team.team_id == ranking.team_id).first()
-            if not team:
-                continue
-
-            course = (
-                session.query(Course)
-                .options(joinedload(Course.nucleo))
-                .filter(Course.course_id == team.course_id)
+            # Get the tournament competitor to determine type
+            competitor = (
+                session.query(TournamentCompetitor)
+                .filter(
+                    TournamentCompetitor.competitor_entity_id == ranking.competitor_id,
+                    # TournamentCompetitor.tournament_id == tournament.tournament_id,
+                )
                 .first()
             )
+
+            if not competitor:
+                continue
+
+            # Get course based on competitor type
+            course = None
+            if competitor.competitor_type.value == "team":
+                team = (
+                    session.query(Team)
+                    .options(joinedload(Team.course).joinedload(Course.nucleo))
+                    .filter(Team.team_id == competitor.competitor_entity_id)
+                    .first()
+                )
+                if team:
+                    course = team.course
+            else:  # athlete
+                student = (
+                    session.query(Student)
+                    .options(joinedload(Student.course).joinedload(Course.nucleo))
+                    .filter(Student.student_id == competitor.competitor_entity_id)
+                    .first()
+                )
+                if student:
+                    course = student.course
+
             if not course:
                 continue
 

@@ -113,7 +113,7 @@ class TournamentFinish(BaseModel):
     class TournamentFinishEntry(BaseModel):
         """Schema for tournament finish entry"""
 
-        team_id: UUID
+        competitor_id: UUID
         position: int
 
     ranking_entries: List[TournamentFinishEntry]

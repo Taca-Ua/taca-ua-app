@@ -70,13 +70,13 @@ TOURNAMENT_FINISHED_V1 = {
         "tournament_id": {"type": "string", "format": "uuid"},
         "ranking_entries": {
             "type": "array",
-            "description": "Final ranking of teams in the tournament",
+            "description": "Final ranking of competitors in the tournament",
             "items": {
                 "type": "object",
                 "additionalProperties": False,
-                "required": ["team_id", "position"],
+                "required": ["competitor_id", "position"],
                 "properties": {
-                    "team_id": {"type": "string", "format": "uuid"},
+                    "competitor_id": {"type": "string", "format": "uuid"},
                     "position": {"type": "integer"},
                 },
             },

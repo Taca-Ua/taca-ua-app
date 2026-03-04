@@ -470,7 +470,7 @@ class ProjectionRepository:
         for data in rankings:
             ranking = TournamentRanking(
                 tournament_id=data["tournament_id"],
-                team_id=data["team_id"],
+                competitor_id=data["competitor_id"],
                 position=data["position"],
                 created_at=data.get("created_at"),
             )

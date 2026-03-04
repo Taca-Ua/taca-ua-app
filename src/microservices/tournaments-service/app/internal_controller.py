@@ -78,7 +78,7 @@ def get_snapshot(db: Session = Depends(get_db_session)):
                 {
                     "id": str(rp.id),
                     "tournament_id": str(rp.tournament_id),
-                    "team_id": str(rp.team_id),
+                    "competitor_id": str(rp.competitor_id),
                     "position": rp.position,
                     "created_at": rp.created_at.isoformat() if rp.created_at else None,
                 }

@@ -165,11 +165,17 @@ def tournament_finish(request, tournament_id):
     serializer.is_valid(raise_exception=True)
 
     try:
-        # Prepare ranking entries
-        ranking_entries = [
-            {"team_id": str(entry["team_id"]), "position": entry["position"]}
-            for entry in serializer.validated_data["ranking_entries"]
-        ]
+        # Prepare ranking entries - extract competitor_id based on type
+        ranking_entries = []
+        for entry in serializer.validated_data["ranking_entries"]:
+            if entry["competitor_type"] == "team":
+                competitor_id = entry["team_id"]
+            else:  # athlete
+                competitor_id = entry["athlete_id"]
+
+            ranking_entries.append(
+                {"competitor_id": str(competitor_id), "position": entry["position"]}
+            )
 
         # Call microservice
         tournament = tournaments_service_client.finish_tournament(

@@ -322,7 +322,9 @@ class TournamentRanking(Base):
     __table_args__ = (
         Index("ix_tournament_rankings_tournament_id", "tournament_id"),
         Index("ix_tournament_rankings_position", "tournament_id", "position"),
-        UniqueConstraint("tournament_id", "team_id", name="uq_tournament_ranking"),
+        UniqueConstraint(
+            "tournament_id", "competitor_id", name="uq_tournament_ranking"
+        ),
         {"schema": "public_read"},
     )
 
@@ -332,7 +334,7 @@ class TournamentRanking(Base):
         ForeignKey("public_read.tournaments.tournament_id"),
         nullable=False,
     )
-    team_id = Column(UUID(as_uuid=True), nullable=False)
+    competitor_id = Column(UUID(as_uuid=True), nullable=False)
     position = Column(Integer, nullable=False)
 
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
