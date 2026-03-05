@@ -9,6 +9,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/shared/taca-messaging /tmp/taca-messaging
 RUN pip install --no-cache-dir /tmp/taca-messaging && rm -rf /tmp/taca-messaging
 
+# Install outbox package
+COPY src/shared/taca-outbox /tmp/taca-outbox
+RUN pip install --no-cache-dir /tmp/taca-outbox && rm -rf /tmp/taca-outbox
+
 COPY src/microservices/matches-service .
 
 # Run migrations and start the service

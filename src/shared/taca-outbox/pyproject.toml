@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "taca-outbox"
+version = "0.1.0"
+description = "Shared Outbox Pattern implementation for TACA-UA microservices"
+requires-python = ">=3.10"
+authors = [
+    {name = "TACA-UA Team"}
+]
+dependencies = [
+    "sqlalchemy>=2.0.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["taca_outbox*"]
+
+[tool.setuptools.package-data]
+taca_outbox = ["py.typed"]

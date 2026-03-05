@@ -6,13 +6,80 @@ Schema: ranking
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, Column, DateTime, Float, Integer
+from sqlalchemy import (
+    JSON,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
+from taca_outbox.models import create_outbox_model
 
 Base = declarative_base()
 
 
+# Core tables for ranking calculations
+class TournamentResult(Base):
+    """
+    Represents the results of a tournament.
+    This is the raw data that feeds into the ranking calculations.
+    """
+
+    __tablename__ = "tournament_result"
+    __table_args__ = (
+        {"schema": "ranking"},
+        # Add unique constraint on tournament_id and position
+        UniqueConstraint("tournament_id", "position", name="uq_tournament_position"),
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tournament_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    competitor_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    position = Column(Integer, nullable=False)
+
+
+class ModalityTypeEscalao(Base):
+    """
+    Represents the scale/level of a modality (sport) for ranking purposes.
+    This can be used to differentiate between different levels of competition.
+    """
+
+    __tablename__ = "modality_type_escalao"
+    __table_args__ = {"schema": "ranking"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    min_participants = Column(Integer, nullable=False)
+    max_participants = Column(Integer, nullable=False)
+    points = Column(Float, nullable=False, default=0.0)
+    modality_type_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("ranking.modality_type.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+
+class ModalityType(Base):
+    """
+    Represents the type of modality (sport) for ranking purposes.
+    This is used to categorize tournaments and results.
+    """
+
+    __tablename__ = "modality_type"
+    __table_args__ = {"schema": "ranking"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    escaloes = relationship(
+        "ModalityTypeEscalao", backref="modality_type", cascade="all, delete-orphan"
+    )
+
+
+# Derived tables for rankings
 class ModalityRanking(Base):
     """
     Represents rankings for a modality (sport) in a season.
@@ -87,3 +154,7 @@ class GeneralRanking(Base):
 
     def __repr__(self):
         return f"<GeneralRanking {self.id} - Position {self.position}: Course {self.course_id} ({self.total_points} pts)>"
+
+
+# OutboxEvent model — schema-bound via shared factory
+OutboxEvent = create_outbox_model(Base, schema="ranking")
