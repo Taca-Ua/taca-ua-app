@@ -5,7 +5,7 @@ Event handling for Ranking Service.
 from datetime import datetime, timezone
 from uuid import UUID
 
-from taca_events import EventRegistry, TournamentFinishedV1
+from taca_events import TournamentFinishedV1
 from taca_messaging import RabbitMQService
 
 from .logger import logger
@@ -52,17 +52,14 @@ async def handle_match_finished(raw_event: dict):
     logger.warning("MatchFinished handler not fully implemented yet")
 
 
-@rabbitmq_service.event_handler("tournament.finished")
-async def handle_tournament_finished(raw_event: dict):
+@rabbitmq_service.event_handler(TournamentFinishedV1)
+async def handle_tournament_finished(event: TournamentFinishedV1):
     """
     Consumes: tournament.finished
 
     Force complete recalculation of modality rankings when tournament finishes.
     Consolidate final points.
     """
-    event = EventRegistry.parse("tournament.finished", raw_event)
-    if not isinstance(event, TournamentFinishedV1):
-        return
     tournament_id = event.data.tournament_id
     logger.info(f"Handling tournament.finished event for tournament {tournament_id}")
 

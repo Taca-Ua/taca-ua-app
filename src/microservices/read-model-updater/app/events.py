@@ -7,13 +7,12 @@ Supports pause/resume for rebuild operations.
 
 import uuid
 from datetime import date, datetime, timezone
-from typing import Any, Dict
+from typing import Any
 
 from taca_events import (  # Nucleo; Course; Modality Type; Modality; Student; Staff; Team; Tournament; Match
     CourseCreatedV1,
     CourseDeletedV1,
     CourseUpdatedV1,
-    EventRegistry,
     MatchCommentAddedV1,
     MatchCommentDeletedV1,
     MatchCreatedV1,
@@ -32,7 +31,6 @@ from taca_events import (  # Nucleo; Course; Modality Type; Modality; Student; S
     NucleoCreatedV1,
     NucleoDeletedV1,
     NucleoUpdatedV1,
-    RoutingKeys,
     StaffCreatedV1,
     StaffDeletedV1,
     StaffUpdatedV1,
@@ -195,12 +193,9 @@ def _parse_date(value: Any) -> date:
 # ==================== Nucleo Events ====================
 
 
-@rabbitmq_service.event_handler(RoutingKeys.NUCLEO_CREATED)
-def handle_nucleo_created(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(NucleoCreatedV1)
+def handle_nucleo_created(event: NucleoCreatedV1):
     """Handle nucleo created event."""
-    event = EventRegistry.parse(RoutingKeys.NUCLEO_CREATED, raw_event)
-    if not isinstance(event, NucleoCreatedV1):
-        return
     nucleo_id = event.data.nucleo_id
     logger.info("event_received", event_type="nucleo.created", nucleo_id=str(nucleo_id))
 
@@ -213,12 +208,9 @@ def handle_nucleo_created(raw_event: Dict[str, Any]):
         db.add(nucleo)
 
 
-@rabbitmq_service.event_handler(RoutingKeys.NUCLEO_UPDATED)
-def handle_nucleo_updated(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(NucleoUpdatedV1)
+def handle_nucleo_updated(event: NucleoUpdatedV1):
     """Handle nucleo updated event."""
-    event = EventRegistry.parse(RoutingKeys.NUCLEO_UPDATED, raw_event)
-    if not isinstance(event, NucleoUpdatedV1):
-        return
     nucleo_id = event.data.nucleo_id
     logger.info("event_received", event_type="nucleo.updated", nucleo_id=str(nucleo_id))
 
@@ -241,12 +233,9 @@ def handle_nucleo_updated(raw_event: Dict[str, Any]):
             rebuild_all_students_for_course(db, course_id)
 
 
-@rabbitmq_service.event_handler(RoutingKeys.NUCLEO_DELETED)
-def handle_nucleo_deleted(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(NucleoDeletedV1)
+def handle_nucleo_deleted(event: NucleoDeletedV1):
     """Handle nucleo deleted event."""
-    event = EventRegistry.parse(RoutingKeys.NUCLEO_DELETED, raw_event)
-    if not isinstance(event, NucleoDeletedV1):
-        return
     nucleo_id = event.data.nucleo_id
     logger.info("event_received", event_type="nucleo.deleted", nucleo_id=str(nucleo_id))
 
@@ -261,12 +250,9 @@ def handle_nucleo_deleted(raw_event: Dict[str, Any]):
 # ==================== Course Events ====================
 
 
-@rabbitmq_service.event_handler(RoutingKeys.COURSE_CREATED)
-def handle_course_created(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(CourseCreatedV1)
+def handle_course_created(event: CourseCreatedV1):
     """Handle course created event."""
-    event = EventRegistry.parse(RoutingKeys.COURSE_CREATED, raw_event)
-    if not isinstance(event, CourseCreatedV1):
-        return
     course_id = event.data.course_id
     logger.info("event_received", event_type="course.created", course_id=str(course_id))
 
@@ -280,12 +266,9 @@ def handle_course_created(raw_event: Dict[str, Any]):
         db.add(course)
 
 
-@rabbitmq_service.event_handler(RoutingKeys.COURSE_UPDATED)
-def handle_course_updated(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(CourseUpdatedV1)
+def handle_course_updated(event: CourseUpdatedV1):
     """Handle course updated event."""
-    event = EventRegistry.parse(RoutingKeys.COURSE_UPDATED, raw_event)
-    if not isinstance(event, CourseUpdatedV1):
-        return
     course_id = event.data.course_id
     logger.info("event_received", event_type="course.updated", course_id=str(course_id))
 
@@ -308,12 +291,9 @@ def handle_course_updated(raw_event: Dict[str, Any]):
         rebuild_all_students_for_course(db, course_id)
 
 
-@rabbitmq_service.event_handler(RoutingKeys.COURSE_DELETED)
-def handle_course_deleted(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(CourseDeletedV1)
+def handle_course_deleted(event: CourseDeletedV1):
     """Handle course deleted event."""
-    event = EventRegistry.parse(RoutingKeys.COURSE_DELETED, raw_event)
-    if not isinstance(event, CourseDeletedV1):
-        return
     course_id = event.data.course_id
     logger.info("event_received", event_type="course.deleted", course_id=str(course_id))
 
@@ -328,12 +308,9 @@ def handle_course_deleted(raw_event: Dict[str, Any]):
 # ==================== Modality Type Events ====================
 
 
-@rabbitmq_service.event_handler(RoutingKeys.MODALITY_TYPE_CREATED)
-def handle_modality_type_created(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(ModalityTypeCreatedV1)
+def handle_modality_type_created(event: ModalityTypeCreatedV1):
     """Handle modality type created event."""
-    event = EventRegistry.parse(RoutingKeys.MODALITY_TYPE_CREATED, raw_event)
-    if not isinstance(event, ModalityTypeCreatedV1):
-        return
     modality_type_id = event.data.modality_type_id
     logger.info(
         "event_received",
@@ -351,12 +328,9 @@ def handle_modality_type_created(raw_event: Dict[str, Any]):
         db.add(modality_type)
 
 
-@rabbitmq_service.event_handler(RoutingKeys.MODALITY_TYPE_UPDATED)
-def handle_modality_type_updated(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(ModalityTypeUpdatedV1)
+def handle_modality_type_updated(event: ModalityTypeUpdatedV1):
     """Handle modality type updated event."""
-    event = EventRegistry.parse(RoutingKeys.MODALITY_TYPE_UPDATED, raw_event)
-    if not isinstance(event, ModalityTypeUpdatedV1):
-        return
     modality_type_id = event.data.modality_type_id
     logger.info(
         "event_received",
@@ -386,12 +360,9 @@ def handle_modality_type_updated(raw_event: Dict[str, Any]):
         modality_type.updated_at = datetime.utcnow()
 
 
-@rabbitmq_service.event_handler(RoutingKeys.MODALITY_TYPE_DELETED)
-def handle_modality_type_deleted(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(ModalityTypeDeletedV1)
+def handle_modality_type_deleted(event: ModalityTypeDeletedV1):
     """Handle modality type deleted event."""
-    event = EventRegistry.parse(RoutingKeys.MODALITY_TYPE_DELETED, raw_event)
-    if not isinstance(event, ModalityTypeDeletedV1):
-        return
     modality_type_id = event.data.modality_type_id
     logger.info(
         "event_received",
@@ -416,12 +387,9 @@ def handle_modality_type_deleted(raw_event: Dict[str, Any]):
 # ==================== Modality Events ====================
 
 
-@rabbitmq_service.event_handler(RoutingKeys.MODALITY_CREATED)
-def handle_modality_created(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(ModalityCreatedV1)
+def handle_modality_created(event: ModalityCreatedV1):
     """Handle modality created event."""
-    event = EventRegistry.parse(RoutingKeys.MODALITY_CREATED, raw_event)
-    if not isinstance(event, ModalityCreatedV1):
-        return
     modality_id = event.data.modality_id
     logger.info(
         "event_received", event_type="modality.created", modality_id=str(modality_id)
@@ -436,12 +404,9 @@ def handle_modality_created(raw_event: Dict[str, Any]):
         db.add(modality)
 
 
-@rabbitmq_service.event_handler(RoutingKeys.MODALITY_UPDATED)
-def handle_modality_updated(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(ModalityUpdatedV1)
+def handle_modality_updated(event: ModalityUpdatedV1):
     """Handle modality updated event."""
-    event = EventRegistry.parse(RoutingKeys.MODALITY_UPDATED, raw_event)
-    if not isinstance(event, ModalityUpdatedV1):
-        return
     modality_id = event.data.modality_id
     logger.info(
         "event_received", event_type="modality.updated", modality_id=str(modality_id)
@@ -465,12 +430,9 @@ def handle_modality_updated(raw_event: Dict[str, Any]):
         rebuild_all_tournaments_for_modality(db, modality_id)
 
 
-@rabbitmq_service.event_handler(RoutingKeys.MODALITY_DELETED)
-def handle_modality_deleted(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(ModalityDeletedV1)
+def handle_modality_deleted(event: ModalityDeletedV1):
     """Handle modality deleted event."""
-    event = EventRegistry.parse(RoutingKeys.MODALITY_DELETED, raw_event)
-    if not isinstance(event, ModalityDeletedV1):
-        return
     modality_id = event.data.modality_id
     logger.info(
         "event_received", event_type="modality.deleted", modality_id=str(modality_id)
@@ -489,12 +451,9 @@ def handle_modality_deleted(raw_event: Dict[str, Any]):
 # ==================== Student Events ====================
 
 
-@rabbitmq_service.event_handler(RoutingKeys.STUDENT_CREATED)
-def handle_student_created(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(StudentCreatedV1)
+def handle_student_created(event: StudentCreatedV1):
     """Handle student created event."""
-    event = EventRegistry.parse(RoutingKeys.STUDENT_CREATED, raw_event)
-    if not isinstance(event, StudentCreatedV1):
-        return
     student_id = event.data.student_id
     logger.info(
         "event_received", event_type="student.created", student_id=str(student_id)
@@ -513,12 +472,9 @@ def handle_student_created(raw_event: Dict[str, Any]):
         rebuild_student_projection(db, student_id)
 
 
-@rabbitmq_service.event_handler(RoutingKeys.STUDENT_UPDATED)
-def handle_student_updated(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(StudentUpdatedV1)
+def handle_student_updated(event: StudentUpdatedV1):
     """Handle student updated event."""
-    event = EventRegistry.parse(RoutingKeys.STUDENT_UPDATED, raw_event)
-    if not isinstance(event, StudentUpdatedV1):
-        return
     student_id = event.data.student_id
     logger.info(
         "event_received", event_type="student.updated", student_id=str(student_id)
@@ -542,12 +498,9 @@ def handle_student_updated(raw_event: Dict[str, Any]):
         rebuild_student_projection(db, student_id)
 
 
-@rabbitmq_service.event_handler(RoutingKeys.STUDENT_DELETED)
-def handle_student_deleted(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(StudentDeletedV1)
+def handle_student_deleted(event: StudentDeletedV1):
     """Handle student deleted event."""
-    event = EventRegistry.parse(RoutingKeys.STUDENT_DELETED, raw_event)
-    if not isinstance(event, StudentDeletedV1):
-        return
     student_id = event.data.student_id
     logger.info(
         "event_received", event_type="student.deleted", student_id=str(student_id)
@@ -566,12 +519,9 @@ def handle_student_deleted(raw_event: Dict[str, Any]):
 # ==================== Staff Events ====================
 
 
-@rabbitmq_service.event_handler(RoutingKeys.STAFF_CREATED)
-def handle_staff_created(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(StaffCreatedV1)
+def handle_staff_created(event: StaffCreatedV1):
     """Handle staff created event."""
-    event = EventRegistry.parse(RoutingKeys.STAFF_CREATED, raw_event)
-    if not isinstance(event, StaffCreatedV1):
-        return
     staff_id = event.data.staff_id
     logger.info("event_received", event_type="staff.created", staff_id=str(staff_id))
 
@@ -585,12 +535,9 @@ def handle_staff_created(raw_event: Dict[str, Any]):
         db.add(staff)
 
 
-@rabbitmq_service.event_handler(RoutingKeys.STAFF_UPDATED)
-def handle_staff_updated(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(StaffUpdatedV1)
+def handle_staff_updated(event: StaffUpdatedV1):
     """Handle staff updated event."""
-    event = EventRegistry.parse(RoutingKeys.STAFF_UPDATED, raw_event)
-    if not isinstance(event, StaffUpdatedV1):
-        return
     staff_id = event.data.staff_id
     logger.info("event_received", event_type="staff.updated", staff_id=str(staff_id))
 
@@ -608,12 +555,9 @@ def handle_staff_updated(raw_event: Dict[str, Any]):
         staff.updated_at = datetime.utcnow()
 
 
-@rabbitmq_service.event_handler(RoutingKeys.STAFF_DELETED)
-def handle_staff_deleted(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(StaffDeletedV1)
+def handle_staff_deleted(event: StaffDeletedV1):
     """Handle staff deleted event."""
-    event = EventRegistry.parse(RoutingKeys.STAFF_DELETED, raw_event)
-    if not isinstance(event, StaffDeletedV1):
-        return
     staff_id = event.data.staff_id
     logger.info("event_received", event_type="staff.deleted", staff_id=str(staff_id))
 
@@ -628,12 +572,9 @@ def handle_staff_deleted(raw_event: Dict[str, Any]):
 # ==================== Team Events ====================
 
 
-@rabbitmq_service.event_handler(RoutingKeys.TEAM_CREATED)
-def handle_team_created(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(TeamCreatedV1)
+def handle_team_created(event: TeamCreatedV1):
     """Handle team created event."""
-    event = EventRegistry.parse(RoutingKeys.TEAM_CREATED, raw_event)
-    if not isinstance(event, TeamCreatedV1):
-        return
     team_id = event.data.team_id
     logger.info("event_received", event_type="team.created", team_id=str(team_id))
 
@@ -649,12 +590,9 @@ def handle_team_created(raw_event: Dict[str, Any]):
         rebuild_team_projection(db, team_id)
 
 
-@rabbitmq_service.event_handler(RoutingKeys.TEAM_UPDATED)
-def handle_team_updated(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(TeamUpdatedV1)
+def handle_team_updated(event: TeamUpdatedV1):
     """Handle team updated event."""
-    event = EventRegistry.parse(RoutingKeys.TEAM_UPDATED, raw_event)
-    if not isinstance(event, TeamUpdatedV1):
-        return
     team_id = event.data.team_id
     logger.info("event_received", event_type="team.updated", team_id=str(team_id))
 
@@ -674,12 +612,9 @@ def handle_team_updated(raw_event: Dict[str, Any]):
         rebuild_team_projection(db, team_id)
 
 
-@rabbitmq_service.event_handler(RoutingKeys.TEAM_DELETED)
-def handle_team_deleted(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(TeamDeletedV1)
+def handle_team_deleted(event: TeamDeletedV1):
     """Handle team deleted event."""
-    event = EventRegistry.parse(RoutingKeys.TEAM_DELETED, raw_event)
-    if not isinstance(event, TeamDeletedV1):
-        return
     team_id = event.data.team_id
     logger.info("event_received", event_type="team.deleted", team_id=str(team_id))
 
@@ -693,12 +628,9 @@ def handle_team_deleted(raw_event: Dict[str, Any]):
         rebuild_team_projection(db, team_id)
 
 
-@rabbitmq_service.event_handler(RoutingKeys.TEAM_PLAYER_ADDED)
-def handle_team_player_added(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(TeamPlayerAddedV1)
+def handle_team_player_added(event: TeamPlayerAddedV1):
     """Handle team player added event."""
-    event = EventRegistry.parse(RoutingKeys.TEAM_PLAYER_ADDED, raw_event)
-    if not isinstance(event, TeamPlayerAddedV1):
-        return
     team_id = event.data.team_id
     student_id = event.data.student_id
     logger.info(
@@ -720,12 +652,9 @@ def handle_team_player_added(raw_event: Dict[str, Any]):
         rebuild_student_projection(db, student_id)
 
 
-@rabbitmq_service.event_handler(RoutingKeys.TEAM_PLAYER_REMOVED)
-def handle_team_player_removed(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(TeamPlayerRemovedV1)
+def handle_team_player_removed(event: TeamPlayerRemovedV1):
     """Handle team player removed event."""
-    event = EventRegistry.parse(RoutingKeys.TEAM_PLAYER_REMOVED, raw_event)
-    if not isinstance(event, TeamPlayerRemovedV1):
-        return
     team_id = event.data.team_id
     student_id = event.data.student_id
     logger.info(
@@ -762,12 +691,9 @@ def handle_team_player_removed(raw_event: Dict[str, Any]):
 # ==================== Tournament Events ====================
 
 
-@rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_CREATED)
-def handle_tournament_created(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(TournamentCreatedV1)
+def handle_tournament_created(event: TournamentCreatedV1):
     """Handle tournament created event."""
-    event = EventRegistry.parse(RoutingKeys.TOURNAMENT_CREATED, raw_event)
-    if not isinstance(event, TournamentCreatedV1):
-        return
     tournament_id = event.data.tournament_id
     logger.info(
         "event_received",
@@ -788,12 +714,9 @@ def handle_tournament_created(raw_event: Dict[str, Any]):
         rebuild_tournament_projection(db, tournament_id)
 
 
-@rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_UPDATED)
-def handle_tournament_updated(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(TournamentUpdatedV1)
+def handle_tournament_updated(event: TournamentUpdatedV1):
     """Handle tournament updated event."""
-    event = EventRegistry.parse(RoutingKeys.TOURNAMENT_UPDATED, raw_event)
-    if not isinstance(event, TournamentUpdatedV1):
-        return
     tournament_id = event.data.tournament_id
     logger.info(
         "event_received",
@@ -821,15 +744,12 @@ def handle_tournament_updated(raw_event: Dict[str, Any]):
         rebuild_tournament_projection(db, tournament_id)
 
 
-@rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_DELETED)
-def handle_tournament_deleted(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(TournamentDeletedV1)
+def handle_tournament_deleted(event: TournamentDeletedV1):
     """Handle tournament deleted event.
 
     Soft-deletes the tournament and cascades to competitors and matches.
     """
-    event = EventRegistry.parse(RoutingKeys.TOURNAMENT_DELETED, raw_event)
-    if not isinstance(event, TournamentDeletedV1):
-        return
     tournament_id = event.data.tournament_id
     logger.info(
         "event_received",
@@ -860,12 +780,9 @@ def handle_tournament_deleted(raw_event: Dict[str, Any]):
         rebuild_tournament_projection(db, tournament_id)
 
 
-@rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_FINISHED)
-def handle_tournament_finished(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(TournamentFinishedV1)
+def handle_tournament_finished(event: TournamentFinishedV1):
     """Handle tournament finished event."""
-    event = EventRegistry.parse(RoutingKeys.TOURNAMENT_FINISHED, raw_event)
-    if not isinstance(event, TournamentFinishedV1):
-        return
     tournament_id = event.data.tournament_id
     ranking_entries = event.data.ranking_entries
 
@@ -920,12 +837,9 @@ def handle_tournament_finished(raw_event: Dict[str, Any]):
         )
 
 
-@rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_COMPETITOR_ADDED)
-def handle_tournament_competitor_added(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(TournamentCompetitorAddedV1)
+def handle_tournament_competitor_added(event: TournamentCompetitorAddedV1):
     """Handle tournament competitor added event."""
-    event = EventRegistry.parse(RoutingKeys.TOURNAMENT_COMPETITOR_ADDED, raw_event)
-    if not isinstance(event, TournamentCompetitorAddedV1):
-        return
     tournament_id = event.data.tournament_id
     logger.info(
         "event_received",
@@ -947,12 +861,9 @@ def handle_tournament_competitor_added(raw_event: Dict[str, Any]):
         rebuild_tournament_standings(db, tournament_id)
 
 
-@rabbitmq_service.event_handler(RoutingKeys.TOURNAMENT_COMPETITOR_DELETED)
-def handle_tournament_competitor_deleted(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(TournamentCompetitorDeletedV1)
+def handle_tournament_competitor_deleted(event: TournamentCompetitorDeletedV1):
     """Handle tournament competitor deleted event."""
-    event = EventRegistry.parse(RoutingKeys.TOURNAMENT_COMPETITOR_DELETED, raw_event)
-    if not isinstance(event, TournamentCompetitorDeletedV1):
-        return
     tournament_id = event.data.tournament_id
     logger.info(
         "event_received",
@@ -990,15 +901,12 @@ def handle_tournament_competitor_deleted(raw_event: Dict[str, Any]):
 # ==================== Match Events ====================
 
 
-@rabbitmq_service.event_handler(RoutingKeys.MATCH_CREATED)
-def handle_match_created(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(MatchCreatedV1)
+def handle_match_created(event: MatchCreatedV1):
     """Handle match created event.
 
     Creates the Match record and any participants included in the event.
     """
-    event = EventRegistry.parse(RoutingKeys.MATCH_CREATED, raw_event)
-    if not isinstance(event, MatchCreatedV1):
-        return
     match_id = event.data.match_id
     logger.info("event_received", event_type="match.created", match_id=str(match_id))
 
@@ -1028,12 +936,9 @@ def handle_match_created(raw_event: Dict[str, Any]):
         rebuild_tournament_projection(db, match.tournament_id)
 
 
-@rabbitmq_service.event_handler(RoutingKeys.MATCH_UPDATED)
-def handle_match_updated(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(MatchUpdatedV1)
+def handle_match_updated(event: MatchUpdatedV1):
     """Handle match updated event."""
-    event = EventRegistry.parse(RoutingKeys.MATCH_UPDATED, raw_event)
-    if not isinstance(event, MatchUpdatedV1):
-        return
     match_id = event.data.match_id
     logger.info("event_received", event_type="match.updated", match_id=str(match_id))
 
@@ -1061,15 +966,12 @@ def handle_match_updated(raw_event: Dict[str, Any]):
         rebuild_match_projection(db, match_id)
 
 
-@rabbitmq_service.event_handler(RoutingKeys.MATCH_DELETED)
-def handle_match_deleted(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(MatchDeletedV1)
+def handle_match_deleted(event: MatchDeletedV1):
     """Handle match deleted event.
 
     Soft-deletes the match and cascades to participants.
     """
-    event = EventRegistry.parse(RoutingKeys.MATCH_DELETED, raw_event)
-    if not isinstance(event, MatchDeletedV1):
-        return
     match_id = event.data.match_id
     logger.info("event_received", event_type="match.deleted", match_id=str(match_id))
 
@@ -1091,12 +993,9 @@ def handle_match_deleted(raw_event: Dict[str, Any]):
         rebuild_tournament_projection(db, tournament_id)
 
 
-@rabbitmq_service.event_handler(RoutingKeys.MATCH_PARTICIPANT_ADDED)
-def handle_match_participant_added(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(MatchParticipantAddedV1)
+def handle_match_participant_added(event: MatchParticipantAddedV1):
     """Handle match participant added event."""
-    event = EventRegistry.parse(RoutingKeys.MATCH_PARTICIPANT_ADDED, raw_event)
-    if not isinstance(event, MatchParticipantAddedV1):
-        return
     match_id = event.data.match_id
     participant_id = event.data.participant_id
     logger.info(
@@ -1118,12 +1017,9 @@ def handle_match_participant_added(raw_event: Dict[str, Any]):
         rebuild_match_projection(db, match_id)
 
 
-@rabbitmq_service.event_handler(RoutingKeys.MATCH_PARTICIPANT_REMOVED)
-def handle_match_participant_removed(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(MatchParticipantRemovedV1)
+def handle_match_participant_removed(event: MatchParticipantRemovedV1):
     """Handle match participant removed event."""
-    event = EventRegistry.parse(RoutingKeys.MATCH_PARTICIPANT_REMOVED, raw_event)
-    if not isinstance(event, MatchParticipantRemovedV1):
-        return
     match_id = event.data.match_id
     participant_id = event.data.participant_id
     logger.info(
@@ -1155,15 +1051,12 @@ def handle_match_participant_removed(raw_event: Dict[str, Any]):
         rebuild_match_projection(db, match_id)
 
 
-@rabbitmq_service.event_handler(RoutingKeys.MATCH_RESULT_UPDATED)
-def handle_match_result_updated(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(MatchResultUpdatedV1)
+def handle_match_result_updated(event: MatchResultUpdatedV1):
     """Handle match result updated event.
 
     Upserts a MatchResult row for each result entry in the event.
     """
-    event = EventRegistry.parse(RoutingKeys.MATCH_RESULT_UPDATED, raw_event)
-    if not isinstance(event, MatchResultUpdatedV1):
-        return
     match_id = event.data.match_id
     results = event.data.results
     logger.info(
@@ -1207,15 +1100,12 @@ def handle_match_result_updated(raw_event: Dict[str, Any]):
             rebuild_tournament_standings(db, match.tournament_id)
 
 
-@rabbitmq_service.event_handler(RoutingKeys.MATCH_LINEUP_ASSIGNED)
-def handle_match_lineup_assigned(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(MatchLineupAssignedV1)
+def handle_match_lineup_assigned(event: MatchLineupAssignedV1):
     """Handle match lineup assigned event.
 
     Upserts MatchLineup rows for each player in the lineup.
     """
-    event = EventRegistry.parse(RoutingKeys.MATCH_LINEUP_ASSIGNED, raw_event)
-    if not isinstance(event, MatchLineupAssignedV1):
-        return
     match_id = event.data.match_id
     team_id = event.data.team_id
     logger.info(
@@ -1251,12 +1141,9 @@ def handle_match_lineup_assigned(raw_event: Dict[str, Any]):
                 db.add(lineup_entry)
 
 
-@rabbitmq_service.event_handler(RoutingKeys.MATCH_COMMENT_ADDED)
-def handle_match_comment_added(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(MatchCommentAddedV1)
+def handle_match_comment_added(event: MatchCommentAddedV1):
     """Handle match comment added event."""
-    event = EventRegistry.parse(RoutingKeys.MATCH_COMMENT_ADDED, raw_event)
-    if not isinstance(event, MatchCommentAddedV1):
-        return
     comment_id = event.data.comment_id
     match_id = event.data.match_id
     logger.info(
@@ -1277,12 +1164,9 @@ def handle_match_comment_added(raw_event: Dict[str, Any]):
         rebuild_match_projection(db, match_id)
 
 
-@rabbitmq_service.event_handler(RoutingKeys.MATCH_COMMENT_DELETED)
-def handle_match_comment_deleted(raw_event: Dict[str, Any]):
+@rabbitmq_service.event_handler(MatchCommentDeletedV1)
+def handle_match_comment_deleted(event: MatchCommentDeletedV1):
     """Handle match comment deleted event."""
-    event = EventRegistry.parse(RoutingKeys.MATCH_COMMENT_DELETED, raw_event)
-    if not isinstance(event, MatchCommentDeletedV1):
-        return
     comment_id = event.data.comment_id
     match_id = event.data.match_id
     logger.info(
