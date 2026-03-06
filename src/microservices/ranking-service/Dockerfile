@@ -13,6 +13,10 @@ RUN pip install --no-cache-dir /tmp/taca-messaging && rm -rf /tmp/taca-messaging
 COPY src/shared/taca-outbox /tmp/taca-outbox
 RUN pip install --no-cache-dir /tmp/taca-outbox && rm -rf /tmp/taca-outbox
 
+# Install snapshots package
+COPY src/shared/taca-snapshots /tmp/taca-snapshots
+RUN pip install --no-cache-dir /tmp/taca-snapshots && rm -rf /tmp/taca-snapshots
+
 COPY src/microservices/ranking-service .
 
 # Run migrations and start the service

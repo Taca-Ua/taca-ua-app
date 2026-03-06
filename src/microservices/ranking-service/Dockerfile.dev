@@ -6,18 +6,15 @@ COPY src/microservices/ranking-service/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Install messaging package
-COPY src/shared/taca-messaging /tmp/taca-messaging
+COPY src/shared /tmp
+
 RUN pip install --no-cache-dir -e /tmp/taca-messaging
-
-# Install logging package
-COPY src/shared/taca-logging /tmp/taca-logging
 RUN pip install --no-cache-dir -e /tmp/taca-logging
-
-# Install outbox package
-COPY src/shared/taca-outbox /tmp/taca-outbox
+RUN pip install --no-cache-dir -e /tmp/taca-events
 RUN pip install --no-cache-dir -e /tmp/taca-outbox
+RUN pip install --no-cache-dir -e /tmp/taca-snapshots
 
 COPY src/microservices/ranking-service .
 
 # Run migrations and start the service in dev mode
-CMD alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /tmp/taca-messaging --reload-dir /app
+CMD alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /tmp --reload-dir /app

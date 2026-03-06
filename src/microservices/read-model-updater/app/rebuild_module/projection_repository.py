@@ -12,11 +12,32 @@ Architecture Note:
 - Clear operations must be safe and preserve schema
 """
 
-from datetime import datetime
-from typing import Any, Dict, List
+from typing import List
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+from taca_snapshots.matches import (
+    MatchCommentSnapshotItem,
+    MatchLineupSnapshotItem,
+    MatchParticipantSnapshotItem,
+    MatchResultSnapshotItem,
+    MatchSnapshotItem,
+)
+from taca_snapshots.modalities import (
+    CourseSnapshotItem,
+    ModalitySnapshotItem,
+    ModalityTypeSnapshotItem,
+    NucleoSnapshotItem,
+    StaffSnapshotItem,
+    StudentSnapshotItem,
+    TeamPlayerSnapshotItem,
+    TeamSnapshotItem,
+)
+from taca_snapshots.tournaments import (
+    TournamentCompetitorSnapshotItem,
+    TournamentRankingPositionSnapshotItem,
+    TournamentSnapshotItem,
+)
 
 from ..logger import logger
 from ..models import (
@@ -70,35 +91,6 @@ class ProjectionRepository:
             db_session: SQLAlchemy database session
         """
         self.db = db_session
-
-    @staticmethod
-    def _parse_datetime_fields(
-        data: Dict[str, Any], fields: List[str]
-    ) -> Dict[str, Any]:
-        """
-        Parse ISO format datetime strings to datetime objects.
-
-        Args:
-            data: Dictionary with possible datetime string fields
-            fields: List of field names that should be parsed as datetimes
-
-        Returns:
-            Dictionary with datetime strings converted to datetime objects
-        """
-        result = data.copy()
-        for field in fields:
-            if field in result and result[field] is not None:
-                if isinstance(result[field], str):
-                    try:
-                        result[field] = datetime.fromisoformat(result[field])
-                    except (ValueError, AttributeError):
-                        logger.warning(
-                            "datetime_parse_failed",
-                            field=field,
-                            value=result[field],
-                        )
-                        result[field] = None
-        return result
 
     def clear_all_projections(self) -> None:
         """
@@ -256,18 +248,18 @@ class ProjectionRepository:
     # ==================== Private Rebuild Methods ====================
     # Each method rebuilds a specific table from snapshot data
 
-    def _rebuild_nucleos(self, nucleos: List[Any]) -> int:
-        """Rebuild Nucleo table."""
+    def _rebuild_nucleos(self, nucleos: List[NucleoSnapshotItem]) -> int:
+        """Rebuild Nucleo table from typed snapshot items."""
         if not nucleos:
             return 0
 
-        for data in nucleos:
+        for item in nucleos:
             nucleo = Nucleo(
-                nucleo_id=data["id"],
-                name=data["name"],
-                abbreviation=data["abbreviation"],
-                created_at=data.get("created_at"),
-                updated_at=data.get("updated_at"),
+                nucleo_id=item.id,
+                name=item.name,
+                abbreviation=item.abbreviation,
+                created_at=item.created_at,
+                updated_at=item.updated_at,
             )
             self.db.add(nucleo)
 
@@ -275,19 +267,19 @@ class ProjectionRepository:
         logger.debug("projection_rebuilt", table="nucleos", count=len(nucleos))
         return len(nucleos)
 
-    def _rebuild_courses(self, courses: List[Any]) -> int:
-        """Rebuild Course table."""
+    def _rebuild_courses(self, courses: List[CourseSnapshotItem]) -> int:
+        """Rebuild Course table from typed snapshot items."""
         if not courses:
             return 0
 
-        for data in courses:
+        for item in courses:
             course = Course(
-                course_id=data["id"],
-                nucleo_id=data["nucleo_id"],
-                name=data["name"],
-                abbreviation=data["abbreviation"],
-                created_at=data.get("created_at"),
-                updated_at=data.get("updated_at"),
+                course_id=item.id,
+                nucleo_id=item.nucleo_id,
+                name=item.name,
+                abbreviation=item.abbreviation,
+                created_at=item.created_at,
+                updated_at=item.updated_at,
             )
             self.db.add(course)
 
@@ -295,19 +287,21 @@ class ProjectionRepository:
         logger.debug("projection_rebuilt", table="courses", count=len(courses))
         return len(courses)
 
-    def _rebuild_modality_types(self, modality_types: List[Any]) -> int:
-        """Rebuild ModalityType table."""
+    def _rebuild_modality_types(
+        self, modality_types: List[ModalityTypeSnapshotItem]
+    ) -> int:
+        """Rebuild ModalityType table from typed snapshot items."""
         if not modality_types:
             return 0
 
-        for data in modality_types:
+        for item in modality_types:
             modality_type = ModalityType(
-                modality_type_id=data["id"],
-                name=data["name"],
-                description=data["description"],
-                escaloes=data["escaloes"],
-                created_at=data.get("created_at"),
-                updated_at=data.get("updated_at"),
+                modality_type_id=item.id,
+                name=item.name,
+                description=item.description,
+                escaloes=item.escaloes,
+                created_at=item.created_at,
+                updated_at=item.updated_at,
             )
             self.db.add(modality_type)
 
@@ -317,18 +311,18 @@ class ProjectionRepository:
         )
         return len(modality_types)
 
-    def _rebuild_modalities(self, modalities: List[Any]) -> int:
-        """Rebuild Modality table."""
+    def _rebuild_modalities(self, modalities: List[ModalitySnapshotItem]) -> int:
+        """Rebuild Modality table from typed snapshot items."""
         if not modalities:
             return 0
 
-        for data in modalities:
+        for item in modalities:
             modality = Modality(
-                modality_id=data["id"],
-                modality_type_id=data["modality_type_id"],
-                name=data.get("name"),
-                created_at=data.get("created_at"),
-                updated_at=data.get("updated_at"),
+                modality_id=item.id,
+                modality_type_id=item.modality_type_id,
+                name=item.name,
+                created_at=item.created_at,
+                updated_at=item.updated_at,
             )
             self.db.add(modality)
 
@@ -336,20 +330,20 @@ class ProjectionRepository:
         logger.debug("projection_rebuilt", table="modalities", count=len(modalities))
         return len(modalities)
 
-    def _rebuild_students(self, students: List[Any]) -> int:
-        """Rebuild Student table."""
+    def _rebuild_students(self, students: List[StudentSnapshotItem]) -> int:
+        """Rebuild Student table from typed snapshot items."""
         if not students:
             return 0
 
-        for data in students:
+        for item in students:
             student = Student(
-                student_id=data["id"],
-                course_id=data["course_id"],
-                student_number=data["student_number"],
-                full_name=data["full_name"],
-                is_member=data["is_member"],
-                created_at=data.get("created_at"),
-                updated_at=data.get("updated_at"),
+                student_id=item.id,
+                course_id=item.course_id,
+                student_number=item.student_number,
+                full_name=item.full_name,
+                is_member=item.is_member,
+                created_at=item.created_at,
+                updated_at=item.updated_at,
             )
             self.db.add(student)
 
@@ -357,19 +351,19 @@ class ProjectionRepository:
         logger.debug("projection_rebuilt", table="students", count=len(students))
         return len(students)
 
-    def _rebuild_staff(self, staff: List[Any]) -> int:
-        """Rebuild Staff table."""
+    def _rebuild_staff(self, staff: List[StaffSnapshotItem]) -> int:
+        """Rebuild Staff table from typed snapshot items."""
         if not staff:
             return 0
 
-        for data in staff:
+        for item in staff:
             staff_member = Staff(
-                staff_id=data["id"],
-                full_name=data["full_name"],
-                staff_number=data["staff_number"],
-                contact=data["contact"],
-                created_at=data.get("created_at"),
-                updated_at=data.get("updated_at"),
+                staff_id=item.id,
+                full_name=item.full_name,
+                staff_number=item.staff_number,
+                contact=item.contact,
+                created_at=item.created_at,
+                updated_at=item.updated_at,
             )
             self.db.add(staff_member)
 
@@ -377,19 +371,19 @@ class ProjectionRepository:
         logger.debug("projection_rebuilt", table="staff", count=len(staff))
         return len(staff)
 
-    def _rebuild_teams(self, teams: List[Any]) -> int:
-        """Rebuild Team table."""
+    def _rebuild_teams(self, teams: List[TeamSnapshotItem]) -> int:
+        """Rebuild Team table from typed snapshot items."""
         if not teams:
             return 0
 
-        for data in teams:
+        for item in teams:
             team = Team(
-                team_id=data["id"],
-                modality_id=data["modality_id"],
-                course_id=data["course_id"],
-                name=data["name"],
-                created_at=data.get("created_at"),
-                updated_at=data.get("updated_at"),
+                team_id=item.id,
+                modality_id=item.modality_id,
+                course_id=item.course_id,
+                name=item.name,
+                created_at=item.created_at,
+                updated_at=item.updated_at,
             )
             self.db.add(team)
 
@@ -397,16 +391,16 @@ class ProjectionRepository:
         logger.debug("projection_rebuilt", table="teams", count=len(teams))
         return len(teams)
 
-    def _rebuild_team_players(self, team_players: List[Any]) -> int:
-        """Rebuild TeamPlayer table."""
+    def _rebuild_team_players(self, team_players: List[TeamPlayerSnapshotItem]) -> int:
+        """Rebuild TeamPlayer table from typed snapshot items."""
         if not team_players:
             return 0
 
-        for data in team_players:
+        for item in team_players:
             # TeamPlayer has auto-increment id, so we don't pass it
             team_player = TeamPlayer(
-                team_id=data["team_id"],
-                student_id=data["student_id"],
+                team_id=item.team_id,
+                student_id=item.student_id,
             )
             self.db.add(team_player)
 
@@ -416,21 +410,21 @@ class ProjectionRepository:
         )
         return len(team_players)
 
-    def _rebuild_tournaments(self, tournaments: List[Any]) -> int:
-        """Rebuild Tournament table."""
+    def _rebuild_tournaments(self, tournaments: List[TournamentSnapshotItem]) -> int:
+        """Rebuild Tournament table from typed snapshot items."""
         if not tournaments:
             return 0
 
-        for data in tournaments:
+        for item in tournaments:
             tournament = Tournament(
-                tournament_id=data["id"],
-                modality_id=data["modality_id"],
-                name=data["name"],
-                start_date=data["start_date"],
-                status=data["status"],
-                created_at=data.get("created_at"),
-                updated_at=data.get("updated_at"),
-                finished_at=data.get("finished_at"),
+                tournament_id=item.id,
+                modality_id=item.modality_id,
+                name=item.name,
+                start_date=item.start_date,
+                status=item.status,
+                created_at=item.created_at,
+                updated_at=item.updated_at,
+                finished_at=item.finished_at,
             )
             self.db.add(tournament)
 
@@ -438,21 +432,23 @@ class ProjectionRepository:
         logger.debug("projection_rebuilt", table="tournaments", count=len(tournaments))
         return len(tournaments)
 
-    def _rebuild_tournament_competitors(self, competitors: List[Any]) -> int:
-        """Rebuild TournamentCompetitor table."""
+    def _rebuild_tournament_competitors(
+        self, competitors: List[TournamentCompetitorSnapshotItem]
+    ) -> int:
+        """Rebuild TournamentCompetitor table from typed snapshot items."""
         if not competitors:
             return 0
 
-        for data in competitors:
+        for item in competitors:
             # Map team_id or athlete_id to competitor_entity_id
-            competitor_entity_id = data.get("team_id") or data.get("athlete_id")
+            competitor_entity_id = item.team_id or item.athlete_id
 
             competitor = TournamentCompetitor(
-                competitor_id=data["id"],
-                tournament_id=data["tournament_id"],
-                competitor_type=data["competitor_type"],
+                competitor_id=item.id,
+                tournament_id=item.tournament_id,
+                competitor_type=item.competitor_type,
                 competitor_entity_id=competitor_entity_id,
-                added_at=data.get("created_at"),
+                added_at=item.created_at,
             )
             self.db.add(competitor)
 
@@ -462,17 +458,19 @@ class ProjectionRepository:
         )
         return len(competitors)
 
-    def _rebuild_tournament_rankings(self, rankings: List[Any]) -> int:
-        """Rebuild TournamentRanking table."""
+    def _rebuild_tournament_rankings(
+        self, rankings: List[TournamentRankingPositionSnapshotItem]
+    ) -> int:
+        """Rebuild TournamentRanking table from typed snapshot items."""
         if not rankings:
             return 0
 
-        for data in rankings:
+        for item in rankings:
             ranking = TournamentRanking(
-                tournament_id=data["tournament_id"],
-                competitor_id=data["competitor_id"],
-                position=data["position"],
-                created_at=data.get("created_at"),
+                tournament_id=item.tournament_id,
+                competitor_id=item.competitor_id,
+                position=item.position,
+                created_at=item.created_at,
             )
             self.db.add(ranking)
 
@@ -482,23 +480,21 @@ class ProjectionRepository:
         )
         return len(rankings)
 
-    def _rebuild_matches(self, matches: List[Any]) -> int:
-        """Rebuild Match table."""
+    def _rebuild_matches(self, matches: List[MatchSnapshotItem]) -> int:
+        """Rebuild Match table from typed snapshot items."""
         if not matches:
             return 0
 
-        datetime_fields = ["start_time", "created_at", "updated_at", "deleted_at"]
-        for data in matches:
-            parsed_data = self._parse_datetime_fields(data, datetime_fields)
+        for item in matches:
             match = Match(
-                match_id=parsed_data["match_id"],
-                tournament_id=parsed_data.get("tournament_id"),
-                location=parsed_data["location"],
-                status=parsed_data["status"],
-                start_time=parsed_data.get("start_time"),
-                created_at=parsed_data.get("created_at"),
-                updated_at=parsed_data.get("updated_at"),
-                deleted_at=parsed_data.get("deleted_at"),
+                match_id=item.match_id,
+                tournament_id=item.tournament_id,
+                location=item.location,
+                status=item.status,
+                start_time=item.start_time,
+                created_at=item.created_at,
+                updated_at=item.updated_at,
+                deleted_at=item.deleted_at,
             )
             self.db.add(match)
 
@@ -506,22 +502,22 @@ class ProjectionRepository:
         logger.debug("projection_rebuilt", table="matches", count=len(matches))
         return len(matches)
 
-    def _rebuild_match_participants(self, participants: List[Any]) -> int:
-        """Rebuild MatchParticipant table."""
+    def _rebuild_match_participants(
+        self, participants: List[MatchParticipantSnapshotItem]
+    ) -> int:
+        """Rebuild MatchParticipant table from typed snapshot items."""
         if not participants:
             return 0
 
-        datetime_fields = ["added_at", "removed_at"]
-        for data in participants:
-            parsed_data = self._parse_datetime_fields(data, datetime_fields)
+        for item in participants:
             # MatchParticipant has auto-increment id, so we don't pass it
             participant = MatchParticipant(
-                match_id=parsed_data["match_id"],
-                participant_id=parsed_data["participant_id"],
-                participant_type=parsed_data["participant_type"],
-                participant_entity_id=parsed_data["participant_entity_id"],
-                added_at=parsed_data.get("added_at"),
-                removed_at=parsed_data.get("removed_at"),
+                match_id=item.match_id,
+                participant_id=item.participant_id,
+                participant_type=item.participant_type,
+                participant_entity_id=item.participant_entity_id,
+                added_at=item.added_at,
+                removed_at=item.removed_at,
             )
             self.db.add(participant)
 
@@ -531,22 +527,20 @@ class ProjectionRepository:
         )
         return len(participants)
 
-    def _rebuild_match_results(self, results: List[Any]) -> int:
-        """Rebuild MatchResult table."""
+    def _rebuild_match_results(self, results: List[MatchResultSnapshotItem]) -> int:
+        """Rebuild MatchResult table from typed snapshot items."""
         if not results:
             return 0
 
-        datetime_fields = ["updated_at"]
-        for data in results:
-            parsed_data = self._parse_datetime_fields(data, datetime_fields)
+        for item in results:
             # MatchResult has auto-increment id, so we don't pass it
             result = MatchResult(
-                match_id=parsed_data["match_id"],
-                participant_id=parsed_data["participant_id"],
-                score=parsed_data.get("score"),
-                position=parsed_data.get("position"),
-                results_metadata=parsed_data.get("results_metadata"),
-                updated_at=parsed_data.get("updated_at"),
+                match_id=item.match_id,
+                participant_id=item.participant_id,
+                score=item.score,
+                position=item.position,
+                results_metadata=item.results_metadata,
+                updated_at=item.updated_at,
             )
             self.db.add(result)
 
@@ -554,22 +548,20 @@ class ProjectionRepository:
         logger.debug("projection_rebuilt", table="match_results", count=len(results))
         return len(results)
 
-    def _rebuild_match_lineups(self, lineups: List[Any]) -> int:
-        """Rebuild MatchLineup table."""
+    def _rebuild_match_lineups(self, lineups: List[MatchLineupSnapshotItem]) -> int:
+        """Rebuild MatchLineup table from typed snapshot items."""
         if not lineups:
             return 0
 
-        datetime_fields = ["assigned_at"]
-        for data in lineups:
-            parsed_data = self._parse_datetime_fields(data, datetime_fields)
+        for item in lineups:
             # MatchLineup has auto-increment id, so we don't pass it
             lineup = MatchLineup(
-                match_id=parsed_data["match_id"],
-                team_id=parsed_data["team_id"],
-                player_id=parsed_data["player_id"],
-                jersey_number=parsed_data["jersey_number"],
-                is_starter=parsed_data["is_starter"],
-                assigned_at=parsed_data.get("assigned_at"),
+                match_id=item.match_id,
+                team_id=item.team_id,
+                player_id=item.player_id,
+                jersey_number=item.jersey_number,
+                is_starter=item.is_starter,
+                assigned_at=item.assigned_at,
             )
             self.db.add(lineup)
 
@@ -577,20 +569,18 @@ class ProjectionRepository:
         logger.debug("projection_rebuilt", table="match_lineups", count=len(lineups))
         return len(lineups)
 
-    def _rebuild_match_comments(self, comments: List[Any]) -> int:
-        """Rebuild MatchComment table."""
+    def _rebuild_match_comments(self, comments: List[MatchCommentSnapshotItem]) -> int:
+        """Rebuild MatchComment table from typed snapshot items."""
         if not comments:
             return 0
 
-        datetime_fields = ["created_at", "deleted_at"]
-        for data in comments:
-            parsed_data = self._parse_datetime_fields(data, datetime_fields)
+        for item in comments:
             comment = MatchComment(
-                comment_id=parsed_data["comment_id"],
-                match_id=parsed_data["match_id"],
-                message=parsed_data["message"],
-                created_at=parsed_data.get("created_at"),
-                deleted_at=parsed_data.get("deleted_at"),
+                comment_id=item.comment_id,
+                match_id=item.match_id,
+                message=item.message,
+                created_at=item.created_at,
+                deleted_at=item.deleted_at,
             )
             self.db.add(comment)
 

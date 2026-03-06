@@ -2,126 +2,147 @@
 Data Transfer Objects (DTOs) for snapshot data.
 
 These DTOs represent the structure of snapshot data received from domain services.
-They provide type safety and validation for the rebuild process.
+The per-entity items are strongly typed Pydantic models imported from the shared
+``taca-snapshots`` package; only the aggregate containers and rebuild result are
+defined here as dataclasses so that the rest of the rebuild orchestration code is
+unchanged.
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
+from taca_snapshots.matches import (
+    MatchCommentSnapshotItem,
+    MatchesSnapshotResponse,
+    MatchLineupSnapshotItem,
+    MatchParticipantSnapshotItem,
+    MatchResultSnapshotItem,
+    MatchSnapshotItem,
+)
+from taca_snapshots.modalities import (
+    CourseSnapshotItem,
+    ModalitiesSnapshotResponse,
+    ModalitySnapshotItem,
+    ModalityTypeSnapshotItem,
+    NucleoSnapshotItem,
+    StaffSnapshotItem,
+    StudentSnapshotItem,
+    TeamPlayerSnapshotItem,
+    TeamSnapshotItem,
+)
+from taca_snapshots.tournaments import (
+    TournamentCompetitorSnapshotItem,
+    TournamentRankingPositionSnapshotItem,
+    TournamentSnapshotItem,
+    TournamentsSnapshotResponse,
+)
 
-@dataclass
-class SnapshotMetadata:
-    """
-    Metadata about a snapshot from a domain service.
-
-    Contains information about when the snapshot was created,
-    what service it came from, and how many records it contains.
-    """
-
-    service_name: str
-    snapshot_timestamp: str
-    total_records: int
-    version: str = "1.0"
-
-
-@dataclass
-class ServiceSnapshot:
-    """
-    Complete snapshot data from a single domain service.
-
-    Contains:
-    - Metadata about the snapshot
-    - Raw data records (as list of dictionaries)
-    - Service-specific information
-    """
-
-    metadata: SnapshotMetadata
-    data: List[Dict[str, Any]]
-
-    @property
-    def service_name(self) -> str:
-        """Get the service name from metadata."""
-        return self.metadata.service_name
-
-    @property
-    def record_count(self) -> int:
-        """Get the number of records in this snapshot."""
-        return len(self.data)
-
-    def validate(self) -> bool:
-        """
-        Validate snapshot data consistency.
-
-        Returns:
-            True if validation passes, False otherwise
-        """
-        # Check if record count matches metadata
-        if self.record_count != self.metadata.total_records:
-            return False
-
-        # Check if data is a list
-        if not isinstance(self.data, list):
-            return False
-
-        return True
+# Re-export individual item types so callers can import from this module
+__all__ = [
+    "MatchSnapshotItem",
+    "MatchParticipantSnapshotItem",
+    "MatchResultSnapshotItem",
+    "MatchLineupSnapshotItem",
+    "MatchCommentSnapshotItem",
+    "NucleoSnapshotItem",
+    "CourseSnapshotItem",
+    "ModalityTypeSnapshotItem",
+    "ModalitySnapshotItem",
+    "StudentSnapshotItem",
+    "StaffSnapshotItem",
+    "TeamSnapshotItem",
+    "TeamPlayerSnapshotItem",
+    "TournamentSnapshotItem",
+    "TournamentCompetitorSnapshotItem",
+    "TournamentRankingPositionSnapshotItem",
+    "MatchesSnapshot",
+    "TournamentSnapshot",
+    "ModalitiesSnapshot",
+    "CompleteSnapshot",
+    "RebuildResult",
+]
 
 
 @dataclass
 class MatchesSnapshot:
     """
-    Snapshot data from Matches service.
-
-    Contains matches, participants, results, lineups, and comments.
+    Snapshot data from Matches service, using strongly typed item DTOs.
     """
 
-    matches: List[Dict[str, Any]]
-    participants: List[Dict[str, Any]]
-    results: List[Dict[str, Any]]
-    lineups: List[Dict[str, Any]]
-    comments: List[Dict[str, Any]]
+    matches: List[MatchSnapshotItem]
+    participants: List[MatchParticipantSnapshotItem]
+    results: List[MatchResultSnapshotItem]
+    lineups: List[MatchLineupSnapshotItem]
+    comments: List[MatchCommentSnapshotItem]
+
+    @classmethod
+    def from_response(cls, response: MatchesSnapshotResponse) -> "MatchesSnapshot":
+        """Build from a parsed MatchesSnapshotResponse."""
+        return cls(
+            matches=response.matches,
+            participants=response.participants,
+            results=response.results,
+            lineups=response.lineups,
+            comments=response.comments,
+        )
 
 
 @dataclass
 class TournamentSnapshot:
     """
-    Snapshot data from Tournament service.
+    Snapshot data from Tournament service, using strongly typed item DTOs.
 
-    Contains tournaments, their competitors, and final rankings.
+    Note: the field is named ``rankings`` here (matching existing rebuild code)
+    even though the service endpoint serialises the list under ``ranking_positions``.
+    The snapshot client handles the mapping.
     """
 
-    tournaments: List[Dict[str, Any]]
-    competitors: List[Dict[str, Any]]
-    rankings: List[Dict[str, Any]]
+    tournaments: List[TournamentSnapshotItem]
+    competitors: List[TournamentCompetitorSnapshotItem]
+    rankings: List[TournamentRankingPositionSnapshotItem]
+
+    @classmethod
+    def from_response(
+        cls, response: TournamentsSnapshotResponse
+    ) -> "TournamentSnapshot":
+        """Build from a parsed TournamentsSnapshotResponse."""
+        return cls(
+            tournaments=response.tournaments,
+            competitors=response.competitors,
+            rankings=response.ranking_positions,
+        )
 
 
 @dataclass
 class ModalitiesSnapshot:
     """
-    Snapshot data from Modalities service.
-
-    Contains modalities, modality types, teams, players, students, etc.
+    Snapshot data from Modalities service, using strongly typed item DTOs.
     """
 
-    nucleos: List[Dict[str, Any]]
-    courses: List[Dict[str, Any]]
-    modality_types: List[Dict[str, Any]]
-    modalities: List[Dict[str, Any]]
-    students: List[Dict[str, Any]]
-    staff: List[Dict[str, Any]]
-    teams: List[Dict[str, Any]]
-    team_players: List[Dict[str, Any]]
+    nucleos: List[NucleoSnapshotItem]
+    courses: List[CourseSnapshotItem]
+    modality_types: List[ModalityTypeSnapshotItem]
+    modalities: List[ModalitySnapshotItem]
+    students: List[StudentSnapshotItem]
+    staff: List[StaffSnapshotItem]
+    teams: List[TeamSnapshotItem]
+    team_players: List[TeamPlayerSnapshotItem]
 
-
-@dataclass
-class RankingSnapshot:
-    """
-    Snapshot data from Ranking service.
-
-    Contains ranking-related data if needed.
-    Note: Ranking might be computed, so this may be empty or minimal.
-    """
-
-    rankings: List[Dict[str, Any]]
+    @classmethod
+    def from_response(
+        cls, response: ModalitiesSnapshotResponse
+    ) -> "ModalitiesSnapshot":
+        """Build from a parsed ModalitiesSnapshotResponse."""
+        return cls(
+            nucleos=response.nucleos,
+            courses=response.courses,
+            modality_types=response.modality_types,
+            modalities=response.modalities,
+            students=response.students,
+            staff=response.staff,
+            teams=response.teams,
+            team_players=response.team_players,
+        )
 
 
 @dataclass
@@ -136,7 +157,6 @@ class CompleteSnapshot:
     matches: Optional[MatchesSnapshot]
     tournament: Optional[TournamentSnapshot]
     modalities: Optional[ModalitiesSnapshot]
-    ranking: Optional[RankingSnapshot]
 
     def has_data(self) -> bool:
         """Check if snapshot contains any data."""
@@ -145,7 +165,6 @@ class CompleteSnapshot:
                 self.matches is not None,
                 self.tournament is not None,
                 self.modalities is not None,
-                self.ranking is not None,
             ]
         )
 
@@ -180,9 +199,6 @@ class CompleteSnapshot:
                 + len(self.modalities.teams)
                 + len(self.modalities.team_players)
             )
-
-        if self.ranking:
-            count += len(self.ranking.rankings)
 
         return count
 
