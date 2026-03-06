@@ -8,9 +8,9 @@ from sqlalchemy.orm import Session
 from taca_events import EventType
 
 from ..database import get_db_session
-from ..event_helpers import emit_event
 from ..logger import logger
 from ..models import ModalityType
+from ..outbox_publisher import outbox_publisher
 from ..schemas import ModalityTypeCreate, ModalityTypeResponse, ModalityTypeUpdate
 
 router = APIRouter()
@@ -48,7 +48,7 @@ def create_modality_type(
         db.flush()  # To get the ID before commit
 
         # Emit modality type created event
-        emit_event(
+        outbox_publisher.emit_event(
             db=db,
             event_type=EventType.MODALITY_TYPE_CREATED,
             aggregate_type="modality_type",
@@ -110,7 +110,7 @@ def update_modality_type(
 
     # Emit modality type updated event
     print(changes_made)
-    emit_event(
+    outbox_publisher.emit_event(
         db=db,
         event_type=EventType.MODALITY_TYPE_UPDATED,
         aggregate_type="modality_type",
@@ -149,7 +149,7 @@ def delete_modality_type(modality_type_id: UUID, db: Session = Depends(get_db_se
         raise HTTPException(status_code=404, detail="Modality type not found")
 
     # Emit modality type deleted event
-    emit_event(
+    outbox_publisher.emit_event(
         db=db,
         event_type=EventType.MODALITY_TYPE_DELETED,
         aggregate_type="modality_type",

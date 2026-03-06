@@ -7,9 +7,9 @@ from sqlalchemy.orm import Session
 from taca_events import EventType
 
 from ..database import get_db_session
-from ..event_helpers import emit_event
 from ..logger import logger
 from ..models import Course, Modality, Nucleo, Student, Team
+from ..outbox_publisher import outbox_publisher
 from ..schemas import TeamCreate, TeamResponse, TeamUpdate
 
 router = APIRouter()
@@ -59,7 +59,7 @@ def create_team(team_data: TeamCreate, db: Session = Depends(get_db_session)):
     db.flush()
 
     # Emit event via outbox
-    emit_event(
+    outbox_publisher.emit_event(
         db=db,
         event_type=EventType.TEAM_CREATED,
         aggregate_type="team",
@@ -116,7 +116,7 @@ def update_team(
         changes_made["course_id"] = str(team_data.course_id)
 
     # Emit team updated event
-    emit_event(
+    outbox_publisher.emit_event(
         db=db,
         event_type=EventType.TEAM_UPDATED,
         aggregate_type="team",
@@ -138,7 +138,7 @@ def update_team(
             if student and student not in team.players:
                 team.players.append(student)
                 # Emit player added event
-                emit_event(
+                outbox_publisher.emit_event(
                     db=db,
                     event_type=EventType.TEAM_PLAYER_ADDED,
                     aggregate_type="team",
@@ -152,7 +152,7 @@ def update_team(
             if student and student in team.players:
                 team.players.remove(student)
                 # Emit player removed event
-                emit_event(
+                outbox_publisher.emit_event(
                     db=db,
                     event_type=EventType.TEAM_PLAYER_REMOVED,
                     aggregate_type="team",
@@ -176,7 +176,7 @@ def delete_team(team_id: UUID, db: Session = Depends(get_db_session)):
         raise HTTPException(status_code=404, detail="Team not found")
 
     # Emit team deleted event before deletion
-    emit_event(
+    outbox_publisher.emit_event(
         db=db,
         event_type=EventType.TEAM_DELETED,
         aggregate_type="team",

@@ -12,6 +12,7 @@ authors = [
 ]
 dependencies = [
     "sqlalchemy>=2.0.0",
+    "taca-events",
 ]
 
 [tool.setuptools.packages.find]

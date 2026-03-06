@@ -12,7 +12,6 @@ from taca_events import EventType
 
 from . import schemas
 from .database import get_db_session
-from .event_helpers import emit_event
 from .logger import logger
 from .models import (
     Comment,
@@ -22,6 +21,7 @@ from .models import (
     MatchStatus,
     ParticipantType,
 )
+from .outbox_publisher import outbox_publisher
 
 router = APIRouter()
 
@@ -187,7 +187,7 @@ def create_match(
         db.add(participant)
 
     # Emit event
-    emit_event(
+    outbox_publisher.emit_event(
         db,
         event_type=EventType.MATCH_CREATED,
         aggregate_type="match",
@@ -295,7 +295,7 @@ def update_match(
 
     match.updated_at = datetime.now(timezone.utc)
 
-    emit_event(
+    outbox_publisher.emit_event(
         db,
         event_type=EventType.MATCH_UPDATED,
         aggregate_type="match",
@@ -345,7 +345,7 @@ def delete_match(
         raise HTTPException(status_code=409, detail="Cannot delete a finished match")
 
     # Emit event before deletion
-    emit_event(
+    outbox_publisher.emit_event(
         db,
         event_type=EventType.MATCH_DELETED,
         aggregate_type="match",
@@ -441,7 +441,7 @@ def add_participant(
     db.flush()  # Get participant.id
 
     # Emit event
-    emit_event(
+    outbox_publisher.emit_event(
         db,
         event_type=EventType.MATCH_PARTICIPANT_ADDED,
         aggregate_type="match",
@@ -506,7 +506,7 @@ def remove_participant(
             status_code=409, detail="Cannot modify participants for finished match"
         )
 
-    emit_event(
+    outbox_publisher.emit_event(
         db,
         event_type=EventType.MATCH_PARTICIPANT_REMOVED,
         aggregate_type="match",
@@ -597,7 +597,7 @@ def assign_lineup(
         db.add(lineup)
         created_lineups.append(lineup)
 
-    emit_event(
+    outbox_publisher.emit_event(
         db,
         event_type=EventType.MATCH_LINEUP_ASSIGNED,
         aggregate_type="match",
@@ -704,7 +704,7 @@ def add_comment(
     db.add(comment)
     db.flush()  # Get comment.id
 
-    emit_event(
+    outbox_publisher.emit_event(
         db,
         event_type=EventType.MATCH_COMMENT_ADDED,
         aggregate_type="match",
@@ -786,7 +786,7 @@ def delete_comment(
         raise HTTPException(status_code=404, detail="Comment not found")
 
     # Emit event before deletion
-    emit_event(
+    outbox_publisher.emit_event(
         db,
         event_type=EventType.MATCH_COMMENT_DELETED,
         aggregate_type="match",
@@ -883,7 +883,7 @@ def update_match_results(
         )
 
     # Emit event for result updates
-    emit_event(
+    outbox_publisher.emit_event(
         db,
         event_type=EventType.MATCH_RESULT_UPDATED,
         aggregate_type="match",
@@ -906,7 +906,7 @@ def update_match_results(
             )
 
     # Emit match updated event for status change
-    emit_event(
+    outbox_publisher.emit_event(
         db,
         event_type=EventType.MATCH_UPDATED,
         aggregate_type="match",

@@ -11,7 +11,6 @@ from sqlalchemy.orm import Session
 from taca_events import EventType
 
 from .database import get_db_session
-from .event_helpers import emit_event
 from .logger import logger
 from .models import (
     CompetitorType,
@@ -19,6 +18,7 @@ from .models import (
     TournamentCompetitor,
     TournamentRankingPosition,
 )
+from .outbox_publisher import outbox_publisher
 from .schemas import (
     CompetitorInput,
     TournamentCreate,
@@ -83,7 +83,7 @@ def add_competitor(db: Session, tournament_id: UUID, competitor_input: Competito
     db.flush()
 
     # Emit event for added competitor
-    emit_event(
+    outbox_publisher.emit_event(
         db=db,
         event_type=EventType.TOURNAMENT_COMPETITOR_ADDED,
         aggregate_type="tournament_competitor",
@@ -153,7 +153,7 @@ async def create_tournament(
         db.flush()  # Get the ID before committing
 
         # Emit event for tournament creation
-        emit_event(
+        outbox_publisher.emit_event(
             db=db,
             event_type=EventType.TOURNAMENT_CREATED,
             aggregate_type="tournament",
@@ -213,7 +213,7 @@ async def update_tournament(
     tournament.updated_at = datetime.now(timezone.utc)
 
     # Create outbox event
-    emit_event(
+    outbox_publisher.emit_event(
         db=db,
         event_type=EventType.TOURNAMENT_UPDATED,
         aggregate_type="tournament",
@@ -253,7 +253,7 @@ async def delete_tournament(tournament_id: UUID, db: Session = Depends(get_db_se
 
     try:
         # Emit event before deleting
-        emit_event(
+        outbox_publisher.emit_event(
             db=db,
             event_type=EventType.TOURNAMENT_DELETED,
             aggregate_type="tournament",
@@ -314,7 +314,7 @@ async def finish_tournament(
         tournament.updated_at = datetime.now(timezone.utc)
 
         # Create outbox event
-        emit_event(
+        outbox_publisher.emit_event(
             db=db,
             event_type=EventType.TOURNAMENT_FINISHED,
             aggregate_type="tournament",
@@ -403,7 +403,7 @@ async def remove_competitors_from_tournament(
             db.flush()
 
             # Emit event for removed competitor
-            emit_event(
+            outbox_publisher.emit_event(
                 db=db,
                 event_type=EventType.TOURNAMENT_COMPETITOR_DELETED,
                 aggregate_type="tournament_competitor",

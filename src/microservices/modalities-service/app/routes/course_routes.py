@@ -8,9 +8,9 @@ from sqlalchemy.orm import Session
 from taca_events import EventType
 
 from ..database import get_db_session
-from ..event_helpers import emit_event
 from ..logger import logger
 from ..models import Course, Nucleo
+from ..outbox_publisher import outbox_publisher
 from ..schemas import CourseCreate, CourseResponse, CourseUpdate
 
 router = APIRouter()
@@ -52,7 +52,7 @@ def create_course(course_data: CourseCreate, db: Session = Depends(get_db_sessio
         db.flush()
 
         # Emit event via outbox
-        emit_event(
+        outbox_publisher.emit_event(
             db=db,
             event_type=EventType.COURSE_CREATED,
             aggregate_type="course",
@@ -111,7 +111,7 @@ def update_course(
 
     try:
         # Emit event via outbox
-        emit_event(
+        outbox_publisher.emit_event(
             db=db,
             event_type=EventType.COURSE_UPDATED,
             aggregate_type="course",
@@ -145,7 +145,7 @@ def delete_course(course_id: UUID, db: Session = Depends(get_db_session)):
         raise HTTPException(status_code=404, detail="Course not found")
 
     # Emit event via outbox before deleting
-    emit_event(
+    outbox_publisher.emit_event(
         db=db,
         event_type=EventType.COURSE_DELETED,
         aggregate_type="course",

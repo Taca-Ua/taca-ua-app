@@ -9,9 +9,9 @@ from sqlalchemy.orm import Session
 from taca_events import EventType
 
 from ..database import get_db_session
-from ..event_helpers import emit_event
 from ..logger import logger
 from ..models import Nucleo
+from ..outbox_publisher import outbox_publisher
 from ..schemas import NucleoCreate, NucleoResponse, NucleoUpdate
 
 router = APIRouter()
@@ -44,7 +44,7 @@ def create_nucleo(nucleo_data: NucleoCreate, db: Session = Depends(get_db_sessio
         db.flush()  # Get the ID without committing
 
         # Emit event via outbox
-        emit_event(
+        outbox_publisher.emit_event(
             db=db,
             event_type=EventType.NUCLEO_CREATED,
             aggregate_type="nucleo",
@@ -110,7 +110,7 @@ def update_nucleo(
 
     try:
         # Emit event via outbox
-        emit_event(
+        outbox_publisher.emit_event(
             db=db,
             event_type=EventType.NUCLEO_UPDATED,
             aggregate_type="nucleo",
@@ -144,7 +144,7 @@ def delete_nucleo(nucleo_id: UUID, db: Session = Depends(get_db_session)):
         raise HTTPException(status_code=404, detail="Nucleo not found")
 
     # Emit event via outbox before deleting
-    emit_event(
+    outbox_publisher.emit_event(
         db=db,
         event_type=EventType.NUCLEO_DELETED,
         aggregate_type="nucleo",

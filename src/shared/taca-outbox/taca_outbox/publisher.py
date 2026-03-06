@@ -28,12 +28,19 @@ Usage::
     await outbox_publisher.stop()
 
     # Inside a request handler (same transaction as the business operation):
-    outbox_publisher.create_event(db=session, event_envelope=envelope_dict)
+    outbox_publisher.emit_event(
+        db=session,
+        event_type=EventType.SOME_EVENT,
+        aggregate_type="entity",
+        aggregate_id=entity.id,
+        data={...},
+    )
 """
 
 import asyncio
 from datetime import datetime, timezone
-from typing import Any, Callable, Optional, Type
+from typing import Any, Callable, Dict, Optional, Type
+from uuid import UUID
 
 
 class OutboxPublisher:
@@ -58,6 +65,7 @@ class OutboxPublisher:
         poll_interval: int = 5,
         batch_size: int = 100,
         max_retries: int = 3,
+        service_name: str = "",
     ):
         """
         Parameters
@@ -78,6 +86,9 @@ class OutboxPublisher:
             Maximum number of events processed per round.
         max_retries:
             Maximum retry attempts before an event is abandoned.
+        service_name:
+            Name of the owning service, used as ``published_by`` default in
+            ``emit_event`` when no metadata is supplied by the caller.
         """
         self.OutboxEvent = outbox_model
         self.session_factory = session_factory
@@ -86,6 +97,7 @@ class OutboxPublisher:
         self.poll_interval = poll_interval
         self.batch_size = batch_size
         self.max_retries = max_retries
+        self.service_name = service_name
         self.running = False
         self._task: Optional[asyncio.Task] = None
 
@@ -228,3 +240,65 @@ class OutboxPublisher:
         )
         db.add(event)
         return event
+
+    def emit_event(
+        self,
+        db: Any,
+        event_type: str,
+        aggregate_type: str,
+        aggregate_id: UUID,
+        data: Dict[str, Any],
+        correlation_id: Optional[str] = None,
+        causation_id: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> Any:
+        """
+        Build a validated event envelope with ``EventBuilder`` and persist it
+        to the outbox inside *db*'s current transaction.
+
+        This combines ``EventBuilder.create()`` and ``create_event()`` into a
+        single call.  The caller is still responsible for committing or rolling
+        back the enclosing transaction together with the business operation.
+
+        Parameters
+        ----------
+        db:
+            Active SQLAlchemy ``Session``.
+        event_type:
+            Full event type string (e.g. ``EventType.TOURNAMENT_CREATED``).
+        aggregate_type:
+            Domain aggregate name (e.g. ``"tournament"``).
+        aggregate_id:
+            UUID of the aggregate instance.
+        data:
+            Domain-specific event payload.
+        correlation_id:
+            Optional request-level correlation identifier.
+        causation_id:
+            Optional ID of the event that caused this one.
+        metadata:
+            Optional extra metadata dict.  When omitted, defaults to
+            ``{"published_by": self.service_name}``.
+
+        Returns
+        -------
+        The newly created (not yet committed) OutboxEvent instance.
+        """
+        from taca_events import EventBuilder
+
+        resolved_metadata = (
+            metadata
+            if metadata is not None
+            else ({"published_by": self.service_name} if self.service_name else {})
+        )
+
+        event_envelope = EventBuilder.create(
+            event_type=event_type,
+            data=data,
+            aggregate_id=str(aggregate_id),
+            correlation_id=correlation_id,
+            causation_id=causation_id,
+            metadata=resolved_metadata,
+        ).to_dict()
+
+        return self.create_event(db=db, event_envelope=event_envelope)
