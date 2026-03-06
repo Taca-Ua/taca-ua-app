@@ -5,7 +5,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from taca_events import EventType
+from taca_events import (
+    CourseCreatedData,
+    CourseDeletedData,
+    CourseUpdatedData,
+    EventType,
+)
 
 from ..database import get_db_session
 from ..logger import logger
@@ -57,12 +62,12 @@ def create_course(course_data: CourseCreate, db: Session = Depends(get_db_sessio
             event_type=EventType.COURSE_CREATED,
             aggregate_type="course",
             aggregate_id=course.id,
-            data={
-                "course_id": str(course.id),
-                "nucleo_id": str(course.nucleo_id),
-                "name": course.name,
-                "abbreviation": course.abbreviation,
-            },
+            data=CourseCreatedData(
+                course_id=course.id,
+                nucleo_id=course.nucleo_id,
+                name=course.name,
+                abbreviation=course.abbreviation,
+            ).model_dump(mode="json"),
         )
 
         db.commit()
@@ -116,14 +121,12 @@ def update_course(
             event_type=EventType.COURSE_UPDATED,
             aggregate_type="course",
             aggregate_id=course.id,
-            data={
-                "course_id": str(course.id),
-                **{
-                    k: v
-                    for k, v in changes_made.items()
-                    if k in ["name", "abbreviation", "nucleo_id"]
-                },
-            },
+            data=CourseUpdatedData(
+                course_id=course.id,
+                name=changes_made.get("name"),
+                abbreviation=changes_made.get("abbreviation"),
+                nucleo_id=changes_made.get("nucleo_id"),
+            ).model_dump(mode="json", exclude_none=True),
         )
 
         db.commit()
@@ -150,9 +153,9 @@ def delete_course(course_id: UUID, db: Session = Depends(get_db_session)):
         event_type=EventType.COURSE_DELETED,
         aggregate_type="course",
         aggregate_id=course.id,
-        data={
-            "course_id": str(course.id),
-        },
+        data=CourseDeletedData(
+            course_id=course.id,
+        ).model_dump(mode="json"),
     )
 
     db.delete(course)

@@ -5,7 +5,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from taca_events import EventType
+from taca_events import (
+    EventType,
+    ModalityTypeCreatedData,
+    ModalityTypeDeletedData,
+    ModalityTypeUpdatedData,
+)
 
 from ..database import get_db_session
 from ..logger import logger
@@ -53,12 +58,12 @@ def create_modality_type(
             event_type=EventType.MODALITY_TYPE_CREATED,
             aggregate_type="modality_type",
             aggregate_id=modality_type.id,
-            data={
-                "modality_type_id": str(modality_type.id),
-                "name": modality_type.name,
-                "description": modality_type.description,
-                "escaloes": modality_type.escaloes,
-            },
+            data=ModalityTypeCreatedData(
+                modality_type_id=modality_type.id,
+                name=modality_type.name,
+                description=modality_type.description,
+                escaloes=modality_type.escaloes,
+            ).model_dump(mode="json"),
         )
 
         db.commit()
@@ -115,14 +120,12 @@ def update_modality_type(
         event_type=EventType.MODALITY_TYPE_UPDATED,
         aggregate_type="modality_type",
         aggregate_id=modality_type.id,
-        data={
-            "modality_type_id": str(modality_type.id),
-            **{
-                k: v
-                for k, v in changes_made.items()
-                if k in ["name", "description", "escaloes"]
-            },
-        },
+        data=ModalityTypeUpdatedData(
+            modality_type_id=modality_type.id,
+            name=changes_made.get("name"),
+            description=changes_made.get("description"),
+            escaloes=changes_made.get("escaloes"),
+        ).model_dump(mode="json", exclude_none=True),
     )
 
     try:
@@ -154,7 +157,9 @@ def delete_modality_type(modality_type_id: UUID, db: Session = Depends(get_db_se
         event_type=EventType.MODALITY_TYPE_DELETED,
         aggregate_type="modality_type",
         aggregate_id=modality_type.id,
-        data={"modality_type_id": str(modality_type.id)},
+        data=ModalityTypeDeletedData(
+            modality_type_id=modality_type.id,
+        ).model_dump(mode="json"),
     )
 
     db.delete(modality_type)

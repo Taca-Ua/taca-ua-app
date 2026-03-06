@@ -8,7 +8,21 @@ from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from taca_events import EventType
+from taca_events import (
+    EventType,
+    LineupPlayerData,
+    MatchCommentAddedData,
+    MatchCommentDeletedData,
+    MatchCreatedData,
+    MatchDeletedData,
+    MatchLineupAssignedData,
+    MatchParticipantAddedData,
+    MatchParticipantData,
+    MatchParticipantRemovedData,
+    MatchResultEntryData,
+    MatchResultUpdatedData,
+    MatchUpdatedData,
+)
 
 from . import schemas
 from .database import get_db_session
@@ -192,21 +206,21 @@ def create_match(
         event_type=EventType.MATCH_CREATED,
         aggregate_type="match",
         aggregate_id=match.id,
-        data={
-            "match_id": str(match.id),
-            "tournament_id": str(match.tournament_id) if match.tournament_id else None,
-            "location": match.location,
-            "status": match.status.value,
-            "start_time": match.start_time.isoformat(),
-            "participants": [
-                {
-                    "participant_id": str(p.id),
-                    "participant_type": p.participant_type.value,
-                    "participant_entity_id": str(p.team_id or p.athlete_id),
-                }
+        data=MatchCreatedData(
+            match_id=match.id,
+            tournament_id=match.tournament_id,
+            location=match.location,
+            status=match.status.value,
+            start_time=match.start_time.isoformat(),
+            participants=[
+                MatchParticipantData(
+                    participant_id=p.id,
+                    participant_type=p.participant_type.value,
+                    participant_entity_id=p.team_id or p.athlete_id,
+                )
                 for p in match.participants
             ],
-        },
+        ).model_dump(mode="json"),
     )
 
     db.commit()
@@ -300,14 +314,12 @@ def update_match(
         event_type=EventType.MATCH_UPDATED,
         aggregate_type="match",
         aggregate_id=match_id,
-        data={
-            "match_id": str(match_id),
-            **{
-                k: v
-                for k, v in changes_made.items()
-                if k in ["location", "start_time", "status"]
-            },
-        },
+        data=MatchUpdatedData(
+            match_id=match_id,
+            location=changes_made.get("location"),
+            start_time=changes_made.get("start_time"),
+            status=changes_made.get("status"),
+        ).model_dump(mode="json", exclude_none=True),
     )
 
     db.commit()
@@ -350,9 +362,9 @@ def delete_match(
         event_type=EventType.MATCH_DELETED,
         aggregate_type="match",
         aggregate_id=match_id,
-        data={
-            "match_id": str(match_id),
-        },
+        data=MatchDeletedData(
+            match_id=match_id,
+        ).model_dump(mode="json"),
     )
 
     db.delete(match)
@@ -446,14 +458,13 @@ def add_participant(
         event_type=EventType.MATCH_PARTICIPANT_ADDED,
         aggregate_type="match",
         aggregate_id=match_id,
-        data={
-            "match_id": str(match_id),
-            "participant_id": str(participant.id),
-            "participant_type": participant_type.value,
-            "participant_entity_id": str(
-                participant_data.team_id or participant_data.athlete_id
-            ),
-        },
+        data=MatchParticipantAddedData(
+            match_id=match_id,
+            participant_id=participant.id,
+            participant_type=participant_type.value,
+            participant_entity_id=participant_data.team_id
+            or participant_data.athlete_id,
+        ).model_dump(mode="json"),
     )
 
     db.commit()
@@ -511,10 +522,10 @@ def remove_participant(
         event_type=EventType.MATCH_PARTICIPANT_REMOVED,
         aggregate_type="match",
         aggregate_id=match_id,
-        data={
-            "match_id": str(match_id),
-            "participant_id": str(participant_id),
-        },
+        data=MatchParticipantRemovedData(
+            match_id=match_id,
+            participant_id=participant_id,
+        ).model_dump(mode="json"),
     )
 
     db.delete(participant)
@@ -602,18 +613,18 @@ def assign_lineup(
         event_type=EventType.MATCH_LINEUP_ASSIGNED,
         aggregate_type="match",
         aggregate_id=match_id,
-        data={
-            "match_id": str(match_id),
-            "team_id": str(lineup_data.team_id),
-            "lineup": [
-                {
-                    "player_id": str(player_data["player_id"]),
-                    "jersey_number": player_data["jersey_number"],
-                    "is_starter": player_data.get("is_starter", True),
-                }
+        data=MatchLineupAssignedData(
+            match_id=match_id,
+            team_id=lineup_data.team_id,
+            lineup=[
+                LineupPlayerData(
+                    player_id=player_data["player_id"],
+                    jersey_number=player_data["jersey_number"],
+                    is_starter=player_data.get("is_starter", True),
+                )
                 for player_data in lineup_data.players
             ],
-        },
+        ).model_dump(mode="json"),
     )
 
     db.commit()
@@ -709,11 +720,11 @@ def add_comment(
         event_type=EventType.MATCH_COMMENT_ADDED,
         aggregate_type="match",
         aggregate_id=match_id,
-        data={
-            "comment_id": str(comment.id),
-            "match_id": str(match_id),
-            "message": comment.message,
-        },
+        data=MatchCommentAddedData(
+            comment_id=comment.id,
+            match_id=match_id,
+            message=comment.message,
+        ).model_dump(mode="json"),
     )
     db.commit()
     db.refresh(comment)
@@ -791,10 +802,10 @@ def delete_comment(
         event_type=EventType.MATCH_COMMENT_DELETED,
         aggregate_type="match",
         aggregate_id=match_id,
-        data={
-            "comment_id": str(comment_id),
-            "match_id": str(match_id),
-        },
+        data=MatchCommentDeletedData(
+            comment_id=comment_id,
+            match_id=match_id,
+        ).model_dump(mode="json"),
     )
 
     db.delete(comment)
@@ -888,10 +899,18 @@ def update_match_results(
         event_type=EventType.MATCH_RESULT_UPDATED,
         aggregate_type="match",
         aggregate_id=match_id,
-        data={
-            "match_id": str(match_id),
-            "results": updated_participants,
-        },
+        data=MatchResultUpdatedData(
+            match_id=match_id,
+            results=[
+                MatchResultEntryData(
+                    participant_id=r["participant_id"],
+                    score=r.get("score"),
+                    position=r.get("position"),
+                    results_metadata=r.get("results_metadata"),
+                )
+                for r in updated_participants
+            ],
+        ).model_dump(mode="json"),
     )
 
     # Update match status if provided
@@ -911,10 +930,10 @@ def update_match_results(
         event_type=EventType.MATCH_UPDATED,
         aggregate_type="match",
         aggregate_id=match_id,
-        data={
-            "match_id": str(match_id),
-            "status": match.status.value,
-        },
+        data=MatchUpdatedData(
+            match_id=match_id,
+            status=match.status.value,
+        ).model_dump(mode="json", exclude_none=True),
     )
 
     match.updated_at = datetime.now(timezone.utc)

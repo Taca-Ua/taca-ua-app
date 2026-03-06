@@ -5,7 +5,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from taca_events import EventType
+from taca_events import (
+    EventType,
+    ModalityCreatedData,
+    ModalityDeletedData,
+    ModalityUpdatedData,
+)
 
 from ..database import get_db_session
 from ..logger import logger
@@ -59,11 +64,11 @@ def create_modality(
             event_type=EventType.MODALITY_CREATED,
             aggregate_type="modality",
             aggregate_id=modality.id,
-            data={
-                "modality_id": str(modality.id),
-                "modality_type_id": str(modality.modality_type_id),
-                "name": modality.name,
-            },
+            data=ModalityCreatedData(
+                modality_id=modality.id,
+                modality_type_id=modality.modality_type_id,
+                name=modality.name,
+            ).model_dump(mode="json"),
         )
 
         db.commit()
@@ -119,14 +124,11 @@ def update_modality(
         event_type=EventType.MODALITY_UPDATED,
         aggregate_type="modality",
         aggregate_id=modality.id,
-        data={
-            "modality_id": str(modality.id),
-            **{
-                k: v
-                for k, v in changes_made.items()
-                if k in ["name", "modality_type_id"]
-            },
-        },
+        data=ModalityUpdatedData(
+            modality_id=modality.id,
+            name=changes_made.get("name"),
+            modality_type_id=changes_made.get("modality_type_id"),
+        ).model_dump(mode="json", exclude_none=True),
     )
 
     try:
@@ -154,9 +156,9 @@ def delete_modality(modality_id: UUID, db: Session = Depends(get_db_session)):
         event_type=EventType.MODALITY_DELETED,
         aggregate_type="modality",
         aggregate_id=modality.id,
-        data={
-            "modality_id": str(modality.id),
-        },
+        data=ModalityDeletedData(
+            modality_id=modality.id,
+        ).model_dump(mode="json"),
     )
 
     db.delete(modality)

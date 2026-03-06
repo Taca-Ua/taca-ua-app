@@ -1,29 +1,19 @@
 """
-TACA Events Schema Registry
+Pydantic typed event schemas for the TACA system.
 
-Centralized event schema definitions and validation for the TACA system.
-
-New typed Pydantic schemas are available via ``taca_events.pydantic_schemas``:
+Import individual schemas or use ``EventRegistry`` to look up schemas
+by routing key.
 
     from taca_events.pydantic_schemas import (
         EventRegistry,
         MatchCreatedV1, MatchCreatedData,
+        TournamentCreatedV1, TournamentCreatedData,
         ...
     )
 """
 
-from .builder import EventBuilder
-
-# Typed Pydantic schemas – new event system
-from .pydantic_schemas import (  # Match schemas; Nucleo schemas; Course schemas; ModalityType schemas; Modality schemas; Student schemas; Staff schemas; Team schemas; Tournament schemas
-    CourseCreatedData,
-    CourseCreatedV1,
-    CourseDeletedData,
-    CourseDeletedV1,
-    CourseUpdatedData,
-    CourseUpdatedV1,
-    EventRegistry,
-    EventSchema,
+from .base import EventSchema
+from .matches import (  # Data models; Schema classes
     LineupPlayerData,
     MatchCommentAddedData,
     MatchCommentAddedV1,
@@ -45,6 +35,14 @@ from .pydantic_schemas import (  # Match schemas; Nucleo schemas; Course schemas
     MatchResultUpdatedV1,
     MatchUpdatedData,
     MatchUpdatedV1,
+)
+from .modalities import (  # Nucleo; Course; ModalityType; Modality; Student; Staff; Team
+    CourseCreatedData,
+    CourseCreatedV1,
+    CourseDeletedData,
+    CourseDeletedV1,
+    CourseUpdatedData,
+    CourseUpdatedV1,
     ModalityCreatedData,
     ModalityCreatedV1,
     ModalityDeletedData,
@@ -63,7 +61,6 @@ from .pydantic_schemas import (  # Match schemas; Nucleo schemas; Course schemas
     NucleoDeletedV1,
     NucleoUpdatedData,
     NucleoUpdatedV1,
-    RankingEntryData,
     StaffCreatedData,
     StaffCreatedV1,
     StaffDeletedData,
@@ -86,6 +83,10 @@ from .pydantic_schemas import (  # Match schemas; Nucleo schemas; Course schemas
     TeamPlayerRemovedV1,
     TeamUpdatedData,
     TeamUpdatedV1,
+)
+from .registry import EventRegistry
+from .tournaments import (
+    RankingEntryData,
     TournamentCompetitorAddedData,
     TournamentCompetitorAddedV1,
     TournamentCompetitorDeletedData,
@@ -99,111 +100,100 @@ from .pydantic_schemas import (  # Match schemas; Nucleo schemas; Course schemas
     TournamentUpdatedData,
     TournamentUpdatedV1,
 )
-from .registry import SchemaRegistry
-from .types import EventType, RoutingKeys
-from .validator import validate_event, validate_event_data
 
 __all__ = [
-    # Legacy (kept for backward compatibility)
-    "EventBuilder",
-    "EventType",
-    "RoutingKeys",
-    "SchemaRegistry",
-    "validate_event",
-    "validate_event_data",
-    # New typed event system
+    # Base
     "EventSchema",
     "EventRegistry",
-    "LineupPlayerData",
-    # Match
-    "MatchCreatedV1",
+    # Match data
     "MatchCreatedData",
-    "MatchUpdatedV1",
     "MatchUpdatedData",
-    "MatchDeletedV1",
     "MatchDeletedData",
-    "MatchParticipantAddedV1",
     "MatchParticipantAddedData",
-    "MatchParticipantRemovedV1",
     "MatchParticipantRemovedData",
-    "MatchLineupAssignedV1",
     "MatchLineupAssignedData",
-    "MatchCommentAddedV1",
     "MatchCommentAddedData",
-    "MatchCommentDeletedV1",
     "MatchCommentDeletedData",
-    "MatchResultUpdatedV1",
     "MatchResultUpdatedData",
     "MatchParticipantData",
-    "MatchResultEntryData",
     "LineupPlayerData",
+    "MatchResultEntryData",
+    # Match schemas
+    "MatchCreatedV1",
+    "MatchUpdatedV1",
+    "MatchDeletedV1",
+    "MatchParticipantAddedV1",
+    "MatchParticipantRemovedV1",
+    "MatchLineupAssignedV1",
+    "MatchCommentAddedV1",
+    "MatchCommentDeletedV1",
+    "MatchResultUpdatedV1",
     # Nucleo
-    "NucleoCreatedV1",
     "NucleoCreatedData",
-    "NucleoUpdatedV1",
     "NucleoUpdatedData",
-    "NucleoDeletedV1",
     "NucleoDeletedData",
+    "NucleoCreatedV1",
+    "NucleoUpdatedV1",
+    "NucleoDeletedV1",
     # Course
-    "CourseCreatedV1",
     "CourseCreatedData",
-    "CourseUpdatedV1",
     "CourseUpdatedData",
-    "CourseDeletedV1",
     "CourseDeletedData",
+    "CourseCreatedV1",
+    "CourseUpdatedV1",
+    "CourseDeletedV1",
     # ModalityType
-    "ModalityTypeCreatedV1",
     "ModalityTypeCreatedData",
-    "ModalityTypeUpdatedV1",
     "ModalityTypeUpdatedData",
-    "ModalityTypeDeletedV1",
     "ModalityTypeDeletedData",
+    "ModalityTypeCreatedV1",
+    "ModalityTypeUpdatedV1",
+    "ModalityTypeDeletedV1",
     # Modality
-    "ModalityCreatedV1",
     "ModalityCreatedData",
-    "ModalityUpdatedV1",
     "ModalityUpdatedData",
-    "ModalityDeletedV1",
     "ModalityDeletedData",
+    "ModalityCreatedV1",
+    "ModalityUpdatedV1",
+    "ModalityDeletedV1",
     # Student
-    "StudentCreatedV1",
     "StudentCreatedData",
-    "StudentUpdatedV1",
     "StudentUpdatedData",
-    "StudentDeletedV1",
     "StudentDeletedData",
+    "StudentCreatedV1",
+    "StudentUpdatedV1",
+    "StudentDeletedV1",
     # Staff
-    "StaffCreatedV1",
     "StaffCreatedData",
-    "StaffUpdatedV1",
     "StaffUpdatedData",
-    "StaffDeletedV1",
     "StaffDeletedData",
+    "StaffCreatedV1",
+    "StaffUpdatedV1",
+    "StaffDeletedV1",
     # Team
-    "TeamCreatedV1",
     "TeamCreatedData",
-    "TeamUpdatedV1",
     "TeamUpdatedData",
-    "TeamDeletedV1",
     "TeamDeletedData",
-    "TeamPlayerAddedV1",
     "TeamPlayerAddedData",
-    "TeamPlayerRemovedV1",
     "TeamPlayerRemovedData",
-    # Tournament
-    "TournamentCreatedV1",
+    "TeamCreatedV1",
+    "TeamUpdatedV1",
+    "TeamDeletedV1",
+    "TeamPlayerAddedV1",
+    "TeamPlayerRemovedV1",
+    # Tournament data
     "TournamentCreatedData",
-    "TournamentUpdatedV1",
     "TournamentUpdatedData",
-    "TournamentDeletedV1",
     "TournamentDeletedData",
-    "TournamentFinishedV1",
     "TournamentFinishedData",
-    "TournamentCompetitorAddedV1",
     "TournamentCompetitorAddedData",
-    "TournamentCompetitorDeletedV1",
     "TournamentCompetitorDeletedData",
     "RankingEntryData",
+    # Tournament schemas
+    "TournamentCreatedV1",
+    "TournamentUpdatedV1",
+    "TournamentDeletedV1",
+    "TournamentFinishedV1",
+    "TournamentCompetitorAddedV1",
+    "TournamentCompetitorDeletedV1",
 ]
-
-__version__ = "1.0.0"

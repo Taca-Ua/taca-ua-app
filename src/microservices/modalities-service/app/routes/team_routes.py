@@ -4,7 +4,14 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from taca_events import EventType
+from taca_events import (
+    EventType,
+    TeamCreatedData,
+    TeamDeletedData,
+    TeamPlayerAddedData,
+    TeamPlayerRemovedData,
+    TeamUpdatedData,
+)
 
 from ..database import get_db_session
 from ..logger import logger
@@ -64,12 +71,12 @@ def create_team(team_data: TeamCreate, db: Session = Depends(get_db_session)):
         event_type=EventType.TEAM_CREATED,
         aggregate_type="team",
         aggregate_id=team.id,
-        data={
-            "team_id": str(team.id),
-            "name": team.name,
-            "modality_id": str(team.modality_id),
-            "course_id": str(team.course_id),
-        },
+        data=TeamCreatedData(
+            team_id=team.id,
+            name=team.name,
+            modality_id=team.modality_id,
+            course_id=team.course_id,
+        ).model_dump(mode="json"),
     )
 
     db.commit()
@@ -121,14 +128,12 @@ def update_team(
         event_type=EventType.TEAM_UPDATED,
         aggregate_type="team",
         aggregate_id=team.id,
-        data={
-            "team_id": str(team.id),
-            **{
-                k: v
-                for k, v in changes_made.items()
-                if k in ["name", "modality_id", "course_id"]
-            },
-        },
+        data=TeamUpdatedData(
+            team_id=team.id,
+            name=changes_made.get("name"),
+            modality_id=changes_made.get("modality_id"),
+            course_id=changes_made.get("course_id"),
+        ).model_dump(mode="json", exclude_none=True),
     )
 
     # Handle adding/removing players
@@ -143,7 +148,10 @@ def update_team(
                     event_type=EventType.TEAM_PLAYER_ADDED,
                     aggregate_type="team",
                     aggregate_id=team.id,
-                    data={"team_id": str(team.id), "student_id": str(player_id)},
+                    data=TeamPlayerAddedData(
+                        team_id=team.id,
+                        student_id=player_id,
+                    ).model_dump(mode="json"),
                 )
 
     if team_data.players_remove:
@@ -157,7 +165,10 @@ def update_team(
                     event_type=EventType.TEAM_PLAYER_REMOVED,
                     aggregate_type="team",
                     aggregate_id=team.id,
-                    data={"team_id": str(team.id), "student_id": str(player_id)},
+                    data=TeamPlayerRemovedData(
+                        team_id=team.id,
+                        student_id=player_id,
+                    ).model_dump(mode="json"),
                 )
 
     team.updated_at = datetime.now(timezone.utc)
@@ -181,7 +192,9 @@ def delete_team(team_id: UUID, db: Session = Depends(get_db_session)):
         event_type=EventType.TEAM_DELETED,
         aggregate_type="team",
         aggregate_id=team.id,
-        data={"team_id": str(team.id)},
+        data=TeamDeletedData(
+            team_id=team.id,
+        ).model_dump(mode="json"),
     )
 
     db.delete(team)

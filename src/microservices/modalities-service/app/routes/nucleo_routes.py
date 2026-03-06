@@ -6,7 +6,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from taca_events import EventType
+from taca_events import (
+    EventType,
+    NucleoCreatedData,
+    NucleoDeletedData,
+    NucleoUpdatedData,
+)
 
 from ..database import get_db_session
 from ..logger import logger
@@ -49,11 +54,11 @@ def create_nucleo(nucleo_data: NucleoCreate, db: Session = Depends(get_db_sessio
             event_type=EventType.NUCLEO_CREATED,
             aggregate_type="nucleo",
             aggregate_id=nucleo.id,
-            data={
-                "nucleo_id": str(nucleo.id),
-                "name": nucleo.name,
-                "abbreviation": nucleo.abbreviation,
-            },
+            data=NucleoCreatedData(
+                nucleo_id=nucleo.id,
+                name=nucleo.name,
+                abbreviation=nucleo.abbreviation,
+            ).model_dump(mode="json"),
         )
 
         db.commit()
@@ -115,14 +120,11 @@ def update_nucleo(
             event_type=EventType.NUCLEO_UPDATED,
             aggregate_type="nucleo",
             aggregate_id=nucleo.id,
-            data={
-                "nucleo_id": str(nucleo.id),
-                **{
-                    key: value
-                    for key, value in changes_made.items()
-                    if key in ["name", "abbreviation"]
-                },
-            },
+            data=NucleoUpdatedData(
+                nucleo_id=nucleo.id,
+                name=changes_made.get("name"),
+                abbreviation=changes_made.get("abbreviation"),
+            ).model_dump(mode="json", exclude_none=True),
         )
 
         db.commit()
@@ -149,9 +151,9 @@ def delete_nucleo(nucleo_id: UUID, db: Session = Depends(get_db_session)):
         event_type=EventType.NUCLEO_DELETED,
         aggregate_type="nucleo",
         aggregate_id=nucleo.id,
-        data={
-            "nucleo_id": str(nucleo.id),
-        },
+        data=NucleoDeletedData(
+            nucleo_id=nucleo.id,
+        ).model_dump(mode="json"),
     )
 
     db.delete(nucleo)

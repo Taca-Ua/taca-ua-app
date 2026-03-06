@@ -5,7 +5,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from taca_events import EventType
+from taca_events import (
+    EventType,
+    StudentCreatedData,
+    StudentDeletedData,
+    StudentUpdatedData,
+)
 
 from ..database import get_db_session
 from ..logger import logger
@@ -62,13 +67,13 @@ def create_student(student_data: StudentCreate, db: Session = Depends(get_db_ses
             event_type=EventType.STUDENT_CREATED,
             aggregate_type="student",
             aggregate_id=student.id,
-            data={
-                "student_id": str(student.id),
-                "full_name": student.full_name,
-                "course_id": str(student.course_id),
-                "student_number": student.student_number,
-                "is_member": student.is_member,
-            },
+            data=StudentCreatedData(
+                student_id=student.id,
+                full_name=student.full_name,
+                course_id=student.course_id,
+                student_number=student.student_number,
+                is_member=student.is_member,
+            ).model_dump(mode="json"),
         )
 
         db.commit()
@@ -124,14 +129,13 @@ def update_student(
         event_type=EventType.STUDENT_UPDATED,
         aggregate_type="student",
         aggregate_id=student.id,
-        data={
-            "student_id": str(student.id),
-            **{
-                k: v
-                for k, v in changes_made.items()
-                if k in ["full_name", "course_id", "student_number", "is_member"]
-            },
-        },
+        data=StudentUpdatedData(
+            student_id=student.id,
+            full_name=changes_made.get("full_name"),
+            course_id=changes_made.get("course_id"),
+            student_number=changes_made.get("student_number"),
+            is_member=changes_made.get("is_member"),
+        ).model_dump(mode="json", exclude_none=True),
     )
 
     try:
@@ -159,9 +163,9 @@ def delete_student(student_id: UUID, db: Session = Depends(get_db_session)):
         event_type=EventType.STUDENT_DELETED,
         aggregate_type="student",
         aggregate_id=student.id,
-        data={
-            "student_id": str(student.id),
-        },
+        data=StudentDeletedData(
+            student_id=student.id,
+        ).model_dump(mode="json"),
     )
 
     db.delete(student)

@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from taca_events import EventType
+from taca_events import EventType, StaffCreatedData, StaffDeletedData, StaffUpdatedData
 
 from ..database import get_db_session
 from ..logger import logger
@@ -56,12 +56,12 @@ def create_staff(staff_data: StaffCreate, db: Session = Depends(get_db_session))
             event_type=EventType.STAFF_CREATED,
             aggregate_type="staff",
             aggregate_id=staff.id,
-            data={
-                "staff_id": str(staff.id),
-                "full_name": staff.full_name,
-                "staff_number": staff.staff_number,
-                "contact": staff.contact,
-            },
+            data=StaffCreatedData(
+                staff_id=staff.id,
+                full_name=staff.full_name,
+                staff_number=staff.staff_number,
+                contact=staff.contact,
+            ).model_dump(mode="json"),
         )
 
         db.commit()
@@ -112,14 +112,12 @@ def update_staff(
         event_type=EventType.STAFF_UPDATED,
         aggregate_type="staff",
         aggregate_id=staff.id,
-        data={
-            "staff_id": str(staff.id),
-            **{
-                k: v
-                for k, v in changes_made.items()
-                if k in ["full_name", "staff_number", "contact"]
-            },
-        },
+        data=StaffUpdatedData(
+            staff_id=staff.id,
+            full_name=changes_made.get("full_name"),
+            staff_number=changes_made.get("staff_number"),
+            contact=changes_made.get("contact"),
+        ).model_dump(mode="json", exclude_none=True),
     )
 
     try:
@@ -148,9 +146,9 @@ def delete_staff(staff_id: UUID, db: Session = Depends(get_db_session)):
         event_type=EventType.STAFF_DELETED,
         aggregate_type="staff",
         aggregate_id=staff.id,
-        data={
-            "staff_id": str(staff.id),
-        },
+        data=StaffDeletedData(
+            staff_id=staff.id,
+        ).model_dump(mode="json"),
     )
 
     db.delete(staff)

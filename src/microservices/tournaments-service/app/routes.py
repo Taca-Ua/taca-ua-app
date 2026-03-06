@@ -8,7 +8,16 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from taca_events import EventType
+from taca_events import (
+    EventType,
+    RankingEntryData,
+    TournamentCompetitorAddedData,
+    TournamentCompetitorDeletedData,
+    TournamentCreatedData,
+    TournamentDeletedData,
+    TournamentFinishedData,
+    TournamentUpdatedData,
+)
 
 from .database import get_db_session
 from .logger import logger
@@ -88,13 +97,12 @@ def add_competitor(db: Session, tournament_id: UUID, competitor_input: Competito
         event_type=EventType.TOURNAMENT_COMPETITOR_ADDED,
         aggregate_type="tournament_competitor",
         aggregate_id=str(tournament_competitor.id),
-        data={
-            "tournament_id": str(tournament_id),
-            "competitor_type": competitor_input.competitor_type,
-            "competitor_entity_id": str(
-                competitor_input.team_id or competitor_input.athlete_id
-            ),
-        },
+        data=TournamentCompetitorAddedData(
+            tournament_id=tournament_id,
+            competitor_type=competitor_input.competitor_type,
+            competitor_entity_id=competitor_input.team_id
+            or competitor_input.athlete_id,
+        ).model_dump(mode="json"),
     )
 
 
@@ -158,13 +166,13 @@ async def create_tournament(
             event_type=EventType.TOURNAMENT_CREATED,
             aggregate_type="tournament",
             aggregate_id=str(tournament.id),
-            data={
-                "tournament_id": str(tournament.id),
-                "modality_id": str(tournament.modality_id),
-                "name": tournament.name,
-                "start_date": tournament.start_date.isoformat(),
-                "status": tournament.status,
-            },
+            data=TournamentCreatedData(
+                tournament_id=tournament.id,
+                modality_id=tournament.modality_id,
+                name=tournament.name,
+                start_date=tournament.start_date.isoformat(),
+                status=tournament.status,
+            ).model_dump(mode="json"),
         )
 
         # Add competitors if provided
@@ -218,14 +226,12 @@ async def update_tournament(
         event_type=EventType.TOURNAMENT_UPDATED,
         aggregate_type="tournament",
         aggregate_id=str(tournament.id),
-        data={
-            "tournament_id": str(tournament.id),
-            **{
-                k: v
-                for k, v in changes_made.items()
-                if k in ["name", "start_date", "status"]
-            },
-        },
+        data=TournamentUpdatedData(
+            tournament_id=tournament.id,
+            name=changes_made.get("name"),
+            start_date=changes_made.get("start_date"),
+            status=changes_made.get("status"),
+        ).model_dump(mode="json", exclude_none=True),
     )
 
     try:
@@ -258,7 +264,9 @@ async def delete_tournament(tournament_id: UUID, db: Session = Depends(get_db_se
             event_type=EventType.TOURNAMENT_DELETED,
             aggregate_type="tournament",
             aggregate_id=str(tournament.id),
-            data={"tournament_id": str(tournament.id)},
+            data=TournamentDeletedData(
+                tournament_id=tournament.id,
+            ).model_dump(mode="json"),
         )
 
         db.delete(tournament)
@@ -319,16 +327,16 @@ async def finish_tournament(
             event_type=EventType.TOURNAMENT_FINISHED,
             aggregate_type="tournament",
             aggregate_id=str(tournament.id),
-            data={
-                "tournament_id": str(tournament.id),
-                "ranking_entries": [
-                    {
-                        "competitor_id": str(entry.competitor_id),
-                        "position": entry.position,
-                    }
+            data=TournamentFinishedData(
+                tournament_id=tournament.id,
+                ranking_entries=[
+                    RankingEntryData(
+                        competitor_id=entry.competitor_id,
+                        position=entry.position,
+                    )
                     for entry in data.ranking_entries
                 ],
-            },
+            ).model_dump(mode="json"),
         )
 
         db.commit()
@@ -408,10 +416,10 @@ async def remove_competitors_from_tournament(
                 event_type=EventType.TOURNAMENT_COMPETITOR_DELETED,
                 aggregate_type="tournament_competitor",
                 aggregate_id=str(competitor_id),
-                data={
-                    "competitor_id": str(competitor_id),
-                    "tournament_id": str(tournament_id),
-                },
+                data=TournamentCompetitorDeletedData(
+                    competitor_id=competitor_id,
+                    tournament_id=tournament_id,
+                ).model_dump(mode="json", exclude_none=True),
             )
 
         db.commit()
