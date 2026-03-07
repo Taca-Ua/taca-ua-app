@@ -32,9 +32,8 @@ class TournamentResult(Base):
 
     __tablename__ = "tournament_result"
     __table_args__ = (
-        {"schema": "ranking"},
-        # Add unique constraint on tournament_id and position
         UniqueConstraint("tournament_id", "position", name="uq_tournament_position"),
+        {"schema": "ranking"},
     )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
