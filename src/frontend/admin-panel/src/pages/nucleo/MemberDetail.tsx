@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import NucleoSidebar from '../../components/nucleo_navbar';
 import { staffApi, studentsApi, type StaffDetail, type StudentDetail } from '../../api/members';
+import { useNotification } from '../../contexts/NotificationProvider';
 
 type CombinedMember =
   | { memberType: 'participant'; data: StudentDetail }
@@ -13,7 +14,7 @@ function MemberDetail() {
   const [member, setMember] = useState<CombinedMember | null>(null);
   const [memberType, setMemberType] = useState< string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { notify } = useNotification();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editedName, setEditedName] = useState('');
   const [editedContact, setEditedContact] = useState('');
@@ -25,18 +26,17 @@ function MemberDetail() {
     const fetchMember = async () => {
       try {
         setLoading(true);
-        setError(null);
 
 		console.log('Fetching member with ID:', id, 'and type:', type);
 
         if (!id || !type) {
-          setError('ID ou tipo inválido');
+          notify('ID ou tipo inválido', 'error');
           setTimeout(() => navigate('/nucleo/membros'), 2000);
           return;
         }
 
         if (type !== 'participant' && type !== 'staff') {
-          setError('Tipo de membro inválido');
+          notify('Tipo de membro inválido', 'error');
           setTimeout(() => navigate('/nucleo/membros'), 2000);
           return;
         }
@@ -52,7 +52,7 @@ function MemberDetail() {
         }
       } catch (err) {
         console.error('Error fetching member:', err);
-        setError('Erro ao carregar os dados do membro');
+        notify('Não foi possível carregar os dados do membro. Tente recarregar a página.', 'error');
         setTimeout(() => navigate('/nucleo/membros'), 2000);
       } finally {
         setLoading(false);
@@ -75,19 +75,8 @@ function MemberDetail() {
     );
   }
 
-  if (error || !member) {
-    return (
-      <div className="flex min-h-screen bg-gray-50">
-        <NucleoSidebar />
-        <div className="flex-1 p-8">
-          <div className="max-w-3xl mx-auto">
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error || 'Membro não encontrado'}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+  if (!member) {
+    return null;
   }
 
   const handleEdit = () => {
@@ -107,7 +96,6 @@ function MemberDetail() {
     if (!member || !editedName.trim() || !memberType) return;
 
     try {
-      setError(null);
 
       if (memberType === 'participant') {
         const updatedMember = await studentsApi.update(member.data.id, {
@@ -126,7 +114,7 @@ function MemberDetail() {
       setIsModalOpen(false);
     } catch (err) {
       console.error('Error updating member:', err);
-      setError('Erro ao atualizar o membro');
+      notify('Não foi possível guardar as alterações ao membro. Tente novamente.', 'error');
     }
   };
 
@@ -138,7 +126,6 @@ function MemberDetail() {
     if (!member || !memberType) return;
 
     try {
-      setError(null);
 
       if (memberType === 'participant') {
         await studentsApi.delete(member.data.id);
@@ -149,7 +136,7 @@ function MemberDetail() {
       navigate('/nucleo/membros');
     } catch (err) {
       console.error('Error deleting member:', err);
-      setError('Erro ao eliminar o membro');
+      notify('Não foi possível eliminar o membro. Poderá ter jogos ou equipas associadas.', 'error');
       setDeleteConfirmOpen(false);
     }
   };

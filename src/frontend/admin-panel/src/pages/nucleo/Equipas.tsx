@@ -7,6 +7,7 @@ import { modalitiesApi } from '../../api/modalities';
 import type { Modality } from '../../api/modalities';
 import { coursesApi } from '../../api/courses';
 import type { Course } from '../../api/courses';
+import { useNotification } from '../../contexts/NotificationProvider';
 
 const Equipas = () => {
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ const Equipas = () => {
   const [allModalities, setAllModalities] = useState<Modality[]>([]);
   const [allCourses, setAllCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { notify } = useNotification();
   const [filterModality, setFilterModality] = useState('');
   const [filterCourse, setFilterCourse] = useState('');
 
@@ -36,7 +37,6 @@ const Equipas = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        setError(null);
 
         // Fetch teams, modalities, and courses in parallel
         const [fetchedTeams, fetchedModalities, fetchedCourses] = await Promise.all([
@@ -54,7 +54,7 @@ const Equipas = () => {
         setAllCourses(fetchedCourses);
       } catch (err) {
         console.error('Failed to fetch data:', err);
-        setError('Erro ao carregar dados. Por favor, tente novamente.');
+        notify('Não foi possível carregar os dados das equipas e modalidades. Tente recarregar a página.', 'error');
       } finally {
         setLoading(false);
       }
@@ -65,17 +65,17 @@ const Equipas = () => {
 
   const handleAddTeam = async () => {
     if (!newTeamName.trim()) {
-      alert('Por favor, preencha o nome da equipa.');
+      notify('Por favor, preencha o nome da equipa.', 'error');
       return;
     }
 
     if (!selectedModality) {
-      alert('Por favor, selecione uma modalidade.');
+      notify('Por favor, selecione uma modalidade.', 'error');
       return;
     }
 
     if (!selectedCourse) {
-      alert('Por favor, selecione um curso.');
+      notify('Por favor, selecione um curso.', 'error');
       return;
     }
 
@@ -94,7 +94,7 @@ const Equipas = () => {
       setIsModalOpen(false);
     } catch (err) {
       console.error('Failed to create team:', err);
-      alert('Erro ao criar equipa. Por favor, tente novamente.');
+      notify('Não foi possível criar a equipa. Verifique os dados e tente novamente.', 'error');
     }
   };
 
@@ -140,13 +140,7 @@ const Equipas = () => {
             </div>
           )}
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-6">
-              {error}
-            </div>
-          )}
-
-          {!loading && !error && (
+          {!loading && (
             <>
               <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>

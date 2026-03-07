@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
+import { useNotification } from '../../contexts/NotificationProvider';
 import { nucleosApi, type Nucleo } from '../../api/nucleos';
 import { coursesApi, type Course } from '../../api/courses';
 
@@ -10,7 +11,7 @@ const NucleoDetails = () => {
 
   const [nucleus, setNucleus] = useState<Nucleo>();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { notify } = useNotification();
   const [nucleoCourses, setNucleoCourses] = useState<Course[]>([]);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -25,10 +26,9 @@ const NucleoDetails = () => {
         setNucleus(data);
         const allCourses = await coursesApi.getAll();
         setNucleoCourses(allCourses.filter(c => c.nucleo.id === String(id)));
-        setError('');
       } catch (err) {
         console.error('Failed to fetch núcleo:', err);
-        setError('Erro ao carregar núcleo');
+        notify('Não foi possível carregar os dados do núcleo. Tente recarregar a página.', 'error');
         navigate('/geral/nucleos');
       } finally {
         setLoading(false);
@@ -44,17 +44,16 @@ const NucleoDetails = () => {
     if (!nucleus) return;
     setEditedAbbreviation(nucleus.abbreviation);
     setEditedName(nucleus.name);
-    setError('');
     setIsEditModalOpen(true);
   };
 
   const handleSave = async () => {
     if (!editedAbbreviation.trim()) {
-      setError('Abreviatura é obrigatória');
+      notify('Abreviatura é obrigatória', 'error');
       return;
     }
     if (!editedName.trim()) {
-      setError('Nome é obrigatório');
+      notify('Nome é obrigatório', 'error');
       return;
     }
 
@@ -64,11 +63,10 @@ const NucleoDetails = () => {
         name: editedName,
       });
       setNucleus(updatedNucleus);
-      setError('');
       setIsEditModalOpen(false);
     } catch (err) {
       console.error('Failed to update course:', err);
-      setError('Erro ao atualizar núcleo');
+      notify('Não foi possível guardar as alterações ao núcleo. Tente novamente.', 'error');
     }
   };
 
@@ -79,7 +77,7 @@ const NucleoDetails = () => {
         navigate('/geral/nucleos');
       } catch (err) {
         console.error('Failed to delete course:', err);
-        setError('Erro ao eliminar núcleo');
+        notify('Não foi possível eliminar o núcleo. Poderá ter cursos ou membros associados.', 'error');
       }
     }
   };
@@ -182,12 +180,6 @@ const NucleoDetails = () => {
 
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Editar Núcleo</h2>
 
-            {error && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-                {error}
-              </div>
-            )}
-
             <div className="space-y-4">
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
@@ -222,7 +214,6 @@ const NucleoDetails = () => {
               <button
                 onClick={() => {
                   setIsEditModalOpen(false);
-                  setError('');
                 }}
                 className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md"
               >

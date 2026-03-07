@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Sidebar from '../../components/geral_navbar';
+import { useNotification } from '../../contexts/NotificationProvider';
 import { modalitiesApi, type ModalityDetail } from '../../api/modalities';
 import { modalityTypesApi } from '../../api/modality-types';
 
@@ -22,9 +23,9 @@ const ModalidadeDetailEditModal = ({
   modalityTypes: ModalityType[];
   setModalityTypes: React.Dispatch<React.SetStateAction<ModalityType[]>>;
 }) => {
-  const [error, setError] = useState('');
   const [editedName, setEditedName] = useState(modality.name);
   const [editedType, setEditedType] = useState(modality.modality_type.id);
+  const { notify } = useNotification();
 
   // Fetch modality types if not already loaded
   useEffect(() => {
@@ -43,11 +44,11 @@ const ModalidadeDetailEditModal = ({
 
   const handleSave = async () => {
     if (!editedName.trim()) {
-      setError('Nome é obrigatório');
+      notify('Nome é obrigatório', 'error');
       return;
     }
     if (!editedType) {
-      setError('Tipo é obrigatório');
+      notify('Tipo é obrigatório', 'error');
       return;
     }
 
@@ -57,11 +58,10 @@ const ModalidadeDetailEditModal = ({
         modality_type_id: editedType,
       });
       setModality(updatedModality);
-      setError('');
       onClose();
     } catch (err) {
       console.error('Failed to update modality:', err);
-      setError('Erro ao atualizar modalidade');
+      notify('Não foi possível guardar as alterações à modalidade. Tente novamente.', 'error');
     }
   };
 
@@ -69,12 +69,6 @@ const ModalidadeDetailEditModal = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
       <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">Editar Modalidade</h2>
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-            {error}
-          </div>
-        )}
 
         <div className="space-y-4">
           <div>
@@ -167,7 +161,7 @@ function ModalidadeDetail() {
         navigate('/geral/modalidades');
       } catch (err) {
         console.error('Failed to delete modality:', err);
-        alert('Erro ao eliminar modalidade');
+        notify('Não foi possível eliminar a modalidade. Poderá ter torneios ou formatos de prova associados.', 'error');
       }
     }
   };

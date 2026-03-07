@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
+import { useNotification } from '../../contexts/NotificationProvider';
 import {
   matchesApi,
   type MatchDetail,
@@ -233,7 +234,7 @@ const ResultsSection = ({
   const [isEditingResults, setIsEditingResults] = useState(false);
   const [saving, setSaving] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
-  const [error, setError] = useState('');
+  const { notify } = useNotification();
   const [results, setResults] = useState<{ [key: string]: { score: string; position: string } }>({});
 
   useEffect(() => {
@@ -250,7 +251,6 @@ const ResultsSection = ({
   const handleSaveResults = async () => {
     try {
       setSaving(true);
-      setError('');
 
       const participant_results: ParticipantResult[] = match.participants.map(p => ({
         participant_id: p.id,
@@ -268,7 +268,7 @@ const ResultsSection = ({
       onUpdate();
     } catch (err) {
       console.error('Error updating results:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao atualizar resultados');
+      notify(err instanceof Error ? err.message : 'Não foi possível guardar os resultados. Verifique os dados e tente novamente.', 'error');
     } finally {
       setSaving(false);
     }
@@ -278,12 +278,11 @@ const ResultsSection = ({
     if (!window.confirm('Tem a certeza que deseja finalizar este jogo? O estado será alterado para "Terminado".')) return;
     try {
       setFinalizing(true);
-      setError('');
       await matchesApi.update(match.id, { status: 'finished' });
       onUpdate();
     } catch (err) {
       console.error('Error finalizing match:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao finalizar jogo');
+      notify(err instanceof Error ? err.message : 'Não foi possível finalizar o jogo. Tente novamente.', 'error');
     } finally {
       setFinalizing(false);
     }
@@ -318,11 +317,6 @@ const ResultsSection = ({
             )}
           </div>
         </div>
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm">
-            {error}
-          </div>
-        )}
         {hasAnyResults ? (
           <div className="space-y-4">
             {match.participants.map((participant) => (
@@ -365,12 +359,6 @@ const ResultsSection = ({
           </button>
         )}
       </div>
-
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm">
-          {error}
-        </div>
-      )}
 
       {!isEditingResults ? (
         <div className="space-y-4">
@@ -439,7 +427,6 @@ const ResultsSection = ({
               type="button"
               onClick={() => {
                 setIsEditingResults(false);
-                setError('');
               }}
               disabled={saving}
               className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md font-medium transition-colors disabled:opacity-50"
@@ -464,7 +451,7 @@ const ResultsSection = ({
 const LineupsSection = ({ match }: { match: MatchDetail }) => {
   const [lineups, setLineups] = useState<LineupDetail[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { notify } = useNotification();
 
   useEffect(() => {
     fetchLineups();
@@ -473,12 +460,11 @@ const LineupsSection = ({ match }: { match: MatchDetail }) => {
   const fetchLineups = async () => {
     try {
       setLoading(true);
-      setError('');
       const data = await matchesApi.getLineups(match.id);
       setLineups(data);
     } catch (err) {
       console.error('Error loading lineups:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao carregar convocatórias');
+      notify(err instanceof Error ? err.message : 'Não foi possível carregar as convocatórias. Tente recarregar a página.', 'error');
     } finally {
       setLoading(false);
     }
@@ -486,14 +472,13 @@ const LineupsSection = ({ match }: { match: MatchDetail }) => {
 
   const handleDownloadTeamSheet = async (teamId: string) => {
     try {
-      setError('');
       const blob = await matchesApi.getMatchTeamSheet(match.id, teamId);
       const url = window.URL.createObjectURL(blob);
       window.open(url, '_blank');
       setTimeout(() => window.URL.revokeObjectURL(url), 10000);
     } catch (err) {
       console.error('Error downloading team sheet:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao descarregar ficha de equipa');
+      notify(err instanceof Error ? err.message : 'Não foi possível descarregar a ficha de equipa. Tente novamente.', 'error');
     }
   };
 
@@ -521,10 +506,6 @@ const LineupsSection = ({ match }: { match: MatchDetail }) => {
       {loading ? (
         <div className="flex justify-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
-        </div>
-      ) : error ? (
-        <div className="p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm">
-          {error}
         </div>
       ) : lineups.length === 0 ? (
         <p className="text-gray-600">Nenhuma convocatória definida.</p>
@@ -600,7 +581,7 @@ const LineupsSection = ({ match }: { match: MatchDetail }) => {
 const CommentsSection = ({ matchId }: { matchId: string }) => {
   const [comments, setComments] = useState<CommentDetail[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { notify } = useNotification();
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -611,12 +592,11 @@ const CommentsSection = ({ matchId }: { matchId: string }) => {
   const fetchComments = async () => {
     try {
       setLoading(true);
-      setError('');
       const data = await matchesApi.getComments(matchId);
       setComments(data);
     } catch (err) {
       console.error('Error loading comments:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao carregar comentários');
+      notify(err instanceof Error ? err.message : 'Não foi possível carregar os comentários. Tente recarregar a página.', 'error');
     } finally {
       setLoading(false);
     }
@@ -627,14 +607,13 @@ const CommentsSection = ({ matchId }: { matchId: string }) => {
 
     try {
       setSubmitting(true);
-      setError('');
       const commentData: CommentCreate = { message: newComment.trim() };
       const addedComment = await matchesApi.addComment(matchId, commentData);
       setComments([...comments, addedComment]);
       setNewComment('');
     } catch (err) {
       console.error('Error adding comment:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao adicionar comentário');
+      notify(err instanceof Error ? err.message : 'Não foi possível adicionar o comentário. Tente novamente.', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -644,12 +623,11 @@ const CommentsSection = ({ matchId }: { matchId: string }) => {
     if (!confirm('Tem a certeza que deseja eliminar este comentário?')) return;
 
     try {
-      setError('');
       await matchesApi.deleteComment(matchId, commentId);
       setComments(comments.filter(c => c.id !== commentId));
     } catch (err) {
       console.error('Error deleting comment:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao eliminar comentário');
+      notify(err instanceof Error ? err.message : 'Não foi possível eliminar o comentário. Tente novamente.', 'error');
     }
   };
 
@@ -667,12 +645,6 @@ const CommentsSection = ({ matchId }: { matchId: string }) => {
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <h3 className="text-xl font-bold text-gray-800 mb-4">Comentários</h3>
-
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm">
-          {error}
-        </div>
-      )}
 
       <div className="mb-6">
         <textarea
@@ -785,7 +757,7 @@ const JogoDetails = () => {
 
   const [match, setMatch] = useState<MatchDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { notify } = useNotification();
   const [saving, setSaving] = useState(false);
 
   // Edit mode state
@@ -804,7 +776,6 @@ const JogoDetails = () => {
 
     try {
       setLoading(true);
-      setError('');
       const matchData = await matchesApi.getById(id);
       setMatch(matchData);
 
@@ -816,7 +787,7 @@ const JogoDetails = () => {
       });
     } catch (err) {
       console.error('Error loading match:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao carregar dados do jogo');
+      notify(err instanceof Error ? err.message : 'Não foi possível carregar os dados do jogo. Tente recarregar a página.', 'error');
     } finally {
       setLoading(false);
     }
@@ -843,18 +814,17 @@ const JogoDetails = () => {
     if (!match) return;
 
     if (!formData.location.trim()) {
-      setError('O local é obrigatório');
+      notify('O local é obrigatório', 'error');
       return;
     }
 
     if (!formData.startTime.trim()) {
-      setError('A data e hora são obrigatórias');
+      notify('A data e hora são obrigatórias', 'error');
       return;
     }
 
     try {
       setSaving(true);
-      setError('');
 
       const updateData: MatchUpdate = {
         location: formData.location.trim(),
@@ -874,7 +844,7 @@ const JogoDetails = () => {
       });
     } catch (err) {
       console.error('Error updating match:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao atualizar jogo');
+      notify(err instanceof Error ? err.message : 'Não foi possível guardar as alterações ao jogo. Tente novamente.', 'error');
     } finally {
       setSaving(false);
     }
@@ -889,19 +859,17 @@ const JogoDetails = () => {
       status: match.status,
     });
     setIsEditingInfo(false);
-    setError('');
   };
 
   const handleDelete = async () => {
     if (!match) return;
 
     try {
-      setError('');
       await matchesApi.delete(match.id);
       navigate(`/geral/torneios/${match.tournament_id}`);
     } catch (err) {
       console.error('Error deleting match:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao eliminar jogo');
+      notify(err instanceof Error ? err.message : 'Não foi possível eliminar o jogo. Poderá ter resultados ou convocatórias registadas.', 'error');
       setShowDeleteModal(false);
     }
   };
@@ -910,7 +878,6 @@ const JogoDetails = () => {
     if (!match) return;
 
     try {
-        setError('');
         const blob = await matchesApi.getMatchSheet(match.id);
         const url = window.URL.createObjectURL(blob);
         window.open(url, '_blank');
@@ -918,7 +885,7 @@ const JogoDetails = () => {
         setTimeout(() => window.URL.revokeObjectURL(url), 10000);
     } catch (err) {
         console.error('Error downloading match sheet:', err);
-        setError(err instanceof Error ? err.message : 'Erro ao descarregar ficha de jogo');
+        notify(err instanceof Error ? err.message : 'Não foi possível descarregar a ficha de jogo. Tente novamente.', 'error');
     }
   };
 
@@ -973,15 +940,6 @@ const JogoDetails = () => {
           </svg>
           Voltar
         </button>
-
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-md flex items-start">
-            <svg className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-            <span>{error}</span>
-          </div>
-        )}
 
         <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
           <MatchHeader match={match} />

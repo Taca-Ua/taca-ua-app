@@ -4,6 +4,7 @@ import Sidebar from '../../components/geral_navbar';
 import { administratorsApi, type AdminDetails } from '../../api/administrators';
 import { nucleosApi, type Nucleo } from '../../api/nucleos';
 import { coursesApi, type Course } from '../../api/courses';
+import { useNotification } from '../../contexts/NotificationProvider';
 
 function AdminDetail() {
   const { id } = useParams();
@@ -12,7 +13,7 @@ function AdminDetail() {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [member, setMember] = useState<AdminDetails | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { notify } = useNotification();
 
   const [editedUserName, setEditedUserName] = useState('');
   const [editedFirstName, setEditedFirstName] = useState('');
@@ -39,10 +40,9 @@ function AdminDetail() {
           const nucleoIds = new Set(adminData.nucleos.map((n: Nucleo) => n.id));
           setAdminCourses(allCourses.filter(c => nucleoIds.has(c.nucleo.id)));
         }
-        setError('');
       } catch (err) {
         console.error('Failed to fetch administrator:', err);
-        setError('Erro ao carregar administrador');
+        notify('Não foi possível carregar os dados do administrador. Tente recarregar a página.', 'error');
         navigate('/geral/administradores');
       } finally {
         setLoading(false);
@@ -62,7 +62,6 @@ function AdminDetail() {
     setEditedEmail(member.email);
     setEditedEnabled(member.enabled);
     setEditedNucleos(member.nucleos.map(n => n.id));
-    setError('');
     // Fetch all nucleos for the selector
     nucleosApi.getAll().then(setAllNucleos).catch(console.error);
     setIsModalOpen(true);
@@ -71,15 +70,15 @@ function AdminDetail() {
   const handleSave = async () => {
     if (!member) return;
     if (!editedEmail.trim()) {
-      setError('Email é obrigatório');
+      notify('Email é obrigatório', 'error');
       return;
     }
     if (!editedFirstName.trim()) {
-      setError('Primeiro nome é obrigatório');
+      notify('Primeiro nome é obrigatório', 'error');
       return;
     }
     if (!editedLastName.trim()) {
-      setError('Último nome é obrigatório');
+      notify('Último nome é obrigatório', 'error');
       return;
     }
 
@@ -100,25 +99,24 @@ function AdminDetail() {
         const nucleoIds = new Set(refreshed.nucleos.map(n => n.id));
         setAdminCourses(allCourses.filter(c => nucleoIds.has(c.nucleo.id)));
       }
-      setError('');
       setIsModalOpen(false);
     } catch (err) {
       console.error('Failed to update administrator:', err);
-      setError('Erro ao atualizar administrador');
+      notify('Não foi possível guardar as alterações ao administrador. Verifique os dados e tente novamente.', 'error');
     }
   };
 
   const handleChangePassword = async () => {
     if (!newPassword.trim()) {
-      setError('Password é obrigatória');
+      notify('Password é obrigatória', 'error');
       return;
     }
     if (!confirmNewPassword.trim()) {
-      setError('Confirmação de password é obrigatória');
+      notify('Confirmação de password é obrigatória', 'error');
       return;
     }
     if (newPassword !== confirmNewPassword) {
-      setError('As passwords não coincidem');
+      notify('As passwords não coincidem', 'error');
       return;
     }
 
@@ -131,12 +129,11 @@ function AdminDetail() {
       setConfirmNewPassword('');
       setShowNewPassword(false);
       setShowConfirmNewPassword(false);
-      setError('');
       setIsPasswordModalOpen(false);
-      alert('Password alterada com sucesso!');
+      notify('Password alterada com sucesso!', 'success');
     } catch (err) {
       console.error('Failed to change password:', err);
-      setError('Erro ao alterar password');
+      notify('Não foi possível alterar a password. Certifique-se que a password atual está correta.', 'error');
     }
   };
 
@@ -147,7 +144,7 @@ function AdminDetail() {
         navigate('/geral/administradores');
       } catch (err) {
         console.error('Failed to delete administrator:', err);
-        setError('Erro ao eliminar administrador');
+        notify('Não foi possível eliminar o administrador. Tente novamente.', 'error');
       }
     }
   };
@@ -260,12 +257,6 @@ function AdminDetail() {
           <div className="bg-white rounded-lg p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Editar Administrador</h2>
 
-            {error && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-                {error}
-              </div>
-            )}
-
             <div className="overflow-y-auto flex-1 pr-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -377,7 +368,6 @@ function AdminDetail() {
               <button
                 onClick={() => {
                   setIsModalOpen(false);
-                  setError('');
                 }}
                 className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md"
               >
@@ -398,12 +388,6 @@ function AdminDetail() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Alterar Password</h2>
-
-            {error && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-                {error}
-              </div>
-            )}
 
             <div className="space-y-4">
               <div>
@@ -454,7 +438,6 @@ function AdminDetail() {
                   setConfirmNewPassword('');
                   setShowNewPassword(false);
                   setShowConfirmNewPassword(false);
-                  setError('');
                 }}
                 className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md"
               >

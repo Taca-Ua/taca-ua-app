@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
+import { useNotification } from '../../contexts/NotificationProvider';
 import { coursesApi, type Course } from '../../api/courses';
 import { nucleosApi, type Nucleo } from '../../api/nucleos';
 
@@ -37,7 +38,7 @@ const Cursos = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [nucleos, setNucleos] = useState<Nucleo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { notify } = useNotification();
   const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch courses on mount
@@ -47,10 +48,9 @@ const Cursos = () => {
         setLoading(true);
         const data = await coursesApi.getAll();
         setCourses(data);
-        setError('');
       } catch (err) {
         console.error('Failed to fetch courses:', err);
-        setError('Erro ao carregar cursos');
+        notify('Não foi possível carregar a lista de cursos. Tente recarregar a página.', 'error');
       } finally {
         setLoading(false);
       }
@@ -75,17 +75,17 @@ const Cursos = () => {
 
   const handleAddCourse = async () => {
     if (!newCourseName.trim()) {
-      setError('Por favor, preencha o nome do curso.');
+      notify('Por favor, preencha o nome do curso.', 'error');
       return;
     }
 
     if (!newCourseAbbreviation.trim()) {
-      setError('Por favor, preencha a abreviatura do curso.');
+      notify('Por favor, preencha a abreviatura do curso.', 'error');
       return;
     }
 
     if (!selectedNucleoId) {
-      setError('Por favor, selecione um núcleo.');
+      notify('Por favor, selecione um núcleo.', 'error');
       return;
     }
 
@@ -97,7 +97,6 @@ const Cursos = () => {
       });
 
       setCourses([...courses, newCourse]);
-      setError('');
 
       // Reset
       setNewCourseName('');
@@ -106,7 +105,7 @@ const Cursos = () => {
       setIsModalOpen(false);
     } catch (err) {
       console.error('Failed to create course:', err);
-      setError('Erro ao criar curso');
+      notify('Não foi possível criar o curso. Verifique os dados e tente novamente.', 'error');
     }
   };
 
@@ -175,12 +174,6 @@ const Cursos = () => {
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Adicionar Curso</h2>
 
-            {error && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-                {error}
-              </div>
-            )}
-
             <div className="space-y-4">
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
@@ -234,7 +227,6 @@ const Cursos = () => {
                   setNewCourseName('');
                   setNewCourseAbbreviation('');
                   setSelectedNucleoId('');
-                  setError('');
                 }}
                 className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
               >

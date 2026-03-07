@@ -5,13 +5,14 @@ import { matchesApi } from '../../api/matches';
 import type { Match } from '../../api/matches';
 import { tournamentsApi } from '../../api/tournaments';
 import type { Tournament } from '../../api/tournaments';
+import { useNotification } from '../../contexts/NotificationProvider';
 
 const Jogos = () => {
   const navigate = useNavigate();
   const [matches, setMatches] = useState<Match[]>([]);
   const [tournamentMap, setTournamentMap] = useState<Record<string, Tournament>>({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { notify } = useNotification();
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -21,7 +22,6 @@ const Jogos = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        setError(null);
         const [fetchedMatches, fetchedTournaments] = await Promise.all([
           matchesApi.getAll(),
           tournamentsApi.getAll(),
@@ -32,7 +32,7 @@ const Jogos = () => {
         setTournamentMap(map);
       } catch (err) {
         console.error('Failed to fetch data:', err);
-        setError('Erro ao carregar jogos. Por favor, tente novamente.');
+        notify('Não foi possível carregar os jogos do núcleo. Tente recarregar a página.', 'error');
       } finally {
         setLoading(false);
       }
@@ -148,13 +148,7 @@ const Jogos = () => {
             </div>
           )}
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-6">
-              {error}
-            </div>
-          )}
-
-          {!loading && !error && (
+          {!loading && (
             <>
               {viewMode === 'list' && (
                 <div className="bg-white rounded-lg shadow-md p-6">

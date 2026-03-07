@@ -8,6 +8,7 @@ import {
   type Staff,
 } from '../../api/members';
 import { coursesApi, type Course } from '../../api/courses';
+import { useNotification } from '../../contexts/NotificationProvider';
 
 type CombinedMember =
   | { memberType: 'participant'; data: Student }
@@ -28,7 +29,7 @@ function Membros() {
   const [members, setMembers] = useState<CombinedMember[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { notify } = useNotification();
   const [filterType, setFilterType] = useState<'all' | 'participant' | 'staff'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -37,7 +38,6 @@ function Membros() {
     const fetchMembers = async () => {
       try {
         setLoading(true);
-        setError(null);
 
         const [participants, staff] = await Promise.all([
           studentsApi.getAll(),
@@ -53,7 +53,7 @@ function Membros() {
         setMembers(unifiedMembers);
       } catch (err) {
         console.error('Failed to fetch members:', err);
-        setError('Erro ao carregar membros. Por favor, tente novamente.');
+        notify('Não foi possível carregar os membros do núcleo. Tente recarregar a página.', 'error');
       } finally {
         setLoading(false);
       }
@@ -87,7 +87,7 @@ function Membros() {
   const handleAddMember = async () => {
     // Validation: Name is required
     if (!memberName.trim()) {
-      alert('Por favor, preencha o nome.');
+      notify('Por favor, preencha o nome.', 'error');
       return;
     }
 
@@ -95,11 +95,11 @@ function Membros() {
       if (memberType === 'participant') {
         // Validate participant fields
         if (!studentNumber.trim()) {
-          alert('Por favor, preencha o número de estudante.');
+          notify('Por favor, preencha o número de estudante.', 'error');
           return;
         }
         if (!courseId.trim()) {
-          alert('Por favor, preencha o curso.');
+          notify('Por favor, preencha o curso.', 'error');
           return;
         }
 
@@ -120,13 +120,13 @@ function Membros() {
 
         if (identifierType === 'contact') {
           if (!contact.trim()) {
-            alert('Por favor, preencha o contacto.');
+            notify('Por favor, preencha o contacto.', 'error');
             return;
           }
           staffData.contact = contact;
         } else {
           if (!staffNumber.trim()) {
-            alert('Por favor, preencha o número de staff.');
+            notify('Por favor, preencha o número de staff.', 'error');
             return;
           }
           staffData.staff_number = staffNumber;
@@ -149,7 +149,7 @@ function Membros() {
       setIsModalOpen(false);
     } catch (err) {
       console.error('Failed to create member:', err);
-      alert('Erro ao adicionar membro. Por favor, tente novamente.');
+      notify('Não foi possível adicionar o membro. O número de estudante ou contacto podem já estar em uso.', 'error');
     }
   };
 
@@ -216,13 +216,7 @@ function Membros() {
             </div>
           )}
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-6">
-              {error}
-            </div>
-          )}
-
-          {!loading && !error && (
+          {!loading && (
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-2xl font-bold mb-6 text-gray-800">
                 Membros

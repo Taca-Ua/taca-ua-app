@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
+import { useNotification } from '../../contexts/NotificationProvider';
 import { tournamentsApi, type TournamentDetail, type TournamentUpdate, type TournamentCompetitor, type TournamentCompetitorDetail, type TournamentFinish } from '../../api/tournaments';
 import { teamsApi, type Team } from '../../api/teams';
 import { matchesApi, type Match, type MatchCreate, type ParticipantCreate } from '../../api/matches';
@@ -128,12 +129,12 @@ const EditTournamentModal = ({
   const [startDate, setStartDate] = useState(
     tournament.start_date ? tournament.start_date.split('T')[0] : ''
   );
-  const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const { notify } = useNotification();
 
   const handleSubmit = async () => {
     if (!name.trim()) {
-      setError('Nome é obrigatório');
+      notify('Nome é obrigatório', 'error');
       return;
     }
 
@@ -145,7 +146,7 @@ const EditTournamentModal = ({
       });
       onClose();
     } catch (err) {
-      setError('Erro ao atualizar torneio');
+      notify('Não foi possível guardar as alterações ao torneio. Tente novamente.', 'error');
     } finally {
       setSaving(false);
     }
@@ -155,12 +156,6 @@ const EditTournamentModal = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">Editar Torneio</h2>
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-            {error}
-          </div>
-        )}
 
         <div className="space-y-4">
           <div>
@@ -223,7 +218,7 @@ const TournamentCompetitors = ({
   const [selectedTeamId, setSelectedTeamId] = useState('');
   const [selectedAthleteId, setSelectedAthleteId] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const { notify } = useNotification();
 
   useEffect(() => {
     loadAvailableTeams();
@@ -264,17 +259,16 @@ const TournamentCompetitors = ({
 
   const handleAddCompetitor = async () => {
     if (selectedCompetitorType === 'team' && !selectedTeamId) {
-      setError('Selecione uma equipa');
+      notify('Selecione uma equipa', 'error');
       return;
     }
     if (selectedCompetitorType === 'athlete' && !selectedAthleteId) {
-      setError('Selecione um atleta');
+      notify('Selecione um atleta', 'error');
       return;
     }
 
     try {
       setLoading(true);
-      setError('');
 
       const competitor: TournamentCompetitor = selectedCompetitorType === 'team'
         ? { competitor_type: 'team', team_id: selectedTeamId }
@@ -286,7 +280,7 @@ const TournamentCompetitors = ({
       setSelectedAthleteId('');
       onCompetitorsChange();
     } catch (err) {
-      setError('Erro ao adicionar competidor');
+      notify('Não foi possível adicionar o competidor. Poderá já estar inscrito neste torneio.', 'error');
     } finally {
       setLoading(false);
     }
@@ -300,7 +294,7 @@ const TournamentCompetitors = ({
       onCompetitorsChange();
     } catch (err) {
       console.error('Failed to remove competitor:', err);
-      alert('Erro ao remover competidor');
+      notify('Não foi possível remover o competidor do torneio. Tente novamente.', 'error');
     }
   };
 
@@ -313,7 +307,6 @@ const TournamentCompetitors = ({
         <button
           onClick={() => {
             setShowAddModal(true);
-            setError('');
             setSelectedTeamId('');
             setSelectedAthleteId('');
             setStudentSearchTerm('');
@@ -364,12 +357,6 @@ const TournamentCompetitors = ({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Adicionar Competidor</h2>
-
-            {error && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-                {error}
-              </div>
-            )}
 
             <div className="space-y-4 mb-6">
               <div>
@@ -484,7 +471,7 @@ const FinishTournamentModal = ({
 
   // Map position number to competitor ID
   const [positionAssignments, setPositionAssignments] = useState<Map<number, string>>(new Map());
-  const [error, setError] = useState('');
+  const { notify } = useNotification();
   const [finishing, setFinishing] = useState(false);
 
   const getCompetitorId = (competitor: TournamentCompetitorDetail): string => {
@@ -515,7 +502,6 @@ const FinishTournamentModal = ({
       newAssignments.set(position, competitorId);
     }
     setPositionAssignments(newAssignments);
-    setError('');
   };
 
   const getPositionLabel = (position: number): string => {
@@ -528,7 +514,7 @@ const FinishTournamentModal = ({
   const handleSubmit = async () => {
     // Validate that all positions are filled
     if (positionAssignments.size < numPositions) {
-      setError(`Por favor, atribua competidores a todas as ${numPositions} posições`);
+      notify(`Por favor, atribua competidores a todas as ${numPositions} posições`, 'error');
       return;
     }
 
@@ -536,13 +522,12 @@ const FinishTournamentModal = ({
     const competitorIds = Array.from(positionAssignments.values());
     const uniqueCompetitors = new Set(competitorIds);
     if (uniqueCompetitors.size !== competitorIds.length) {
-      setError('Cada competidor só pode ocupar uma posição');
+      notify('Cada competidor só pode ocupar uma posição', 'error');
       return;
     }
 
     try {
       setFinishing(true);
-      setError('');
 
       // Build ranking entries
       const ranking_entries: (TournamentCompetitor & { position: number })[] = [];
@@ -569,7 +554,7 @@ const FinishTournamentModal = ({
       await onFinish({ ranking_entries });
       onClose();
     } catch (err) {
-      setError('Erro ao finalizar torneio');
+      notify('Não foi possível finalizar o torneio. Certifique-se que todos os jogos foram concluídos.', 'error');
     } finally {
       setFinishing(false);
     }
@@ -586,12 +571,6 @@ const FinishTournamentModal = ({
         <p className="text-gray-600 mb-6">
           Atribua os competidores às posições finais do torneio (1º ao {numPositions}º lugar).
         </p>
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-            {error}
-          </div>
-        )}
 
         <div className="space-y-3 mb-6">
           {Array.from({ length: numPositions }, (_, i) => i + 1).map((position) => {
@@ -680,37 +659,36 @@ const TournamentMatches = ({
   const [location, setLocation] = useState('');
   const [startTime, setStartTime] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const { notify } = useNotification();
   const [matchStatusFilter, setMatchStatusFilter] = useState<string>('all');
 
   const handleCreateMatch = async () => {
     // Validate at least 2 participants
     const validParticipants = selectedParticipants.filter(p => p.trim() !== '');
     if (validParticipants.length < 2) {
-      setError('Selecione pelo menos 2 participantes');
+      notify('Selecione pelo menos 2 participantes', 'error');
       return;
     }
 
     // Check for duplicates
     const uniqueParticipants = new Set(validParticipants);
     if (uniqueParticipants.size !== validParticipants.length) {
-      setError('Os participantes devem ser diferentes');
+      notify('Os participantes devem ser diferentes', 'error');
       return;
     }
 
     if (!location.trim()) {
-      setError('Local é obrigatório');
+      notify('Local é obrigatório', 'error');
       return;
     }
 
     if (!startTime) {
-      setError('Data e hora são obrigatórias');
+      notify('Data e hora são obrigatórias', 'error');
       return;
     }
 
     try {
       setLoading(true);
-      setError('');
 
       // Map selected IDs to ParticipantCreate objects, detecting the type from tournament.competitors
       const participants: ParticipantCreate[] = validParticipants.map(competitorId => {
@@ -744,7 +722,7 @@ const TournamentMatches = ({
       resetForm();
       onMatchesChange();
     } catch (err) {
-      setError('Erro ao criar jogo');
+      notify('Não foi possível criar o jogo. Verifique os dados e tente novamente.', 'error');
     } finally {
       setLoading(false);
     }
@@ -754,7 +732,6 @@ const TournamentMatches = ({
     setSelectedParticipants(['', '']);
     setLocation('');
     setStartTime('');
-    setError('');
   };
 
   const addParticipantSlot = () => {
@@ -781,7 +758,7 @@ const TournamentMatches = ({
       onMatchDeleted(matchId);
     } catch (err) {
       console.error('Failed to delete match:', err);
-      alert('Erro ao eliminar jogo');
+      notify('Não foi possível eliminar o jogo. Poderá ter resultados ou convocatórias registadas.', 'error');
     }
   };
 
@@ -915,12 +892,6 @@ const TournamentMatches = ({
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Criar Jogo</h2>
 
-            {error && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-                {error}
-              </div>
-            )}
-
             <div className="space-y-4">
               <div>
                 <div className="flex justify-between items-center mb-2">
@@ -1034,6 +1005,7 @@ const TorneioDetails = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showFinishModal, setShowFinishModal] = useState(false);
   const [activating, setActivating] = useState(false);
+  const { notify } = useNotification();
 
   useEffect(() => {
     loadTournament();
@@ -1048,7 +1020,7 @@ const TorneioDetails = () => {
       setTournament(data);
     } catch (err) {
       console.error('Failed to fetch tournament:', err);
-      alert('Erro ao carregar torneio');
+      notify('Não foi possível carregar os dados do torneio. Tente recarregar a página.', 'error');
       navigate('/geral/torneios');
     } finally {
       setLoading(false);
@@ -1072,7 +1044,7 @@ const TorneioDetails = () => {
         setTournament(updated);
       } catch (err) {
         console.error('Failed to activate tournament:', err);
-        alert('Erro ao ativar torneio');
+        notify('Não foi possível ativar o torneio. Verifique se estão reunidas as condições necessárias.', 'error');
       } finally {
         setActivating(false);
       }
@@ -1088,7 +1060,7 @@ const TorneioDetails = () => {
         navigate('/geral/torneios');
       } catch (err) {
         console.error('Failed to delete tournament:', err);
-        alert('Erro ao eliminar torneio');
+        notify('Não foi possível eliminar o torneio. Poderá ter jogos ou competidores associados.', 'error');
       }
     }
   };

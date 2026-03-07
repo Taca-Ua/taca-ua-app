@@ -7,11 +7,13 @@ import { tournamentsApi } from '../../api/tournaments';
 import { seasonsApi, type Season } from '../../api/seasons';
 import { nucleosApi } from '../../api/nucleos';
 import { useAuth } from '../../hooks/useAuth';
+import { useNotification } from '../../contexts/NotificationProvider';
 
 function DashboardGeral() {
   const navigate = useNavigate();
   // username is used in the welcome greeting below
   const { username } = useAuth();
+  const { notify } = useNotification();
   const [stats, setStats] = useState({
     modalities: 0,
     courses: 0,
@@ -83,10 +85,10 @@ function DashboardGeral() {
       setDraftSeason(draft);
       setShowStartModal(false);
 
-      alert('Época iniciada com sucesso!');
+      notify('Época iniciada com sucesso!', 'success');
     } catch (err) {
       console.error('Failed to start season:', err);
-      alert('Erro ao iniciar época');
+      notify('Não foi possível iniciar a época. Certifique-se que não existe já uma época ativa.', 'error');
     } finally {
       setSeasonLoading(false);
     }
@@ -108,10 +110,10 @@ function DashboardGeral() {
       setDraftSeason(draft);
       setShowFinishModal(false);
 
-      alert('Época finalizada com sucesso!');
+      notify('Época finalizada com sucesso!', 'success');
     } catch (err) {
       console.error('Failed to finish season:', err);
-      alert('Erro ao finalizar época');
+      notify('Não foi possível finalizar a época. Confirme que todos os torneios foram concluídos.', 'error');
     } finally {
       setSeasonLoading(false);
     }
@@ -135,7 +137,6 @@ function DashboardGeral() {
             <>
               <div className="bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 rounded-lg shadow-lg p-6 mb-8">
                 <div className="flex items-start gap-4">
-                  <div className="text-4xl">🗓️</div>
                   <div className="flex-1">
                     <h2 className="text-2xl font-bold mb-2 text-gray-800">Gestão de Época</h2>
                     {currentSeason ? (
@@ -151,10 +152,10 @@ function DashboardGeral() {
                           onClick={() => setShowFinishModal(true)}
                           className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md font-bold transition-colors"
                         >
-                          🏁 Finalizar Época {currentSeason.year}
+                          Finalizar Época {currentSeason.year}
                         </button>
                         <p className="text-sm text-gray-600 mt-2">
-                          ⚠️ Esta ação irá encerrar a época atual e não pode ser revertida!
+                          Esta ação irá encerrar a época atual e não pode ser revertida!
                         </p>
                       </div>
                     ) : draftSeason ? (
@@ -167,16 +168,16 @@ function DashboardGeral() {
                           onClick={() => setShowStartModal(true)}
                           className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-md font-bold transition-colors"
                         >
-                          ▶️ Iniciar Época {draftSeason.year}
+                          Iniciar Época {draftSeason.year}
                         </button>
                         <p className="text-sm text-gray-600 mt-2">
-                          ⚠️ Certifique-se de que tudo está configurado antes de iniciar a época!
+                          Certifique-se de que tudo está configurado antes de iniciar a época!
                         </p>
                       </div>
                     ) : (
                       <div>
                         <p className="text-lg mb-4 text-red-700 font-semibold">
-                          ⚠️ Nenhuma época disponível! Crie uma nova época primeiro.
+                          Nenhuma época disponível! Crie uma nova época primeiro.
                         </p>
                       </div>
                     )}
@@ -227,7 +228,7 @@ function DashboardGeral() {
       {showStartModal && draftSeason && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-lg max-w-md w-full">
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">⚠️ Confirmar Início de Época</h2>
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Confirmar Início de Época</h2>
             <div className="mb-6 space-y-3">
               <p className="text-gray-700">
                 Tem certeza que deseja <span className="font-bold">iniciar a época {draftSeason.year}</span>?
@@ -265,7 +266,7 @@ function DashboardGeral() {
                   if (input?.value === 'INICIAR') {
                     handleStartSeason();
                   } else {
-                    alert('Por favor, digite "INICIAR" para confirmar');
+                    notify('Por favor, digite "INICIAR" para confirmar', 'error');
                   }
                 }}
                 disabled={seasonLoading}
@@ -281,13 +282,13 @@ function DashboardGeral() {
       {showFinishModal && currentSeason && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-lg max-w-md w-full">
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">⚠️ Confirmar Finalização de Época</h2>
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Confirmar Finalização de Época</h2>
             <div className="mb-6 space-y-3">
               <p className="text-gray-700">
                 Tem certeza que deseja <span className="font-bold text-red-600">finalizar a época {currentSeason.year}</span>?
               </p>
               <div className="bg-red-50 border-l-4 border-red-500 p-4">
-                <p className="text-sm text-red-800 font-semibold mb-2">⚠️ ATENÇÃO - AÇÃO IRREVERSÍVEL:</p>
+                <p className="text-sm text-red-800 font-semibold mb-2">ATENÇÃO - AÇÃO IRREVERSÍVEL:</p>
                 <ul className="text-sm text-red-700 space-y-1 list-disc list-inside">
                   <li><strong>Esta ação NÃO pode ser revertida!</strong></li>
                   <li>A época será marcada como <strong>FINALIZADA</strong></li>
@@ -320,7 +321,7 @@ function DashboardGeral() {
                   if (input?.value === 'FINALIZAR') {
                     handleFinishSeason();
                   } else {
-                    alert('Por favor, digite "FINALIZAR" para confirmar');
+                    notify('Por favor, digite "FINALIZAR" para confirmar', 'error');
                   }
                 }}
                 disabled={seasonLoading}
