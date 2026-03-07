@@ -15,6 +15,24 @@ from pydantic import BaseModel
 T = TypeVar("T", bound="EventSchema")
 
 
+def _event_type_to_attr(event_type_str: str) -> tuple[str, str]:
+    """
+    Derive the ``EventType`` attribute name and routing key from an event-type string.
+
+    Example: ``'match.participant.added.v1'``
+    → attr ``'MATCH_PARTICIPANT_ADDED'``, routing_key ``'match.participant.added'``
+    """
+    parts = event_type_str.split(".")
+    # Strip trailing version token (e.g. "v1", "v2")
+    if parts and parts[-1].startswith("v") and parts[-1][1:].isdigit():
+        name_parts = parts[:-1]
+    else:
+        name_parts = parts
+    attr = "_".join(name_parts).upper()
+    routing_key = ".".join(name_parts)
+    return attr, routing_key
+
+
 class EventSchema(BaseModel):
     """
     Base class for all typed event schemas.
@@ -50,6 +68,36 @@ class EventSchema(BaseModel):
     """
 
     data: Any  # Overridden by concrete subclasses
+
+    # ------------------------------------------------------------------ #
+    # Auto-registration
+    # ------------------------------------------------------------------ #
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        """
+        Auto-populate :class:`~taca_events.types.EventType` and
+        :class:`~taca_events.types.RoutingKeys` when a concrete
+        ``EventSchema`` subclass is defined.
+
+        This removes the need to manually maintain the string catalogs in
+        ``types.py`` — the Pydantic schema class itself is the single source
+        of truth for its event-type string.
+        """
+        super().__init_subclass__(**kwargs)
+        try:
+            event_str = cls.event_type()
+        except NotImplementedError:
+            return  # Base class or intermediate abstract subclass — skip
+
+        attr, routing_key = _event_type_to_attr(event_str)
+        rk_attr = routing_key.upper().replace(".", "_")
+
+        # Deferred import to avoid circular dependency
+        # (types.py has no dependency on pydantic_schemas)
+        from taca_events.types import EventType, RoutingKeys
+
+        setattr(EventType, attr, event_str)
+        setattr(RoutingKeys, rk_attr, routing_key)
 
     # ------------------------------------------------------------------ #
     # Class-level metadata (override in subclasses)
