@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Sidebar from "../../components/geral_navbar";
 import { modalityTypesApi, type ModalityType } from "../../api/modality-types";
+import { useNotification } from '../../contexts/NotificationProvider';
 
 // Types for the scoring format structure
 interface EscalaoRow {
@@ -14,7 +15,7 @@ interface EscalaoRow {
 const FormatosPontuacao = () => {
   const [scoringFormats, setModalityTypes] = useState<ModalityType[]>([]);
   const [loading] = useState(false);
-  const [error, setError] = useState('');
+  const { notify } = useNotification();
 
   // Modal states
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -40,7 +41,7 @@ useEffect(() => {
 		} catch (err) {
 			console.error('Failed to fetch scoring formats:', err);
 			if (!mounted) return;
-			setError('Erro ao carregar formatos de prova');
+			notify('Não foi possível carregar os formatos de prova. Tente recarregar a página.', 'error');
 		}
 	})();
 
@@ -76,29 +77,28 @@ useEffect(() => {
 
   const handleCreateFormat = async () => {
     if (!formatName.trim()) {
-      setError('Por favor, preencha o nome do formato.');
+      notify('Por favor, preencha o nome do formato.', 'error');
       return;
     }
 
     if (escaloes.length === 0) {
-      setError('Por favor, adicione pelo menos um escalão.');
+      notify('Por favor, adicione pelo menos um escalão.', 'error');
       return;
     }
 
     // Validate escaloes
     for (const esc of escaloes) {
       if (!esc.escalao.trim()) {
-        setError('Todos os escalões devem ter um nome.');
+        notify('Todos os escalões devem ter um nome.', 'error');
         return;
       }
       if (esc.points.length === 0) {
-        setError('Todos os escalões devem ter pontuações definidas.');
+        notify('Todos os escalões devem ter pontuações definidas.', 'error');
         return;
       }
     }
 
     try {
-      setError('');
 
     //   TODO: API call to create scoring format
       const newFormat = await modalityTypesApi.create({
@@ -124,7 +124,7 @@ useEffect(() => {
       setIsCreateModalOpen(false);
     } catch (err) {
       console.error('Failed to create scoring format:', err);
-      setError('Erro ao criar formato de prova');
+      notify('Não foi possível criar o formato de prova. Verifique os dados e tente novamente.', 'error');
     }
   };
 
@@ -144,29 +144,28 @@ useEffect(() => {
 
   const handleUpdateFormat = async () => {
     if (!formatName.trim()) {
-      setError('Por favor, preencha o nome do formato.');
+      notify('Por favor, preencha o nome do formato.', 'error');
       return;
     }
 
     if (escaloes.length === 0) {
-      setError('Por favor, adicione pelo menos um escalão.');
+      notify('Por favor, adicione pelo menos um escalão.', 'error');
       return;
     }
 
     // Validate escaloes
     for (const esc of escaloes) {
       if (!esc.escalao.trim()) {
-        setError('Todos os escalões devem ter um nome.');
+        notify('Todos os escalões devem ter um nome.', 'error');
         return;
       }
       if (esc.points.length === 0) {
-        setError('Todos os escalões devem ter pontuações definidas.');
+        notify('Todos os escalões devem ter pontuações definidas.', 'error');
         return;
       }
     }
 
     try {
-      setError('');
 
       // TODO: API call to update scoring format
       const updatedFormat = await modalityTypesApi.update(selectedFormat!.id, {
@@ -193,10 +192,10 @@ useEffect(() => {
       setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: [] }]);
       setSelectedFormat(null);
       setIsEditModalOpen(false);
-      alert('Formato de prova atualizado com sucesso!');
+      notify('Formato de prova atualizado com sucesso!', 'success');
     } catch (err) {
       console.error('Failed to update scoring format:', err);
-      setError('Erro ao atualizar formato de prova');
+      notify('Não foi possível guardar as alterações ao formato de prova. Tente novamente.', 'error');
     }
   };
 
@@ -208,7 +207,6 @@ useEffect(() => {
     }
 
     try {
-      setError('');
 
       // TODO: API call to delete scoring format
       await modalityTypesApi.delete(selectedFormat.id);
@@ -216,10 +214,10 @@ useEffect(() => {
       setModalityTypes(scoringFormats.filter(f => f.id !== selectedFormat.id));
       setIsViewModalOpen(false);
       setSelectedFormat(null);
-      alert('Formato de prova eliminado com sucesso!');
+      notify('Formato de prova eliminado com sucesso!', 'success');
     } catch (err) {
       console.error('Failed to delete scoring format:', err);
-      setError('Erro ao eliminar formato de prova');
+      notify('Não foi possível eliminar o formato de prova. Poderá estar em uso por alguma modalidade.', 'error');
     }
   };
 
@@ -246,12 +244,6 @@ useEffect(() => {
             + Adicionar Formato
           </button>
         </div>
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-            {error}
-          </div>
-        )}
 
         <div className="bg-white rounded-lg shadow p-6 space-y-4">
           {loading ? (
@@ -290,12 +282,6 @@ useEffect(() => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 overflow-y-auto">
           <div className="bg-white p-8 rounded-lg w-full max-w-4xl my-8">
             <h2 className="text-2xl font-bold mb-6">Criar Formato de Prova</h2>
-
-            {error && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-                {error}
-              </div>
-            )}
 
             <div className="space-y-6">
               <div>
@@ -416,7 +402,6 @@ useEffect(() => {
                   setFormatName('');
                   setFormatDescription('');
                   setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: [] }]);
-                  setError('');
                 }}
               >
                 Cancelar
@@ -536,12 +521,6 @@ useEffect(() => {
 		<div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 overflow-y-auto">
           <div className="bg-white p-8 rounded-lg w-full max-w-4xl my-8">
             <h2 className="text-2xl font-bold mb-6">Editar Formato de Prova</h2>
-
-            {error && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-                {error}
-              </div>
-            )}
 
             <div className="space-y-6">
               <div>
@@ -663,7 +642,6 @@ useEffect(() => {
                   setFormatDescription('');
                   setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: [] }]);
                   setSelectedFormat(null);
-                  setError('');
                 }}
               >
                 Cancelar

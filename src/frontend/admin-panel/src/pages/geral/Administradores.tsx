@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
 import { administratorsApi, type Admin } from '../../api/administrators';
 import { nucleosApi, type Nucleo } from '../../api/nucleos';
+import { useNotification } from '../../contexts/NotificationProvider';
 
 function Administradores() {
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ function Administradores() {
   const [allNucleos, setAllNucleos] = useState<Nucleo[]>([]);
   const [selectedNucleos, setSelectedNucleos] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { notify } = useNotification();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -34,10 +35,9 @@ function Administradores() {
         ]);
         setMembers(adminsData);
         setAllNucleos(nucleosData);
-        setError('');
       } catch (err) {
         console.error('Failed to fetch data:', err);
-        setError('Erro ao carregar dados');
+        notify('Não foi possível carregar a lista de administradores. Tente recarregar a página.', 'error');
       } finally {
         setLoading(false);
       }
@@ -51,31 +51,31 @@ function Administradores() {
 
   const handleAddMember = async () => {
     if (!memberUserName.trim()) {
-      setError('Username é obrigatório');
+      notify('Username é obrigatório', 'error');
       return;
     }
     if (!memberFirstName.trim()) {
-      setError('Primeiro nome é obrigatório');
+      notify('Primeiro nome é obrigatório', 'error');
       return;
     }
     if (!memberLastName.trim()) {
-      setError('Último nome é obrigatório');
+      notify('Último nome é obrigatório', 'error');
       return;
     }
     if (!email.trim()) {
-      setError('Email é obrigatório');
+      notify('Email é obrigatório', 'error');
       return;
     }
     if (!memberPassword.trim()) {
-      setError('Password é obrigatória');
+      notify('Password é obrigatória', 'error');
       return;
     }
     if (!confirmPassword.trim()) {
-      setError('Confirmação de password é obrigatória');
+      notify('Confirmação de password é obrigatória', 'error');
       return;
     }
     if (memberPassword !== confirmPassword) {
-      setError('As passwords não coincidem');
+      notify('As passwords não coincidem', 'error');
       return;
     }
 
@@ -102,11 +102,10 @@ function Administradores() {
       setEmail('');
       setSelectedNucleos([]);
       setNucleoSearch('');
-      setError('');
       setIsModalOpen(false);
     } catch (err) {
       console.error('Failed to create administrator:', err);
-      setError('Erro ao criar administrador');
+      notify('Não foi possível criar o administrador. Erro interno.', 'error');
     }
   };
 
@@ -341,12 +340,6 @@ function Administradores() {
               )}
             </div>
 
-            {error && (
-              <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-                {error}
-              </div>
-            )}
-
             <div className="flex gap-4 mt-6 flex-shrink-0">
               <button
                 onClick={() => {
@@ -362,7 +355,6 @@ function Administradores() {
                   setEmail('');
                   setSelectedNucleos([]);
                   setNucleoSearch('');
-                  setError('');
                 }}
                 className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
               >

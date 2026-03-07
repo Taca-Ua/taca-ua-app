@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
+import { useNotification } from '../../contexts/NotificationProvider';
 import { tournamentsApi, type Tournament, type TournamentCreate } from '../../api/tournaments';
 import { modalitiesApi, type Modality } from '../../api/modalities';
 
@@ -15,7 +16,7 @@ const TorneiosCreateModal = ({ isOpen, onClose, onCreate, modalities, setModalit
   const [name, setName] = useState('');
   const [modalityId, setModalityId] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const { notify } = useNotification();
 
   // Fetch modalities on first mount if not already loaded
   useEffect(() => {
@@ -37,7 +38,6 @@ const TorneiosCreateModal = ({ isOpen, onClose, onCreate, modalities, setModalit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
     try {
       const newTournament: TournamentCreate = {
         name,
@@ -49,7 +49,7 @@ const TorneiosCreateModal = ({ isOpen, onClose, onCreate, modalities, setModalit
       onClose();
     } catch (err) {
       console.error('Failed to create tournament:', err);
-      setError('Erro ao criar torneio');
+      notify('Não foi possível criar o torneio. Verifique os dados e tente novamente.', 'error');
     } finally {
       setLoading(false);
     }
@@ -61,11 +61,6 @@ const TorneiosCreateModal = ({ isOpen, onClose, onCreate, modalities, setModalit
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
       <div className="bg-white p-8 rounded-lg w-full max-w-lg">
         <h2 className="text-2xl font-bold mb-4">Criar Torneio</h2>
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-            {error}
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -121,7 +116,7 @@ const Torneios = () => {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { notify: notifyPage } = useNotification();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [modalities, setModalities] = useState<Modality[]>([]);  // lazy load modalities
@@ -135,10 +130,9 @@ const Torneios = () => {
           tournamentsApi.getAll(),
         ]);
         setTournaments(tournamentsData);
-        setError('');
       } catch (err) {
         console.error('Failed to fetch data:', err);
-        setError('Erro ao carregar dados');
+        notifyPage('Erro ao carregar dados', 'error');
       } finally {
         setLoading(false);
       }
@@ -163,12 +157,6 @@ const Torneios = () => {
             + Criar Torneio
           </button>
         </div>
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-            {error}
-          </div>
-        )}
 
         <div className="bg-white shadow-md rounded-lg p-6 space-y-3">
           {loading ? (

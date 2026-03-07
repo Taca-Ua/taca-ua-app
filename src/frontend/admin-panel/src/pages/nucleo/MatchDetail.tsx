@@ -10,6 +10,7 @@ import {
 } from '../../api/matches';
 import type { Team } from '../../api/teams';
 import { tournamentsApi, type Tournament } from '../../api/tournaments';
+import { useNotification } from '../../contexts/NotificationProvider';
 
 // ==================== Private Components ====================
 
@@ -378,7 +379,7 @@ const MatchDetail = () => {
   const [lineups, setLineups] = useState<LineupDetail[]>([]);
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { notify } = useNotification();
 
   // Modal state
   const [showLineupModal, setShowLineupModal] = useState(false);
@@ -393,7 +394,6 @@ const MatchDetail = () => {
 
     try {
       setLoading(true);
-      setError('');
 
       const [matchData, lineupsData] = await Promise.all([
         matchesApi.getById(id),
@@ -414,7 +414,7 @@ const MatchDetail = () => {
       }
     } catch (err) {
       console.error('Error loading match data:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao carregar dados do jogo');
+      notify(err instanceof Error ? err.message : 'Não foi possível carregar os dados do jogo. Tente recarregar a página.', 'error');
     } finally {
       setLoading(false);
     }
@@ -422,7 +422,7 @@ const MatchDetail = () => {
 
   const handleOpenLineupEditor = (participant: MatchDetailData['participants'][0]) => {
     if (!participant.team) {
-      alert('Este participante não é uma equipa.');
+      notify('Este participante não é uma equipa.', 'error');
       return;
     }
 
@@ -434,8 +434,6 @@ const MatchDetail = () => {
     if (!match || !editingParticipant?.team) return;
 
     try {
-      setError('');
-
       const lineupData: LineupAssign = {
         team_id: editingParticipant.team.id,
         players: players,
@@ -449,10 +447,10 @@ const MatchDetail = () => {
       const updatedLineups = await matchesApi.getLineups(match.id);
       setLineups(updatedLineups);
 
-      alert('Convocatória guardada com sucesso!');
+      notify('Convocatória guardada com sucesso!', 'success');
     } catch (err) {
       console.error('Error saving lineup:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao guardar convocatória');
+      notify(err instanceof Error ? err.message : 'Não foi possível guardar a convocatória. Verifique os dados e tente novamente.', 'error');
     }
   };
 
@@ -460,7 +458,6 @@ const handleDownloadMatchSheet = async () => {
     if (!match) return;
 
     try {
-        setError('');
         const blob = await matchesApi.getMatchSheet(match.id);
         const url = window.URL.createObjectURL(blob);
         window.open(url, '_blank');
@@ -468,7 +465,7 @@ const handleDownloadMatchSheet = async () => {
         setTimeout(() => window.URL.revokeObjectURL(url), 10000);
     } catch (err) {
         console.error('Error downloading match sheet:', err);
-        setError(err instanceof Error ? err.message : 'Erro ao descarregar ficha de jogo');
+        notify(err instanceof Error ? err.message : 'Não foi possível descarregar a ficha de jogo. Tente novamente.', 'error');
     }
 };
 
@@ -476,14 +473,13 @@ const handleDownloadMatchSheet = async () => {
     if (!match) return;
 
     try {
-        setError('');
         const blob = await matchesApi.getMatchTeamSheet(match.id, teamId);
         const url = window.URL.createObjectURL(blob);
         window.open(url, '_blank');
         setTimeout(() => window.URL.revokeObjectURL(url), 10000);
     } catch (err) {
         console.error('Error downloading team sheet:', err);
-        setError(err instanceof Error ? err.message : 'Erro ao descarregar ficha de equipa');
+        notify(err instanceof Error ? err.message : 'Não foi possível descarregar a ficha de equipa. Tente novamente.', 'error');
     }
   };
 
@@ -535,15 +531,6 @@ const handleDownloadMatchSheet = async () => {
             </svg>
             Voltar
           </button>
-
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-md flex items-start">
-              <svg className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-              <span>{error}</span>
-            </div>
-          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-1">

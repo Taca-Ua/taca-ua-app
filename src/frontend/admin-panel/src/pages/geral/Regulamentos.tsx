@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import Sidebar from "../../components/geral_navbar";
 import { regulationsApi, type Regulation, type RegulationCreate } from '../../api/regulations';
 import { modalitiesApi, type Modality } from '../../api/modalities';
+import { useNotification } from '../../contexts/NotificationProvider';
 
 const Regulamentos = () => {
   const [regulations, setRegulations] = useState<Regulation[]>([]);
   const [modalities, setModalities] = useState<Modality[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { notify } = useNotification();
   const [filterModality, setFilterModality] = useState("");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -32,10 +33,9 @@ const Regulamentos = () => {
       ]);
       setRegulations(regulationsData);
       setModalities(modalitiesData);
-      setError('');
     } catch (err) {
       console.error('Failed to fetch data:', err);
-      setError('Erro ao carregar dados');
+      notify('Não foi possível carregar os regulamentos. Tente recarregar a página.', 'error');
     } finally {
       setLoading(false);
     }
@@ -53,12 +53,11 @@ const Regulamentos = () => {
 
   const handleUpload = async () => {
     if (!title.trim() || !file) {
-      alert("Título e ficheiro são obrigatórios");
+      notify('Título e ficheiro são obrigatórios', 'error');
       return;
     }
 
     try {
-      setError('');
       const newRegulationData: RegulationCreate = {
         file,
         title,
@@ -78,9 +77,9 @@ const Regulamentos = () => {
     } catch (err: unknown) {
       console.error('Failed to upload regulation:', err);
       if (err instanceof Error) {
-        setError(err.message);
+        notify(err.message, 'error');
       } else {
-        setError('Erro ao fazer upload do regulamento');
+        notify('Não foi possível fazer o upload. Verifique o ficheiro (formato e tamanho) e tente novamente.', 'error');
       }
     }
   };
@@ -98,18 +97,17 @@ const Regulamentos = () => {
     }
 
     try {
-      setError('');
       await regulationsApi.delete(selectedRegulation.id);
       setRegulations(regulations.filter(r => r.id !== selectedRegulation.id));
       setIsViewModalOpen(false);
       setSelectedRegulation(null);
-      alert('Regulamento eliminado com sucesso!');
+      notify('Regulamento eliminado com sucesso!', 'success');
     } catch (err: unknown) {
       console.error('Failed to delete regulation:', err);
       if (err instanceof Error) {
-        setError(err.message);
+        notify(err.message, 'error');
       } else {
-        setError('Erro ao eliminar regulamento');
+        notify('Não foi possível eliminar o regulamento. Tente novamente.', 'error');
       }
     }
   };
@@ -129,12 +127,6 @@ const Regulamentos = () => {
             + Adicionar Regulamento
           </button>
         </div>
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-            {error}
-          </div>
-        )}
 
         <div className="flex gap-6 mb-6">
           <div>

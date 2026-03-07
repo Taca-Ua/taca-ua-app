@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import NucleoSidebar from '../../components/nucleo_navbar';
 import { teamsApi, type TeamDetail } from '../../api/teams';
 import { studentsApi, type Student } from '../../api/members';
+import { useNotification } from '../../contexts/NotificationProvider';
 
 const TeamDetailsEditModal = ({
   team,
@@ -14,17 +15,15 @@ const TeamDetailsEditModal = ({
   onClose: () => void;
 }) => {
   const [editedName, setEditedName] = useState(team.name);
-
-  const [error, setError] = useState<string | null>(null);
+  const { notify } = useNotification();
 
   const handleSave = async () => {
     if (!editedName.trim()) {
-      alert('Por favor, preencha o nome da equipa.');
+      notify('Por favor, preencha o nome da equipa.', 'error');
       return;
     }
 
     try {
-      setError(null);
       const teamData = await teamsApi.update(team.id, {
         name: editedName,
       });
@@ -37,7 +36,7 @@ const TeamDetailsEditModal = ({
       onClose();
     } catch (err) {
       console.error('Error updating team:', err);
-      setError('Erro ao atualizar equipa');
+      notify('Não foi possível guardar as alterações à equipa. Tente novamente.', 'error');
     }
   };
 
@@ -45,12 +44,6 @@ const TeamDetailsEditModal = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
       <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">Editar Equipa</h2>
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
-            {error}
-          </div>
-        )}
 
         <div className="space-y-4">
           <div>
@@ -239,7 +232,7 @@ const TeamDetailPage = () => {
   const navigate = useNavigate();
   const [team, setTeam] = useState<TeamDetail>();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { notify } = useNotification();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -249,7 +242,6 @@ const TeamDetailPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        setError(null);
 
         const [teamData] = await Promise.all([
           teamsApi.get(id!),
@@ -258,7 +250,7 @@ const TeamDetailPage = () => {
         const foundTeam = teamData;
 
         if (!foundTeam) {
-          setError('Equipa não encontrada');
+          notify('Equipa não encontrada', 'error');
           setTimeout(() => navigate('/nucleo/equipas'), 2000);
           return;
         }
@@ -266,7 +258,7 @@ const TeamDetailPage = () => {
         setTeam(foundTeam);
       } catch (err) {
         console.error('Error fetching data:', err);
-        setError('Erro ao carregar dados');
+        notify('Não foi possível carregar os dados da equipa. Tente recarregar a página.', 'error');
       } finally {
         setLoading(false);
       }
@@ -288,19 +280,8 @@ const TeamDetailPage = () => {
     );
   }
 
-  if (error || !team) {
-    return (
-      <div className="flex min-h-screen bg-gray-50">
-        <NucleoSidebar />
-        <div className="flex-1 p-8">
-          <div className="max-w-7xl mx-auto">
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error || 'Equipa não encontrada'}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+  if (!team) {
+    return null;
   }
 
   const handleEdit = () => {
@@ -313,26 +294,24 @@ const TeamDetailPage = () => {
 
   const confirmDelete = async () => {
     try {
-      setError(null);
       await teamsApi.delete(team.id);
       navigate('/nucleo/equipas');
     } catch (err) {
       console.error('Error deleting team:', err);
-      setError('Erro ao eliminar equipa');
+      notify('Não foi possível eliminar a equipa. Poderá ter jogos associados.', 'error');
       setDeleteConfirmOpen(false);
     }
   };
 
   const handleRemoveMember = async (memberId: string) => {
     try {
-      setError(null);
       const newTeam = await teamsApi.update(team.id, {
         players_remove: [memberId],
       });
       setTeam(newTeam);
     } catch (err) {
       console.error('Error removing member from team:', err);
-      setError('Erro ao remover membro da equipa');
+      notify('Não foi possível remover o membro da equipa. Tente novamente.', 'error');
     }
   };
 
@@ -342,12 +321,6 @@ const TeamDetailPage = () => {
 
       <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
-              {error}
-            </div>
-          )}
-
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div>
               <div className="flex justify-center mb-8">

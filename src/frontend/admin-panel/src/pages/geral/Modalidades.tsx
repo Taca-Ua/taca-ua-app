@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/geral_navbar";
+import { useNotification } from "../../contexts/NotificationProvider";
 import { modalitiesApi, type Modality } from "../../api/modalities";
 import { modalityTypesApi, type ModalityTypeMinimal } from "../../api/modality-types";
 
@@ -51,7 +52,7 @@ const CreateModalityModal = ({
 }) => {
   const [newModalityName, setNewModalityName] = useState("");
   const [modalityType, setModalityType] = useState("");
-  const [error, setError] = useState("");
+  const { notify } = useNotification();
 
   // Fetch modality types on mount if empty
   useEffect(() => {
@@ -71,12 +72,12 @@ const CreateModalityModal = ({
 
   const handleAddModality = async () => {
     if (!newModalityName.trim()) {
-      setError("Por favor, preencha o nome da modalidade.");
+      notify("Por favor, preencha o nome da modalidade.", 'error');
       return;
     }
 
     if (!modalityType) {
-      setError("Por favor, selecione o tipo.");
+      notify("Por favor, selecione o tipo.", 'error');
       return;
     }
 
@@ -87,7 +88,6 @@ const CreateModalityModal = ({
       });
 
       addModality(newModality);
-      setError("");
 
       // Reset
       setNewModalityName("");
@@ -95,7 +95,7 @@ const CreateModalityModal = ({
       onClose();
     } catch (err) {
       console.error("Failed to create modality:", err);
-      setError("Erro ao criar modalidade");
+      notify("Não foi possível criar a modalidade. Verifique os dados e tente novamente.", 'error');
     }
   };
 
@@ -105,12 +105,6 @@ const CreateModalityModal = ({
         <h2 className="text-2xl font-bold mb-6 text-gray-800">
           Adicionar Modalidade
         </h2>
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-            {error}
-          </div>
-        )}
 
         <div className="space-y-4">
           <div>
@@ -151,7 +145,6 @@ const CreateModalityModal = ({
               onClose();
               setNewModalityName("");
               setModalityType("");
-              setError("");
             }}
             className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
           >
