@@ -104,7 +104,6 @@ class EventBuilder:
             ValueError: If required fields are missing
         """
         from .types import EventType
-        from .validator import validate_event_data
 
         # Extract aggregate type from event_type
         aggregate_type = EventType.get_aggregate_type(event_type)
@@ -118,11 +117,6 @@ class EventBuilder:
                 f"Cannot determine aggregate_id for {event_type}. "
                 f"Provide it explicitly or include {aggregate_type}_id in data."
             )
-
-        # Validate data against schema
-        is_valid, errors = validate_event_data(event_type, data)
-        if not is_valid:
-            raise ValueError(f"Event data validation failed for {event_type}: {errors}")
 
         # Extract version from event_type
         version = EventBuilder._extract_version(event_type)

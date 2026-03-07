@@ -9,7 +9,6 @@ description = "TACA Event Schema Registry"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
-    "jsonschema>=4.17.0",
     "pydantic>=2.0.0",
 ]
 
