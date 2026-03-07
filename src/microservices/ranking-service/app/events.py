@@ -5,7 +5,7 @@ Event handling for Ranking Service.
 from datetime import datetime, timezone
 from uuid import UUID
 
-from taca_events import TournamentFinishedV1
+from taca_events.pydantic_schemas.tournaments import TournamentFinishedV1
 from taca_messaging import RabbitMQService
 
 from .logger import logger

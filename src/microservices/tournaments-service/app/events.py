@@ -3,7 +3,11 @@ Event handling for Tournaments Service.
 Publishes and consumes events via RabbitMQ.
 """
 
-from taca_events import ModalityDeletedV1, TeamCreatedV1, TeamDeletedV1
+from taca_events.pydantic_schemas.modalities import (
+    ModalityDeletedV1,
+    TeamCreatedV1,
+    TeamDeletedV1,
+)
 from taca_messaging.rabbitmq_service import RabbitMQService
 
 from .logger import logger

@@ -5,11 +5,13 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from taca_events import (
-    EventType,
+from taca_events.pydantic_schemas.modalities import (
     StudentCreatedData,
+    StudentCreatedV1,
     StudentDeletedData,
+    StudentDeletedV1,
     StudentUpdatedData,
+    StudentUpdatedV1,
 )
 
 from ..database import get_db_session
@@ -62,10 +64,7 @@ def create_student(student_data: StudentCreate, db: Session = Depends(get_db_ses
         db.flush()
 
         # Emit event via outbox
-        outbox_publisher.emit_event(
-            db=db,
-            event_type=EventType.STUDENT_CREATED,
-            aggregate_type="student",
+        event = StudentCreatedV1.create(
             aggregate_id=student.id,
             data=StudentCreatedData(
                 student_id=student.id,
@@ -73,7 +72,14 @@ def create_student(student_data: StudentCreate, db: Session = Depends(get_db_ses
                 course_id=student.course_id,
                 student_number=student.student_number,
                 is_member=student.is_member,
-            ).model_dump(mode="json"),
+            ),
+        )
+        outbox_publisher.emit_event(
+            db=db,
+            event_type=event.event_type(),
+            aggregate_type="student",
+            aggregate_id=student.id,
+            data=event.to_data_dict(),
         )
 
         db.commit()
@@ -124,10 +130,7 @@ def update_student(
     student.updated_at = datetime.now(timezone.utc)
 
     # Emit event via outbox
-    outbox_publisher.emit_event(
-        db=db,
-        event_type=EventType.STUDENT_UPDATED,
-        aggregate_type="student",
+    event = StudentUpdatedV1.create(
         aggregate_id=student.id,
         data=StudentUpdatedData(
             student_id=student.id,
@@ -135,7 +138,14 @@ def update_student(
             course_id=changes_made.get("course_id"),
             student_number=changes_made.get("student_number"),
             is_member=changes_made.get("is_member"),
-        ).model_dump(mode="json", exclude_none=True),
+        ),
+    )
+    outbox_publisher.emit_event(
+        db=db,
+        event_type=event.event_type(),
+        aggregate_type="student",
+        aggregate_id=student.id,
+        data=event.to_data_dict(),
     )
 
     try:
@@ -158,14 +168,18 @@ def delete_student(student_id: UUID, db: Session = Depends(get_db_session)):
         raise HTTPException(status_code=404, detail="Student not found")
 
     # Emit event via outbox before deletion
-    outbox_publisher.emit_event(
-        db=db,
-        event_type=EventType.STUDENT_DELETED,
-        aggregate_type="student",
+    event = StudentDeletedV1.create(
         aggregate_id=student.id,
         data=StudentDeletedData(
             student_id=student.id,
-        ).model_dump(mode="json"),
+        ),
+    )
+    outbox_publisher.emit_event(
+        db=db,
+        event_type=event.event_type(),
+        aggregate_type="student",
+        aggregate_id=student.id,
+        data=event.to_data_dict(),
     )
 
     db.delete(student)

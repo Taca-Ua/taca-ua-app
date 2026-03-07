@@ -9,7 +9,7 @@ import uuid
 from datetime import date, datetime, timezone
 from typing import Any
 
-from taca_events import (  # Nucleo; Course; Modality Type; Modality; Student; Staff; Team; Tournament; Match
+from taca_events.pydantic_schemas import (  # Nucleo; Course; Modality Type; Modality; Student; Staff; Team; Tournament; Match
     CourseCreatedV1,
     CourseDeletedV1,
     CourseUpdatedV1,

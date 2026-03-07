@@ -5,7 +5,14 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from taca_events import EventType, StaffCreatedData, StaffDeletedData, StaffUpdatedData
+from taca_events.pydantic_schemas.modalities import (
+    StaffCreatedData,
+    StaffCreatedV1,
+    StaffDeletedData,
+    StaffDeletedV1,
+    StaffUpdatedData,
+    StaffUpdatedV1,
+)
 
 from ..database import get_db_session
 from ..logger import logger
@@ -51,17 +58,21 @@ def create_staff(staff_data: StaffCreate, db: Session = Depends(get_db_session))
         db.flush()  # Get staff.id before commit
 
         # Emit staff.created event
-        outbox_publisher.emit_event(
-            db=db,
-            event_type=EventType.STAFF_CREATED,
-            aggregate_type="staff",
+        event = StaffCreatedV1.create(
             aggregate_id=staff.id,
             data=StaffCreatedData(
                 staff_id=staff.id,
                 full_name=staff.full_name,
                 staff_number=staff.staff_number,
                 contact=staff.contact,
-            ).model_dump(mode="json"),
+            ),
+        )
+        outbox_publisher.emit_event(
+            db=db,
+            event_type=event.event_type(),
+            aggregate_type="staff",
+            aggregate_id=staff.id,
+            data=event.to_data_dict(),
         )
 
         db.commit()
@@ -107,17 +118,21 @@ def update_staff(
     staff.updated_at = datetime.now(timezone.utc)
 
     # Emit staff.updated event
-    outbox_publisher.emit_event(
-        db=db,
-        event_type=EventType.STAFF_UPDATED,
-        aggregate_type="staff",
+    event = StaffUpdatedV1.create(
         aggregate_id=staff.id,
         data=StaffUpdatedData(
             staff_id=staff.id,
             full_name=changes_made.get("full_name"),
             staff_number=changes_made.get("staff_number"),
             contact=changes_made.get("contact"),
-        ).model_dump(mode="json", exclude_none=True),
+        ),
+    )
+    outbox_publisher.emit_event(
+        db=db,
+        event_type=event.event_type(),
+        aggregate_type="staff",
+        aggregate_id=staff.id,
+        data=event.to_data_dict(),
     )
 
     try:
@@ -141,14 +156,18 @@ def delete_staff(staff_id: UUID, db: Session = Depends(get_db_session)):
         raise HTTPException(status_code=404, detail="Staff member not found")
 
     # Emit staff.deleted event
-    outbox_publisher.emit_event(
-        db=db,
-        event_type=EventType.STAFF_DELETED,
-        aggregate_type="staff",
+    event = StaffDeletedV1.create(
         aggregate_id=staff.id,
         data=StaffDeletedData(
             staff_id=staff.id,
-        ).model_dump(mode="json"),
+        ),
+    )
+    outbox_publisher.emit_event(
+        db=db,
+        event_type=event.event_type(),
+        aggregate_type="staff",
+        aggregate_id=staff.id,
+        data=event.to_data_dict(),
     )
 
     db.delete(staff)

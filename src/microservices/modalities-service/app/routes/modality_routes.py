@@ -5,11 +5,13 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from taca_events import (
-    EventType,
+from taca_events.pydantic_schemas.modalities import (
     ModalityCreatedData,
+    ModalityCreatedV1,
     ModalityDeletedData,
+    ModalityDeletedV1,
     ModalityUpdatedData,
+    ModalityUpdatedV1,
 )
 
 from ..database import get_db_session
@@ -59,16 +61,20 @@ def create_modality(
         db.flush()  # To get modality.id before commit
 
         # Emit event via outbox
-        outbox_publisher.emit_event(
-            db=db,
-            event_type=EventType.MODALITY_CREATED,
-            aggregate_type="modality",
+        event = ModalityCreatedV1.create(
             aggregate_id=modality.id,
             data=ModalityCreatedData(
                 modality_id=modality.id,
                 modality_type_id=modality.modality_type_id,
                 name=modality.name,
-            ).model_dump(mode="json"),
+            ),
+        )
+        outbox_publisher.emit_event(
+            db=db,
+            event_type=event.event_type(),
+            aggregate_type="modality",
+            aggregate_id=modality.id,
+            data=event.to_data_dict(),
         )
 
         db.commit()
@@ -119,16 +125,20 @@ def update_modality(
     modality.updated_at = datetime.now(timezone.utc)
 
     # Emit event via outbox
-    outbox_publisher.emit_event(
-        db=db,
-        event_type=EventType.MODALITY_UPDATED,
-        aggregate_type="modality",
+    event = ModalityUpdatedV1.create(
         aggregate_id=modality.id,
         data=ModalityUpdatedData(
             modality_id=modality.id,
             name=changes_made.get("name"),
             modality_type_id=changes_made.get("modality_type_id"),
-        ).model_dump(mode="json", exclude_none=True),
+        ),
+    )
+    outbox_publisher.emit_event(
+        db=db,
+        event_type=event.event_type(),
+        aggregate_type="modality",
+        aggregate_id=modality.id,
+        data=event.to_data_dict(),
     )
 
     try:
@@ -151,14 +161,18 @@ def delete_modality(modality_id: UUID, db: Session = Depends(get_db_session)):
         raise HTTPException(status_code=404, detail="Modality not found")
 
     # Emit event via outbox
-    outbox_publisher.emit_event(
-        db=db,
-        event_type=EventType.MODALITY_DELETED,
-        aggregate_type="modality",
+    event = ModalityDeletedV1.create(
         aggregate_id=modality.id,
         data=ModalityDeletedData(
             modality_id=modality.id,
-        ).model_dump(mode="json"),
+        ),
+    )
+    outbox_publisher.emit_event(
+        db=db,
+        event_type=event.event_type(),
+        aggregate_type="modality",
+        aggregate_id=modality.id,
+        data=event.to_data_dict(),
     )
 
     db.delete(modality)

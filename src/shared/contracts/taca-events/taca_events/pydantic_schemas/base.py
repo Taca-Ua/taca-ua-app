@@ -150,10 +150,10 @@ class EventSchema(BaseModel):
     # Serialisation helpers
     # ------------------------------------------------------------------ #
 
-    def to_data_dict(self) -> dict:
+    def to_data_dict(self, *, exclude_none: bool = True) -> dict:
         """
         Return the typed ``data`` payload as a JSON-serialisable dict.
 
         Use this when passing event data to ``outbox_publisher.emit_event()``.
         """
-        return self.data.model_dump(mode="json")
+        return self.data.model_dump(mode="json", exclude_none=exclude_none)

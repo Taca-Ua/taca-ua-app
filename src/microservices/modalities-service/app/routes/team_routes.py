@@ -4,13 +4,17 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from taca_events import (
-    EventType,
+from taca_events.pydantic_schemas.modalities import (
     TeamCreatedData,
+    TeamCreatedV1,
     TeamDeletedData,
+    TeamDeletedV1,
     TeamPlayerAddedData,
+    TeamPlayerAddedV1,
     TeamPlayerRemovedData,
+    TeamPlayerRemovedV1,
     TeamUpdatedData,
+    TeamUpdatedV1,
 )
 
 from ..database import get_db_session
@@ -66,17 +70,21 @@ def create_team(team_data: TeamCreate, db: Session = Depends(get_db_session)):
     db.flush()
 
     # Emit event via outbox
-    outbox_publisher.emit_event(
-        db=db,
-        event_type=EventType.TEAM_CREATED,
-        aggregate_type="team",
+    event = TeamCreatedV1.create(
         aggregate_id=team.id,
         data=TeamCreatedData(
             team_id=team.id,
             name=team.name,
             modality_id=team.modality_id,
             course_id=team.course_id,
-        ).model_dump(mode="json"),
+        ),
+    )
+    outbox_publisher.emit_event(
+        db=db,
+        event_type=event.event_type(),
+        aggregate_type="team",
+        aggregate_id=team.id,
+        data=event.to_data_dict(),
     )
 
     db.commit()
@@ -123,17 +131,21 @@ def update_team(
         changes_made["course_id"] = str(team_data.course_id)
 
     # Emit team updated event
-    outbox_publisher.emit_event(
-        db=db,
-        event_type=EventType.TEAM_UPDATED,
-        aggregate_type="team",
+    event = TeamUpdatedV1.create(
         aggregate_id=team.id,
         data=TeamUpdatedData(
             team_id=team.id,
             name=changes_made.get("name"),
             modality_id=changes_made.get("modality_id"),
             course_id=changes_made.get("course_id"),
-        ).model_dump(mode="json", exclude_none=True),
+        ),
+    )
+    outbox_publisher.emit_event(
+        db=db,
+        event_type=event.event_type(),
+        aggregate_type="team",
+        aggregate_id=team.id,
+        data=event.to_data_dict(exclude_none=True),
     )
 
     # Handle adding/removing players
@@ -143,15 +155,19 @@ def update_team(
             if student and student not in team.players:
                 team.players.append(student)
                 # Emit player added event
-                outbox_publisher.emit_event(
-                    db=db,
-                    event_type=EventType.TEAM_PLAYER_ADDED,
-                    aggregate_type="team",
+                event = TeamPlayerAddedV1.create(
                     aggregate_id=team.id,
                     data=TeamPlayerAddedData(
                         team_id=team.id,
                         student_id=player_id,
-                    ).model_dump(mode="json"),
+                    ),
+                )
+                outbox_publisher.emit_event(
+                    db=db,
+                    event_type=event.event_type(),
+                    aggregate_type="team",
+                    aggregate_id=team.id,
+                    data=event.to_data_dict(),
                 )
 
     if team_data.players_remove:
@@ -160,15 +176,19 @@ def update_team(
             if student and student in team.players:
                 team.players.remove(student)
                 # Emit player removed event
-                outbox_publisher.emit_event(
-                    db=db,
-                    event_type=EventType.TEAM_PLAYER_REMOVED,
-                    aggregate_type="team",
+                event = TeamPlayerRemovedV1.create(
                     aggregate_id=team.id,
                     data=TeamPlayerRemovedData(
                         team_id=team.id,
                         student_id=player_id,
-                    ).model_dump(mode="json"),
+                    ),
+                )
+                outbox_publisher.emit_event(
+                    db=db,
+                    event_type=event.event_type(),
+                    aggregate_type="team",
+                    aggregate_id=team.id,
+                    data=event.to_data_dict(),
                 )
 
     team.updated_at = datetime.now(timezone.utc)
@@ -187,14 +207,18 @@ def delete_team(team_id: UUID, db: Session = Depends(get_db_session)):
         raise HTTPException(status_code=404, detail="Team not found")
 
     # Emit team deleted event before deletion
-    outbox_publisher.emit_event(
-        db=db,
-        event_type=EventType.TEAM_DELETED,
-        aggregate_type="team",
+    event = TeamDeletedV1.create(
         aggregate_id=team.id,
         data=TeamDeletedData(
             team_id=team.id,
-        ).model_dump(mode="json"),
+        ),
+    )
+    outbox_publisher.emit_event(
+        db=db,
+        event_type=event.event_type(),
+        aggregate_type="team",
+        aggregate_id=team.id,
+        data=event.to_data_dict(),
     )
 
     db.delete(team)
