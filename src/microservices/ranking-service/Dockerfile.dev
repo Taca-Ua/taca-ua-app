@@ -2,17 +2,10 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY src/microservices/ranking-service/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Install messaging package
 COPY src/shared /tmp
 
-RUN pip install --no-cache-dir -e /tmp/taca-messaging
-RUN pip install --no-cache-dir -e /tmp/taca-logging
-RUN pip install --no-cache-dir -e /tmp/taca-events
-RUN pip install --no-cache-dir -e /tmp/taca-outbox
-RUN pip install --no-cache-dir -e /tmp/taca-snapshots
+COPY src/microservices/ranking-service/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/microservices/ranking-service .
 
