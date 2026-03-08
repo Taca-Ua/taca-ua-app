@@ -8,10 +8,23 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from taca_events import EventType
+from taca_events.pydantic_schemas.tournaments import (
+    RankingEntryData,
+    TournamentCompetitorAddedData,
+    TournamentCompetitorAddedV1,
+    TournamentCompetitorDeletedData,
+    TournamentCompetitorDeletedV1,
+    TournamentCreatedData,
+    TournamentCreatedV1,
+    TournamentDeletedData,
+    TournamentDeletedV1,
+    TournamentFinishedData,
+    TournamentFinishedV1,
+    TournamentUpdatedData,
+    TournamentUpdatedV1,
+)
 
 from .database import get_db_session
-from .event_helpers import emit_event
 from .logger import logger
 from .models import (
     CompetitorType,
@@ -19,6 +32,7 @@ from .models import (
     TournamentCompetitor,
     TournamentRankingPosition,
 )
+from .outbox_publisher import outbox_publisher
 from .schemas import (
     CompetitorInput,
     TournamentCreate,
@@ -83,18 +97,21 @@ def add_competitor(db: Session, tournament_id: UUID, competitor_input: Competito
     db.flush()
 
     # Emit event for added competitor
-    emit_event(
+    event = TournamentCompetitorAddedV1.create(
+        aggregate_id=tournament_competitor.id,
+        data=TournamentCompetitorAddedData(
+            tournament_id=tournament_id,
+            competitor_type=competitor_input.competitor_type,
+            competitor_entity_id=competitor_input.team_id
+            or competitor_input.athlete_id,
+        ),
+    )
+    outbox_publisher.emit_event(
         db=db,
-        event_type=EventType.TOURNAMENT_COMPETITOR_ADDED,
+        event_type=event.event_type(),
         aggregate_type="tournament_competitor",
         aggregate_id=str(tournament_competitor.id),
-        data={
-            "tournament_id": str(tournament_id),
-            "competitor_type": competitor_input.competitor_type,
-            "competitor_entity_id": str(
-                competitor_input.team_id or competitor_input.athlete_id
-            ),
-        },
+        data=event.to_data_dict(),
     )
 
 
@@ -153,18 +170,22 @@ async def create_tournament(
         db.flush()  # Get the ID before committing
 
         # Emit event for tournament creation
-        emit_event(
+        event = TournamentCreatedV1.create(
+            aggregate_id=tournament.id,
+            data=TournamentCreatedData(
+                tournament_id=tournament.id,
+                modality_id=tournament.modality_id,
+                name=tournament.name,
+                start_date=tournament.start_date.isoformat(),
+                status=tournament.status,
+            ),
+        )
+        outbox_publisher.emit_event(
             db=db,
-            event_type=EventType.TOURNAMENT_CREATED,
+            event_type=event.event_type(),
             aggregate_type="tournament",
             aggregate_id=str(tournament.id),
-            data={
-                "tournament_id": str(tournament.id),
-                "modality_id": str(tournament.modality_id),
-                "name": tournament.name,
-                "start_date": tournament.start_date.isoformat(),
-                "status": tournament.status,
-            },
+            data=event.to_data_dict(),
         )
 
         # Add competitors if provided
@@ -213,19 +234,21 @@ async def update_tournament(
     tournament.updated_at = datetime.now(timezone.utc)
 
     # Create outbox event
-    emit_event(
+    event = TournamentUpdatedV1.create(
+        aggregate_id=tournament.id,
+        data=TournamentUpdatedData(
+            tournament_id=tournament.id,
+            name=changes_made.get("name"),
+            start_date=changes_made.get("start_date"),
+            status=changes_made.get("status"),
+        ),
+    )
+    outbox_publisher.emit_event(
         db=db,
-        event_type=EventType.TOURNAMENT_UPDATED,
+        event_type=event.event_type(),
         aggregate_type="tournament",
         aggregate_id=str(tournament.id),
-        data={
-            "tournament_id": str(tournament.id),
-            **{
-                k: v
-                for k, v in changes_made.items()
-                if k in ["name", "start_date", "status"]
-            },
-        },
+        data=event.to_data_dict(),
     )
 
     try:
@@ -253,12 +276,18 @@ async def delete_tournament(tournament_id: UUID, db: Session = Depends(get_db_se
 
     try:
         # Emit event before deleting
-        emit_event(
+        event = TournamentDeletedV1.create(
+            aggregate_id=tournament.id,
+            data=TournamentDeletedData(
+                tournament_id=tournament.id,
+            ),
+        )
+        outbox_publisher.emit_event(
             db=db,
-            event_type=EventType.TOURNAMENT_DELETED,
+            event_type=event.event_type(),
             aggregate_type="tournament",
             aggregate_id=str(tournament.id),
-            data={"tournament_id": str(tournament.id)},
+            data=event.to_data_dict(),
         )
 
         db.delete(tournament)
@@ -314,21 +343,25 @@ async def finish_tournament(
         tournament.updated_at = datetime.now(timezone.utc)
 
         # Create outbox event
-        emit_event(
-            db=db,
-            event_type=EventType.TOURNAMENT_FINISHED,
-            aggregate_type="tournament",
-            aggregate_id=str(tournament.id),
-            data={
-                "tournament_id": str(tournament.id),
-                "ranking_entries": [
-                    {
-                        "competitor_id": str(entry.competitor_id),
-                        "position": entry.position,
-                    }
+        event = TournamentFinishedV1.create(
+            aggregate_id=tournament.id,
+            data=TournamentFinishedData(
+                tournament_id=tournament.id,
+                ranking_entries=[
+                    RankingEntryData(
+                        competitor_id=entry.competitor_id,
+                        position=entry.position,
+                    )
                     for entry in data.ranking_entries
                 ],
-            },
+            ),
+        )
+        outbox_publisher.emit_event(
+            db=db,
+            event_type=event.event_type(),
+            aggregate_type="tournament",
+            aggregate_id=str(tournament.id),
+            data=event.to_data_dict(),
         )
 
         db.commit()
@@ -403,15 +436,19 @@ async def remove_competitors_from_tournament(
             db.flush()
 
             # Emit event for removed competitor
-            emit_event(
+            event = TournamentCompetitorDeletedV1.create(
+                aggregate_id=competitor_id,
+                data=TournamentCompetitorDeletedData(
+                    competitor_id=competitor_id,
+                    tournament_id=tournament_id,
+                ),
+            )
+            outbox_publisher.emit_event(
                 db=db,
-                event_type=EventType.TOURNAMENT_COMPETITOR_DELETED,
+                event_type=event.event_type(),
                 aggregate_type="tournament_competitor",
                 aggregate_id=str(competitor_id),
-                data={
-                    "competitor_id": str(competitor_id),
-                    "tournament_id": str(tournament_id),
-                },
+                data=event.to_data_dict(),
             )
 
         db.commit()

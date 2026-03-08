@@ -3,7 +3,7 @@ import json
 import logging
 import os
 import re
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict, Optional, Type, Union
 
 import aio_pika
 from aio_pika import ExchangeType, Message, connect_robust
@@ -59,8 +59,8 @@ class RabbitMQService:
         self.processed_messages = 0
         self.failed_processed_messages = 0
 
-        # Store event handlers: {event_name: [handler_func1, handler_func2, ...]}
-        self.event_handlers: Dict[str, list[Callable]] = {}
+        # Store event handlers: {event_name: [{"handler": func, "schema": cls or None}, ...]}
+        self.event_handlers: Dict[str, list[dict]] = {}
 
     async def connect(self):
         """Establish connection to RabbitMQ."""
@@ -90,24 +90,44 @@ class RabbitMQService:
             self.channel = None
             self.exchange = None
 
-    def event_handler(self, event_name: str):
+    def event_handler(self, event_source: Union[str, Type]):
         """
         Decorator to register an event handler function.
 
-        Usage:
+        Accepts either a routing key string (legacy) or an EventSchema subclass (typed).
+
+        String usage (legacy):
             @rabbitmq_service.event_handler('match.created')
             async def process_match_created(data: dict):
-                print(f"Match created: {data}")
+                ...
+
+        Typed usage (new):
+            @rabbitmq_service.event_handler(MatchCreatedV1)
+            async def process_match_created(event: MatchCreatedV1):
+                ...
 
         Args:
-            event_name: The event name/routing key to listen for (supports wildcards like 'match.*')
+            event_source: Routing key string OR EventSchema subclass with a
+                          ``routing_key()`` classmethod.
         """
+        if isinstance(event_source, str):
+            event_name = event_source
+            schema_class = None
+        elif isinstance(event_source, type) and hasattr(event_source, "routing_key"):
+            event_name = event_source.routing_key()
+            schema_class = event_source
+        else:
+            raise TypeError(
+                f"event_handler expects a str or EventSchema subclass, "
+                f"got {type(event_source)}"
+            )
 
         def decorator(func: Callable):
-            # Register the handler
             if event_name not in self.event_handlers:
                 self.event_handlers[event_name] = []
-            self.event_handlers[event_name].append(func)
+            self.event_handlers[event_name].append(
+                {"handler": func, "schema": schema_class}
+            )
             return func
 
         return decorator
@@ -115,17 +135,44 @@ class RabbitMQService:
     async def _process_message(
         self,
         message: AbstractIncomingMessage,
-        handler: Callable,
+        entry: dict,
     ):
         """Internal method to process incoming messages."""
         body = message.body.decode("utf-8")
         data = json.loads(body)
+        inner_data = data.get("data", None)
 
-        # Check if handler is async or sync
-        if inspect.iscoroutinefunction(handler):
-            await handler(data.get("data", None))
+        handler = entry["handler"]
+        schema_class = entry["schema"]
+
+        if schema_class is not None:
+            # Typed handler: automatically parse the event via EventRegistry
+            try:
+                from taca_events.pydantic_schemas.registry import EventRegistry
+
+                routing_key = schema_class.routing_key()
+                typed_event = EventRegistry.parse(routing_key, inner_data or {})
+            except KeyError as e:
+                self.logger.error(
+                    f"No schema registered for '{schema_class.__name__}': {e}"
+                )
+                return
+            except Exception as e:
+                self.logger.error(
+                    f"Failed to parse event for '{schema_class.__name__}': {e}"
+                )
+                return
+
+            if inspect.iscoroutinefunction(handler):
+                await handler(typed_event)
+            else:
+                handler(typed_event)
         else:
-            handler(data.get("data", None))
+            # Legacy handler: pass the raw inner data dict
+            if inspect.iscoroutinefunction(handler):
+                await handler(inner_data)
+            else:
+                handler(inner_data)
 
         self.processed_messages += 1
         self.logger.info(
@@ -177,10 +224,10 @@ class RabbitMQService:
 
         # Find all matching handlers
         try:
-            for event_pattern, handlers in self.event_handlers.items():
+            for event_pattern, entries in self.event_handlers.items():
                 if self._matches_pattern(routing_key, event_pattern):
-                    for handler in handlers:
-                        await self._process_message(message, handler)
+                    for entry in entries:
+                        await self._process_message(message, entry)
                         processed = True
 
             # Acknowledge message once after all handlers have processed it

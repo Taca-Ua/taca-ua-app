@@ -6,12 +6,19 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from taca_events import EventType
+from taca_events.pydantic_schemas.modalities import (
+    NucleoCreatedData,
+    NucleoCreatedV1,
+    NucleoDeletedData,
+    NucleoDeletedV1,
+    NucleoUpdatedData,
+    NucleoUpdatedV1,
+)
 
 from ..database import get_db_session
-from ..event_helpers import emit_event
 from ..logger import logger
 from ..models import Nucleo
+from ..outbox_publisher import outbox_publisher
 from ..schemas import NucleoCreate, NucleoResponse, NucleoUpdate
 
 router = APIRouter()
@@ -44,16 +51,20 @@ def create_nucleo(nucleo_data: NucleoCreate, db: Session = Depends(get_db_sessio
         db.flush()  # Get the ID without committing
 
         # Emit event via outbox
-        emit_event(
+        event = NucleoCreatedV1.create(
+            aggregate_id=nucleo.id,
+            data=NucleoCreatedData(
+                nucleo_id=nucleo.id,
+                name=nucleo.name,
+                abbreviation=nucleo.abbreviation,
+            ),
+        )
+        outbox_publisher.emit_event(
             db=db,
-            event_type=EventType.NUCLEO_CREATED,
+            event_type=event.event_type(),
             aggregate_type="nucleo",
             aggregate_id=nucleo.id,
-            data={
-                "nucleo_id": str(nucleo.id),
-                "name": nucleo.name,
-                "abbreviation": nucleo.abbreviation,
-            },
+            data=event.to_data_dict(),
         )
 
         db.commit()
@@ -110,19 +121,20 @@ def update_nucleo(
 
     try:
         # Emit event via outbox
-        emit_event(
+        event = NucleoUpdatedV1.create(
+            aggregate_id=nucleo.id,
+            data=NucleoUpdatedData(
+                nucleo_id=nucleo.id,
+                name=changes_made.get("name"),
+                abbreviation=changes_made.get("abbreviation"),
+            ),
+        )
+        outbox_publisher.emit_event(
             db=db,
-            event_type=EventType.NUCLEO_UPDATED,
+            event_type=event.event_type(),
             aggregate_type="nucleo",
             aggregate_id=nucleo.id,
-            data={
-                "nucleo_id": str(nucleo.id),
-                **{
-                    key: value
-                    for key, value in changes_made.items()
-                    if key in ["name", "abbreviation"]
-                },
-            },
+            data=event.to_data_dict(),
         )
 
         db.commit()
@@ -144,14 +156,18 @@ def delete_nucleo(nucleo_id: UUID, db: Session = Depends(get_db_session)):
         raise HTTPException(status_code=404, detail="Nucleo not found")
 
     # Emit event via outbox before deleting
-    emit_event(
+    event = NucleoDeletedV1.create(
+        aggregate_id=nucleo.id,
+        data=NucleoDeletedData(
+            nucleo_id=nucleo.id,
+        ),
+    )
+    outbox_publisher.emit_event(
         db=db,
-        event_type=EventType.NUCLEO_DELETED,
+        event_type=event.event_type(),
         aggregate_type="nucleo",
         aggregate_id=nucleo.id,
-        data={
-            "nucleo_id": str(nucleo.id),
-        },
+        data=event.to_data_dict(),
     )
 
     db.delete(nucleo)

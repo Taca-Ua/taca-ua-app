@@ -5,12 +5,19 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from taca_events import EventType
+from taca_events.pydantic_schemas.modalities import (
+    CourseCreatedData,
+    CourseCreatedV1,
+    CourseDeletedData,
+    CourseDeletedV1,
+    CourseUpdatedData,
+    CourseUpdatedV1,
+)
 
 from ..database import get_db_session
-from ..event_helpers import emit_event
 from ..logger import logger
 from ..models import Course, Nucleo
+from ..outbox_publisher import outbox_publisher
 from ..schemas import CourseCreate, CourseResponse, CourseUpdate
 
 router = APIRouter()
@@ -52,17 +59,21 @@ def create_course(course_data: CourseCreate, db: Session = Depends(get_db_sessio
         db.flush()
 
         # Emit event via outbox
-        emit_event(
+        event = CourseCreatedV1.create(
+            aggregate_id=course.id,
+            data=CourseCreatedData(
+                course_id=course.id,
+                nucleo_id=course.nucleo_id,
+                name=course.name,
+                abbreviation=course.abbreviation,
+            ),
+        )
+        outbox_publisher.emit_event(
             db=db,
-            event_type=EventType.COURSE_CREATED,
+            event_type=event.event_type(),
             aggregate_type="course",
             aggregate_id=course.id,
-            data={
-                "course_id": str(course.id),
-                "nucleo_id": str(course.nucleo_id),
-                "name": course.name,
-                "abbreviation": course.abbreviation,
-            },
+            data=event.to_data_dict(),
         )
 
         db.commit()
@@ -111,19 +122,21 @@ def update_course(
 
     try:
         # Emit event via outbox
-        emit_event(
+        event = CourseUpdatedV1.create(
+            aggregate_id=course.id,
+            data=CourseUpdatedData(
+                course_id=course.id,
+                name=changes_made.get("name"),
+                abbreviation=changes_made.get("abbreviation"),
+                nucleo_id=changes_made.get("nucleo_id"),
+            ),
+        )
+        outbox_publisher.emit_event(
             db=db,
-            event_type=EventType.COURSE_UPDATED,
+            event_type=event.event_type(),
             aggregate_type="course",
             aggregate_id=course.id,
-            data={
-                "course_id": str(course.id),
-                **{
-                    k: v
-                    for k, v in changes_made.items()
-                    if k in ["name", "abbreviation", "nucleo_id"]
-                },
-            },
+            data=event.to_data_dict(),
         )
 
         db.commit()
@@ -145,14 +158,18 @@ def delete_course(course_id: UUID, db: Session = Depends(get_db_session)):
         raise HTTPException(status_code=404, detail="Course not found")
 
     # Emit event via outbox before deleting
-    emit_event(
+    event = CourseDeletedV1.create(
+        aggregate_id=course.id,
+        data=CourseDeletedData(
+            course_id=course.id,
+        ),
+    )
+    outbox_publisher.emit_event(
         db=db,
-        event_type=EventType.COURSE_DELETED,
+        event_type=event.event_type(),
         aggregate_type="course",
         aggregate_id=course.id,
-        data={
-            "course_id": str(course.id),
-        },
+        data=event.to_data_dict(),
     )
 
     db.delete(course)

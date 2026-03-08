@@ -5,12 +5,19 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from taca_events import EventType
+from taca_events.pydantic_schemas.modalities import (
+    ModalityTypeCreatedData,
+    ModalityTypeCreatedV1,
+    ModalityTypeDeletedData,
+    ModalityTypeDeletedV1,
+    ModalityTypeUpdatedData,
+    ModalityTypeUpdatedV1,
+)
 
 from ..database import get_db_session
-from ..event_helpers import emit_event
 from ..logger import logger
 from ..models import ModalityType
+from ..outbox_publisher import outbox_publisher
 from ..schemas import ModalityTypeCreate, ModalityTypeResponse, ModalityTypeUpdate
 
 router = APIRouter()
@@ -48,17 +55,21 @@ def create_modality_type(
         db.flush()  # To get the ID before commit
 
         # Emit modality type created event
-        emit_event(
+        event = ModalityTypeCreatedV1.create(
+            aggregate_id=modality_type.id,
+            data=ModalityTypeCreatedData(
+                modality_type_id=modality_type.id,
+                name=modality_type.name,
+                description=modality_type.description,
+                escaloes=modality_type.escaloes,
+            ),
+        )
+        outbox_publisher.emit_event(
             db=db,
-            event_type=EventType.MODALITY_TYPE_CREATED,
+            event_type=event.event_type(),
             aggregate_type="modality_type",
             aggregate_id=modality_type.id,
-            data={
-                "modality_type_id": str(modality_type.id),
-                "name": modality_type.name,
-                "description": modality_type.description,
-                "escaloes": modality_type.escaloes,
-            },
+            data=event.to_data_dict(),
         )
 
         db.commit()
@@ -109,20 +120,21 @@ def update_modality_type(
     modality_type.updated_at = datetime.now(timezone.utc)
 
     # Emit modality type updated event
-    print(changes_made)
-    emit_event(
+    event = ModalityTypeUpdatedV1.create(
+        aggregate_id=modality_type.id,
+        data=ModalityTypeUpdatedData(
+            modality_type_id=modality_type.id,
+            name=changes_made.get("name"),
+            description=changes_made.get("description"),
+            escaloes=changes_made.get("escaloes"),
+        ),
+    )
+    outbox_publisher.emit_event(
         db=db,
-        event_type=EventType.MODALITY_TYPE_UPDATED,
+        event_type=event.event_type(),
         aggregate_type="modality_type",
         aggregate_id=modality_type.id,
-        data={
-            "modality_type_id": str(modality_type.id),
-            **{
-                k: v
-                for k, v in changes_made.items()
-                if k in ["name", "description", "escaloes"]
-            },
-        },
+        data=event.to_data_dict(),
     )
 
     try:
@@ -149,12 +161,16 @@ def delete_modality_type(modality_type_id: UUID, db: Session = Depends(get_db_se
         raise HTTPException(status_code=404, detail="Modality type not found")
 
     # Emit modality type deleted event
-    emit_event(
+    event = ModalityTypeDeletedV1.create(
+        aggregate_id=modality_type.id,
+        data=ModalityTypeDeletedData(modality_type_id=modality_type.id),
+    )
+    outbox_publisher.emit_event(
         db=db,
-        event_type=EventType.MODALITY_TYPE_DELETED,
+        event_type=event.event_type(),
         aggregate_type="modality_type",
         aggregate_id=modality_type.id,
-        data={"modality_type_id": str(modality_type.id)},
+        data=event.to_data_dict(),
     )
 
     db.delete(modality_type)

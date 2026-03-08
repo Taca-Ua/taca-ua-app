@@ -8,11 +8,31 @@ from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from taca_events import EventType
+from taca_events.pydantic_schemas.matches import (
+    LineupPlayerData,
+    MatchCommentAddedData,
+    MatchCommentAddedV1,
+    MatchCommentDeletedData,
+    MatchCommentDeletedV1,
+    MatchCreatedData,
+    MatchCreatedV1,
+    MatchDeletedData,
+    MatchDeletedV1,
+    MatchLineupAssignedData,
+    MatchLineupAssignedV1,
+    MatchParticipantAddedData,
+    MatchParticipantAddedV1,
+    MatchParticipantData,
+    MatchParticipantRemovedData,
+    MatchParticipantRemovedV1,
+    MatchResultEntryData,
+    MatchResultUpdatedData,
+    MatchUpdatedData,
+    MatchUpdatedV1,
+)
 
 from . import schemas
 from .database import get_db_session
-from .event_helpers import emit_event
 from .logger import logger
 from .models import (
     Comment,
@@ -22,6 +42,7 @@ from .models import (
     MatchStatus,
     ParticipantType,
 )
+from .outbox_publisher import outbox_publisher
 
 router = APIRouter()
 
@@ -187,26 +208,30 @@ def create_match(
         db.add(participant)
 
     # Emit event
-    emit_event(
-        db,
-        event_type=EventType.MATCH_CREATED,
-        aggregate_type="match",
+    event = MatchCreatedV1.create(
         aggregate_id=match.id,
-        data={
-            "match_id": str(match.id),
-            "tournament_id": str(match.tournament_id) if match.tournament_id else None,
-            "location": match.location,
-            "status": match.status.value,
-            "start_time": match.start_time.isoformat(),
-            "participants": [
-                {
-                    "participant_id": str(p.id),
-                    "participant_type": p.participant_type.value,
-                    "participant_entity_id": str(p.team_id or p.athlete_id),
-                }
+        data=MatchCreatedData(
+            match_id=match.id,
+            tournament_id=match.tournament_id,
+            location=match.location,
+            status=match.status.value,
+            start_time=match.start_time.isoformat(),
+            participants=[
+                MatchParticipantData(
+                    participant_id=p.id,
+                    participant_type=p.participant_type.value,
+                    participant_entity_id=p.team_id or p.athlete_id,
+                )
                 for p in match.participants
             ],
-        },
+        ),
+    )
+    outbox_publisher.emit_event(
+        db,
+        event_type=event.event_type(),
+        aggregate_type="match",
+        aggregate_id=match.id,
+        data=event.to_data_dict(),
     )
 
     db.commit()
@@ -295,19 +320,22 @@ def update_match(
 
     match.updated_at = datetime.now(timezone.utc)
 
-    emit_event(
+    # Emit event for match update
+    event = MatchUpdatedV1.create(
+        aggregate_id=match_id,
+        data=MatchUpdatedData(
+            match_id=match_id,
+            location=changes_made.get("location"),
+            start_time=changes_made.get("start_time"),
+            status=changes_made.get("status"),
+        ),
+    )
+    outbox_publisher.emit_event(
         db,
-        event_type=EventType.MATCH_UPDATED,
+        event_type=event.event_type(),
         aggregate_type="match",
         aggregate_id=match_id,
-        data={
-            "match_id": str(match_id),
-            **{
-                k: v
-                for k, v in changes_made.items()
-                if k in ["location", "start_time", "status"]
-            },
-        },
+        data=event.to_data_dict(),
     )
 
     db.commit()
@@ -345,14 +373,18 @@ def delete_match(
         raise HTTPException(status_code=409, detail="Cannot delete a finished match")
 
     # Emit event before deletion
-    emit_event(
+    event = MatchDeletedV1.create(
+        aggregate_id=match_id,
+        data=MatchDeletedData(
+            match_id=match_id,
+        ),
+    )
+    outbox_publisher.emit_event(
         db,
-        event_type=EventType.MATCH_DELETED,
+        event_type=event.event_type(),
         aggregate_type="match",
         aggregate_id=match_id,
-        data={
-            "match_id": str(match_id),
-        },
+        data=event.to_data_dict(),
     )
 
     db.delete(match)
@@ -441,19 +473,22 @@ def add_participant(
     db.flush()  # Get participant.id
 
     # Emit event
-    emit_event(
+    event = MatchParticipantAddedV1.create(
+        aggregate_id=match_id,
+        data=MatchParticipantAddedData(
+            match_id=match_id,
+            participant_id=participant.id,
+            participant_type=participant_type.value,
+            participant_entity_id=participant_data.team_id
+            or participant_data.athlete_id,
+        ),
+    )
+    outbox_publisher.emit_event(
         db,
-        event_type=EventType.MATCH_PARTICIPANT_ADDED,
+        event_type=event.event_type(),
         aggregate_type="match",
         aggregate_id=match_id,
-        data={
-            "match_id": str(match_id),
-            "participant_id": str(participant.id),
-            "participant_type": participant_type.value,
-            "participant_entity_id": str(
-                participant_data.team_id or participant_data.athlete_id
-            ),
-        },
+        data=event.to_data_dict(),
     )
 
     db.commit()
@@ -506,15 +541,19 @@ def remove_participant(
             status_code=409, detail="Cannot modify participants for finished match"
         )
 
-    emit_event(
+    # Emit event before deletion
+    event = MatchParticipantRemovedV1.create(
+        aggregate_id=match_id,
+        data=MatchParticipantRemovedData(
+            match_id=match_id, participant_id=participant_id
+        ),
+    )
+    outbox_publisher.emit_event(
         db,
-        event_type=EventType.MATCH_PARTICIPANT_REMOVED,
+        event_type=event.event_type(),
         aggregate_type="match",
         aggregate_id=match_id,
-        data={
-            "match_id": str(match_id),
-            "participant_id": str(participant_id),
-        },
+        data=event.to_data_dict(),
     )
 
     db.delete(participant)
@@ -597,23 +636,28 @@ def assign_lineup(
         db.add(lineup)
         created_lineups.append(lineup)
 
-    emit_event(
-        db,
-        event_type=EventType.MATCH_LINEUP_ASSIGNED,
-        aggregate_type="match",
+    # Emit event for lineup assignment
+    event = MatchLineupAssignedV1.create(
         aggregate_id=match_id,
-        data={
-            "match_id": str(match_id),
-            "team_id": str(lineup_data.team_id),
-            "lineup": [
-                {
-                    "player_id": str(player_data["player_id"]),
-                    "jersey_number": player_data["jersey_number"],
-                    "is_starter": player_data.get("is_starter", True),
-                }
+        data=MatchLineupAssignedData(
+            match_id=match_id,
+            team_id=lineup_data.team_id,
+            lineup=[
+                LineupPlayerData(
+                    player_id=player_data["player_id"],
+                    jersey_number=player_data["jersey_number"],
+                    is_starter=player_data.get("is_starter", True),
+                )
                 for player_data in lineup_data.players
             ],
-        },
+        ),
+    )
+    outbox_publisher.emit_event(
+        db,
+        event_type=event.event_type(),
+        aggregate_type="match",
+        aggregate_id=match_id,
+        data=event.to_data_dict(),
     )
 
     db.commit()
@@ -704,16 +748,21 @@ def add_comment(
     db.add(comment)
     db.flush()  # Get comment.id
 
-    emit_event(
+    # Emit event for comment addition
+    event = MatchCommentAddedV1.create(
+        aggregate_id=match_id,
+        data=MatchCommentAddedData(
+            comment_id=comment.id,
+            match_id=match_id,
+            message=comment.message,
+        ),
+    )
+    outbox_publisher.emit_event(
         db,
-        event_type=EventType.MATCH_COMMENT_ADDED,
+        event_type=event.event_type(),
         aggregate_type="match",
         aggregate_id=match_id,
-        data={
-            "comment_id": str(comment.id),
-            "match_id": str(match_id),
-            "message": comment.message,
-        },
+        data=event.to_data_dict(),
     )
     db.commit()
     db.refresh(comment)
@@ -786,15 +835,19 @@ def delete_comment(
         raise HTTPException(status_code=404, detail="Comment not found")
 
     # Emit event before deletion
-    emit_event(
+    event = MatchCommentDeletedV1.create(
+        aggregate_id=match_id,
+        data=MatchCommentDeletedData(
+            comment_id=comment_id,
+            match_id=match_id,
+        ),
+    )
+    outbox_publisher.emit_event(
         db,
-        event_type=EventType.MATCH_COMMENT_DELETED,
+        event_type=event.event_type(),
         aggregate_type="match",
         aggregate_id=match_id,
-        data={
-            "comment_id": str(comment_id),
-            "match_id": str(match_id),
-        },
+        data=event.to_data_dict(),
     )
 
     db.delete(comment)
@@ -883,15 +936,27 @@ def update_match_results(
         )
 
     # Emit event for result updates
-    emit_event(
+    event = MatchUpdatedV1.create(
+        aggregate_id=match_id,
+        data=MatchResultUpdatedData(
+            match_id=match_id,
+            results=[
+                MatchResultEntryData(
+                    participant_id=r["participant_id"],
+                    score=r.get("score"),
+                    position=r.get("position"),
+                    results_metadata=r.get("results_metadata"),
+                )
+                for r in updated_participants
+            ],
+        ),
+    )
+    outbox_publisher.emit_event(
         db,
-        event_type=EventType.MATCH_RESULT_UPDATED,
+        event_type=event.event_type(),
         aggregate_type="match",
         aggregate_id=match_id,
-        data={
-            "match_id": str(match_id),
-            "results": updated_participants,
-        },
+        data=event.to_data_dict(),
     )
 
     # Update match status if provided
@@ -906,15 +971,19 @@ def update_match_results(
             )
 
     # Emit match updated event for status change
-    emit_event(
+    event = MatchUpdatedV1.create(
+        aggregate_id=match_id,
+        data=MatchUpdatedData(
+            match_id=match_id,
+            status=match.status.value,
+        ),
+    )
+    outbox_publisher.emit_event(
         db,
-        event_type=EventType.MATCH_UPDATED,
+        event_type=event.event_type(),
         aggregate_type="match",
         aggregate_id=match_id,
-        data={
-            "match_id": str(match_id),
-            "status": match.status.value,
-        },
+        data=event.to_data_dict(),
     )
 
     match.updated_at = datetime.now(timezone.utc)

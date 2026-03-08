@@ -4,7 +4,7 @@ Snapshot HTTP Client for fetching snapshots from domain services.
 This client is responsible for:
 - Making HTTP requests to domain service snapshot endpoints
 - Handling timeouts and retries
-- Transforming raw HTTP responses into structured DTOs
+- Transforming raw HTTP responses into strongly typed DTOs
 - Fail-fast error handling
 
 Architecture Note:
@@ -13,9 +13,12 @@ Architecture Note:
 - All URLs come from environment variables (Config class)
 """
 
-from typing import Any, Dict, Optional
+from typing import Optional
 
 import httpx
+from taca_snapshots.matches import MatchesSnapshotResponse
+from taca_snapshots.modalities import ModalitiesSnapshotResponse
+from taca_snapshots.tournaments import TournamentsSnapshotResponse
 
 from ..config import Config
 from ..logger import logger
@@ -23,7 +26,6 @@ from .dto import (
     CompleteSnapshot,
     MatchesSnapshot,
     ModalitiesSnapshot,
-    RankingSnapshot,
     TournamentSnapshot,
 )
 
@@ -57,9 +59,7 @@ class SnapshotClient:
         self.timeout = Config.SNAPSHOT_REQUEST_TIMEOUT
         self.max_retries = Config.SNAPSHOT_MAX_RETRIES
 
-    async def _fetch_snapshot(
-        self, service_name: str, url: str
-    ) -> Optional[Dict[str, Any]]:
+    async def _fetch_snapshot(self, service_name: str, url: str) -> Optional[dict]:
         """
         Fetch snapshot from a single service.
 
@@ -68,7 +68,7 @@ class SnapshotClient:
             url: Full URL to the snapshot endpoint
 
         Returns:
-            Snapshot data as dictionary, or None if service returned empty snapshot
+            Raw snapshot JSON as a dictionary, or None if service returned 404
 
         Raises:
             SnapshotFetchError: If fetching fails after retries
@@ -166,7 +166,7 @@ class SnapshotClient:
         Fetch snapshot from Matches service.
 
         Returns:
-            MatchesSnapshot with all match-related data, or None if unavailable
+            MatchesSnapshot with all match-related data (typed DTOs), or None if unavailable
         """
         url = Config.get_snapshot_url("matches")
         if not url:
@@ -178,13 +178,8 @@ class SnapshotClient:
             if data is None:
                 return None
 
-            return MatchesSnapshot(
-                matches=data.get("matches", []),
-                participants=data.get("participants", []),
-                results=data.get("results", []),
-                lineups=data.get("lineups", []),
-                comments=data.get("comments", []),
-            )
+            response = MatchesSnapshotResponse(**data)
+            return MatchesSnapshot.from_response(response)
         except SnapshotFetchError:
             # Re-raise to be handled by caller
             raise
@@ -194,7 +189,8 @@ class SnapshotClient:
         Fetch snapshot from Tournament service.
 
         Returns:
-            TournamentSnapshot with tournament and competitor data, or None if unavailable
+            TournamentSnapshot with tournament and competitor data (typed DTOs),
+            or None if unavailable
         """
         url = Config.get_snapshot_url("tournament")
         if not url:
@@ -206,13 +202,8 @@ class SnapshotClient:
             if data is None:
                 return None
 
-            print("Fetched tournament snapshot data:", data)  # Debug log
-
-            return TournamentSnapshot(
-                tournaments=data.get("tournaments", []),
-                competitors=data.get("competitors", []),
-                rankings=data.get("ranking_positions", []),
-            )
+            response = TournamentsSnapshotResponse(**data)
+            return TournamentSnapshot.from_response(response)
         except SnapshotFetchError:
             raise
 
@@ -221,7 +212,8 @@ class SnapshotClient:
         Fetch snapshot from Modalities service.
 
         Returns:
-            ModalitiesSnapshot with all modality-related data, or None if unavailable
+            ModalitiesSnapshot with all modality-related data (typed DTOs),
+            or None if unavailable
         """
         url = Config.get_snapshot_url("modalities")
         if not url:
@@ -233,39 +225,8 @@ class SnapshotClient:
             if data is None:
                 return None
 
-            return ModalitiesSnapshot(
-                nucleos=data.get("nucleos", []),
-                courses=data.get("courses", []),
-                modality_types=data.get("modality_types", []),
-                modalities=data.get("modalities", []),
-                students=data.get("students", []),
-                staff=data.get("staff", []),
-                teams=data.get("teams", []),
-                team_players=data.get("team_players", []),
-            )
-        except SnapshotFetchError:
-            raise
-
-    async def fetch_ranking_snapshot(self) -> Optional[RankingSnapshot]:
-        """
-        Fetch snapshot from Ranking service.
-
-        Returns:
-            RankingSnapshot with ranking data, or None if unavailable
-        """
-        url = Config.get_snapshot_url("ranking")
-        if not url:
-            logger.warning("snapshot_url_not_configured", service="ranking")
-            return None
-
-        try:
-            data = await self._fetch_snapshot("ranking", url)
-            if data is None:
-                return None
-
-            return RankingSnapshot(
-                rankings=data.get("rankings", []),
-            )
+            response = ModalitiesSnapshotResponse(**data)
+            return ModalitiesSnapshot.from_response(response)
         except SnapshotFetchError:
             raise
 
@@ -290,13 +251,11 @@ class SnapshotClient:
             matches = await self.fetch_matches_snapshot()
             tournament = await self.fetch_tournament_snapshot()
             modalities = await self.fetch_modalities_snapshot()
-            ranking = await self.fetch_ranking_snapshot()
 
             snapshot = CompleteSnapshot(
                 matches=matches,
                 tournament=tournament,
                 modalities=modalities,
-                ranking=ranking,
             )
 
             total_records = snapshot.get_total_record_count()
@@ -306,7 +265,6 @@ class SnapshotClient:
                 has_matches=matches is not None,
                 has_tournament=tournament is not None,
                 has_modalities=modalities is not None,
-                has_ranking=ranking is not None,
             )
 
             return snapshot
