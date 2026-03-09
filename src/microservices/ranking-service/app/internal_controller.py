@@ -11,16 +11,10 @@ These endpoints should NOT be exposed via API Gateway.
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from taca_snapshots.ranking import (
-    CourseRankingSnapshotItem,
-    GeneralRankingSnapshotItem,
-    ModalityRankingSnapshotItem,
-    RankingSnapshotResponse,
-)
+from taca_snapshots.ranking import RankingSnapshotResponse
 
 from .database import get_db_session
 from .logger import logger
-from .models import CourseRanking, GeneralRanking, ModalityRanking
 
 router = APIRouter(prefix="/internal", tags=["internal"])
 
@@ -57,69 +51,9 @@ def get_snapshot(
     """
     logger.info("snapshot_requested", service="ranking", limit=limit, offset=offset)
 
-    try:
-        # Fetch domain data
-        modality_rankings = db.query(ModalityRanking).offset(offset).limit(limit).all()
-        course_rankings = db.query(CourseRanking).offset(offset).limit(limit).all()
-        general_rankings = db.query(GeneralRanking).offset(offset).limit(limit).all()
+    snapshot = RankingSnapshotResponse()
 
-        # Build typed DTOs
-        modality_ranking_dtos = [
-            ModalityRankingSnapshotItem(
-                id=str(mr.id),
-                modality_id=str(mr.modality_id),
-                season_id=str(mr.season_id),
-                course_id=str(mr.course_id),
-                points=mr.points,
-                details=mr.details,
-                last_updated=mr.last_updated,
-            )
-            for mr in modality_rankings
-        ]
-
-        course_ranking_dtos = [
-            CourseRankingSnapshotItem(
-                id=str(cr.id),
-                course_id=str(cr.course_id),
-                season_id=str(cr.season_id),
-                total_points=cr.total_points,
-                modality_breakdown=cr.modality_breakdown,
-                last_updated=cr.last_updated,
-            )
-            for cr in course_rankings
-        ]
-
-        general_ranking_dtos = [
-            GeneralRankingSnapshotItem(
-                id=str(gr.id),
-                season_id=str(gr.season_id),
-                course_id=str(gr.course_id),
-                position=gr.position,
-                total_points=gr.total_points,
-                last_updated=gr.last_updated,
-            )
-            for gr in general_rankings
-        ]
-
-        snapshot = RankingSnapshotResponse(
-            modality_rankings=modality_ranking_dtos,
-            course_rankings=course_ranking_dtos,
-            general_rankings=general_ranking_dtos,
-        )
-
-        logger.info(
-            "snapshot_generated",
-            service="ranking",
-            modality_rankings_count=len(modality_ranking_dtos),
-            course_rankings_count=len(course_ranking_dtos),
-            general_rankings_count=len(general_ranking_dtos),
-        )
-
-        return snapshot
-
-    except Exception as e:
-        logger.error("snapshot_generation_failed", service="ranking", error=str(e))
-        raise
+    return snapshot
 
 
 @router.get("/health")

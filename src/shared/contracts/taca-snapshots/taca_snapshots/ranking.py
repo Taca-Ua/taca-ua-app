@@ -9,7 +9,7 @@ Field names mirror the JSON keys currently returned by
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from .base import SnapshotBase
 
@@ -66,7 +66,3 @@ class RankingSnapshotResponse(SnapshotBase):
     - **Providers**: returned (or serialised) by the FastAPI endpoint.
     - **Consumers**: parsed from the raw JSON by the snapshot client.
     """
-
-    modality_rankings: List[ModalityRankingSnapshotItem] = []
-    course_rankings: List[CourseRankingSnapshotItem] = []
-    general_rankings: List[GeneralRankingSnapshotItem] = []
