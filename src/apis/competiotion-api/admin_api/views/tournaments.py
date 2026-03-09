@@ -22,6 +22,7 @@ from ..serializers.tournaments import (
     TournamentUpdateSerializer,
 )
 from ..services.enricher_service import enricher_service
+from ..services.modalities_service import modalities_service_client
 from ..services.tournaments_service import tournaments_service_client
 
 
@@ -54,18 +55,29 @@ class TournamentListCreateView(RoleRequiredMixin, APIView):
         serializer = TournamentCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        data = serializer.validated_data
+
         try:
-            # Call microservice
+            # Determine modality type (playoff vs regular) to validate modality_id and set correct one for tournament creation
+            modality_type_id = None
+            if data["is_playoff"]:
+                modality_type_id = modalities_service_client.get_playoff_modality_type()
+            else:
+                modality_type_id = modalities_service_client.get_modality(
+                    data["modality_id"]
+                )
+                modality_type_id = modality_type_id.modality_type.id
+
+            # Create tournament
             tournament = tournaments_service_client.create_tournament(
                 modality_id=serializer.validated_data["modality_id"],
                 name=serializer.validated_data["name"],
-                created_by="00000000-0000-0000-0000-000000000000",  # Placeholder
                 start_date=(
                     serializer.validated_data.get("start_date").isoformat()
                     if serializer.validated_data.get("start_date")
                     else datetime.now().isoformat()
                 ),
-                teams_ids=serializer.validated_data.get("teams_ids", []),
+                modality_type_id=modality_type_id,
             )
 
             # Enrich tournament info

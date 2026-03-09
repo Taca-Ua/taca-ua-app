@@ -106,9 +106,8 @@ class TournamentsService(BaseService):
         self,
         modality_id: UUID,
         name: str,
-        created_by: UUID,
+        modality_type_id: UUID,
         start_date: Optional[str] = None,
-        teams_ids: Optional[List[UUID]] = None,
     ) -> TournamentDTO:
         """
         Create a new tournament
@@ -116,9 +115,8 @@ class TournamentsService(BaseService):
         Args:
             modality_id: ID of the modality
             name: Tournament name
-            created_by: ID of the user creating the tournament
+            modality_type_id: ID of the modality type (regular vs playoff)
             start_date: Optional start date (ISO format)
-            teams_ids: Optional list of team IDs
 
         Returns:
             Created tournament dictionary
@@ -126,14 +124,10 @@ class TournamentsService(BaseService):
         data = {
             "modality_id": str(modality_id),
             "name": name,
-            "created_by": str(created_by),
+            "modality_type_id": str(modality_type_id),
         }
         if start_date:
             data["start_date"] = start_date
-        if teams_ids:
-            data["teams_ids"] = [str(team_id) for team_id in teams_ids]
-        else:
-            data["teams_ids"] = []
 
         tournament_data = self.post("/tournaments", data=data)
         return TournamentDTO(**tournament_data)

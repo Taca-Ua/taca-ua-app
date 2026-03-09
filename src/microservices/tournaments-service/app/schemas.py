@@ -58,9 +58,8 @@ class TournamentCreate(BaseModel):
 
     name: str
     modality_id: UUID
-    competitors: Optional[List[CompetitorInput]] = None
+    modality_type_id: UUID
     start_date: Optional[datetime]
-    created_by: Optional[UUID] = None
 
 
 class TournamentUpdate(BaseModel):

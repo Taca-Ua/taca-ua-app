@@ -164,7 +164,7 @@ async def create_tournament(
             name=data.name,
             start_date=data.start_date,
             status="draft",
-            created_by=data.created_by,
+            created_by="00000000-0000-0000-0000-000000000000",  # Placeholder, should be replaced with actual user ID from auth context
         )
         db.add(tournament)
         db.flush()  # Get the ID before committing
@@ -187,11 +187,6 @@ async def create_tournament(
             aggregate_id=str(tournament.id),
             data=event.to_data_dict(),
         )
-
-        # Add competitors if provided
-        if data.competitors:
-            for competitor_input in data.competitors:
-                add_competitor(db, tournament.id, competitor_input)
 
         db.commit()
         db.refresh(tournament)
