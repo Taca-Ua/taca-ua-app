@@ -52,6 +52,7 @@ class ModalityTypeListCreateView(RoleRequiredMixin, APIView):
             name=serializer.validated_data["name"],
             description=serializer.validated_data.get("description", ""),
             escaloes=serializer.validated_data["escaloes"],
+            is_playoff=serializer.validated_data.get("is_playoff", False),
         )
         serializer = ModalityTypeListSerializer(modality_type)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -91,6 +92,7 @@ class ModalityTypeDetailView(RoleRequiredMixin, APIView):
             name=serializer.validated_data.get("name"),
             description=serializer.validated_data.get("description"),
             escaloes=serializer.validated_data.get("escaloes"),
+            is_playoff=serializer.validated_data.get("is_playoff"),
         )
 
         serializer = ModalityTypeDetailSerializer(modality_type)
@@ -112,7 +114,9 @@ class ModalityTypeDetailView(RoleRequiredMixin, APIView):
 @api_view(["GET"])
 @require_auth
 def list_modality_types(request: Request):
-    modality_types = modalities_service_client.list_modality_types()
+    modality_types = modalities_service_client.list_modality_types(
+        include_playoff=False
+    )
 
     serializer = ModalityTypeMinimalSerializer(modality_types, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)

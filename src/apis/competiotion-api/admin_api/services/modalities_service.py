@@ -51,6 +51,7 @@ class ModalityTypeDTO:
     name: str
     description: str
     escaloes: List[_EscalaDTO]
+    is_playoff: bool = False
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -329,19 +330,28 @@ class ModalitiesService(BaseService):
         self.delete(f"/courses/{course_id}")
 
     # ==================== MODALITY TYPE METHODS ====================
-    def list_modality_types(self) -> List[ModalityTypeDTO]:
+    def list_modality_types(
+        self, include_playoff: bool = True
+    ) -> List[ModalityTypeDTO]:
         """List all modality types
 
         Returns:
             List[ModalityTypeDTO]: List of ModalityTypeDTO objects
         """
-        modality_types_data = self.get("/modality-types")
+        params = {}
+        if not include_playoff:
+            params["exclude_playoff"] = True
+        modality_types_data = self.get("/modality-types", params=params)
         return [
             ModalityTypeDTO(**modality_type) for modality_type in modality_types_data
         ]
 
     def create_modality_type(
-        self, name: str, description: str = "", escaloes: List[str] = None
+        self,
+        name: str,
+        description: str = "",
+        escaloes: List[str] = None,
+        is_playoff: bool = False,
     ) -> ModalityTypeDTO:
         """Create a new modality type
 
@@ -349,6 +359,7 @@ class ModalitiesService(BaseService):
             name (str): Name of the modality type
             description (str, optional): Description of the modality type. Defaults to "".
             escaloes (List[str], optional): List of escaloes. Defaults to None.
+            is_playoff (bool, optional): Whether this modality type is used for playoffs. Defaults to False.
 
         Returns:
             ModalityTypeDTO: Created ModalityTypeDTO object
@@ -360,6 +371,7 @@ class ModalitiesService(BaseService):
             "name": name,
             "description": description,
             "escaloes": escaloes,
+            "is_playoff": is_playoff,
         }
         modality_type_data = self.post("/modality-types", data)
         return ModalityTypeDTO(**modality_type_data)
@@ -376,12 +388,22 @@ class ModalitiesService(BaseService):
         modality_type_data = self.get(f"/modality-types/{modality_type_id}")
         return ModalityTypeDTO(**modality_type_data)
 
+    def get_playoff_modality_type(self) -> ModalityTypeDTO:
+        """Get the modality type used for playoff tournaments
+
+        Returns:
+            ModalityTypeDTO: ModalityTypeDTO object representing the playoff modality type
+        """
+        modality_type_data = self.get("/modality-types/playoff")
+        return ModalityTypeDTO(**modality_type_data)
+
     def update_modality_type(
         self,
         modality_type_id: str,
         name: Optional[str] = None,
         description: Optional[str] = None,
         escaloes: Optional[List[str]] = None,
+        is_playoff: Optional[bool] = None,
     ) -> ModalityTypeDTO:
         """Update a modality type
 
@@ -390,7 +412,7 @@ class ModalitiesService(BaseService):
             name (Optional[str], optional): New name of the modality type. Defaults to None.
             description (Optional[str], optional): New description of the modality type. Defaults to None.
             escaloes (Optional[List[str]], optional): New list of escaloes. Defaults to None.
-
+            is_playoff (Optional[bool], optional): New value for the is_playoff flag. Defaults to None.
         Returns:
             ModalityTypeDTO: Updated ModalityTypeDTO object
         """
@@ -401,6 +423,8 @@ class ModalitiesService(BaseService):
             data["description"] = description
         if escaloes is not None:
             data["escaloes"] = escaloes
+        if is_playoff is not None:
+            data["is_playoff"] = is_playoff
 
         modality_type_data = self.put(f"/modality-types/{modality_type_id}", data)
         return ModalityTypeDTO(**modality_type_data)

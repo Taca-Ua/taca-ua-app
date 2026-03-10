@@ -26,6 +26,7 @@ class ModalityTypeListSerializer(serializers.Serializer):
         required=False, allow_null=True, allow_blank=True
     )
     escaloes = _EscalaoSerializer(many=True)
+    is_playoff = serializers.BooleanField(default=False)
 
     created_at = serializers.DateTimeField(default_timezone=None)
 
@@ -44,6 +45,7 @@ class ModalityTypeCreateSerializer(serializers.Serializer):
         required=False, allow_null=True, allow_blank=True
     )
     escaloes = _EscalaoSerializer(many=True)
+    is_playoff = serializers.BooleanField(default=False)
 
 
 class ModalityTypeUpdateSerializer(serializers.Serializer):
@@ -54,3 +56,4 @@ class ModalityTypeUpdateSerializer(serializers.Serializer):
         required=False, allow_null=True, allow_blank=True
     )
     escaloes = _EscalaoSerializer(many=True, required=False)
+    is_playoff = serializers.BooleanField(required=False)

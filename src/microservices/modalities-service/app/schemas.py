@@ -78,6 +78,7 @@ class ModalityTypeCreate(BaseModel):
     name: str
     description: Optional[str] = None
     escaloes: Optional[List[_Escalao]] = None
+    is_playoff: bool = False
 
     def escaloes_encoder(self):
         if not self.escaloes:
@@ -94,6 +95,7 @@ class ModalityTypeUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     escaloes: Optional[List[_Escalao]] = None
+    is_playoff: Optional[bool] = None
 
     def escaloes_encoder(self):
         if not self.escaloes:
@@ -111,6 +113,7 @@ class ModalityTypeResponse(BaseModel):
     name: str
     description: Optional[str] = None
     escaloes: Optional[List[_Escalao]] = None
+    is_playoff: bool = False
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
