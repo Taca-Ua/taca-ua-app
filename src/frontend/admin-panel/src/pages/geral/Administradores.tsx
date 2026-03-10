@@ -66,8 +66,16 @@ function Administradores() {
       notify('Email é obrigatório', 'error');
       return;
     }
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
+      notify('Email inválido', 'error');
+      return;
+    }
     if (!memberPassword.trim()) {
       notify('Password é obrigatória', 'error');
+      return;
+    }
+    if (memberPassword.length < 8) {
+      notify('Password deve ter pelo menos 8 caracteres', 'error');
       return;
     }
     if (!confirmPassword.trim()) {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import ConfirmModal from "../../components/ConfirmModal";
 import Sidebar from "../../components/geral_navbar";
 import { modalityTypesApi, type ModalityType } from "../../api/modality-types";
 import { useNotification } from '../../contexts/NotificationProvider';
@@ -21,7 +22,9 @@ const FormatosPontuacao = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState<ModalityType | null>(null);
+  const [deletingFormat, setDeletingFormat] = useState(false);
 
   // Form states
   const [formatName, setFormatName] = useState('');
@@ -202,22 +205,28 @@ useEffect(() => {
   const handleDeleteFormat = async () => {
     if (!selectedFormat) return;
 
-    if (!confirm(`Tem certeza que deseja eliminar "${selectedFormat.name}"?`)) {
-      return;
-    }
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeleteFormat = async () => {
+    if (!selectedFormat) return;
 
     try {
+      setDeletingFormat(true);
 
       // TODO: API call to delete scoring format
       await modalityTypesApi.delete(selectedFormat.id);
 
       setModalityTypes(scoringFormats.filter(f => f.id !== selectedFormat.id));
+      setIsDeleteModalOpen(false);
       setIsViewModalOpen(false);
       setSelectedFormat(null);
       notify('Formato de prova eliminado com sucesso!', 'success');
     } catch (err) {
       console.error('Failed to delete scoring format:', err);
       notify('Não foi possível eliminar o formato de prova. Poderá estar em uso por alguma modalidade.', 'error');
+    } finally {
+      setDeletingFormat(false);
     }
   };
 
@@ -656,6 +665,21 @@ useEffect(() => {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        title="Eliminar formato de prova"
+        message={selectedFormat ? `Tem certeza que deseja eliminar "${selectedFormat.name}"?` : ''}
+        confirmLabel="Eliminar"
+        variant="danger"
+        loading={deletingFormat}
+        onCancel={() => {
+          if (!deletingFormat) {
+            setIsDeleteModalOpen(false);
+          }
+        }}
+        onConfirm={confirmDeleteFormat}
+      />
     </div>
   );
 };

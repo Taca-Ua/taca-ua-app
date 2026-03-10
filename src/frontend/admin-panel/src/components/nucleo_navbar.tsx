@@ -22,9 +22,14 @@ export default function NucleoSidebar() {
             <>
               <Link
                 to="/nucleo/dashboard"
-                className="text-lg font-bold text-teal-600 hover:text-teal-700 truncate"
+                className="flex items-center gap-2 min-w-0 text-lg font-bold text-teal-600 hover:text-teal-700"
               >
-                TaçaUA
+                <img
+                  src="/logo.png"
+                  alt="TaçaUA"
+                  className="h-8 w-8 object-contain flex-shrink-0"
+                />
+                <span className="truncate">TaçaUA</span>
               </Link>
               <button
                 onClick={() => setIsOpen(false)}
