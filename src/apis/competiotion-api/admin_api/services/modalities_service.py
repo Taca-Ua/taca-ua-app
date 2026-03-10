@@ -394,7 +394,10 @@ class ModalitiesService(BaseService):
         Returns:
             ModalityTypeDTO: ModalityTypeDTO object representing the playoff modality type
         """
-        modality_type_data = self.get("/modality-types/playoff")
+        try:
+            modality_type_data = self.get("/playoff-modality-type")
+        except Exception:
+            return None
         return ModalityTypeDTO(**modality_type_data)
 
     def update_modality_type(

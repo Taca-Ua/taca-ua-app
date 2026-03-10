@@ -74,7 +74,8 @@ export class ApiClient {
       const error: ApiError = await response.json().catch(() => ({
         error: 'Network error',
       }));
-      throw new Error(error.error || 'API request failed');
+      const new_error = new Error(error.error || 'API request failed');
+      throw new_error;
     }
 
     return response.json();

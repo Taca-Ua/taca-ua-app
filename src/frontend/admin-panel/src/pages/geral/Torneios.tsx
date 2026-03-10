@@ -15,6 +15,7 @@ const TorneiosCreateModal = ({ isOpen, onClose, onCreate, modalities, setModalit
 }) => {
   const [name, setName] = useState('');
   const [modalityId, setModalityId] = useState('');
+  const [isPlayoff, setIsPlayoff] = useState(false);
   const [loading, setLoading] = useState(false);
   const { notify } = useNotification();
 
@@ -42,6 +43,7 @@ const TorneiosCreateModal = ({ isOpen, onClose, onCreate, modalities, setModalit
       const newTournament: TournamentCreate = {
         name,
         modality_id: modalityId,
+        is_playoff: isPlayoff,
         competitors: [],
       };
       const createdTournament = await tournamentsApi.create(newTournament);
@@ -87,6 +89,19 @@ const TorneiosCreateModal = ({ isOpen, onClose, onCreate, modalities, setModalit
                 <option key={m.id} value={m.id}>{m.name}</option>
               ))}
             </select>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="is_playoff_create"
+              checked={isPlayoff}
+              onChange={(e) => setIsPlayoff(e.target.checked)}
+              className="w-4 h-4 accent-teal-500"
+            />
+            <label htmlFor="is_playoff_create" className="font-medium cursor-pointer">
+              Torneio de Playoff
+            </label>
           </div>
 
           <div className="flex justify-end space-x-2">

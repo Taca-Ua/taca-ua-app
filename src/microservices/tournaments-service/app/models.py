@@ -83,6 +83,9 @@ class Tournament(Base):
         String(20), nullable=False, default="draft", index=True
     )  # draft, active, finished
     start_date = Column(DateTime(timezone=True), nullable=True)
+    scoring_format_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+
+    # bulshit fields
     created_by = Column(UUID(as_uuid=True), nullable=False)
     created_at = Column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
@@ -111,6 +114,9 @@ class Tournament(Base):
             "modality_id": str(self.modality_id),
             "name": self.name,
             "status": self.status,
+            "scoring_format_id": (
+                str(self.scoring_format_id) if self.scoring_format_id else None
+            ),
             "start_date": self.start_date.isoformat() if self.start_date else None,
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat() if self.created_at else None,

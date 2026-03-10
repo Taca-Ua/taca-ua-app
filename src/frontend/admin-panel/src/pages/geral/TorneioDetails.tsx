@@ -21,6 +21,9 @@ const TournamentInfo = ({
   onActivate: () => void;
   onFinish: () => void;
 }) => {
+  const [showScoringModal, setShowScoringModal] = useState(false);
+  const [selectedEscalaoIdx, setSelectedEscalaoIdx] = useState(0);
+
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
       case 'active': return 'bg-green-100 text-green-800';
@@ -38,6 +41,10 @@ const TournamentInfo = ({
       default: return status;
     }
   };
+
+  const scoringFormat = tournament.scoring_format;
+  const escaloes = scoringFormat?.escaloes ?? [];
+  const activeEscalao = escaloes[selectedEscalaoIdx];
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 space-y-4">
@@ -71,6 +78,98 @@ const TournamentInfo = ({
           <label className="block text-teal-500 font-medium mb-2">Data de Início</label>
           <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
             {new Date(tournament.start_date).toLocaleDateString('pt-PT')}
+          </div>
+        </div>
+      )}
+
+      {scoringFormat && (
+        <div>
+          <label className="block text-teal-500 font-medium mb-2">Formato de Pontuação</label>
+          <div className="w-full px-4 py-3 bg-gray-100 rounded-md flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-gray-800">{scoringFormat.name}</span>
+              {scoringFormat.is_playoff && (
+                <span className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-800 font-medium">
+                  Playoff
+                </span>
+              )}
+            </div>
+            {escaloes.length > 0 && (
+              <button
+                onClick={() => { setSelectedEscalaoIdx(0); setShowScoringModal(true); }}
+                className="text-sm text-teal-600 hover:text-teal-800 font-medium underline-offset-2 hover:underline transition-colors"
+              >
+                Ver detalhes
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showScoringModal && scoringFormat && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowScoringModal(false)}>
+          <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-bold text-gray-800">{scoringFormat.name}</h3>
+                {scoringFormat.is_playoff && (
+                  <span className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-800 font-medium">
+                    Playoff
+                  </span>
+                )}
+              </div>
+              <button onClick={() => setShowScoringModal(false)} className="text-gray-400 hover:text-gray-600 text-xl font-bold leading-none">✕</button>
+            </div>
+
+            {escaloes.length > 1 && (
+              <div className="flex flex-wrap gap-2 mb-4">
+                {escaloes.map((esc, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedEscalaoIdx(idx)}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                      idx === selectedEscalaoIdx
+                        ? 'bg-teal-500 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {esc.escalao}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {activeEscalao && (
+              <div>
+                {escaloes.length === 1 && (
+                  <p className="text-sm font-semibold text-gray-700 mb-3">{activeEscalao.escalao}</p>
+                )}
+                {activeEscalao.minParticipants !== null || activeEscalao.maxParticipants !== null ? (
+                  <p className="text-xs text-gray-500 mb-3">
+                    Participantes:{' '}
+                    {activeEscalao.minParticipants !== null ? `mín. ${activeEscalao.minParticipants}` : ''}
+                    {activeEscalao.minParticipants !== null && activeEscalao.maxParticipants !== null ? ' — ' : ''}
+                    {activeEscalao.maxParticipants !== null ? `máx. ${activeEscalao.maxParticipants}` : ''}
+                  </p>
+                ) : null}
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="text-left px-4 py-2 text-gray-600 font-semibold border border-gray-200 w-20">Posição</th>
+                      <th className="text-right px-4 py-2 text-gray-600 font-semibold border border-gray-200">Pontos</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activeEscalao.points.map((pts, i) => (
+                      <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td className="px-4 py-2 border border-gray-200 text-gray-700 font-medium">{i + 1}º</td>
+                        <td className="px-4 py-2 border border-gray-200 text-right text-teal-700 font-semibold">{pts}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -129,6 +228,7 @@ const EditTournamentModal = ({
   const [startDate, setStartDate] = useState(
     tournament.start_date ? tournament.start_date.split('T')[0] : ''
   );
+  const [isPlayoff, setIsPlayoff] = useState(tournament.scoring_format?.is_playoff ?? false);
   const [saving, setSaving] = useState(false);
   const { notify } = useNotification();
 
@@ -142,7 +242,8 @@ const EditTournamentModal = ({
       setSaving(true);
       await onSave({
         name: name.trim(),
-        start_date: startDate || undefined
+        start_date: startDate || undefined,
+        is_playoff: isPlayoff,
       });
       onClose();
     } catch (err) {
@@ -178,6 +279,19 @@ const EditTournamentModal = ({
               onChange={(e) => setStartDate(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
             />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="is_playoff_edit"
+              checked={isPlayoff}
+              onChange={(e) => setIsPlayoff(e.target.checked)}
+              className="w-4 h-4 accent-teal-500"
+            />
+            <label htmlFor="is_playoff_edit" className="text-gray-700 font-medium cursor-pointer">
+              Torneio de Playoff
+            </label>
           </div>
         </div>
 

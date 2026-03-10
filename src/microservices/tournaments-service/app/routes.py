@@ -164,6 +164,7 @@ async def create_tournament(
             name=data.name,
             start_date=data.start_date,
             status="draft",
+            scoring_format_id=data.scoring_format_id,
             created_by="00000000-0000-0000-0000-000000000000",  # Placeholder, should be replaced with actual user ID from auth context
         )
         db.add(tournament)
@@ -225,6 +226,9 @@ async def update_tournament(
     if data.status is not None:
         tournament.status = data.status
         changes_made["status"] = data.status
+    if data.scoring_format_id is not None:
+        tournament.scoring_format_id = data.scoring_format_id
+        changes_made["scoring_format_id"] = str(data.scoring_format_id)
 
     tournament.updated_at = datetime.now(timezone.utc)
 

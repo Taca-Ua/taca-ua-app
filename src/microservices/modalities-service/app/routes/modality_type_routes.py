@@ -111,7 +111,7 @@ def get_modality_type(modality_type_id: UUID, db: Session = Depends(get_db_sessi
     return modality_type.to_dict()
 
 
-@router.get("/modality-types/playoff", response_model=ModalityTypeResponse)
+@router.get("/playoff-modality-type", response_model=ModalityTypeResponse)
 def get_playoff_modality_type(db: Session = Depends(get_db_session)):
     """Get the modality type used for playoff tournaments"""
     modality_type = db.query(ModalityType).filter(ModalityType.is_playoff).first()

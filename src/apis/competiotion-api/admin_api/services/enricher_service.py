@@ -55,6 +55,10 @@ class EnricherService:
             tournament.modality_id
         )
 
+        tournament.scoring_format = modalities_service_client.get_modality_type(
+            tournament.scoring_format_id
+        )
+
         # Fetch and enrich teams data
         team_ids = []
         athlete_ids = []

@@ -59,14 +59,22 @@ class TournamentListCreateView(RoleRequiredMixin, APIView):
 
         try:
             # Determine modality type (playoff vs regular) to validate modality_id and set correct one for tournament creation
-            modality_type_id = None
+            scoring_format_id = None
             if data["is_playoff"]:
-                modality_type_id = modalities_service_client.get_playoff_modality_type()
-            else:
-                modality_type_id = modalities_service_client.get_modality(
-                    data["modality_id"]
+                playoff_modality_type = (
+                    modalities_service_client.get_playoff_modality_type()
                 )
-                modality_type_id = modality_type_id.modality_type.id
+                if not playoff_modality_type:
+                    return Response(
+                        {
+                            "detail": "Playoff modality type not found. Cannot create playoff tournament."
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                scoring_format_id = playoff_modality_type.id
+            else:
+                modality = modalities_service_client.get_modality(data["modality_id"])
+                scoring_format_id = modality.modality_type.id
 
             # Create tournament
             tournament = tournaments_service_client.create_tournament(
@@ -77,7 +85,7 @@ class TournamentListCreateView(RoleRequiredMixin, APIView):
                     if serializer.validated_data.get("start_date")
                     else datetime.now().isoformat()
                 ),
-                modality_type_id=modality_type_id,
+                scoring_format_id=scoring_format_id,
             )
 
             # Enrich tournament info
@@ -115,11 +123,10 @@ class TournamentDetailView(RoleRequiredMixin, APIView):
             tournament = tournaments_service_client.get_tournament(tournament_id)
 
             # Enrich tournament info
+            enricher_service.complete_tournament_info(tournament)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
-        enricher_service.complete_tournament_info(tournament)
-        print("Tournament details:", tournament.__dict__.get("competitors", None))
         serializer = TournamentDetailSerializer(tournament)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -129,6 +136,25 @@ class TournamentDetailView(RoleRequiredMixin, APIView):
         serializer.is_valid(raise_exception=True)
 
         try:
+            scoring_format_id = None
+            if serializer.validated_data.get("is_playoff"):
+                scoring_format_id = (
+                    modalities_service_client.get_playoff_modality_type().id
+                )
+            elif serializer.validated_data.get("is_playoff") is False:
+                if serializer.validated_data.get("modality_id"):
+                    scoring_format_id = modalities_service_client.get_modality(
+                        serializer.validated_data["modality_id"]
+                    ).modality_type.id
+                else:
+                    # If modality_id is not being updated, we need to fetch the tournament's current modality to determine if it's playoff or not
+                    current_tournament = tournaments_service_client.get_tournament(
+                        tournament_id
+                    )
+                    scoring_format_id = modalities_service_client.get_modality(
+                        current_tournament.modality_id
+                    ).modality_type.id
+
             # Call microservice
             tournament = tournaments_service_client.update_tournament(
                 tournament_id=tournament_id,
@@ -139,6 +165,7 @@ class TournamentDetailView(RoleRequiredMixin, APIView):
                     else None
                 ),
                 status=serializer.validated_data.get("status"),
+                scoring_format_id=scoring_format_id,
             )
 
             # Enrich tournament info
