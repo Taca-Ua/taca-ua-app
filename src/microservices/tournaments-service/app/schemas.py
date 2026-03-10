@@ -58,9 +58,8 @@ class TournamentCreate(BaseModel):
 
     name: str
     modality_id: UUID
-    competitors: Optional[List[CompetitorInput]] = None
+    scoring_format_id: UUID
     start_date: Optional[datetime]
-    created_by: Optional[UUID] = None
 
 
 class TournamentUpdate(BaseModel):
@@ -71,6 +70,7 @@ class TournamentUpdate(BaseModel):
     status: Optional[str] = None
     competitors_add: List[CompetitorInput] = None
     competitors_remove: List[UUID] = None  # competitor IDs to remove
+    scoring_format_id: Optional[UUID] = None
 
 
 class TournamentRankingPositionSchema(BaseModel):
@@ -94,6 +94,7 @@ class TournamentResponse(BaseModel):
     status: str
     modality_id: UUID
     start_date: Optional[datetime]
+    scoring_format_id: UUID
     competitors: List[CompetitorResponse]
 
     created_by: UUID

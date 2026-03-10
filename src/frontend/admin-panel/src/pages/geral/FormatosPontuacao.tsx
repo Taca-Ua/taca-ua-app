@@ -26,6 +26,7 @@ const FormatosPontuacao = () => {
   // Form states
   const [formatName, setFormatName] = useState('');
   const [formatDescription, setFormatDescription] = useState('');
+  const [isPlayoff, setIsPlayoff] = useState(false);
   const [escaloes, setEscaloes] = useState<EscalaoRow[]>([
     { escalao: 'A', minParticipants: null, maxParticipants: null, points: [] }
   ]);
@@ -105,6 +106,7 @@ useEffect(() => {
         name: formatName,
         description: formatDescription || undefined,
         escaloes: escaloes,
+        is_playoff: isPlayoff,
       });
 
     //   const newFormat: ModalityType = {
@@ -120,11 +122,17 @@ useEffect(() => {
       // Reset form
       setFormatName('');
       setFormatDescription('');
+      setIsPlayoff(false);
       setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: [] }]);
       setIsCreateModalOpen(false);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to create scoring format:', err);
-      notify('Não foi possível criar o formato de prova. Verifique os dados e tente novamente.', 'error');
+      const msg = err instanceof Error ? err.message : '';
+      if (msg.toLowerCase().includes('playoff')) {
+        notify('Já existe um formato de playoff. Só pode existir um formato de playoff de cada vez.', 'error');
+      } else {
+        notify('Não foi possível criar o formato de prova. Verifique os dados e tente novamente.', 'error');
+      }
     }
   };
 
@@ -137,6 +145,7 @@ useEffect(() => {
     setSelectedFormat(format);
     setFormatName(format.name);
     setFormatDescription(format.description || '');
+    setIsPlayoff(format.is_playoff);
     setEscaloes(format.escaloes);
     setIsViewModalOpen(false);
     setIsEditModalOpen(true);
@@ -172,15 +181,8 @@ useEffect(() => {
         name: formatName,
         description: formatDescription || undefined,
         escaloes: escaloes,
+        is_playoff: isPlayoff,
       });
-
-    //   const updatedFormat: ModalityType = {
-    //     ...selectedFormat!,
-    //     name: formatName,
-    //     description: formatDescription || undefined,
-    //     escaloes: escaloes,
-    //     updated_at: new Date().toISOString(),
-    //   };
 
       setModalityTypes(scoringFormats.map(f =>
         f.id === selectedFormat!.id ? updatedFormat : f
@@ -189,13 +191,19 @@ useEffect(() => {
       // Reset form
       setFormatName('');
       setFormatDescription('');
+      setIsPlayoff(false);
       setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: [] }]);
       setSelectedFormat(null);
       setIsEditModalOpen(false);
       notify('Formato de prova atualizado com sucesso!', 'success');
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to update scoring format:', err);
-      notify('Não foi possível guardar as alterações ao formato de prova. Tente novamente.', 'error');
+      const msg = err instanceof Error ? err.message : '';
+      if (msg.toLowerCase().includes('playoff')) {
+        notify('Já existe um formato de playoff. Só pode existir um formato de playoff de cada vez.', 'error');
+      } else {
+        notify('Não foi possível guardar as alterações ao formato de prova. Tente novamente.', 'error');
+      }
     }
   };
 
@@ -259,7 +267,14 @@ useEffect(() => {
                 onClick={() => handleViewFormat(format)}
               >
                 <div>
-                  <div className="font-medium text-lg">{format.name}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-lg">{format.name}</span>
+                    {format.is_playoff && (
+                      <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-semibold rounded-full border border-amber-300">
+                        Playoff
+                      </span>
+                    )}
+                  </div>
                   {format.description && (
                     <div className="text-sm text-gray-600 mt-1">{format.description}</div>
                   )}
@@ -306,6 +321,20 @@ useEffect(() => {
                   value={formatDescription}
                   onChange={e => setFormatDescription(e.target.value)}
                 />
+              </div>
+
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="create-is-playoff"
+                  checked={isPlayoff}
+                  onChange={e => setIsPlayoff(e.target.checked)}
+                  className="w-4 h-4 accent-amber-500 cursor-pointer"
+                />
+                <label htmlFor="create-is-playoff" className="font-medium cursor-pointer select-none">
+                  Formato Playoff
+                </label>
+                <span className="text-sm text-gray-500">(só pode existir um formato de playoff de cada vez)</span>
               </div>
 
               <div>
@@ -401,6 +430,7 @@ useEffect(() => {
                   setIsCreateModalOpen(false);
                   setFormatName('');
                   setFormatDescription('');
+                  setIsPlayoff(false);
                   setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: [] }]);
                 }}
               >
@@ -430,6 +460,18 @@ useEffect(() => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
+            </div>
+
+            <div className="mb-4 flex items-center gap-2">
+              {selectedFormat.is_playoff ? (
+                <span className="px-3 py-1 bg-amber-100 text-amber-700 text-sm font-semibold rounded-full border border-amber-300">
+                  Formato Playoff
+                </span>
+              ) : (
+                <span className="px-3 py-1 bg-gray-100 text-gray-500 text-sm rounded-full border border-gray-200">
+                  Formato Regular
+                </span>
+              )}
             </div>
 
             {selectedFormat.description && (
@@ -547,6 +589,20 @@ useEffect(() => {
                 />
               </div>
 
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="edit-is-playoff"
+                  checked={isPlayoff}
+                  onChange={e => setIsPlayoff(e.target.checked)}
+                  className="w-4 h-4 accent-amber-500 cursor-pointer"
+                />
+                <label htmlFor="edit-is-playoff" className="font-medium cursor-pointer select-none">
+                  Formato Playoff
+                </label>
+                <span className="text-sm text-gray-500">(só pode existir um formato de playoff de cada vez)</span>
+              </div>
+
               <div>
                 <div className="flex justify-between items-center mb-3">
                   <label className="block font-medium">
@@ -640,6 +696,7 @@ useEffect(() => {
                   setIsEditModalOpen(false);
                   setFormatName('');
                   setFormatDescription('');
+                  setIsPlayoff(false);
                   setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: [] }]);
                   setSelectedFormat(null);
                 }}

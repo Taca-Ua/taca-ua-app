@@ -3,6 +3,7 @@ import { type Match } from "./matches";
 import type { Modality } from './modalities';
 import type { Team } from './teams';
 import type { Student } from './members';
+import type { ModalityType } from "./modality-types";
 
 export interface TournamentCompetitor {
   competitor_type: 'team' | 'athlete';
@@ -26,6 +27,7 @@ export interface Tournament {
 
 export interface TournamentDetail extends Tournament {
   start_date: string;
+  scoring_format: ModalityType;
   competitors: TournamentCompetitorDetail[];
   matches: Match[];
 }
@@ -33,6 +35,7 @@ export interface TournamentDetail extends Tournament {
 export interface TournamentCreate {
   name: string;
   modality_id: string;
+  is_playoff?: boolean;
   competitors: TournamentCompetitor[];
   start_date?: string;
 }
@@ -43,6 +46,7 @@ export interface TournamentUpdate {
   status?: 'draft' | 'active' | 'finished';
   competitors_add?: TournamentCompetitor[];
   competitors_remove?: TournamentCompetitor[];
+  is_playoff?: boolean;
 }
 
 // Input interfaces

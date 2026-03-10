@@ -18,6 +18,7 @@ export interface ModalityType {
   name: string;
   description?: string;
   escaloes: EscalaoRow[];
+  is_playoff: boolean;
   created_at: string;
 }
 
@@ -29,12 +30,14 @@ export interface ModalityTypeCreate {
   name: string;
   description?: string;
   escaloes: EscalaoRow[];
+  is_playoff: boolean;
 }
 
 export interface ModalityTypeUpdate {
   name?: string;
   description?: string;
   escaloes?: EscalaoRow[];
+  is_playoff?: boolean;
 }
 
 // API methods

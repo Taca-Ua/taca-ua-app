@@ -5,7 +5,7 @@ Tournament management serializers
 from rest_framework import serializers
 
 from .matches import MatchListSerializer
-from .modalities import ModalityListSerializer
+from .modalities import ModalityListSerializer, ModalityTypeListSerializer
 from .students import StudentListSerializer
 from .teams import TeamListSerializer
 
@@ -75,6 +75,7 @@ class TournamentDetailSerializer(TournamentListSerializer):
     """Serializer for tournament details"""
 
     start_date = serializers.DateTimeField(required=False, allow_null=True)
+    scoring_format = ModalityTypeListSerializer()
 
     competitors = TournamentCompetitorDetailSerializer(many=True)
     matches = MatchListSerializer(many=True)
@@ -86,11 +87,7 @@ class TournamentCreateSerializer(serializers.Serializer):
     name = serializers.CharField(required=True)
     modality_id = serializers.UUIDField(required=True)
     start_date = serializers.DateTimeField(required=False, allow_null=True)
-
-    competitors = TournamentCompetitorSerializer(
-        many=True,
-        required=False,
-    )
+    is_playoff = serializers.BooleanField(required=False, default=False)
 
 
 class TournamentUpdateSerializer(serializers.Serializer):
@@ -99,6 +96,7 @@ class TournamentUpdateSerializer(serializers.Serializer):
     name = serializers.CharField(required=False)
     start_date = serializers.DateTimeField(required=False, allow_null=True)
     status = serializers.ChoiceField(choices=STATUS_CHOICES, required=False)
+    is_playoff = serializers.BooleanField(default=None, required=False)
 
 
 class TournamentFinishSerializer(serializers.Serializer):
