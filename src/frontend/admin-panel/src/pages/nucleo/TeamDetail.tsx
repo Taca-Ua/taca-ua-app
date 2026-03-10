@@ -321,6 +321,16 @@ const TeamDetailPage = () => {
 
       <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
+          <div className="mb-8 flex justify-between items-center">
+            <h1 className="text-3xl font-bold text-gray-800">Detalhes da Equipa</h1>
+            <button
+              onClick={() => navigate('/nucleo/equipas')}
+              className="px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+            >
+              Voltar
+            </button>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div>
               <div className="flex justify-center mb-8">

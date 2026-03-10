@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import ConfirmModal from "../../components/ConfirmModal";
 import Sidebar from "../../components/geral_navbar";
 import { regulationsApi, type Regulation, type RegulationCreate } from '../../api/regulations';
 import { modalitiesApi, type Modality } from '../../api/modalities';
@@ -12,7 +13,9 @@ const Regulamentos = () => {
   const [filterModality, setFilterModality] = useState("");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedRegulation, setSelectedRegulation] = useState<Regulation | null>(null);
+  const [deletingRegulation, setDeletingRegulation] = useState(false);
 
   // Campos Upload
   const [title, setTitle] = useState("");
@@ -92,13 +95,17 @@ const Regulamentos = () => {
   const handleDelete = async () => {
     if (!selectedRegulation) return;
 
-    if (!confirm(`Tem certeza que deseja eliminar "${selectedRegulation.title}"?`)) {
-      return;
-    }
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedRegulation) return;
 
     try {
+      setDeletingRegulation(true);
       await regulationsApi.delete(selectedRegulation.id);
       setRegulations(regulations.filter(r => r.id !== selectedRegulation.id));
+      setIsDeleteModalOpen(false);
       setIsViewModalOpen(false);
       setSelectedRegulation(null);
       notify('Regulamento eliminado com sucesso!', 'success');
@@ -109,6 +116,8 @@ const Regulamentos = () => {
       } else {
         notify('Não foi possível eliminar o regulamento. Tente novamente.', 'error');
       }
+    } finally {
+      setDeletingRegulation(false);
     }
   };
 
@@ -324,6 +333,21 @@ const Regulamentos = () => {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        title="Eliminar regulamento"
+        message={selectedRegulation ? `Tem certeza que deseja eliminar "${selectedRegulation.title}"?` : ''}
+        confirmLabel="Eliminar"
+        variant="danger"
+        loading={deletingRegulation}
+        onCancel={() => {
+          if (!deletingRegulation) {
+            setIsDeleteModalOpen(false);
+          }
+        }}
+        onConfirm={confirmDelete}
+      />
 
     </div>
   );

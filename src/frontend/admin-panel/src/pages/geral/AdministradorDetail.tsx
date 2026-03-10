@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import ConfirmModal from '../../components/ConfirmModal';
 import Sidebar from '../../components/geral_navbar';
 import { administratorsApi, type AdminDetails } from '../../api/administrators';
 import { nucleosApi, type Nucleo } from '../../api/nucleos';
@@ -28,6 +29,8 @@ function AdminDetail() {
   const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
   const [nucleoSearchEdit, setNucleoSearchEdit] = useState('');
   const [adminCourses, setAdminCourses] = useState<Course[]>([]);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -137,15 +140,20 @@ function AdminDetail() {
     }
   };
 
-  const handleDelete = async () => {
-    if (window.confirm('Tem certeza que deseja eliminar este administrador?')) {
-      try {
-        await administratorsApi.delete(String(id));
-        navigate('/geral/administradores');
-      } catch (err) {
-        console.error('Failed to delete administrator:', err);
-        notify('Não foi possível eliminar o administrador. Tente novamente.', 'error');
-      }
+  const handleDelete = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      setDeleting(true);
+      await administratorsApi.delete(String(id));
+      navigate('/geral/administradores');
+    } catch (err) {
+      console.error('Failed to delete administrator:', err);
+      notify('Não foi possível eliminar o administrador. Tente novamente.', 'error');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -166,6 +174,16 @@ function AdminDetail() {
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
       <div className="flex-1 p-8 max-w-3xl mx-auto">
+        <div className="mb-8 flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-gray-800">Detalhes do Administrador</h1>
+          <button
+            onClick={() => navigate('/geral/administradores')}
+            className="px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+          >
+            Voltar
+          </button>
+        </div>
+
         <div className="bg-white rounded-lg shadow-md p-8">
           <div className="space-y-6">
             <div>
@@ -453,6 +471,21 @@ function AdminDetail() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        title="Eliminar administrador"
+        message="Tem certeza que deseja eliminar este administrador?"
+        confirmLabel="Eliminar"
+        variant="danger"
+        loading={deleting}
+        onCancel={() => {
+          if (!deleting) {
+            setIsDeleteModalOpen(false);
+          }
+        }}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

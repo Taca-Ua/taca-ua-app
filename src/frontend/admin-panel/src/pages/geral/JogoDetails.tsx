@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import ConfirmModal from '../../components/ConfirmModal';
 import Sidebar from '../../components/geral_navbar';
 import { useNotification } from '../../contexts/NotificationProvider';
 import {
@@ -144,7 +145,7 @@ const MatchInfo = ({
           <p className="text-lg text-gray-800">{formatDateTime(match.start_time)}</p>
         </div>
       </div>
-    );
+    );geral/torneios/36754121-cc82-4e76-b667-d6232466b046
   }
 
   return (
@@ -234,6 +235,7 @@ const ResultsSection = ({
   const [isEditingResults, setIsEditingResults] = useState(false);
   const [saving, setSaving] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
+  const [showFinalizeModal, setShowFinalizeModal] = useState(false);
   const { notify } = useNotification();
   const [results, setResults] = useState<{ [key: string]: { score: string; position: string } }>({});
 
@@ -274,11 +276,15 @@ const ResultsSection = ({
     }
   };
 
-  const handleFinalizeMatch = async () => {
-    if (!window.confirm('Tem a certeza que deseja finalizar este jogo? O estado será alterado para "Terminado".')) return;
+  const handleFinalizeMatch = () => {
+    setShowFinalizeModal(true);
+  };
+
+  const confirmFinalizeMatch = async () => {
     try {
       setFinalizing(true);
       await matchesApi.update(match.id, { status: 'finished' });
+      setShowFinalizeModal(false);
       onUpdate();
     } catch (err) {
       console.error('Error finalizing match:', err);
@@ -296,53 +302,70 @@ const ResultsSection = ({
 
   if (match.status !== 'finished' && !isEditingResults) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold text-gray-800">Resultados</h3>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setIsEditingResults(true)}
-              className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md text-sm font-medium transition-colors"
-            >
-              {hasAnyResults ? 'Editar Resultados' : 'Publicar Resultados'}
-            </button>
-            {hasAnyResults && (
+      <>
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-bold text-gray-800">Resultados</h3>
+            <div className="flex gap-2">
               <button
-                onClick={handleFinalizeMatch}
-                disabled={finalizing}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+                onClick={() => setIsEditingResults(true)}
+                className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md text-sm font-medium transition-colors"
               >
-                {finalizing ? 'A finalizar...' : 'Finalizar Jogo'}
+                {hasAnyResults ? 'Editar Resultados' : 'Publicar Resultados'}
               </button>
-            )}
+              {hasAnyResults && (
+                <button
+                  onClick={handleFinalizeMatch}
+                  disabled={finalizing}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+                >
+                  {finalizing ? 'A finalizar...' : 'Finalizar Jogo'}
+                </button>
+              )}
+            </div>
           </div>
-        </div>
-        {hasAnyResults ? (
-          <div className="space-y-4">
-            {match.participants.map((participant) => (
-              <div key={participant.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                <span className="font-semibold text-gray-800">{getName(participant)}</span>
-                <div className="flex gap-6">
-                  {participant.score !== null && participant.score !== undefined && (
-                    <div className="text-right">
-                      <div className="text-sm text-gray-500">Pontuação</div>
-                      <div className="text-2xl font-bold text-teal-600">{participant.score}</div>
-                    </div>
-                  )}
-                  {participant.position !== null && participant.position !== undefined && (
-                    <div className="text-right">
-                      <div className="text-sm text-gray-500">Posição</div>
-                      <div className="text-2xl font-bold text-teal-600">{participant.position}º</div>
-                    </div>
-                  )}
+          {hasAnyResults ? (
+            <div className="space-y-4">
+              {match.participants.map((participant) => (
+                <div key={participant.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                  <span className="font-semibold text-gray-800">{getName(participant)}</span>
+                  <div className="flex gap-6">
+                    {participant.score !== null && participant.score !== undefined && (
+                      <div className="text-right">
+                        <div className="text-sm text-gray-500">Pontuação</div>
+                        <div className="text-2xl font-bold text-teal-600">{participant.score}</div>
+                      </div>
+                    )}
+                    {participant.position !== null && participant.position !== undefined && (
+                      <div className="text-right">
+                        <div className="text-sm text-gray-500">Posição</div>
+                        <div className="text-2xl font-bold text-teal-600">{participant.position}º</div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-600">Os resultados ainda não foram publicados.</p>
-        )}
-      </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-600">Os resultados ainda não foram publicados.</p>
+          )}
+        </div>
+
+        <ConfirmModal
+          isOpen={showFinalizeModal}
+          title="Finalizar jogo"
+          message='Tem a certeza que deseja finalizar este jogo? O estado será alterado para "Terminado".'
+          confirmLabel="Finalizar"
+          variant="success"
+          loading={finalizing}
+          onCancel={() => {
+            if (!finalizing) {
+              setShowFinalizeModal(false);
+            }
+          }}
+          onConfirm={confirmFinalizeMatch}
+        />
+      </>
     );
   }
 
@@ -584,6 +607,8 @@ const CommentsSection = ({ matchId }: { matchId: string }) => {
   const { notify } = useNotification();
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
+  const [deletingComment, setDeletingComment] = useState(false);
 
   useEffect(() => {
     fetchComments();
@@ -619,15 +644,23 @@ const CommentsSection = ({ matchId }: { matchId: string }) => {
     }
   };
 
-  const handleDeleteComment = async (commentId: string) => {
-    if (!confirm('Tem a certeza que deseja eliminar este comentário?')) return;
+  const handleDeleteComment = (commentId: string) => {
+    setCommentToDelete(commentId);
+  };
+
+  const confirmDeleteComment = async () => {
+    if (!commentToDelete) return;
 
     try {
-      await matchesApi.deleteComment(matchId, commentId);
-      setComments(comments.filter(c => c.id !== commentId));
+      setDeletingComment(true);
+      await matchesApi.deleteComment(matchId, commentToDelete);
+      setComments(comments.filter(c => c.id !== commentToDelete));
+      setCommentToDelete(null);
     } catch (err) {
       console.error('Error deleting comment:', err);
       notify(err instanceof Error ? err.message : 'Não foi possível eliminar o comentário. Tente novamente.', 'error');
+    } finally {
+      setDeletingComment(false);
     }
   };
 
@@ -698,6 +731,21 @@ const CommentsSection = ({ matchId }: { matchId: string }) => {
           ))}
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={commentToDelete !== null}
+        title="Eliminar comentário"
+        message="Tem a certeza que deseja eliminar este comentário?"
+        confirmLabel="Eliminar"
+        variant="danger"
+        loading={deletingComment}
+        onCancel={() => {
+          if (!deletingComment) {
+            setCommentToDelete(null);
+          }
+        }}
+        onConfirm={confirmDeleteComment}
+      />
     </div>
   );
 };

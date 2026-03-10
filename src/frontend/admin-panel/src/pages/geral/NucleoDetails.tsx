@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import ConfirmModal from '../../components/ConfirmModal';
 import Sidebar from '../../components/geral_navbar';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { nucleosApi, type Nucleo } from '../../api/nucleos';
@@ -17,6 +18,8 @@ const NucleoDetails = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editedAbbreviation, setEditedAbbreviation] = useState('');
   const [editedName, setEditedName] = useState('');
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -70,15 +73,20 @@ const NucleoDetails = () => {
     }
   };
 
-  const handleDelete = async () => {
-    if (window.confirm(`Tem certeza que deseja eliminar "${nucleus?.name}"?`)) {
-      try {
-        await nucleosApi.delete(String(id));
-        navigate('/geral/nucleos');
-      } catch (err) {
-        console.error('Failed to delete course:', err);
-        notify('Não foi possível eliminar o núcleo. Poderá ter cursos ou membros associados.', 'error');
-      }
+  const handleDelete = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      setDeleting(true);
+      await nucleosApi.delete(String(id));
+      navigate('/geral/nucleos');
+    } catch (err) {
+      console.error('Failed to delete course:', err);
+      notify('Não foi possível eliminar o núcleo. Poderá ter cursos ou membros associados.', 'error');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -231,6 +239,21 @@ const NucleoDetails = () => {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        title="Eliminar núcleo"
+        message={`Tem certeza que deseja eliminar "${nucleus.name}"?`}
+        confirmLabel="Eliminar"
+        variant="danger"
+        loading={deleting}
+        onCancel={() => {
+          if (!deleting) {
+            setIsDeleteModalOpen(false);
+          }
+        }}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 };

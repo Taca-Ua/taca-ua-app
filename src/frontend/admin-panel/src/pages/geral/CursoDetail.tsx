@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import ConfirmModal from '../../components/ConfirmModal';
 import Sidebar from '../../components/geral_navbar';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { coursesApi, type Course } from '../../api/courses';
@@ -18,6 +19,8 @@ const CursoDetail = () => {
   const [editedName, setEditedName] = useState('');
   const [editedAbbreviation, setEditedAbbreviation] = useState('');
   const [editedNucleoId, setEditedNucleoId] = useState('');
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -88,15 +91,20 @@ const CursoDetail = () => {
     }
   };
 
-  const handleDelete = async () => {
-    if (window.confirm(`Tem certeza que deseja eliminar "${course?.name}"?`)) {
-      try {
-        await coursesApi.delete(String(id));
-        navigate('/geral/cursos');
-      } catch (err) {
-        console.error('Failed to delete course:', err);
-        notify('Não foi possível eliminar o curso. Poderá estar associado a membros ou equipas.', 'error');
-      }
+  const handleDelete = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      setDeleting(true);
+      await coursesApi.delete(String(id));
+      navigate('/geral/cursos');
+    } catch (err) {
+      console.error('Failed to delete course:', err);
+      notify('Não foi possível eliminar o curso. Poderá estar associado a membros ou equipas.', 'error');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -251,6 +259,21 @@ const CursoDetail = () => {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        title="Eliminar curso"
+        message={`Tem certeza que deseja eliminar "${course.name}"?`}
+        confirmLabel="Eliminar"
+        variant="danger"
+        loading={deleting}
+        onCancel={() => {
+          if (!deleting) {
+            setIsDeleteModalOpen(false);
+          }
+        }}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 };

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import ConfirmModal from '../../components/ConfirmModal';
 import Sidebar from '../../components/geral_navbar';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { tournamentsApi, type TournamentDetail, type TournamentUpdate, type TournamentCompetitor, type TournamentCompetitorDetail, type TournamentFinish } from '../../api/tournaments';
@@ -218,6 +219,8 @@ const TournamentCompetitors = ({
   const [selectedTeamId, setSelectedTeamId] = useState('');
   const [selectedAthleteId, setSelectedAthleteId] = useState('');
   const [loading, setLoading] = useState(false);
+  const [competitorToRemove, setCompetitorToRemove] = useState<{ competitor: TournamentCompetitorDetail; name: string } | null>(null);
+  const [removingCompetitor, setRemovingCompetitor] = useState(false);
   const { notify } = useNotification();
 
   useEffect(() => {
@@ -286,15 +289,23 @@ const TournamentCompetitors = ({
     }
   };
 
-  const handleRemoveCompetitor = async (competitor: TournamentCompetitorDetail, name: string) => {
-    if (!window.confirm(`Remover "${name}" do torneio?`)) return;
+  const handleRemoveCompetitor = (competitor: TournamentCompetitorDetail, name: string) => {
+    setCompetitorToRemove({ competitor, name });
+  };
+
+  const confirmRemoveCompetitor = async () => {
+    if (!competitorToRemove) return;
 
     try {
-      await tournamentsApi.removeCompetitors(tournament.id, [competitor.id]);
+      setRemovingCompetitor(true);
+      await tournamentsApi.removeCompetitors(tournament.id, [competitorToRemove.competitor.id]);
+      setCompetitorToRemove(null);
       onCompetitorsChange();
     } catch (err) {
       console.error('Failed to remove competitor:', err);
       notify('Não foi possível remover o competidor do torneio. Tente novamente.', 'error');
+    } finally {
+      setRemovingCompetitor(false);
     }
   };
 
@@ -452,6 +463,21 @@ const TournamentCompetitors = ({
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={competitorToRemove !== null}
+        title="Remover competidor"
+        message={competitorToRemove ? `Remover "${competitorToRemove.name}" do torneio?` : ''}
+        confirmLabel="Remover"
+        variant="danger"
+        loading={removingCompetitor}
+        onCancel={() => {
+          if (!removingCompetitor) {
+            setCompetitorToRemove(null);
+          }
+        }}
+        onConfirm={confirmRemoveCompetitor}
+      />
     </div>
   );
 };
@@ -659,6 +685,8 @@ const TournamentMatches = ({
   const [location, setLocation] = useState('');
   const [startTime, setStartTime] = useState('');
   const [loading, setLoading] = useState(false);
+  const [matchToDelete, setMatchToDelete] = useState<string | null>(null);
+  const [deletingMatch, setDeletingMatch] = useState(false);
   const { notify } = useNotification();
   const [matchStatusFilter, setMatchStatusFilter] = useState<string>('all');
 
@@ -750,15 +778,23 @@ const TournamentMatches = ({
     setSelectedParticipants(updated);
   };
 
-  const handleDeleteMatch = async (matchId: string) => {
-    if (!window.confirm('Tem certeza que deseja eliminar este jogo?')) return;
+  const handleDeleteMatch = (matchId: string) => {
+    setMatchToDelete(matchId);
+  };
+
+  const confirmDeleteMatch = async () => {
+    if (!matchToDelete) return;
 
     try {
-      await matchesApi.delete(matchId);
-      onMatchDeleted(matchId);
+      setDeletingMatch(true);
+      await matchesApi.delete(matchToDelete);
+      onMatchDeleted(matchToDelete);
+      setMatchToDelete(null);
     } catch (err) {
       console.error('Failed to delete match:', err);
       notify('Não foi possível eliminar o jogo. Poderá ter resultados ou convocatórias registadas.', 'error');
+    } finally {
+      setDeletingMatch(false);
     }
   };
 
@@ -991,6 +1027,21 @@ const TournamentMatches = ({
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={matchToDelete !== null}
+        title="Eliminar jogo"
+        message="Tem certeza que deseja eliminar este jogo?"
+        confirmLabel="Eliminar"
+        variant="danger"
+        loading={deletingMatch}
+        onCancel={() => {
+          if (!deletingMatch) {
+            setMatchToDelete(null);
+          }
+        }}
+        onConfirm={confirmDeleteMatch}
+      />
     </div>
   );
 };
@@ -1005,6 +1056,9 @@ const TorneioDetails = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showFinishModal, setShowFinishModal] = useState(false);
   const [activating, setActivating] = useState(false);
+  const [showActivateModal, setShowActivateModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingTournament, setDeletingTournament] = useState(false);
   const { notify } = useNotification();
 
   useEffect(() => {
@@ -1034,34 +1088,46 @@ const TorneioDetails = () => {
     setTournament(updated);
   };
 
-  const handleActivate = async () => {
+  const handleActivate = () => {
     if (!id || !tournament) return;
 
-    if (window.confirm(`Ativar o torneio "${tournament.name}"? O torneio passará a estar ativo e visível.`)) {
-      try {
-        setActivating(true);
-        const updated = await tournamentsApi.update(id, { status: 'active' });
-        setTournament(updated);
-      } catch (err) {
-        console.error('Failed to activate tournament:', err);
-        notify('Não foi possível ativar o torneio. Verifique se estão reunidas as condições necessárias.', 'error');
-      } finally {
-        setActivating(false);
-      }
+    setShowActivateModal(true);
+  };
+
+  const confirmActivate = async () => {
+    if (!id || !tournament) return;
+
+    try {
+      setActivating(true);
+      const updated = await tournamentsApi.update(id, { status: 'active' });
+      setTournament(updated);
+      setShowActivateModal(false);
+    } catch (err) {
+      console.error('Failed to activate tournament:', err);
+      notify('Não foi possível ativar o torneio. Verifique se estão reunidas as condições necessárias.', 'error');
+    } finally {
+      setActivating(false);
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!id || !tournament) return;
 
-    if (window.confirm(`Tem certeza que deseja eliminar "${tournament.name}"?`)) {
-      try {
-        await tournamentsApi.delete(id);
-        navigate('/geral/torneios');
-      } catch (err) {
-        console.error('Failed to delete tournament:', err);
-        notify('Não foi possível eliminar o torneio. Poderá ter jogos ou competidores associados.', 'error');
-      }
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!id || !tournament) return;
+
+    try {
+      setDeletingTournament(true);
+      await tournamentsApi.delete(id);
+      navigate('/geral/torneios');
+    } catch (err) {
+      console.error('Failed to delete tournament:', err);
+      notify('Não foi possível eliminar o torneio. Poderá ter jogos ou competidores associados.', 'error');
+    } finally {
+      setDeletingTournament(false);
     }
   };
 
@@ -1145,6 +1211,36 @@ const TorneioDetails = () => {
           onFinish={handleFinish}
         />
       )}
+
+      <ConfirmModal
+        isOpen={showActivateModal}
+        title="Ativar torneio"
+        message={tournament ? `Ativar o torneio "${tournament.name}"? O torneio passará a estar ativo e visível.` : ''}
+        confirmLabel="Ativar"
+        variant="success"
+        loading={activating}
+        onCancel={() => {
+          if (!activating) {
+            setShowActivateModal(false);
+          }
+        }}
+        onConfirm={confirmActivate}
+      />
+
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        title="Eliminar torneio"
+        message={tournament ? `Tem certeza que deseja eliminar "${tournament.name}"?` : ''}
+        confirmLabel="Eliminar"
+        variant="danger"
+        loading={deletingTournament}
+        onCancel={() => {
+          if (!deletingTournament) {
+            setShowDeleteModal(false);
+          }
+        }}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 };
