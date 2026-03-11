@@ -184,10 +184,10 @@ function Administradores() {
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
-          <div className="bg-white rounded-lg p-8 max-w-4xl w-full mx-4 animate-slideUp max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="bg-white rounded-lg p-8 max-w-4xl w-full mx-4 animate-slideUp max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Adicionar Administrador</h2>
 
-            <div className="overflow-y-auto flex-1 pr-2">
+            <div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="memberUserName" className="block text-gray-700 font-medium mb-2">
@@ -344,6 +344,32 @@ function Administradores() {
                       ))
                     )}
                   </div>
+                  {selectedNucleos.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-gray-600 text-sm font-medium mb-2">Selecionados:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {allNucleos
+                          .filter(n => selectedNucleos.includes(n.id))
+                          .sort((a, b) => a.name.localeCompare(b.name))
+                          .map(n => (
+                            <span
+                              key={n.id}
+                              className="inline-flex items-center gap-1 bg-teal-100 text-teal-800 text-sm font-medium px-2.5 py-1 rounded-full"
+                            >
+                              <span>{n.abbreviation}</span>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedNucleos(selectedNucleos.filter(id => id !== n.id))}
+                                className="ml-0.5 text-teal-600 hover:text-teal-900"
+                                tabIndex={-1}
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
