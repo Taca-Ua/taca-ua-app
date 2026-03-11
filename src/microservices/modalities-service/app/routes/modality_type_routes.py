@@ -12,6 +12,7 @@ from taca_events.pydantic_schemas.modalities import (
     ModalityTypeDeletedV1,
     ModalityTypeUpdatedData,
     ModalityTypeUpdatedV1,
+    _EscalaoData,
 )
 
 from ..database import get_db_session
@@ -78,7 +79,14 @@ def create_modality_type(
                 modality_type_id=modality_type.id,
                 name=modality_type.name,
                 description=modality_type.description,
-                escaloes=modality_type.escaloes,
+                escaloes=[
+                    _EscalaoData(
+                        min_participants=e.minParticipants,
+                        max_participants=e.maxParticipants,
+                        points=e.points,
+                    )
+                    for e in modality_type_data.escaloes
+                ],
             ),
         )
         outbox_publisher.emit_event(
@@ -167,7 +175,14 @@ def update_modality_type(
             modality_type_id=modality_type.id,
             name=changes_made.get("name"),
             description=changes_made.get("description"),
-            escaloes=changes_made.get("escaloes"),
+            escaloes=[
+                _EscalaoData(
+                    min_participants=e.minParticipants,
+                    max_participants=e.maxParticipants,
+                    points=e.points,
+                )
+                for e in modality_type_data.escaloes
+            ],
         ),
     )
     outbox_publisher.emit_event(

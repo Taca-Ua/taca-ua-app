@@ -1146,6 +1146,7 @@ const TorneioDetails = () => {
 
     const updated = await tournamentsApi.update(id, data);
     setTournament(updated);
+    notify('Torneio atualizado com sucesso', 'success');
   };
 
   const handleActivate = async () => {
@@ -1156,6 +1157,7 @@ const TorneioDetails = () => {
         setActivating(true);
         const updated = await tournamentsApi.update(id, { status: 'active' });
         setTournament(updated);
+        notify('Torneio ativado com sucesso', 'success');
       } catch (err) {
         console.error('Failed to activate tournament:', err);
         notify('Não foi possível ativar o torneio. Verifique se estão reunidas as condições necessárias.', 'error');
@@ -1172,6 +1174,7 @@ const TorneioDetails = () => {
       try {
         await tournamentsApi.delete(id);
         navigate('/geral/torneios');
+        notify('Torneio eliminado com sucesso', 'success');
       } catch (err) {
         console.error('Failed to delete tournament:', err);
         notify('Não foi possível eliminar o torneio. Poderá ter jogos ou competidores associados.', 'error');
@@ -1184,6 +1187,7 @@ const TorneioDetails = () => {
 
     const updated = await tournamentsApi.finish(id, data);
     setTournament(updated);
+    notify('Torneio finalizado com sucesso', 'success');
   };
 
   if (loading) {

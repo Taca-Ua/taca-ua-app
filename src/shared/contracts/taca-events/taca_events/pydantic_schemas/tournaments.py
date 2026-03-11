@@ -49,6 +49,7 @@ class TournamentCompetitorAddedData(BaseModel):
     tournament_id: UUID
     competitor_type: str  # "team" | "athlete"
     competitor_entity_id: UUID
+    competitor_id: UUID
 
 
 class TournamentCompetitorDeletedData(BaseModel):

@@ -43,12 +43,7 @@ from .modalities import (
     TeamPlayerSnapshotItem,
     TeamSnapshotItem,
 )
-from .ranking import (
-    CourseRankingSnapshotItem,
-    GeneralRankingSnapshotItem,
-    ModalityRankingSnapshotItem,
-    RankingSnapshotResponse,
-)
+from .ranking import RankingSnapshotResponse
 from .tournaments import (
     TournamentCompetitorSnapshotItem,
     TournamentRankingPositionSnapshotItem,

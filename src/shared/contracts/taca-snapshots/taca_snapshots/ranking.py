@@ -8,49 +8,7 @@ Field names mirror the JSON keys currently returned by
 ``GET /internal/snapshot`` in the ranking-service.
 """
 
-from datetime import datetime
-from typing import Any, Dict, Optional
-
 from .base import SnapshotBase
-
-# ---------------------------------------------------------------------------
-# Individual item snapshots
-# ---------------------------------------------------------------------------
-
-
-class ModalityRankingSnapshotItem(SnapshotBase):
-    """A single modality-ranking record."""
-
-    id: str
-    modality_id: str
-    season_id: str
-    course_id: str
-    points: Optional[float] = None
-    details: Optional[Dict[str, Any]] = None
-    last_updated: Optional[datetime] = None
-
-
-class CourseRankingSnapshotItem(SnapshotBase):
-    """A single course-ranking record."""
-
-    id: str
-    course_id: str
-    season_id: str
-    total_points: Optional[float] = None
-    modality_breakdown: Optional[Dict[str, Any]] = None
-    last_updated: Optional[datetime] = None
-
-
-class GeneralRankingSnapshotItem(SnapshotBase):
-    """A single general-ranking record."""
-
-    id: str
-    season_id: str
-    course_id: str
-    position: Optional[int] = None
-    total_points: Optional[float] = None
-    last_updated: Optional[datetime] = None
-
 
 # ---------------------------------------------------------------------------
 # Aggregate snapshot response (full HTTP response body)
