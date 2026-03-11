@@ -9,7 +9,7 @@ Field names mirror the JSON keys currently returned by
 """
 
 from datetime import datetime
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from .base import SnapshotBase
 
@@ -44,10 +44,15 @@ class CourseSnapshotItem(SnapshotBase):
 class ModalityTypeSnapshotItem(SnapshotBase):
     """A single modality-type record."""
 
+    class EscaloType(SnapshotBase):
+        min_participants: Optional[int] = None
+        max_participants: Optional[int] = None
+        points: Optional[List[int]] = None
+
     id: str
     name: str
     description: Optional[str] = None
-    escaloes: Optional[List[Any]] = None
+    escaloes: Optional[List[EscaloType]] = None
     created_by: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

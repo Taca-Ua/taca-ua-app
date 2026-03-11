@@ -111,7 +111,18 @@ def get_snapshot(
                 id=str(mt.id),
                 name=mt.name,
                 description=mt.description,
-                escaloes=mt.escaloes,
+                escaloes=(
+                    [
+                        ModalityTypeSnapshotItem.EscaloType(
+                            min_participants=e["minParticipants"],
+                            max_participants=e["maxParticipants"],
+                            points=e["points"],
+                        )
+                        for e in mt.escaloes
+                    ]
+                    if mt.escaloes
+                    else None
+                ),
                 created_by=str(mt.created_by),
                 created_at=mt.created_at,
                 updated_at=mt.updated_at,

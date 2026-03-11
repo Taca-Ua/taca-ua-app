@@ -3,7 +3,7 @@ Event handling for Ranking Service.
 """
 
 from taca_events import modalities, tournaments
-from taca_messaging import RabbitMQService
+from taca_messaging import PausableRabbitMQService
 
 from .database import get_db
 from .logger import logger
@@ -17,7 +17,7 @@ from .models import (
     TournamentResult,
 )
 
-rabbitmq_service = RabbitMQService(service_name="ranking-service")
+rabbitmq_service = PausableRabbitMQService(service_name="ranking-service")
 
 
 # ==================== Modality Type Events ====================

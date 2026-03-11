@@ -285,3 +285,50 @@ class RabbitMQService:
             routing_key=event_name,
         )
         self.logger.info(f"Published event '{event_name}'")
+
+
+class PausableRabbitMQService(RabbitMQService):
+    """
+    Extended RabbitMQ service with pause/resume capabilities.
+
+    Used by the rebuild process to temporarily stop event consumption
+    while core tables are being cleared and repopulated.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._paused = False
+
+    def is_paused(self) -> bool:
+        return self._paused
+
+    async def pause_consumption(self) -> None:
+        """Cancel active consumers so messages queue in RabbitMQ."""
+        if self._paused:
+            self.logger.warning("event_consumption_already_paused")
+            return
+        self._paused = True
+        if self.channel and hasattr(self.channel, "_consumers"):
+            consumer_tags = list(self.channel._consumers.keys())
+            for tag in consumer_tags:
+                try:
+                    await self.channel.cancel(tag)
+                    self.logger.info("consumer_cancelled", consumer_tag=tag)
+                except Exception as exc:
+                    self.logger.error(
+                        "consumer_cancel_failed", consumer_tag=tag, error=str(exc)
+                    )
+        self.logger.info("event_consumption_paused")
+
+    async def resume_consumption(self) -> None:
+        """Re-start consuming from the queue."""
+        if not self._paused:
+            self.logger.warning("event_consumption_not_paused")
+            return
+        self._paused = False
+        try:
+            await self.start_consuming()
+            self.logger.info("event_consumption_resumed")
+        except Exception as exc:
+            self.logger.error("event_consumption_resume_failed", error=str(exc))
+            raise

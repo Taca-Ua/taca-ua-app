@@ -6,6 +6,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from .events import rabbitmq_service
 from .internal_controller import router as internal_router
 from .logger import logger
+from .rebuild_controller import router as rebuild_router
 
 
 @asynccontextmanager
@@ -28,6 +29,7 @@ Instrumentator().instrument(app).expose(app)  # Prometheus metrics endpoint
 
 # Include routers
 app.include_router(internal_router)
+app.include_router(rebuild_router)
 
 
 @app.get("/")
