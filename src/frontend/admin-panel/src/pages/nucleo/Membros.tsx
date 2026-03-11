@@ -94,10 +94,23 @@ function Membros() {
     try {
       if (memberType === 'participant') {
         // Validate participant fields
-        if (!studentNumber.trim()) {
+        const trimmedStudentNumber = studentNumber.trim();
+
+        if (!trimmedStudentNumber) {
           notify('Por favor, preencha o número de estudante.', 'error');
           return;
         }
+
+        if (!/^\d+$/.test(trimmedStudentNumber)) {
+          notify('O número de estudante (NMEC) deve conter apenas dígitos.', 'error');
+          return;
+        }
+
+        if (trimmedStudentNumber.length > 13) {
+          notify('O número de estudante (NMEC) não pode ter mais de 13 caracteres.', 'error');
+          return;
+        }
+
         if (!courseId.trim()) {
           notify('Por favor, preencha o curso.', 'error');
           return;
@@ -106,7 +119,7 @@ function Membros() {
         const newParticipant = await studentsApi.create({
           full_name: memberName,
           course_id: String(courseId),
-          student_number: studentNumber,
+          student_number: trimmedStudentNumber,
           is_member: true,
         });
 
@@ -119,17 +132,43 @@ function Membros() {
         };
 
         if (identifierType === 'contact') {
-          if (!contact.trim()) {
+          const trimmedContact = contact.trim();
+
+          if (!trimmedContact) {
             notify('Por favor, preencha o contacto.', 'error');
             return;
           }
-          staffData.contact = contact;
+
+          if (!/^\+?\d+$/.test(trimmedContact)) {
+            notify('O contacto (telemóvel) deve conter apenas dígitos e pode ter um "+" no início.', 'error');
+            return;
+          }
+
+          if (trimmedContact.length > 13) {
+            notify('O contacto (telemóvel) não pode ter mais de 13 caracteres.', 'error');
+            return;
+          }
+
+          staffData.contact = trimmedContact;
         } else {
-          if (!staffNumber.trim()) {
+          const trimmedStaffNumber = staffNumber.trim();
+
+          if (!trimmedStaffNumber) {
             notify('Por favor, preencha o número de staff.', 'error');
             return;
           }
-          staffData.staff_number = staffNumber;
+
+          if (!/^\d+$/.test(trimmedStaffNumber)) {
+            notify('O número de staff deve conter apenas dígitos.', 'error');
+            return;
+          }
+
+          if (trimmedStaffNumber.length > 13) {
+            notify('O número de staff não pode ter mais de 13 caracteres.', 'error');
+            return;
+          }
+
+          staffData.staff_number = trimmedStaffNumber;
         }
 
         const newStaff = await staffApi.create(staffData);
