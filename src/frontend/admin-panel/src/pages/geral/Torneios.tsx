@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
+import { useNotification } from '../../contexts/NotificationProvider';
 import { tournamentsApi, type Tournament, type TournamentCreate } from '../../api/tournaments';
 import { modalitiesApi, type Modality } from '../../api/modalities';
-import { teamsApi, type Team } from '../../api/teams';
 
 
 const TorneiosCreateModal = ({ isOpen, onClose, onCreate, modalities, setModalities }: {
@@ -15,10 +15,8 @@ const TorneiosCreateModal = ({ isOpen, onClose, onCreate, modalities, setModalit
 }) => {
   const [name, setName] = useState('');
   const [modalityId, setModalityId] = useState('');
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const { notify } = useNotification();
 
   // Fetch modalities on first mount if not already loaded
   useEffect(() => {
@@ -37,40 +35,21 @@ const TorneiosCreateModal = ({ isOpen, onClose, onCreate, modalities, setModalit
     }
   }, []);
 
-  // Fetch teams when selected modality changes
-  useEffect(() => {
-    setSelectedTeams([]); // Reset selected teams when modality changes
-    const fetchTeamsByModality = async () => {
-      if (!modalityId) return;
-      try {
-        const allTeams = await teamsApi.getAll({
-          modality_id: modalityId,
-        });
-        setTeams(allTeams);
-      }
-      catch (err) {
-        console.error('Failed to fetch teams by modality:', err);
-      }
-    };
-    fetchTeamsByModality();
-  }, [modalityId]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
     try {
       const newTournament: TournamentCreate = {
         name,
         modality_id: modalityId,
-        competitors: selectedTeams.map(teamId => ({ competitor_type: 'team', team_id: teamId })),
+        competitors: [],
       };
       const createdTournament = await tournamentsApi.create(newTournament);
       onCreate(createdTournament);
       onClose();
     } catch (err) {
       console.error('Failed to create tournament:', err);
-      setError('Erro ao criar torneio');
+      notify('Não foi possível criar o torneio. Verifique os dados e tente novamente.', 'error');
     } finally {
       setLoading(false);
     }
@@ -82,14 +61,8 @@ const TorneiosCreateModal = ({ isOpen, onClose, onCreate, modalities, setModalit
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
       <div className="bg-white p-8 rounded-lg w-full max-w-lg">
         <h2 className="text-2xl font-bold mb-4">Criar Torneio</h2>
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-            {error}
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Name of the tournament */}
           <div>
             <label className="font-medium">Nome do Torneio <span className="text-red-500">*</span></label>
             <input
@@ -101,7 +74,6 @@ const TorneiosCreateModal = ({ isOpen, onClose, onCreate, modalities, setModalit
             />
           </div>
 
-          {/* Modality of the tournament */}
           <div>
             <label className="font-medium">Modalidade <span className="text-red-500">*</span></label>
             <select
@@ -117,29 +89,6 @@ const TorneiosCreateModal = ({ isOpen, onClose, onCreate, modalities, setModalit
             </select>
           </div>
 
-          {/* Teams selection */}
-          <div>
-            <label className="font-medium">Equipas</label>
-            <select
-              multiple
-              value={selectedTeams}
-              onChange={(e) => {
-                const options = e.target.options;
-                const selected: string[] = [];
-                for (let i = 0; i < options.length; i++) {
-                  if (options[i].selected) {
-                    selected.push(options[i].value);
-                  }
-                }
-                setSelectedTeams(selected);
-              }}
-              className="w-full border border-gray-300 rounded-md p-2 h-32"
-            >
-              {teams.map(t => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-            </select>
-          </div>
           <div className="flex justify-end space-x-2">
             <button
               type="button"
@@ -167,7 +116,7 @@ const Torneios = () => {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { notify: notifyPage } = useNotification();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [modalities, setModalities] = useState<Modality[]>([]);  // lazy load modalities
@@ -181,10 +130,9 @@ const Torneios = () => {
           tournamentsApi.getAll(),
         ]);
         setTournaments(tournamentsData);
-        setError('');
       } catch (err) {
         console.error('Failed to fetch data:', err);
-        setError('Erro ao carregar dados');
+        notifyPage('Erro ao carregar dados', 'error');
       } finally {
         setLoading(false);
       }
@@ -194,12 +142,11 @@ const Torneios = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
 
-      <div className="p-8 max-w-7xl mx-auto">
+      <div className="flex-1 p-8 max-w-7xl mx-auto">
 
-        {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Torneios</h1>
 
@@ -211,13 +158,6 @@ const Torneios = () => {
           </button>
         </div>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-            {error}
-          </div>
-        )}
-
-        {/* Lista */}
         <div className="bg-white shadow-md rounded-lg p-6 space-y-3">
           {loading ? (
             <div className="text-center py-8">
@@ -229,11 +169,20 @@ const Torneios = () => {
               <div
                 key={t.id}
                 onClick={() => navigate(`/geral/torneios/${t.id}`)}
-                className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer flex justify-between"
+                className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer flex justify-between items-center"
               >
-                <div className="font-medium">{t.name}</div>
-                <div className="text-sm text-teal-600">
-                  {t.modality.name} {t.status}
+                <div className="font-medium text-gray-800">{t.name}</div>
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-teal-600 font-medium">{t.modality.name}</span>
+                  <span className="text-gray-400">|</span>
+                  <span className={`px-2 py-1 rounded-full font-medium ${
+                    t.status === 'active' ? 'bg-green-100 text-green-800' :
+                    t.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
+                    t.status === 'finished' ? 'bg-gray-100 text-gray-600' :
+                    'bg-gray-100 text-gray-600'
+                  }`}>
+                    {t.status === 'active' ? 'Ativo' : t.status === 'draft' ? 'Rascunho' : t.status === 'finished' ? 'Finalizado' : t.status}
+                  </span>
                 </div>
               </div>
             ))
@@ -242,7 +191,6 @@ const Torneios = () => {
           )}
         </div>
 
-        {/* Create Modal */}
         {isModalOpen &&
           <TorneiosCreateModal
             isOpen={isModalOpen}

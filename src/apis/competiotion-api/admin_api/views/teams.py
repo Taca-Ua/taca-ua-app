@@ -9,6 +9,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from ..decorators import RoleRequiredMixin
 from ..serializers.teams import (
     TeamCreateSerializer,
     TeamDetailSerializer,
@@ -33,14 +34,16 @@ from ..services.modalities_service import modalities_service_client
         tags=["Team Management"],
     ),
 )
-class TeamListCreateView(APIView):
+class TeamListCreateView(RoleRequiredMixin, APIView):
     def get(self, request: Request):
         # Serialize input data
         serializer = TeamListRequestSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
         # TODO: Pass filters to the modalities service client
-        teams = modalities_service_client.list_teams()
+        teams = modalities_service_client.list_teams(
+            admin_id=str(request.user_id) if "nucleo_admin" in request.roles else None
+        )
 
         # Serialize output data
         serializer = TeamListSerializer(teams, many=True)
@@ -80,7 +83,7 @@ class TeamListCreateView(APIView):
         tags=["Team Management"],
     ),
 )
-class TeamDetailView(APIView):
+class TeamDetailView(RoleRequiredMixin, APIView):
     def get(self, request, team_id):
         team = modalities_service_client.get_team(team_id)
 

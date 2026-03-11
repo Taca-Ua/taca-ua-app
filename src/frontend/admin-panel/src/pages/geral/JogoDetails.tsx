@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import ConfirmModal from '../../components/ConfirmModal';
 import Sidebar from '../../components/geral_navbar';
+import { useNotification } from '../../contexts/NotificationProvider';
 import {
   matchesApi,
   type MatchDetail,
@@ -143,7 +145,7 @@ const MatchInfo = ({
           <p className="text-lg text-gray-800">{formatDateTime(match.start_time)}</p>
         </div>
       </div>
-    );
+    );geral/torneios/36754121-cc82-4e76-b667-d6232466b046
   }
 
   return (
@@ -232,7 +234,9 @@ const ResultsSection = ({
 }) => {
   const [isEditingResults, setIsEditingResults] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const [finalizing, setFinalizing] = useState(false);
+  const [showFinalizeModal, setShowFinalizeModal] = useState(false);
+  const { notify } = useNotification();
   const [results, setResults] = useState<{ [key: string]: { score: string; position: string } }>({});
 
   useEffect(() => {
@@ -249,7 +253,6 @@ const ResultsSection = ({
   const handleSaveResults = async () => {
     try {
       setSaving(true);
-      setError('');
 
       const participant_results: ParticipantResult[] = match.participants.map(p => ({
         participant_id: p.id,
@@ -259,7 +262,7 @@ const ResultsSection = ({
 
       const updateData: MatchResultsUpdate = {
         participant_results,
-        status: 'finished',
+        // Do NOT auto-finish: status is not changed here
       };
 
       await matchesApi.updateMatchResults(match.id, updateData);
@@ -267,9 +270,27 @@ const ResultsSection = ({
       onUpdate();
     } catch (err) {
       console.error('Error updating results:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao atualizar resultados');
+      notify(err instanceof Error ? err.message : 'Não foi possível guardar os resultados. Verifique os dados e tente novamente.', 'error');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleFinalizeMatch = () => {
+    setShowFinalizeModal(true);
+  };
+
+  const confirmFinalizeMatch = async () => {
+    try {
+      setFinalizing(true);
+      await matchesApi.update(match.id, { status: 'finished' });
+      setShowFinalizeModal(false);
+      onUpdate();
+    } catch (err) {
+      console.error('Error finalizing match:', err);
+      notify(err instanceof Error ? err.message : 'Não foi possível finalizar o jogo. Tente novamente.', 'error');
+    } finally {
+      setFinalizing(false);
     }
   };
 
@@ -277,20 +298,74 @@ const ResultsSection = ({
     return participant.team?.name || participant.athlete?.full_name || 'Participante';
   };
 
+  const hasAnyResults = match.participants.some(p => p.score !== null && p.score !== undefined);
+
   if (match.status !== 'finished' && !isEditingResults) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold text-gray-800">Resultados</h3>
-          <button
-            onClick={() => setIsEditingResults(true)}
-            className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md text-sm font-medium transition-colors"
-          >
-            Publicar Resultados
-          </button>
+      <>
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-bold text-gray-800">Resultados</h3>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setIsEditingResults(true)}
+                className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md text-sm font-medium transition-colors"
+              >
+                {hasAnyResults ? 'Editar Resultados' : 'Publicar Resultados'}
+              </button>
+              {hasAnyResults && (
+                <button
+                  onClick={handleFinalizeMatch}
+                  disabled={finalizing}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+                >
+                  {finalizing ? 'A finalizar...' : 'Finalizar Jogo'}
+                </button>
+              )}
+            </div>
+          </div>
+          {hasAnyResults ? (
+            <div className="space-y-4">
+              {match.participants.map((participant) => (
+                <div key={participant.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                  <span className="font-semibold text-gray-800">{getName(participant)}</span>
+                  <div className="flex gap-6">
+                    {participant.score !== null && participant.score !== undefined && (
+                      <div className="text-right">
+                        <div className="text-sm text-gray-500">Pontuação</div>
+                        <div className="text-2xl font-bold text-teal-600">{participant.score}</div>
+                      </div>
+                    )}
+                    {participant.position !== null && participant.position !== undefined && (
+                      <div className="text-right">
+                        <div className="text-sm text-gray-500">Posição</div>
+                        <div className="text-2xl font-bold text-teal-600">{participant.position}º</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-600">Os resultados ainda não foram publicados.</p>
+          )}
         </div>
-        <p className="text-gray-600">Os resultados ainda não foram publicados.</p>
-      </div>
+
+        <ConfirmModal
+          isOpen={showFinalizeModal}
+          title="Finalizar jogo"
+          message='Tem a certeza que deseja finalizar este jogo? O estado será alterado para "Terminado".'
+          confirmLabel="Finalizar"
+          variant="success"
+          loading={finalizing}
+          onCancel={() => {
+            if (!finalizing) {
+              setShowFinalizeModal(false);
+            }
+          }}
+          onConfirm={confirmFinalizeMatch}
+        />
+      </>
     );
   }
 
@@ -307,12 +382,6 @@ const ResultsSection = ({
           </button>
         )}
       </div>
-
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm">
-          {error}
-        </div>
-      )}
 
       {!isEditingResults ? (
         <div className="space-y-4">
@@ -381,7 +450,6 @@ const ResultsSection = ({
               type="button"
               onClick={() => {
                 setIsEditingResults(false);
-                setError('');
               }}
               disabled={saving}
               className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md font-medium transition-colors disabled:opacity-50"
@@ -406,7 +474,7 @@ const ResultsSection = ({
 const LineupsSection = ({ match }: { match: MatchDetail }) => {
   const [lineups, setLineups] = useState<LineupDetail[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { notify } = useNotification();
 
   useEffect(() => {
     fetchLineups();
@@ -415,14 +483,25 @@ const LineupsSection = ({ match }: { match: MatchDetail }) => {
   const fetchLineups = async () => {
     try {
       setLoading(true);
-      setError('');
       const data = await matchesApi.getLineups(match.id);
       setLineups(data);
     } catch (err) {
       console.error('Error loading lineups:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao carregar convocatórias');
+      notify(err instanceof Error ? err.message : 'Não foi possível carregar as convocatórias. Tente recarregar a página.', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDownloadTeamSheet = async (teamId: string) => {
+    try {
+      const blob = await matchesApi.getMatchTeamSheet(match.id, teamId);
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+    } catch (err) {
+      console.error('Error downloading team sheet:', err);
+      notify(err instanceof Error ? err.message : 'Não foi possível descarregar a ficha de equipa. Tente novamente.', 'error');
     }
   };
 
@@ -451,10 +530,6 @@ const LineupsSection = ({ match }: { match: MatchDetail }) => {
         <div className="flex justify-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
         </div>
-      ) : error ? (
-        <div className="p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm">
-          {error}
-        </div>
       ) : lineups.length === 0 ? (
         <p className="text-gray-600">Nenhuma convocatória definida.</p>
       ) : (
@@ -466,9 +541,20 @@ const LineupsSection = ({ match }: { match: MatchDetail }) => {
 
             return (
               <div key={teamId} className="border-l-4 border-teal-500 pl-4">
-                <h4 className="font-semibold text-lg text-gray-800 mb-3">
-                  {team?.name || `Equipa ${teamId.substring(0, 8)}`}
-                </h4>
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="font-semibold text-lg text-gray-800">
+                    {team?.name || `Equipa ${teamId.substring(0, 8)}`}
+                  </h4>
+                  <button
+                    onClick={() => handleDownloadTeamSheet(teamId)}
+                    className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-md text-sm font-medium transition-colors flex items-center gap-1"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Ficha de Equipa
+                  </button>
+                </div>
 
                 {starters.length > 0 && (
                   <div className="mb-3">
@@ -518,9 +604,11 @@ const LineupsSection = ({ match }: { match: MatchDetail }) => {
 const CommentsSection = ({ matchId }: { matchId: string }) => {
   const [comments, setComments] = useState<CommentDetail[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { notify } = useNotification();
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
+  const [deletingComment, setDeletingComment] = useState(false);
 
   useEffect(() => {
     fetchComments();
@@ -529,12 +617,11 @@ const CommentsSection = ({ matchId }: { matchId: string }) => {
   const fetchComments = async () => {
     try {
       setLoading(true);
-      setError('');
       const data = await matchesApi.getComments(matchId);
       setComments(data);
     } catch (err) {
       console.error('Error loading comments:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao carregar comentários');
+      notify(err instanceof Error ? err.message : 'Não foi possível carregar os comentários. Tente recarregar a página.', 'error');
     } finally {
       setLoading(false);
     }
@@ -545,29 +632,35 @@ const CommentsSection = ({ matchId }: { matchId: string }) => {
 
     try {
       setSubmitting(true);
-      setError('');
       const commentData: CommentCreate = { message: newComment.trim() };
       const addedComment = await matchesApi.addComment(matchId, commentData);
       setComments([...comments, addedComment]);
       setNewComment('');
     } catch (err) {
       console.error('Error adding comment:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao adicionar comentário');
+      notify(err instanceof Error ? err.message : 'Não foi possível adicionar o comentário. Tente novamente.', 'error');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleDeleteComment = async (commentId: string) => {
-    if (!confirm('Tem a certeza que deseja eliminar este comentário?')) return;
+  const handleDeleteComment = (commentId: string) => {
+    setCommentToDelete(commentId);
+  };
+
+  const confirmDeleteComment = async () => {
+    if (!commentToDelete) return;
 
     try {
-      setError('');
-      await matchesApi.deleteComment(matchId, commentId);
-      setComments(comments.filter(c => c.id !== commentId));
+      setDeletingComment(true);
+      await matchesApi.deleteComment(matchId, commentToDelete);
+      setComments(comments.filter(c => c.id !== commentToDelete));
+      setCommentToDelete(null);
     } catch (err) {
       console.error('Error deleting comment:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao eliminar comentário');
+      notify(err instanceof Error ? err.message : 'Não foi possível eliminar o comentário. Tente novamente.', 'error');
+    } finally {
+      setDeletingComment(false);
     }
   };
 
@@ -586,13 +679,6 @@ const CommentsSection = ({ matchId }: { matchId: string }) => {
     <div className="bg-white rounded-lg shadow-md p-6">
       <h3 className="text-xl font-bold text-gray-800 mb-4">Comentários</h3>
 
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm">
-          {error}
-        </div>
-      )}
-
-      {/* Add Comment Form */}
       <div className="mb-6">
         <textarea
           className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
@@ -610,7 +696,6 @@ const CommentsSection = ({ matchId }: { matchId: string }) => {
         </button>
       </div>
 
-      {/* Comments List */}
       {loading ? (
         <div className="flex justify-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
@@ -646,6 +731,21 @@ const CommentsSection = ({ matchId }: { matchId: string }) => {
           ))}
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={commentToDelete !== null}
+        title="Eliminar comentário"
+        message="Tem a certeza que deseja eliminar este comentário?"
+        confirmLabel="Eliminar"
+        variant="danger"
+        loading={deletingComment}
+        onCancel={() => {
+          if (!deletingComment) {
+            setCommentToDelete(null);
+          }
+        }}
+        onConfirm={confirmDeleteComment}
+      />
     </div>
   );
 };
@@ -705,7 +805,7 @@ const JogoDetails = () => {
 
   const [match, setMatch] = useState<MatchDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { notify } = useNotification();
   const [saving, setSaving] = useState(false);
 
   // Edit mode state
@@ -724,7 +824,6 @@ const JogoDetails = () => {
 
     try {
       setLoading(true);
-      setError('');
       const matchData = await matchesApi.getById(id);
       setMatch(matchData);
 
@@ -736,7 +835,7 @@ const JogoDetails = () => {
       });
     } catch (err) {
       console.error('Error loading match:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao carregar dados do jogo');
+      notify(err instanceof Error ? err.message : 'Não foi possível carregar os dados do jogo. Tente recarregar a página.', 'error');
     } finally {
       setLoading(false);
     }
@@ -763,18 +862,17 @@ const JogoDetails = () => {
     if (!match) return;
 
     if (!formData.location.trim()) {
-      setError('O local é obrigatório');
+      notify('O local é obrigatório', 'error');
       return;
     }
 
     if (!formData.startTime.trim()) {
-      setError('A data e hora são obrigatórias');
+      notify('A data e hora são obrigatórias', 'error');
       return;
     }
 
     try {
       setSaving(true);
-      setError('');
 
       const updateData: MatchUpdate = {
         location: formData.location.trim(),
@@ -794,7 +892,7 @@ const JogoDetails = () => {
       });
     } catch (err) {
       console.error('Error updating match:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao atualizar jogo');
+      notify(err instanceof Error ? err.message : 'Não foi possível guardar as alterações ao jogo. Tente novamente.', 'error');
     } finally {
       setSaving(false);
     }
@@ -809,19 +907,17 @@ const JogoDetails = () => {
       status: match.status,
     });
     setIsEditingInfo(false);
-    setError('');
   };
 
   const handleDelete = async () => {
     if (!match) return;
 
     try {
-      setError('');
       await matchesApi.delete(match.id);
       navigate(`/geral/torneios/${match.tournament_id}`);
     } catch (err) {
       console.error('Error deleting match:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao eliminar jogo');
+      notify(err instanceof Error ? err.message : 'Não foi possível eliminar o jogo. Poderá ter resultados ou convocatórias registadas.', 'error');
       setShowDeleteModal(false);
     }
   };
@@ -830,27 +926,22 @@ const JogoDetails = () => {
     if (!match) return;
 
     try {
-      setError('');
-      const blob = await matchesApi.getMatchSheet(match.id);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `jogo_${match.id}_ficha.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+        const blob = await matchesApi.getMatchSheet(match.id);
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        // Optionally revoke after some time
+        setTimeout(() => window.URL.revokeObjectURL(url), 10000);
     } catch (err) {
-      console.error('Error downloading match sheet:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao fazer download da ficha de jogo');
+        console.error('Error downloading match sheet:', err);
+        notify(err instanceof Error ? err.message : 'Não foi possível descarregar a ficha de jogo. Tente novamente.', 'error');
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50">
         <Sidebar />
-        <div className="flex justify-center items-center py-12">
+        <div className="flex-1 flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
         </div>
       </div>
@@ -859,9 +950,9 @@ const JogoDetails = () => {
 
   if (!match) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50">
         <Sidebar />
-        <div className="p-8 max-w-4xl mx-auto">
+        <div className="flex-1 p-8 max-w-4xl mx-auto">
           <div className="bg-white rounded-lg shadow-md p-8 text-center">
             <div className="text-6xl mb-4">⚽</div>
             <h2 className="text-2xl font-bold text-gray-800 mb-2">Jogo não encontrado</h2>
@@ -879,11 +970,10 @@ const JogoDetails = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
 
-      <div className="p-8 max-w-6xl mx-auto">
-        {/* Back Button */}
+      <div className="flex-1 p-8 max-w-6xl mx-auto">
         <button
           onClick={() => navigate(-1)}
           className="mb-6 flex items-center text-teal-600 hover:text-teal-700 font-medium transition-colors group"
@@ -899,25 +989,12 @@ const JogoDetails = () => {
           Voltar
         </button>
 
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-md flex items-start">
-            <svg className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-            <span>{error}</span>
-          </div>
-        )}
-
-        {/* Match Header */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
           <MatchHeader match={match} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Match Info & Actions */}
           <div className="lg:col-span-1 space-y-6">
-            {/* Match Info Card */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-bold text-gray-800">Informações</h3>
@@ -945,7 +1022,6 @@ const JogoDetails = () => {
               />
             </div>
 
-            {/* Action Buttons */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h3 className="text-xl font-bold text-gray-800 mb-4">Ações</h3>
               <div className="space-y-3">
@@ -972,7 +1048,6 @@ const JogoDetails = () => {
             </div>
           </div>
 
-          {/* Right Column - Results, Lineups, Comments */}
           <div className="lg:col-span-2 space-y-6">
             <ResultsSection match={match} onUpdate={fetchMatch} />
             <LineupsSection match={match} />
@@ -981,7 +1056,6 @@ const JogoDetails = () => {
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
       <DeleteModal
         show={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}

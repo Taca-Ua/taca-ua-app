@@ -9,6 +9,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from ..decorators import RoleRequiredMixin, require_auth
 from ..serializers.seasons import SeasonCreateSerializer, SeasonListSerializer
 
 
@@ -25,7 +26,7 @@ from ..serializers.seasons import SeasonCreateSerializer, SeasonListSerializer
         tags=["Season Management"],
     ),
 )
-class SeasonListCreateView(APIView):
+class SeasonListCreateView(RoleRequiredMixin, APIView):
     def get(self, request):
         dummy_data = [
             {"id": 1, "year": 2024, "status": "finished"},
@@ -48,6 +49,7 @@ class SeasonListCreateView(APIView):
     tags=["Season Management"],
 )
 @api_view(["POST"])
+@require_auth
 def season_start(request, season_id):
     dummy_response = {"id": season_id, "year": 2025, "status": "active"}
     return Response(dummy_response)
@@ -60,6 +62,7 @@ def season_start(request, season_id):
     tags=["Season Management"],
 )
 @api_view(["POST"])
+@require_auth
 def season_finish(request, season_id):
     dummy_response = {"id": season_id, "year": 2025, "status": "finished"}
     return Response(dummy_response)

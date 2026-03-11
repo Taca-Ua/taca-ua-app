@@ -1,22 +1,25 @@
 import { createContext } from 'react';
-
-export interface User {
-  id: number;
-  username: string;
-  email: string;
-  course_id: number | null;
-  course_abbreviation: string | null;
-  full_name: string;
-  role: 'nucleo' | 'geral';
-}
+import type { KcRole } from '../lib/jwtRoles';
 
 export interface AuthContextType {
-  user: User | null;
-  token: string | null;
-  isAuthenticated: boolean;
+  /** True once Keycloak has finished its init handshake. */
   isLoading: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  /** True when the user holds a valid Keycloak session. */
+  isAuthenticated: boolean;
+  /** Raw access token kept in memory only – never persisted to storage. */
+  token: string | null;
+  /** All realm roles extracted from the token payload. */
+  roles: string[];
+  /** The recognised admin role ('general_admin' | 'nucleo_admin') or null. */
+  adminRole: KcRole | null;
+  /** preferred_username from the token. */
+  username: string | null;
+  /** Redirect to Keycloak login page. */
+  login: () => void;
+  /** End the Keycloak session and redirect back to the app root. */
   logout: () => void;
+  /** Convenience: check whether a specific KcRole is held. */
+  hasRole: (role: KcRole) => boolean;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);

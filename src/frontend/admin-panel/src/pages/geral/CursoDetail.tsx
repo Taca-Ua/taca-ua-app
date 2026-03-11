@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import ConfirmModal from '../../components/ConfirmModal';
 import Sidebar from '../../components/geral_navbar';
+import { useNotification } from '../../contexts/NotificationProvider';
 import { coursesApi, type Course } from '../../api/courses';
 import { nucleosApi, type Nucleo } from '../../api/nucleos';
 
@@ -11,12 +13,14 @@ const CursoDetail = () => {
   const [course, setCourse] = useState<Course>();
   const [nucleos, setNucleos] = useState<Nucleo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { notify } = useNotification();
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editedName, setEditedName] = useState('');
   const [editedAbbreviation, setEditedAbbreviation] = useState('');
   const [editedNucleoId, setEditedNucleoId] = useState('');
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -24,10 +28,9 @@ const CursoDetail = () => {
         setLoading(true);
         const data = await coursesApi.getById(String(id));
         setCourse(data);
-        setError('');
       } catch (err) {
         console.error('Failed to fetch course:', err);
-        setError('Erro ao carregar curso');
+        notify('Não foi possível carregar os dados do curso. Tente recarregar a página.', 'error');
         navigate('/geral/cursos');
       } finally {
         setLoading(false);
@@ -57,21 +60,20 @@ const CursoDetail = () => {
     setEditedName(course.name);
     setEditedAbbreviation(course.abbreviation);
     setEditedNucleoId(course.nucleo.id);
-    setError('');
     setIsEditModalOpen(true);
   };
 
   const handleSave = async () => {
     if (!editedName.trim()) {
-      setError('Nome é obrigatório');
+      notify('Nome é obrigatório', 'error');
       return;
     }
     if (!editedAbbreviation.trim()) {
-      setError('Abreviatura é obrigatória');
+      notify('Abreviatura é obrigatória', 'error');
       return;
     }
     if (!editedNucleoId) {
-      setError('Núcleo é obrigatório');
+      notify('Núcleo é obrigatório', 'error');
       return;
     }
 
@@ -82,31 +84,35 @@ const CursoDetail = () => {
         nucleo_id: editedNucleoId,
       });
       setCourse(updatedCourse);
-      setError('');
       setIsEditModalOpen(false);
     } catch (err) {
       console.error('Failed to update course:', err);
-      setError('Erro ao atualizar curso');
+      notify('Não foi possível guardar as alterações ao curso. Verifique os dados e tente novamente.', 'error');
     }
   };
 
-  const handleDelete = async () => {
-    if (window.confirm(`Tem certeza que deseja eliminar "${course?.name}"?`)) {
-      try {
-        await coursesApi.delete(String(id));
-        navigate('/geral/cursos');
-      } catch (err) {
-        console.error('Failed to delete course:', err);
-        setError('Erro ao eliminar curso');
-      }
+  const handleDelete = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      setDeleting(true);
+      await coursesApi.delete(String(id));
+      navigate('/geral/cursos');
+    } catch (err) {
+      console.error('Failed to delete course:', err);
+      notify('Não foi possível eliminar o curso. Poderá estar associado a membros ou equipas.', 'error');
+    } finally {
+      setDeleting(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50">
         <Sidebar />
-        <div className="flex justify-center items-center py-12">
+        <div className="flex-1 flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
         </div>
       </div>
@@ -116,12 +122,10 @@ const CursoDetail = () => {
   if (!course) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-
-      <div className="p-8">
+      <div className="flex-1 p-8">
         <div className="max-w-4xl mx-auto">
-          {/* Header */}
           <div className="mb-8 flex justify-between items-center">
             <h1 className="text-3xl font-bold text-gray-800">Detalhes do Curso</h1>
             <button
@@ -132,31 +136,16 @@ const CursoDetail = () => {
             </button>
           </div>
 
-          {/* Card */}
           <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
-            {/* Logo */}
             <div>
               <label className="block text-teal-500 font-medium mb-2">Logo</label>
               <div className="flex items-center gap-4">
                 <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-teal-500">
-                  {/* {course.logo_url ? (
-                    <img
-                      src={course.logo_url}
-                      alt={course.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.parentElement!.innerHTML = `<span class="text-teal-600 font-bold text-2xl">${course.abbreviation}</span>`;
-                      }}
-                    />
-                  ) : ( */}
                     <span className="text-teal-600 font-bold text-2xl">{course.abbreviation}</span>
-                  {/* )} */}
                 </div>
               </div>
             </div>
 
-            {/* Name */}
             <div>
               <label className="block text-teal-500 font-medium mb-2">Nome</label>
               <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
@@ -164,7 +153,6 @@ const CursoDetail = () => {
               </div>
             </div>
 
-            {/* Abbreviation */}
             <div>
               <label className="block text-teal-500 font-medium mb-2">Abreviatura</label>
               <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
@@ -172,7 +160,6 @@ const CursoDetail = () => {
               </div>
             </div>
 
-            {/* Nucleo */}
             <div>
               <label className="block text-teal-500 font-medium mb-2">Núcleo</label>
               <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
@@ -199,20 +186,12 @@ const CursoDetail = () => {
         </div>
       </div>
 
-      {/* MODAL Edition */}
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Editar Curso</h2>
 
-            {error && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-                {error}
-              </div>
-            )}
-
             <div className="space-y-4">
-              {/* Name */}
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
                   Nome <span className="text-red-500">*</span>
@@ -227,7 +206,6 @@ const CursoDetail = () => {
                 />
               </div>
 
-              {/* Abbreviation */}
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
                   Abreviatura <span className="text-red-500">*</span>
@@ -242,7 +220,6 @@ const CursoDetail = () => {
                 />
               </div>
 
-              {/* Nucleo */}
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
                   Núcleo <span className="text-red-500">*</span>
@@ -266,7 +243,6 @@ const CursoDetail = () => {
               <button
                 onClick={() => {
                   setIsEditModalOpen(false);
-                  setError('');
                 }}
                 className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md"
               >
@@ -283,6 +259,21 @@ const CursoDetail = () => {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        title="Eliminar curso"
+        message={`Tem certeza que deseja eliminar "${course.name}"?`}
+        confirmLabel="Eliminar"
+        variant="danger"
+        loading={deleting}
+        onCancel={() => {
+          if (!deleting) {
+            setIsDeleteModalOpen(false);
+          }
+        }}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 };

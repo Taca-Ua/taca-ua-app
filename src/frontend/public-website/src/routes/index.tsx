@@ -1,11 +1,13 @@
 import { createBrowserRouter } from 'react-router-dom';
 import Home from '../pages/Home';
 import NotFound from '../pages/NotFound';
-import Geral from '../pages/classificacao/Geral';
-import Modalidade from '../pages/classificacao/Modalidade';
-import TorneioDetail from '../pages/classificacao/TorneioDetail';
 import Regulamentos from '../pages/Regulamentos';
 import Calendario from '../pages/Calendario';
+import Tournaments from '../pages/classificacao/Tournaments';
+import TournamentDetailPage from '../pages/classificacao/TournamentDetail';
+import GeneralRankingPage from '../pages/classificacao/GeneralRanking';
+import Students from '../pages/Students';
+import Teams from '../pages/Teams';
 
 export const router = createBrowserRouter([
   {
@@ -13,20 +15,28 @@ export const router = createBrowserRouter([
     element: <Home />
   },
   {
-    path: '/classificacao/geral',
-    element: <Geral />
-  },
-  {
-    path: '/classificacao/modalidade',
-    element: <Modalidade />
-  },
-  {
-    path: '/classificacao/torneio/:id',
-    element: <TorneioDetail />
-  },
-  {
     path: '/calendario',
     element: <Calendario />
+  },
+  {
+    path: '/torneios',
+    element: <Tournaments />
+  },
+  {
+    path: '/torneios/:id',
+    element: <TournamentDetailPage />
+  },
+  {
+    path: '/ranking',
+    element: <GeneralRankingPage />
+  },
+  {
+    path: '/estudantes',
+    element: <Students />
+  },
+  {
+    path: '/equipas',
+    element: <Teams />
   },
   {
     path: '/regulamentos',

@@ -8,19 +8,11 @@ import uuid
 from datetime import datetime, timezone
 
 import sqlalchemy as sa
-from sqlalchemy import (
-    Boolean,
-    Column,
-    DateTime,
-    Enum,
-    ForeignKey,
-    Integer,
-    String,
-    Text,
-)
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+from taca_outbox.models import create_outbox_model
 
 Base = declarative_base()
 
@@ -137,11 +129,13 @@ class Tournament(Base):
 
 
 class TournamentRankingPosition(Base):
-    """Represents the ranking position of a team in a tournament"""
+    """Represents the ranking position of a competitor in a tournament"""
 
     __tablename__ = "tournament_ranking_position"
     __table_args__ = (
-        sa.UniqueConstraint("tournament_id", "team_id", name="uq_tournament_team"),
+        sa.UniqueConstraint(
+            "tournament_id", "competitor_id", name="uq_tournament_competitor"
+        ),
         {"schema": "tournaments"},
     )
 
@@ -152,7 +146,7 @@ class TournamentRankingPosition(Base):
         nullable=False,
         index=True,
     )
-    team_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    competitor_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     position = Column(Integer, nullable=False)
     created_at = Column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
@@ -165,52 +159,11 @@ class TournamentRankingPosition(Base):
         return {
             "id": str(self.id),
             "tournament_id": str(self.tournament_id),
-            "team_id": str(self.team_id),
+            "competitor_id": str(self.competitor_id),
             "position": self.position,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
 
-class OutboxEvent(Base):
-    """
-    Outbox pattern for reliable event publishing.
-    Events are stored here first, then published by the OutboxPublisher.
-    """
-
-    __tablename__ = "outbox_event"
-    __table_args__ = {"schema": "tournaments"}
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    event_type = Column(
-        String(255), nullable=False, index=True
-    )  # e.g., 'tournament.created'
-    aggregate_type = Column(
-        String(100), nullable=False, index=True
-    )  # e.g., 'tournament'
-    aggregate_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    payload = Column(sa.JSON, nullable=False)  # Event data
-    published = Column(Boolean, default=False, nullable=False, index=True)
-    published_at = Column(DateTime(timezone=True), nullable=True)
-    created_at = Column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False,
-    )
-    retry_count = Column(sa.Integer, default=0, nullable=False)
-    last_error = Column(Text, nullable=True)
-
-    def to_dict(self):
-        return {
-            "id": str(self.id),
-            "event_type": self.event_type,
-            "aggregate_type": self.aggregate_type,
-            "aggregate_id": str(self.aggregate_id),
-            "payload": self.payload,
-            "published": self.published,
-            "published_at": (
-                self.published_at.isoformat() if self.published_at else None
-            ),
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "retry_count": self.retry_count,
-            "last_error": self.last_error,
-        }
+# OutboxEvent model — schema-bound via shared factory
+OutboxEvent = create_outbox_model(Base, schema="tournaments")

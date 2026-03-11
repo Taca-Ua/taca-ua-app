@@ -13,6 +13,10 @@ RUN pip install --no-cache-dir /tmp/taca-messaging && rm -rf /tmp/taca-messaging
 COPY src/shared/read-model-shared /tmp/read-model-shared
 RUN pip install --no-cache-dir /tmp/read-model-shared && rm -rf /tmp/read-model-shared
 
+# Install snapshots package
+COPY src/shared/taca-snapshots /tmp/taca-snapshots
+RUN pip install --no-cache-dir /tmp/taca-snapshots && rm -rf /tmp/taca-snapshots
+
 COPY src/microservices/read-model-updater .
 
 # Run migrations and start the service

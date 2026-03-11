@@ -1,6 +1,8 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import ConfirmModal from '../../components/ConfirmModal';
 import Sidebar from '../../components/geral_navbar';
+import { useNotification } from '../../contexts/NotificationProvider';
 import { modalitiesApi, type ModalityDetail } from '../../api/modalities';
 import { modalityTypesApi } from '../../api/modality-types';
 
@@ -22,9 +24,9 @@ const ModalidadeDetailEditModal = ({
   modalityTypes: ModalityType[];
   setModalityTypes: React.Dispatch<React.SetStateAction<ModalityType[]>>;
 }) => {
-  const [error, setError] = useState('');
   const [editedName, setEditedName] = useState(modality.name);
   const [editedType, setEditedType] = useState(modality.modality_type.id);
+  const { notify } = useNotification();
 
   // Fetch modality types if not already loaded
   useEffect(() => {
@@ -43,11 +45,11 @@ const ModalidadeDetailEditModal = ({
 
   const handleSave = async () => {
     if (!editedName.trim()) {
-      setError('Nome é obrigatório');
+      notify('Nome é obrigatório', 'error');
       return;
     }
     if (!editedType) {
-      setError('Tipo é obrigatório');
+      notify('Tipo é obrigatório', 'error');
       return;
     }
 
@@ -57,11 +59,10 @@ const ModalidadeDetailEditModal = ({
         modality_type_id: editedType,
       });
       setModality(updatedModality);
-      setError('');
       onClose();
     } catch (err) {
       console.error('Failed to update modality:', err);
-      setError('Erro ao atualizar modalidade');
+      notify('Não foi possível guardar as alterações à modalidade. Tente novamente.', 'error');
     }
   };
 
@@ -70,14 +71,7 @@ const ModalidadeDetailEditModal = ({
       <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">Editar Modalidade</h2>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-            {error}
-          </div>
-        )}
-
         <div className="space-y-4">
-          {/* Name */}
           <div>
             <label className="block text-gray-700 font-medium mb-2">
               Nome <span className="text-red-500">*</span>
@@ -91,7 +85,6 @@ const ModalidadeDetailEditModal = ({
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
             />
           </div>
-          {/* Type */}
           <div>
             <label className="block text-gray-700 font-medium mb-2">
               Tipo <span className="text-red-500">*</span>
@@ -137,6 +130,9 @@ function ModalidadeDetail() {
   const [modality, setModality] = useState<ModalityDetail | null>(null);
   const [modalityTypes, setModalityTypes] = useState<ModalityType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const { notify } = useNotification();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -162,23 +158,28 @@ function ModalidadeDetail() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async () => {
-    if (window.confirm('Tem certeza que deseja eliminar esta modalidade?')) {
-      try {
-        await modalitiesApi.delete(String(id));
-        navigate('/geral/modalidades');
-      } catch (err) {
-        console.error('Failed to delete modality:', err);
-        alert('Erro ao eliminar modalidade');
-      }
+  const handleDelete = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      setDeleting(true);
+      await modalitiesApi.delete(String(id));
+      navigate('/geral/modalidades');
+    } catch (err) {
+      console.error('Failed to delete modality:', err);
+      notify('Não foi possível eliminar a modalidade. Poderá ter torneios ou formatos de prova associados.', 'error');
+    } finally {
+      setDeleting(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50">
         <Sidebar />
-        <div className="flex justify-center items-center py-12">
+        <div className="flex-1 flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
         </div>
       </div>
@@ -188,19 +189,26 @@ function ModalidadeDetail() {
   if (!modality) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
 
-      {/* Content */}
-      <div className="p-8 max-w-3xl mx-auto">
+      <div className="flex-1 p-8 max-w-3xl mx-auto">
+        <div className="mb-8 flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-gray-800">Detalhes da Modalidade</h1>
+          <button
+            onClick={() => navigate('/geral/modalidades')}
+            className="px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+          >
+            Voltar
+          </button>
+        </div>
+
         <div className="bg-white rounded-lg shadow-md p-8">
           <div className="space-y-6">
-            {/* Name */}
             <div>
               <label className="block text-teal-500 font-medium mb-2">Nome</label>
               <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800">{modality.name}</div>
             </div>
-            {/* Type */}
             <div>
               <label className="block text-teal-500 font-medium mb-2">Tipo</label>
               <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800 capitalize">{modality.modality_type.name}</div>
@@ -227,6 +235,21 @@ function ModalidadeDetail() {
           setModalityTypes={setModalityTypes}
         />
       )}
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        title="Eliminar modalidade"
+        message="Tem certeza que deseja eliminar esta modalidade?"
+        confirmLabel="Eliminar"
+        variant="danger"
+        loading={deleting}
+        onCancel={() => {
+          if (!deleting) {
+            setIsDeleteModalOpen(false);
+          }
+        }}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

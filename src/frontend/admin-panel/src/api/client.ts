@@ -1,3 +1,5 @@
+import keycloak from '../lib/keycloak';
+
 const API_BASE_URL = '/api/admin';
 
 interface ApiError {
@@ -10,14 +12,25 @@ export class ApiClient {
 
   constructor(baseUrl: string = API_BASE_URL) {
     this.baseUrl = baseUrl;
+    // Remove any stale legacy session token that the old mock auth may have
+    // written to localStorage.  The real Keycloak token lives in memory only.
+    localStorage.removeItem('auth_token');
   }
 
-  private getAuthHeader(): Record<string, string> {
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      return { Authorization: `Bearer ${token}` };
+  /**
+   * Proactively refresh the Keycloak access token if it expires within 30 s,
+   * then return the Authorization header map ready for fetch().
+   */
+  private async getAuthHeader(): Promise<Record<string, string>> {
+    if (!keycloak.authenticated) return {};
+    try {
+      await keycloak.updateToken(30);
+    } catch {
+      // Refresh token has expired – redirect the user to Keycloak login.
+      keycloak.login();
+      return {};
     }
-    return {};
+    return keycloak.token ? { Authorization: `Bearer ${keycloak.token}` } : {};
   }
 
   async get<T>(endpoint: string, params?: unknown): Promise<T> {
@@ -33,7 +46,7 @@ export class ApiClient {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        ...this.getAuthHeader(),
+        ...(await this.getAuthHeader()),
       },
     });
 
@@ -49,11 +62,15 @@ export class ApiClient {
 
   async post<T>(endpoint: string, data: unknown): Promise<T> {
     const isFormData = data instanceof FormData;
+    
+    // Precisamos do await aqui para obter os headers de autenticação
+    const authHeader = await this.getAuthHeader();
 
     const headers: Record<string, string> = {
-      ...this.getAuthHeader(),
+      ...authHeader,
     };
 
+    // Se for FormData (ficheiro), o fetch define o Content-Type automaticamente com o boundary correto
     if (!isFormData) {
       headers['Content-Type'] = 'application/json';
     }
@@ -79,7 +96,7 @@ export class ApiClient {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        ...this.getAuthHeader(),
+        ...(await this.getAuthHeader()),
       },
       body: JSON.stringify(data),
     });
@@ -99,7 +116,7 @@ export class ApiClient {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        ...this.getAuthHeader(),
+        ...(await this.getAuthHeader()),
       },
     });
 

@@ -5,6 +5,7 @@ Event handling for Ranking Service.
 from datetime import datetime, timezone
 from uuid import UUID
 
+from taca_events.pydantic_schemas.tournaments import TournamentFinishedV1
 from taca_messaging import RabbitMQService
 
 from .logger import logger
@@ -30,15 +31,15 @@ async def publish_rankings_updated(season_id: UUID, scope, entity_id: UUID = Non
 
 
 @rabbitmq_service.event_handler("match.finished")
-async def handle_match_finished(data: dict):
+async def handle_match_finished(raw_event: dict):
     """
     Consumes: match.finished
 
     Update rankings incrementally when a match finishes.
     Recalculate affected rankings (modality, course, general).
     """
-    match_id = data.get("match_id")
-    # tournament_id = data.get("tournament_id")
+    match_id = raw_event.get("match_id")
+    # tournament_id = raw_event.get("tournament_id")
     logger.info(f"Handling match.finished event for match {match_id}")
 
     # Implementation to be added when database operations are needed
@@ -51,16 +52,15 @@ async def handle_match_finished(data: dict):
     logger.warning("MatchFinished handler not fully implemented yet")
 
 
-@rabbitmq_service.event_handler("tournament.finished")
-async def handle_tournament_finished(data: dict):
+@rabbitmq_service.event_handler(TournamentFinishedV1)
+async def handle_tournament_finished(event: TournamentFinishedV1):
     """
     Consumes: tournament.finished
 
     Force complete recalculation of modality rankings when tournament finishes.
     Consolidate final points.
     """
-    tournament_id = data.get("tournament_id")
-    # modality_id = data.get("modality_id")
+    tournament_id = event.data.tournament_id
     logger.info(f"Handling tournament.finished event for tournament {tournament_id}")
 
     # Implementation to be added when database operations are needed
@@ -73,14 +73,14 @@ async def handle_tournament_finished(data: dict):
 
 
 @rabbitmq_service.event_handler("season.finished")
-async def handle_season_finished(data: dict):
+async def handle_season_finished(raw_event: dict):
     """
     Consumes: season.finished
 
     Archive final rankings for the season.
     Create historical snapshot.
     """
-    season_id = data.get("season_id")
+    season_id = raw_event.get("season_id")
     logger.info(f"Handling season.finished event for season {season_id}")
 
     # Implementation to be added when database operations are needed

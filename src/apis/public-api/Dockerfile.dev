@@ -2,20 +2,10 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+COPY src/shared /tmp
+
 COPY src/apis/public-api/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Install messaging package
-COPY src/shared/taca-messaging /tmp/taca-messaging
-RUN pip install --no-cache-dir -e /tmp/taca-messaging
-
-# Install shared modules package
-COPY src/shared/read-model-shared /tmp/read-model-shared
-RUN pip install --no-cache-dir -e /tmp/read-model-shared
-
-# Install logging package
-COPY src/shared/taca-logging /tmp/taca-logging
-RUN pip install --no-cache-dir -e /tmp/taca-logging
 
 COPY src/apis/public-api .
 

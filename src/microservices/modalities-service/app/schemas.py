@@ -23,6 +23,7 @@ class NucleoResponse(BaseModel):
     id: str
     name: str
     abbreviation: str
+    admins_ids: List[str] = Field(default_factory=list)
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None

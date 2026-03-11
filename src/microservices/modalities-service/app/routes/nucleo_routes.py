@@ -1,16 +1,24 @@
 from datetime import datetime, timezone
-from typing import List
+from typing import Dict, List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from taca_events import EventType
+from taca_events.pydantic_schemas.modalities import (
+    NucleoCreatedData,
+    NucleoCreatedV1,
+    NucleoDeletedData,
+    NucleoDeletedV1,
+    NucleoUpdatedData,
+    NucleoUpdatedV1,
+)
 
 from ..database import get_db_session
-from ..event_helpers import emit_event
 from ..logger import logger
 from ..models import Nucleo
+from ..outbox_publisher import outbox_publisher
 from ..schemas import NucleoCreate, NucleoResponse, NucleoUpdate
 
 router = APIRouter()
@@ -43,16 +51,20 @@ def create_nucleo(nucleo_data: NucleoCreate, db: Session = Depends(get_db_sessio
         db.flush()  # Get the ID without committing
 
         # Emit event via outbox
-        emit_event(
+        event = NucleoCreatedV1.create(
+            aggregate_id=nucleo.id,
+            data=NucleoCreatedData(
+                nucleo_id=nucleo.id,
+                name=nucleo.name,
+                abbreviation=nucleo.abbreviation,
+            ),
+        )
+        outbox_publisher.emit_event(
             db=db,
-            event_type=EventType.NUCLEO_CREATED,
+            event_type=event.event_type(),
             aggregate_type="nucleo",
             aggregate_id=nucleo.id,
-            data={
-                "nucleo_id": str(nucleo.id),
-                "name": nucleo.name,
-                "abbreviation": nucleo.abbreviation,
-            },
+            data=event.to_data_dict(),
         )
 
         db.commit()
@@ -109,19 +121,20 @@ def update_nucleo(
 
     try:
         # Emit event via outbox
-        emit_event(
+        event = NucleoUpdatedV1.create(
+            aggregate_id=nucleo.id,
+            data=NucleoUpdatedData(
+                nucleo_id=nucleo.id,
+                name=changes_made.get("name"),
+                abbreviation=changes_made.get("abbreviation"),
+            ),
+        )
+        outbox_publisher.emit_event(
             db=db,
-            event_type=EventType.NUCLEO_UPDATED,
+            event_type=event.event_type(),
             aggregate_type="nucleo",
             aggregate_id=nucleo.id,
-            data={
-                "nucleo_id": str(nucleo.id),
-                **{
-                    key: value
-                    for key, value in changes_made.items()
-                    if key in ["name", "abbreviation"]
-                },
-            },
+            data=event.to_data_dict(),
         )
 
         db.commit()
@@ -143,16 +156,75 @@ def delete_nucleo(nucleo_id: UUID, db: Session = Depends(get_db_session)):
         raise HTTPException(status_code=404, detail="Nucleo not found")
 
     # Emit event via outbox before deleting
-    emit_event(
+    event = NucleoDeletedV1.create(
+        aggregate_id=nucleo.id,
+        data=NucleoDeletedData(
+            nucleo_id=nucleo.id,
+        ),
+    )
+    outbox_publisher.emit_event(
         db=db,
-        event_type=EventType.NUCLEO_DELETED,
+        event_type=event.event_type(),
         aggregate_type="nucleo",
         aggregate_id=nucleo.id,
-        data={
-            "nucleo_id": str(nucleo.id),
-        },
+        data=event.to_data_dict(),
     )
 
     db.delete(nucleo)
     db.commit()
     logger.info(f"Deleted nucleo: {nucleo_id}")
+
+
+@router.get("/nucleos/admin/{admin_id}", response_model=List[NucleoResponse])
+def list_nucleos_by_admin(admin_id: UUID, db: Session = Depends(get_db_session)):
+    """List all nucleos associated with a specific admin user ID"""
+    str_admin_id = str(admin_id)
+    nucleos = db.query(Nucleo).filter(Nucleo.admins_ids.contains([str_admin_id])).all()
+    print(f"Found {len(nucleos)} nucleos for admin {admin_id}")
+    return [nucleo.to_dict() for nucleo in nucleos]
+
+
+@router.put(
+    "/nucleos/admin/{admin_id}/associate/",
+    status_code=status.HTTP_200_OK,
+)
+def associate_admin_with_nucleos(
+    admin_id: UUID,
+    nucleo_ids: List[UUID],
+    db: Session = Depends(get_db_session),
+):
+    """Remove previous associations and associate an admin user with multiple nucleos"""
+    # First, remove the admin ID from all nucleos that currently have it
+    str_admin_id = str(admin_id)
+    db.query(Nucleo).filter(Nucleo.admins_ids.contains([str_admin_id])).update(
+        {Nucleo.admins_ids: func.array_remove(Nucleo.admins_ids, str_admin_id)},
+        synchronize_session=False,
+    )
+
+    # Then, add the admin ID to the specified nucleos
+    str_nucleo_ids = [str(nucleo_id) for nucleo_id in nucleo_ids]
+    db.query(Nucleo).filter(Nucleo.id.in_(str_nucleo_ids)).update(
+        {Nucleo.admins_ids: func.array_append(Nucleo.admins_ids, str_admin_id)},
+        synchronize_session=False,
+    )
+
+    db.commit()
+    return {"message": "Admin associations updated successfully"}
+
+
+@router.post("/nucleos/batch-admin", response_model=Dict[str, List[NucleoResponse]])
+def list_nucleos_by_batch_admin_ids(
+    admin_ids: List[UUID], db: Session = Depends(get_db_session)
+):
+    """List all nucleos associated with a batch of admin user IDs"""
+    str_admin_ids = [str(admin_id) for admin_id in admin_ids]
+    nucleos = db.query(Nucleo).filter(Nucleo.admins_ids.overlap(str_admin_ids)).all()
+
+    # return a dictionary mapping admin ID to a list of associated nucleos
+    resp = {str(admin_id): [] for admin_id in admin_ids}
+    str_admin_ids = set(str_admin_ids)  # Convert to set for faster lookup
+    for nucleo in nucleos:
+        for admin_id in nucleo.admins_ids:
+            if admin_id in str_admin_ids:
+                resp[admin_id].append(nucleo.to_dict())
+    return resp

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import NucleoSidebar from '../../components/nucleo_navbar';
 import { teamsApi, type TeamDetail } from '../../api/teams';
 import { studentsApi, type Student } from '../../api/members';
+import { useNotification } from '../../contexts/NotificationProvider';
 
 const TeamDetailsEditModal = ({
   team,
@@ -14,17 +15,15 @@ const TeamDetailsEditModal = ({
   onClose: () => void;
 }) => {
   const [editedName, setEditedName] = useState(team.name);
-
-  const [error, setError] = useState<string | null>(null);
+  const { notify } = useNotification();
 
   const handleSave = async () => {
     if (!editedName.trim()) {
-      alert('Por favor, preencha o nome da equipa.');
+      notify('Por favor, preencha o nome da equipa.', 'error');
       return;
     }
 
     try {
-      setError(null);
       const teamData = await teamsApi.update(team.id, {
         name: editedName,
       });
@@ -37,7 +36,7 @@ const TeamDetailsEditModal = ({
       onClose();
     } catch (err) {
       console.error('Error updating team:', err);
-      setError('Erro ao atualizar equipa');
+      notify('Não foi possível guardar as alterações à equipa. Tente novamente.', 'error');
     }
   };
 
@@ -46,15 +45,7 @@ const TeamDetailsEditModal = ({
       <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">Editar Equipa</h2>
 
-        {/* Error Banner */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
-            {error}
-          </div>
-        )}
-
         <div className="space-y-4">
-          {/* Team Name */}
           <div>
             <label htmlFor="editName" className="block text-gray-700 font-medium mb-2">
               Nome da Equipa <span className="text-red-500">*</span>
@@ -70,7 +61,6 @@ const TeamDetailsEditModal = ({
           </div>
         </div>
 
-        {/* Modal Actions */}
         <div className="flex gap-4 mt-6">
           <button
             onClick={onClose}
@@ -101,6 +91,7 @@ const TeamParticipantsEdditModal = ({
 }) => {
   const [availableParticipants, setAvailableParticipants] = useState<Student[]>([]);
   const [editedParticipantsList, setEditedParticipantsList] = useState<Student[]>(team.players);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const originalParticipantsList = [...team.players];
 
@@ -121,10 +112,6 @@ const TeamParticipantsEdditModal = ({
   }, []);
 
   const handleSave = async () => {
-    console.log('Original Participants:', originalParticipantsList);
-    console.log('Edited Participants:', editedParticipantsList);
-
-    // Logic to save added participants to the team
     const playersToAdd = editedParticipantsList
       .filter(ep => !originalParticipantsList.some(op => op.id === ep.id))
       .map(p => p.id);
@@ -132,9 +119,6 @@ const TeamParticipantsEdditModal = ({
     const playersToRemove = originalParticipantsList
       .filter(op => !editedParticipantsList.some(ep => ep.id === op.id))
       .map(p => p.id);
-
-    console.log('Players to add:', playersToAdd);
-    console.log('Players to remove:', playersToRemove);
 
     try {
       const newTeam = await teamsApi.update(team.id, {
@@ -149,48 +133,82 @@ const TeamParticipantsEdditModal = ({
     onClose();
   };
 
+  const toggleParticipant = (participant: Student) => {
+    const isSelected = editedParticipantsList.some(p => p.id === participant.id);
+    if (isSelected) {
+      setEditedParticipantsList(editedParticipantsList.filter(p => p.id !== participant.id));
+    } else {
+      setEditedParticipantsList([...editedParticipantsList, participant]);
+    }
+  };
+
+  const filteredParticipants = availableParticipants.filter(p =>
+    p.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.student_number.includes(searchQuery)
+  );
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
-      <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
-        <h2 className="text-2xl font-bold mb-6 text-gray-800">Adicionar Membro</h2>
+      <div className="bg-white rounded-lg p-8 max-w-lg w-full mx-4 animate-slideUp max-h-[90vh] flex flex-col">
+        <h2 className="text-2xl font-bold mb-4 text-gray-800">Gerir Membros da Equipa</h2>
 
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="selectMember" className="block text-gray-700 font-medium mb-2">
-              Selecionar Membros <span className="text-red-500">*</span>
-            </label>
-            <select
-              id="selectMember"
-              onChange={(e) => {
-                const selectedId = e.target.value;
-                const selectedParticipant = availableParticipants.find(p => p.id === selectedId);
-                console.log('Selected Participant:', availableParticipants);
-                if (selectedParticipant) {
-                  setEditedParticipantsList([...editedParticipantsList, selectedParticipant]);
-                }
-              }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-            >
-              <option value="">-- Selecionar Membro --</option>
-              {availableParticipants.map(participant => (
-                <option
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Pesquisar por nome ou NMEC..."
+          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 mb-4"
+        />
+
+        <div className="flex-1 overflow-y-auto space-y-2 mb-3 max-h-96">
+          {filteredParticipants.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">
+              {availableParticipants.length === 0 ? 'Nenhum participante disponível' : 'Nenhum resultado para a pesquisa'}
+            </p>
+          ) : (
+            filteredParticipants.map(participant => {
+              const isSelected = editedParticipantsList.some(p => p.id === participant.id);
+              return (
+                <div
                   key={participant.id}
-                  value={participant.id}
-                  disabled={editedParticipantsList.some(p => p.id === participant.id)}
+                  onClick={() => toggleParticipant(participant)}
+                  className={`flex items-center justify-between px-4 py-3 rounded-md cursor-pointer transition-colors ${
+                    isSelected
+                      ? 'bg-teal-50 border border-teal-300 hover:bg-teal-100'
+                      : 'bg-gray-50 hover:bg-gray-100'
+                  }`}
                 >
-                  {participant.full_name} (Nº {participant.student_number})
-                </option>
-              ))}
-            </select>
-
-            {availableParticipants.length === 0 && (
-              <p className="text-sm text-gray-500 mt-2">Todos os membros já estão na equipa.</p>
-            )}
-          </div>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0 ${
+                      isSelected ? 'bg-teal-500 text-white' : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      {participant.full_name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-800">{participant.full_name}</p>
+                      <p className="text-sm text-gray-500">NMEC: {participant.student_number}</p>
+                    </div>
+                  </div>
+                  {isSelected ? (
+                    <svg className="w-5 h-5 text-teal-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
 
-        {/* Modal Actions */}
-        <div className="flex gap-4 mt-6">
+        <p className="text-sm text-gray-500 mb-4">
+          {editedParticipantsList.length} participante(s) selecionado(s)
+        </p>
+
+        <div className="flex gap-4 flex-shrink-0">
           <button
             onClick={onClose}
             className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
@@ -201,7 +219,7 @@ const TeamParticipantsEdditModal = ({
             onClick={handleSave}
             className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
           >
-            Adicionar
+            Guardar
           </button>
         </div>
       </div>
@@ -214,7 +232,7 @@ const TeamDetailPage = () => {
   const navigate = useNavigate();
   const [team, setTeam] = useState<TeamDetail>();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { notify } = useNotification();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -224,7 +242,6 @@ const TeamDetailPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        setError(null);
 
         const [teamData] = await Promise.all([
           teamsApi.get(id!),
@@ -233,7 +250,7 @@ const TeamDetailPage = () => {
         const foundTeam = teamData;
 
         if (!foundTeam) {
-          setError('Equipa não encontrada');
+          notify('Equipa não encontrada', 'error');
           setTimeout(() => navigate('/nucleo/equipas'), 2000);
           return;
         }
@@ -241,7 +258,7 @@ const TeamDetailPage = () => {
         setTeam(foundTeam);
       } catch (err) {
         console.error('Error fetching data:', err);
-        setError('Erro ao carregar dados');
+        notify('Não foi possível carregar os dados da equipa. Tente recarregar a página.', 'error');
       } finally {
         setLoading(false);
       }
@@ -252,9 +269,9 @@ const TeamDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50">
         <NucleoSidebar />
-        <div className="p-8">
+        <div className="flex-1 p-8">
           <div className="max-w-7xl mx-auto flex justify-center items-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
           </div>
@@ -263,19 +280,8 @@ const TeamDetailPage = () => {
     );
   }
 
-  if (error || !team) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <NucleoSidebar />
-        <div className="p-8">
-          <div className="max-w-7xl mx-auto">
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error || 'Equipa não encontrada'}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+  if (!team) {
+    return null;
   }
 
   const handleEdit = () => {
@@ -288,46 +294,45 @@ const TeamDetailPage = () => {
 
   const confirmDelete = async () => {
     try {
-      setError(null);
       await teamsApi.delete(team.id);
       navigate('/nucleo/equipas');
     } catch (err) {
       console.error('Error deleting team:', err);
-      setError('Erro ao eliminar equipa');
+      notify('Não foi possível eliminar a equipa. Poderá ter jogos associados.', 'error');
       setDeleteConfirmOpen(false);
     }
   };
 
   const handleRemoveMember = async (memberId: string) => {
     try {
-      setError(null);
       const newTeam = await teamsApi.update(team.id, {
         players_remove: [memberId],
       });
       setTeam(newTeam);
     } catch (err) {
       console.error('Error removing member from team:', err);
-      setError('Erro ao remover membro da equipa');
+      notify('Não foi possível remover o membro da equipa. Tente novamente.', 'error');
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <NucleoSidebar />
 
-      <div className="p-8">
+      <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
-          {/* Error Banner */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
-              {error}
-            </div>
-          )}
+          <div className="mb-8 flex justify-between items-center">
+            <h1 className="text-3xl font-bold text-gray-800">Detalhes da Equipa</h1>
+            <button
+              onClick={() => navigate('/nucleo/equipas')}
+              className="px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+            >
+              Voltar
+            </button>
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Left Column - Team Info */}
             <div>
-              {/* Team Avatar */}
               <div className="flex justify-center mb-8">
                 <div className="w-48 h-48 bg-indigo-100 rounded-full flex items-center justify-center shadow-lg">
                   <svg
@@ -340,7 +345,6 @@ const TeamDetailPage = () => {
                 </div>
               </div>
 
-              {/* Team Details */}
               <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
                 <div>
                   <label className="block text-teal-500 font-medium mb-2">
@@ -378,7 +382,6 @@ const TeamDetailPage = () => {
                   </div>
                 </div>
 
-                {/* Action Buttons */}
                 <div className="flex gap-4 mt-6">
                   <button
                     onClick={handleEdit}
@@ -396,7 +399,6 @@ const TeamDetailPage = () => {
               </div>
             </div>
 
-            {/* Right Column - Team Members */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-800">Equipa</h2>
@@ -424,7 +426,6 @@ const TeamDetailPage = () => {
                         </div>
                         <div>
                           <p className="text-gray-800 font-medium">{member.full_name}</p>
-                          {/* <p className="text-sm text-gray-500">Nº {member.student_number}</p> */}
                         </div>
                       </div>
                       <button
@@ -446,7 +447,6 @@ const TeamDetailPage = () => {
         </div>
       </div>
 
-      {/* Edit Team Modal */}
       {isEditModalOpen && (
         <TeamDetailsEditModal
           team={team}
@@ -455,7 +455,6 @@ const TeamDetailPage = () => {
         />
       )}
 
-      {/* Add Member Modal */}
       {isAddMemberModalOpen && (
         <TeamParticipantsEdditModal
           team={team}
@@ -464,7 +463,6 @@ const TeamDetailPage = () => {
         />
       )}
 
-      {/* Delete Confirmation Modal */}
       {deleteConfirmOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">

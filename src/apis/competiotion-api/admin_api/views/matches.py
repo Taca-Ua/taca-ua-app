@@ -5,6 +5,7 @@ Match management views
 from uuid import UUID
 
 import structlog
+from django.http import HttpResponse
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
@@ -12,6 +13,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from ..decorators import RoleRequiredMixin, require_auth
 from ..serializers.matches import (
     CommentCreateSerializer,
     CommentDetailSerializer,
@@ -25,8 +27,10 @@ from ..serializers.matches import (
     ParticipantCreateSerializer,
     ParticipantDetailSerializer,
 )
+from ..services.document_generation import document_generation_service
 from ..services.enricher_service import enricher_service
 from ..services.matches_service import matches_service_client
+from ..services.modalities_service import modalities_service_client
 
 logger = structlog.get_logger(__name__)
 
@@ -47,7 +51,7 @@ logger = structlog.get_logger(__name__)
         tags=["Match Management"],
     ),
 )
-class MatchListCreateView(APIView):
+class MatchListCreateView(RoleRequiredMixin, APIView):
     """List and create matches"""
 
     def get(self, request):
@@ -61,6 +65,14 @@ class MatchListCreateView(APIView):
         date_from = request.query_params.get("date_from")
         date_to = request.query_params.get("date_to")
 
+        allowed_team_ids = None
+        if "nucleo_admin" in request.roles:
+            # If user is a nucleo admin, filter matches to only include their teams
+            allowed_teams = modalities_service_client.list_teams(
+                admin_id=request.user_id
+            )
+            allowed_team_ids = {str(team.id) for team in allowed_teams}
+
         try:
             matches = matches_service_client.list_matches(
                 tournament_id=UUID(tournament_id) if tournament_id else None,
@@ -71,6 +83,23 @@ class MatchListCreateView(APIView):
                 date_from=date_from,
                 date_to=date_to,
             )
+
+            # If user is a nucleo admin, filter matches to only include those with their teams and show just their teams in participants
+            if allowed_team_ids is not None:
+                filtered_matches = []
+                for match in matches:
+                    # Filter participants to only include those with allowed teams
+                    filtered_participants = []
+                    for participant in match.participants:
+                        if participant.team_id in allowed_team_ids:
+                            filtered_participants.append(participant)
+
+                    # Only include the match if it has any participants after filtering
+                    if filtered_participants:
+                        match.participants = filtered_participants
+                        filtered_matches.append(match)
+
+                matches = filtered_matches
 
             # Enrich participant data with team/athlete details
             enricher_service.complete_matches_info(matches)
@@ -138,14 +167,29 @@ class MatchListCreateView(APIView):
         tags=["Match Management"],
     ),
 )
-class MatchDetailView(APIView):
+class MatchDetailView(RoleRequiredMixin, APIView):
     """Retrieve, update, or delete a match"""
 
     def get(self, request, match_id):
         """Get match details"""
         try:
+            allowed_team_ids = None
+            if "nucleo_admin" in request.roles:
+                # If user is a nucleo admin, filter matches to only include their teams
+                allowed_teams = modalities_service_client.list_teams(
+                    admin_id=request.user_id
+                )
+                allowed_team_ids = {str(team.id) for team in allowed_teams}
+
             match = matches_service_client.get_match(match_id=match_id)
-            print("Match fetched:", match.__dict__["participants"])
+
+            # filter match participants if user is a nucleo admin
+            if allowed_team_ids is not None:
+                filtered_participants = []
+                for participant in match.participants:
+                    if participant.team_id in allowed_team_ids:
+                        filtered_participants.append(participant)
+                match.participants = filtered_participants
 
             # Enrich participant data
             enricher_service.complete_matches_info([match])
@@ -208,7 +252,7 @@ class MatchDetailView(APIView):
         tags=["Match Management"],
     ),
 )
-class ParticipantAddView(APIView):
+class ParticipantAddView(RoleRequiredMixin, APIView):
     """Add a participant to a match"""
 
     def post(self, request, match_id):
@@ -244,6 +288,7 @@ class ParticipantAddView(APIView):
     tags=["Match Management"],
 )
 @api_view(["DELETE"])
+@require_auth
 def remove_participant(request, match_id, participant_id):
     """Remove participant from match"""
     try:
@@ -271,6 +316,7 @@ def remove_participant(request, match_id, participant_id):
     tags=["Match Management"],
 )
 @api_view(["PUT"])
+@require_auth
 def update_match_results(request, match_id):
     """Update match results"""
     serializer = MatchResultsUpdateSerializer(data=request.data)
@@ -325,7 +371,7 @@ def update_match_results(request, match_id):
         tags=["Match Management"],
     ),
 )
-class LineupView(APIView):
+class LineupView(RoleRequiredMixin, APIView):
     """Get or assign lineup for a match"""
 
     def get(self, request, match_id):
@@ -395,7 +441,7 @@ class LineupView(APIView):
         tags=["Match Management"],
     ),
 )
-class CommentView(APIView):
+class CommentView(RoleRequiredMixin, APIView):
     """Get or add comments for a match"""
 
     def get(self, request, match_id):
@@ -436,6 +482,7 @@ class CommentView(APIView):
     tags=["Match Management"],
 )
 @api_view(["DELETE"])
+@require_auth
 def delete_comment(request, match_id, comment_id):
     """Delete a comment"""
     try:
@@ -456,16 +503,74 @@ def delete_comment(request, match_id, comment_id):
 
 @extend_schema(
     responses={200: {"type": "string", "format": "binary"}},
-    description="Generate match sheet PDF (not implemented yet)",
+    description="Generate match sheet PDF",
     tags=["Match Management"],
 )
 @api_view(["GET"])
+@require_auth
 def match_sheet(request, match_id):
     """Generate match sheet PDF"""
-    return Response(
-        {"message": "PDF generation not implemented"},
-        status=status.HTTP_501_NOT_IMPLEMENTED,
-    )
+    try:
+        match = matches_service_client.get_match(match_id=match_id)
+        match = enricher_service.complete_matches_info([match])[0]
+
+        if "nucleo_admin" in request.roles and match.status == "scheduled":
+            # retuern 403 if user is a nucleo admin and match is still scheduled (not started), to avoid showing teams/athletes not in their nucleo
+            return Response(
+                {
+                    "detail": "Forbidden: Cannot generate match sheet for scheduled match"
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        pdf_content = document_generation_service.generate_match_report(match)
+
+        response = HttpResponse(pdf_content, content_type="application/pdf")
+        response["Content-Disposition"] = (
+            f'attachment; filename="match_sheet_{match_id}.pdf"'
+        )
+        return response
+    except Exception as e:
+        logger.error(
+            "Failed to generate match sheet PDF", match_id=str(match_id), error=str(e)
+        )
+        return Response(
+            {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@extend_schema(
+    responses={200: {"type": "string", "format": "binary"}},
+    description="Generate match sheet PDF for a specific team",
+    tags=["Match Management"],
+)
+@api_view(["GET"])
+@require_auth
+def match_team_sheet(request, match_id, team_id):
+    """
+    Generate match sheet PDF for a specific team in a match.
+    """
+
+    try:
+        pdf_content = document_generation_service.generate_match_team_report(
+            match_id, team_id
+        )
+
+        response = HttpResponse(pdf_content, content_type="application/pdf")
+        response["Content-Disposition"] = (
+            f'attachment; filename="match_team_sheet_{match_id}_{team_id}.pdf"'
+        )
+        return response
+    except Exception as e:
+        logger.error(
+            "Failed to generate team-specific match sheet PDF",
+            match_id=str(match_id),
+            team_id=str(team_id),
+            error=str(e),
+        )
+        return Response(
+            {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 # ============= URL Patterns =============
@@ -503,4 +608,9 @@ urlpatterns = [
     ),
     # Additional features
     path("<uuid:match_id>/sheet/", match_sheet, name="match-sheet"),
+    path(
+        "<uuid:match_id>/team/<uuid:team_id>/sheet/",
+        match_team_sheet,
+        name="match-team-sheet",
+    ),
 ]

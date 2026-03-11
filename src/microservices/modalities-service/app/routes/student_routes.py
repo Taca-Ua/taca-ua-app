@@ -5,12 +5,19 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from taca_events import EventType
+from taca_events.pydantic_schemas.modalities import (
+    StudentCreatedData,
+    StudentCreatedV1,
+    StudentDeletedData,
+    StudentDeletedV1,
+    StudentUpdatedData,
+    StudentUpdatedV1,
+)
 
 from ..database import get_db_session
-from ..event_helpers import emit_event
 from ..logger import logger
-from ..models import Course, Student
+from ..models import Course, Nucleo, Student
+from ..outbox_publisher import outbox_publisher
 from ..schemas import StudentCreate, StudentResponse, StudentUpdate
 
 router = APIRouter()
@@ -20,9 +27,16 @@ DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000"
 
 
 @router.get("/students", response_model=List[StudentResponse])
-def list_students(db: Session = Depends(get_db_session)):
+def list_students(admin_id: str = None, db: Session = Depends(get_db_session)):
     """List all students"""
-    students = db.query(Student).all()
+    students = db.query(Student)
+    if admin_id is not None:
+        students = (
+            students.join(Student.course)
+            .join(Course.nucleo)
+            .filter(Nucleo.admins_ids.any(admin_id))
+        )
+    students = students.all()
     return [student.to_dict() for student in students]
 
 
@@ -50,18 +64,22 @@ def create_student(student_data: StudentCreate, db: Session = Depends(get_db_ses
         db.flush()
 
         # Emit event via outbox
-        emit_event(
+        event = StudentCreatedV1.create(
+            aggregate_id=student.id,
+            data=StudentCreatedData(
+                student_id=student.id,
+                full_name=student.full_name,
+                course_id=student.course_id,
+                student_number=student.student_number,
+                is_member=student.is_member,
+            ),
+        )
+        outbox_publisher.emit_event(
             db=db,
-            event_type=EventType.STUDENT_CREATED,
+            event_type=event.event_type(),
             aggregate_type="student",
             aggregate_id=student.id,
-            data={
-                "student_id": str(student.id),
-                "full_name": student.full_name,
-                "course_id": str(student.course_id),
-                "student_number": student.student_number,
-                "is_member": student.is_member,
-            },
+            data=event.to_data_dict(),
         )
 
         db.commit()
@@ -112,19 +130,22 @@ def update_student(
     student.updated_at = datetime.now(timezone.utc)
 
     # Emit event via outbox
-    emit_event(
+    event = StudentUpdatedV1.create(
+        aggregate_id=student.id,
+        data=StudentUpdatedData(
+            student_id=student.id,
+            full_name=changes_made.get("full_name"),
+            course_id=changes_made.get("course_id"),
+            student_number=changes_made.get("student_number"),
+            is_member=changes_made.get("is_member"),
+        ),
+    )
+    outbox_publisher.emit_event(
         db=db,
-        event_type=EventType.STUDENT_UPDATED,
+        event_type=event.event_type(),
         aggregate_type="student",
         aggregate_id=student.id,
-        data={
-            "student_id": str(student.id),
-            **{
-                k: v
-                for k, v in changes_made.items()
-                if k in ["full_name", "course_id", "student_number", "is_member"]
-            },
-        },
+        data=event.to_data_dict(),
     )
 
     try:
@@ -147,14 +168,18 @@ def delete_student(student_id: UUID, db: Session = Depends(get_db_session)):
         raise HTTPException(status_code=404, detail="Student not found")
 
     # Emit event via outbox before deletion
-    emit_event(
+    event = StudentDeletedV1.create(
+        aggregate_id=student.id,
+        data=StudentDeletedData(
+            student_id=student.id,
+        ),
+    )
+    outbox_publisher.emit_event(
         db=db,
-        event_type=EventType.STUDENT_DELETED,
+        event_type=event.event_type(),
         aggregate_type="student",
         aggregate_id=student.id,
-        data={
-            "student_id": str(student.id),
-        },
+        data=event.to_data_dict(),
     )
 
     db.delete(student)

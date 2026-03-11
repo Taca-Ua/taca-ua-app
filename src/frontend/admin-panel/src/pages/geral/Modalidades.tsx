@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/geral_navbar";
+import { useNotification } from "../../contexts/NotificationProvider";
 import { modalitiesApi, type Modality } from "../../api/modalities";
 import { modalityTypesApi, type ModalityTypeMinimal } from "../../api/modality-types";
 
@@ -22,8 +23,8 @@ const MoadlitiesList = (modalities: Modality[]) => {
         className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer transition-colors flex justify-between items-center"
       >
         <span className="text-gray-800 font-medium">{mod.name}</span>
-        <span className="text-gray-600 text-sm capitalize">
-          Tipo: {mod.modality_type.name}
+        <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+          {mod.modality_type.name}
         </span>
       </div>
     );
@@ -51,7 +52,7 @@ const CreateModalityModal = ({
 }) => {
   const [newModalityName, setNewModalityName] = useState("");
   const [modalityType, setModalityType] = useState("");
-  const [error, setError] = useState("");
+  const { notify } = useNotification();
 
   // Fetch modality types on mount if empty
   useEffect(() => {
@@ -71,12 +72,12 @@ const CreateModalityModal = ({
 
   const handleAddModality = async () => {
     if (!newModalityName.trim()) {
-      setError("Por favor, preencha o nome da modalidade.");
+      notify("Por favor, preencha o nome da modalidade.", 'error');
       return;
     }
 
     if (!modalityType) {
-      setError("Por favor, selecione o tipo.");
+      notify("Por favor, selecione o tipo.", 'error');
       return;
     }
 
@@ -87,7 +88,6 @@ const CreateModalityModal = ({
       });
 
       addModality(newModality);
-      setError("");
 
       // Reset
       setNewModalityName("");
@@ -95,7 +95,7 @@ const CreateModalityModal = ({
       onClose();
     } catch (err) {
       console.error("Failed to create modality:", err);
-      setError("Erro ao criar modalidade");
+      notify("Não foi possível criar a modalidade. Verifique os dados e tente novamente.", 'error');
     }
   };
 
@@ -106,14 +106,7 @@ const CreateModalityModal = ({
           Adicionar Modalidade
         </h2>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-            {error}
-          </div>
-        )}
-
         <div className="space-y-4">
-          {/* Name */}
           <div>
             <label className="block text-gray-700 font-medium mb-2">
               Nome da Modalidade <span className="text-red-500">*</span>
@@ -127,7 +120,6 @@ const CreateModalityModal = ({
             />
           </div>
 
-          {/* Type */}
           <div>
             <label className="block text-gray-700 font-medium mb-2">
               Tipo <span className="text-red-500">*</span>
@@ -147,14 +139,12 @@ const CreateModalityModal = ({
           </div>
         </div>
 
-        {/* Actions */}
         <div className="flex gap-4 mt-6">
           <button
             onClick={() => {
               onClose();
               setNewModalityName("");
               setModalityType("");
-              setError("");
             }}
             className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
           >
@@ -175,6 +165,7 @@ const CreateModalityModal = ({
 const Modalities = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [modalities, setModalities] = useState<Modality[]>([]);
   const [modalityTypes, setModalityTypes] = useState<ModalityTypeMinimal[]>([]);
@@ -202,9 +193,9 @@ const Modalities = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50">
         <Sidebar />
-        <div className="flex justify-center items-center py-12">
+        <div className="flex-1 flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
         </div>
       </div>
@@ -212,13 +203,12 @@ const Modalities = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
 
-      <div className="p-8">
+      <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-8 flex justify-between items-center">
+          <div className="mb-6 flex justify-between items-center">
             <h1 className="text-3xl font-bold text-gray-800">Modalidades</h1>
             <button
               onClick={() => setIsModalOpen(true)}
@@ -229,14 +219,26 @@ const Modalities = () => {
             </button>
           </div>
 
-          {/* Modalities List */}
+          <div className="mb-6">
+            <input
+              type="text"
+              placeholder="Pesquisar modalidade..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+            />
+          </div>
+
           <div className="bg-white rounded-lg shadow-md p-6">
-            {MoadlitiesList(modalities)}
+            {MoadlitiesList(
+              [...modalities]
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .filter((m) => m.name.toLowerCase().includes(searchQuery.toLowerCase()))
+            )}
           </div>
         </div>
       </div>
 
-      {/* Add Modality Modal */}
       {isModalOpen && (
         <CreateModalityModal
           modalityTypes={modalityTypes}

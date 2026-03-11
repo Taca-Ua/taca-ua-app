@@ -8,6 +8,7 @@ import {
   type Staff,
 } from '../../api/members';
 import { coursesApi, type Course } from '../../api/courses';
+import { useNotification } from '../../contexts/NotificationProvider';
 
 type CombinedMember =
   | { memberType: 'participant'; data: Student }
@@ -28,7 +29,7 @@ function Membros() {
   const [members, setMembers] = useState<CombinedMember[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { notify } = useNotification();
   const [filterType, setFilterType] = useState<'all' | 'participant' | 'staff'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -37,7 +38,6 @@ function Membros() {
     const fetchMembers = async () => {
       try {
         setLoading(true);
-        setError(null);
 
         const [participants, staff] = await Promise.all([
           studentsApi.getAll(),
@@ -53,7 +53,7 @@ function Membros() {
         setMembers(unifiedMembers);
       } catch (err) {
         console.error('Failed to fetch members:', err);
-        setError('Erro ao carregar membros. Por favor, tente novamente.');
+        notify('Não foi possível carregar os membros do núcleo. Tente recarregar a página.', 'error');
       } finally {
         setLoading(false);
       }
@@ -87,26 +87,39 @@ function Membros() {
   const handleAddMember = async () => {
     // Validation: Name is required
     if (!memberName.trim()) {
-      alert('Por favor, preencha o nome.');
+      notify('Por favor, preencha o nome.', 'error');
       return;
     }
 
     try {
       if (memberType === 'participant') {
         // Validate participant fields
-        if (!studentNumber.trim()) {
-          alert('Por favor, preencha o número de estudante.');
+        const trimmedStudentNumber = studentNumber.trim();
+
+        if (!trimmedStudentNumber) {
+          notify('Por favor, preencha o número de estudante.', 'error');
           return;
         }
+
+        if (!/^\d+$/.test(trimmedStudentNumber)) {
+          notify('O número de estudante (NMEC) deve conter apenas dígitos.', 'error');
+          return;
+        }
+
+        if (trimmedStudentNumber.length > 13) {
+          notify('O número de estudante (NMEC) não pode ter mais de 13 caracteres.', 'error');
+          return;
+        }
+
         if (!courseId.trim()) {
-          alert('Por favor, preencha o curso.');
+          notify('Por favor, preencha o curso.', 'error');
           return;
         }
 
         const newParticipant = await studentsApi.create({
           full_name: memberName,
           course_id: String(courseId),
-          student_number: studentNumber,
+          student_number: trimmedStudentNumber,
           is_member: true,
         });
 
@@ -119,17 +132,43 @@ function Membros() {
         };
 
         if (identifierType === 'contact') {
-          if (!contact.trim()) {
-            alert('Por favor, preencha o contacto.');
+          const trimmedContact = contact.trim();
+
+          if (!trimmedContact) {
+            notify('Por favor, preencha o contacto.', 'error');
             return;
           }
-          staffData.contact = contact;
+
+          if (!/^\+?\d+$/.test(trimmedContact)) {
+            notify('O contacto (telemóvel) deve conter apenas dígitos e pode ter um "+" no início.', 'error');
+            return;
+          }
+
+          if (trimmedContact.length > 13) {
+            notify('O contacto (telemóvel) não pode ter mais de 13 caracteres.', 'error');
+            return;
+          }
+
+          staffData.contact = trimmedContact;
         } else {
-          if (!staffNumber.trim()) {
-            alert('Por favor, preencha o número de staff.');
+          const trimmedStaffNumber = staffNumber.trim();
+
+          if (!trimmedStaffNumber) {
+            notify('Por favor, preencha o número de staff.', 'error');
             return;
           }
-          staffData.staff_number = staffNumber;
+
+          if (!/^\d+$/.test(trimmedStaffNumber)) {
+            notify('O número de staff deve conter apenas dígitos.', 'error');
+            return;
+          }
+
+          if (trimmedStaffNumber.length > 13) {
+            notify('O número de staff não pode ter mais de 13 caracteres.', 'error');
+            return;
+          }
+
+          staffData.staff_number = trimmedStaffNumber;
         }
 
         const newStaff = await staffApi.create(staffData);
@@ -149,7 +188,7 @@ function Membros() {
       setIsModalOpen(false);
     } catch (err) {
       console.error('Failed to create member:', err);
-      alert('Erro ao adicionar membro. Por favor, tente novamente.');
+      notify('Não foi possível adicionar o membro. O número de estudante ou contacto podem já estar em uso.', 'error');
     }
   };
 
@@ -172,14 +211,12 @@ function Membros() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <NucleoSidebar />
-      <div className="p-8">
+      <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
-          {/* Header with Filters and Add Button */}
           <div className="mb-6">
             <div className="flex flex-col sm:flex-row gap-4 mb-4">
-              {/* Search Bar */}
               <div className="flex-1">
                 <input
                   type="text"
@@ -190,7 +227,6 @@ function Membros() {
                 />
               </div>
 
-              {/* Type Filter */}
               <div className="sm:w-48">
                 <select
                   value={filterType}
@@ -203,7 +239,6 @@ function Membros() {
                 </select>
               </div>
 
-              {/* Add Button */}
               <button
                 onClick={() => setIsModalOpen(true)}
                 className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-2 rounded-md font-medium transition-colors flex items-center gap-2 justify-center sm:justify-start"
@@ -214,22 +249,13 @@ function Membros() {
             </div>
           </div>
 
-          {/* Loading State */}
           {loading && (
             <div className="flex justify-center items-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
             </div>
           )}
 
-          {/* Error State */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-6">
-              {error}
-            </div>
-          )}
-
-          {/* Content - Only show when not loading */}
-          {!loading && !error && (
+          {!loading && (
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-2xl font-bold mb-6 text-gray-800">
                 Membros
@@ -269,14 +295,12 @@ function Membros() {
         </div>
       </div>
 
-      {/* Add Member Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Adicionar Membro</h2>
 
             <div className="space-y-4">
-              {/* Name Input */}
               <div>
                 <label htmlFor="memberName" className="block text-gray-700 font-medium mb-2">
                   Nome <span className="text-red-500">*</span>
@@ -291,7 +315,6 @@ function Membros() {
                 />
               </div>
 
-              {/* Type Select */}
               <div>
                 <label htmlFor="memberType" className="block text-gray-700 font-medium mb-2">
                   Tipo <span className="text-red-500">*</span>
@@ -307,7 +330,6 @@ function Membros() {
                 </select>
               </div>
 
-              {/* Participant Fields */}
               {memberType === 'participant' && (
                 <>
                   <div>
@@ -344,7 +366,6 @@ function Membros() {
                 </>
               )}
 
-              {/* Staff Fields */}
               {memberType === 'staff' && (
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">
@@ -375,7 +396,6 @@ function Membros() {
                     </label>
                   </div>
 
-                  {/* Contact or Staff Number Input */}
                   {identifierType === 'contact' ? (
                     <input
                       type="tel"
@@ -397,7 +417,6 @@ function Membros() {
               )}
             </div>
 
-            {/* Modal Actions */}
             <div className="flex gap-4 mt-6">
               <button
                 onClick={() => {

@@ -3,17 +3,19 @@ import { useParams, useNavigate } from 'react-router-dom';
 import NucleoSidebar from '../../components/nucleo_navbar';
 import {
   matchesApi,
-  type MatchDetail,
+  type MatchDetail as MatchDetailData,
   type LineupDetail,
   type LineupAssign,
   type PlayerLineup
 } from '../../api/matches';
 import type { Team } from '../../api/teams';
+import { tournamentsApi, type Tournament } from '../../api/tournaments';
+import { useNotification } from '../../contexts/NotificationProvider';
 
 // ==================== Private Components ====================
 
 // Match Info Card Component
-const MatchInfoCard = ({ match }: { match: MatchDetail }) => {
+const MatchInfoCard = ({ match, tournament }: { match: MatchDetailData; tournament: Tournament | null }) => {
   const formatDateTime = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -28,10 +30,10 @@ const MatchInfoCard = ({ match }: { match: MatchDetail }) => {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      scheduled: { label: '⏰ Agendado', color: 'bg-blue-100 text-blue-800' },
-      in_progress: { label: '▶️ Em Curso', color: 'bg-yellow-100 text-yellow-800' },
-      finished: { label: '✅ Terminado', color: 'bg-green-100 text-green-800' },
-      cancelled: { label: '❌ Cancelado', color: 'bg-red-100 text-red-800' },
+      scheduled: { label: 'Agendado', color: 'bg-blue-100 text-blue-800' },
+      in_progress: { label: 'Em Curso', color: 'bg-yellow-100 text-yellow-800' },
+      finished: { label: 'Terminado', color: 'bg-green-100 text-green-800' },
+      cancelled: { label: 'Cancelado', color: 'bg-red-100 text-red-800' },
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.scheduled;
@@ -48,7 +50,6 @@ const MatchInfoCard = ({ match }: { match: MatchDetail }) => {
 
   return (
     <div className="bg-white rounded-lg shadow-md p-8">
-      {/* Team Avatars */}
       <div className="flex justify-center items-center gap-8 mb-8">
         {participants.slice(0, 2).map((participant, idx) => (
           <div key={participant.id}>
@@ -69,11 +70,20 @@ const MatchInfoCard = ({ match }: { match: MatchDetail }) => {
         )}
       </div>
 
-      {/* Match Details */}
       <div>
         <h2 className="text-xl font-bold text-gray-800 mb-6">Detalhes do Jogo</h2>
 
         <div className="space-y-4">
+          {tournament && (
+            <div>
+              <label className="block text-gray-600 text-sm mb-1">Torneio</label>
+              <div className="text-gray-800 font-medium">{tournament.name}</div>
+              {tournament.modality && (
+                <div className="text-gray-500 text-sm">{tournament.modality.name}</div>
+              )}
+            </div>
+          )}
+
           <div>
             <label className="block text-gray-600 text-sm mb-1">Estado</label>
             <div>{getStatusBadge(match.status)}</div>
@@ -128,12 +138,14 @@ const TeamLineupCard = ({
   participant,
   lineups,
   canEdit,
-  onEdit
+  onEdit,
+  onDownloadSheet,
 }: {
-  participant: MatchDetail['participants'][0];
+  participant: MatchDetailData['participants'][0];
   lineups: LineupDetail[];
   canEdit: boolean;
   onEdit: () => void;
+  onDownloadSheet: () => void;
 }) => {
   const teamName = participant.team?.name || participant.athlete?.full_name || 'Participante';
   const teamLineups = lineups.filter(l => l.team_id === participant.team?.id);
@@ -144,14 +156,25 @@ const TeamLineupCard = ({
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-bold text-gray-800">{teamName}</h3>
-        {canEdit && (
+        <div className="flex gap-2">
           <button
-            onClick={onEdit}
-            className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md text-sm font-medium transition-colors"
+            onClick={onDownloadSheet}
+            className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-md text-sm font-medium transition-colors flex items-center gap-1"
           >
-            Editar Convocatória
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Ficha de Equipa
           </button>
-        )}
+          {canEdit && (
+            <button
+              onClick={onEdit}
+              className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md text-sm font-medium transition-colors"
+            >
+              Editar Convocatória
+            </button>
+          )}
+        </div>
       </div>
 
       {teamLineups.length === 0 ? (
@@ -266,7 +289,6 @@ const LineupEditorModal = ({
           Editar Convocatória - {team.name}
         </h2>
 
-        {/* Search Bar */}
         <div className="mb-4">
           <input
             type="text"
@@ -277,7 +299,6 @@ const LineupEditorModal = ({
           />
         </div>
 
-        {/* Players List */}
         <div className="space-y-2 max-h-[500px] overflow-y-auto mb-6">
           {filteredPlayers.length > 0 ? (
             filteredPlayers.map((player) => {
@@ -329,7 +350,6 @@ const LineupEditorModal = ({
           )}
         </div>
 
-        {/* Modal Actions */}
         <div className="flex gap-4">
           <button
             onClick={handleCancel}
@@ -355,14 +375,15 @@ const MatchDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [match, setMatch] = useState<MatchDetail | null>(null);
+  const [match, setMatch] = useState<MatchDetailData | null>(null);
   const [lineups, setLineups] = useState<LineupDetail[]>([]);
+  const [tournament, setTournament] = useState<Tournament | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { notify } = useNotification();
 
   // Modal state
   const [showLineupModal, setShowLineupModal] = useState(false);
-  const [editingParticipant, setEditingParticipant] = useState<MatchDetail['participants'][0] | null>(null);
+  const [editingParticipant, setEditingParticipant] = useState<MatchDetailData['participants'][0] | null>(null);
 
   useEffect(() => {
     fetchMatchData();
@@ -373,7 +394,6 @@ const MatchDetail = () => {
 
     try {
       setLoading(true);
-      setError('');
 
       const [matchData, lineupsData] = await Promise.all([
         matchesApi.getById(id),
@@ -382,17 +402,27 @@ const MatchDetail = () => {
 
       setMatch(matchData);
       setLineups(lineupsData);
+
+      // Fetch tournament details
+      if (matchData.tournament_id) {
+        try {
+          const tournamentData = await tournamentsApi.getById(matchData.tournament_id);
+          setTournament(tournamentData);
+        } catch {
+          // Tournament not critical, ignore error
+        }
+      }
     } catch (err) {
       console.error('Error loading match data:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao carregar dados do jogo');
+      notify(err instanceof Error ? err.message : 'Não foi possível carregar os dados do jogo. Tente recarregar a página.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOpenLineupEditor = (participant: MatchDetail['participants'][0]) => {
+  const handleOpenLineupEditor = (participant: MatchDetailData['participants'][0]) => {
     if (!participant.team) {
-      alert('Este participante não é uma equipa.');
+      notify('Este participante não é uma equipa.', 'error');
       return;
     }
 
@@ -404,8 +434,6 @@ const MatchDetail = () => {
     if (!match || !editingParticipant?.team) return;
 
     try {
-      setError('');
-
       const lineupData: LineupAssign = {
         team_id: editingParticipant.team.id,
         players: players,
@@ -419,38 +447,47 @@ const MatchDetail = () => {
       const updatedLineups = await matchesApi.getLineups(match.id);
       setLineups(updatedLineups);
 
-      alert('Convocatória guardada com sucesso!');
+      notify('Convocatória guardada com sucesso!', 'success');
     } catch (err) {
       console.error('Error saving lineup:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao guardar convocatória');
+      notify(err instanceof Error ? err.message : 'Não foi possível guardar a convocatória. Verifique os dados e tente novamente.', 'error');
     }
   };
 
-  const handleDownloadMatchSheet = async () => {
+const handleDownloadMatchSheet = async () => {
     if (!match) return;
 
     try {
-      setError('');
-      const blob = await matchesApi.getMatchSheet(match.id);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `ficha-jogo-${match.id}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+        const blob = await matchesApi.getMatchSheet(match.id);
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        // Optionally revoke after some time
+        setTimeout(() => window.URL.revokeObjectURL(url), 10000);
     } catch (err) {
-      console.error('Error downloading match sheet:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao descarregar ficha de jogo');
+        console.error('Error downloading match sheet:', err);
+        notify(err instanceof Error ? err.message : 'Não foi possível descarregar a ficha de jogo. Tente novamente.', 'error');
+    }
+};
+
+  const handleDownloadTeamSheet = async (teamId: string) => {
+    if (!match) return;
+
+    try {
+        const blob = await matchesApi.getMatchTeamSheet(match.id, teamId);
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+    } catch (err) {
+        console.error('Error downloading team sheet:', err);
+        notify(err instanceof Error ? err.message : 'Não foi possível descarregar a ficha de equipa. Tente novamente.', 'error');
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50">
         <NucleoSidebar />
-        <div className="flex justify-center items-center py-12">
+        <div className="flex-1 flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
         </div>
       </div>
@@ -459,9 +496,9 @@ const MatchDetail = () => {
 
   if (!match) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50">
         <NucleoSidebar />
-        <div className="p-8 max-w-4xl mx-auto">
+        <div className="flex-1 p-8 max-w-4xl mx-auto">
           <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded">
             <p className="font-bold">Jogo não encontrado</p>
             <p className="text-sm mt-1">O jogo que procura não existe ou foi removido.</p>
@@ -475,12 +512,11 @@ const MatchDetail = () => {
   const teamParticipants = match.participants.filter(p => p.team);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <NucleoSidebar />
 
-      <div className="p-8">
+      <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
-          {/* Back Button */}
           <button
             onClick={() => navigate(-1)}
             className="mb-6 flex items-center text-teal-600 hover:text-teal-700 font-medium transition-colors group"
@@ -496,42 +532,34 @@ const MatchDetail = () => {
             Voltar
           </button>
 
-          {/* Error Message */}
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-md flex items-start">
-              <svg className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-              <span>{error}</span>
-            </div>
-          )}
-
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column - Match Info */}
             <div className="lg:col-span-1">
-              <MatchInfoCard match={match} />
+              <MatchInfoCard match={match} tournament={tournament} />
 
-              {/* Action Buttons */}
               <div className="mt-6 space-y-3">
                 <button
                   onClick={handleDownloadMatchSheet}
-                  className="w-full px-4 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-md font-medium transition-colors flex items-center justify-center"
+                  disabled={match.status === 'scheduled'}
+                  className={`w-full px-4 py-3 rounded-md font-medium transition-colors flex items-center justify-center ${
+                  match.status === 'scheduled'
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-orange-500 hover:bg-orange-600 text-white'
+                  }`}
                 >
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                   Descarregar Ficha de Jogo
                 </button>
 
                 {!canEditLineups && (
                   <div className="px-4 py-3 bg-gray-100 text-gray-600 rounded-md text-sm text-center">
-                    ⚠️ Não pode editar convocatórias após o início do jogo
+                    Não pode editar convocatórias após o início do jogo
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Right Column - Team Lineups */}
             <div className="lg:col-span-2 space-y-6">
               {teamParticipants.length === 0 ? (
                 <div className="bg-white rounded-lg shadow-md p-8 text-center">
@@ -545,6 +573,7 @@ const MatchDetail = () => {
                     lineups={lineups}
                     canEdit={canEditLineups}
                     onEdit={() => handleOpenLineupEditor(participant)}
+                    onDownloadSheet={() => handleDownloadTeamSheet(participant.team!.id)}
                   />
                 ))
               )}
@@ -553,7 +582,6 @@ const MatchDetail = () => {
         </div>
       </div>
 
-      {/* Lineup Editor Modal */}
       <LineupEditorModal
         show={showLineupModal}
         team={editingParticipant?.team || null}

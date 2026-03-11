@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import RegulamentoCard from '../components/RegulamentoCard';
-import { api } from '../api';
-import type { Regulation } from '../api/types';
+// import { api } from '../api';
+// import type { Regulation } from '../api/types';
 
 function Regulamentos() {
   const [regulations, setRegulations] = useState<Regulation[]>([]);

@@ -7,6 +7,7 @@ import { modalitiesApi } from '../../api/modalities';
 import type { Modality } from '../../api/modalities';
 import { coursesApi } from '../../api/courses';
 import type { Course } from '../../api/courses';
+import { useNotification } from '../../contexts/NotificationProvider';
 
 const Equipas = () => {
   const navigate = useNavigate();
@@ -18,17 +19,17 @@ const Equipas = () => {
   const [allModalities, setAllModalities] = useState<Modality[]>([]);
   const [allCourses, setAllCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { notify } = useNotification();
   const [filterModality, setFilterModality] = useState('');
   const [filterCourse, setFilterCourse] = useState('');
 
   // Get only modalities and courses that have teams (for filtering)
   const availableModalities = allModalities.filter(modality =>
-    teams.some(team => team.modality.name === modality.id)
+    teams.some(team => team.modality.id === modality.id)
   );
 
   const availableCourses = allCourses.filter(course =>
-    teams.some(team => team.course.name === course.id)
+    teams.some(team => team.course.id === course.id)
   );
 
   // Fetch teams, modalities, and courses from API
@@ -36,7 +37,6 @@ const Equipas = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        setError(null);
 
         // Fetch teams, modalities, and courses in parallel
         const [fetchedTeams, fetchedModalities, fetchedCourses] = await Promise.all([
@@ -54,7 +54,7 @@ const Equipas = () => {
         setAllCourses(fetchedCourses);
       } catch (err) {
         console.error('Failed to fetch data:', err);
-        setError('Erro ao carregar dados. Por favor, tente novamente.');
+        notify('Não foi possível carregar os dados das equipas e modalidades. Tente recarregar a página.', 'error');
       } finally {
         setLoading(false);
       }
@@ -65,17 +65,17 @@ const Equipas = () => {
 
   const handleAddTeam = async () => {
     if (!newTeamName.trim()) {
-      alert('Por favor, preencha o nome da equipa.');
+      notify('Por favor, preencha o nome da equipa.', 'error');
       return;
     }
 
     if (!selectedModality) {
-      alert('Por favor, selecione uma modalidade.');
+      notify('Por favor, selecione uma modalidade.', 'error');
       return;
     }
 
     if (!selectedCourse) {
-      alert('Por favor, selecione um curso.');
+      notify('Por favor, selecione um curso.', 'error');
       return;
     }
 
@@ -94,7 +94,7 @@ const Equipas = () => {
       setIsModalOpen(false);
     } catch (err) {
       console.error('Failed to create team:', err);
-      alert('Erro ao criar equipa. Por favor, tente novamente.');
+      notify('Não foi possível criar a equipa. Verifique os dados e tente novamente.', 'error');
     }
   };
 
@@ -118,12 +118,11 @@ const Equipas = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <NucleoSidebar />
 
-      <div className="p-8">
+      <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
           <div className="mb-8 flex justify-between items-center">
             <h1 className="text-3xl font-bold text-gray-800">Equipas</h1>
             <button
@@ -135,26 +134,15 @@ const Equipas = () => {
             </button>
           </div>
 
-          {/* Loading State */}
           {loading && (
             <div className="flex justify-center items-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
             </div>
           )}
 
-          {/* Error State */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-6">
-              {error}
-            </div>
-          )}
-
-          {/* Content - Only show when not loading */}
-          {!loading && !error && (
+          {!loading && (
             <>
-              {/* Filters */}
               <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Modality Filter */}
                 <div>
                   <label htmlFor="modalityFilter" className="block text-gray-700 font-medium mb-2">
                     Modalidade
@@ -174,7 +162,6 @@ const Equipas = () => {
                   </select>
                 </div>
 
-                {/* Course Filter */}
                 <div>
                   <label htmlFor="courseFilter" className="block text-gray-700 font-medium mb-2">
                     Curso
@@ -195,7 +182,6 @@ const Equipas = () => {
                 </div>
               </div>
 
-              {/* Teams List */}
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-2xl font-bold mb-6 text-gray-800">Equipas</h2>
                 <div className="space-y-3">
@@ -227,14 +213,12 @@ const Equipas = () => {
         </div>
       </div>
 
-      {/* Add Team Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Adicionar Equipa</h2>
 
             <div className="space-y-4">
-              {/* Team Name */}
               <div>
                 <label htmlFor="teamName" className="block text-gray-700 font-medium mb-2">
                   Nome da Equipa <span className="text-red-500">*</span>
@@ -249,7 +233,6 @@ const Equipas = () => {
                 />
               </div>
 
-              {/* Modality Selection */}
               <div>
                 <label htmlFor="modality" className="block text-gray-700 font-medium mb-2">
                   Modalidade <span className="text-red-500">*</span>
@@ -269,7 +252,6 @@ const Equipas = () => {
                 </select>
               </div>
 
-              {/* Course Selection */}
               <div>
                 <label htmlFor="course" className="block text-gray-700 font-medium mb-2">
                   Curso <span className="text-red-500">*</span>
@@ -290,7 +272,6 @@ const Equipas = () => {
               </div>
             </div>
 
-            {/* Modal Actions */}
             <div className="flex gap-4 mt-6">
               <button
                 onClick={() => {

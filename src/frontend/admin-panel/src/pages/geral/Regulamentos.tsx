@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from "react";
+import ConfirmModal from "../../components/ConfirmModal";
 import Sidebar from "../../components/geral_navbar";
 import { regulationsApi, type Regulation, type RegulationCreate } from '../../api/regulations';
 import { modalitiesApi, type Modality } from '../../api/modalities';
+import { useNotification } from '../../contexts/NotificationProvider';
 
 const Regulamentos: React.FC = () => {
   const [regulations, setRegulations] = useState<Regulation[]>([]);
   const [modalities, setModalities] = useState<Modality[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  
+  const { notify } = useNotification();
   const [searchTerm, setSearchTerm] = useState("");
-  
+  const [filterModality, setFilterModality] = useState("");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedRegulation, setSelectedRegulation] = useState<Regulation | null>(null);
+  const [deletingRegulation, setDeletingRegulation] = useState(false);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -54,7 +57,6 @@ const Regulamentos: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      setError('');
       
       const [regulationsData, modalitiesData] = await Promise.all([
         regulationsApi.getAll(),
@@ -72,10 +74,9 @@ const Regulamentos: React.FC = () => {
 
       setRegulations(existingRegulations.filter((r): r is Regulation => r !== null));
       setModalities(modalitiesData);
-      
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to fetch data:', err);
-      setError('Erro ao carregar os regulamentos do servidor.');
+      notify('Não foi possível carregar os regulamentos. Tente recarregar a página.', 'error');
     } finally {
       setLoading(false);
     }
@@ -88,30 +89,38 @@ const Regulamentos: React.FC = () => {
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !file) {
-      alert("O título e o ficheiro PDF são obrigatórios.");
+      notify('Título e ficheiro são obrigatórios', 'error');
       return;
     }
 
     try {
       setUploading(true);
-      setError('');
+      // O setError(''); foi removido pois já não usamos esse estado
 
+      // Chamada à API usando os teus dados
       const newRegulation = await regulationsApi.create({
         title,
         file,
         description: description || undefined,
       });
 
+      // Atualiza a lista local com o que veio do servidor
       setRegulations(prev => [newRegulation, ...prev]);
 
+      // Limpa o formulário e fecha o modal
       setTitle("");
       setDescription("");
       setFile(null);
       setIsUploadModalOpen(false);
-      alert("Regulamento adicionado com sucesso!");
-    } catch (err: any) {
+      
+      notify("Regulamento adicionado com sucesso!", "success");
+    } catch (err: unknown) {
       console.error('Upload failed:', err);
-      setError(err.message || 'Falha ao processar o upload do ficheiro.');
+      if (err instanceof Error) {
+        notify(err.message, 'error');
+      } else {
+        notify('Não foi possível processar o upload do ficheiro.', 'error');
+      }
     } finally {
       setUploading(false);
     }
@@ -119,21 +128,42 @@ const Regulamentos: React.FC = () => {
 
   const handleDelete = async () => {
     if (!selectedRegulation) return;
+    
+    // Em vez do confirm do browser, abre o modal customizado da dev
+    setIsDeleteModalOpen(true);
+  };
 
-    if (!window.confirm(`Tem a certeza que deseja eliminar permanentemente "${selectedRegulation.title}"?`)) {
-      return;
-    }
+  const confirmDelete = async () => {
+    if (!selectedRegulation) return;
 
     try {
-      setError('');
+      setDeletingRegulation(true);
+      
+      // Chamada à tua API
       await regulationsApi.delete(selectedRegulation.id);
       
+      // Atualiza a lista local
       setRegulations(prev => prev.filter(r => r.id !== selectedRegulation.id));
+      
+      // Fecha ambos os modais (o de visualização e o de confirmação)
+      setIsDeleteModalOpen(false);
       setIsViewModalOpen(false);
       setSelectedRegulation(null);
-    } catch (err: any) {
-      console.error('Delete failed:', err);
-      alert('Erro ao eliminar: ' + err.message);
+      
+      // Notificação de sucesso da dev
+      notify('Regulamento eliminado com sucesso!', 'success');
+      
+    } catch (err: unknown) {
+      console.error('Failed to delete regulation:', err);
+      
+      // Tratamento de erro padronizado
+      if (err instanceof Error) {
+        notify(err.message, 'error');
+      } else {
+        notify('Não foi possível eliminar o regulamento. Tente novamente.', 'error');
+      }
+    } finally {
+      setDeletingRegulation(false);
     }
   };
 
@@ -144,6 +174,7 @@ const Regulamentos: React.FC = () => {
       <main className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           
+          {/* Header estilizado da HEAD */}
           <header className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-800">Gestão de Regulamentos</h1>
@@ -158,30 +189,42 @@ const Regulamentos: React.FC = () => {
             </button>
           </header>
 
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-md">
-              <p className="font-bold">Aviso</p>
-              <p>{error}</p>
+          {/* Barra de Ferramentas: Teu Search + Filtro de Modalidade da dev */}
+          <div className="bg-white p-4 rounded-lg shadow-sm mb-6 border border-gray-200 flex flex-wrap gap-6 items-end">
+            <div className="relative max-w-md flex-1">
+              <label className="block mb-1 text-xs font-bold text-gray-400 uppercase tracking-widest">Pesquisar</label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </span>
+                <input
+                  type="text"
+                  placeholder="Por título..."
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 sm:text-sm"
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                />
+              </div>
             </div>
-          )}
 
-          {/* Barra de Ferramentas / Filtros */}
-          <div className="bg-white p-4 rounded-lg shadow-sm mb-6 border border-gray-200">
-            <div className="relative max-w-md">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-              </span>
-              <input
-                type="text"
-                placeholder="Pesquisar por título..."
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-teal-500 sm:text-sm"
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
+            <div className="min-w-[200px]">
+              <label className="block mb-1 text-xs font-bold text-gray-400 uppercase tracking-widest">Modalidade</label>
+              <select
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-1 focus:ring-teal-500"
+                value={filterModality}
+                onChange={e => setFilterModality(e.target.value)}
+              >
+                <option value="">Todas as Modalidades</option>
+                {modalities.map(m => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+              </select>
             </div>
           </div>
 
-          {/* Grid de Cards / Lista */}
+          {/* Grid de Cards / Lista com Teu Loading */}
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20">
               <div className="h-12 w-12 animate-spin rounded-full border-4 border-teal-500 border-t-transparent"></div>
@@ -224,7 +267,6 @@ const Regulamentos: React.FC = () => {
         </div>
       </main>
 
-      {/* ========== MODAL UPLOAD ========== */}
       {isUploadModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
@@ -300,7 +342,6 @@ const Regulamentos: React.FC = () => {
         </div>
       )}
 
-      {/* ========== MODAL VIEW/DETAILS ========== */}
       {isViewModalOpen && selectedRegulation && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
@@ -371,6 +412,21 @@ const Regulamentos: React.FC = () => {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        title="Eliminar regulamento"
+        message={selectedRegulation ? `Tem certeza que deseja eliminar "${selectedRegulation.title}"?` : ''}
+        confirmLabel="Eliminar"
+        variant="danger"
+        loading={deletingRegulation}
+        onCancel={() => {
+          if (!deletingRegulation) {
+            setIsDeleteModalOpen(false);
+          }
+        }}
+        onConfirm={confirmDelete}
+      />
 
     </div>
   );

@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import NucleoSidebar from '../../components/nucleo_navbar';
 import { staffApi, studentsApi, type StaffDetail, type StudentDetail } from '../../api/members';
+import { useNotification } from '../../contexts/NotificationProvider';
 
 type CombinedMember =
   | { memberType: 'participant'; data: StudentDetail }
@@ -13,7 +14,7 @@ function MemberDetail() {
   const [member, setMember] = useState<CombinedMember | null>(null);
   const [memberType, setMemberType] = useState< string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { notify } = useNotification();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editedName, setEditedName] = useState('');
   const [editedContact, setEditedContact] = useState('');
@@ -25,18 +26,17 @@ function MemberDetail() {
     const fetchMember = async () => {
       try {
         setLoading(true);
-        setError(null);
 
 		console.log('Fetching member with ID:', id, 'and type:', type);
 
         if (!id || !type) {
-          setError('ID ou tipo inválido');
+          notify('ID ou tipo inválido', 'error');
           setTimeout(() => navigate('/nucleo/membros'), 2000);
           return;
         }
 
         if (type !== 'participant' && type !== 'staff') {
-          setError('Tipo de membro inválido');
+          notify('Tipo de membro inválido', 'error');
           setTimeout(() => navigate('/nucleo/membros'), 2000);
           return;
         }
@@ -52,7 +52,7 @@ function MemberDetail() {
         }
       } catch (err) {
         console.error('Error fetching member:', err);
-        setError('Erro ao carregar os dados do membro');
+        notify('Não foi possível carregar os dados do membro. Tente recarregar a página.', 'error');
         setTimeout(() => navigate('/nucleo/membros'), 2000);
       } finally {
         setLoading(false);
@@ -64,9 +64,9 @@ function MemberDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50">
         <NucleoSidebar />
-        <div className="p-8">
+        <div className="flex-1 p-8">
           <div className="max-w-3xl mx-auto flex justify-center items-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
           </div>
@@ -75,19 +75,8 @@ function MemberDetail() {
     );
   }
 
-  if (error || !member) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <NucleoSidebar />
-        <div className="p-8">
-          <div className="max-w-3xl mx-auto">
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error || 'Membro não encontrado'}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+  if (!member) {
+    return null;
   }
 
   const handleEdit = () => {
@@ -107,7 +96,6 @@ function MemberDetail() {
     if (!member || !editedName.trim() || !memberType) return;
 
     try {
-      setError(null);
 
       if (memberType === 'participant') {
         const updatedMember = await studentsApi.update(member.data.id, {
@@ -126,7 +114,7 @@ function MemberDetail() {
       setIsModalOpen(false);
     } catch (err) {
       console.error('Error updating member:', err);
-      setError('Erro ao atualizar o membro');
+      notify('Não foi possível guardar as alterações ao membro. Tente novamente.', 'error');
     }
   };
 
@@ -138,7 +126,6 @@ function MemberDetail() {
     if (!member || !memberType) return;
 
     try {
-      setError(null);
 
       if (memberType === 'participant') {
         await studentsApi.delete(member.data.id);
@@ -149,20 +136,29 @@ function MemberDetail() {
       navigate('/nucleo/membros');
     } catch (err) {
       console.error('Error deleting member:', err);
-      setError('Erro ao eliminar o membro');
+      notify('Não foi possível eliminar o membro. Poderá ter jogos ou equipas associadas.', 'error');
       setDeleteConfirmOpen(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <NucleoSidebar />
-      <div className="p-8">
+      <div className="flex-1 p-8">
         <div className="max-w-3xl mx-auto">
+          <div className="mb-6 flex items-center">
+            <button
+              onClick={() => navigate('/nucleo/membros')}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md font-medium transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Voltar
+            </button>
+          </div>
           <div className="bg-white rounded-lg shadow-md p-8">
-            {/* Member Details - Read Only */}
             <div className="space-y-6">
-              {/* Type Badge */}
               <div>
                 <span className={`inline-block px-4 py-2 rounded-full text-sm font-medium ${
                   memberType === 'participant'
@@ -173,7 +169,6 @@ function MemberDetail() {
                 </span>
               </div>
 
-              {/* Name */}
               <div>
                 <label className="block text-teal-500 font-medium mb-2">
                   Nome
@@ -183,10 +178,8 @@ function MemberDetail() {
                 </div>
               </div>
 
-              {/* Participant-specific fields */}
               {memberType === 'participant' && (
                 <>
-                  {/* Student Number */}
                   <div>
                     <label className="block text-teal-500 font-medium mb-2">
                       Número de Estudante
@@ -196,7 +189,6 @@ function MemberDetail() {
                     </div>
                   </div>
 
-                  {/* Member Status */}
                   <div>
                     <label className="block text-teal-500 font-medium mb-2">
                       Estado de Membro
@@ -212,22 +204,19 @@ function MemberDetail() {
                     </div>
                   </div>
 
-                  {/* Course ID */}
                   <div>
                     <label className="block text-teal-500 font-medium mb-2">
                       Curso
                     </label>
                     <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
-                      {(member.data as StudentDetail).course.id}
+                      {(member.data as StudentDetail).course.name}
                     </div>
                   </div>
                 </>
               )}
 
-              {/* Staff-specific fields */}
               {memberType === 'staff' && (
                 <>
-                  {/* Staff Number */}
                   {(member.data as StaffDetail).staff_number && (
                     <div>
                       <label className="block text-teal-500 font-medium mb-2">
@@ -239,7 +228,6 @@ function MemberDetail() {
                     </div>
                   )}
 
-                  {/* Contact */}
                   {(member.data as StaffDetail).contact && (
                     <div>
                       <label className="block text-teal-500 font-medium mb-2">
@@ -254,7 +242,6 @@ function MemberDetail() {
               )}
             </div>
 
-            {/* Action Buttons */}
             <div className="flex gap-4 mt-8">
               <button
                 onClick={handleEdit}
@@ -273,14 +260,12 @@ function MemberDetail() {
         </div>
       </div>
 
-      {/* Edit Member Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Editar Membro</h2>
 
             <div className="space-y-4">
-              {/* Name Input */}
               <div>
                 <label htmlFor="editName" className="block text-gray-700 font-medium mb-2">
                   Nome <span className="text-red-500">*</span>
@@ -295,10 +280,8 @@ function MemberDetail() {
                 />
               </div>
 
-              {/* Participant-specific fields */}
               {memberType === 'participant' && (
                 <>
-                  {/* Student Number (read-only) */}
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">
                       Número de Estudante
@@ -308,7 +291,6 @@ function MemberDetail() {
                     </div>
                   </div>
 
-                  {/* Is Member Toggle */}
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">
                       Tipo
@@ -339,10 +321,8 @@ function MemberDetail() {
                 </>
               )}
 
-              {/* Staff-specific fields */}
               {memberType === 'staff' && (
                 <>
-                  {/* Staff Number (read-only) */}
                   {(member.data as StaffDetail).staff_number && (
                     <div>
                       <label className="block text-gray-700 font-medium mb-2">
@@ -354,7 +334,6 @@ function MemberDetail() {
                     </div>
                   )}
 
-                  {/* Contact Input */}
                   <div>
                     <label htmlFor="editContact" className="block text-gray-700 font-medium mb-2">
                       Contacto
@@ -372,7 +351,6 @@ function MemberDetail() {
               )}
             </div>
 
-            {/* Modal Actions */}
             <div className="flex gap-4 mt-6">
               <button
                 onClick={() => {
@@ -395,7 +373,6 @@ function MemberDetail() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
       {deleteConfirmOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">

@@ -5,11 +5,15 @@ import { modalitiesApi } from '../../api/modalities';
 import { teamsApi } from '../../api/teams';
 import { tournamentsApi } from '../../api/tournaments';
 import { seasonsApi, type Season } from '../../api/seasons';
+import { nucleosApi } from '../../api/nucleos';
 import { useAuth } from '../../hooks/useAuth';
+import { useNotification } from '../../contexts/NotificationProvider';
 
 function DashboardGeral() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  // username is used in the welcome greeting below
+  const { username } = useAuth();
+  const { notify } = useNotification();
   const [stats, setStats] = useState({
     modalities: 0,
     courses: 0,
@@ -30,15 +34,13 @@ function DashboardGeral() {
         setLoading(true);
 
         // Fetch all data in parallel
-        const [modalities, tournaments, teams, seasons] = await Promise.all([
+        const [modalities, tournaments, teams, seasons, nucleos] = await Promise.all([
           modalitiesApi.getAll(),
           tournamentsApi.getAll(),
           teamsApi.getAll(), // Get teams from all courses
           seasonsApi.getAll(),
+          nucleosApi.getAll(),
         ]);
-
-        // Count unique courses from teams
-        const uniqueCourses = new Set(teams.map(t => t.course.id));
 
         // Count active tournaments
         const activeTournaments = tournaments.filter(t => t.status === 'active').length;
@@ -52,7 +54,7 @@ function DashboardGeral() {
 
         setStats({
           modalities: modalities.length,
-          courses: uniqueCourses.size,
+          courses: nucleos.length,
           tournaments: tournaments.length,
           activeTournaments,
           teams: teams.length,
@@ -83,10 +85,10 @@ function DashboardGeral() {
       setDraftSeason(draft);
       setShowStartModal(false);
 
-      alert('Época iniciada com sucesso!');
+      notify('Época iniciada com sucesso!', 'success');
     } catch (err) {
       console.error('Failed to start season:', err);
-      alert('Erro ao iniciar época');
+      notify('Não foi possível iniciar a época. Certifique-se que não existe já uma época ativa.', 'error');
     } finally {
       setSeasonLoading(false);
     }
@@ -108,36 +110,33 @@ function DashboardGeral() {
       setDraftSeason(draft);
       setShowFinishModal(false);
 
-      alert('Época finalizada com sucesso!');
+      notify('Época finalizada com sucesso!', 'success');
     } catch (err) {
       console.error('Failed to finish season:', err);
-      alert('Erro ao finalizar época');
+      notify('Não foi possível finalizar a época. Confirme que todos os torneios foram concluídos.', 'error');
     } finally {
       setSeasonLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      <div className="p-8">
+      <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-4xl font-bold mb-4 text-gray-800">Dashboard - Administrador Geral</h1>
           <p className="text-gray-600 mb-8">
-            Bem-vindo, <span className="font-semibold">{user?.full_name}</span>
+            Bem-vindo, <span className="font-semibold">{username ?? 'Administrador'}</span>
           </p>
 
-          {/* Loading State */}
           {loading ? (
             <div className="flex justify-center items-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
             </div>
           ) : (
             <>
-              {/* Season Management - Critical Section */}
               <div className="bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 rounded-lg shadow-lg p-6 mb-8">
                 <div className="flex items-start gap-4">
-                  <div className="text-4xl">🗓️</div>
                   <div className="flex-1">
                     <h2 className="text-2xl font-bold mb-2 text-gray-800">Gestão de Época</h2>
                     {currentSeason ? (
@@ -153,10 +152,10 @@ function DashboardGeral() {
                           onClick={() => setShowFinishModal(true)}
                           className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md font-bold transition-colors"
                         >
-                          🏁 Finalizar Época {currentSeason.year}
+                          Finalizar Época {currentSeason.year}
                         </button>
                         <p className="text-sm text-gray-600 mt-2">
-                          ⚠️ Esta ação irá encerrar a época atual e não pode ser revertida!
+                          Esta ação irá encerrar a época atual e não pode ser revertida!
                         </p>
                       </div>
                     ) : draftSeason ? (
@@ -169,16 +168,16 @@ function DashboardGeral() {
                           onClick={() => setShowStartModal(true)}
                           className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-md font-bold transition-colors"
                         >
-                          ▶️ Iniciar Época {draftSeason.year}
+                          Iniciar Época {draftSeason.year}
                         </button>
                         <p className="text-sm text-gray-600 mt-2">
-                          ⚠️ Certifique-se de que tudo está configurado antes de iniciar a época!
+                          Certifique-se de que tudo está configurado antes de iniciar a época!
                         </p>
                       </div>
                     ) : (
                       <div>
                         <p className="text-lg mb-4 text-red-700 font-semibold">
-                          ⚠️ Nenhuma época disponível! Crie uma nova época primeiro.
+                          Nenhuma época disponível! Crie uma nova época primeiro.
                         </p>
                       </div>
                     )}
@@ -186,7 +185,6 @@ function DashboardGeral() {
                 </div>
               </div>
 
-              {/* Stats Cards */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <div
                   onClick={() => navigate('/geral/modalidades')}
@@ -222,71 +220,15 @@ function DashboardGeral() {
                 </div>
               </div>
 
-              {/* Quick Actions */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-2xl font-bold mb-4 text-gray-800">Ações Rápidas</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  <button
-                    onClick={() => navigate('/geral/modalidades')}
-                    className="px-6 py-4 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors text-left"
-                  >
-                    <div className="text-lg font-bold mb-1">⚽ Gerir Modalidades</div>
-                    <div className="text-sm opacity-90">Ver e editar modalidades</div>
-                  </button>
-
-                  <button
-                    onClick={() => navigate('/geral/torneios')}
-                    className="px-6 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-md font-medium transition-colors text-left"
-                  >
-                    <div className="text-lg font-bold mb-1">🏆 Gerir Torneios</div>
-                    <div className="text-sm opacity-90">Criar e gerir torneios</div>
-                  </button>
-
-                  <button
-                    onClick={() => navigate('/geral/regulamentos')}
-                    className="px-6 py-4 bg-purple-500 hover:bg-purple-600 text-white rounded-md font-medium transition-colors text-left"
-                  >
-                    <div className="text-lg font-bold mb-1">📋 Regulamentos</div>
-                    <div className="text-sm opacity-90">Ver e editar regulamentos</div>
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <button
-                    onClick={() => navigate('/geral/nucleos')}
-                    className="px-6 py-4 bg-green-500 hover:bg-green-600 text-white rounded-md font-medium transition-colors text-left"
-                  >
-                    <div className="text-lg font-bold mb-1">🏫 Gerir Núcleos</div>
-                    <div className="text-sm opacity-90">Ver núcleos e cursos</div>
-                  </button>
-
-                  <button
-                    onClick={() => navigate('/geral/administradores')}
-                    className="px-6 py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-md font-medium transition-colors text-left"
-                  >
-                    <div className="text-lg font-bold mb-1">👥 Administradores</div>
-                    <div className="text-sm opacity-90">Gerir administradores</div>
-                  </button>
-
-                  <button
-                    onClick={() => window.open('/', '_blank')}
-                    className="px-6 py-4 bg-gray-500 hover:bg-gray-600 text-white rounded-md font-medium transition-colors text-left"
-                  >
-                    <div className="text-lg font-bold mb-1">🌐 Website Público</div>
-                    <div className="text-sm opacity-90">Ver site público</div>
-                  </button>
-                </div>
-              </div>
             </>
           )}
         </div>
       </div>
 
-      {/* Start Season Confirmation Modal */}
       {showStartModal && draftSeason && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-lg max-w-md w-full">
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">⚠️ Confirmar Início de Época</h2>
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Confirmar Início de Época</h2>
             <div className="mb-6 space-y-3">
               <p className="text-gray-700">
                 Tem certeza que deseja <span className="font-bold">iniciar a época {draftSeason.year}</span>?
@@ -324,7 +266,7 @@ function DashboardGeral() {
                   if (input?.value === 'INICIAR') {
                     handleStartSeason();
                   } else {
-                    alert('Por favor, digite "INICIAR" para confirmar');
+                    notify('Por favor, digite "INICIAR" para confirmar', 'error');
                   }
                 }}
                 disabled={seasonLoading}
@@ -337,17 +279,16 @@ function DashboardGeral() {
         </div>
       )}
 
-      {/* Finish Season Confirmation Modal */}
       {showFinishModal && currentSeason && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-lg max-w-md w-full">
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">⚠️ Confirmar Finalização de Época</h2>
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Confirmar Finalização de Época</h2>
             <div className="mb-6 space-y-3">
               <p className="text-gray-700">
                 Tem certeza que deseja <span className="font-bold text-red-600">finalizar a época {currentSeason.year}</span>?
               </p>
               <div className="bg-red-50 border-l-4 border-red-500 p-4">
-                <p className="text-sm text-red-800 font-semibold mb-2">⚠️ ATENÇÃO - AÇÃO IRREVERSÍVEL:</p>
+                <p className="text-sm text-red-800 font-semibold mb-2">ATENÇÃO - AÇÃO IRREVERSÍVEL:</p>
                 <ul className="text-sm text-red-700 space-y-1 list-disc list-inside">
                   <li><strong>Esta ação NÃO pode ser revertida!</strong></li>
                   <li>A época será marcada como <strong>FINALIZADA</strong></li>
@@ -380,7 +321,7 @@ function DashboardGeral() {
                   if (input?.value === 'FINALIZAR') {
                     handleFinishSeason();
                   } else {
-                    alert('Por favor, digite "FINALIZAR" para confirmar');
+                    notify('Por favor, digite "FINALIZAR" para confirmar', 'error');
                   }
                 }}
                 disabled={seasonLoading}

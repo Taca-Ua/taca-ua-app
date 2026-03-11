@@ -2,20 +2,10 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+COPY src/shared /tmp
+
 COPY src/apis/competiotion-api/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Install messaging package
-COPY src/shared/taca-messaging /tmp/taca-messaging
-RUN pip install --no-cache-dir -e /tmp/taca-messaging
-
-# Install logging package
-COPY src/shared/taca-logging /tmp/taca-logging
-RUN pip install --no-cache-dir -e /tmp/taca-logging
-
-# Install storage package 
-COPY src/shared/taca-storage /tmp/taca-storage
-RUN pip install --no-cache-dir -e /tmp/taca-storage
 
 COPY src/apis/competiotion-api .
 

@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import ConfirmModal from '../../components/ConfirmModal';
 import Sidebar from '../../components/geral_navbar';
-import { tournamentsApi, type TournamentDetail, type TournamentUpdate, type TournamentCompetitor, type TournamentCompetitorDetail } from '../../api/tournaments';
+import { useNotification } from '../../contexts/NotificationProvider';
+import { tournamentsApi, type TournamentDetail, type TournamentUpdate, type TournamentCompetitor, type TournamentCompetitorDetail, type TournamentFinish } from '../../api/tournaments';
 import { teamsApi, type Team } from '../../api/teams';
 import { matchesApi, type Match, type MatchCreate, type ParticipantCreate } from '../../api/matches';
 import { studentsApi, type Student } from '../../api/members';
@@ -10,11 +12,15 @@ import { studentsApi, type Student } from '../../api/members';
 const TournamentInfo = ({
   tournament,
   onEdit,
-  onDelete
+  onDelete,
+  onActivate,
+  onFinish
 }: {
   tournament: TournamentDetail;
   onEdit: () => void;
   onDelete: () => void;
+  onActivate: () => void;
+  onFinish: () => void;
 }) => {
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
@@ -84,6 +90,28 @@ const TournamentInfo = ({
           Eliminar
         </button>
       </div>
+
+      {tournament.status === 'draft' && (
+        <div className="pt-4 border-t mt-4">
+          <button
+            onClick={onActivate}
+            className="w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-md font-medium transition-colors"
+          >
+            Ativar Torneio
+          </button>
+        </div>
+      )}
+
+      {tournament.status === 'active' && (
+        <div className="pt-4 border-t mt-4">
+          <button
+            onClick={onFinish}
+            className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors"
+          >
+            Finalizar Torneio
+          </button>
+        </div>
+      )}
     </div>
   );
 };
@@ -102,15 +130,12 @@ const EditTournamentModal = ({
   const [startDate, setStartDate] = useState(
     tournament.start_date ? tournament.start_date.split('T')[0] : ''
   );
-  const [status, setStatus] = useState<'draft' | 'active' | 'finished'>(
-    tournament.status as 'draft' | 'active' | 'finished'
-  );
-  const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const { notify } = useNotification();
 
   const handleSubmit = async () => {
     if (!name.trim()) {
-      setError('Nome é obrigatório');
+      notify('Nome é obrigatório', 'error');
       return;
     }
 
@@ -118,12 +143,11 @@ const EditTournamentModal = ({
       setSaving(true);
       await onSave({
         name: name.trim(),
-        start_date: startDate || undefined,
-        status
+        start_date: startDate || undefined
       });
       onClose();
     } catch (err) {
-      setError('Erro ao atualizar torneio');
+      notify('Não foi possível guardar as alterações ao torneio. Tente novamente.', 'error');
     } finally {
       setSaving(false);
     }
@@ -133,12 +157,6 @@ const EditTournamentModal = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">Editar Torneio</h2>
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-            {error}
-          </div>
-        )}
 
         <div className="space-y-4">
           <div>
@@ -161,19 +179,6 @@ const EditTournamentModal = ({
               onChange={(e) => setStartDate(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
             />
-          </div>
-
-          <div>
-            <label className="block text-gray-700 font-medium mb-2">Estado</label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as 'draft' | 'active' | 'finished')}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
-            >
-              <option value="draft">Rascunho</option>
-              <option value="active">Ativo</option>
-              <option value="finished">Finalizado</option>
-            </select>
           </div>
         </div>
 
@@ -214,7 +219,9 @@ const TournamentCompetitors = ({
   const [selectedTeamId, setSelectedTeamId] = useState('');
   const [selectedAthleteId, setSelectedAthleteId] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [competitorToRemove, setCompetitorToRemove] = useState<{ competitor: TournamentCompetitorDetail; name: string } | null>(null);
+  const [removingCompetitor, setRemovingCompetitor] = useState(false);
+  const { notify } = useNotification();
 
   useEffect(() => {
     loadAvailableTeams();
@@ -255,17 +262,16 @@ const TournamentCompetitors = ({
 
   const handleAddCompetitor = async () => {
     if (selectedCompetitorType === 'team' && !selectedTeamId) {
-      setError('Selecione uma equipa');
+      notify('Selecione uma equipa', 'error');
       return;
     }
     if (selectedCompetitorType === 'athlete' && !selectedAthleteId) {
-      setError('Selecione um atleta');
+      notify('Selecione um atleta', 'error');
       return;
     }
 
     try {
       setLoading(true);
-      setError('');
 
       const competitor: TournamentCompetitor = selectedCompetitorType === 'team'
         ? { competitor_type: 'team', team_id: selectedTeamId }
@@ -277,21 +283,29 @@ const TournamentCompetitors = ({
       setSelectedAthleteId('');
       onCompetitorsChange();
     } catch (err) {
-      setError('Erro ao adicionar competidor');
+      notify('Não foi possível adicionar o competidor. Poderá já estar inscrito neste torneio.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRemoveCompetitor = async (competitor: TournamentCompetitorDetail, name: string) => {
-    if (!window.confirm(`Remover "${name}" do torneio?`)) return;
+  const handleRemoveCompetitor = (competitor: TournamentCompetitorDetail, name: string) => {
+    setCompetitorToRemove({ competitor, name });
+  };
+
+  const confirmRemoveCompetitor = async () => {
+    if (!competitorToRemove) return;
 
     try {
-      await tournamentsApi.removeCompetitors(tournament.id, [competitor.id]);
+      setRemovingCompetitor(true);
+      await tournamentsApi.removeCompetitors(tournament.id, [competitorToRemove.competitor.id]);
+      setCompetitorToRemove(null);
       onCompetitorsChange();
     } catch (err) {
       console.error('Failed to remove competitor:', err);
-      alert('Erro ao remover competidor');
+      notify('Não foi possível remover o competidor do torneio. Tente novamente.', 'error');
+    } finally {
+      setRemovingCompetitor(false);
     }
   };
 
@@ -304,7 +318,6 @@ const TournamentCompetitors = ({
         <button
           onClick={() => {
             setShowAddModal(true);
-            setError('');
             setSelectedTeamId('');
             setSelectedAthleteId('');
             setStudentSearchTerm('');
@@ -351,17 +364,10 @@ const TournamentCompetitors = ({
         </div>
       )}
 
-      {/* Add Competitor Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Adicionar Competidor</h2>
-
-            {error && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-                {error}
-              </div>
-            )}
 
             <div className="space-y-4 mb-6">
               <div>
@@ -457,6 +463,208 @@ const TournamentCompetitors = ({
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={competitorToRemove !== null}
+        title="Remover competidor"
+        message={competitorToRemove ? `Remover "${competitorToRemove.name}" do torneio?` : ''}
+        confirmLabel="Remover"
+        variant="danger"
+        loading={removingCompetitor}
+        onCancel={() => {
+          if (!removingCompetitor) {
+            setCompetitorToRemove(null);
+          }
+        }}
+        onConfirm={confirmRemoveCompetitor}
+      />
+    </div>
+  );
+};
+
+// Component for finishing tournament with standings
+const FinishTournamentModal = ({
+  tournament,
+  onClose,
+  onFinish
+}: {
+  tournament: TournamentDetail;
+  onClose: () => void;
+  onFinish: (data: TournamentFinish) => Promise<void>;
+}) => {
+  const MAX_POSITIONS = 12; // Configurable number of positions
+  const numPositions = Math.min(MAX_POSITIONS, tournament.competitors.length);
+
+  // Map position number to competitor ID
+  const [positionAssignments, setPositionAssignments] = useState<Map<number, string>>(new Map());
+  const { notify } = useNotification();
+  const [finishing, setFinishing] = useState(false);
+
+  const getCompetitorId = (competitor: TournamentCompetitorDetail): string => {
+    if (competitor.competitor_type === 'team' && competitor.team) {
+      return competitor.team.id;
+    }
+    if (competitor.competitor_type === 'athlete' && competitor.athlete) {
+      return competitor.athlete.id;
+    }
+    return '';
+  };
+
+  const getCompetitorName = (competitor: TournamentCompetitorDetail): string => {
+    if (competitor.competitor_type === 'team' && competitor.team) {
+      return competitor.team.name;
+    }
+    if (competitor.competitor_type === 'athlete' && competitor.athlete) {
+      return competitor.athlete.full_name;
+    }
+    return 'Desconhecido';
+  };
+
+  const handleCompetitorChange = (position: number, competitorId: string) => {
+    const newAssignments = new Map(positionAssignments);
+    if (competitorId === '') {
+      newAssignments.delete(position);
+    } else {
+      newAssignments.set(position, competitorId);
+    }
+    setPositionAssignments(newAssignments);
+  };
+
+  const getPositionLabel = (position: number): string => {
+    if (position === 1) return '1º Lugar';
+    if (position === 2) return '2º Lugar';
+    if (position === 3) return '3º Lugar';
+    return `${position}º Lugar`;
+  };
+
+  const handleSubmit = async () => {
+    // Validate that all positions are filled
+    if (positionAssignments.size < numPositions) {
+      notify(`Por favor, atribua competidores a todas as ${numPositions} posições`, 'error');
+      return;
+    }
+
+    // Check for duplicate competitors
+    const competitorIds = Array.from(positionAssignments.values());
+    const uniqueCompetitors = new Set(competitorIds);
+    if (uniqueCompetitors.size !== competitorIds.length) {
+      notify('Cada competidor só pode ocupar uma posição', 'error');
+      return;
+    }
+
+    try {
+      setFinishing(true);
+
+      // Build ranking entries
+      const ranking_entries: (TournamentCompetitor & { position: number })[] = [];
+
+      positionAssignments.forEach((competitorId, position) => {
+        const competitor = tournament.competitors.find(c => getCompetitorId(c) === competitorId);
+
+        if (competitor) {
+          const entry: TournamentCompetitor & { position: number } = {
+            competitor_type: competitor.competitor_type,
+            position
+          };
+
+          if (competitor.competitor_type === 'team') {
+            entry.team_id = competitorId;
+          } else {
+            entry.athlete_id = competitorId;
+          }
+
+          ranking_entries.push(entry);
+        }
+      });
+
+      await onFinish({ ranking_entries });
+      onClose();
+    } catch (err) {
+      notify('Não foi possível finalizar o torneio. Certifique-se que todos os jogos foram concluídos.', 'error');
+    } finally {
+      setFinishing(false);
+    }
+  };
+
+  // Get list of already assigned competitors
+  const assignedCompetitors = new Set(positionAssignments.values());
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <h2 className="text-2xl font-bold mb-6 text-gray-800">Finalizar Torneio - Classificação Final</h2>
+
+        <p className="text-gray-600 mb-6">
+          Atribua os competidores às posições finais do torneio (1º ao {numPositions}º lugar).
+        </p>
+
+        <div className="space-y-3 mb-6">
+          {Array.from({ length: numPositions }, (_, i) => i + 1).map((position) => {
+            const selectedCompetitorId = positionAssignments.get(position) || '';
+
+            return (
+              <div
+                key={position}
+                className="flex items-center gap-4 p-4 bg-gray-50 rounded-md"
+              >
+                <div className="w-32">
+                  <label className="text-gray-800 font-semibold">
+                    {getPositionLabel(position)}
+                  </label>
+                </div>
+                <div className="flex-1">
+                  <select
+                    value={selectedCompetitorId}
+                    onChange={(e) => handleCompetitorChange(position, e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Selecione um competidor...</option>
+                    {tournament.competitors.map((competitor) => {
+                      const competitorId = getCompetitorId(competitor);
+                      const competitorName = getCompetitorName(competitor);
+                      const isAssigned = assignedCompetitors.has(competitorId) && selectedCompetitorId !== competitorId;
+
+                      return (
+                        <option
+                          key={competitorId}
+                          value={competitorId}
+                          disabled={isAssigned}
+                        >
+                          {competitorName} ({competitor.competitor_type === 'team' ? 'Equipa' : 'Atleta'})
+                          {isAssigned ? ' - Já atribuído' : ''}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {numPositions < tournament.competitors.length && (
+          <div className="mb-4 p-3 bg-yellow-100 border border-yellow-400 text-yellow-800 rounded-md text-sm">
+            Nota: Apenas os primeiros {numPositions} lugares serão registados. {tournament.competitors.length - numPositions} competidor(es) não terão posição atribuída.
+          </div>
+        )}
+
+        <div className="flex gap-4">
+          <button
+            onClick={onClose}
+            disabled={finishing}
+            className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={finishing}
+            className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50"
+          >
+            {finishing ? 'A finalizar...' : 'Finalizar Torneio'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
@@ -464,10 +672,12 @@ const TournamentCompetitors = ({
 // Component to manage matches
 const TournamentMatches = ({
   tournament,
-  onMatchesChange
+  onMatchesChange,
+  onMatchDeleted
 }: {
   tournament: TournamentDetail;
   onMatchesChange: () => void;
+  onMatchDeleted: (matchId: string) => void;
 }) => {
   const navigate = useNavigate();
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -475,36 +685,38 @@ const TournamentMatches = ({
   const [location, setLocation] = useState('');
   const [startTime, setStartTime] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [matchToDelete, setMatchToDelete] = useState<string | null>(null);
+  const [deletingMatch, setDeletingMatch] = useState(false);
+  const { notify } = useNotification();
+  const [matchStatusFilter, setMatchStatusFilter] = useState<string>('all');
 
   const handleCreateMatch = async () => {
     // Validate at least 2 participants
     const validParticipants = selectedParticipants.filter(p => p.trim() !== '');
     if (validParticipants.length < 2) {
-      setError('Selecione pelo menos 2 participantes');
+      notify('Selecione pelo menos 2 participantes', 'error');
       return;
     }
 
     // Check for duplicates
     const uniqueParticipants = new Set(validParticipants);
     if (uniqueParticipants.size !== validParticipants.length) {
-      setError('Os participantes devem ser diferentes');
+      notify('Os participantes devem ser diferentes', 'error');
       return;
     }
 
     if (!location.trim()) {
-      setError('Local é obrigatório');
+      notify('Local é obrigatório', 'error');
       return;
     }
 
     if (!startTime) {
-      setError('Data e hora são obrigatórias');
+      notify('Data e hora são obrigatórias', 'error');
       return;
     }
 
     try {
       setLoading(true);
-      setError('');
 
       // Map selected IDs to ParticipantCreate objects, detecting the type from tournament.competitors
       const participants: ParticipantCreate[] = validParticipants.map(competitorId => {
@@ -538,7 +750,7 @@ const TournamentMatches = ({
       resetForm();
       onMatchesChange();
     } catch (err) {
-      setError('Erro ao criar jogo');
+      notify('Não foi possível criar o jogo. Verifique os dados e tente novamente.', 'error');
     } finally {
       setLoading(false);
     }
@@ -548,7 +760,6 @@ const TournamentMatches = ({
     setSelectedParticipants(['', '']);
     setLocation('');
     setStartTime('');
-    setError('');
   };
 
   const addParticipantSlot = () => {
@@ -567,15 +778,23 @@ const TournamentMatches = ({
     setSelectedParticipants(updated);
   };
 
-  const handleDeleteMatch = async (matchId: string) => {
-    if (!window.confirm('Tem certeza que deseja eliminar este jogo?')) return;
+  const handleDeleteMatch = (matchId: string) => {
+    setMatchToDelete(matchId);
+  };
+
+  const confirmDeleteMatch = async () => {
+    if (!matchToDelete) return;
 
     try {
-      await matchesApi.delete(matchId);
-      onMatchesChange();
+      setDeletingMatch(true);
+      await matchesApi.delete(matchToDelete);
+      onMatchDeleted(matchToDelete);
+      setMatchToDelete(null);
     } catch (err) {
       console.error('Failed to delete match:', err);
-      alert('Erro ao eliminar jogo');
+      notify('Não foi possível eliminar o jogo. Poderá ter resultados ou convocatórias registadas.', 'error');
+    } finally {
+      setDeletingMatch(false);
     }
   };
 
@@ -618,33 +837,53 @@ const TournamentMatches = ({
     return null;
   };
 
+  const filteredMatches = tournament.matches.filter(match =>
+    matchStatusFilter === 'all' || match.status === matchStatusFilter
+  );
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800">
           Jogos ({tournament.matches.length})
         </h2>
-        <button
-          onClick={() => {
-            setShowCreateModal(true);
-            resetForm();
-          }}
-          disabled={tournament.competitors.length < 2}
-          className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          title={tournament.competitors.length < 2 ? 'É necessário pelo menos 2 competidores' : ''}
-        >
-          + Criar Jogo
-        </button>
+        <div className="flex items-center gap-3">
+          <select
+            value={matchStatusFilter}
+            onChange={(e) => setMatchStatusFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+          >
+            <option value="all">Todos os estados</option>
+            <option value="scheduled">Agendados</option>
+            <option value="in_progress">Em Progresso</option>
+            <option value="finished">Finalizados</option>
+            <option value="cancelled">Cancelados</option>
+          </select>
+          <button
+            onClick={() => {
+              setShowCreateModal(true);
+              resetForm();
+            }}
+            disabled={tournament.competitors.length < 2}
+            className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title={tournament.competitors.length < 2 ? 'É necessário pelo menos 2 competidores' : ''}
+          >
+            + Criar Jogo
+          </button>
+        </div>
       </div>
 
       {tournament.matches.length === 0 ? (
         <p className="text-gray-500 text-center py-8">Nenhum jogo criado</p>
+      ) : filteredMatches.length === 0 ? (
+        <p className="text-gray-500 text-center py-8">Nenhum jogo com o estado selecionado</p>
       ) : (
         <div className="space-y-3">
-          {tournament.matches.map((match) => (
+          {filteredMatches.map((match) => (
             <div
               key={match.id}
-              className="p-4 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
+              onClick={() => navigate(`/geral/jogos/${match.id}`)}
+              className="p-4 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
             >
               <div className="flex justify-between items-start mb-2">
                 <div className="flex-1">
@@ -659,8 +898,8 @@ const TournamentMatches = ({
                   )}
 
                   <div className="flex gap-4 text-sm text-gray-600">
-                    <span>📍 {match.location}</span>
-                    <span>🕒 {new Date(match.start_time).toLocaleString('pt-PT')}</span>
+                    <span>{match.location}</span>
+                    <span>{new Date(match.start_time).toLocaleString('pt-PT', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
 
                   <div className="mt-2">
@@ -670,13 +909,7 @@ const TournamentMatches = ({
                   </div>
                 </div>
 
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => navigate(`/geral/jogos/${match.id}`)}
-                    className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-sm transition-colors"
-                  >
-                    Ver
-                  </button>
+                <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => handleDeleteMatch(match.id)}
                     className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-md text-sm transition-colors"
@@ -690,17 +923,10 @@ const TournamentMatches = ({
         </div>
       )}
 
-      {/* Create Match Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Criar Jogo</h2>
-
-            {error && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-                {error}
-              </div>
-            )}
 
             <div className="space-y-4">
               <div>
@@ -801,6 +1027,21 @@ const TournamentMatches = ({
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={matchToDelete !== null}
+        title="Eliminar jogo"
+        message="Tem certeza que deseja eliminar este jogo?"
+        confirmLabel="Eliminar"
+        variant="danger"
+        loading={deletingMatch}
+        onCancel={() => {
+          if (!deletingMatch) {
+            setMatchToDelete(null);
+          }
+        }}
+        onConfirm={confirmDeleteMatch}
+      />
     </div>
   );
 };
@@ -813,6 +1054,12 @@ const TorneioDetails = () => {
   const [tournament, setTournament] = useState<TournamentDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showFinishModal, setShowFinishModal] = useState(false);
+  const [activating, setActivating] = useState(false);
+  const [showActivateModal, setShowActivateModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingTournament, setDeletingTournament] = useState(false);
+  const { notify } = useNotification();
 
   useEffect(() => {
     loadTournament();
@@ -827,7 +1074,7 @@ const TorneioDetails = () => {
       setTournament(data);
     } catch (err) {
       console.error('Failed to fetch tournament:', err);
-      alert('Erro ao carregar torneio');
+      notify('Não foi possível carregar os dados do torneio. Tente recarregar a página.', 'error');
       navigate('/geral/torneios');
     } finally {
       setLoading(false);
@@ -841,25 +1088,61 @@ const TorneioDetails = () => {
     setTournament(updated);
   };
 
-  const handleDelete = async () => {
+  const handleActivate = () => {
     if (!id || !tournament) return;
 
-    if (window.confirm(`Tem certeza que deseja eliminar "${tournament.name}"?`)) {
-      try {
-        await tournamentsApi.delete(id);
-        navigate('/geral/torneios');
-      } catch (err) {
-        console.error('Failed to delete tournament:', err);
-        alert('Erro ao eliminar torneio');
-      }
+    setShowActivateModal(true);
+  };
+
+  const confirmActivate = async () => {
+    if (!id || !tournament) return;
+
+    try {
+      setActivating(true);
+      const updated = await tournamentsApi.update(id, { status: 'active' });
+      setTournament(updated);
+      setShowActivateModal(false);
+    } catch (err) {
+      console.error('Failed to activate tournament:', err);
+      notify('Não foi possível ativar o torneio. Verifique se estão reunidas as condições necessárias.', 'error');
+    } finally {
+      setActivating(false);
     }
+  };
+
+  const handleDelete = () => {
+    if (!id || !tournament) return;
+
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!id || !tournament) return;
+
+    try {
+      setDeletingTournament(true);
+      await tournamentsApi.delete(id);
+      navigate('/geral/torneios');
+    } catch (err) {
+      console.error('Failed to delete tournament:', err);
+      notify('Não foi possível eliminar o torneio. Poderá ter jogos ou competidores associados.', 'error');
+    } finally {
+      setDeletingTournament(false);
+    }
+  };
+
+  const handleFinish = async (data: TournamentFinish) => {
+    if (!id) return;
+
+    const updated = await tournamentsApi.finish(id, data);
+    setTournament(updated);
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50">
         <Sidebar />
-        <div className="flex justify-center items-center py-12">
+        <div className="flex-1 flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
         </div>
       </div>
@@ -869,12 +1152,11 @@ const TorneioDetails = () => {
   if (!tournament) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
 
-      <div className="p-8">
+      <div className="flex-1 p-8">
         <div className="max-w-6xl mx-auto">
-          {/* Header */}
           <div className="mb-8 flex justify-between items-center">
             <h1 className="text-3xl font-bold text-gray-800">Detalhes do Torneio</h1>
             <button
@@ -885,18 +1167,17 @@ const TorneioDetails = () => {
             </button>
           </div>
 
-          {/* Content Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Tournament Info */}
             <div>
               <TournamentInfo
                 tournament={tournament}
                 onEdit={() => setShowEditModal(true)}
                 onDelete={handleDelete}
+                onActivate={handleActivate}
+                onFinish={() => setShowFinishModal(true)}
               />
             </div>
 
-            {/* Competitors */}
             <div>
               <TournamentCompetitors
                 tournament={tournament}
@@ -905,17 +1186,16 @@ const TorneioDetails = () => {
             </div>
           </div>
 
-          {/* Matches - Full Width */}
           <div className="mt-6">
             <TournamentMatches
               tournament={tournament}
               onMatchesChange={loadTournament}
+              onMatchDeleted={(matchId) => setTournament(prev => prev ? { ...prev, matches: prev.matches.filter(m => m.id !== matchId) } : null)}
             />
           </div>
         </div>
       </div>
 
-      {/* Edit Modal */}
       {showEditModal && (
         <EditTournamentModal
           tournament={tournament}
@@ -923,6 +1203,44 @@ const TorneioDetails = () => {
           onSave={handleUpdate}
         />
       )}
+
+      {showFinishModal && (
+        <FinishTournamentModal
+          tournament={tournament}
+          onClose={() => setShowFinishModal(false)}
+          onFinish={handleFinish}
+        />
+      )}
+
+      <ConfirmModal
+        isOpen={showActivateModal}
+        title="Ativar torneio"
+        message={tournament ? `Ativar o torneio "${tournament.name}"? O torneio passará a estar ativo e visível.` : ''}
+        confirmLabel="Ativar"
+        variant="success"
+        loading={activating}
+        onCancel={() => {
+          if (!activating) {
+            setShowActivateModal(false);
+          }
+        }}
+        onConfirm={confirmActivate}
+      />
+
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        title="Eliminar torneio"
+        message={tournament ? `Tem certeza que deseja eliminar "${tournament.name}"?` : ''}
+        confirmLabel="Eliminar"
+        variant="danger"
+        loading={deletingTournament}
+        onCancel={() => {
+          if (!deletingTournament) {
+            setShowDeleteModal(false);
+          }
+        }}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 };

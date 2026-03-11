@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ..services.regulation_service import RegulationService
+from ..decorators import RoleRequiredMixin
 from ..serializers.regulations import (
     RegulationCreateSerializer,
     RegulationListSerializer,
@@ -27,7 +28,7 @@ from ..serializers.regulations import (
         tags=["Regulation Management"],
     ),
 )
-class RegulationListCreateView(APIView):
+class RegulationListCreateView(RoleRequiredMixin, APIView):
     def get(self, request):
         regulations = RegulationService.list_regulations()
         serializer = RegulationListSerializer(regulations, many=True)
@@ -72,7 +73,7 @@ class RegulationListCreateView(APIView):
         tags=["Regulation Management"],
     ),
 )
-class RegulationDetailView(APIView):
+class RegulationDetailView(RoleRequiredMixin, APIView):
     def get(self, request, regulation_id):
         regulation = RegulationService.get_regulation(regulation_id)
         serializer = RegulationListSerializer(regulation)

@@ -1,28 +1,30 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
+import { useNotification } from '../../contexts/NotificationProvider';
 import { coursesApi, type Course } from '../../api/courses';
 import { nucleosApi, type Nucleo } from '../../api/nucleos';
 
 const CourseEntry = (course: Course) => {
   const navigate = useNavigate();
 
-  console.log('Rendering CourseEntry for:', course);
   return (
     <div
       key={course.id}
       onClick={() => navigate(`/geral/cursos/${course.id}`)}
       className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer transition-colors flex justify-between items-center"
     >
-      <div className="flex flex-col">
-        <span className="text-gray-800 font-medium">{course.name}</span>
-        <span className="text-gray-600 text-sm">
-          Abreviatura: {course.abbreviation}
-        </span>
+      <div className="flex items-center gap-4">
+        <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center border-2 border-teal-500 flex-shrink-0">
+          <span className="text-teal-600 font-bold text-xs">{course.abbreviation}</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-teal-600 font-bold text-lg">{course.abbreviation}</span>
+          <span className="text-gray-400">|</span>
+          <span className="text-gray-800 font-medium">{course.name}</span>
+        </div>
       </div>
-      <span className="text-gray-600 text-sm">
-        Núcleo: {course.nucleo.name}
-      </span>
+      <span className="text-gray-500 text-sm">{course.nucleo.name}</span>
     </div>
   );
 };
@@ -36,7 +38,8 @@ const Cursos = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [nucleos, setNucleos] = useState<Nucleo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { notify } = useNotification();
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch courses on mount
   useEffect(() => {
@@ -45,10 +48,9 @@ const Cursos = () => {
         setLoading(true);
         const data = await coursesApi.getAll();
         setCourses(data);
-        setError('');
       } catch (err) {
         console.error('Failed to fetch courses:', err);
-        setError('Erro ao carregar cursos');
+        notify('Não foi possível carregar a lista de cursos. Tente recarregar a página.', 'error');
       } finally {
         setLoading(false);
       }
@@ -73,17 +75,17 @@ const Cursos = () => {
 
   const handleAddCourse = async () => {
     if (!newCourseName.trim()) {
-      setError('Por favor, preencha o nome do curso.');
+      notify('Por favor, preencha o nome do curso.', 'error');
       return;
     }
 
     if (!newCourseAbbreviation.trim()) {
-      setError('Por favor, preencha a abreviatura do curso.');
+      notify('Por favor, preencha a abreviatura do curso.', 'error');
       return;
     }
 
     if (!selectedNucleoId) {
-      setError('Por favor, selecione um núcleo.');
+      notify('Por favor, selecione um núcleo.', 'error');
       return;
     }
 
@@ -95,7 +97,6 @@ const Cursos = () => {
       });
 
       setCourses([...courses, newCourse]);
-      setError('');
 
       // Reset
       setNewCourseName('');
@@ -104,13 +105,13 @@ const Cursos = () => {
       setIsModalOpen(false);
     } catch (err) {
       console.error('Failed to create course:', err);
-      setError('Erro ao criar curso');
+      notify('Não foi possível criar o curso. Verifique os dados e tente novamente.', 'error');
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50">
         <Sidebar />
         <div className="flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
@@ -120,13 +121,12 @@ const Cursos = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
 
-      <div className="p-8">
+      <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-8 flex justify-between items-center">
+          <div className="mb-6 flex justify-between items-center">
             <h1 className="text-3xl font-bold text-gray-800">Cursos</h1>
             <button
               onClick={() => setIsModalOpen(true)}
@@ -137,11 +137,23 @@ const Cursos = () => {
             </button>
           </div>
 
-          {/* Courses List */}
+          <div className="mb-6">
+            <input
+              type="text"
+              placeholder="Pesquisar curso..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+            />
+          </div>
+
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="space-y-3">
               {courses.length > 0 ? (
-                courses.map((course) => (
+                [...courses]
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .filter((c) => c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.abbreviation.toLowerCase().includes(searchQuery.toLowerCase()))
+                  .map((course) => (
                   <CourseEntry
                     key={course.id}
                     {...course}
@@ -157,20 +169,12 @@ const Cursos = () => {
         </div>
       </div>
 
-      {/* Add Course Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Adicionar Curso</h2>
 
-            {error && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-                {error}
-              </div>
-            )}
-
             <div className="space-y-4">
-              {/* Name */}
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
                   Nome do Curso <span className="text-red-500">*</span>
@@ -184,7 +188,6 @@ const Cursos = () => {
                 />
               </div>
 
-              {/* Abbreviation */}
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
                   Abreviatura <span className="text-red-500">*</span>
@@ -198,7 +201,6 @@ const Cursos = () => {
                 />
               </div>
 
-              {/* Nucleo */}
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
                   Núcleo <span className="text-red-500">*</span>
@@ -218,7 +220,6 @@ const Cursos = () => {
               </div>
             </div>
 
-            {/* Actions */}
             <div className="flex gap-4 mt-6">
               <button
                 onClick={() => {
@@ -226,7 +227,6 @@ const Cursos = () => {
                   setNewCourseName('');
                   setNewCourseAbbreviation('');
                   setSelectedNucleoId('');
-                  setError('');
                 }}
                 className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
               >

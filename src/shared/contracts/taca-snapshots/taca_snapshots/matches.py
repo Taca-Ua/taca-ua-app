@@ -1,0 +1,96 @@
+"""
+Snapshot DTOs for the Matches service.
+
+These models define the typed contract for snapshot data produced by the
+Matches service and consumed by the Read Model Updater during a rebuild.
+
+Field names mirror the JSON keys currently returned by
+``GET /internal/snapshot`` in the matches-service.
+"""
+
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from .base import SnapshotBase
+
+# ---------------------------------------------------------------------------
+# Individual item snapshots
+# ---------------------------------------------------------------------------
+
+
+class MatchSnapshotItem(SnapshotBase):
+    """A single match record as serialised by the snapshot endpoint."""
+
+    match_id: str
+    tournament_id: Optional[str] = None
+    location: Optional[str] = None
+    status: Optional[str] = None
+    start_time: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    deleted_at: Optional[datetime] = None
+
+
+class MatchParticipantSnapshotItem(SnapshotBase):
+    """A single match-participant record as serialised by the snapshot endpoint."""
+
+    participant_id: str
+    match_id: str
+    participant_type: Optional[str] = None
+    participant_entity_id: Optional[str] = None
+    added_at: Optional[datetime] = None
+    removed_at: Optional[datetime] = None
+
+
+class MatchResultSnapshotItem(SnapshotBase):
+    """A single match-result record as serialised by the snapshot endpoint."""
+
+    match_id: str
+    participant_id: str
+    score: Optional[int] = None
+    position: Optional[int] = None
+    results_metadata: Optional[Dict[str, Any]] = None
+    updated_at: Optional[datetime] = None
+
+
+class MatchLineupSnapshotItem(SnapshotBase):
+    """A single lineup entry as serialised by the snapshot endpoint."""
+
+    match_id: str
+    team_id: str
+    player_id: str
+    jersey_number: Optional[int] = None
+    is_starter: bool = False
+    assigned_at: Optional[datetime] = None
+
+
+class MatchCommentSnapshotItem(SnapshotBase):
+    """A single match comment as serialised by the snapshot endpoint."""
+
+    comment_id: str
+    match_id: str
+    message: str
+    created_at: Optional[datetime] = None
+    deleted_at: Optional[datetime] = None
+
+
+# ---------------------------------------------------------------------------
+# Aggregate snapshot response (full HTTP response body)
+# ---------------------------------------------------------------------------
+
+
+class MatchesSnapshotResponse(SnapshotBase):
+    """
+    Full snapshot response returned by ``GET /internal/snapshot`` in the
+    matches-service.
+
+    This model is used by:
+    - **Providers**: returned (or serialised) by the FastAPI endpoint.
+    - **Consumers**: parsed from the raw JSON by the snapshot client.
+    """
+
+    matches: List[MatchSnapshotItem] = []
+    participants: List[MatchParticipantSnapshotItem] = []
+    results: List[MatchResultSnapshotItem] = []
+    lineups: List[MatchLineupSnapshotItem] = []
+    comments: List[MatchCommentSnapshotItem] = []
