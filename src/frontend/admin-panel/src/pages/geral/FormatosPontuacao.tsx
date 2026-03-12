@@ -10,8 +10,11 @@ interface EscalaoRow {
   escalao: string;
   minParticipants: number | null;
   maxParticipants: number | null;
-  points: number[];
+  points: string;
 }
+
+const parsePoints = (raw: string): number[] =>
+  raw.split(/[\s,]+/).map(p => parseInt(p.trim())).filter(p => !isNaN(p));
 
 
 const FormatosPontuacao = () => {
@@ -31,7 +34,7 @@ const FormatosPontuacao = () => {
   const [formatName, setFormatName] = useState('');
   const [formatDescription, setFormatDescription] = useState('');
   const [escaloes, setEscaloes] = useState<EscalaoRow[]>([
-    { escalao: 'A', minParticipants: null, maxParticipants: null, points: [] }
+    { escalao: 'A', minParticipants: null, maxParticipants: null, points: '' }
   ]);
 
 useEffect(() => {
@@ -59,7 +62,7 @@ useEffect(() => {
     const nextLetter = letters[escaloes.length] || '';
     setEscaloes([
       ...escaloes,
-      { escalao: nextLetter, minParticipants: null, maxParticipants: null, points: [] }
+      { escalao: nextLetter, minParticipants: null, maxParticipants: null, points: '' }
     ]);
   };
 
@@ -69,13 +72,7 @@ useEffect(() => {
 
   const handleEscalaoChange = (index: number, field: keyof EscalaoRow, value: string | number | null) => {
     const newEscaloes = [...escaloes];
-    if (field === 'points') {
-      // Parse points as comma or space separated numbers
-      const pointsArray = String(value).split(/[\s,]+/).map(p => parseInt(p.trim())).filter(p => !isNaN(p));
-      newEscaloes[index] = { ...newEscaloes[index], points: pointsArray };
-    } else {
-      newEscaloes[index] = { ...newEscaloes[index], [field]: value };
-    }
+    newEscaloes[index] = { ...newEscaloes[index], [field]: value };
     setEscaloes(newEscaloes);
   };
 
@@ -96,7 +93,7 @@ useEffect(() => {
         notify('Todos os escalões devem ter um nome.', 'error');
         return;
       }
-      if (esc.points.length === 0) {
+      if (parsePoints(esc.points).length === 0) {
         notify('Todos os escalões devem ter pontuações definidas.', 'error');
         return;
       }
@@ -108,7 +105,7 @@ useEffect(() => {
       const newFormat = await modalityTypesApi.create({
         name: formatName,
         description: formatDescription || undefined,
-        escaloes: escaloes,
+        escaloes: escaloes.map(esc => ({ ...esc, points: parsePoints(esc.points) })),
       });
 
     //   const newFormat: ModalityType = {
@@ -124,7 +121,7 @@ useEffect(() => {
       // Reset form
       setFormatName('');
       setFormatDescription('');
-      setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: [] }]);
+      setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: '' }]);
       setIsCreateModalOpen(false);
     } catch (err) {
       console.error('Failed to create scoring format:', err);
@@ -141,7 +138,7 @@ useEffect(() => {
     setSelectedFormat(format);
     setFormatName(format.name);
     setFormatDescription(format.description || '');
-    setEscaloes(format.escaloes);
+    setEscaloes(format.escaloes.map(esc => ({ ...esc, points: esc.points.join(' ') })));
     setIsViewModalOpen(false);
     setIsEditModalOpen(true);
   };
@@ -163,7 +160,7 @@ useEffect(() => {
         notify('Todos os escalões devem ter um nome.', 'error');
         return;
       }
-      if (esc.points.length === 0) {
+      if (parsePoints(esc.points).length === 0) {
         notify('Todos os escalões devem ter pontuações definidas.', 'error');
         return;
       }
@@ -175,7 +172,7 @@ useEffect(() => {
       const updatedFormat = await modalityTypesApi.update(selectedFormat!.id, {
         name: formatName,
         description: formatDescription || undefined,
-        escaloes: escaloes,
+        escaloes: escaloes.map(esc => ({ ...esc, points: parsePoints(esc.points) })),
       });
 
     //   const updatedFormat: ModalityType = {
@@ -193,7 +190,7 @@ useEffect(() => {
       // Reset form
       setFormatName('');
       setFormatDescription('');
-      setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: [] }]);
+      setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: '' }]);
       setSelectedFormat(null);
       setIsEditModalOpen(false);
       notify('Formato de prova atualizado com sucesso!', 'success');
@@ -392,7 +389,7 @@ useEffect(() => {
                           type="text"
                           className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
                           placeholder="Ex: 140 130 120 110 90 80 70 60 40 30 20 10"
-                          value={esc.points.join(' ')}
+                          value={esc.points}
                           onChange={e => handleEscalaoChange(index, 'points', e.target.value)}
                         />
                         <p className="text-xs text-gray-500 mt-1">
@@ -412,7 +409,7 @@ useEffect(() => {
                   setIsCreateModalOpen(false);
                   setFormatName('');
                   setFormatDescription('');
-                  setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: [] }]);
+                  setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: '' }]);
                 }}
               >
                 Cancelar
@@ -625,7 +622,7 @@ useEffect(() => {
                           type="text"
                           className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
                           placeholder="Ex: 140 130 120 110 90 80 70 60 40 30 20 10"
-                          value={esc.points.join(' ')}
+                          value={esc.points}
                           onChange={e => handleEscalaoChange(index, 'points', e.target.value)}
                         />
                         <p className="text-xs text-gray-500 mt-1">
@@ -651,7 +648,7 @@ useEffect(() => {
                   setIsEditModalOpen(false);
                   setFormatName('');
                   setFormatDescription('');
-                  setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: [] }]);
+                  setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: '' }]);
                   setSelectedFormat(null);
                 }}
               >
