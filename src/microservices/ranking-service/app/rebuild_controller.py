@@ -31,7 +31,8 @@ from .models import (
     TournamentCompetitor,
     TournamentResult,
 )
-from .ranking_processor import compute_all_rankings
+from .outbox_publisher import outbox_publisher
+from .ranking_processor import compute_all_rankings, emit_ranking_computed_event
 
 
 class RankingRebuildService(BaseRebuildService):
@@ -120,7 +121,10 @@ class RankingRebuildService(BaseRebuildService):
             logger.info("core_tables_rebuilt", total_records=total)
 
             # Recompute derived rankings from freshly populated core tables
+            # and emit the RankingComputedV1 event so the read-model-updater
+            # can synchronise its GeneralRankingView projection.
             compute_all_rankings(self.db)
+            emit_ranking_computed_event(self.db, outbox_publisher)
             self.db.commit()
             logger.info("derived_tables_computed")
 

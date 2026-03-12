@@ -23,7 +23,7 @@ the recomputed rows back.  Commit/rollback is left to the caller.
 
 from collections import defaultdict
 from typing import Dict, List, Optional
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy.orm import Session
 
@@ -210,4 +210,87 @@ def compute_all_rankings(db: Session) -> None:
         "ranking_computation_completed",
         modalities=len(modality_course_points),
         courses=len(all_course_ids),
+    )
+
+
+def emit_ranking_computed_event(db: Session, publisher) -> None:
+    """
+    Build and persist a RankingComputedV1 outbox event from the current
+    state of the derived ranking tables.
+
+    Must be called **after** :func:`compute_all_rankings` and **before**
+    the session is committed so that the outbox row is written in the same
+    transaction as the ranking data.
+
+    Parameters
+    ----------
+    db:
+        Active SQLAlchemy ``Session`` (must have the freshly flushed
+        ranking rows visible).
+    publisher:
+        An :class:`~taca_outbox.OutboxPublisher` instance used to persist
+        the event to the outbox table.
+    """
+    from taca_events.pydantic_schemas.ranking import (
+        GeneralRankingEntryData,
+        ModalityRankingEntryData,
+        RankingComputedData,
+        RankingComputedV1,
+    )
+
+    general_rows: List[GeneralRanking] = db.query(GeneralRanking).all()
+    modality_rows: List[ModalityRanking] = db.query(ModalityRanking).all()
+
+    # Count distinct tournaments each course has at least one result in
+    from sqlalchemy import func
+
+    from .models import TournamentResult as TR
+
+    tournaments_by_course: Dict[UUID, int] = {}
+    for row in general_rows:
+        count = (
+            db.query(func.count(TR.tournament_id.distinct()))
+            .filter(TR.competitor_id == row.course_id)
+            .scalar()
+            or 0
+        )
+        tournaments_by_course[row.course_id] = count
+
+    general_data = [
+        GeneralRankingEntryData(
+            course_id=r.course_id,
+            points=r.points,
+            tournaments_participated=tournaments_by_course.get(r.course_id, 0),
+        )
+        for r in general_rows
+    ]
+    modality_data = [
+        ModalityRankingEntryData(
+            modality_id=r.modality_id,
+            course_id=r.course_id,
+            points=r.points,
+        )
+        for r in modality_rows
+    ]
+
+    aggregate_id = uuid4()
+    event = RankingComputedV1.create(
+        aggregate_id=aggregate_id,
+        data=RankingComputedData(
+            general_ranking=general_data,
+            modality_rankings=modality_data,
+        ),
+    )
+    publisher.emit_event(
+        db=db,
+        event_type=event.event_type(),
+        aggregate_type=event.aggregate_type(),
+        aggregate_id=str(aggregate_id),
+        data=event.to_data_dict(),
+    )
+
+    logger.info(
+        "ranking_computed_event_queued",
+        general_entries=len(general_data),
+        modality_entries=len(modality_data),
     )

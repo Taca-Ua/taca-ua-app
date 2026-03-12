@@ -6,16 +6,19 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from .events import rabbitmq_service
 from .internal_controller import router as internal_router
 from .logger import logger
+from .outbox_publisher import outbox_publisher
 from .rebuild_controller import router as rebuild_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Start RabbitMQ consumer
+    # Startup: Start RabbitMQ consumer and outbox publisher
     await rabbitmq_service.start_consuming()
+    await outbox_publisher.start()
     logger.info("service_started", action="startup")
     yield
-    # Shutdown: Disconnect RabbitMQ
+    # Shutdown: Stop outbox publisher and disconnect RabbitMQ
+    await outbox_publisher.stop()
     await rabbitmq_service.disconnect()
     logger.info("service_stopped", action="shutdown")
 

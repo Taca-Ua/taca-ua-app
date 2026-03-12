@@ -16,7 +16,8 @@ from .models import (
     TournamentCompetitor,
     TournamentResult,
 )
-from .ranking_processor import compute_all_rankings
+from .outbox_publisher import outbox_publisher
+from .ranking_processor import compute_all_rankings, emit_ranking_computed_event
 
 rabbitmq_service = PausableRabbitMQService(service_name="ranking-service")
 
@@ -100,6 +101,7 @@ def handle_modality_type_updated(event: modalities.ModalityTypeUpdatedV1):
                 db.add(escalao)
         db.flush()
         compute_all_rankings(db)
+        emit_ranking_computed_event(db, outbox_publisher)
 
 
 @rabbitmq_service.event_handler(modalities.ModalityTypeDeletedV1)
@@ -126,6 +128,7 @@ def handle_modality_type_deleted(event: modalities.ModalityTypeDeletedV1):
         db.delete(modality_type)
         db.flush()
         compute_all_rankings(db)
+        emit_ranking_computed_event(db, outbox_publisher)
 
 
 # ==================== Modality Events ====================
@@ -189,6 +192,7 @@ def handle_modality_deleted(event: modalities.ModalityDeletedV1):
         db.delete(modality)
         db.flush()
         compute_all_rankings(db)
+        emit_ranking_computed_event(db, outbox_publisher)
 
 
 # ==================== Tournament Events ====================
@@ -243,6 +247,7 @@ def handle_tournament_updated(event: tournaments.TournamentUpdatedV1):
 
         db.flush()
         compute_all_rankings(db)
+        emit_ranking_computed_event(db, outbox_publisher)
 
 
 @rabbitmq_service.event_handler(tournaments.TournamentDeletedV1)
@@ -270,6 +275,7 @@ def handle_tournament_deleted(event: tournaments.TournamentDeletedV1):
         db.delete(tournament)
         db.flush()
         compute_all_rankings(db)
+        emit_ranking_computed_event(db, outbox_publisher)
 
 
 @rabbitmq_service.event_handler(tournaments.TournamentFinishedV1)
@@ -312,6 +318,7 @@ def handle_tournament_finished(event: tournaments.TournamentFinishedV1):
             ranking_entries_count=len(ranking_entries),
         )
         compute_all_rankings(db)
+        emit_ranking_computed_event(db, outbox_publisher)
 
 
 @rabbitmq_service.event_handler(tournaments.TournamentCompetitorAddedV1)

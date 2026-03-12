@@ -84,6 +84,12 @@ from .modalities import (  # Nucleo; Course; ModalityType; Modality; Student; St
     TeamUpdatedData,
     TeamUpdatedV1,
 )
+from .ranking import (
+    GeneralRankingEntryData,
+    ModalityRankingEntryData,
+    RankingComputedData,
+    RankingComputedV1,
+)
 from .registry import EventRegistry
 from .tournaments import (
     RankingEntryData,
@@ -196,4 +202,10 @@ __all__ = [
     "TournamentFinishedV1",
     "TournamentCompetitorAddedV1",
     "TournamentCompetitorDeletedV1",
+    # Ranking data
+    "GeneralRankingEntryData",
+    "ModalityRankingEntryData",
+    "RankingComputedData",
+    # Ranking schemas
+    "RankingComputedV1",
 ]

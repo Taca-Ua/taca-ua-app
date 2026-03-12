@@ -15,6 +15,7 @@ Exposed endpoints (all require ``X-INTERNAL-TOKEN``):
 from typing import Dict, List, Optional
 
 from sqlalchemy import text
+from sqlalchemy.orm import joinedload
 from taca_rebuild import BaseRebuildService, make_rebuild_router
 from taca_snapshots.matches import (
     MatchCommentSnapshotItem,
@@ -35,6 +36,7 @@ from taca_snapshots.modalities import (
     TeamPlayerSnapshotItem,
     TeamSnapshotItem,
 )
+from taca_snapshots.ranking import GeneralRankingSnapshotItem, RankingSnapshotResponse
 from taca_snapshots.tournaments import (
     TournamentCompetitorSnapshotItem,
     TournamentRankingPositionSnapshotItem,
@@ -71,7 +73,6 @@ from .models import (
     TournamentStandingsView,
 )
 from .utils import (
-    rebuild_general_ranking,
     rebuild_match_projection,
     rebuild_student_projection,
     rebuild_team_projection,
@@ -87,6 +88,7 @@ class ReadModelRebuildService(BaseRebuildService):
             "matches": f"{Config.MATCHES_SERVICE_URL}/internal/snapshot",
             "tournament": f"{Config.TOURNAMENT_SERVICE_URL}/internal/snapshot",
             "modalities": f"{Config.MODALITIES_SERVICE_URL}/internal/snapshot",
+            "ranking": f"{Config.RANKING_SERVICE_URL}/internal/snapshot",
         }
 
     def clear_tables(self) -> None:
@@ -131,6 +133,9 @@ class ReadModelRebuildService(BaseRebuildService):
         matches = (
             MatchesSnapshotResponse(**raw["matches"]) if raw.get("matches") else None
         )
+        ranking = (
+            RankingSnapshotResponse(**raw["ranking"]) if raw.get("ranking") else None
+        )
 
         logger.info("projections_rebuilding")
         total = 0
@@ -159,6 +164,12 @@ class ReadModelRebuildService(BaseRebuildService):
 
         self.db.commit()
         total += self._rebuild_materialized_views()
+
+        if ranking:
+            total += self._rebuild_general_ranking_from_snapshot(
+                ranking.general_rankings
+            )
+
         self.db.commit()
         self._reset_sequences()
 
@@ -240,7 +251,14 @@ class ReadModelRebuildService(BaseRebuildService):
                     modality_type_id=item.id,
                     name=item.name,
                     description=item.description,
-                    escaloes=item.escaloes,
+                    escaloes=[
+                        {
+                            "min_participants": e.min_participants,
+                            "max_participants": e.max_participants,
+                            "points": e.points,
+                        }
+                        for e in item.escaloes or []
+                    ],
                     created_at=item.created_at,
                     updated_at=item.updated_at,
                 )
@@ -466,6 +484,55 @@ class ReadModelRebuildService(BaseRebuildService):
         self.db.flush()
         return len(comments)
 
+    def _rebuild_general_ranking_from_snapshot(
+        self, entries: List[GeneralRankingSnapshotItem]
+    ) -> int:
+        from datetime import datetime
+
+        if not entries:
+            return 0
+        sorted_entries = sorted(entries, key=lambda e: e.points, reverse=True)
+        added = 0
+        prev_points: Optional[int] = None
+        current_rank = 0
+        for idx, item in enumerate(sorted_entries):
+            if item.points != prev_points:
+                current_rank = idx + 1
+            prev_points = item.points
+            course = (
+                self.db.query(Course)
+                .options(joinedload(Course.nucleo))
+                .filter(Course.course_id == item.course_id)
+                .first()
+            )
+            if not course:
+                logger.warning(
+                    "ranking_rebuild_course_not_found", course_id=str(item.course_id)
+                )
+                current_rank = idx + 1
+                continue
+            nucleo = course.nucleo
+            print(
+                f"Adding ranking entry: course_id={course.course_id}, course_name={course.name}, points={item.points}, rank={current_rank}"
+            )
+            self.db.add(
+                GeneralRankingView(
+                    course_id=item.course_id,
+                    course_name=course.name,
+                    course_abbreviation=course.abbreviation,
+                    nucleo_id=nucleo.nucleo_id if nucleo else None,
+                    nucleo_name=nucleo.name if nucleo else "",
+                    nucleo_abbreviation=nucleo.abbreviation if nucleo else "",
+                    points=item.points,
+                    rank=current_rank,
+                    tournaments_participated=item.tournaments_participated,
+                    updated_at=datetime.utcnow(),
+                )
+            )
+            added += 1
+        self.db.flush()
+        return added
+
     def _rebuild_materialized_views(self) -> int:
         total = 0
 
@@ -498,9 +565,6 @@ class ReadModelRebuildService(BaseRebuildService):
         for (tournament_id,) in tournaments:
             rebuild_tournament_standings(self.db, tournament_id)
         total += self.db.query(TournamentStandingsView).count()
-
-        rebuild_general_ranking(self.db)
-        total += self.db.query(GeneralRankingView).count()
 
         self.db.flush()
         return total
