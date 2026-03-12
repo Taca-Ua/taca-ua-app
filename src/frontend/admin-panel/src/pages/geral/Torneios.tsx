@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import HelpTooltip from '../../components/HelpTooltip';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
 import { useNotification } from '../../contexts/NotificationProvider';
@@ -65,7 +66,7 @@ const TorneiosCreateModal = ({ isOpen, onClose, onCreate, modalities, setModalit
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="font-medium">Nome do Torneio <span className="text-red-500">*</span></label>
+            <label className="font-medium">Nome do Torneio <HelpTooltip text="Nome identificador do torneio para a época atual. Deve ser descritivo e único para facilitar a identificação." className="ml-1" /> <span className="text-red-500">*</span></label>
             <input
               type="text"
               value={name}
@@ -76,7 +77,7 @@ const TorneiosCreateModal = ({ isOpen, onClose, onCreate, modalities, setModalit
           </div>
 
           <div>
-            <label className="font-medium">Modalidade <span className="text-red-500">*</span></label>
+            <label className="font-medium">Modalidade <HelpTooltip text="Desporto ou atividade para o qual este torneio é organizado. A modalidade determina as regras de inscrição (equipas vs atletas)." className="ml-1" /> <span className="text-red-500">*</span></label>
             <select
               value={modalityId}
               onChange={(e) => setModalityId(e.target.value)}

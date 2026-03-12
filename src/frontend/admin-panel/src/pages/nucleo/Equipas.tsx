@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import HelpTooltip from '../../components/HelpTooltip';
 import { useNavigate } from 'react-router-dom';
 import NucleoSidebar from '../../components/nucleo_navbar';
 import { teamsApi } from '../../api/teams';
@@ -237,7 +238,7 @@ const Equipas = () => {
 
               <div>
                 <label htmlFor="modality" className="block text-gray-700 font-medium mb-2">
-                  Modalidade <span className="text-red-500">*</span>
+                  Modalidade <HelpTooltip text="Desporto para o qual esta equipa está inscrita. A equipa só pode participar em torneios da mesma modalidade." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="modality"
@@ -256,7 +257,7 @@ const Equipas = () => {
 
               <div>
                 <label htmlFor="course" className="block text-gray-700 font-medium mb-2">
-                  Curso <span className="text-red-500">*</span>
+                  Curso <HelpTooltip text="Curso académico que esta equipa representa. Afeta os filtros de pesquisa e a organização das equipas." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="course"

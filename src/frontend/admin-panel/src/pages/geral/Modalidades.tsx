@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import HelpTooltip from '../../components/HelpTooltip';
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/geral_navbar";
 import { useNotification } from "../../contexts/NotificationProvider";
@@ -123,7 +124,7 @@ const CreateModalityModal = ({
 
           <div>
             <label className="block text-gray-700 font-medium mb-2">
-              Tipo <span className="text-red-500">*</span>
+              Tipo <HelpTooltip text="Classifica a modalidade como individual (atletas competem individualmente, ex: atletismo) ou coletiva (equipas competem entre si, ex: futebol)." className="ml-1" /> <span className="text-red-500">*</span>
             </label>
             <select
               value={modalityType}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import HelpTooltip from '../../components/HelpTooltip';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
 import { useNotification } from '../../contexts/NotificationProvider';
@@ -191,7 +192,7 @@ const Cursos = () => {
 
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
-                  Abreviatura <span className="text-red-500">*</span>
+                  Abreviatura <HelpTooltip text="Código curto do curso, ex: MECT, LEI, LECI. Utilizado como identificador visual no sistema e nos perfis de equipa." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -204,7 +205,7 @@ const Cursos = () => {
 
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
-                  Núcleo <span className="text-red-500">*</span>
+                  Núcleo <HelpTooltip text="Associação académica (núcleo) a que este curso pertence. Determina qual administrador de núcleo pode gerir este curso." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={selectedNucleoId}

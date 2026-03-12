@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import HelpTooltip from '../../components/HelpTooltip';
 import { useParams, useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../components/ConfirmModal';
 import Sidebar from '../../components/geral_navbar';
@@ -155,14 +156,14 @@ const CursoDetail = () => {
             </div>
 
             <div>
-              <label className="block text-teal-500 font-medium mb-2">Abreviatura</label>
+              <label className="block text-teal-500 font-medium mb-2">Abreviatura <HelpTooltip text="Código curto do curso, ex: MECT, LEI, LECI. Utilizado como identificador visual no sistema." className="ml-1" /></label>
               <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
                 {course.abbreviation}
               </div>
             </div>
 
             <div>
-              <label className="block text-teal-500 font-medium mb-2">Núcleo</label>
+              <label className="block text-teal-500 font-medium mb-2">Núcleo <HelpTooltip text="Associação académica (núcleo) a que este curso pertence." className="ml-1" /></label>
               <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
                 {course.nucleo.name}
               </div>
@@ -209,7 +210,7 @@ const CursoDetail = () => {
 
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
-                  Abreviatura <span className="text-red-500">*</span>
+                  Abreviatura <HelpTooltip text="Código curto do curso, ex: MECT, LEI, LECI. Utilizado como identificador visual no sistema." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -223,7 +224,7 @@ const CursoDetail = () => {
 
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
-                  Núcleo <span className="text-red-500">*</span>
+                  Núcleo <HelpTooltip text="Associação académica (núcleo) a que este curso pertence. Determina qual administrador de núcleo pode gerir este curso." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={editedNucleoId}

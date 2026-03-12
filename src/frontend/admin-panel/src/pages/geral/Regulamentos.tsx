@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import HelpTooltip from '../../components/HelpTooltip';
 import ConfirmModal from "../../components/ConfirmModal";
 import Sidebar from "../../components/geral_navbar";
 import { regulationsApi, type Regulation, type RegulationCreate } from '../../api/regulations';
@@ -194,7 +195,7 @@ const Regulamentos = () => {
             <div className="space-y-4">
 
               <div>
-                <label className="font-medium">Título<span className="text-red-500">*</span></label>
+                <label className="font-medium">Título <HelpTooltip text="Nome identificador do documento regulamentar. Será exibido na listagem de regulamentos do sistema." className="ml-1" /><span className="text-red-500">*</span></label>
                 <input
                   className="border px-3 py-2 rounded-md w-full"
                   value={title}
@@ -203,7 +204,7 @@ const Regulamentos = () => {
               </div>
 
               <div>
-                <label className="font-medium">Modalidade</label>
+                <label className="font-medium">Modalidade <HelpTooltip text="Modalidade a que este regulamento se aplica. Selecione 'Nenhuma' para um regulamento geral que se aplica a toda a competição." className="ml-1" /></label>
                 <select
                   className="border px-3 py-2 rounded-md w-full bg-white"
                   value={modalityId}
@@ -226,7 +227,7 @@ const Regulamentos = () => {
               </div>
 
               <div>
-                <label className="font-medium">Ficheiro<span className="text-red-500">*</span></label>
+                <label className="font-medium">Ficheiro <HelpTooltip text="Documento com as regras da modalidade ou competição. Formato recomendado: PDF. O ficheiro ficará disponível para download pelos utilizadores." className="ml-1" /><span className="text-red-500">*</span></label>
                 <input
                   type="file"
                   className="border px-3 py-2 rounded-md w-full"

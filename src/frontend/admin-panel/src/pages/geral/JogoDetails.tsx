@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import HelpTooltip from '../../components/HelpTooltip';
 import { useParams, useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../components/ConfirmModal';
 import Sidebar from '../../components/geral_navbar';
@@ -153,7 +154,7 @@ const MatchInfo = ({
     <form onSubmit={(e) => { e.preventDefault(); onSave(); }} className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Estado <span className="text-red-500">*</span>
+          Estado <HelpTooltip text="Agendado: jogo ainda não começou. Em Curso: jogo a decorrer. Terminado: jogo concluído com resultados registados. Cancelado: jogo cancelado sem resultados." className="ml-1" /> <span className="text-red-500">*</span>
         </label>
         <select
           className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent"
@@ -169,7 +170,7 @@ const MatchInfo = ({
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Local <span className="text-red-500">*</span>
+          Local <HelpTooltip text="Local físico onde o jogo vai decorrer/decorreu, ex: Campo Municipal, Pav. Principal. Visível aos participantes." className="ml-1" /> <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -413,7 +414,7 @@ const ResultsSection = ({
               <div className="font-semibold text-gray-800 mb-3">{getName(participant)}</div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Pontuação</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Pontuação <HelpTooltip text="Pontuação total marcada por este competidor no jogo (ex: golos, pontos marcados)." className="ml-1" /></label>
                   <input
                     type="number"
                     min="0"
@@ -428,7 +429,7 @@ const ResultsSection = ({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Posição</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Posição <HelpTooltip text="Classificação final do competidor neste jogo (1º = 1º lugar). Utilizado para calcular a pontuação acumulada no torneio." className="ml-1" /></label>
                   <input
                     type="number"
                     min="1"

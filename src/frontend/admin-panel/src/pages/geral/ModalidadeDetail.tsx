@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import HelpTooltip from '../../components/HelpTooltip';
 import { useState, useEffect } from 'react';
 import ConfirmModal from '../../components/ConfirmModal';
 import Sidebar from '../../components/geral_navbar';
@@ -88,7 +89,7 @@ const ModalidadeDetailEditModal = ({
           </div>
           <div>
             <label className="block text-gray-700 font-medium mb-2">
-              Tipo <span className="text-red-500">*</span>
+              Tipo <HelpTooltip text="Classifica a modalidade como individual (atletas competem individualmente) ou coletiva (equipas competem entre si). Afeta as regras de inscrição e pontuação." className="ml-1" /> <span className="text-red-500">*</span>
             </label>
             <select
               value={editedType}

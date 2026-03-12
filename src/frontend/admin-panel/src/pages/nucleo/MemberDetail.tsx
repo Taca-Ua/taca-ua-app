@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import HelpTooltip from '../../components/HelpTooltip';
 import { useState, useEffect } from 'react';
 import NucleoSidebar from '../../components/nucleo_navbar';
 import { staffApi, studentsApi, type StaffDetail, type StudentDetail } from '../../api/members';
@@ -294,7 +295,7 @@ function MemberDetail() {
 
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">
-                      Tipo
+                      Tipo <HelpTooltip text="Membro: paga quota e tem acesso a todos os benefícios do núcleo. Não-Membro: pode participar mas com acesso limitado." className="ml-1" />
                     </label>
                     <div className="flex gap-4">
                       <label className="flex items-center">
@@ -337,7 +338,7 @@ function MemberDetail() {
 
                   <div>
                     <label htmlFor="editContact" className="block text-gray-700 font-medium mb-2">
-                      Contacto
+                      Contacto <HelpTooltip text="Número de telefone ou outro contacto do colaborador de staff. Utilizado para comunicações do núcleo." className="ml-1" />
                     </label>
                     <input
                       type="text"

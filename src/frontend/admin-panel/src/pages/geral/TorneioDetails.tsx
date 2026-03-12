@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import HelpTooltip from '../../components/HelpTooltip';
 import { useParams, useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../components/ConfirmModal';
 import Sidebar from '../../components/geral_navbar';
@@ -173,7 +174,7 @@ const EditTournamentModal = ({
           </div>
 
           <div>
-            <label className="block text-gray-700 font-medium mb-2">Data de Início</label>
+            <label className="block text-gray-700 font-medium mb-2">Data de Início <HelpTooltip text="Data em que o torneio começa oficialmente. Após esta data o torneio pode ser ativado e os jogos calendarizados." className="ml-1" /></label>
             <input
               type="date"
               value={startDate}
@@ -373,7 +374,7 @@ const TournamentCompetitors = ({
             <div className="space-y-4 mb-6">
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
-                  Tipo <span className="text-red-500">*</span>
+                  Tipo <HelpTooltip text="Equipa: inscrição de uma equipa como unidade. Atleta: inscrição individual de um estudante membro do núcleo." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={selectedCompetitorType}
@@ -935,7 +936,7 @@ const TournamentMatches = ({
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <label className="block text-gray-700 font-medium">
-                    Participantes <span className="text-red-500">*</span>
+                    Participantes <HelpTooltip text="Selecione os competidores que vão disputar este jogo. São necessários no mínimo 2 participantes. Só podem ser selecionados competidores já inscritos no torneio." className="ml-1" /> <span className="text-red-500">*</span>
                   </label>
                   <button
                     type="button"
@@ -987,7 +988,7 @@ const TournamentMatches = ({
 
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
-                  Local <span className="text-red-500">*</span>
+                  Local <HelpTooltip text="Local onde o jogo vai decorrer, ex: Campo Municipal, Pavilhão Principal. Esta informação é visível aos participantes." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"

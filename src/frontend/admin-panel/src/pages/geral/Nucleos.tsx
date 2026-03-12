@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import HelpTooltip from '../../components/HelpTooltip';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
 import { useNotification } from '../../contexts/NotificationProvider';
@@ -144,7 +145,7 @@ const Nucleo = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
-                  Abreviatura <span className="text-red-500">*</span>
+                  Abreviatura <HelpTooltip text="Sigla ou código curto do núcleo, ex: NEECT, NEEEC. Utilizado como identificador visual nos perfis." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"

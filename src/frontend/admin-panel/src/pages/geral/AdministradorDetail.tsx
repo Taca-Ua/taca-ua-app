@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import HelpTooltip from '../../components/HelpTooltip';
 import { useState, useEffect } from 'react';
 import ConfirmModal from '../../components/ConfirmModal';
 import Sidebar from '../../components/geral_navbar';
@@ -200,7 +201,7 @@ function AdminDetail() {
               <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800">{member.email}</div>
             </div>
             <div>
-              <label className="block text-teal-500 font-medium mb-2">Estado</label>
+              <label className="block text-teal-500 font-medium mb-2">Estado <HelpTooltip text="Indica se a conta está ativa. Contas inativas não podem aceder à plataforma de administração." className="ml-1" /></label>
               <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800">
                 {member.enabled ? (
                   <span className="text-green-600 font-medium">Ativo</span>
@@ -211,7 +212,7 @@ function AdminDetail() {
             </div>
             <div>
                 <label className="block text-teal-500 font-medium mb-2">
-                  Tipo
+                  Tipo <HelpTooltip text="Geral: acesso total à plataforma. Núcleo: apenas gere os núcleos atribuídos. Não é possível alterar o tipo após criação." className="ml-1" />
                 </label>
                 <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
                   {member.role === 'general_admin' ? 'Geral' :
@@ -221,7 +222,7 @@ function AdminDetail() {
 
             {member.role === 'nucleo_admin' && (
               <div>
-                <label className="block text-teal-500 font-medium mb-2">Núcleos</label>
+                <label className="block text-teal-500 font-medium mb-2">Núcleos <HelpTooltip text="Núcleos desportivos que este administrador pode gerir. Pode ser alterado na edição do perfil." className="ml-1" /></label>
                 <div className="bg-gray-100 px-4 py-3 rounded-md">
                   {member.nucleos.length === 0 ? (
                     <span className="text-gray-500">Nenhum núcleo associado</span>
@@ -319,7 +320,7 @@ function AdminDetail() {
                 />
             </div>
             <div>
-                <label className="block text-gray-700 font-medium mb-2">Estado</label>
+                <label className="block text-gray-700 font-medium mb-2">Estado <HelpTooltip text="Ativo: o administrador pode aceder ao sistema. Inativo: acesso bloqueado sem eliminar a conta." className="ml-1" /></label>
                 <select
                   value={editedEnabled ? 'true' : 'false'}
                   onChange={(e) => setEditedEnabled(e.target.value === 'true')}
@@ -410,7 +411,7 @@ function AdminDetail() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-gray-700 font-medium mb-2">Nova Password <span className="text-red-500">*</span></label>
+                <label className="block text-gray-700 font-medium mb-2">Nova Password <HelpTooltip text="A password deve ter no mínimo 8 caracteres. Após guardar, o administrador deverá usar a nova password no próximo login." className="ml-1" /> <span className="text-red-500">*</span></label>
                 <div className="relative">
                   <input
                     type={showNewPassword ? 'text' : 'password'}
@@ -429,7 +430,7 @@ function AdminDetail() {
                 </div>
               </div>
               <div>
-                <label className="block text-gray-700 font-medium mb-2">Confirmar Password <span className="text-red-500">*</span></label>
+                <label className="block text-gray-700 font-medium mb-2">Confirmar Password <HelpTooltip text="Repita exatamente a nova password para confirmar que não houve erros de digitação." className="ml-1" /> <span className="text-red-500">*</span></label>
                 <div className="relative">
                   <input
                     type={showConfirmNewPassword ? 'text' : 'password'}

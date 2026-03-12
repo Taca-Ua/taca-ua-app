@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import HelpTooltip from '../../components/HelpTooltip';
 import { useParams, useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../components/ConfirmModal';
 import Sidebar from '../../components/geral_navbar';
@@ -132,7 +133,7 @@ const NucleoDetails = () => {
             </div>
 
             <div>
-              <label className="block text-teal-500 font-medium mb-2">Abreviatura</label>
+              <label className="block text-teal-500 font-medium mb-2">Abreviatura <HelpTooltip text="Sigla ou código curto do núcleo, ex: NEECT, NEEEC. Utilizado como identificador visual no sistema." className="ml-1" /></label>
               <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
                 {nucleus.abbreviation}
               </div>
@@ -192,7 +193,7 @@ const NucleoDetails = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
-                  Abreviatura <span className="text-red-500">*</span>
+                  Abreviatura <HelpTooltip text="Sigla ou código curto do núcleo. Utilizado como identificador visual." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"

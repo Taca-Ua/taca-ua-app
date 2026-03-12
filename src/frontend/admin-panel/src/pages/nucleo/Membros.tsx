@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import HelpTooltip from '../../components/HelpTooltip';
 import { useNavigate } from 'react-router-dom';
 import NucleoSidebar from '../../components/nucleo_navbar';
 import {
@@ -319,7 +320,7 @@ function Membros() {
 
               <div>
                 <label htmlFor="memberType" className="block text-gray-700 font-medium mb-2">
-                  Tipo <span className="text-red-500">*</span>
+                  Tipo <HelpTooltip text="Participante: estudante que compete nas provas desportivas. Staff: pessoal de apoio (treinadores, dirigentes) sem competição direta." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="memberType"
@@ -336,7 +337,7 @@ function Membros() {
                 <>
                   <div>
                     <label htmlFor="studentNumber" className="block text-gray-700 font-medium mb-2">
-                      Número de Estudante <span className="text-red-500">*</span>
+                      Número de Estudante <HelpTooltip text="Número mecanológráfico (NMEC) do estudante na Universidade de Aveiro. Utilizado para verificação de elegibilidade." className="ml-1" /> <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -371,7 +372,7 @@ function Membros() {
               {memberType === 'staff' && (
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">
-                    Identificação <span className="text-red-500">*</span>
+                    Identificação <HelpTooltip text="Escolha como identificar o colaborador: por contacto telefónico ou número de staff. Pelo menos um é obrigatório para o registo." className="ml-1" /> <span className="text-red-500">*</span>
                   </label>
                   <div className="flex gap-4 mb-3">
                     <label className="flex items-center">

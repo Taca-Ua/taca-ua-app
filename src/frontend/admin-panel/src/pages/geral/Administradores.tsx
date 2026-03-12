@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import HelpTooltip from '../../components/HelpTooltip';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
 import { administratorsApi, type Admin } from '../../api/administrators';
@@ -194,7 +195,7 @@ function Administradores() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="memberUserName" className="block text-gray-700 font-medium mb-2">
-                  Username <span className="text-red-500">*</span>
+                  Username <HelpTooltip text="Nome único de identificação do administrador, usado para aceder à plataforma. Não pode ser alterado após criação." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -207,7 +208,7 @@ function Administradores() {
               </div>
               <div>
                 <label htmlFor="email" className="block text-gray-700 font-medium mb-2">
-                  Email <span className="text-red-500">*</span>
+                  Email <HelpTooltip text="Endereço de email institucional do administrador. Utilizado para notificações e recuperação de conta." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="email"
@@ -248,7 +249,7 @@ function Administradores() {
 
               <div>
                 <label htmlFor="memberPassword" className="block text-gray-700 font-medium mb-2">
-                  Password <span className="text-red-500">*</span>
+                  Password <HelpTooltip text="A password deve ter no mínimo 8 caracteres. Utilize uma combinação de letras, números e símbolos para maior segurança." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -269,7 +270,7 @@ function Administradores() {
               </div>
               <div>
                 <label htmlFor="memberConfirmPassword" className="block text-gray-700 font-medium mb-2">
-                  Confirmar Password <span className="text-red-500">*</span>
+                  Confirmar Password <HelpTooltip text="Repita exatamente a password inserida ao lado para garantir que não houve erros de digitação." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -290,7 +291,7 @@ function Administradores() {
               </div>
               <div className="md:col-span-2">
                 <label htmlFor="memberRole" className="block text-gray-700 font-medium mb-2">
-                  Tipo <span className="text-red-500">*</span>
+                  Tipo <HelpTooltip text="Administrador Geral tem acesso total à plataforma. Administrador Núcleo só pode gerir os núcleos que lhe forem atribuídos." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="memberRole"
@@ -311,7 +312,7 @@ function Administradores() {
               {memberRole === 'nucleo_admin' && (
                 <div className="mt-4">
                   <label className="block text-gray-700 font-medium mb-2">
-                    Núcleos
+                    Núcleos <HelpTooltip text="Selecione os núcleos desportivos que este administrador poderá gerir. Apenas aplicável para o tipo Administrador Núcleo." className="ml-1" />
                   </label>
                   <input
                     type="text"

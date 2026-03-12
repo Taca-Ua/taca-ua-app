@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import HelpTooltip from '../../components/HelpTooltip';
 import ConfirmModal from "../../components/ConfirmModal";
 import Sidebar from "../../components/geral_navbar";
 import { modalityTypesApi, type ModalityType } from "../../api/modality-types";
@@ -101,20 +102,11 @@ useEffect(() => {
 
     try {
 
-    //   TODO: API call to create scoring format
       const newFormat = await modalityTypesApi.create({
         name: formatName,
         description: formatDescription || undefined,
         escaloes: escaloes.map(esc => ({ ...esc, points: parsePoints(esc.points) })),
       });
-
-    //   const newFormat: ModalityType = {
-    //     id: Date.now().toString(),
-    //     name: formatName,
-    //     description: formatDescription || undefined,
-    //     escaloes: escaloes,
-    //     created_at: new Date().toISOString(),
-    //   };
 
       setModalityTypes([...scoringFormats, newFormat]);
 
@@ -294,7 +286,7 @@ useEffect(() => {
             <div className="space-y-6">
               <div>
                 <label className="block font-medium mb-2">
-                  Nome do Formato <span className="text-red-500">*</span>
+                  Nome do Formato <HelpTooltip text="Nome único que identifica este conjunto de regras de pontuação. Ex: 'Modalidades Coletivas Recorrentes'." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -319,7 +311,7 @@ useEffect(() => {
               <div>
                 <div className="flex justify-between items-center mb-3">
                   <label className="block font-medium">
-                    Escalões <span className="text-red-500">*</span>
+                    Escalões <HelpTooltip text="Categorias de participação dentro do formato (ex: A, B, C). Cada escalão tem os seus próprios limites de participantes e tabela de pontuações." className="ml-1" /> <span className="text-red-500">*</span>
                   </label>
                   <button
                     onClick={handleAddEscalao}
@@ -348,7 +340,7 @@ useEffect(() => {
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                         <div>
-                          <label className="block text-sm font-medium mb-1">Nome do Escalão</label>
+                          <label className="block text-sm font-medium mb-1">Nome do Escalão <HelpTooltip text="Identificador do escalão, tipicamente uma letra (A, B, C) ou nome descritivo." className="ml-1" /></label>
                           <input
                             type="text"
                             className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -359,7 +351,7 @@ useEffect(() => {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium mb-1">Mín. Participantes</label>
+                          <label className="block text-sm font-medium mb-1">Mín. Participantes <HelpTooltip text="Número mínimo de equipas/participantes necessários para este escalão se realizar. Deixe vazio se não aplicar." className="ml-1" /></label>
                           <input
                             type="number"
                             className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -370,7 +362,7 @@ useEffect(() => {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium mb-1">Máx. Participantes</label>
+                          <label className="block text-sm font-medium mb-1">Máx. Participantes <HelpTooltip text="Número máximo de equipas/participantes permitidos neste escalão. Deixe vazio se não aplicar." className="ml-1" /></label>
                           <input
                             type="number"
                             className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -383,7 +375,7 @@ useEffect(() => {
 
                       <div>
                         <label className="block text-sm font-medium mb-1">
-                          Pontuações (1º, 2º, 3º, ...) <span className="text-red-500">*</span>
+                          Pontuações (1º, 2º, 3º, ...) <HelpTooltip text="Pontos atribuídos por posição final. O 1º valor é para o 1º lugar, o 2º para o 2º lugar, etc. Separe por espaços ou vírgulas." className="ml-1" position="top" /> <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
@@ -392,9 +384,6 @@ useEffect(() => {
                           value={esc.points}
                           onChange={e => handleEscalaoChange(index, 'points', e.target.value)}
                         />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Separe os valores por espaço ou vírgula. Ordem: 1º lugar, 2º lugar, 3º lugar, etc.
-                        </p>
                       </div>
                     </div>
                   ))}
@@ -533,7 +522,7 @@ useEffect(() => {
             <div className="space-y-6">
               <div>
                 <label className="block font-medium mb-2">
-                  Nome do Formato <span className="text-red-500">*</span>
+                  Nome do Formato <HelpTooltip text="Nome único que identifica este conjunto de regras de pontuação. Ex: 'Modalidades Coletivas Recorrentes'." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -558,7 +547,7 @@ useEffect(() => {
               <div>
                 <div className="flex justify-between items-center mb-3">
                   <label className="block font-medium">
-                    Escalões <span className="text-red-500">*</span>
+                    Escalões <HelpTooltip text="Categorias de participação dentro do formato (ex: A, B, C). Cada escalão tem os seus próprios limites de participantes e tabela de pontuações." className="ml-1" /> <span className="text-red-500">*</span>
                   </label>
                 </div>
 
@@ -581,7 +570,7 @@ useEffect(() => {
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                         <div>
-                          <label className="block text-sm font-medium mb-1">Nome do Escalão</label>
+                          <label className="block text-sm font-medium mb-1">Nome do Escalão <HelpTooltip text="Identificador do escalão, tipicamente uma letra (A, B, C) ou nome descritivo." className="ml-1" /></label>
                           <input
                             type="text"
                             className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -592,7 +581,7 @@ useEffect(() => {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium mb-1">Mín. Participantes</label>
+                          <label className="block text-sm font-medium mb-1">Mín. Participantes <HelpTooltip text="Número mínimo de equipas/participantes necessários para este escalão se realizar. Deixe vazio se não aplicar." className="ml-1" /></label>
                           <input
                             type="number"
                             className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -603,7 +592,7 @@ useEffect(() => {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium mb-1">Máx. Participantes</label>
+                          <label className="block text-sm font-medium mb-1">Máx. Participantes <HelpTooltip text="Número máximo de equipas/participantes permitidos neste escalão. Deixe vazio se não aplicar." className="ml-1" /></label>
                           <input
                             type="number"
                             className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -616,7 +605,7 @@ useEffect(() => {
 
                       <div>
                         <label className="block text-sm font-medium mb-1">
-                          Pontuações (1º, 2º, 3º, ...) <span className="text-red-500">*</span>
+                          Pontuações (1º, 2º, 3º, ...) <HelpTooltip text="Pontos atribuídos por posição final. O 1º valor é para o 1º lugar, o 2º para o 2º lugar, etc. Separe por espaços ou vírgulas." className="ml-1" position="top" /> <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
@@ -625,9 +614,6 @@ useEffect(() => {
                           value={esc.points}
                           onChange={e => handleEscalaoChange(index, 'points', e.target.value)}
                         />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Separe os valores por espaço ou vírgula. Ordem: 1º lugar, 2º lugar, 3º lugar, etc.
-                        </p>
                       </div>
                     </div>
                   ))}

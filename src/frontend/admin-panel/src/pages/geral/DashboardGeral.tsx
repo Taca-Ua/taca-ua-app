@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import HelpTooltip from '../../components/HelpTooltip';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from "../../components/geral_navbar";
 import { modalitiesApi } from '../../api/modalities';
@@ -246,8 +247,9 @@ function DashboardGeral() {
                   <li>Certifique-se de que todas as configurações estão corretas</li>
                 </ul>
               </div>
-              <p className="text-sm text-gray-600 italic mt-4">
+              <p className="text-sm text-gray-600 italic mt-4 flex items-center gap-1">
                 Digite "INICIAR" para confirmar:
+                <HelpTooltip text="Esta confirmação previne ativações acidentais. Se existir uma época ativa, ela será automaticamente finalizada antes de ativar a nova." position="right" />
               </p>
               <input
                 type="text"
@@ -301,8 +303,9 @@ function DashboardGeral() {
                   <li>Verifique que todos os jogos foram concluídos</li>
                 </ul>
               </div>
-              <p className="text-sm text-gray-600 italic mt-4">
+              <p className="text-sm text-gray-600 italic mt-4 flex items-center gap-1">
                 Digite "FINALIZAR" para confirmar:
+                <HelpTooltip text="Esta confirmação é obrigatória pois a ação é irreversível. Todos os resultados e dados da época serão arquivados permanentemente e não poderão ser modificados." position="right" />
               </p>
               <input
                 type="text"
