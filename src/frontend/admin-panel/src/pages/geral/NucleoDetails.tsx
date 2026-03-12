@@ -113,7 +113,7 @@ const NucleoDetails = () => {
             <h1 className="text-3xl font-bold text-gray-800">Detalhes do Núcleo</h1>
             <button
               onClick={() => navigate('/geral/nucleos')}
-              className="px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+              className="px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
             >
               Voltar
             </button>

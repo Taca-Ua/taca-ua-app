@@ -880,10 +880,11 @@ const TournamentMatches = ({
       ) : (
         <div className="space-y-3">
           {filteredMatches.map((match) => (
-            <div
+            <button
               key={match.id}
+              type="button"
               onClick={() => navigate(`/geral/jogos/${match.id}`)}
-              className="p-4 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
+              className="w-full text-left p-4 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
             >
               <div className="flex justify-between items-start mb-2">
                 <div className="flex-1">
@@ -911,14 +912,15 @@ const TournamentMatches = ({
 
                 <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                   <button
+                    type="button"
                     onClick={() => handleDeleteMatch(match.id)}
-                    className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-md text-sm transition-colors"
+                    className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-md text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-red-400"
                   >
                     Eliminar
                   </button>
                 </div>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       )}
@@ -1161,7 +1163,7 @@ const TorneioDetails = () => {
             <h1 className="text-3xl font-bold text-gray-800">Detalhes do Torneio</h1>
             <button
               onClick={() => navigate('/geral/torneios')}
-              className="px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+              className="px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
             >
               Voltar
             </button>

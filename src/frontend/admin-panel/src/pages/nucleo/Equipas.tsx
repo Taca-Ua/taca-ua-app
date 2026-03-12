@@ -187,10 +187,11 @@ const Equipas = () => {
                 <div className="space-y-3">
                   {filteredTeams.length > 0 ? (
                     filteredTeams.map((team) => (
-                      <div
+                      <button
                         key={team.id}
+                        type="button"
                         onClick={() => navigate(`/nucleo/equipas/${team.id}`)}
-                        className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer transition-colors"
+                        className="w-full text-left px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
                       >
                         <div className="flex justify-between items-center">
                           <span className="text-gray-800 font-medium">{team.name}</span>
@@ -199,7 +200,7 @@ const Equipas = () => {
                             <span className="text-gray-500">{getCourseName(team.course.id)}</span>
                           </div>
                         </div>
-                      </div>
+                      </button>
                     ))
                   ) : (
                     <p className="text-gray-500 text-center py-8">

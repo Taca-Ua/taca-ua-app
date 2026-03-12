@@ -166,10 +166,11 @@ const Torneios = () => {
             </div>
           ) : tournaments.length > 0 ? (
             tournaments.map(t => (
-              <div
+              <button
                 key={t.id}
+                type="button"
                 onClick={() => navigate(`/geral/torneios/${t.id}`)}
-                className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer flex justify-between items-center"
+                className="w-full text-left px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-teal-500"
               >
                 <div className="font-medium text-gray-800">{t.name}</div>
                 <div className="flex items-center gap-3 text-sm">
@@ -184,7 +185,7 @@ const Torneios = () => {
                     {t.status === 'active' ? 'Ativo' : t.status === 'draft' ? 'Rascunho' : t.status === 'finished' ? 'Finalizado' : t.status}
                   </span>
                 </div>
-              </div>
+              </button>
             ))
           ) : (
             <p className="text-gray-500 text-center">Nenhum torneio encontrado.</p>

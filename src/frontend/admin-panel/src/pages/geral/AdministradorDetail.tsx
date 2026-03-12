@@ -178,7 +178,7 @@ function AdminDetail() {
           <h1 className="text-3xl font-bold text-gray-800">Detalhes do Administrador</h1>
           <button
             onClick={() => navigate('/geral/administradores')}
-            className="px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+            className="px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
           >
             Voltar
           </button>
@@ -257,13 +257,13 @@ function AdminDetail() {
           </div>
 
           <div className="flex gap-4 mt-8">
-            <button onClick={handleEdit} className="flex-1 px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium">
+            <button onClick={handleEdit} className="flex-1 px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-teal-400">
               Editar
             </button>
-            <button onClick={() => setIsPasswordModalOpen(true)} className="flex-1 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-md font-medium">
+            <button onClick={() => setIsPasswordModalOpen(true)} className="flex-1 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-blue-400">
               Alterar Password
             </button>
-            <button onClick={handleDelete} className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium">
+            <button onClick={handleDelete} className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-red-400">
               Eliminar
             </button>
           </div>

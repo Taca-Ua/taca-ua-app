@@ -216,10 +216,10 @@ function ModalidadeDetail() {
           </div>
 
           <div className="flex gap-4 mt-8">
-            <button onClick={handleEdit} className="flex-1 px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium">
+            <button onClick={handleEdit} className="flex-1 px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-teal-400">
               Editar
             </button>
-            <button onClick={handleDelete} className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium">
+            <button onClick={handleDelete} className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-red-400">
               Eliminar
             </button>
           </div>

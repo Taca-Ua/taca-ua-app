@@ -241,7 +241,7 @@ function Membros() {
 
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-2 rounded-md font-medium transition-colors flex items-center gap-2 justify-center sm:justify-start"
+                className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-2 rounded-md font-medium transition-colors flex items-center gap-2 justify-center sm:justify-start focus:outline-none focus:ring-2 focus:ring-teal-500"
               >
                 <span>+</span>
                 Adicionar Membro
@@ -270,10 +270,11 @@ function Membros() {
               ) : (
                 <div className="space-y-3 max-h-[600px] overflow-y-auto">
                   {filteredMembers.map((member) => (
-                    <div
+                    <button
+                      type="button"
                       key={`${member.memberType}-${member.data.id}`}
                       onClick={() => handleMemberClick(member)}
-                      className="bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors cursor-pointer"
+                      className="w-full text-left bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
                     >
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-3">
@@ -286,7 +287,7 @@ function Membros() {
                           {getDisplayInfo(member)}
                         </span>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
@@ -429,13 +430,13 @@ function Membros() {
                   setStaffNumber('');
                   setIdentifierType('contact');
                 }}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleAddMember}
-                className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
+                className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
               >
                 Adicionar
               </button>

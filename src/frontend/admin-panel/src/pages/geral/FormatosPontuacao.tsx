@@ -248,7 +248,7 @@ useEffect(() => {
 
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="px-6 py-3 bg-teal-500 text-white rounded-md hover:bg-teal-600 transition-colors"
+            className="px-6 py-3 bg-teal-500 text-white rounded-md hover:bg-teal-600 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-400"
           >
             + Adicionar Formato
           </button>
@@ -262,9 +262,10 @@ useEffect(() => {
             </div>
           ) : scoringFormats.length > 0 ? (
             scoringFormats.map(format => (
-              <div
+              <button
                 key={format.id}
-                className="p-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer flex justify-between items-center transition-colors"
+                type="button"
+                className="w-full text-left p-4 bg-gray-100 rounded-md hover:bg-gray-200 flex justify-between items-center transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
                 onClick={() => handleViewFormat(format)}
               >
                 <div>
@@ -279,7 +280,7 @@ useEffect(() => {
                 <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
-              </div>
+              </button>
             ))
           ) : (
             <p className="text-gray-500 text-center py-8">Nenhum formato de prova encontrado.</p>
@@ -324,7 +325,7 @@ useEffect(() => {
                   </label>
                   <button
                     onClick={handleAddEscalao}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm"
+                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                   >
                     + Adicionar Escalão
                   </button>
@@ -338,7 +339,7 @@ useEffect(() => {
                         {escaloes.length > 1 && (
                           <button
                             onClick={() => handleRemoveEscalao(index)}
-                            className="text-red-500 hover:text-red-700"
+                            className="text-red-500 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-400 rounded"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -405,7 +406,7 @@ useEffect(() => {
 
             <div className="flex gap-4 mt-6">
               <button
-                className="flex-1 bg-gray-300 py-2 rounded-md hover:bg-gray-400 transition-colors"
+                className="flex-1 bg-gray-300 py-2 rounded-md hover:bg-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
                 onClick={() => {
                   setIsCreateModalOpen(false);
                   setFormatName('');
@@ -416,7 +417,7 @@ useEffect(() => {
                 Cancelar
               </button>
               <button
-                className="flex-1 bg-teal-500 py-2 text-white rounded-md hover:bg-teal-600 transition-colors"
+                className="flex-1 bg-teal-500 py-2 text-white rounded-md hover:bg-teal-600 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-400"
                 onClick={handleCreateFormat}
               >
                 Criar Formato
@@ -433,7 +434,7 @@ useEffect(() => {
               <h2 className="text-2xl font-bold">{selectedFormat.name}</h2>
               <button
                 onClick={() => setIsViewModalOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 rounded"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -505,19 +506,19 @@ useEffect(() => {
             <div className="flex gap-4 pt-4 border-t">
               <button
                 onClick={handleDeleteFormat}
-                className="px-6 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                className="px-6 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors focus:outline-none focus:ring-2 focus:ring-red-400"
               >
                 Eliminar
               </button>
               <button
                 onClick={() => handleEditFormat(selectedFormat)}
-                className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
               >
                 Editar
               </button>
               <button
                 onClick={() => setIsViewModalOpen(false)}
-                className="flex-1 px-6 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+                className="flex-1 px-6 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
               >
                 Fechar
               </button>
@@ -571,7 +572,7 @@ useEffect(() => {
                         {escaloes.length > 1 && (
                           <button
                             onClick={() => handleRemoveEscalao(index)}
-                            className="text-red-500 hover:text-red-700"
+                            className="text-red-500 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-400 rounded"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -644,7 +645,7 @@ useEffect(() => {
 
             <div className="flex gap-4 mt-6">
               <button
-                className="flex-1 bg-gray-300 py-2 rounded-md hover:bg-gray-400 transition-colors"
+                className="flex-1 bg-gray-300 py-2 rounded-md hover:bg-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
                 onClick={() => {
                   setIsEditModalOpen(false);
                   setFormatName('');
@@ -656,7 +657,7 @@ useEffect(() => {
                 Cancelar
               </button>
               <button
-                className="flex-1 bg-teal-500 py-2 text-white rounded-md hover:bg-teal-600 transition-colors"
+                className="flex-1 bg-teal-500 py-2 text-white rounded-md hover:bg-teal-600 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-400"
                 onClick={handleUpdateFormat}
               >
                 Guardar Alterações

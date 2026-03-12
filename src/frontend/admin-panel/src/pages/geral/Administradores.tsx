@@ -137,7 +137,7 @@ function Administradores() {
             <h1 className="text-3xl font-bold text-gray-800">Administradores</h1>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-2 rounded-md font-medium transition-colors flex items-center gap-2"
+              className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-2 rounded-md font-medium transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-teal-400"
             >
               <span>+</span>
               Adicionar Administrador
@@ -148,16 +148,17 @@ function Administradores() {
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Administradores Gerais</h2>
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {AdminG.map((admin) => (
-                <div
+                <button
                   key={admin.id}
+                  type="button"
                   onClick={() => navigate(`/geral/administradores/${admin.id}`)}
-                  className="bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors cursor-pointer"
+                  className="w-full text-left bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <div className="flex justify-between items-center">
                     <span className="text-gray-800 font-medium">{admin.username}</span>
                     <span className="text-gray-600 text-sm">{admin.first_name} {admin.last_name} - {admin.email}</span>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -166,16 +167,17 @@ function Administradores() {
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Administradores Núcleo</h2>
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {AdminN.map((admin) => (
-                <div
+                <button
                   key={admin.id}
+                  type="button"
                   onClick={() => navigate(`/geral/administradores/${admin.id}`)}
-                  className="bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors cursor-pointer"
+                  className="w-full text-left bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <div className="flex justify-between items-center">
                     <span className="text-gray-800 font-medium">{admin.username}</span>
                     <span className="text-gray-600 text-sm">{admin.first_name} {admin.last_name} - {admin.email}</span>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -390,13 +392,13 @@ function Administradores() {
                   setSelectedNucleos([]);
                   setNucleoSearch('');
                 }}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleAddMember}
-                className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
+                className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-teal-400"
               >
                 Adicionar
               </button>

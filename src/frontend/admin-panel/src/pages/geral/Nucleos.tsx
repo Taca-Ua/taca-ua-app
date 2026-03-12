@@ -107,10 +107,11 @@ const Nucleo = () => {
                   .sort((a, b) => a.name.localeCompare(b.name))
                   .filter((n) => n.name.toLowerCase().includes(searchQuery.toLowerCase()) || n.abbreviation.toLowerCase().includes(searchQuery.toLowerCase()))
                   .map((n) => (
-                  <div
+                  <button
                     key={n.id}
+                    type="button"
                     onClick={() => navigate(`/geral/nucleos/${n.id}`)}
-                    className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer transition-colors flex justify-between items-center"
+                    className="w-full text-left px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-teal-500"
                   >
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-teal-500 flex-shrink-0">
@@ -122,7 +123,7 @@ const Nucleo = () => {
                         <span className="text-gray-800 font-medium">{n.name}</span>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 ))
               ) : (
                 <p className="text-gray-500 text-center py-8">

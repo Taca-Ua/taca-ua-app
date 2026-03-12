@@ -186,23 +186,25 @@ function DashboardGeral() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div
+                <button
+                  type="button"
                   onClick={() => navigate('/geral/modalidades')}
-                  className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+                  className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <h2 className="text-xl font-semibold mb-2 text-teal-600">Modalidades</h2>
                   <p className="text-3xl font-bold text-gray-800">{stats.modalities}</p>
                   <p className="text-sm text-gray-500 mt-2">Modalidades registadas</p>
-                </div>
+                </button>
 
-                <div
+                <button
+                  type="button"
                   onClick={() => navigate('/geral/torneios')}
-                  className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+                  className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <h2 className="text-xl font-semibold mb-2 text-purple-600">Torneios</h2>
                   <p className="text-3xl font-bold text-gray-800">{stats.tournaments}</p>
                   <p className="text-sm text-gray-500 mt-2">Total de torneios</p>
-                </div>
+                </button>
 
                 <div className="bg-white p-6 rounded-lg shadow-md">
                   <h2 className="text-xl font-semibold mb-2 text-orange-600">Torneios Ativos</h2>
@@ -210,14 +212,15 @@ function DashboardGeral() {
                   <p className="text-sm text-gray-500 mt-2">Em andamento</p>
                 </div>
 
-                <div
+                <button
+                  type="button"
                   onClick={() => navigate('/geral/nucleos')}
-                  className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+                  className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <h2 className="text-xl font-semibold mb-2 text-teal-600">Núcleos</h2>
                   <p className="text-3xl font-bold text-gray-800">{stats.courses}</p>
                   <p className="text-sm text-gray-500 mt-2">Núcleos ativos</p>
-                </div>
+                </button>
               </div>
 
             </>

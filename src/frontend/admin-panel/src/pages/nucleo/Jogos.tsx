@@ -162,10 +162,11 @@ const Jogos = () => {
                           const { date, time } = formatDateTime(match.start_time);
                           const tournament = tournamentMap[match.tournament_id];
                           return (
-                            <div
+                            <button
                               key={match.id}
+                              type="button"
                               onClick={() => navigate(`/nucleo/jogos/${match.id}`)}
-                              className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer transition-colors"
+                              className="w-full text-left px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
                             >
                               <div className="flex justify-between items-start mb-2">
                                 <span className="text-gray-800 font-bold text-lg">
@@ -206,7 +207,7 @@ const Jogos = () => {
                                   <span className="font-medium">Local:</span> {match.location}
                                 </span>
                               </div>
-                            </div>
+                            </button>
                           );
                         })
                       ) : (
@@ -279,10 +280,11 @@ const Jogos = () => {
                               {dayMatches.map((match) => {
                                 const { time } = formatDateTime(match.start_time);
                                 return (
-                                  <div
+                                  <button
                                     key={match.id}
+                                    type="button"
                                     onClick={() => navigate(`/nucleo/jogos/${match.id}`)}
-                                    className="text-xs bg-teal-100 hover:bg-teal-200 px-2 py-1 rounded cursor-pointer transition-colors"
+                                    className="w-full text-left text-xs bg-teal-100 hover:bg-teal-200 px-2 py-1 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
                                     title={`${time} - ${match.participants.map(p => {
                                       if (p.team) return p.team.name;
                                       if (p.athlete) return p.athlete.full_name;
@@ -297,7 +299,7 @@ const Jogos = () => {
                                         return 'TBD';
                                       }).join(' vs ')}
                                     </div>
-                                  </div>
+                                  </button>
                                 );
                               })}
                             </div>
