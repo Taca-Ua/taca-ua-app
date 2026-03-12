@@ -24,6 +24,7 @@ class TournamentSnapshotItem(SnapshotBase):
     id: str
     modality_id: str
     name: str
+    scoring_format_id: Optional[str] = None
     status: Optional[str] = None
     start_date: Optional[datetime] = None
     created_by: Optional[str] = None

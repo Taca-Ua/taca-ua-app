@@ -46,6 +46,7 @@ class Tournament(Base):
 
     tournament_id = Column(UUID(as_uuid=True), primary_key=True)
     modality_id = Column(UUID(as_uuid=True), nullable=False)
+    scoring_format_id = Column(UUID(as_uuid=True), nullable=True)
 
 
 class TournamentCompetitor(Base):

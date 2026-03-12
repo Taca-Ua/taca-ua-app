@@ -27,6 +27,7 @@ class TournamentUpdatedData(BaseModel):
     name: Optional[str] = None
     start_date: Optional[str] = None
     status: Optional[str] = None
+    scoring_format_id: Optional[UUID] = None
 
 
 class TournamentDeletedData(BaseModel):

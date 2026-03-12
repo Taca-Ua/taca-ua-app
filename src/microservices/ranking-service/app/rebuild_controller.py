@@ -38,13 +38,17 @@ from .events import rabbitmq_service
 from .logger import logger
 from .models import (
     Course,
+    CourseRanking,
+    GeneralRanking,
     Modality,
+    ModalityRanking,
     ModalityType,
     ModalityTypeEscalao,
     Tournament,
     TournamentCompetitor,
     TournamentResult,
 )
+from .ranking_processor import compute_all_rankings
 
 router = APIRouter(prefix="/internal", tags=["internal"])
 
@@ -172,6 +176,9 @@ class RankingRebuildService:
 
             logger.info("rebuild_step", step="rebuild_core_tables")
             records = self._rebuild_core_tables(snapshot)
+
+            logger.info("rebuild_step", step="compute_derived_tables")
+            self._compute_derived_tables()
 
             logger.info("rebuild_step", step="resume_event_consumption")
             await self._resume_events()
@@ -438,6 +445,7 @@ class RankingRebuildService:
                 Tournament(
                     tournament_id=item.id,
                     modality_id=item.modality_id,
+                    scoring_format_id=item.scoring_format_id,
                 )
             )
         self.db.flush()
@@ -459,6 +467,21 @@ class RankingRebuildService:
             "core_table_rebuilt", table="tournament_competitors", count=len(items)
         )
         return len(items)
+
+    # ------------------------------------------------------------------
+    # Derived tables
+    # ------------------------------------------------------------------
+
+    def _compute_derived_tables(self) -> None:
+        """Recompute all derived ranking tables from the freshly rebuilt core tables."""
+        try:
+            compute_all_rankings(self.db)
+            self.db.commit()
+            logger.info("derived_tables_computed")
+        except Exception as exc:
+            self.db.rollback()
+            logger.error("derived_tables_compute_failed", error=str(exc))
+            raise
 
     def _insert_ranking_positions(
         self, items: List[TournamentRankingPositionSnapshotItem]
@@ -496,6 +519,11 @@ class RankingRebuildService:
                         TournamentCompetitor
                     ).count(),
                     "tournament_results": self.db.query(TournamentResult).count(),
+                },
+                "derived_tables": {
+                    "modality_rankings": self.db.query(ModalityRanking).count(),
+                    "course_rankings": self.db.query(CourseRanking).count(),
+                    "general_rankings": self.db.query(GeneralRanking).count(),
                 },
                 "event_consumption_paused": getattr(
                     self.rabbitmq_svc, "is_paused", lambda: False

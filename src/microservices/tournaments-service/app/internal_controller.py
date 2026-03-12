@@ -68,6 +68,9 @@ def get_snapshot(
                 id=str(t.id),
                 modality_id=str(t.modality_id),
                 name=t.name,
+                scoring_format_id=(
+                    str(t.scoring_format_id) if t.scoring_format_id else None
+                ),
                 status=t.status,
                 start_date=t.start_date,
                 created_by=str(t.created_by),

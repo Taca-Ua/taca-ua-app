@@ -16,6 +16,7 @@ from .models import (
     TournamentCompetitor,
     TournamentResult,
 )
+from .ranking_processor import compute_all_rankings
 
 rabbitmq_service = PausableRabbitMQService(service_name="ranking-service")
 
@@ -98,6 +99,7 @@ def handle_modality_type_updated(event: modalities.ModalityTypeUpdatedV1):
                 )
                 db.add(escalao)
         db.flush()
+        compute_all_rankings(db)
 
 
 @rabbitmq_service.event_handler(modalities.ModalityTypeDeletedV1)
@@ -123,6 +125,7 @@ def handle_modality_type_deleted(event: modalities.ModalityTypeDeletedV1):
             return
         db.delete(modality_type)
         db.flush()
+        compute_all_rankings(db)
 
 
 # ==================== Modality Events ====================
@@ -184,6 +187,8 @@ def handle_modality_deleted(event: modalities.ModalityDeletedV1):
             logger.warning("modality_not_found", modality_id=str(modality_id))
             return
         db.delete(modality)
+        db.flush()
+        compute_all_rankings(db)
 
 
 # ==================== Tournament Events ====================
@@ -193,19 +198,51 @@ def handle_modality_deleted(event: modalities.ModalityDeletedV1):
 def handle_tournament_created(event: tournaments.TournamentCreatedV1):
     """Handle tournament created event."""
     tournament_id = event.data.tournament_id
+    scoring_format_id = event.data.scoring_format_id
     logger.info(
         "event_received",
         event_type="tournament.created",
         tournament_id=str(tournament_id),
+        scoring_format_id=str(scoring_format_id),
     )
 
     with get_db() as db:
         tournament = Tournament(
             tournament_id=tournament_id,
             modality_id=event.data.modality_id,
+            scoring_format_id=scoring_format_id,
         )
         db.add(tournament)
         db.flush()
+
+
+@rabbitmq_service.event_handler(tournaments.TournamentUpdatedV1)
+def handle_tournament_updated(event: tournaments.TournamentUpdatedV1):
+    """Handle tournament updated event."""
+    tournament_id = event.data.tournament_id
+    scoring_format_id = event.data.scoring_format_id
+
+    logger.info(
+        "event_received",
+        event_type="tournament.updated",
+        tournament_id=str(tournament_id),
+    )
+
+    with get_db() as db:
+        tournament = (
+            db.query(Tournament)
+            .filter(Tournament.tournament_id == tournament_id)
+            .first()
+        )
+        if not tournament:
+            logger.warning("tournament_not_found", tournament_id=str(tournament_id))
+            return
+
+        if scoring_format_id is not None:
+            tournament.scoring_format_id = scoring_format_id
+
+        db.flush()
+        compute_all_rankings(db)
 
 
 @rabbitmq_service.event_handler(tournaments.TournamentDeletedV1)
@@ -230,8 +267,9 @@ def handle_tournament_deleted(event: tournaments.TournamentDeletedV1):
         if not tournament:
             logger.warning("tournament_not_found", tournament_id=str(tournament_id))
             return
-        tournament.delete()
+        db.delete(tournament)
         db.flush()
+        compute_all_rankings(db)
 
 
 @rabbitmq_service.event_handler(tournaments.TournamentFinishedV1)
@@ -273,6 +311,7 @@ def handle_tournament_finished(event: tournaments.TournamentFinishedV1):
             tournament_id=str(tournament_id),
             ranking_entries_count=len(ranking_entries),
         )
+        compute_all_rankings(db)
 
 
 @rabbitmq_service.event_handler(tournaments.TournamentCompetitorAddedV1)

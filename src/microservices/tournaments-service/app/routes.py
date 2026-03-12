@@ -180,6 +180,7 @@ async def create_tournament(
                 name=tournament.name,
                 start_date=tournament.start_date.isoformat(),
                 status=tournament.status,
+                scoring_format_id=tournament.scoring_format_id,
             ),
         )
         outbox_publisher.emit_event(
@@ -241,6 +242,7 @@ async def update_tournament(
             name=changes_made.get("name"),
             start_date=changes_made.get("start_date"),
             status=changes_made.get("status"),
+            scoring_format_id=changes_made.get("scoring_format_id"),
         ),
     )
     outbox_publisher.emit_event(

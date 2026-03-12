@@ -99,12 +99,25 @@ def upgrade() -> None:
             sa.dialects.postgresql.UUID(as_uuid=True),
             nullable=False,
         ),
+        sa.Column(
+            "scoring_format_id",
+            sa.dialects.postgresql.UUID(as_uuid=True),
+            sa.ForeignKey(
+                "ranking.modality_types.modality_type_id", ondelete="SET NULL"
+            ),
+        ),
         schema="ranking",
     )
     op.create_index(
         "ix_ranking_tournaments_modality_id",
         "tournaments",
         ["modality_id"],
+        schema="ranking",
+    )
+    op.create_index(
+        "ix_ranking_tournaments_scoring_format_id",
+        "tournaments",
+        ["scoring_format_id"],
         schema="ranking",
     )
 

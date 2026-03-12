@@ -27,6 +27,7 @@ from taca_events.pydantic_schemas.matches import (
     MatchParticipantRemovedV1,
     MatchResultEntryData,
     MatchResultUpdatedData,
+    MatchResultUpdatedV1,
     MatchUpdatedData,
     MatchUpdatedV1,
 )
@@ -936,7 +937,7 @@ def update_match_results(
         )
 
     # Emit event for result updates
-    event = MatchUpdatedV1.create(
+    event = MatchResultUpdatedV1.create(
         aggregate_id=match_id,
         data=MatchResultUpdatedData(
             match_id=match_id,
