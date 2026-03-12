@@ -46,6 +46,7 @@ class TournamentCompetitor(Base):
 
     team_id = Column(UUID(as_uuid=True), nullable=True, index=True)
     athlete_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+    competitor_course_id = Column(UUID(as_uuid=True), nullable=True, index=True)
 
     created_at = Column(
         DateTime(timezone=True),

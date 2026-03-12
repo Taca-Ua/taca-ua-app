@@ -215,6 +215,7 @@ class TournamentsService(BaseService):
         """
         data = [competitor for competitor in competitors_data]
 
+        print(data)
         tournament_data = self.put(
             f"/tournaments/{tournament_id}/competitors/add", data=data
         )

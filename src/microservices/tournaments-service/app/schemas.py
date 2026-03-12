@@ -17,6 +17,7 @@ class CompetitorInput(BaseModel):
     competitor_type: str  # "team" or "athlete"
     team_id: Optional[UUID] = None
     athlete_id: Optional[UUID] = None
+    competitor_course_id: Optional[UUID] = None
 
     @field_validator("competitor_type")
     @classmethod

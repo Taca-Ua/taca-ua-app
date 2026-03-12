@@ -92,6 +92,7 @@ def add_competitor(db: Session, tournament_id: UUID, competitor_input: Competito
             if competitor_type == CompetitorType.ATHLETE
             else None
         ),
+        competitor_course_id=competitor_input.competitor_course_id,
     )
     db.add(tournament_competitor)
     db.flush()

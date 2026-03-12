@@ -248,6 +248,15 @@ def tournament_add_competitors(request, tournament_id):
     serializer.is_valid(raise_exception=True)
 
     try:
+        for entry in serializer.validated_data:
+            if team_id := entry.get("team_id"):
+                team = modalities_service_client.get_team(team_id)
+                entry["competitor_course_id"] = team.course.id
+
+            if athlete_id := entry.get("athlete_id"):
+                student = modalities_service_client.get_student(athlete_id)
+                entry["competitor_course_id"] = student.course.id
+
         # Call microservice
         tournament = tournaments_service_client.add_competitors(
             tournament_id=tournament_id,
