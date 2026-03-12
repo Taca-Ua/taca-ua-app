@@ -43,6 +43,7 @@ class TournamentCompetitorSnapshotItem(SnapshotBase):
     team_id: Optional[str] = None
     athlete_id: Optional[str] = None
     created_at: Optional[datetime] = None
+    competitor_course_id: Optional[str] = None
 
 
 class TournamentRankingPositionSnapshotItem(SnapshotBase):

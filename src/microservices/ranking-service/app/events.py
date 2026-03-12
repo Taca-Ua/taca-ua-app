@@ -336,6 +336,7 @@ def handle_tournament_competitor_added(event: tournaments.TournamentCompetitorAd
         competitor = TournamentCompetitor(
             competitor_id=competitor_id,
             tournament_id=tournament_id,
+            competitor_course_id=event.data.competitor_course_id,
         )
         db.add(competitor)
         db.flush()

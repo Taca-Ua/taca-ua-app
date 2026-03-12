@@ -140,6 +140,7 @@ def _register_defaults() -> None:
         TeamPlayerRemovedV1,
         TeamUpdatedV1,
     )
+    from .ranking import RankingComputedV1
     from .tournaments import (
         TournamentCompetitorAddedV1,
         TournamentCompetitorDeletedV1,
@@ -197,6 +198,8 @@ def _register_defaults() -> None:
         TournamentFinishedV1,
         TournamentCompetitorAddedV1,
         TournamentCompetitorDeletedV1,
+        # Ranking events
+        RankingComputedV1,
     ]
 
     for schema_cls in schemas:

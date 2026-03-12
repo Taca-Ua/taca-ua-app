@@ -90,6 +90,9 @@ def get_snapshot(
                 team_id=str(c.team_id) if c.team_id else None,
                 athlete_id=str(c.athlete_id) if c.athlete_id else None,
                 created_at=c.created_at,
+                competitor_course_id=(
+                    str(c.competitor_course_id) if c.competitor_course_id else None
+                ),
             )
             for c in competitors
         ]

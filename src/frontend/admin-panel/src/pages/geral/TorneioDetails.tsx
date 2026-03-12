@@ -650,7 +650,8 @@ const FinishTournamentModal = ({
         const competitor = tournament.competitors.find(c => getCompetitorId(c) === competitorId);
 
         if (competitor) {
-          const entry: TournamentCompetitor & { position: number } = {
+          const entry: TournamentCompetitor & { competitor_id: string; position: number } = {
+            competitor_id: competitor.id,
             competitor_type: competitor.competitor_type,
             position
           };

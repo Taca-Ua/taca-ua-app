@@ -106,6 +106,7 @@ class TournamentFinishSerializer(serializers.Serializer):
         """Serializer for finishing a tournament entry"""
 
         position = serializers.IntegerField(required=True)
+        competitor_id = serializers.UUIDField(required=True)
 
     ranking_entries = TournamentFinishEntrySerializer(many=True)
 

@@ -25,6 +25,7 @@ from collections import defaultdict
 from typing import Dict, List, Optional
 from uuid import UUID, uuid4
 
+from sqlalchemy import and_, func
 from sqlalchemy.orm import Session
 
 from .logger import logger
@@ -139,11 +140,16 @@ def compute_all_rankings(db: Session) -> None:
             if not results:
                 continue
 
-            participant_count: int = (
+            tournament_competitors: List[TournamentCompetitor] = (
                 db.query(TournamentCompetitor)
                 .filter(TournamentCompetitor.tournament_id == tid)
-                .count()
+                .all()
             )
+            participant_count: int = len(tournament_competitors)
+            course_by_competitor: Dict[UUID, UUID] = {
+                tc.competitor_id: tc.competitor_course_id
+                for tc in tournament_competitors
+            }
 
             if tournament.scoring_format_id is None:
                 logger.warning(
@@ -165,12 +171,22 @@ def compute_all_rankings(db: Session) -> None:
                 )
                 continue
 
+            print(
+                f"Tournament {tid} has {participant_count} participants, using escalao with points {escalao.points}"
+            )
+            print(f"Processing {len(results)} results for tournament {tid}")
             for result in results:
                 pts = _points_for_position(escalao, result.position)
                 if pts:
-                    modality_course_points[modality.modality_id][
-                        result.competitor_id
-                    ] += pts
+                    course_id = course_by_competitor.get(result.competitor_id)
+                    if course_id is None:
+                        logger.warning(
+                            "result_competitor_not_found_in_tournament_competitors",
+                            tournament_id=str(tid),
+                            competitor_id=str(result.competitor_id),
+                        )
+                        continue
+                    modality_course_points[modality.modality_id][course_id] += pts
 
     # --- 4. Persist ModalityRanking -----------------------------------------
     for modality_id, course_points in modality_course_points.items():
@@ -242,15 +258,21 @@ def emit_ranking_computed_event(db: Session, publisher) -> None:
     modality_rows: List[ModalityRanking] = db.query(ModalityRanking).all()
 
     # Count distinct tournaments each course has at least one result in
-    from sqlalchemy import func
-
+    from .models import TournamentCompetitor as TC
     from .models import TournamentResult as TR
 
     tournaments_by_course: Dict[UUID, int] = {}
     for row in general_rows:
         count = (
-            db.query(func.count(TR.tournament_id.distinct()))
-            .filter(TR.competitor_id == row.course_id)
+            db.query(func.count(func.distinct(TC.tournament_id)))
+            .join(
+                TR,
+                and_(
+                    TR.tournament_id == TC.tournament_id,
+                    TR.competitor_id == TC.competitor_id,
+                ),
+            )
+            .filter(TC.competitor_course_id == row.course_id)
             .scalar()
             or 0
         )

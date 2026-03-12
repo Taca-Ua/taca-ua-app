@@ -106,6 +106,7 @@ class RankingRebuildService(BaseRebuildService):
 
             mod = ModalitiesSnapshotResponse(**mod_raw) if mod_raw else None
             tour = TournamentsSnapshotResponse(**tour_raw) if tour_raw else None
+            print(tour_raw)
 
             if mod:
                 total += self._insert_modality_types(mod.modality_types)
@@ -225,6 +226,7 @@ class RankingRebuildService(BaseRebuildService):
                 TournamentCompetitor(
                     tournament_id=item.tournament_id,
                     competitor_id=item.id,
+                    competitor_course_id=item.competitor_course_id,
                 )
             )
         self.db.flush()

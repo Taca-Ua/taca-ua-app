@@ -207,13 +207,11 @@ def tournament_finish(request, tournament_id):
         # Prepare ranking entries - extract competitor_id based on type
         ranking_entries = []
         for entry in serializer.validated_data["ranking_entries"]:
-            if entry["competitor_type"] == "team":
-                competitor_id = entry["team_id"]
-            else:  # athlete
-                competitor_id = entry["athlete_id"]
-
             ranking_entries.append(
-                {"competitor_id": str(competitor_id), "position": entry["position"]}
+                {
+                    "competitor_id": str(entry["competitor_id"]),
+                    "position": entry["position"],
+                }
             )
 
         # Call microservice

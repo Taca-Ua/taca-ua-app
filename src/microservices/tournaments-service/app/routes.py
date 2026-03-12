@@ -106,6 +106,7 @@ def add_competitor(db: Session, tournament_id: UUID, competitor_input: Competito
             competitor_entity_id=competitor_input.team_id
             or competitor_input.athlete_id,
             competitor_id=tournament_competitor.id,
+            competitor_course_id=competitor_input.competitor_course_id,
         ),
     )
     outbox_publisher.emit_event(

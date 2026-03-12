@@ -55,6 +55,7 @@ class TournamentCompetitor(Base):
 
     tournament_id = Column(UUID(as_uuid=True), primary_key=True)
     competitor_id = Column(UUID(as_uuid=True), primary_key=True)
+    competitor_course_id = Column(UUID(as_uuid=True), nullable=False)
 
 
 class TournamentResult(Base):
