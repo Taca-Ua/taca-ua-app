@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import NucleoSidebar from '../../components/nucleo_navbar';
+import HelpTooltip from '../../components/HelpTooltip';
 import { teamsApi, type TeamDetail } from '../../api/teams';
 import { studentsApi, type Student } from '../../api/members';
 import { useNotification } from '../../contexts/NotificationProvider';
@@ -49,7 +50,7 @@ const TeamDetailsEditModal = ({
         <div className="space-y-4">
           <div>
             <label htmlFor="editName" className="block text-gray-700 font-medium mb-2">
-              Nome da Equipa <span className="text-red-500">*</span>
+              Nome da Equipa <HelpTooltip text="Nome pelo qual a equipa é identificada nos torneios e rankings. Deve ser único dentro do núcleo." className="ml-1" /> <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -358,7 +359,7 @@ const TeamDetailPage = () => {
 
                 <div>
                   <label className="block text-teal-500 font-medium mb-2">
-                    Modalidade
+                    Modalidade <HelpTooltip text="Desporto desta equipa. Define os torneios em que pode participar." className="ml-1" />
                   </label>
                   <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
                     {team.modality.name}
@@ -367,7 +368,7 @@ const TeamDetailPage = () => {
 
                 <div>
                   <label className="block text-teal-500 font-medium mb-2">
-                    Curso
+                    Curso <HelpTooltip text="Curso académico que esta equipa representa." className="ml-1" />
                   </label>
                   <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
                     {team.course.name}

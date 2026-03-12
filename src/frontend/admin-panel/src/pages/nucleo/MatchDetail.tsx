@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import NucleoSidebar from '../../components/nucleo_navbar';
+import HelpTooltip from '../../components/HelpTooltip';
 import {
   matchesApi,
   type MatchDetail as MatchDetailData,
@@ -86,7 +87,7 @@ const MatchInfoCard = ({ match, tournament }: { match: MatchDetailData; tourname
           )}
 
           <div>
-            <label className="block text-gray-600 text-sm mb-1">Estado</label>
+            <label className="block text-gray-600 text-sm mb-1">Estado <HelpTooltip text="Agendado: jogo ainda não começou. Em Curso: jogo a decorrer. Terminado: jogo concluído. Cancelado: jogo cancelado." className="ml-1" /></label>
             <div>{getStatusBadge(match.status)}</div>
           </div>
 
@@ -98,7 +99,7 @@ const MatchInfoCard = ({ match, tournament }: { match: MatchDetailData; tourname
           </div>
 
           <div>
-            <label className="block text-gray-600 text-sm mb-1">Local</label>
+            <label className="block text-gray-600 text-sm mb-1">Local <HelpTooltip text="Local físico onde o jogo vai decorrer, ex: Campo Municipal, Pavilhão Principal." className="ml-1" /></label>
             <div className="text-gray-800 font-medium">{match.location}</div>
           </div>
 
@@ -320,7 +321,7 @@ const LineupEditorModal = ({
                   {isSelected && lineupEntry && (
                     <div className="ml-8 flex gap-4 items-center">
                       <div className="flex items-center gap-2">
-                        <label className="text-sm text-gray-600">Número:</label>
+                        <label className="text-sm text-gray-600">Número: <HelpTooltip text="Número da camisola do jogador neste jogo (1–99)." className="ml-1" /></label>
                         <input
                           type="number"
                           min="1"

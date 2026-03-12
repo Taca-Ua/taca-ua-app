@@ -224,7 +224,7 @@ const Equipas = () => {
             <div className="space-y-4">
               <div>
                 <label htmlFor="teamName" className="block text-gray-700 font-medium mb-2">
-                  Nome da Equipa <span className="text-red-500">*</span>
+                  Nome da Equipa <HelpTooltip text="Nome pelo qual a equipa é identificada nos torneios e rankings. Deve ser único dentro do núcleo." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"

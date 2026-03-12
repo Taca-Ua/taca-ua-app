@@ -350,7 +350,7 @@ function Membros() {
                   </div>
                   <div>
                     <label htmlFor="courseId" className="block text-gray-700 font-medium mb-2">
-                      Curso <span className="text-red-500">*</span>
+                      Curso <HelpTooltip text="Curso académico do estudante na Universidade de Aveiro. Utilizado para organização e filtros de equipas." className="ml-1" /> <span className="text-red-500">*</span>
                     </label>
                     <select
                       id="courseId"
