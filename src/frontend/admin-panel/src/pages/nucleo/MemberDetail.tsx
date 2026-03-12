@@ -151,7 +151,7 @@ function MemberDetail() {
           <div className="mb-6 flex items-center">
             <button
               onClick={() => navigate('/nucleo/membros')}
-              className={`flex items-center gap-2 px-4 py-2 ${btn.secondary}Alt rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400`}
+              className={`flex items-center gap-2 px-4 py-2 ${btn.secondaryAlt} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />

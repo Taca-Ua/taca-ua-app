@@ -108,7 +108,7 @@ const TournamentInfo = ({
         <div className="pt-4 border-t mt-4">
           <button
             onClick={onFinish}
-            className={`w-full px-6 py-3 ${btn.info}Strong rounded-md font-medium transition-colors`}
+            className={`w-full px-6 py-3 ${btn.infoStrong} rounded-md font-medium transition-colors`}
           >
             Finalizar Torneio
           </button>
@@ -356,7 +356,7 @@ const TournamentCompetitors = ({
                 </div>
                 <button
                   onClick={() => handleRemoveCompetitor(competitor, name || 'Desconhecido')}
-                  className={`px-3 py-1 ${btn.danger}Light rounded-md text-sm transition-colors`}
+                  className={`px-3 py-1 ${btn.dangerLight} rounded-md text-sm transition-colors`}
                 >
                   Remover
                 </button>
@@ -661,7 +661,7 @@ const FinishTournamentModal = ({
           <button
             onClick={handleSubmit}
             disabled={finishing}
-            className={`flex-1 px-4 py-2 ${btn.info}Strong rounded-md disabled:opacity-50`}
+            className={`flex-1 px-4 py-2 ${btn.infoStrong} rounded-md disabled:opacity-50`}
           >
             {finishing ? 'A finalizar...' : 'Finalizar Torneio'}
           </button>
@@ -916,7 +916,7 @@ const TournamentMatches = ({
                   <button
                     type="button"
                     onClick={() => handleDeleteMatch(match.id)}
-                    className={`px-3 py-1 ${btn.danger}Light rounded-md text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-red-400`}
+                    className={`px-3 py-1 ${btn.dangerLight} rounded-md text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-red-400`}
                   >
                     Eliminar
                   </button>
@@ -972,7 +972,7 @@ const TournamentMatches = ({
                         <button
                           type="button"
                           onClick={() => removeParticipantSlot(index)}
-                          className={`px-3 py-2 ${btn.danger}Light rounded-md transition-colors`}
+                          className={`px-3 py-2 ${btn.dangerLight} rounded-md transition-colors`}
                           title="Remover participante"
                         >
                           ✕

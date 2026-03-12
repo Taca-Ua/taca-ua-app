@@ -200,7 +200,7 @@ const MatchInfo = ({
           type="button"
           onClick={onCancel}
           disabled={saving}
-          className={`flex-1 px-4 py-2 ${btn.secondary}Alt rounded-md font-medium transition-colors disabled:opacity-50`}
+          className={`flex-1 px-4 py-2 ${btn.secondaryAlt} rounded-md font-medium transition-colors disabled:opacity-50`}
         >
           Cancelar
         </button>
@@ -454,7 +454,7 @@ const ResultsSection = ({
                 setIsEditingResults(false);
               }}
               disabled={saving}
-              className={`flex-1 px-4 py-2 ${btn.secondary}Alt rounded-md font-medium transition-colors disabled:opacity-50`}
+              className={`flex-1 px-4 py-2 ${btn.secondaryAlt} rounded-md font-medium transition-colors disabled:opacity-50`}
             >
               Cancelar
             </button>
@@ -783,7 +783,7 @@ const DeleteModal = ({
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className={`flex-1 px-4 py-2 ${btn.secondary}Alt rounded-md font-medium transition-colors`}
+            className={`flex-1 px-4 py-2 ${btn.secondaryAlt} rounded-md font-medium transition-colors`}
           >
             Cancelar
           </button>

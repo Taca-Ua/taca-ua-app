@@ -432,7 +432,7 @@ const TeamDetailPage = () => {
                       </div>
                       <button
                         onClick={() => handleRemoveMember(member.id)}
-                        className={`px-3 py-1 ${btn.danger}Ghost rounded-md text-sm font-medium transition-colors`}
+                        className={`px-3 py-1 ${btn.dangerGhost} rounded-md text-sm font-medium transition-colors`}
                       >
                         Remover
                       </button>
