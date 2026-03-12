@@ -14,8 +14,12 @@ COPY src/shared/read-model-shared /tmp/read-model-shared
 RUN pip install --no-cache-dir /tmp/read-model-shared && rm -rf /tmp/read-model-shared
 
 # Install snapshots package
-COPY src/shared/taca-snapshots /tmp/taca-snapshots
+COPY src/shared/contracts/taca-snapshots /tmp/taca-snapshots
 RUN pip install --no-cache-dir /tmp/taca-snapshots && rm -rf /tmp/taca-snapshots
+
+# Install rebuild framework package
+COPY src/shared/platform/taca-rebuild /tmp/taca-rebuild
+RUN pip install --no-cache-dir /tmp/taca-rebuild && rm -rf /tmp/taca-rebuild
 
 COPY src/microservices/read-model-updater .
 
