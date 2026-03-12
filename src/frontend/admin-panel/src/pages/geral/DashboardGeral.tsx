@@ -8,6 +8,7 @@ import { seasonsApi, type Season } from '../../api/seasons';
 import { nucleosApi } from '../../api/nucleos';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotification } from '../../contexts/NotificationProvider';
+import { btn } from '../../styles/buttonStyles';
 
 function DashboardGeral() {
   const navigate = useNavigate();
@@ -150,7 +151,7 @@ function DashboardGeral() {
                         </p>
                         <button
                           onClick={() => setShowFinishModal(true)}
-                          className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md font-bold transition-colors"
+                          className={`px-6 py-3 ${btn.danger} rounded-md font-bold transition-colors`}
                         >
                           Finalizar Época {currentSeason.year}
                         </button>
@@ -166,7 +167,7 @@ function DashboardGeral() {
                         </p>
                         <button
                           onClick={() => setShowStartModal(true)}
-                          className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-md font-bold transition-colors"
+                          className={`px-6 py-3 ${btn.success} rounded-md font-bold transition-colors`}
                         >
                           Iniciar Época {draftSeason.year}
                         </button>
@@ -273,7 +274,7 @@ function DashboardGeral() {
                   }
                 }}
                 disabled={seasonLoading}
-                className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-bold disabled:opacity-50"
+                className={`flex-1 px-4 py-2 ${btn.success} rounded-md font-bold disabled:opacity-50`}
               >
                 {seasonLoading ? 'A iniciar...' : 'Iniciar Época'}
               </button>
@@ -328,7 +329,7 @@ function DashboardGeral() {
                   }
                 }}
                 disabled={seasonLoading}
-                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md font-bold disabled:opacity-50"
+                className={`flex-1 px-4 py-2 ${btn.danger} rounded-md font-bold disabled:opacity-50`}
               >
                 {seasonLoading ? 'A finalizar...' : 'Finalizar Época'}
               </button>

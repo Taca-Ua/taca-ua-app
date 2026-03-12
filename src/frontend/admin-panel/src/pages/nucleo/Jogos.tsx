@@ -6,6 +6,7 @@ import type { Match } from '../../api/matches';
 import { tournamentsApi } from '../../api/tournaments';
 import type { Tournament } from '../../api/tournaments';
 import { useNotification } from '../../contexts/NotificationProvider';
+import { btn } from '../../styles/buttonStyles';
 
 const Jogos = () => {
   const navigate = useNavigate();
@@ -123,7 +124,7 @@ const Jogos = () => {
                   className={`px-4 py-2 rounded-md font-medium transition-colors ${
                     viewMode === 'list'
                       ? 'bg-teal-500 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      : btn.secondaryAlt
                   }`}
                 >
                   Lista
@@ -133,7 +134,7 @@ const Jogos = () => {
                   className={`px-4 py-2 rounded-md font-medium transition-colors ${
                     viewMode === 'calendar'
                       ? 'bg-teal-500 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      : btn.secondaryAlt
                   }`}
                 >
                   Calendário
@@ -225,7 +226,7 @@ const Jogos = () => {
                   <div className="flex justify-between items-center mb-6">
                     <button
                       onClick={previousMonth}
-                      className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md font-medium transition-colors"
+                      className={`px-4 py-2 ${btn.secondaryAlt} rounded-md font-medium transition-colors`}
                     >
                       ←
                     </button>
@@ -234,7 +235,7 @@ const Jogos = () => {
                     </h2>
                     <button
                       onClick={nextMonth}
-                      className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md font-medium transition-colors"
+                      className={`px-4 py-2 ${btn.secondaryAlt} rounded-md font-medium transition-colors`}
                     >
                       →
                     </button>

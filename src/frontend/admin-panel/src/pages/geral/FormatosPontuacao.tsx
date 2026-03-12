@@ -3,6 +3,7 @@ import ConfirmModal from "../../components/ConfirmModal";
 import Sidebar from "../../components/geral_navbar";
 import { modalityTypesApi, type ModalityType } from "../../api/modality-types";
 import { useNotification } from '../../contexts/NotificationProvider';
+import { btn } from '../../styles/buttonStyles';
 
 // Types for the scoring format structure
 interface EscalaoRow {
@@ -248,7 +249,7 @@ useEffect(() => {
 
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="px-6 py-3 bg-teal-500 text-white rounded-md hover:bg-teal-600 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-400"
+            className={`px-6 py-3 ${btn.primary} rounded-md transition-colors`}
           >
             + Adicionar Formato
           </button>
@@ -325,7 +326,7 @@ useEffect(() => {
                   </label>
                   <button
                     onClick={handleAddEscalao}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className={`px-4 py-2 ${btn.info} rounded-md transition-colors text-sm`}
                   >
                     + Adicionar Escalão
                   </button>
@@ -406,7 +407,7 @@ useEffect(() => {
 
             <div className="flex gap-4 mt-6">
               <button
-                className="flex-1 bg-gray-300 py-2 rounded-md hover:bg-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
+                className={`flex-1 ${btn.secondary} py-2 rounded-md`}
                 onClick={() => {
                   setIsCreateModalOpen(false);
                   setFormatName('');
@@ -417,7 +418,7 @@ useEffect(() => {
                 Cancelar
               </button>
               <button
-                className="flex-1 bg-teal-500 py-2 text-white rounded-md hover:bg-teal-600 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-400"
+                className={`flex-1 ${btn.primary} py-2 rounded-md transition-colors`}
                 onClick={handleCreateFormat}
               >
                 Criar Formato
@@ -506,19 +507,19 @@ useEffect(() => {
             <div className="flex gap-4 pt-4 border-t">
               <button
                 onClick={handleDeleteFormat}
-                className="px-6 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors focus:outline-none focus:ring-2 focus:ring-red-400"
+                className={`px-6 py-2 ${btn.dangerLight} rounded transition-colors`}
               >
                 Eliminar
               </button>
               <button
                 onClick={() => handleEditFormat(selectedFormat)}
-                className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className={`px-6 py-2 ${btn.info} rounded transition-colors`}
               >
                 Editar
               </button>
               <button
                 onClick={() => setIsViewModalOpen(false)}
-                className="flex-1 px-6 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
+                className={`flex-1 px-6 py-2 ${btn.secondaryAlt} rounded transition-colors`}
               >
                 Fechar
               </button>
@@ -635,7 +636,7 @@ useEffect(() => {
                   ))}
 				  <button
 					onClick={handleAddEscalao}
-					className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm"
+					className={`px-4 py-2 ${btn.info} rounded-md transition-colors text-sm`}
 				  >
 					+ Adicionar Escalão
 				  </button>
@@ -645,7 +646,7 @@ useEffect(() => {
 
             <div className="flex gap-4 mt-6">
               <button
-                className="flex-1 bg-gray-300 py-2 rounded-md hover:bg-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
+                className={`flex-1 ${btn.secondary} py-2 rounded-md`}
                 onClick={() => {
                   setIsEditModalOpen(false);
                   setFormatName('');
@@ -657,7 +658,7 @@ useEffect(() => {
                 Cancelar
               </button>
               <button
-                className="flex-1 bg-teal-500 py-2 text-white rounded-md hover:bg-teal-600 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-400"
+                className={`flex-1 ${btn.primary} py-2 rounded-md transition-colors`}
                 onClick={handleUpdateFormat}
               >
                 Guardar Alterações

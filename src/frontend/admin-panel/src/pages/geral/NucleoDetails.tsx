@@ -5,6 +5,7 @@ import Sidebar from '../../components/geral_navbar';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { nucleosApi, type Nucleo } from '../../api/nucleos';
 import { coursesApi, type Course } from '../../api/courses';
+import { btn } from '../../styles/buttonStyles';
 
 const NucleoDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -113,7 +114,7 @@ const NucleoDetails = () => {
             <h1 className="text-3xl font-bold text-gray-800">Detalhes do Núcleo</h1>
             <button
               onClick={() => navigate('/geral/nucleos')}
-              className="px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
+              className={`px-6 py-3 ${btn.secondary} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400`}
             >
               Voltar
             </button>
@@ -166,14 +167,14 @@ const NucleoDetails = () => {
             <div className="flex gap-4 pt-4">
               <button
                 onClick={handleEdit}
-                className="flex-1 px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
+                className={`flex-1 px-6 py-3 ${btn.primary} rounded-md font-medium transition-colors`}
               >
                 Editar
               </button>
 
               <button
                 onClick={handleDelete}
-                className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium transition-colors"
+                className={`flex-1 px-6 py-3 ${btn.danger} rounded-md font-medium transition-colors`}
               >
                 Eliminar
               </button>
@@ -223,14 +224,14 @@ const NucleoDetails = () => {
                 onClick={() => {
                   setIsEditModalOpen(false);
                 }}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md"
+                className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md`}
               >
                 Cancelar
               </button>
 
               <button
                 onClick={handleSave}
-                className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md"
+                className={`flex-1 px-4 py-2 ${btn.primary} rounded-md`}
               >
                 Guardar
               </button>

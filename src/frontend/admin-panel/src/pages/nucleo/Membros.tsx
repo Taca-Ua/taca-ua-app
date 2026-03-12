@@ -9,6 +9,7 @@ import {
 } from '../../api/members';
 import { coursesApi, type Course } from '../../api/courses';
 import { useNotification } from '../../contexts/NotificationProvider';
+import { btn } from '../../styles/buttonStyles';
 
 type CombinedMember =
   | { memberType: 'participant'; data: Student }
@@ -241,7 +242,7 @@ function Membros() {
 
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-2 rounded-md font-medium transition-colors flex items-center gap-2 justify-center sm:justify-start focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className={`${btn.primary} px-6 py-2 rounded-md font-medium transition-colors flex items-center gap-2 justify-center sm:justify-start focus:outline-none focus:ring-2 focus:ring-teal-500`}
               >
                 <span>+</span>
                 Adicionar Membro
@@ -430,13 +431,13 @@ function Membros() {
                   setStaffNumber('');
                   setIdentifierType('contact');
                 }}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
+                className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400`}
               >
                 Cancelar
               </button>
               <button
                 onClick={handleAddMember}
-                className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className={`flex-1 px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500`}
               >
                 Adicionar
               </button>

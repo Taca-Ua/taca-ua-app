@@ -11,6 +11,7 @@ import {
 import type { Team } from '../../api/teams';
 import { tournamentsApi, type Tournament } from '../../api/tournaments';
 import { useNotification } from '../../contexts/NotificationProvider';
+import { btn } from '../../styles/buttonStyles';
 
 // ==================== Private Components ====================
 
@@ -169,7 +170,7 @@ const TeamLineupCard = ({
           {canEdit && (
             <button
               onClick={onEdit}
-              className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md text-sm font-medium transition-colors"
+              className={`px-4 py-2 ${btn.primary} rounded-md text-sm font-medium transition-colors`}
             >
               Editar Convocatória
             </button>
@@ -353,13 +354,13 @@ const LineupEditorModal = ({
         <div className="flex gap-4">
           <button
             onClick={handleCancel}
-            className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+            className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md font-medium transition-colors`}
           >
             Cancelar
           </button>
           <button
             onClick={handleSave}
-            className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
+            className={`flex-1 px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors`}
           >
             Guardar
           </button>

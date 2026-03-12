@@ -8,6 +8,7 @@ import type { Modality } from '../../api/modalities';
 import { coursesApi } from '../../api/courses';
 import type { Course } from '../../api/courses';
 import { useNotification } from '../../contexts/NotificationProvider';
+import { btn } from '../../styles/buttonStyles';
 
 const Equipas = () => {
   const navigate = useNavigate();
@@ -127,7 +128,7 @@ const Equipas = () => {
             <h1 className="text-3xl font-bold text-gray-800">Equipas</h1>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors flex items-center gap-2"
+              className={`px-6 py-3 ${btn.primary} rounded-md font-medium transition-colors flex items-center gap-2`}
             >
               <span>+</span>
               Adicionar Equipa
@@ -281,13 +282,13 @@ const Equipas = () => {
                   setSelectedModality('');
                   setSelectedCourse('');
                 }}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+                className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md font-medium transition-colors`}
               >
                 Cancelar
               </button>
               <button
                 onClick={handleAddTeam}
-                className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
+                className={`flex-1 px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors`}
               >
                 Adicionar
               </button>

@@ -4,6 +4,7 @@ import Sidebar from '../../components/geral_navbar';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { tournamentsApi, type Tournament, type TournamentCreate } from '../../api/tournaments';
 import { modalitiesApi, type Modality } from '../../api/modalities';
+import { btn } from '../../styles/buttonStyles';
 
 
 const TorneiosCreateModal = ({ isOpen, onClose, onCreate, modalities, setModalities }: {
@@ -152,7 +153,7 @@ const Torneios = () => {
 
           <button
             onClick={() => setIsModalOpen(true)}
-            className="px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md"
+            className={`px-6 py-3 ${btn.primary} rounded-md`}
           >
             + Criar Torneio
           </button>

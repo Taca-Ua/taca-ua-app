@@ -4,6 +4,7 @@ import Sidebar from '../../components/geral_navbar';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { coursesApi, type Course } from '../../api/courses';
 import { nucleosApi, type Nucleo } from '../../api/nucleos';
+import { btn } from '../../styles/buttonStyles';
 
 const CourseEntry = (course: Course) => {
   const navigate = useNavigate();
@@ -130,7 +131,7 @@ const Cursos = () => {
             <h1 className="text-3xl font-bold text-gray-800">Cursos</h1>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors flex items-center gap-2"
+              className={`px-6 py-3 ${btn.primary} rounded-md font-medium transition-colors flex items-center gap-2`}
             >
               <span>+</span>
               Adicionar Curso
@@ -228,13 +229,13 @@ const Cursos = () => {
                   setNewCourseAbbreviation('');
                   setSelectedNucleoId('');
                 }}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+                className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md font-medium transition-colors`}
               >
                 Cancelar
               </button>
               <button
                 onClick={handleAddCourse}
-                className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
+                className={`flex-1 px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors`}
               >
                 Adicionar
               </button>

@@ -5,6 +5,7 @@ import Sidebar from '../../components/geral_navbar';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { modalitiesApi, type ModalityDetail } from '../../api/modalities';
 import { modalityTypesApi } from '../../api/modality-types';
+import { btn } from '../../styles/buttonStyles';
 
 interface ModalityType {
 	  id: string;
@@ -106,13 +107,13 @@ const ModalidadeDetailEditModal = ({
         <div className="flex gap-4 mt-6">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md"
+            className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md`}
           >
             Cancelar
           </button>
           <button
             onClick={handleSave}
-            className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md"
+            className={`flex-1 px-4 py-2 ${btn.primary} rounded-md`}
           >
             Guardar
           </button>
@@ -197,7 +198,7 @@ function ModalidadeDetail() {
           <h1 className="text-3xl font-bold text-gray-800">Detalhes da Modalidade</h1>
           <button
             onClick={() => navigate('/geral/modalidades')}
-            className="px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+            className={`px-6 py-3 ${btn.secondary} rounded-md font-medium transition-colors`}
           >
             Voltar
           </button>
@@ -216,10 +217,10 @@ function ModalidadeDetail() {
           </div>
 
           <div className="flex gap-4 mt-8">
-            <button onClick={handleEdit} className="flex-1 px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-teal-400">
+            <button onClick={handleEdit} className={`flex-1 px-6 py-3 ${btn.primary} rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-teal-400`}>
               Editar
             </button>
-            <button onClick={handleDelete} className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-red-400">
+            <button onClick={handleDelete} className={`flex-1 px-6 py-3 ${btn.danger} rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-red-400`}>
               Eliminar
             </button>
           </div>
