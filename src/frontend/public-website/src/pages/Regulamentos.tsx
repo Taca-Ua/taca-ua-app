@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import RegulamentoCard from '../components/RegulamentoCard';
-// import { api } from '../api';
-// import type { Regulation } from '../api/types';
+import { getRegulations, type Regulation } from '../api/regulations';
 
 function Regulamentos() {
   const [regulations, setRegulations] = useState<Regulation[]>([]);
@@ -20,7 +19,7 @@ function Regulamentos() {
       setError(null);
 
       try {
-        const data = await api.regulations.getRegulations();
+        const data = await getRegulations();
         setRegulations(data);
       } catch (err) {
         console.error('Failed to load regulations:', err);
@@ -121,7 +120,7 @@ function Regulamentos() {
                   <RegulamentoCard
                     key={regulamento.id}
                     title={regulamento.title}
-                    category={regulamento.category || 'Regulamento'}
+                    category="Regulamento"
                     epoca=""
                     onClick={() => handleCardClick(regulamento.id)}
                   />
@@ -151,7 +150,7 @@ function Regulamentos() {
                   {selectedRegulamento.title}
                 </h2>
                 <p className="text-sm text-gray-600">
-                  {selectedRegulamento.category || 'Regulamento'}
+                  {'Regulamento'}
                 </p>
               </div>
               <button

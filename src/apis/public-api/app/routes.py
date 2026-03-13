@@ -496,3 +496,26 @@ def get_course_ranking(
 
     logger.info("course_ranking_retrieved", course_id=str(course_id))
     return ranking
+
+
+# ==================== Regulation Endpoints ====================
+
+
+@router.get(
+    "/regulations",
+    response_model=list[schemas.RegulationPublic],
+    summary="List all regulations",
+    description="Get all public regulation documents, optionally filtered by search term",
+)
+def list_regulations(
+    search: Optional[str] = Query(None, description="Search in title and description"),
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve the list of regulation documents.
+
+    - **search**: Optional text to filter by title or description
+    """
+    regulations = crud.get_regulations(db=db, search=search)
+    logger.info("regulations_listed", total=len(regulations))
+    return regulations

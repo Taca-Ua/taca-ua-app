@@ -722,3 +722,25 @@ class GeneralRankingView(Base):
     updated_at = Column(
         DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
     )
+
+
+# ==================== Shared Operational Tables ====================
+
+
+class Regulation(Base):
+    """
+    Regulation document - read-only reference to the regulation table
+    owned by the modalities-service (default public schema).
+    """
+
+    __tablename__ = "regulation"
+    __table_args__ = {"schema": "modalities"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True)
+    title = Column(Text, nullable=False)
+    description = Column(Text, nullable=True)
+    file_url = Column(String(500), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(
+        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
