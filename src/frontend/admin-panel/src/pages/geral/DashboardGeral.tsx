@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import HelpTooltip from '../../components/HelpTooltip';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from "../../components/geral_navbar";
 import { modalitiesApi } from '../../api/modalities';
@@ -8,6 +9,7 @@ import { seasonsApi, type Season } from '../../api/seasons';
 import { nucleosApi } from '../../api/nucleos';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotification } from '../../contexts/NotificationProvider';
+import { btn } from '../../styles/buttonStyles';
 
 function DashboardGeral() {
   const navigate = useNavigate();
@@ -150,7 +152,7 @@ function DashboardGeral() {
                         </p>
                         <button
                           onClick={() => setShowFinishModal(true)}
-                          className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md font-bold transition-colors"
+                          className={`px-6 py-3 ${btn.danger} rounded-md font-bold transition-colors`}
                         >
                           Finalizar Época {currentSeason.year}
                         </button>
@@ -166,7 +168,7 @@ function DashboardGeral() {
                         </p>
                         <button
                           onClick={() => setShowStartModal(true)}
-                          className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-md font-bold transition-colors"
+                          className={`px-6 py-3 ${btn.success} rounded-md font-bold transition-colors`}
                         >
                           Iniciar Época {draftSeason.year}
                         </button>
@@ -186,23 +188,25 @@ function DashboardGeral() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div
+                <button
+                  type="button"
                   onClick={() => navigate('/geral/modalidades')}
-                  className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+                  className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <h2 className="text-xl font-semibold mb-2 text-teal-600">Modalidades</h2>
                   <p className="text-3xl font-bold text-gray-800">{stats.modalities}</p>
                   <p className="text-sm text-gray-500 mt-2">Modalidades registadas</p>
-                </div>
+                </button>
 
-                <div
+                <button
+                  type="button"
                   onClick={() => navigate('/geral/torneios')}
-                  className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+                  className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <h2 className="text-xl font-semibold mb-2 text-purple-600">Torneios</h2>
                   <p className="text-3xl font-bold text-gray-800">{stats.tournaments}</p>
                   <p className="text-sm text-gray-500 mt-2">Total de torneios</p>
-                </div>
+                </button>
 
                 <div className="bg-white p-6 rounded-lg shadow-md">
                   <h2 className="text-xl font-semibold mb-2 text-orange-600">Torneios Ativos</h2>
@@ -210,14 +214,15 @@ function DashboardGeral() {
                   <p className="text-sm text-gray-500 mt-2">Em andamento</p>
                 </div>
 
-                <div
+                <button
+                  type="button"
                   onClick={() => navigate('/geral/nucleos')}
-                  className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+                  className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <h2 className="text-xl font-semibold mb-2 text-teal-600">Núcleos</h2>
                   <p className="text-3xl font-bold text-gray-800">{stats.courses}</p>
                   <p className="text-sm text-gray-500 mt-2">Núcleos ativos</p>
-                </div>
+                </button>
               </div>
 
             </>
@@ -242,8 +247,9 @@ function DashboardGeral() {
                   <li>Certifique-se de que todas as configurações estão corretas</li>
                 </ul>
               </div>
-              <p className="text-sm text-gray-600 italic mt-4">
+              <p className="text-sm text-gray-600 italic mt-4 flex items-center gap-1">
                 Digite "INICIAR" para confirmar:
+                <HelpTooltip text="Esta confirmação previne ativações acidentais. Se existir uma época ativa, ela será automaticamente finalizada antes de ativar a nova." position="right" />
               </p>
               <input
                 type="text"
@@ -270,7 +276,7 @@ function DashboardGeral() {
                   }
                 }}
                 disabled={seasonLoading}
-                className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-bold disabled:opacity-50"
+                className={`flex-1 px-4 py-2 ${btn.success} rounded-md font-bold disabled:opacity-50`}
               >
                 {seasonLoading ? 'A iniciar...' : 'Iniciar Época'}
               </button>
@@ -297,8 +303,9 @@ function DashboardGeral() {
                   <li>Verifique que todos os jogos foram concluídos</li>
                 </ul>
               </div>
-              <p className="text-sm text-gray-600 italic mt-4">
+              <p className="text-sm text-gray-600 italic mt-4 flex items-center gap-1">
                 Digite "FINALIZAR" para confirmar:
+                <HelpTooltip text="Esta confirmação é obrigatória pois a ação é irreversível. Todos os resultados e dados da época serão arquivados permanentemente e não poderão ser modificados." position="right" />
               </p>
               <input
                 type="text"
@@ -325,7 +332,7 @@ function DashboardGeral() {
                   }
                 }}
                 disabled={seasonLoading}
-                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md font-bold disabled:opacity-50"
+                className={`flex-1 px-4 py-2 ${btn.danger} rounded-md font-bold disabled:opacity-50`}
               >
                 {seasonLoading ? 'A finalizar...' : 'Finalizar Época'}
               </button>

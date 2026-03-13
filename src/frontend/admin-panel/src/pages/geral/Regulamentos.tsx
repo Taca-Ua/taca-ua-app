@@ -4,6 +4,7 @@ import Sidebar from "../../components/geral_navbar";
 import { regulationsApi, type Regulation, type RegulationCreate } from '../../api/regulations';
 import { modalitiesApi, type Modality } from '../../api/modalities';
 import { useNotification } from '../../contexts/NotificationProvider';
+import { btn } from '../../styles/buttonStyles';
 
 const Regulamentos: React.FC = () => {
   const [regulations, setRegulations] = useState<Regulation[]>([]);
@@ -288,7 +289,21 @@ const Regulamentos: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Descrição Breve</label>
+                <label className="font-medium">Modalidade <HelpTooltip text="Modalidade a que este regulamento se aplica. Selecione 'Nenhuma' para um regulamento geral que se aplica a toda a competição." className="ml-1" /></label>
+                <select
+                  className="border px-3 py-2 rounded-md w-full bg-white"
+                  value={modalityId}
+                  onChange={e => setModalityId(e.target.value)}
+                >
+                  <option value="">Nenhuma (Geral)</option>
+                  {modalities.map(m => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="font-medium">Descrição</label>
                 <textarea
                   className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none min-h-[100px]"
                   value={description}

@@ -1,8 +1,10 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import HelpTooltip from '../../components/HelpTooltip';
 import { useState, useEffect } from 'react';
 import NucleoSidebar from '../../components/nucleo_navbar';
 import { staffApi, studentsApi, type StaffDetail, type StudentDetail } from '../../api/members';
 import { useNotification } from '../../contexts/NotificationProvider';
+import { btn } from '../../styles/buttonStyles';
 
 type CombinedMember =
   | { memberType: 'participant'; data: StudentDetail }
@@ -149,7 +151,7 @@ function MemberDetail() {
           <div className="mb-6 flex items-center">
             <button
               onClick={() => navigate('/nucleo/membros')}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md font-medium transition-colors"
+              className={`flex items-center gap-2 px-4 py-2 ${btn.secondaryAlt} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -245,13 +247,13 @@ function MemberDetail() {
             <div className="flex gap-4 mt-8">
               <button
                 onClick={handleEdit}
-                className="flex-1 px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
+                className={`flex-1 px-6 py-3 ${btn.primary} rounded-md font-medium transition-colors`}
               >
                 Editar
               </button>
               <button
                 onClick={handleDelete}
-                className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium transition-colors"
+                className={`flex-1 px-6 py-3 ${btn.danger} rounded-md font-medium transition-colors`}
               >
                 Eliminar
               </button>
@@ -293,7 +295,7 @@ function MemberDetail() {
 
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">
-                      Tipo
+                      Tipo <HelpTooltip text="Membro: paga quota e tem acesso a todos os benefícios do núcleo. Não-Membro: pode participar mas com acesso limitado." className="ml-1" />
                     </label>
                     <div className="flex gap-4">
                       <label className="flex items-center">
@@ -336,7 +338,7 @@ function MemberDetail() {
 
                   <div>
                     <label htmlFor="editContact" className="block text-gray-700 font-medium mb-2">
-                      Contacto
+                      Contacto <HelpTooltip text="Número de telefone ou outro contacto do colaborador de staff. Utilizado para comunicações do núcleo." className="ml-1" />
                     </label>
                     <input
                       type="text"
@@ -358,13 +360,13 @@ function MemberDetail() {
                   setEditedName('');
                   setEditedContact('');
                 }}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+                className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md font-medium transition-colors`}
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSave}
-                className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
+                className={`flex-1 px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors`}
               >
                 Guardar
               </button>
@@ -385,13 +387,13 @@ function MemberDetail() {
             <div className="flex gap-4">
               <button
                 onClick={() => setDeleteConfirmOpen(false)}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+                className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md font-medium transition-colors`}
               >
                 Cancelar
               </button>
               <button
                 onClick={confirmDelete}
-                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium transition-colors"
+                className={`flex-1 px-4 py-2 ${btn.danger} rounded-md font-medium transition-colors`}
               >
                 Eliminar
               </button>

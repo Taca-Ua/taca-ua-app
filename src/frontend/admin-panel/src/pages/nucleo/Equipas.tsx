@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import HelpTooltip from '../../components/HelpTooltip';
 import { useNavigate } from 'react-router-dom';
 import NucleoSidebar from '../../components/nucleo_navbar';
 import { teamsApi } from '../../api/teams';
@@ -8,6 +9,7 @@ import type { Modality } from '../../api/modalities';
 import { coursesApi } from '../../api/courses';
 import type { Course } from '../../api/courses';
 import { useNotification } from '../../contexts/NotificationProvider';
+import { btn } from '../../styles/buttonStyles';
 
 const Equipas = () => {
   const navigate = useNavigate();
@@ -127,7 +129,7 @@ const Equipas = () => {
             <h1 className="text-3xl font-bold text-gray-800">Equipas</h1>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors flex items-center gap-2"
+              className={`px-6 py-3 ${btn.primary} rounded-md font-medium transition-colors flex items-center gap-2`}
             >
               <span>+</span>
               Adicionar Equipa
@@ -187,10 +189,11 @@ const Equipas = () => {
                 <div className="space-y-3">
                   {filteredTeams.length > 0 ? (
                     filteredTeams.map((team) => (
-                      <div
+                      <button
                         key={team.id}
+                        type="button"
                         onClick={() => navigate(`/nucleo/equipas/${team.id}`)}
-                        className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer transition-colors"
+                        className="w-full text-left px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
                       >
                         <div className="flex justify-between items-center">
                           <span className="text-gray-800 font-medium">{team.name}</span>
@@ -199,7 +202,7 @@ const Equipas = () => {
                             <span className="text-gray-500">{getCourseName(team.course.id)}</span>
                           </div>
                         </div>
-                      </div>
+                      </button>
                     ))
                   ) : (
                     <p className="text-gray-500 text-center py-8">
@@ -221,7 +224,7 @@ const Equipas = () => {
             <div className="space-y-4">
               <div>
                 <label htmlFor="teamName" className="block text-gray-700 font-medium mb-2">
-                  Nome da Equipa <span className="text-red-500">*</span>
+                  Nome da Equipa <HelpTooltip text="Nome pelo qual a equipa é identificada nos torneios e rankings. Deve ser único dentro do núcleo." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -235,7 +238,7 @@ const Equipas = () => {
 
               <div>
                 <label htmlFor="modality" className="block text-gray-700 font-medium mb-2">
-                  Modalidade <span className="text-red-500">*</span>
+                  Modalidade <HelpTooltip text="Desporto para o qual esta equipa está inscrita. A equipa só pode participar em torneios da mesma modalidade." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="modality"
@@ -254,7 +257,7 @@ const Equipas = () => {
 
               <div>
                 <label htmlFor="course" className="block text-gray-700 font-medium mb-2">
-                  Curso <span className="text-red-500">*</span>
+                  Curso <HelpTooltip text="Curso académico que esta equipa representa. Afeta os filtros de pesquisa e a organização das equipas." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="course"
@@ -280,13 +283,13 @@ const Equipas = () => {
                   setSelectedModality('');
                   setSelectedCourse('');
                 }}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+                className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md font-medium transition-colors`}
               >
                 Cancelar
               </button>
               <button
                 onClick={handleAddTeam}
-                className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
+                className={`flex-1 px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors`}
               >
                 Adicionar
               </button>

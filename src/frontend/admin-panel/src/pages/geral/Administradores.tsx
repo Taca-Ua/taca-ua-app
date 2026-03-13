@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import HelpTooltip from '../../components/HelpTooltip';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
 import { administratorsApi, type Admin } from '../../api/administrators';
 import { nucleosApi, type Nucleo } from '../../api/nucleos';
 import { useNotification } from '../../contexts/NotificationProvider';
+import { btn } from '../../styles/buttonStyles';
 
 function Administradores() {
   const navigate = useNavigate();
@@ -23,6 +25,8 @@ function Administradores() {
   const [allNucleos, setAllNucleos] = useState<Nucleo[]>([]);
   const [selectedNucleos, setSelectedNucleos] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'general_admin' | 'nucleo_admin'>('all');
   const { notify } = useNotification();
 
   useEffect(() => {
@@ -46,8 +50,17 @@ function Administradores() {
     fetchData();
   }, []);
 
-  const AdminG = members.filter(m => m.role === 'general_admin');
-  const AdminN = members.filter(m => m.role === 'nucleo_admin');
+  const filteredMembers = members.filter(m => {
+    const matchesSearch =
+      m.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesRole = roleFilter === 'all' || m.role === roleFilter;
+    return matchesSearch && matchesRole;
+  });
+  const AdminG = filteredMembers.filter(m => m.role === 'general_admin');
+  const AdminN = filteredMembers.filter(m => m.role === 'nucleo_admin');
 
   const handleAddMember = async () => {
     if (!memberUserName.trim()) {
@@ -137,27 +150,38 @@ function Administradores() {
             <h1 className="text-3xl font-bold text-gray-800">Administradores</h1>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-2 rounded-md font-medium transition-colors flex items-center gap-2"
+              className={`${btn.primary} px-6 py-2 rounded-md font-medium transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-teal-400`}
             >
               <span>+</span>
               Adicionar Administrador
             </button>
           </div>
 
+          <div className="flex gap-3 mb-6">
+            <input
+              type="text"
+              placeholder="Pesquisar administrador..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+            />
+          </div>
+
           <div className="bg-white rounded-lg shadow-md p-6 mb-8">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Administradores Gerais</h2>
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {AdminG.map((admin) => (
-                <div
+                <button
                   key={admin.id}
+                  type="button"
                   onClick={() => navigate(`/geral/administradores/${admin.id}`)}
-                  className="bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors cursor-pointer"
+                  className="w-full text-left bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <div className="flex justify-between items-center">
                     <span className="text-gray-800 font-medium">{admin.username}</span>
                     <span className="text-gray-600 text-sm">{admin.first_name} {admin.last_name} - {admin.email}</span>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -166,16 +190,17 @@ function Administradores() {
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Administradores Núcleo</h2>
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {AdminN.map((admin) => (
-                <div
+                <button
                   key={admin.id}
+                  type="button"
                   onClick={() => navigate(`/geral/administradores/${admin.id}`)}
-                  className="bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors cursor-pointer"
+                  className="w-full text-left bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <div className="flex justify-between items-center">
                     <span className="text-gray-800 font-medium">{admin.username}</span>
                     <span className="text-gray-600 text-sm">{admin.first_name} {admin.last_name} - {admin.email}</span>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -191,7 +216,7 @@ function Administradores() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="memberUserName" className="block text-gray-700 font-medium mb-2">
-                  Username <span className="text-red-500">*</span>
+                  Username <HelpTooltip text="Nome único de identificação do administrador, usado para aceder à plataforma. Não pode ser alterado após criação." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -204,7 +229,7 @@ function Administradores() {
               </div>
               <div>
                 <label htmlFor="email" className="block text-gray-700 font-medium mb-2">
-                  Email <span className="text-red-500">*</span>
+                  Email <HelpTooltip text="Endereço de email institucional do administrador. Utilizado para notificações e recuperação de conta." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="email"
@@ -245,7 +270,7 @@ function Administradores() {
 
               <div>
                 <label htmlFor="memberPassword" className="block text-gray-700 font-medium mb-2">
-                  Password <span className="text-red-500">*</span>
+                  Password <HelpTooltip text="A password deve ter no mínimo 8 caracteres. Utilize uma combinação de letras, números e símbolos para maior segurança." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -266,7 +291,7 @@ function Administradores() {
               </div>
               <div>
                 <label htmlFor="memberConfirmPassword" className="block text-gray-700 font-medium mb-2">
-                  Confirmar Password <span className="text-red-500">*</span>
+                  Confirmar Password <HelpTooltip text="Repita exatamente a password inserida ao lado para garantir que não houve erros de digitação." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -287,7 +312,7 @@ function Administradores() {
               </div>
               <div className="md:col-span-2">
                 <label htmlFor="memberRole" className="block text-gray-700 font-medium mb-2">
-                  Tipo <span className="text-red-500">*</span>
+                  Tipo <HelpTooltip text="Administrador Geral tem acesso total à plataforma. Administrador Núcleo só pode gerir os núcleos que lhe forem atribuídos." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="memberRole"
@@ -308,7 +333,7 @@ function Administradores() {
               {memberRole === 'nucleo_admin' && (
                 <div className="mt-4">
                   <label className="block text-gray-700 font-medium mb-2">
-                    Núcleos
+                    Núcleos <HelpTooltip text="Selecione os núcleos desportivos que este administrador poderá gerir. Apenas aplicável para o tipo Administrador Núcleo." className="ml-1" />
                   </label>
                   <input
                     type="text"
@@ -390,13 +415,13 @@ function Administradores() {
                   setSelectedNucleos([]);
                   setNucleoSearch('');
                 }}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+                className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400`}
               >
                 Cancelar
               </button>
               <button
                 onClick={handleAddMember}
-                className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
+                className={`flex-1 px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-teal-400`}
               >
                 Adicionar
               </button>

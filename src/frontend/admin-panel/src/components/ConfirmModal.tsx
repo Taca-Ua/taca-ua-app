@@ -1,3 +1,4 @@
+import { btn } from '../styles/buttonStyles';
 type ConfirmModalProps = {
   isOpen: boolean;
   title: string;
@@ -50,7 +51,7 @@ const ConfirmModal = ({
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md disabled:opacity-50"
+            className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-gray-400`}
           >
             {cancelLabel}
           </button>
