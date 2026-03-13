@@ -1,9 +1,12 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import HelpTooltip from '../../components/HelpTooltip';
 import { useState, useEffect } from 'react';
+import ConfirmModal from '../../components/ConfirmModal';
 import Sidebar from '../../components/geral_navbar';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { modalitiesApi, type ModalityDetail } from '../../api/modalities';
 import { modalityTypesApi } from '../../api/modality-types';
+import { btn } from '../../styles/buttonStyles';
 
 interface ModalityType {
 	  id: string;
@@ -86,7 +89,7 @@ const ModalidadeDetailEditModal = ({
           </div>
           <div>
             <label className="block text-gray-700 font-medium mb-2">
-              Tipo <span className="text-red-500">*</span>
+              Tipo <HelpTooltip text="Classifica a modalidade como individual (atletas competem individualmente) ou coletiva (equipas competem entre si). Afeta as regras de inscrição e pontuação." className="ml-1" /> <span className="text-red-500">*</span>
             </label>
             <select
               value={editedType}
@@ -105,13 +108,13 @@ const ModalidadeDetailEditModal = ({
         <div className="flex gap-4 mt-6">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md"
+            className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md`}
           >
             Cancelar
           </button>
           <button
             onClick={handleSave}
-            className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md"
+            className={`flex-1 px-4 py-2 ${btn.primary} rounded-md`}
           >
             Guardar
           </button>
@@ -129,6 +132,9 @@ function ModalidadeDetail() {
   const [modality, setModality] = useState<ModalityDetail | null>(null);
   const [modalityTypes, setModalityTypes] = useState<ModalityType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const { notify } = useNotification();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -154,15 +160,20 @@ function ModalidadeDetail() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async () => {
-    if (window.confirm('Tem certeza que deseja eliminar esta modalidade?')) {
-      try {
-        await modalitiesApi.delete(String(id));
-        navigate('/geral/modalidades');
-      } catch (err) {
-        console.error('Failed to delete modality:', err);
-        notify('Não foi possível eliminar a modalidade. Poderá ter torneios ou formatos de prova associados.', 'error');
-      }
+  const handleDelete = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      setDeleting(true);
+      await modalitiesApi.delete(String(id));
+      navigate('/geral/modalidades');
+    } catch (err) {
+      console.error('Failed to delete modality:', err);
+      notify('Não foi possível eliminar a modalidade. Poderá ter torneios ou formatos de prova associados.', 'error');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -184,6 +195,16 @@ function ModalidadeDetail() {
       <Sidebar />
 
       <div className="flex-1 p-8 max-w-3xl mx-auto">
+        <div className="mb-8 flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-gray-800">Detalhes da Modalidade</h1>
+          <button
+            onClick={() => navigate('/geral/modalidades')}
+            className={`px-6 py-3 ${btn.secondary} rounded-md font-medium transition-colors`}
+          >
+            Voltar
+          </button>
+        </div>
+
         <div className="bg-white rounded-lg shadow-md p-8">
           <div className="space-y-6">
             <div>
@@ -197,10 +218,10 @@ function ModalidadeDetail() {
           </div>
 
           <div className="flex gap-4 mt-8">
-            <button onClick={handleEdit} className="flex-1 px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium">
+            <button onClick={handleEdit} className={`flex-1 px-6 py-3 ${btn.primary} rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-teal-400`}>
               Editar
             </button>
-            <button onClick={handleDelete} className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium">
+            <button onClick={handleDelete} className={`flex-1 px-6 py-3 ${btn.danger} rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-red-400`}>
               Eliminar
             </button>
           </div>
@@ -216,6 +237,21 @@ function ModalidadeDetail() {
           setModalityTypes={setModalityTypes}
         />
       )}
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        title="Eliminar modalidade"
+        message="Tem certeza que deseja eliminar esta modalidade?"
+        confirmLabel="Eliminar"
+        variant="danger"
+        loading={deleting}
+        onCancel={() => {
+          if (!deleting) {
+            setIsDeleteModalOpen(false);
+          }
+        }}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

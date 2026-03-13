@@ -1,0 +1,72 @@
+import { btn } from '../styles/buttonStyles';
+type ConfirmModalProps = {
+  isOpen: boolean;
+  title: string;
+  message: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  variant?: 'danger' | 'primary' | 'success';
+  loading?: boolean;
+  onConfirm: () => void | Promise<void>;
+  onCancel: () => void;
+};
+
+const variantClasses: Record<NonNullable<ConfirmModalProps['variant']>, string> = {
+  danger: 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
+  primary: 'bg-teal-500 hover:bg-teal-600 focus:ring-teal-500',
+  success: 'bg-green-600 hover:bg-green-700 focus:ring-green-500'
+};
+
+const ConfirmModal = ({
+  isOpen,
+  title,
+  message,
+  confirmLabel = 'Confirmar',
+  cancelLabel = 'Cancelar',
+  variant = 'primary',
+  loading = false,
+  onConfirm,
+  onCancel
+}: ConfirmModalProps) => {
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      onClick={() => {
+        if (!loading) {
+          onCancel();
+        }
+      }}
+    >
+      <div
+        className="bg-white rounded-lg p-8 max-w-md w-full mx-4 shadow-lg"
+        onClick={(e: any) => e.stopPropagation()}
+      >
+        <h2 className="text-2xl font-bold mb-4 text-gray-800">{title}</h2>
+        <p className="text-gray-600 mb-6">{message}</p>
+
+        <div className="flex gap-4">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={loading}
+            className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-gray-400`}
+          >
+            {cancelLabel}
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={loading}
+            className={`flex-1 px-4 py-2 text-white rounded-md transition-colors focus:outline-none focus:ring-2 disabled:opacity-50 ${variantClasses[variant]}`}
+          >
+            {loading ? 'A processar...' : confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ConfirmModal;

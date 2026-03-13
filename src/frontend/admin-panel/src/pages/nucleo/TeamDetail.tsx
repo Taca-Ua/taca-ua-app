@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import NucleoSidebar from '../../components/nucleo_navbar';
+import HelpTooltip from '../../components/HelpTooltip';
 import { teamsApi, type TeamDetail } from '../../api/teams';
 import { studentsApi, type Student } from '../../api/members';
 import { useNotification } from '../../contexts/NotificationProvider';
+import { btn } from '../../styles/buttonStyles';
 
 const TeamDetailsEditModal = ({
   team,
@@ -48,7 +50,7 @@ const TeamDetailsEditModal = ({
         <div className="space-y-4">
           <div>
             <label htmlFor="editName" className="block text-gray-700 font-medium mb-2">
-              Nome da Equipa <span className="text-red-500">*</span>
+              Nome da Equipa <HelpTooltip text="Nome pelo qual a equipa é identificada nos torneios e rankings. Deve ser único dentro do núcleo." className="ml-1" /> <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -64,13 +66,13 @@ const TeamDetailsEditModal = ({
         <div className="flex gap-4 mt-6">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+            className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md font-medium transition-colors`}
           >
             Cancelar
           </button>
           <button
             onClick={handleSave}
-            className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
+            className={`flex-1 px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors`}
           >
             Guardar
           </button>
@@ -211,13 +213,13 @@ const TeamParticipantsEdditModal = ({
         <div className="flex gap-4 flex-shrink-0">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+            className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md font-medium transition-colors`}
           >
             Cancelar
           </button>
           <button
             onClick={handleSave}
-            className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
+            className={`flex-1 px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors`}
           >
             Guardar
           </button>
@@ -321,6 +323,16 @@ const TeamDetailPage = () => {
 
       <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
+          <div className="mb-8 flex justify-between items-center">
+            <h1 className="text-3xl font-bold text-gray-800">Detalhes da Equipa</h1>
+            <button
+              onClick={() => navigate('/nucleo/equipas')}
+              className={`px-6 py-3 ${btn.secondary} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400`}
+            >
+              Voltar
+            </button>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div>
               <div className="flex justify-center mb-8">
@@ -347,7 +359,7 @@ const TeamDetailPage = () => {
 
                 <div>
                   <label className="block text-teal-500 font-medium mb-2">
-                    Modalidade
+                    Modalidade <HelpTooltip text="Desporto desta equipa. Define os torneios em que pode participar." className="ml-1" />
                   </label>
                   <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
                     {team.modality.name}
@@ -356,7 +368,7 @@ const TeamDetailPage = () => {
 
                 <div>
                   <label className="block text-teal-500 font-medium mb-2">
-                    Curso
+                    Curso <HelpTooltip text="Curso académico que esta equipa representa." className="ml-1" />
                   </label>
                   <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
                     {team.course.name}
@@ -375,13 +387,13 @@ const TeamDetailPage = () => {
                 <div className="flex gap-4 mt-6">
                   <button
                     onClick={handleEdit}
-                    className="flex-1 px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
+                    className={`flex-1 px-6 py-3 ${btn.primary} rounded-md font-medium transition-colors`}
                   >
                     Editar
                   </button>
                   <button
                     onClick={handleDelete}
-                    className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium transition-colors"
+                    className={`flex-1 px-6 py-3 ${btn.danger} rounded-md font-medium transition-colors`}
                   >
                     Eliminar
                   </button>
@@ -394,7 +406,7 @@ const TeamDetailPage = () => {
                 <h2 className="text-2xl font-bold text-gray-800">Equipa</h2>
                 <button
                   onClick={() => setIsAddMemberModalOpen(true)}
-                  className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors flex items-center gap-2"
+                  className={`px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors flex items-center gap-2`}
                 >
                   <span>+</span>
                   Adicionar Membro
@@ -420,7 +432,7 @@ const TeamDetailPage = () => {
                       </div>
                       <button
                         onClick={() => handleRemoveMember(member.id)}
-                        className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-md text-sm font-medium transition-colors"
+                        className={`px-3 py-1 ${btn.dangerGhost} rounded-md text-sm font-medium transition-colors`}
                       >
                         Remover
                       </button>
@@ -465,13 +477,13 @@ const TeamDetailPage = () => {
             <div className="flex gap-4">
               <button
                 onClick={() => setDeleteConfirmOpen(false)}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+                className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md font-medium transition-colors`}
               >
                 Cancelar
               </button>
               <button
                 onClick={confirmDelete}
-                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium transition-colors"
+                className={`flex-1 px-4 py-2 ${btn.danger} rounded-md font-medium transition-colors`}
               >
                 Eliminar
               </button>

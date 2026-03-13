@@ -1,10 +1,13 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import HelpTooltip from '../../components/HelpTooltip';
 import { useState, useEffect } from 'react';
+import ConfirmModal from '../../components/ConfirmModal';
 import Sidebar from '../../components/geral_navbar';
 import { administratorsApi, type AdminDetails } from '../../api/administrators';
 import { nucleosApi, type Nucleo } from '../../api/nucleos';
 import { coursesApi, type Course } from '../../api/courses';
 import { useNotification } from '../../contexts/NotificationProvider';
+import { btn } from '../../styles/buttonStyles';
 
 function AdminDetail() {
   const { id } = useParams();
@@ -28,6 +31,8 @@ function AdminDetail() {
   const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
   const [nucleoSearchEdit, setNucleoSearchEdit] = useState('');
   const [adminCourses, setAdminCourses] = useState<Course[]>([]);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -137,15 +142,20 @@ function AdminDetail() {
     }
   };
 
-  const handleDelete = async () => {
-    if (window.confirm('Tem certeza que deseja eliminar este administrador?')) {
-      try {
-        await administratorsApi.delete(String(id));
-        navigate('/geral/administradores');
-      } catch (err) {
-        console.error('Failed to delete administrator:', err);
-        notify('Não foi possível eliminar o administrador. Tente novamente.', 'error');
-      }
+  const handleDelete = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      setDeleting(true);
+      await administratorsApi.delete(String(id));
+      navigate('/geral/administradores');
+    } catch (err) {
+      console.error('Failed to delete administrator:', err);
+      notify('Não foi possível eliminar o administrador. Tente novamente.', 'error');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -166,6 +176,16 @@ function AdminDetail() {
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
       <div className="flex-1 p-8 max-w-3xl mx-auto">
+        <div className="mb-8 flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-gray-800">Detalhes do Administrador</h1>
+          <button
+            onClick={() => navigate('/geral/administradores')}
+            className={`px-6 py-3 ${btn.secondary} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400`}
+          >
+            Voltar
+          </button>
+        </div>
+
         <div className="bg-white rounded-lg shadow-md p-8">
           <div className="space-y-6">
             <div>
@@ -181,7 +201,7 @@ function AdminDetail() {
               <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800">{member.email}</div>
             </div>
             <div>
-              <label className="block text-teal-500 font-medium mb-2">Estado</label>
+              <label className="block text-teal-500 font-medium mb-2">Estado <HelpTooltip text="Indica se a conta está ativa. Contas inativas não podem aceder à plataforma de administração." className="ml-1" /></label>
               <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800">
                 {member.enabled ? (
                   <span className="text-green-600 font-medium">Ativo</span>
@@ -192,7 +212,7 @@ function AdminDetail() {
             </div>
             <div>
                 <label className="block text-teal-500 font-medium mb-2">
-                  Tipo
+                  Tipo <HelpTooltip text="Geral: acesso total à plataforma. Núcleo: apenas gere os núcleos atribuídos. Não é possível alterar o tipo após criação." className="ml-1" />
                 </label>
                 <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
                   {member.role === 'general_admin' ? 'Geral' :
@@ -202,7 +222,7 @@ function AdminDetail() {
 
             {member.role === 'nucleo_admin' && (
               <div>
-                <label className="block text-teal-500 font-medium mb-2">Núcleos</label>
+                <label className="block text-teal-500 font-medium mb-2">Núcleos <HelpTooltip text="Núcleos desportivos que este administrador pode gerir. Pode ser alterado na edição do perfil." className="ml-1" /></label>
                 <div className="bg-gray-100 px-4 py-3 rounded-md">
                   {member.nucleos.length === 0 ? (
                     <span className="text-gray-500">Nenhum núcleo associado</span>
@@ -239,13 +259,13 @@ function AdminDetail() {
           </div>
 
           <div className="flex gap-4 mt-8">
-            <button onClick={handleEdit} className="flex-1 px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium">
+            <button onClick={handleEdit} className={`flex-1 px-6 py-3 ${btn.primary} rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-teal-400`}>
               Editar
             </button>
-            <button onClick={() => setIsPasswordModalOpen(true)} className="flex-1 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-md font-medium">
+            <button onClick={() => setIsPasswordModalOpen(true)} className={`flex-1 px-6 py-3 ${btn.info} rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-blue-400`}>
               Alterar Password
             </button>
-            <button onClick={handleDelete} className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium">
+            <button onClick={handleDelete} className={`flex-1 px-6 py-3 ${btn.danger} rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-red-400`}>
               Eliminar
             </button>
           </div>
@@ -300,7 +320,7 @@ function AdminDetail() {
                 />
             </div>
             <div>
-                <label className="block text-gray-700 font-medium mb-2">Estado</label>
+                <label className="block text-gray-700 font-medium mb-2">Estado <HelpTooltip text="Ativo: o administrador pode aceder ao sistema. Inativo: acesso bloqueado sem eliminar a conta." className="ml-1" /></label>
                 <select
                   value={editedEnabled ? 'true' : 'false'}
                   onChange={(e) => setEditedEnabled(e.target.value === 'true')}
@@ -369,13 +389,13 @@ function AdminDetail() {
                 onClick={() => {
                   setIsModalOpen(false);
                 }}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md"
+                className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md`}
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSave}
-                className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md"
+                className={`flex-1 px-4 py-2 ${btn.primary} rounded-md`}
               >
                 Guardar
               </button>
@@ -391,7 +411,7 @@ function AdminDetail() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-gray-700 font-medium mb-2">Nova Password <span className="text-red-500">*</span></label>
+                <label className="block text-gray-700 font-medium mb-2">Nova Password <HelpTooltip text="A password deve ter no mínimo 8 caracteres. Após guardar, o administrador deverá usar a nova password no próximo login." className="ml-1" /> <span className="text-red-500">*</span></label>
                 <div className="relative">
                   <input
                     type={showNewPassword ? 'text' : 'password'}
@@ -410,7 +430,7 @@ function AdminDetail() {
                 </div>
               </div>
               <div>
-                <label className="block text-gray-700 font-medium mb-2">Confirmar Password <span className="text-red-500">*</span></label>
+                <label className="block text-gray-700 font-medium mb-2">Confirmar Password <HelpTooltip text="Repita exatamente a nova password para confirmar que não houve erros de digitação." className="ml-1" /> <span className="text-red-500">*</span></label>
                 <div className="relative">
                   <input
                     type={showConfirmNewPassword ? 'text' : 'password'}
@@ -439,13 +459,13 @@ function AdminDetail() {
                   setShowNewPassword(false);
                   setShowConfirmNewPassword(false);
                 }}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md"
+                className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md`}
               >
                 Cancelar
               </button>
               <button
                 onClick={handleChangePassword}
-                className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md"
+                className={`flex-1 px-4 py-2 ${btn.primary} rounded-md`}
               >
                 Alterar Password
               </button>
@@ -453,6 +473,21 @@ function AdminDetail() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        title="Eliminar administrador"
+        message="Tem certeza que deseja eliminar este administrador?"
+        confirmLabel="Eliminar"
+        variant="danger"
+        loading={deleting}
+        onCancel={() => {
+          if (!deleting) {
+            setIsDeleteModalOpen(false);
+          }
+        }}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

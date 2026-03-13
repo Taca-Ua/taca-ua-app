@@ -27,13 +27,18 @@ export default function Sidebar() {
             <>
               <Link
                 to="/geral/dashboard"
-                className="text-lg font-bold text-teal-600 hover:text-teal-700 truncate"
+                className="flex items-center gap-2 min-w-0 text-lg font-bold text-teal-600 hover:text-teal-700"
               >
-                TaçaUA
+                <img
+                  src="/logo.png"
+                  alt="TaçaUA"
+                  className="h-8 w-8 object-contain flex-shrink-0"
+                />
+                <span className="truncate">TaçaUA</span>
               </Link>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-gray-500 hover:text-red-500 transition ml-2 flex-shrink-0"
+                className="text-gray-500 hover:text-red-500 transition ml-2 flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-teal-400 rounded"
                 aria-label="Fechar menu"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -44,7 +49,7 @@ export default function Sidebar() {
           ) : (
             <button
               onClick={() => setIsOpen(true)}
-              className="w-full flex flex-col items-center justify-center gap-1 text-gray-600 hover:text-teal-600 transition"
+              className="w-full flex flex-col items-center justify-center gap-1 text-gray-600 hover:text-teal-600 transition focus:outline-none focus:ring-2 focus:ring-teal-400 rounded"
               aria-label="Abrir menu"
             >
               <span className="block w-5 h-0.5 bg-current"></span>
@@ -60,7 +65,7 @@ export default function Sidebar() {
               key={item.to}
               to={item.to}
               onClick={() => setIsOpen(false)}
-              className="flex items-center h-11 px-3 text-gray-700 hover:text-teal-600 hover:bg-teal-50 transition-colors"
+              className="flex items-center h-11 px-3 text-gray-700 hover:text-teal-600 hover:bg-teal-50 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-teal-400"
               title={!isOpen ? item.label : undefined}
             >
               {isOpen ? (
@@ -89,7 +94,7 @@ export default function Sidebar() {
                   setIsOpen(false);
                   logout();
                 }}
-                className="flex items-center h-10 w-full text-left text-gray-700 hover:text-red-600 font-medium transition text-sm"
+                className="flex items-center h-10 w-full text-left text-gray-700 hover:text-red-600 font-medium transition text-sm focus:outline-none focus:ring-2 focus:ring-red-400 rounded"
               >
                 Logout
               </button>
@@ -109,7 +114,7 @@ export default function Sidebar() {
                 onClick={() => {
                   logout();
                 }}
-                className="flex items-center justify-center h-11 w-full text-gray-500 hover:text-red-600 transition"
+                className="flex items-center justify-center h-11 w-full text-gray-500 hover:text-red-600 transition focus:outline-none focus:ring-2 focus:ring-red-400 rounded"
                 title="Logout"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
