@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from "react";
 import ConfirmModal from "../../components/ConfirmModal";
+import HelpTooltip from "../../components/HelpTooltip";
 import Sidebar from "../../components/geral_navbar";
 import { regulationsApi, type Regulation, type RegulationCreate } from '../../api/regulations';
-import { modalitiesApi, type Modality } from '../../api/modalities';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { btn } from '../../styles/buttonStyles';
 
 const Regulamentos: React.FC = () => {
   const [regulations, setRegulations] = useState<Regulation[]>([]);
-  const [modalities, setModalities] = useState<Modality[]>([]);
   const [loading, setLoading] = useState(true);
   const { notify } = useNotification();
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterModality, setFilterModality] = useState("");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -59,12 +57,7 @@ const Regulamentos: React.FC = () => {
     try {
       setLoading(true);
       
-      const [regulationsData, modalitiesData] = await Promise.all([
-        regulationsApi.getAll(),
-        modalitiesApi.getAll(),
-      ]);
-
-      console.log("ESTRUTURA DO REGULAMENTO:", regulationsData[0]);
+      const regulationsData = await regulationsApi.getAll();
 
       const existingRegulations = await Promise.all(
         regulationsData.map(async (reg) => {
@@ -74,7 +67,6 @@ const Regulamentos: React.FC = () => {
       );
 
       setRegulations(existingRegulations.filter((r): r is Regulation => r !== null));
-      setModalities(modalitiesData);
     } catch (err) {
       console.error('Failed to fetch data:', err);
       notify('Não foi possível carregar os regulamentos. Tente recarregar a página.', 'error');
@@ -184,7 +176,7 @@ const Regulamentos: React.FC = () => {
 
             <button
               onClick={() => setIsUploadModalOpen(true)}
-              className="px-6 py-3 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 transition-shadow shadow-md"
+              className={`px-6 py-3 ${btn.primary} font-semibold rounded-lg shadow-md`}
             >
               + Novo Regulamento
             </button>
@@ -210,19 +202,7 @@ const Regulamentos: React.FC = () => {
               </div>
             </div>
 
-            <div className="min-w-[200px]">
-              <label className="block mb-1 text-xs font-bold text-gray-400 uppercase tracking-widest">Modalidade</label>
-              <select
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-1 focus:ring-teal-500"
-                value={filterModality}
-                onChange={e => setFilterModality(e.target.value)}
-              >
-                <option value="">Todas as Modalidades</option>
-                {modalities.map(m => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
-              </select>
-            </div>
+
           </div>
 
           {/* Grid de Cards / Lista com Teu Loading */}
@@ -289,21 +269,7 @@ const Regulamentos: React.FC = () => {
               </div>
 
               <div>
-                <label className="font-medium">Modalidade <HelpTooltip text="Modalidade a que este regulamento se aplica. Selecione 'Nenhuma' para um regulamento geral que se aplica a toda a competição." className="ml-1" /></label>
-                <select
-                  className="border px-3 py-2 rounded-md w-full bg-white"
-                  value={modalityId}
-                  onChange={e => setModalityId(e.target.value)}
-                >
-                  <option value="">Nenhuma (Geral)</option>
-                  {modalities.map(m => (
-                    <option key={m.id} value={m.id}>{m.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="font-medium">Descrição</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Descrição</label>
                 <textarea
                   className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none min-h-[100px]"
                   value={description}
@@ -339,7 +305,7 @@ const Regulamentos: React.FC = () => {
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
-                  className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-colors"
+                  className={`flex-1 px-4 py-2 ${btn.secondaryAlt} font-semibold rounded-lg transition-colors`}
                   onClick={() => setIsUploadModalOpen(false)}
                 >
                   Cancelar
@@ -347,7 +313,7 @@ const Regulamentos: React.FC = () => {
                 <button
                   type="submit"
                   disabled={uploading}
-                  className="flex-1 px-4 py-2 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 shadow-lg disabled:bg-gray-400 transition-all"
+                  className={`flex-1 px-4 py-2 ${btn.primary} font-semibold rounded-lg shadow-lg disabled:opacity-50 transition-all`}
                 >
                   {uploading ? "A enviar..." : "Guardar Regulamento"}
                 </button>
@@ -402,7 +368,7 @@ const Regulamentos: React.FC = () => {
                     href={selectedRegulation.file_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-all shadow-sm"
+                    className={`px-4 py-2 ${btn.infoStrong} text-sm font-bold rounded-lg shadow-sm`}
                   >
                     Visualizar
                   </a>
@@ -412,15 +378,15 @@ const Regulamentos: React.FC = () => {
               <div className="mt-10 pt-6 border-t border-gray-100 flex gap-4">
                 <button
                   onClick={handleDelete}
-                  className="px-6 py-2.5 text-sm font-bold bg-white text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+                  className={`px-6 py-2.5 text-sm font-bold ${btn.dangerGhost} rounded-lg transition-colors`}
                 >
                   Eliminar Documento
                 </button>
                 <button
                   onClick={() => setIsViewModalOpen(false)}
-                  className="flex-1 px-6 py-2.5 text-sm font-bold bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+                  className={`flex-1 px-6 py-2.5 text-sm font-bold ${btn.secondary} rounded-lg transition-colors`}
                 >
-                  Fechar Painel
+                  Fechar
                 </button>
               </div>
             </div>
