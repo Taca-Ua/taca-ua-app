@@ -183,7 +183,6 @@ def _parse_dt(value: Any) -> datetime:
         return dt.astimezone(timezone.utc).replace(tzinfo=None)
     return dt
 
-
 def _parse_date(value: Any) -> date:
     """Parse an ISO 8601 date string to a date object."""
     if isinstance(value, date) and not isinstance(value, datetime):
@@ -350,6 +349,7 @@ def handle_modality_type_updated(event: ModalityTypeUpdatedV1):
                 "modality_type_not_found", modality_type_id=str(modality_type_id)
             )
             return
+
         if event.data.name is not None:
             modality_type.name = event.data.name
         if event.data.description is not None:
@@ -512,11 +512,13 @@ def handle_student_deleted(event: StudentDeletedV1):
             logger.warning("student_not_found", student_id=str(student_id))
             return
         student.deleted_at = datetime.utcnow()
+
         db.flush()
         rebuild_student_projection(db, student_id)
 
 
 # ==================== Staff Events ====================
+
 
 
 @rabbitmq_service.event_handler(StaffCreatedV1)
@@ -624,6 +626,7 @@ def handle_team_deleted(event: TeamDeletedV1):
             logger.warning("team_not_found", team_id=str(team_id))
             return
         team.deleted_at = datetime.utcnow()
+
         db.flush()
         rebuild_team_projection(db, team_id)
 
@@ -646,6 +649,7 @@ def handle_team_player_added(event: TeamPlayerAddedV1):
             student_id=student_id,
         )
         db.add(team_player)
+
         db.flush()
         # Rebuild both team and student projections
         rebuild_team_projection(db, team_id)
@@ -682,6 +686,7 @@ def handle_team_player_removed(event: TeamPlayerRemovedV1):
             )
             return
         team_player.removed_at = datetime.utcnow()
+
         db.flush()
         # Rebuild both team and student projections
         rebuild_team_projection(db, team_id)
@@ -802,7 +807,6 @@ def handle_tournament_finished(event: TournamentFinishedV1):
         if not tournament:
             logger.warning("tournament_not_found", tournament_id=str(tournament_id))
             return
-
         now = datetime.utcnow()
         tournament.status = "finished"
         tournament.finished_at = now

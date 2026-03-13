@@ -1,80 +1,37 @@
-import keycloak from '../lib/keycloak';
 import { apiClient } from './client';
 
 export interface Regulation {
-  id: number;
+  id: string;
   title: string;
-  description?: string;
-  modality_id?: number;
   file_url: string;
+  description?: string;
   created_at: string;
 }
 
 export interface RegulationCreate {
-  file: File;
   title: string;
-  modality_id?: number;
+  file: File;
   description?: string;
-}
-
-export interface RegulationUpdate {
-  title?: string;
-  description?: string;
-  modality_id?: number;
 }
 
 export const regulationsApi = {
-  async getAll(): Promise<Regulation[]> {
-    return apiClient.get<Regulation[]>('/regulations');
-  },
-
-  async getById(id: number): Promise<Regulation> {
-    return apiClient.get<Regulation>(`/regulations/${id}`);
+  async getAll(search?: string): Promise<Regulation[]> {
+    const params = search ? { search } : undefined;
+    return apiClient.get<Regulation[]>('/regulations/', params);
   },
 
   async create(data: RegulationCreate): Promise<Regulation> {
     const formData = new FormData();
     formData.append('file', data.file);
     formData.append('title', data.title);
-    if (data.modality_id) {
-      formData.append('modality_id', data.modality_id.toString());
-    }
     if (data.description) {
       formData.append('description', data.description);
     }
 
-    // Use fetch directly for multipart/form-data upload (apiClient uses JSON headers)
-    let token = keycloak.token ?? null;
-    if (keycloak.authenticated) {
-      try {
-        await keycloak.updateToken(30);
-        token = keycloak.token ?? null;
-      } catch {
-        keycloak.login();
-        throw new Error('Session expired, please log in again');
-      }
-    }
-    const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-
-    const response = await fetch('/api/admin/regulations', {
-      method: 'POST',
-      headers,
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Upload failed' }));
-      throw new Error(error.error || 'Failed to upload regulation');
-    }
-
-    return response.json();
+    return apiClient.post<Regulation>('/regulations/', formData);
   },
 
-  async update(id: number, data: RegulationUpdate): Promise<Regulation> {
-    return apiClient.put<Regulation>(`/regulations/${id}`, data);
-  },
-
-  async delete(id: number): Promise<void> {
-    return apiClient.delete(`/regulations/${id}`);
-  },
+  async delete(id: string): Promise<void> {
+    return apiClient.delete(`/regulations/${id}/`);
+  }
 };

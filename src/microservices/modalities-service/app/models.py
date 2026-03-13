@@ -316,6 +316,29 @@ class Team(Base):
             result["players"] = [player.to_dict() for player in self.players]
         return result
 
-
 # OutboxEvent model — schema-bound via shared factory
 OutboxEvent = create_outbox_model(Base, schema="modalities")
+
+class Regulation(Base):
+    """Represents a sport regulation document in the microservice"""
+    __tablename__ = "regulation"
+    __table_args__ = {"schema": "modalities"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    title = Column(Text, nullable=False)
+    description = Column(Text, nullable=True)
+    file_url = Column(Text, nullable=False)
+    
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), onupdate=lambda: datetime.now(timezone.utc))
+
+
+    def to_dict(self):
+        return {
+            "id": str(self.id),
+            "title": self.title,
+            "description": self.description,
+            "file_url": self.file_url,
+            "created_at": self.created_at.isoformat(),
+        }
+

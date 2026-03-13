@@ -5,6 +5,9 @@ Maps endpoints according to API_ENDPOINTS.md specification
 
 from django.urls import include, path
 
+# Reintroduzimos os teus imports (HEAD)
+from .views.regulations import RegulationListCreateView, RegulationDetailView
+
 app_name = "admin_api"
 
 urlpatterns = [
@@ -16,13 +19,24 @@ urlpatterns = [
     path("files/", include("admin_api.views.file_views")),
     # Course Management (RF2)
     path("courses/", include("admin_api.views.courses")),
-    # Regulation Management (RF2.3)
-    path("regulations/", include("admin_api.views.regulations")),
+    
+    # Regulation Management (RF2.3) - Tuas rotas mantidas
+    path(
+        "regulations/", 
+        RegulationListCreateView.as_view(), 
+        name="regulation-list"
+    ),
+    path(
+        "regulations/<uuid:regulation_id>/", 
+        RegulationDetailView.as_view(), 
+        name="regulation-detail"
+    ),
+    
     # Modality Management (RF3)
     path("modalities/", include("admin_api.views.modalities")),
     path("modality-types/", include("admin_api.views.modality_types")),
     # Nucleo Management
-    path("nucleos/", include("admin_api.views.nucleus")),
+    path("nucleos/", include("admin_api.views.nucleus")), # Corrigido para 'nucleus' conforme a dev
     # Tournament Management (RF3)
     path("tournaments/", include("admin_api.views.tournaments")),
     # Team Management (RF4)

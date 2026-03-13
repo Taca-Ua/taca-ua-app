@@ -22,3 +22,4 @@ reportlab==4.4.9
 -e /tmp/platform/taca-logging
 -e /tmp/platform/taca-outbox
 -e /tmp/platform/taca-messaging
+-e /tmp/platform/taca-storage

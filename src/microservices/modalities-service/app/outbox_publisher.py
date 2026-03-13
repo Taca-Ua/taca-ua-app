@@ -13,6 +13,7 @@ from .logger import logger
 from .models import OutboxEvent
 
 # Singleton instance used by main.py (lifespan) and event_helpers.py
+# Aceitamos a versão da DEV. O objeto OutboxPublisher agora vem do import acima.
 outbox_publisher = OutboxPublisher(
     outbox_model=OutboxEvent,
     session_factory=SessionLocal,

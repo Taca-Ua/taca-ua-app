@@ -61,13 +61,24 @@ export class ApiClient {
   }
 
   async post<T>(endpoint: string, data: unknown): Promise<T> {
+    const isFormData = data instanceof FormData;
+    
+    // Precisamos do await aqui para obter os headers de autenticação
+    const authHeader = await this.getAuthHeader();
+
+    const headers: Record<string, string> = {
+      ...authHeader,
+    };
+
+    // Se for FormData (ficheiro), o fetch define o Content-Type automaticamente com o boundary correto
+    if (!isFormData) {
+      headers['Content-Type'] = 'application/json';
+    }
+
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(await this.getAuthHeader()),
-      },
-      body: JSON.stringify(data),
+      headers,
+      body: isFormData ? (data as FormData) : JSON.stringify(data),
     });
 
     if (!response.ok) {

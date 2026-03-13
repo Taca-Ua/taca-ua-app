@@ -145,6 +145,10 @@ services:
       # Issuer must match the ``iss`` claim in tokens, which Keycloak stamps
       # using the public URL seen by the browser (through nginx).
       - KEYCLOAK_ISSUER=http://localhost/keycloak/realms/${KEYCLOAK_REALM:-taca-ua}
+      # CORINGA PARA PASSAR A MINHA PAGINA:
+      # - KEYCLOAK_ISSUER=http://localhost/keycloak/realms/taca-ua
+      # - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/keycloak
+      # - KEYCLOAK_REALM=taca-ua
       # Optional: uncomment to enforce audience (``aud``) verification.
       # - KEYCLOAK_AUDIENCE=competition-api-gateway
       # Dev auth bypass — set to "true" to skip Keycloak JWT validation.

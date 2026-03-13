@@ -1,3 +1,4 @@
+from .regulation_routes import router as regulation_router
 from .course_routes import router as course_router
 from .modality_routes import router as modality_router
 from .modality_type_routes import router as modality_type_router
@@ -14,4 +15,5 @@ __all__ = [
     "staff_router",
     "student_router",
     "team_router",
+    "regulation_router"
 ]

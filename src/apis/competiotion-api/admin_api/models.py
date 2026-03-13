@@ -660,3 +660,5 @@ class Journey(models.Model):
 
     def __str__(self):
         return f"Journey {self.number}"
+
+

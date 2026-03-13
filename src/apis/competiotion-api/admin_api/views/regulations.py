@@ -1,13 +1,13 @@
 """
-Regulation management views
+Regulation management views - Refactored to use Service Layer
 """
 
-from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from ..services.regulation_service import RegulationService
 from ..decorators import RoleRequiredMixin
 from ..serializers.regulations import (
     RegulationCreateSerializer,
@@ -15,54 +15,44 @@ from ..serializers.regulations import (
     RegulationUpdateSerializer,
 )
 
-
 @extend_schema_view(
     get=extend_schema(
         responses=RegulationListSerializer(many=True),
-        description="List all regulations",
+        description="List all regulations from database",
         tags=["Regulation Management"],
     ),
     post=extend_schema(
         request=RegulationCreateSerializer,
         responses=RegulationListSerializer,
-        description="Upload a new regulation",
+        description="Upload a new regulation to MinIO and save to database",
         tags=["Regulation Management"],
     ),
 )
 class RegulationListCreateView(RoleRequiredMixin, APIView):
     def get(self, request):
-        dummy_data = [
-            {
-                "id": 1,
-                "title": "Regulamento Futebol",
-                "description": "Regras do futebol TACA",
-                "modality_id": 1,
-                "file_url": "http://example.com/reg1.pdf",
-                "created_at": "2025-01-15T10:00:00Z",
-            },
-            {
-                "id": 2,
-                "title": "Regulamento Futsal",
-                "description": "Regras do futsal TACA",
-                "modality_id": 2,
-                "file_url": "http://example.com/reg2.pdf",
-                "created_at": "2025-01-20T10:00:00Z",
-            },
-        ]
-        return Response(dummy_data)
+        regulations = RegulationService.list_regulations()
+        serializer = RegulationListSerializer(regulations, many=True)
+        return Response(serializer.data)
 
     def post(self, request):
         serializer = RegulationCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        dummy_response = {
-            "id": 3,
-            "title": serializer.validated_data.get("title"),
-            "description": serializer.validated_data.get("description", ""),
-            "modality_id": serializer.validated_data.get("modality_id"),
-            "file_url": "http://example.com/reg3.pdf",
-            "created_at": "2025-12-01T12:00:00Z",
-        }
-        return Response(dummy_response, status=status.HTTP_201_CREATED)
+        
+        try:
+            regulation = RegulationService.create_regulation(
+                title=serializer.validated_data['title'],
+                file=serializer.validated_data.pop('file'),
+                description=serializer.validated_data.get('description', '')
+            )
+            
+            output_serializer = RegulationListSerializer(regulation)
+            return Response(output_serializer.data, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            return Response(
+                {"error": f"Operation failed: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 @extend_schema_view(
@@ -79,67 +69,32 @@ class RegulationListCreateView(RoleRequiredMixin, APIView):
     ),
     delete=extend_schema(
         responses={204: None},
-        description="Delete a regulation",
+        description="Delete a regulation from database and storage",
         tags=["Regulation Management"],
     ),
 )
 class RegulationDetailView(RoleRequiredMixin, APIView):
     def get(self, request, regulation_id):
-        # Mock data for testing - find the regulation by ID
-        all_regulations = [
-            {
-                "id": 1,
-                "title": "Regulamento Futebol",
-                "description": "Regras do futebol TACA",
-                "modality_id": 1,
-                "file_url": "http://example.com/reg1.pdf",
-                "created_at": "2025-01-15T10:00:00Z",
-            },
-            {
-                "id": 2,
-                "title": "Regulamento Futsal",
-                "description": "Regras do futsal TACA",
-                "modality_id": 2,
-                "file_url": "http://example.com/reg2.pdf",
-                "created_at": "2025-01-20T10:00:00Z",
-            },
-        ]
-
-        regulation = next(
-            (r for r in all_regulations if r["id"] == regulation_id), None
-        )
-
-        if regulation is None:
-            return Response(
-                {"error": "Regulation not found"}, status=status.HTTP_404_NOT_FOUND
-            )
-
-        return Response(regulation)
+        regulation = RegulationService.get_regulation(regulation_id)
+        serializer = RegulationListSerializer(regulation)
+        return Response(serializer.data)
 
     def put(self, request, regulation_id):
-        serializer = RegulationUpdateSerializer(data=request.data)
+        regulation = RegulationService.get_regulation(regulation_id)
+        serializer = RegulationUpdateSerializer(regulation, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        dummy_response = {
-            "id": regulation_id,
-            "title": serializer.validated_data.get(
-                "title", f"Regulation {regulation_id}"
-            ),
-            "description": serializer.validated_data.get("description", ""),
-            "modality_id": serializer.validated_data.get("modality_id"),
-            "file_url": f"http://example.com/reg{regulation_id}.pdf",
-            "created_at": "2025-12-01T12:00:00Z",
-        }
-        return Response(dummy_response)
+        
+        serializer.save()
+        
+        output_serializer = RegulationListSerializer(regulation)
+        return Response(output_serializer.data)
 
     def delete(self, request, regulation_id):
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-urlpatterns = [
-    path("", RegulationListCreateView.as_view(), name="regulation-list"),
-    path(
-        "<uuid:regulation_id>/",
-        RegulationDetailView.as_view(),
-        name="regulation-detail",
-    ),
-]
+        try:
+            RegulationService.delete_regulation(regulation_id)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to delete: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
