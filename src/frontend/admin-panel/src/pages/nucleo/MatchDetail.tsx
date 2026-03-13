@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import NucleoSidebar from '../../components/nucleo_navbar';
+import HelpTooltip from '../../components/HelpTooltip';
 import {
   matchesApi,
   type MatchDetail as MatchDetailData,
@@ -11,6 +12,7 @@ import {
 import type { Team } from '../../api/teams';
 import { tournamentsApi, type Tournament } from '../../api/tournaments';
 import { useNotification } from '../../contexts/NotificationProvider';
+import { btn } from '../../styles/buttonStyles';
 
 // ==================== Private Components ====================
 
@@ -85,7 +87,7 @@ const MatchInfoCard = ({ match, tournament }: { match: MatchDetailData; tourname
           )}
 
           <div>
-            <label className="block text-gray-600 text-sm mb-1">Estado</label>
+            <label className="block text-gray-600 text-sm mb-1">Estado <HelpTooltip text="Agendado: jogo ainda não começou. Em Curso: jogo a decorrer. Terminado: jogo concluído. Cancelado: jogo cancelado." className="ml-1" /></label>
             <div>{getStatusBadge(match.status)}</div>
           </div>
 
@@ -97,7 +99,7 @@ const MatchInfoCard = ({ match, tournament }: { match: MatchDetailData; tourname
           </div>
 
           <div>
-            <label className="block text-gray-600 text-sm mb-1">Local</label>
+            <label className="block text-gray-600 text-sm mb-1">Local <HelpTooltip text="Local físico onde o jogo vai decorrer, ex: Campo Municipal, Pavilhão Principal." className="ml-1" /></label>
             <div className="text-gray-800 font-medium">{match.location}</div>
           </div>
 
@@ -169,7 +171,7 @@ const TeamLineupCard = ({
           {canEdit && (
             <button
               onClick={onEdit}
-              className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md text-sm font-medium transition-colors"
+              className={`px-4 py-2 ${btn.primary} rounded-md text-sm font-medium transition-colors`}
             >
               Editar Convocatória
             </button>
@@ -319,7 +321,7 @@ const LineupEditorModal = ({
                   {isSelected && lineupEntry && (
                     <div className="ml-8 flex gap-4 items-center">
                       <div className="flex items-center gap-2">
-                        <label className="text-sm text-gray-600">Número:</label>
+                        <label className="text-sm text-gray-600">Número: <HelpTooltip text="Número da camisola do jogador neste jogo (1–99)." className="ml-1" /></label>
                         <input
                           type="number"
                           min="1"
@@ -353,13 +355,13 @@ const LineupEditorModal = ({
         <div className="flex gap-4">
           <button
             onClick={handleCancel}
-            className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+            className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md font-medium transition-colors`}
           >
             Cancelar
           </button>
           <button
             onClick={handleSave}
-            className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
+            className={`flex-1 px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors`}
           >
             Guardar
           </button>
@@ -519,7 +521,7 @@ const handleDownloadMatchSheet = async () => {
         <div className="max-w-7xl mx-auto">
           <button
             onClick={() => navigate(-1)}
-            className="mb-6 flex items-center text-teal-600 hover:text-teal-700 font-medium transition-colors group"
+            className="mb-6 flex items-center text-teal-600 hover:text-teal-700 font-medium transition-colors group focus:outline-none focus:ring-2 focus:ring-teal-400 rounded"
           >
             <svg
               className="w-5 h-5 mr-2 transform group-hover:-translate-x-1 transition-transform"

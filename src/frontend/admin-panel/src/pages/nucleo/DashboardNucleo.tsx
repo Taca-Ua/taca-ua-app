@@ -64,32 +64,35 @@ function DashboardNucleo() {
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div
+                <button
+                  type="button"
                   onClick={() => navigate('/nucleo/membros')}
-                  className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+                  className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <h2 className="text-xl font-semibold mb-2 text-teal-600">Membros</h2>
                   <p className="text-3xl font-bold text-gray-800">{stats.members}</p>
                   <p className="text-sm text-gray-500 mt-2">Membros registados</p>
-                </div>
+                </button>
 
-                <div
+                <button
+                  type="button"
                   onClick={() => navigate('/nucleo/equipas')}
-                  className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+                  className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <h2 className="text-xl font-semibold mb-2 text-teal-600">Equipas</h2>
                   <p className="text-3xl font-bold text-gray-800">{stats.teams}</p>
                   <p className="text-sm text-gray-500 mt-2">Equipas criadas</p>
-                </div>
+                </button>
 
-                <div
+                <button
+                  type="button"
                   onClick={() => navigate('/nucleo/jogos')}
-                  className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+                  className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <h2 className="text-xl font-semibold mb-2 text-teal-600">Jogos</h2>
                   <p className="text-3xl font-bold text-gray-800">{stats.matches}</p>
                   <p className="text-sm text-gray-500 mt-2">Total de jogos</p>
-                </div>
+                </button>
 
                 <div className="bg-white p-6 rounded-lg shadow-md">
                   <h2 className="text-xl font-semibold mb-2 text-orange-600">Próximos Jogos</h2>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import HelpTooltip from '../../components/HelpTooltip';
 import { useParams, useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../components/ConfirmModal';
 import Sidebar from '../../components/geral_navbar';
@@ -7,6 +8,7 @@ import { tournamentsApi, type TournamentDetail, type TournamentUpdate, type Tour
 import { teamsApi, type Team } from '../../api/teams';
 import { matchesApi, type Match, type MatchCreate, type ParticipantCreate } from '../../api/matches';
 import { studentsApi, type Student } from '../../api/members';
+import { btn } from '../../styles/buttonStyles';
 
 // Component to display tournament information
 const TournamentInfo = ({
@@ -79,13 +81,13 @@ const TournamentInfo = ({
       <div className="flex gap-4 pt-4">
         <button
           onClick={onEdit}
-          className="flex-1 px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
+          className={`flex-1 px-6 py-3 ${btn.primary} rounded-md font-medium transition-colors`}
         >
           Editar
         </button>
         <button
           onClick={onDelete}
-          className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium transition-colors"
+          className={`flex-1 px-6 py-3 ${btn.danger} rounded-md font-medium transition-colors`}
         >
           Eliminar
         </button>
@@ -95,7 +97,7 @@ const TournamentInfo = ({
         <div className="pt-4 border-t mt-4">
           <button
             onClick={onActivate}
-            className="w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-md font-medium transition-colors"
+            className={`w-full px-6 py-3 ${btn.success} rounded-md font-medium transition-colors`}
           >
             Ativar Torneio
           </button>
@@ -106,7 +108,7 @@ const TournamentInfo = ({
         <div className="pt-4 border-t mt-4">
           <button
             onClick={onFinish}
-            className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors"
+            className={`w-full px-6 py-3 ${btn.infoStrong} rounded-md font-medium transition-colors`}
           >
             Finalizar Torneio
           </button>
@@ -172,7 +174,7 @@ const EditTournamentModal = ({
           </div>
 
           <div>
-            <label className="block text-gray-700 font-medium mb-2">Data de Início</label>
+            <label className="block text-gray-700 font-medium mb-2">Data de Início <HelpTooltip text="Data em que o torneio começa oficialmente. Após esta data o torneio pode ser ativado e os jogos calendarizados." className="ml-1" /></label>
             <input
               type="date"
               value={startDate}
@@ -186,14 +188,14 @@ const EditTournamentModal = ({
           <button
             onClick={onClose}
             disabled={saving}
-            className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md disabled:opacity-50"
+            className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md disabled:opacity-50`}
           >
             Cancelar
           </button>
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md disabled:opacity-50"
+            className={`flex-1 px-4 py-2 ${btn.primary} rounded-md disabled:opacity-50`}
           >
             {saving ? 'A guardar...' : 'Guardar'}
           </button>
@@ -323,7 +325,7 @@ const TournamentCompetitors = ({
             setStudentSearchTerm('');
             setSelectedCompetitorType('team');
           }}
-          className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
+          className={`px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors`}
         >
           + Adicionar Competidor
         </button>
@@ -354,7 +356,7 @@ const TournamentCompetitors = ({
                 </div>
                 <button
                   onClick={() => handleRemoveCompetitor(competitor, name || 'Desconhecido')}
-                  className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-md text-sm transition-colors"
+                  className={`px-3 py-1 ${btn.dangerLight} rounded-md text-sm transition-colors`}
                 >
                   Remover
                 </button>
@@ -372,7 +374,7 @@ const TournamentCompetitors = ({
             <div className="space-y-4 mb-6">
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
-                  Tipo <span className="text-red-500">*</span>
+                  Tipo <HelpTooltip text="Equipa: inscrição de uma equipa como unidade. Atleta: inscrição individual de um estudante membro do núcleo." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={selectedCompetitorType}
@@ -448,14 +450,14 @@ const TournamentCompetitors = ({
               <button
                 onClick={() => setShowAddModal(false)}
                 disabled={loading}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md disabled:opacity-50"
+                className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md disabled:opacity-50`}
               >
                 Cancelar
               </button>
               <button
                 onClick={handleAddCompetitor}
                 disabled={loading}
-                className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md disabled:opacity-50"
+                className={`flex-1 px-4 py-2 ${btn.primary} rounded-md disabled:opacity-50`}
               >
                 {loading ? 'A adicionar...' : 'Adicionar'}
               </button>
@@ -652,14 +654,14 @@ const FinishTournamentModal = ({
           <button
             onClick={onClose}
             disabled={finishing}
-            className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md disabled:opacity-50"
+            className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md disabled:opacity-50`}
           >
             Cancelar
           </button>
           <button
             onClick={handleSubmit}
             disabled={finishing}
-            className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50"
+            className={`flex-1 px-4 py-2 ${btn.infoStrong} rounded-md disabled:opacity-50`}
           >
             {finishing ? 'A finalizar...' : 'Finalizar Torneio'}
           </button>
@@ -865,7 +867,7 @@ const TournamentMatches = ({
               resetForm();
             }}
             disabled={tournament.competitors.length < 2}
-            className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
             title={tournament.competitors.length < 2 ? 'É necessário pelo menos 2 competidores' : ''}
           >
             + Criar Jogo
@@ -880,10 +882,11 @@ const TournamentMatches = ({
       ) : (
         <div className="space-y-3">
           {filteredMatches.map((match) => (
-            <div
+            <button
               key={match.id}
+              type="button"
               onClick={() => navigate(`/geral/jogos/${match.id}`)}
-              className="p-4 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
+              className="w-full text-left p-4 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
             >
               <div className="flex justify-between items-start mb-2">
                 <div className="flex-1">
@@ -911,14 +914,15 @@ const TournamentMatches = ({
 
                 <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                   <button
+                    type="button"
                     onClick={() => handleDeleteMatch(match.id)}
-                    className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-md text-sm transition-colors"
+                    className={`px-3 py-1 ${btn.dangerLight} rounded-md text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-red-400`}
                   >
                     Eliminar
                   </button>
                 </div>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       )}
@@ -932,12 +936,12 @@ const TournamentMatches = ({
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <label className="block text-gray-700 font-medium">
-                    Participantes <span className="text-red-500">*</span>
+                    Participantes <HelpTooltip text="Selecione os competidores que vão disputar este jogo. São necessários no mínimo 2 participantes. Só podem ser selecionados competidores já inscritos no torneio." className="ml-1" /> <span className="text-red-500">*</span>
                   </label>
                   <button
                     type="button"
                     onClick={addParticipantSlot}
-                    className="text-sm px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors"
+                    className={`text-sm px-3 py-1 ${btn.info} rounded-md transition-colors`}
                   >
                     + Adicionar Participante
                   </button>
@@ -968,7 +972,7 @@ const TournamentMatches = ({
                         <button
                           type="button"
                           onClick={() => removeParticipantSlot(index)}
-                          className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors"
+                          className={`px-3 py-2 ${btn.dangerLight} rounded-md transition-colors`}
                           title="Remover participante"
                         >
                           ✕
@@ -984,7 +988,7 @@ const TournamentMatches = ({
 
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
-                  Local <span className="text-red-500">*</span>
+                  Local <HelpTooltip text="Local onde o jogo vai decorrer, ex: Campo Municipal, Pavilhão Principal. Esta informação é visível aos participantes." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -1012,14 +1016,14 @@ const TournamentMatches = ({
               <button
                 onClick={() => setShowCreateModal(false)}
                 disabled={loading}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md disabled:opacity-50"
+                className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md disabled:opacity-50`}
               >
                 Cancelar
               </button>
               <button
                 onClick={handleCreateMatch}
                 disabled={loading}
-                className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md disabled:opacity-50"
+                className={`flex-1 px-4 py-2 ${btn.primary} rounded-md disabled:opacity-50`}
               >
                 {loading ? 'A criar...' : 'Criar'}
               </button>
@@ -1161,7 +1165,7 @@ const TorneioDetails = () => {
             <h1 className="text-3xl font-bold text-gray-800">Detalhes do Torneio</h1>
             <button
               onClick={() => navigate('/geral/torneios')}
-              className="px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+              className={`px-6 py-3 ${btn.secondary} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400`}
             >
               Voltar
             </button>

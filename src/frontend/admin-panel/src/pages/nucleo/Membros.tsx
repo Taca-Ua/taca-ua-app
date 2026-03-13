@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import HelpTooltip from '../../components/HelpTooltip';
 import { useNavigate } from 'react-router-dom';
 import NucleoSidebar from '../../components/nucleo_navbar';
 import {
@@ -9,6 +10,7 @@ import {
 } from '../../api/members';
 import { coursesApi, type Course } from '../../api/courses';
 import { useNotification } from '../../contexts/NotificationProvider';
+import { btn } from '../../styles/buttonStyles';
 
 type CombinedMember =
   | { memberType: 'participant'; data: Student }
@@ -241,7 +243,7 @@ function Membros() {
 
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-2 rounded-md font-medium transition-colors flex items-center gap-2 justify-center sm:justify-start"
+                className={`${btn.primary} px-6 py-2 rounded-md font-medium transition-colors flex items-center gap-2 justify-center sm:justify-start focus:outline-none focus:ring-2 focus:ring-teal-500`}
               >
                 <span>+</span>
                 Adicionar Membro
@@ -270,10 +272,11 @@ function Membros() {
               ) : (
                 <div className="space-y-3 max-h-[600px] overflow-y-auto">
                   {filteredMembers.map((member) => (
-                    <div
+                    <button
+                      type="button"
                       key={`${member.memberType}-${member.data.id}`}
                       onClick={() => handleMemberClick(member)}
-                      className="bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors cursor-pointer"
+                      className="w-full text-left bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
                     >
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-3">
@@ -286,7 +289,7 @@ function Membros() {
                           {getDisplayInfo(member)}
                         </span>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
@@ -317,7 +320,7 @@ function Membros() {
 
               <div>
                 <label htmlFor="memberType" className="block text-gray-700 font-medium mb-2">
-                  Tipo <span className="text-red-500">*</span>
+                  Tipo <HelpTooltip text="Participante: estudante que compete nas provas desportivas. Staff: pessoal de apoio (treinadores, dirigentes) sem competição direta." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="memberType"
@@ -334,7 +337,7 @@ function Membros() {
                 <>
                   <div>
                     <label htmlFor="studentNumber" className="block text-gray-700 font-medium mb-2">
-                      Número de Estudante <span className="text-red-500">*</span>
+                      Número de Estudante <HelpTooltip text="Número mecanológráfico (NMEC) do estudante na Universidade de Aveiro. Utilizado para verificação de elegibilidade." className="ml-1" /> <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -347,7 +350,7 @@ function Membros() {
                   </div>
                   <div>
                     <label htmlFor="courseId" className="block text-gray-700 font-medium mb-2">
-                      Curso <span className="text-red-500">*</span>
+                      Curso <HelpTooltip text="Curso académico do estudante na Universidade de Aveiro. Utilizado para organização e filtros de equipas." className="ml-1" /> <span className="text-red-500">*</span>
                     </label>
                     <select
                       id="courseId"
@@ -369,7 +372,7 @@ function Membros() {
               {memberType === 'staff' && (
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">
-                    Identificação <span className="text-red-500">*</span>
+                    Identificação <HelpTooltip text="Escolha como identificar o colaborador: por contacto telefónico ou número de staff. Pelo menos um é obrigatório para o registo." className="ml-1" /> <span className="text-red-500">*</span>
                   </label>
                   <div className="flex gap-4 mb-3">
                     <label className="flex items-center">
@@ -429,13 +432,13 @@ function Membros() {
                   setStaffNumber('');
                   setIdentifierType('contact');
                 }}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+                className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400`}
               >
                 Cancelar
               </button>
               <button
                 onClick={handleAddMember}
-                className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
+                className={`flex-1 px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500`}
               >
                 Adicionar
               </button>

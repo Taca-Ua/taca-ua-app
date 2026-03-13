@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import HelpTooltip from '../../components/HelpTooltip';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { tournamentsApi, type Tournament, type TournamentCreate } from '../../api/tournaments';
 import { modalitiesApi, type Modality } from '../../api/modalities';
+import { btn } from '../../styles/buttonStyles';
 
 
 const TorneiosCreateModal = ({ isOpen, onClose, onCreate, modalities, setModalities }: {
@@ -64,7 +66,7 @@ const TorneiosCreateModal = ({ isOpen, onClose, onCreate, modalities, setModalit
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="font-medium">Nome do Torneio <span className="text-red-500">*</span></label>
+            <label className="font-medium">Nome do Torneio <HelpTooltip text="Nome identificador do torneio para a época atual. Deve ser descritivo e único para facilitar a identificação." className="ml-1" /> <span className="text-red-500">*</span></label>
             <input
               type="text"
               value={name}
@@ -75,7 +77,7 @@ const TorneiosCreateModal = ({ isOpen, onClose, onCreate, modalities, setModalit
           </div>
 
           <div>
-            <label className="font-medium">Modalidade <span className="text-red-500">*</span></label>
+            <label className="font-medium">Modalidade <HelpTooltip text="Desporto ou atividade para o qual este torneio é organizado. A modalidade determina as regras de inscrição (equipas vs atletas)." className="ml-1" /> <span className="text-red-500">*</span></label>
             <select
               value={modalityId}
               onChange={(e) => setModalityId(e.target.value)}
@@ -155,7 +157,7 @@ const Torneios = () => {
 
           <button
             onClick={() => setIsModalOpen(true)}
-            className="px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md"
+            className={`px-6 py-3 ${btn.primary} rounded-md`}
           >
             + Criar Torneio
           </button>
@@ -211,10 +213,11 @@ const Torneios = () => {
                 (statusFilter === '' || t.status === statusFilter)
               )
               .map(t => (
-              <div
+              <button
                 key={t.id}
+                type="button"
                 onClick={() => navigate(`/geral/torneios/${t.id}`)}
-                className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer flex justify-between items-center"
+                className="w-full text-left px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-teal-500"
               >
                 <div className="font-medium text-gray-800">{t.name}</div>
                 <div className="flex items-center gap-3 text-sm">
@@ -229,7 +232,7 @@ const Torneios = () => {
                     {t.status === 'active' ? 'Ativo' : t.status === 'draft' ? 'Rascunho' : t.status === 'finished' ? 'Finalizado' : t.status}
                   </span>
                 </div>
-              </div>
+              </button>
             ))
           ) : (
             <p className="text-gray-500 text-center">Nenhum torneio encontrado.</p>

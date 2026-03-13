@@ -1,16 +1,21 @@
 import { useEffect, useState } from "react";
+import HelpTooltip from '../../components/HelpTooltip';
 import ConfirmModal from "../../components/ConfirmModal";
 import Sidebar from "../../components/geral_navbar";
 import { modalityTypesApi, type ModalityType } from "../../api/modality-types";
 import { useNotification } from '../../contexts/NotificationProvider';
+import { btn } from '../../styles/buttonStyles';
 
 // Types for the scoring format structure
 interface EscalaoRow {
   escalao: string;
   minParticipants: number | null;
   maxParticipants: number | null;
-  points: number[];
+  points: string;
 }
+
+const parsePoints = (raw: string): number[] =>
+  raw.split(/[\s,]+/).map(p => parseInt(p.trim())).filter(p => !isNaN(p));
 
 
 const FormatosPontuacao = () => {
@@ -30,7 +35,7 @@ const FormatosPontuacao = () => {
   const [formatName, setFormatName] = useState('');
   const [formatDescription, setFormatDescription] = useState('');
   const [escaloes, setEscaloes] = useState<EscalaoRow[]>([
-    { escalao: 'A', minParticipants: null, maxParticipants: null, points: [] }
+    { escalao: 'A', minParticipants: null, maxParticipants: null, points: '' }
   ]);
 
 useEffect(() => {
@@ -58,7 +63,7 @@ useEffect(() => {
     const nextLetter = letters[escaloes.length] || '';
     setEscaloes([
       ...escaloes,
-      { escalao: nextLetter, minParticipants: null, maxParticipants: null, points: [] }
+      { escalao: nextLetter, minParticipants: null, maxParticipants: null, points: '' }
     ]);
   };
 
@@ -68,13 +73,7 @@ useEffect(() => {
 
   const handleEscalaoChange = (index: number, field: keyof EscalaoRow, value: string | number | null) => {
     const newEscaloes = [...escaloes];
-    if (field === 'points') {
-      // Parse points as comma or space separated numbers
-      const pointsArray = String(value).split(/[\s,]+/).map(p => parseInt(p.trim())).filter(p => !isNaN(p));
-      newEscaloes[index] = { ...newEscaloes[index], points: pointsArray };
-    } else {
-      newEscaloes[index] = { ...newEscaloes[index], [field]: value };
-    }
+    newEscaloes[index] = { ...newEscaloes[index], [field]: value };
     setEscaloes(newEscaloes);
   };
 
@@ -95,7 +94,7 @@ useEffect(() => {
         notify('Todos os escalões devem ter um nome.', 'error');
         return;
       }
-      if (esc.points.length === 0) {
+      if (parsePoints(esc.points).length === 0) {
         notify('Todos os escalões devem ter pontuações definidas.', 'error');
         return;
       }
@@ -103,27 +102,18 @@ useEffect(() => {
 
     try {
 
-    //   TODO: API call to create scoring format
       const newFormat = await modalityTypesApi.create({
         name: formatName,
         description: formatDescription || undefined,
-        escaloes: escaloes,
+        escaloes: escaloes.map(esc => ({ ...esc, points: parsePoints(esc.points) })),
       });
-
-    //   const newFormat: ModalityType = {
-    //     id: Date.now().toString(),
-    //     name: formatName,
-    //     description: formatDescription || undefined,
-    //     escaloes: escaloes,
-    //     created_at: new Date().toISOString(),
-    //   };
 
       setModalityTypes([...scoringFormats, newFormat]);
 
       // Reset form
       setFormatName('');
       setFormatDescription('');
-      setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: [] }]);
+      setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: '' }]);
       setIsCreateModalOpen(false);
     } catch (err) {
       console.error('Failed to create scoring format:', err);
@@ -140,7 +130,7 @@ useEffect(() => {
     setSelectedFormat(format);
     setFormatName(format.name);
     setFormatDescription(format.description || '');
-    setEscaloes(format.escaloes);
+    setEscaloes(format.escaloes.map(esc => ({ ...esc, points: esc.points.join(' ') })));
     setIsViewModalOpen(false);
     setIsEditModalOpen(true);
   };
@@ -162,7 +152,7 @@ useEffect(() => {
         notify('Todos os escalões devem ter um nome.', 'error');
         return;
       }
-      if (esc.points.length === 0) {
+      if (parsePoints(esc.points).length === 0) {
         notify('Todos os escalões devem ter pontuações definidas.', 'error');
         return;
       }
@@ -174,7 +164,7 @@ useEffect(() => {
       const updatedFormat = await modalityTypesApi.update(selectedFormat!.id, {
         name: formatName,
         description: formatDescription || undefined,
-        escaloes: escaloes,
+        escaloes: escaloes.map(esc => ({ ...esc, points: parsePoints(esc.points) })),
       });
 
     //   const updatedFormat: ModalityType = {
@@ -192,7 +182,7 @@ useEffect(() => {
       // Reset form
       setFormatName('');
       setFormatDescription('');
-      setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: [] }]);
+      setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: '' }]);
       setSelectedFormat(null);
       setIsEditModalOpen(false);
       notify('Formato de prova atualizado com sucesso!', 'success');
@@ -248,7 +238,7 @@ useEffect(() => {
 
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="px-6 py-3 bg-teal-500 text-white rounded-md hover:bg-teal-600 transition-colors"
+            className={`px-6 py-3 ${btn.primary} rounded-md transition-colors`}
           >
             + Adicionar Formato
           </button>
@@ -262,9 +252,10 @@ useEffect(() => {
             </div>
           ) : scoringFormats.length > 0 ? (
             scoringFormats.map(format => (
-              <div
+              <button
                 key={format.id}
-                className="p-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer flex justify-between items-center transition-colors"
+                type="button"
+                className="w-full text-left p-4 bg-gray-100 rounded-md hover:bg-gray-200 flex justify-between items-center transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
                 onClick={() => handleViewFormat(format)}
               >
                 <div>
@@ -279,7 +270,7 @@ useEffect(() => {
                 <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
-              </div>
+              </button>
             ))
           ) : (
             <p className="text-gray-500 text-center py-8">Nenhum formato de prova encontrado.</p>
@@ -295,7 +286,7 @@ useEffect(() => {
             <div className="space-y-6">
               <div>
                 <label className="block font-medium mb-2">
-                  Nome do Formato <span className="text-red-500">*</span>
+                  Nome do Formato <HelpTooltip text="Nome único que identifica este conjunto de regras de pontuação. Ex: 'Modalidades Coletivas Recorrentes'." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -320,11 +311,11 @@ useEffect(() => {
               <div>
                 <div className="flex justify-between items-center mb-3">
                   <label className="block font-medium">
-                    Escalões <span className="text-red-500">*</span>
+                    Escalões <HelpTooltip text="Categorias de participação dentro do formato (ex: A, B, C). Cada escalão tem os seus próprios limites de participantes e tabela de pontuações." className="ml-1" /> <span className="text-red-500">*</span>
                   </label>
                   <button
                     onClick={handleAddEscalao}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm"
+                    className={`px-4 py-2 ${btn.info} rounded-md transition-colors text-sm`}
                   >
                     + Adicionar Escalão
                   </button>
@@ -338,7 +329,7 @@ useEffect(() => {
                         {escaloes.length > 1 && (
                           <button
                             onClick={() => handleRemoveEscalao(index)}
-                            className="text-red-500 hover:text-red-700"
+                            className="text-red-500 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-400 rounded"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -349,7 +340,7 @@ useEffect(() => {
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                         <div>
-                          <label className="block text-sm font-medium mb-1">Nome do Escalão</label>
+                          <label className="block text-sm font-medium mb-1">Nome do Escalão <HelpTooltip text="Identificador do escalão, tipicamente uma letra (A, B, C) ou nome descritivo." className="ml-1" /></label>
                           <input
                             type="text"
                             className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -360,7 +351,7 @@ useEffect(() => {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium mb-1">Mín. Participantes</label>
+                          <label className="block text-sm font-medium mb-1">Mín. Participantes <HelpTooltip text="Número mínimo de equipas/participantes necessários para este escalão se realizar. Deixe vazio se não aplicar." className="ml-1" /></label>
                           <input
                             type="number"
                             className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -371,7 +362,7 @@ useEffect(() => {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium mb-1">Máx. Participantes</label>
+                          <label className="block text-sm font-medium mb-1">Máx. Participantes <HelpTooltip text="Número máximo de equipas/participantes permitidos neste escalão. Deixe vazio se não aplicar." className="ml-1" /></label>
                           <input
                             type="number"
                             className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -384,18 +375,15 @@ useEffect(() => {
 
                       <div>
                         <label className="block text-sm font-medium mb-1">
-                          Pontuações (1º, 2º, 3º, ...) <span className="text-red-500">*</span>
+                          Pontuações (1º, 2º, 3º, ...) <HelpTooltip text="Pontos atribuídos por posição final. O 1º valor é para o 1º lugar, o 2º para o 2º lugar, etc. Separe por espaços ou vírgulas." className="ml-1" position="top" /> <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
                           className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
                           placeholder="Ex: 140 130 120 110 90 80 70 60 40 30 20 10"
-                          value={esc.points.join(' ')}
+                          value={esc.points}
                           onChange={e => handleEscalaoChange(index, 'points', e.target.value)}
                         />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Separe os valores por espaço ou vírgula. Ordem: 1º lugar, 2º lugar, 3º lugar, etc.
-                        </p>
                       </div>
                     </div>
                   ))}
@@ -405,18 +393,18 @@ useEffect(() => {
 
             <div className="flex gap-4 mt-6">
               <button
-                className="flex-1 bg-gray-300 py-2 rounded-md hover:bg-gray-400 transition-colors"
+                className={`flex-1 ${btn.secondary} py-2 rounded-md`}
                 onClick={() => {
                   setIsCreateModalOpen(false);
                   setFormatName('');
                   setFormatDescription('');
-                  setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: [] }]);
+                  setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: '' }]);
                 }}
               >
                 Cancelar
               </button>
               <button
-                className="flex-1 bg-teal-500 py-2 text-white rounded-md hover:bg-teal-600 transition-colors"
+                className={`flex-1 ${btn.primary} py-2 rounded-md transition-colors`}
                 onClick={handleCreateFormat}
               >
                 Criar Formato
@@ -433,7 +421,7 @@ useEffect(() => {
               <h2 className="text-2xl font-bold">{selectedFormat.name}</h2>
               <button
                 onClick={() => setIsViewModalOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 rounded"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -505,19 +493,19 @@ useEffect(() => {
             <div className="flex gap-4 pt-4 border-t">
               <button
                 onClick={handleDeleteFormat}
-                className="px-6 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                className={`px-6 py-2 ${btn.dangerLight} rounded transition-colors`}
               >
                 Eliminar
               </button>
               <button
                 onClick={() => handleEditFormat(selectedFormat)}
-                className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                className={`px-6 py-2 ${btn.info} rounded transition-colors`}
               >
                 Editar
               </button>
               <button
                 onClick={() => setIsViewModalOpen(false)}
-                className="flex-1 px-6 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+                className={`flex-1 px-6 py-2 ${btn.secondaryAlt} rounded transition-colors`}
               >
                 Fechar
               </button>
@@ -534,7 +522,7 @@ useEffect(() => {
             <div className="space-y-6">
               <div>
                 <label className="block font-medium mb-2">
-                  Nome do Formato <span className="text-red-500">*</span>
+                  Nome do Formato <HelpTooltip text="Nome único que identifica este conjunto de regras de pontuação. Ex: 'Modalidades Coletivas Recorrentes'." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -559,7 +547,7 @@ useEffect(() => {
               <div>
                 <div className="flex justify-between items-center mb-3">
                   <label className="block font-medium">
-                    Escalões <span className="text-red-500">*</span>
+                    Escalões <HelpTooltip text="Categorias de participação dentro do formato (ex: A, B, C). Cada escalão tem os seus próprios limites de participantes e tabela de pontuações." className="ml-1" /> <span className="text-red-500">*</span>
                   </label>
                 </div>
 
@@ -571,7 +559,7 @@ useEffect(() => {
                         {escaloes.length > 1 && (
                           <button
                             onClick={() => handleRemoveEscalao(index)}
-                            className="text-red-500 hover:text-red-700"
+                            className="text-red-500 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-400 rounded"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -582,7 +570,7 @@ useEffect(() => {
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                         <div>
-                          <label className="block text-sm font-medium mb-1">Nome do Escalão</label>
+                          <label className="block text-sm font-medium mb-1">Nome do Escalão <HelpTooltip text="Identificador do escalão, tipicamente uma letra (A, B, C) ou nome descritivo." className="ml-1" /></label>
                           <input
                             type="text"
                             className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -593,7 +581,7 @@ useEffect(() => {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium mb-1">Mín. Participantes</label>
+                          <label className="block text-sm font-medium mb-1">Mín. Participantes <HelpTooltip text="Número mínimo de equipas/participantes necessários para este escalão se realizar. Deixe vazio se não aplicar." className="ml-1" /></label>
                           <input
                             type="number"
                             className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -604,7 +592,7 @@ useEffect(() => {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium mb-1">Máx. Participantes</label>
+                          <label className="block text-sm font-medium mb-1">Máx. Participantes <HelpTooltip text="Número máximo de equipas/participantes permitidos neste escalão. Deixe vazio se não aplicar." className="ml-1" /></label>
                           <input
                             type="number"
                             className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -617,24 +605,21 @@ useEffect(() => {
 
                       <div>
                         <label className="block text-sm font-medium mb-1">
-                          Pontuações (1º, 2º, 3º, ...) <span className="text-red-500">*</span>
+                          Pontuações (1º, 2º, 3º, ...) <HelpTooltip text="Pontos atribuídos por posição final. O 1º valor é para o 1º lugar, o 2º para o 2º lugar, etc. Separe por espaços ou vírgulas." className="ml-1" position="top" /> <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
                           className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
                           placeholder="Ex: 140 130 120 110 90 80 70 60 40 30 20 10"
-                          value={esc.points.join(' ')}
+                          value={esc.points}
                           onChange={e => handleEscalaoChange(index, 'points', e.target.value)}
                         />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Separe os valores por espaço ou vírgula. Ordem: 1º lugar, 2º lugar, 3º lugar, etc.
-                        </p>
                       </div>
                     </div>
                   ))}
 				  <button
 					onClick={handleAddEscalao}
-					className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm"
+					className={`px-4 py-2 ${btn.info} rounded-md transition-colors text-sm`}
 				  >
 					+ Adicionar Escalão
 				  </button>
@@ -644,19 +629,19 @@ useEffect(() => {
 
             <div className="flex gap-4 mt-6">
               <button
-                className="flex-1 bg-gray-300 py-2 rounded-md hover:bg-gray-400 transition-colors"
+                className={`flex-1 ${btn.secondary} py-2 rounded-md`}
                 onClick={() => {
                   setIsEditModalOpen(false);
                   setFormatName('');
                   setFormatDescription('');
-                  setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: [] }]);
+                  setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: '' }]);
                   setSelectedFormat(null);
                 }}
               >
                 Cancelar
               </button>
               <button
-                className="flex-1 bg-teal-500 py-2 text-white rounded-md hover:bg-teal-600 transition-colors"
+                className={`flex-1 ${btn.primary} py-2 rounded-md transition-colors`}
                 onClick={handleUpdateFormat}
               >
                 Guardar Alterações

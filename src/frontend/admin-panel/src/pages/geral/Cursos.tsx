@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react';
+import HelpTooltip from '../../components/HelpTooltip';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { coursesApi, type Course } from '../../api/courses';
 import { nucleosApi, type Nucleo } from '../../api/nucleos';
+import { btn } from '../../styles/buttonStyles';
 
 const CourseEntry = (course: Course) => {
   const navigate = useNavigate();
 
   return (
-    <div
-      key={course.id}
+    <button
+      type="button"
       onClick={() => navigate(`/geral/cursos/${course.id}`)}
-      className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer transition-colors flex justify-between items-center"
+      className="w-full text-left px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-teal-500"
     >
       <div className="flex items-center gap-4">
         <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center border-2 border-teal-500 flex-shrink-0">
@@ -25,7 +27,7 @@ const CourseEntry = (course: Course) => {
         </div>
       </div>
       <span className="text-gray-500 text-sm">{course.nucleo.name}</span>
-    </div>
+    </button>
   );
 };
 
@@ -131,7 +133,7 @@ const Cursos = () => {
             <h1 className="text-3xl font-bold text-gray-800">Cursos</h1>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors flex items-center gap-2"
+              className={`px-6 py-3 ${btn.primary} rounded-md font-medium transition-colors flex items-center gap-2`}
             >
               <span>+</span>
               Adicionar Curso
@@ -204,7 +206,7 @@ const Cursos = () => {
 
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
-                  Abreviatura <span className="text-red-500">*</span>
+                  Abreviatura <HelpTooltip text="Código curto do curso, ex: MECT, LEI, LECI. Utilizado como identificador visual no sistema e nos perfis de equipa." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -217,7 +219,7 @@ const Cursos = () => {
 
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
-                  Núcleo <span className="text-red-500">*</span>
+                  Núcleo <HelpTooltip text="Associação académica (núcleo) a que este curso pertence. Determina qual administrador de núcleo pode gerir este curso." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={selectedNucleoId}
@@ -242,13 +244,13 @@ const Cursos = () => {
                   setNewCourseAbbreviation('');
                   setSelectedNucleoId('');
                 }}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+                className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md font-medium transition-colors`}
               >
                 Cancelar
               </button>
               <button
                 onClick={handleAddCourse}
-                className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
+                className={`flex-1 px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors`}
               >
                 Adicionar
               </button>

@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
+import HelpTooltip from '../../components/HelpTooltip';
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/geral_navbar";
 import { useNotification } from "../../contexts/NotificationProvider";
 import { modalitiesApi, type Modality } from "../../api/modalities";
 import { modalityTypesApi, type ModalityTypeMinimal } from "../../api/modality-types";
+import { btn } from '../../styles/buttonStyles';
 
 const MoadlitiesList = (modalities: Modality[]) => {
   if (modalities.length === 0) {
@@ -17,16 +19,16 @@ const MoadlitiesList = (modalities: Modality[]) => {
   const ModalityEntry = (mod: Modality) => {
     const navigate = useNavigate();
     return (
-      <div
-        key={mod.id}
+      <button
+        type="button"
         onClick={() => navigate(`/geral/modalidades/${mod.id}`)}
-        className="px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer transition-colors flex justify-between items-center"
+        className="w-full text-left px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-teal-500"
       >
         <span className="text-gray-800 font-medium">{mod.name}</span>
         <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
           {mod.modality_type.name}
         </span>
-      </div>
+      </button>
     );
   };
 
@@ -122,7 +124,7 @@ const CreateModalityModal = ({
 
           <div>
             <label className="block text-gray-700 font-medium mb-2">
-              Tipo <span className="text-red-500">*</span>
+              Tipo <HelpTooltip text="Classifica a modalidade como individual (atletas competem individualmente, ex: atletismo) ou coletiva (equipas competem entre si, ex: futebol)." className="ml-1" /> <span className="text-red-500">*</span>
             </label>
             <select
               value={modalityType}
@@ -146,13 +148,13 @@ const CreateModalityModal = ({
               setNewModalityName("");
               setModalityType("");
             }}
-            className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition-colors"
+            className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md font-medium transition-colors`}
           >
             Cancelar
           </button>
           <button
             onClick={handleAddModality}
-            className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors"
+            className={`flex-1 px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors`}
           >
             Adicionar
           </button>
@@ -213,7 +215,7 @@ const Modalities = () => {
             <h1 className="text-3xl font-bold text-gray-800">Modalidades</h1>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md font-medium transition-colors flex items-center gap-2"
+              className={`px-6 py-3 ${btn.primary} rounded-md font-medium transition-colors flex items-center gap-2`}
             >
               <span>+</span>
               Adicionar Modalidade

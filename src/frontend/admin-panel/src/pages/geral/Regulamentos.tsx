@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
+import HelpTooltip from '../../components/HelpTooltip';
 import ConfirmModal from "../../components/ConfirmModal";
 import Sidebar from "../../components/geral_navbar";
 import { regulationsApi, type Regulation, type RegulationCreate } from '../../api/regulations';
 import { modalitiesApi, type Modality } from '../../api/modalities';
 import { useNotification } from '../../contexts/NotificationProvider';
+import { btn } from '../../styles/buttonStyles';
 
 const Regulamentos = () => {
   const [regulations, setRegulations] = useState<Regulation[]>([]);
@@ -131,7 +133,7 @@ const Regulamentos = () => {
 
           <button
             onClick={() => setIsUploadModalOpen(true)}
-            className="px-6 py-3 bg-teal-500 text-white rounded-md hover:bg-teal-600"
+            className={`px-6 py-3 ${btn.primary} rounded-md`}
           >
             + Adicionar Regulamento
           </button>
@@ -193,7 +195,7 @@ const Regulamentos = () => {
             <div className="space-y-4">
 
               <div>
-                <label className="font-medium">Título<span className="text-red-500">*</span></label>
+                <label className="font-medium">Título <HelpTooltip text="Nome identificador do documento regulamentar. Será exibido na listagem de regulamentos do sistema." className="ml-1" /><span className="text-red-500">*</span></label>
                 <input
                   className="border px-3 py-2 rounded-md w-full"
                   value={title}
@@ -202,7 +204,7 @@ const Regulamentos = () => {
               </div>
 
               <div>
-                <label className="font-medium">Modalidade</label>
+                <label className="font-medium">Modalidade <HelpTooltip text="Modalidade a que este regulamento se aplica. Selecione 'Nenhuma' para um regulamento geral que se aplica a toda a competição." className="ml-1" /></label>
                 <select
                   className="border px-3 py-2 rounded-md w-full bg-white"
                   value={modalityId}
@@ -225,7 +227,7 @@ const Regulamentos = () => {
               </div>
 
               <div>
-                <label className="font-medium">Ficheiro<span className="text-red-500">*</span></label>
+                <label className="font-medium">Ficheiro <HelpTooltip text="Documento com as regras da modalidade ou competição. Formato recomendado: PDF. O ficheiro ficará disponível para download pelos utilizadores." className="ml-1" /><span className="text-red-500">*</span></label>
                 <input
                   type="file"
                   className="border px-3 py-2 rounded-md w-full"
@@ -300,7 +302,7 @@ const Regulamentos = () => {
                   href={selectedRegulation.file_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                  className={`inline-flex items-center gap-2 px-4 py-2 ${btn.info} rounded transition-colors`}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -318,13 +320,13 @@ const Regulamentos = () => {
             <div className="flex gap-4 mt-8 pt-4 border-t">
               <button
                 onClick={handleDelete}
-                className="px-6 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                className={`px-6 py-2 ${btn.dangerLight} rounded transition-colors`}
               >
                 Eliminar
               </button>
               <button
                 onClick={() => setIsViewModalOpen(false)}
-                className="flex-1 px-6 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+                className={`flex-1 px-6 py-2 ${btn.secondaryAlt} rounded transition-colors`}
               >
                 Fechar
               </button>
