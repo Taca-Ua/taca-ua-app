@@ -40,6 +40,7 @@ const Cursos = () => {
   const [loading, setLoading] = useState(true);
   const { notify } = useNotification();
   const [searchQuery, setSearchQuery] = useState('');
+  const [nucleoFilter, setNucleoFilter] = useState('');
 
   // Fetch courses on mount
   useEffect(() => {
@@ -137,14 +138,24 @@ const Cursos = () => {
             </button>
           </div>
 
-          <div className="mb-6">
+          <div className="mb-6 flex gap-3">
             <input
               type="text"
               placeholder="Pesquisar curso..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
+            <select
+              value={nucleoFilter}
+              onChange={(e) => setNucleoFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+            >
+              <option value="">Todos os núcleos</option>
+              {[...nucleos].sort((a, b) => a.name.localeCompare(b.name)).map(n => (
+                <option key={n.id} value={n.id}>{n.name}</option>
+              ))}
+            </select>
           </div>
 
           <div className="bg-white rounded-lg shadow-md p-6">
@@ -152,7 +163,10 @@ const Cursos = () => {
               {courses.length > 0 ? (
                 [...courses]
                   .sort((a, b) => a.name.localeCompare(b.name))
-                  .filter((c) => c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.abbreviation.toLowerCase().includes(searchQuery.toLowerCase()))
+                  .filter((c) =>
+                    (c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.abbreviation.toLowerCase().includes(searchQuery.toLowerCase())) &&
+                    (nucleoFilter === '' || c.nucleo.id === nucleoFilter)
+                  )
                   .map((course) => (
                   <CourseEntry
                     key={course.id}

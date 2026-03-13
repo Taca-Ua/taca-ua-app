@@ -23,6 +23,8 @@ function Administradores() {
   const [allNucleos, setAllNucleos] = useState<Nucleo[]>([]);
   const [selectedNucleos, setSelectedNucleos] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'general_admin' | 'nucleo_admin'>('all');
   const { notify } = useNotification();
 
   useEffect(() => {
@@ -46,8 +48,17 @@ function Administradores() {
     fetchData();
   }, []);
 
-  const AdminG = members.filter(m => m.role === 'general_admin');
-  const AdminN = members.filter(m => m.role === 'nucleo_admin');
+  const filteredMembers = members.filter(m => {
+    const matchesSearch =
+      m.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesRole = roleFilter === 'all' || m.role === roleFilter;
+    return matchesSearch && matchesRole;
+  });
+  const AdminG = filteredMembers.filter(m => m.role === 'general_admin');
+  const AdminN = filteredMembers.filter(m => m.role === 'nucleo_admin');
 
   const handleAddMember = async () => {
     if (!memberUserName.trim()) {
@@ -142,6 +153,16 @@ function Administradores() {
               <span>+</span>
               Adicionar Administrador
             </button>
+          </div>
+
+          <div className="flex gap-3 mb-6">
+            <input
+              type="text"
+              placeholder="Pesquisar administrador..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+            />
           </div>
 
           <div className="bg-white rounded-lg shadow-md p-6 mb-8">
