@@ -122,6 +122,9 @@ const Torneios = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [modalities, setModalities] = useState<Modality[]>([]);  // lazy load modalities
+  const [searchQuery, setSearchQuery] = useState('');
+  const [modalityFilter, setModalityFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
   // Fetch tournaments on component mount
   useEffect(() => {
@@ -160,14 +163,56 @@ const Torneios = () => {
           </button>
         </div>
 
+        <div className="flex gap-3 mb-6">
+          <input
+            type="text"
+            placeholder="Pesquisar torneio..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+          />
+          <select
+            value={modalityFilter}
+            onChange={(e) => setModalityFilter(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+          >
+            <option value="">Todas as modalidades</option>
+            {[...new Map(tournaments.map(t => [t.modality.id, t.modality])).values()]
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map(m => (
+                <option key={m.id} value={m.id}>{m.name}</option>
+              ))}
+          </select>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+          >
+            <option value="">Todos os estados</option>
+            <option value="draft">Rascunho</option>
+            <option value="active">Ativo</option>
+            <option value="finished">Finalizado</option>
+          </select>
+        </div>
+
         <div className="bg-white shadow-md rounded-lg p-6 space-y-3">
           {loading ? (
             <div className="text-center py-8">
               <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-teal-500 border-r-transparent"></div>
               <p className="mt-2 text-gray-600">A carregar...</p>
             </div>
-          ) : tournaments.length > 0 ? (
-            tournaments.map(t => (
+          ) : tournaments.filter(t =>
+              t.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+              (modalityFilter === '' || t.modality.id === modalityFilter) &&
+              (statusFilter === '' || t.status === statusFilter)
+            ).length > 0 ? (
+            tournaments
+              .filter(t =>
+                t.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+                (modalityFilter === '' || t.modality.id === modalityFilter) &&
+                (statusFilter === '' || t.status === statusFilter)
+              )
+              .map(t => (
               <button
                 key={t.id}
                 type="button"

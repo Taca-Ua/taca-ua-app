@@ -168,6 +168,7 @@ const Modalities = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
 
   const [modalities, setModalities] = useState<Modality[]>([]);
   const [modalityTypes, setModalityTypes] = useState<ModalityTypeMinimal[]>([]);
@@ -221,21 +222,36 @@ const Modalities = () => {
             </button>
           </div>
 
-          <div className="mb-6">
+          <div className="mb-6 flex gap-3">
             <input
               type="text"
               placeholder="Pesquisar modalidade..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+            >
+              <option value="">Todos os tipos</option>
+              {[...new Map(modalities.map(m => [m.modality_type.id, m.modality_type])).values()]
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+            </select>
           </div>
 
           <div className="bg-white rounded-lg shadow-md p-6">
             {MoadlitiesList(
               [...modalities]
                 .sort((a, b) => a.name.localeCompare(b.name))
-                .filter((m) => m.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                .filter((m) =>
+                  m.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+                  (typeFilter === '' || m.modality_type.id === typeFilter)
+                )
             )}
           </div>
         </div>
