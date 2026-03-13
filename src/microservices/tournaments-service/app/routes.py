@@ -92,6 +92,7 @@ def add_competitor(db: Session, tournament_id: UUID, competitor_input: Competito
             if competitor_type == CompetitorType.ATHLETE
             else None
         ),
+        competitor_course_id=competitor_input.competitor_course_id,
     )
     db.add(tournament_competitor)
     db.flush()
@@ -104,6 +105,8 @@ def add_competitor(db: Session, tournament_id: UUID, competitor_input: Competito
             competitor_type=competitor_input.competitor_type,
             competitor_entity_id=competitor_input.team_id
             or competitor_input.athlete_id,
+            competitor_id=tournament_competitor.id,
+            competitor_course_id=competitor_input.competitor_course_id,
         ),
     )
     outbox_publisher.emit_event(
@@ -164,7 +167,8 @@ async def create_tournament(
             name=data.name,
             start_date=data.start_date,
             status="draft",
-            created_by=data.created_by,
+            scoring_format_id=data.scoring_format_id,
+            created_by="00000000-0000-0000-0000-000000000000",  # Placeholder, should be replaced with actual user ID from auth context
         )
         db.add(tournament)
         db.flush()  # Get the ID before committing
@@ -178,6 +182,7 @@ async def create_tournament(
                 name=tournament.name,
                 start_date=tournament.start_date.isoformat(),
                 status=tournament.status,
+                scoring_format_id=tournament.scoring_format_id,
             ),
         )
         outbox_publisher.emit_event(
@@ -187,11 +192,6 @@ async def create_tournament(
             aggregate_id=str(tournament.id),
             data=event.to_data_dict(),
         )
-
-        # Add competitors if provided
-        if data.competitors:
-            for competitor_input in data.competitors:
-                add_competitor(db, tournament.id, competitor_input)
 
         db.commit()
         db.refresh(tournament)
@@ -230,6 +230,9 @@ async def update_tournament(
     if data.status is not None:
         tournament.status = data.status
         changes_made["status"] = data.status
+    if data.scoring_format_id is not None:
+        tournament.scoring_format_id = data.scoring_format_id
+        changes_made["scoring_format_id"] = str(data.scoring_format_id)
 
     tournament.updated_at = datetime.now(timezone.utc)
 
@@ -241,6 +244,7 @@ async def update_tournament(
             name=changes_made.get("name"),
             start_date=changes_made.get("start_date"),
             status=changes_made.get("status"),
+            scoring_format_id=changes_made.get("scoring_format_id"),
         ),
     )
     outbox_publisher.emit_event(

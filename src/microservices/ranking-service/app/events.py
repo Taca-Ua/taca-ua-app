@@ -2,89 +2,398 @@
 Event handling for Ranking Service.
 """
 
-from datetime import datetime, timezone
-from uuid import UUID
+from taca_events import modalities, tournaments
+from taca_messaging import PausableRabbitMQService
 
-from taca_events.pydantic_schemas.tournaments import TournamentFinishedV1
-from taca_messaging import RabbitMQService
-
+from .database import get_db
 from .logger import logger
+from .models import (
+    Course,
+    Modality,
+    ModalityType,
+    ModalityTypeEscalao,
+    Tournament,
+    TournamentCompetitor,
+    TournamentResult,
+)
+from .outbox_publisher import outbox_publisher
+from .ranking_processor import compute_all_rankings, emit_ranking_computed_event
 
-rabbitmq_service = RabbitMQService(service_name="ranking-service")
-
-
-# Event Publishers
-async def publish_rankings_updated(season_id: UUID, scope, entity_id: UUID = None):
-    """Publish RankingsUpdated event."""
-    if not rabbitmq_service:
-        return
-
-    event_data = {
-        "season_id": str(season_id),
-        "scope": scope,  # "modality", "course", "general"
-        "entity_id": str(entity_id) if entity_id else None,
-        "updated_at": datetime.now(timezone.utc).isoformat(),
-    }
-
-    await rabbitmq_service.publish_event("rankings.updated", event_data)
-    logger.info(f"Published rankings.updated event for scope {scope}")
+rabbitmq_service = PausableRabbitMQService(service_name="ranking-service")
 
 
-@rabbitmq_service.event_handler("match.finished")
-async def handle_match_finished(raw_event: dict):
-    """
-    Consumes: match.finished
-
-    Update rankings incrementally when a match finishes.
-    Recalculate affected rankings (modality, course, general).
-    """
-    match_id = raw_event.get("match_id")
-    # tournament_id = raw_event.get("tournament_id")
-    logger.info(f"Handling match.finished event for match {match_id}")
-
-    # Implementation to be added when database operations are needed
-    # - Get tournament and modality info
-    # - Apply scoring schema
-    # - Update modality rankings
-    # - Recalculate course rankings
-    # - Recalculate general rankings
-    # - Publish rankings.updated event
-    logger.warning("MatchFinished handler not fully implemented yet")
+# ==================== Modality Type Events ====================
 
 
-@rabbitmq_service.event_handler(TournamentFinishedV1)
-async def handle_tournament_finished(event: TournamentFinishedV1):
-    """
-    Consumes: tournament.finished
+@rabbitmq_service.event_handler(modalities.ModalityTypeCreatedV1)
+def handle_modality_type_created(event: modalities.ModalityTypeCreatedV1):
+    """Handle modality type created event."""
+    modality_type_id = event.data.modality_type_id
+    escaloes_data = event.data.escaloes
+    logger.info(
+        "event_received",
+        event_type="modality_type.created",
+        modality_type_id=str(modality_type_id),
+    )
 
-    Force complete recalculation of modality rankings when tournament finishes.
-    Consolidate final points.
+    with get_db() as db:
+        modality_type = ModalityType(
+            modality_type_id=modality_type_id,
+        )
+        db.add(modality_type)
+
+        for escalao_data in escaloes_data:
+            escalao = ModalityTypeEscalao(
+                modality_type_id=modality_type_id,
+                min_participants=escalao_data.min_participants,
+                max_participants=escalao_data.max_participants,
+                points=escalao_data.points,
+            )
+            db.add(escalao)
+        db.flush()
+
+
+@rabbitmq_service.event_handler(modalities.ModalityTypeUpdatedV1)
+def handle_modality_type_updated(event: modalities.ModalityTypeUpdatedV1):
+    """Handle modality type updated event."""
+    modality_type_id = event.data.modality_type_id
+    escaloes_data = event.data.escaloes
+
+    logger.info(
+        "event_received",
+        event_type="modality_type.updated",
+        modality_type_id=str(modality_type_id),
+    )
+
+    with get_db() as db:
+        modality_type = (
+            db.query(ModalityType)
+            .filter(ModalityType.modality_type_id == modality_type_id)
+            .first()
+        )
+        if not modality_type:
+            logger.warning(
+                "modality_type_not_found", modality_type_id=str(modality_type_id)
+            )
+            return
+
+        # Update modality type id if provided
+        if event.data.modality_type_id is not None:
+            modality_type.modality_type_id = event.data.modality_type_id
+            db.flush()
+
+        # Update escaloes if provided
+        if escaloes_data is not None:
+            # Delete existing escaloes
+            db.query(ModalityTypeEscalao).filter(
+                ModalityTypeEscalao.modality_type_id
+                == modality_type.modality_type_id  # Use the updated or not modality_type_id for filtering
+            ).delete()
+
+            # Add new escaloes
+            for escalao_data in escaloes_data:
+                escalao = ModalityTypeEscalao(
+                    modality_type_id=modality_type.modality_type_id,
+                    min_participants=escalao_data.min_participants,
+                    max_participants=escalao_data.max_participants,
+                    points=escalao_data.points,
+                )
+                db.add(escalao)
+        db.flush()
+        compute_all_rankings(db)
+        emit_ranking_computed_event(db, outbox_publisher)
+
+
+@rabbitmq_service.event_handler(modalities.ModalityTypeDeletedV1)
+def handle_modality_type_deleted(event: modalities.ModalityTypeDeletedV1):
+    """Handle modality type deleted event."""
+    modality_type_id = event.data.modality_type_id
+    logger.info(
+        "event_received",
+        event_type="modality_type.deleted",
+        modality_type_id=str(modality_type_id),
+    )
+
+    with get_db() as db:
+        modality_type = (
+            db.query(ModalityType)
+            .filter(ModalityType.modality_type_id == modality_type_id)
+            .first()
+        )
+        if not modality_type:
+            logger.warning(
+                "modality_type_not_found", modality_type_id=str(modality_type_id)
+            )
+            return
+        db.delete(modality_type)
+        db.flush()
+        compute_all_rankings(db)
+        emit_ranking_computed_event(db, outbox_publisher)
+
+
+# ==================== Modality Events ====================
+
+
+@rabbitmq_service.event_handler(modalities.ModalityCreatedV1)
+def handle_modality_created(event: modalities.ModalityCreatedV1):
+    """Handle modality created event."""
+    modality_id = event.data.modality_id
+    logger.info(
+        "event_received", event_type="modality.created", modality_id=str(modality_id)
+    )
+
+    with get_db() as db:
+        modality = Modality(
+            modality_id=modality_id,
+            modality_type_id=event.data.modality_type_id,
+        )
+        db.add(modality)
+
+
+@rabbitmq_service.event_handler(modalities.ModalityUpdatedV1)
+def handle_modality_updated(event: modalities.ModalityUpdatedV1):
+    """Handle modality updated event."""
+    modality_id = event.data.modality_id
+    logger.info(
+        "event_received", event_type="modality.updated", modality_id=str(modality_id)
+    )
+
+    with get_db() as db:
+        modality = (
+            db.query(Modality).filter(Modality.modality_id == modality_id).first()
+        )
+        if not modality:
+            logger.warning("modality_not_found", modality_id=str(modality_id))
+            return
+
+        # Update id
+        if event.data.modality_type_id is not None:
+            modality.modality_type_id = event.data.modality_type_id
+        db.flush()
+
+        # Update escaloes if provided
+
+
+@rabbitmq_service.event_handler(modalities.ModalityDeletedV1)
+def handle_modality_deleted(event: modalities.ModalityDeletedV1):
+    """Handle modality deleted event."""
+    modality_id = event.data.modality_id
+    logger.info(
+        "event_received", event_type="modality.deleted", modality_id=str(modality_id)
+    )
+
+    with get_db() as db:
+        modality = (
+            db.query(Modality).filter(Modality.modality_id == modality_id).first()
+        )
+        if not modality:
+            logger.warning("modality_not_found", modality_id=str(modality_id))
+            return
+        db.delete(modality)
+        db.flush()
+        compute_all_rankings(db)
+        emit_ranking_computed_event(db, outbox_publisher)
+
+
+# ==================== Tournament Events ====================
+
+
+@rabbitmq_service.event_handler(tournaments.TournamentCreatedV1)
+def handle_tournament_created(event: tournaments.TournamentCreatedV1):
+    """Handle tournament created event."""
+    tournament_id = event.data.tournament_id
+    scoring_format_id = event.data.scoring_format_id
+    logger.info(
+        "event_received",
+        event_type="tournament.created",
+        tournament_id=str(tournament_id),
+        scoring_format_id=str(scoring_format_id),
+    )
+
+    with get_db() as db:
+        tournament = Tournament(
+            tournament_id=tournament_id,
+            modality_id=event.data.modality_id,
+            scoring_format_id=scoring_format_id,
+        )
+        db.add(tournament)
+        db.flush()
+
+
+@rabbitmq_service.event_handler(tournaments.TournamentUpdatedV1)
+def handle_tournament_updated(event: tournaments.TournamentUpdatedV1):
+    """Handle tournament updated event."""
+    tournament_id = event.data.tournament_id
+    scoring_format_id = event.data.scoring_format_id
+
+    logger.info(
+        "event_received",
+        event_type="tournament.updated",
+        tournament_id=str(tournament_id),
+    )
+
+    with get_db() as db:
+        tournament = (
+            db.query(Tournament)
+            .filter(Tournament.tournament_id == tournament_id)
+            .first()
+        )
+        if not tournament:
+            logger.warning("tournament_not_found", tournament_id=str(tournament_id))
+            return
+
+        if scoring_format_id is not None:
+            tournament.scoring_format_id = scoring_format_id
+
+        db.flush()
+        compute_all_rankings(db)
+        emit_ranking_computed_event(db, outbox_publisher)
+
+
+@rabbitmq_service.event_handler(tournaments.TournamentDeletedV1)
+def handle_tournament_deleted(event: tournaments.TournamentDeletedV1):
+    """Handle tournament deleted event.
+
+    Soft-deletes the tournament and cascades to competitors and matches.
     """
     tournament_id = event.data.tournament_id
-    logger.info(f"Handling tournament.finished event for tournament {tournament_id}")
+    logger.info(
+        "event_received",
+        event_type="tournament.deleted",
+        tournament_id=str(tournament_id),
+    )
 
-    # Implementation to be added when database operations are needed
-    # - Recalculate all rankings for this modality
-    # - Ensure all matches are counted
-    # - Update course rankings
-    # - Update general rankings
-    # - Publish rankings.updated event
-    logger.warning("TournamentFinished handler not fully implemented yet")
+    with get_db() as db:
+        tournament = (
+            db.query(Tournament)
+            .filter(Tournament.tournament_id == tournament_id)
+            .first()
+        )
+        if not tournament:
+            logger.warning("tournament_not_found", tournament_id=str(tournament_id))
+            return
+        db.delete(tournament)
+        db.flush()
+        compute_all_rankings(db)
+        emit_ranking_computed_event(db, outbox_publisher)
 
 
-@rabbitmq_service.event_handler("season.finished")
-async def handle_season_finished(raw_event: dict):
-    """
-    Consumes: season.finished
+@rabbitmq_service.event_handler(tournaments.TournamentFinishedV1)
+def handle_tournament_finished(event: tournaments.TournamentFinishedV1):
+    """Handle tournament finished event."""
+    tournament_id = event.data.tournament_id
+    ranking_entries = event.data.ranking_entries
 
-    Archive final rankings for the season.
-    Create historical snapshot.
-    """
-    season_id = raw_event.get("season_id")
-    logger.info(f"Handling season.finished event for season {season_id}")
+    logger.info(
+        "event_received",
+        event_type="tournament.finished",
+        tournament_id=str(tournament_id),
+        ranking_entries_count=len(ranking_entries),
+    )
 
-    # Implementation to be added when database operations are needed
-    # - Archive all rankings for this season
-    # - Create snapshot for historical queries
-    # - Mark season as closed
-    logger.warning("SeasonFinished handler not fully implemented yet")
+    with get_db() as db:
+        tournament = (
+            db.query(Tournament)
+            .filter(Tournament.tournament_id == tournament_id)
+            .first()
+        )
+        if not tournament:
+            logger.warning("tournament_not_found", tournament_id=str(tournament_id))
+            return
+
+        # Create new ranking entries
+        for entry in ranking_entries:
+            ranking = TournamentResult(
+                tournament_id=tournament_id,
+                competitor_id=entry.competitor_id,
+                position=entry.position,
+            )
+            db.add(ranking)
+
+        db.flush()
+
+        logger.info(
+            "tournament_rankings_stored",
+            tournament_id=str(tournament_id),
+            ranking_entries_count=len(ranking_entries),
+        )
+        compute_all_rankings(db)
+        emit_ranking_computed_event(db, outbox_publisher)
+
+
+@rabbitmq_service.event_handler(tournaments.TournamentCompetitorAddedV1)
+def handle_tournament_competitor_added(event: tournaments.TournamentCompetitorAddedV1):
+    """Handle tournament competitor added event."""
+    tournament_id = event.data.tournament_id
+    competitor_id = event.data.competitor_id
+    logger.info(
+        "event_received",
+        event_type="tournament.competitor.added",
+        tournament_id=str(tournament_id),
+    )
+
+    with get_db() as db:
+        competitor = TournamentCompetitor(
+            competitor_id=competitor_id,
+            tournament_id=tournament_id,
+            competitor_course_id=event.data.competitor_course_id,
+        )
+        db.add(competitor)
+        db.flush()
+
+
+@rabbitmq_service.event_handler(tournaments.TournamentCompetitorDeletedV1)
+def handle_tournament_competitor_deleted(
+    event: tournaments.TournamentCompetitorDeletedV1,
+):
+    """Handle tournament competitor deleted event."""
+    tournament_id = event.data.tournament_id
+    competitor_id = event.data.competitor_id
+    logger.info(
+        "event_received",
+        event_type="tournament.competitor.deleted",
+        tournament_id=str(tournament_id),
+    )
+
+    with get_db() as db:
+        competitor = (
+            db.query(TournamentCompetitor)
+            .filter(
+                TournamentCompetitor.competitor_id == competitor_id,
+                TournamentCompetitor.tournament_id == tournament_id,
+            )
+            .first()
+        )
+
+        if not competitor:
+            logger.warning(
+                "tournament_competitor_not_found", tournament_id=str(tournament_id)
+            )
+            return
+        db.flush()
+
+
+# ==================== Course Events ====================
+@rabbitmq_service.event_handler(modalities.CourseCreatedV1)
+def handle_course_created(event: modalities.CourseCreatedV1):
+    """Handle course created event."""
+    course_id = event.data.course_id
+    logger.info("event_received", event_type="course.created", course_id=str(course_id))
+
+    with get_db() as db:
+        course = Course(course_id=course_id)
+        db.add(course)
+        db.flush()
+
+
+@rabbitmq_service.event_handler(modalities.CourseDeletedV1)
+def handle_course_deleted(event: modalities.CourseDeletedV1):
+    """Handle course deleted event."""
+    course_id = event.data.course_id
+    logger.info("event_received", event_type="course.deleted", course_id=str(course_id))
+
+    with get_db() as db:
+        course = db.query(Course).filter(Course.course_id == course_id).first()
+        if not course:
+            logger.warning("course_not_found", course_id=str(course_id))
+            return

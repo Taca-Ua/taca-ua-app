@@ -24,6 +24,9 @@ const TournamentInfo = ({
   onActivate: () => void;
   onFinish: () => void;
 }) => {
+  const [showScoringModal, setShowScoringModal] = useState(false);
+  const [selectedEscalaoIdx, setSelectedEscalaoIdx] = useState(0);
+
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
       case 'active': return 'bg-green-100 text-green-800';
@@ -41,6 +44,10 @@ const TournamentInfo = ({
       default: return status;
     }
   };
+
+  const scoringFormat = tournament.scoring_format;
+  const escaloes = scoringFormat?.escaloes ?? [];
+  const activeEscalao = escaloes[selectedEscalaoIdx];
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 space-y-4">
@@ -74,6 +81,98 @@ const TournamentInfo = ({
           <label className="block text-teal-500 font-medium mb-2">Data de Início</label>
           <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
             {new Date(tournament.start_date).toLocaleDateString('pt-PT')}
+          </div>
+        </div>
+      )}
+
+      {scoringFormat && (
+        <div>
+          <label className="block text-teal-500 font-medium mb-2">Formato de Pontuação</label>
+          <div className="w-full px-4 py-3 bg-gray-100 rounded-md flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-gray-800">{scoringFormat.name}</span>
+              {scoringFormat.is_playoff && (
+                <span className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-800 font-medium">
+                  Playoff
+                </span>
+              )}
+            </div>
+            {escaloes.length > 0 && (
+              <button
+                onClick={() => { setSelectedEscalaoIdx(0); setShowScoringModal(true); }}
+                className="text-sm text-teal-600 hover:text-teal-800 font-medium underline-offset-2 hover:underline transition-colors"
+              >
+                Ver detalhes
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showScoringModal && scoringFormat && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowScoringModal(false)}>
+          <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-bold text-gray-800">{scoringFormat.name}</h3>
+                {scoringFormat.is_playoff && (
+                  <span className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-800 font-medium">
+                    Playoff
+                  </span>
+                )}
+              </div>
+              <button onClick={() => setShowScoringModal(false)} className="text-gray-400 hover:text-gray-600 text-xl font-bold leading-none">✕</button>
+            </div>
+
+            {escaloes.length > 1 && (
+              <div className="flex flex-wrap gap-2 mb-4">
+                {escaloes.map((esc, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedEscalaoIdx(idx)}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                      idx === selectedEscalaoIdx
+                        ? 'bg-teal-500 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {esc.escalao}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {activeEscalao && (
+              <div>
+                {escaloes.length === 1 && (
+                  <p className="text-sm font-semibold text-gray-700 mb-3">{activeEscalao.escalao}</p>
+                )}
+                {activeEscalao.minParticipants !== null || activeEscalao.maxParticipants !== null ? (
+                  <p className="text-xs text-gray-500 mb-3">
+                    Participantes:{' '}
+                    {activeEscalao.minParticipants !== null ? `mín. ${activeEscalao.minParticipants}` : ''}
+                    {activeEscalao.minParticipants !== null && activeEscalao.maxParticipants !== null ? ' — ' : ''}
+                    {activeEscalao.maxParticipants !== null ? `máx. ${activeEscalao.maxParticipants}` : ''}
+                  </p>
+                ) : null}
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="text-left px-4 py-2 text-gray-600 font-semibold border border-gray-200 w-20">Posição</th>
+                      <th className="text-right px-4 py-2 text-gray-600 font-semibold border border-gray-200">Pontos</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activeEscalao.points.map((pts, i) => (
+                      <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td className="px-4 py-2 border border-gray-200 text-gray-700 font-medium">{i + 1}º</td>
+                        <td className="px-4 py-2 border border-gray-200 text-right text-teal-700 font-semibold">{pts}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -132,6 +231,7 @@ const EditTournamentModal = ({
   const [startDate, setStartDate] = useState(
     tournament.start_date ? tournament.start_date.split('T')[0] : ''
   );
+  const [isPlayoff, setIsPlayoff] = useState(tournament.scoring_format?.is_playoff ?? false);
   const [saving, setSaving] = useState(false);
   const { notify } = useNotification();
 
@@ -145,7 +245,8 @@ const EditTournamentModal = ({
       setSaving(true);
       await onSave({
         name: name.trim(),
-        start_date: startDate || undefined
+        start_date: startDate || undefined,
+        is_playoff: isPlayoff,
       });
       onClose();
     } catch (err) {
@@ -181,6 +282,19 @@ const EditTournamentModal = ({
               onChange={(e) => setStartDate(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
             />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="is_playoff_edit"
+              checked={isPlayoff}
+              onChange={(e) => setIsPlayoff(e.target.checked)}
+              className="w-4 h-4 accent-teal-500"
+            />
+            <label htmlFor="is_playoff_edit" className="text-gray-700 font-medium cursor-pointer">
+              Torneio de Playoff
+            </label>
           </div>
         </div>
 
@@ -497,10 +611,24 @@ const FinishTournamentModal = ({
   const MAX_POSITIONS = 12; // Configurable number of positions
   const numPositions = Math.min(MAX_POSITIONS, tournament.competitors.length);
 
-  // Map position number to competitor ID
-  const [positionAssignments, setPositionAssignments] = useState<Map<number, string>>(new Map());
+  // Map ranking position to competitor IDs (supports ties)
+  const [positionAssignments, setPositionAssignments] = useState<Map<number, string[]>>(() => {
+    const initial = new Map<number, string[]>();
+    for (let position = 1; position <= numPositions; position += 1) {
+      initial.set(position, ['']);
+    }
+    return initial;
+  });
   const { notify } = useNotification();
   const [finishing, setFinishing] = useState(false);
+
+  useEffect(() => {
+    const initial = new Map<number, string[]>();
+    for (let position = 1; position <= numPositions; position += 1) {
+      initial.set(position, ['']);
+    }
+    setPositionAssignments(initial);
+  }, [numPositions, tournament.id]);
 
   const getCompetitorId = (competitor: TournamentCompetitorDetail): string => {
     if (competitor.competitor_type === 'team' && competitor.team) {
@@ -522,14 +650,106 @@ const FinishTournamentModal = ({
     return 'Desconhecido';
   };
 
-  const handleCompetitorChange = (position: number, competitorId: string) => {
-    const newAssignments = new Map(positionAssignments);
-    if (competitorId === '') {
-      newAssignments.delete(position);
-    } else {
-      newAssignments.set(position, competitorId);
+  const getFilledCountAtPosition = (
+    assignments: Map<number, string[]>,
+    position: number
+  ): number => {
+    return (assignments.get(position) || []).filter(Boolean).length;
+  };
+
+  const getActivePositions = (assignments: Map<number, string[]> = positionAssignments): Set<number> => {
+    const active = new Set<number>();
+    let nextPosition = 1;
+
+    while (nextPosition <= numPositions) {
+      active.add(nextPosition);
+      const filledCount = getFilledCountAtPosition(assignments, nextPosition);
+      if (filledCount === 0) break;
+      nextPosition += filledCount;
     }
-    setPositionAssignments(newAssignments);
+
+    return active;
+  };
+
+  const normalizeAssignments = (assignments: Map<number, string[]>): Map<number, string[]> => {
+    const active = getActivePositions(assignments);
+    const normalized = new Map<number, string[]>();
+
+    for (let position = 1; position <= numPositions; position += 1) {
+      if (active.has(position)) {
+        const existing = assignments.get(position) || [''];
+        normalized.set(position, existing.length > 0 ? existing : ['']);
+      } else {
+        normalized.set(position, ['']);
+      }
+    }
+
+    return normalized;
+  };
+
+  const handleCompetitorChange = (position: number, index: number, competitorId: string) => {
+    const newAssignments = new Map(positionAssignments);
+    const competitorsAtPosition = [...(newAssignments.get(position) || [])];
+    competitorsAtPosition[index] = competitorId;
+    newAssignments.set(position, competitorsAtPosition);
+    setPositionAssignments(normalizeAssignments(newAssignments));
+  };
+
+  const addTieSlot = (position: number) => {
+    const newAssignments = new Map(positionAssignments);
+    const competitorsAtPosition = [...(newAssignments.get(position) || [])];
+    competitorsAtPosition.push('');
+    newAssignments.set(position, competitorsAtPosition);
+    setPositionAssignments(normalizeAssignments(newAssignments));
+  };
+
+  const removeTieSlot = (position: number, index: number) => {
+    const newAssignments = new Map(positionAssignments);
+    const competitorsAtPosition = [...(newAssignments.get(position) || [])];
+
+    if (competitorsAtPosition.length <= 1) {
+      competitorsAtPosition[0] = '';
+      newAssignments.set(position, competitorsAtPosition);
+      setPositionAssignments(normalizeAssignments(newAssignments));
+      return;
+    }
+
+    competitorsAtPosition.splice(index, 1);
+    newAssignments.set(position, competitorsAtPosition);
+    setPositionAssignments(normalizeAssignments(newAssignments));
+  };
+
+  const getAssignedCompetitorIds = (): string[] => {
+    const assigned: string[] = [];
+    positionAssignments.forEach((competitorsAtPosition) => {
+      competitorsAtPosition.forEach((competitorId) => {
+        if (competitorId) assigned.push(competitorId);
+      });
+    });
+    return assigned;
+  };
+
+  const validateCompetitionRanking = (): string | null => {
+    const activePositions = getActivePositions();
+
+    for (let position = 1; position <= numPositions; position += 1) {
+      const filledCount = getFilledCountAtPosition(positionAssignments, position);
+
+      if (!activePositions.has(position) && filledCount > 0) {
+        return `A posição ${position}º deve estar vazia devido a empates em posições anteriores`;
+      }
+    }
+
+    let expectedPosition = 1;
+    while (expectedPosition <= numPositions) {
+      const filledCount = getFilledCountAtPosition(positionAssignments, expectedPosition);
+      if (filledCount === 0) {
+        return `A posição ${expectedPosition}º precisa de pelo menos um competidor`;
+      }
+      expectedPosition += filledCount;
+    }
+
+    return null;
   };
 
   const getPositionLabel = (position: number): string => {
@@ -540,17 +760,27 @@ const FinishTournamentModal = ({
   };
 
   const handleSubmit = async () => {
-    // Validate that all positions are filled
-    if (positionAssignments.size < numPositions) {
-      notify(`Por favor, atribua competidores a todas as ${numPositions} posições`, 'error');
+    const assignedCompetitorIds = getAssignedCompetitorIds();
+
+    if (assignedCompetitorIds.length < numPositions) {
+      notify(`Por favor, atribua ${numPositions} competidores no total`, 'error');
       return;
     }
 
-    // Check for duplicate competitors
-    const competitorIds = Array.from(positionAssignments.values());
-    const uniqueCompetitors = new Set(competitorIds);
-    if (uniqueCompetitors.size !== competitorIds.length) {
-      notify('Cada competidor só pode ocupar uma posição', 'error');
+    if (assignedCompetitorIds.length > numPositions) {
+      notify(`Apenas ${numPositions} competidores podem ser classificados`, 'error');
+      return;
+    }
+
+    const uniqueCompetitors = new Set(assignedCompetitorIds);
+    if (uniqueCompetitors.size !== assignedCompetitorIds.length) {
+      notify('Cada competidor só pode ser atribuído uma vez', 'error');
+      return;
+    }
+
+    const rankingValidationError = validateCompetitionRanking();
+    if (rankingValidationError) {
+      notify(rankingValidationError, 'error');
       return;
     }
 
@@ -558,26 +788,35 @@ const FinishTournamentModal = ({
       setFinishing(true);
 
       // Build ranking entries
-      const ranking_entries: (TournamentCompetitor & { position: number })[] = [];
+      const ranking_entries: (TournamentCompetitor & { competitor_id: string; position: number })[] = [];
 
-      positionAssignments.forEach((competitorId, position) => {
-        const competitor = tournament.competitors.find(c => getCompetitorId(c) === competitorId);
+      positionAssignments.forEach((competitorsAtPosition, position) => {
+        competitorsAtPosition.forEach((competitorRecordId) => {
+          if (!competitorRecordId) return;
 
-        if (competitor) {
-          const entry: TournamentCompetitor & { position: number } = {
-            competitor_type: competitor.competitor_type,
-            position
-          };
+          const competitor = tournament.competitors.find(c => c.id === competitorRecordId);
 
-          if (competitor.competitor_type === 'team') {
-            entry.team_id = competitorId;
-          } else {
-            entry.athlete_id = competitorId;
+          if (competitor) {
+            const entry: TournamentCompetitor & { competitor_id: string; position: number } = {
+              competitor_id: competitor.id,
+              competitor_type: competitor.competitor_type,
+              position
+            };
+
+            const participantId = getCompetitorId(competitor);
+
+            if (competitor.competitor_type === 'team') {
+              entry.team_id = participantId;
+            } else {
+              entry.athlete_id = participantId;
+            }
+
+            ranking_entries.push(entry);
           }
-
-          ranking_entries.push(entry);
-        }
+        });
       });
+
+      ranking_entries.sort((a, b) => a.position - b.position);
 
       await onFinish({ ranking_entries });
       onClose();
@@ -588,8 +827,7 @@ const FinishTournamentModal = ({
     }
   };
 
-  // Get list of already assigned competitors
-  const assignedCompetitors = new Set(positionAssignments.values());
+  const activePositions = getActivePositions();
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -597,47 +835,80 @@ const FinishTournamentModal = ({
         <h2 className="text-2xl font-bold mb-6 text-gray-800">Finalizar Torneio - Classificação Final</h2>
 
         <p className="text-gray-600 mb-6">
-          Atribua os competidores às posições finais do torneio (1º ao {numPositions}º lugar).
+          Selecione os competidores por posição final. Para empates, adicione mais competidores na mesma posição.
         </p>
 
         <div className="space-y-3 mb-6">
-          {Array.from({ length: numPositions }, (_, i) => i + 1).map((position) => {
-            const selectedCompetitorId = positionAssignments.get(position) || '';
+          {Array.from({ length: numPositions }, (_, i) => i + 1)
+            .filter((position) => activePositions.has(position))
+            .map((position) => {
+            const competitorsAtPosition = positionAssignments.get(position) || [''];
 
             return (
               <div
                 key={position}
-                className="flex items-center gap-4 p-4 bg-gray-50 rounded-md"
+                className="p-4 bg-gray-50 rounded-md"
               >
-                <div className="w-32">
-                  <label className="text-gray-800 font-semibold">
-                    {getPositionLabel(position)}
-                  </label>
-                </div>
-                <div className="flex-1">
-                  <select
-                    value={selectedCompetitorId}
-                    onChange={(e) => handleCompetitorChange(position, e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-gray-800 font-semibold">{getPositionLabel(position)}</label>
+                  <button
+                    type="button"
+                    onClick={() => addTieSlot(position)}
+                    className="text-sm px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors"
                   >
-                    <option value="">Selecione um competidor...</option>
-                    {tournament.competitors.map((competitor) => {
-                      const competitorId = getCompetitorId(competitor);
-                      const competitorName = getCompetitorName(competitor);
-                      const isAssigned = assignedCompetitors.has(competitorId) && selectedCompetitorId !== competitorId;
+                    + Empate
+                  </button>
+                </div>
 
-                      return (
-                        <option
-                          key={competitorId}
-                          value={competitorId}
-                          disabled={isAssigned}
+                <div className="space-y-2">
+                  {competitorsAtPosition.map((competitorRecordId, index) => {
+                    const selectedElsewhere = new Set(
+                      getAssignedCompetitorIds().filter((id, idx, arr) => {
+                        if (id !== competitorRecordId) return true;
+                        const first = arr.indexOf(id);
+                        return first !== idx;
+                      })
+                    );
+
+                    return (
+                      <div key={`${position}-${index}`} className="flex gap-2">
+                        <select
+                          value={competitorRecordId}
+                          onChange={(e) => handleCompetitorChange(position, index, e.target.value)}
+                          className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
                         >
-                          {competitorName} ({competitor.competitor_type === 'team' ? 'Equipa' : 'Atleta'})
-                          {isAssigned ? ' - Já atribuído' : ''}
-                        </option>
-                      );
-                    })}
-                  </select>
+                          <option value="">Selecione um competidor...</option>
+                          {tournament.competitors.map((competitor) => {
+                            const competitorRecordIdOption = competitor.id;
+                            const participantName = getCompetitorName(competitor);
+                            const isDisabled = selectedElsewhere.has(competitorRecordIdOption) && competitorRecordIdOption !== competitorRecordId;
+
+                            return (
+                              <option
+                                key={competitorRecordIdOption}
+                                value={competitorRecordIdOption}
+                                disabled={isDisabled}
+                              >
+                                {participantName} ({competitor.competitor_type === 'team' ? 'Equipa' : 'Atleta'})
+                                {isDisabled ? ' - Já atribuído' : ''}
+                              </option>
+                            );
+                          })}
+                        </select>
+
+                        {competitorsAtPosition.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeTieSlot(position, index)}
+                            className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors"
+                            title="Remover empate"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -1090,6 +1361,7 @@ const TorneioDetails = () => {
 
     const updated = await tournamentsApi.update(id, data);
     setTournament(updated);
+    notify('Torneio atualizado com sucesso', 'success');
   };
 
   const handleActivate = () => {
@@ -1140,6 +1412,7 @@ const TorneioDetails = () => {
 
     const updated = await tournamentsApi.finish(id, data);
     setTournament(updated);
+    notify('Torneio finalizado com sucesso', 'success');
   };
 
   if (loading) {

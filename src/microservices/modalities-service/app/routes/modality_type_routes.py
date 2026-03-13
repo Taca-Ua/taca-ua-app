@@ -12,6 +12,7 @@ from taca_events.pydantic_schemas.modalities import (
     ModalityTypeDeletedV1,
     ModalityTypeUpdatedData,
     ModalityTypeUpdatedV1,
+    _EscalaoData,
 )
 
 from ..database import get_db_session
@@ -27,9 +28,14 @@ DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000"
 
 
 @router.get("/modality-types", response_model=List[ModalityTypeResponse])
-def list_modality_types(db: Session = Depends(get_db_session)):
+def list_modality_types(
+    exclude_playoff: bool = False, db: Session = Depends(get_db_session)
+):
     """List all modality types"""
-    modality_types = db.query(ModalityType).all()
+    query = db.query(ModalityType)
+    if exclude_playoff:
+        query = query.filter(ModalityType.is_playoff == False)  # noqa: E712
+    modality_types = query.all()
     return [mt.to_dict() for mt in modality_types]
 
 
@@ -43,10 +49,22 @@ def create_modality_type(
 ):
     """Create a new modality type"""
     try:
+        # Check if a playoff type already exists
+        if modality_type_data.is_playoff:
+            existing_playoff = (
+                db.query(ModalityType).filter(ModalityType.is_playoff).first()
+            )
+            if existing_playoff:
+                raise HTTPException(
+                    status_code=400,
+                    detail="A playoff modality type already exists",
+                )
+
         modality_type = ModalityType(
             name=modality_type_data.name,
             description=modality_type_data.description,
             escaloes=modality_type_data.escaloes_encoder(),
+            is_playoff=modality_type_data.is_playoff,
             created_by=DEFAULT_USER_ID,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
@@ -61,7 +79,14 @@ def create_modality_type(
                 modality_type_id=modality_type.id,
                 name=modality_type.name,
                 description=modality_type.description,
-                escaloes=modality_type.escaloes,
+                escaloes=[
+                    _EscalaoData(
+                        min_participants=e.minParticipants,
+                        max_participants=e.maxParticipants,
+                        points=e.points,
+                    )
+                    for e in modality_type_data.escaloes
+                ],
             ),
         )
         outbox_publisher.emit_event(
@@ -94,6 +119,15 @@ def get_modality_type(modality_type_id: UUID, db: Session = Depends(get_db_sessi
     return modality_type.to_dict()
 
 
+@router.get("/playoff-modality-type", response_model=ModalityTypeResponse)
+def get_playoff_modality_type(db: Session = Depends(get_db_session)):
+    """Get the modality type used for playoff tournaments"""
+    modality_type = db.query(ModalityType).filter(ModalityType.is_playoff).first()
+    if not modality_type:
+        raise HTTPException(status_code=404, detail="Playoff modality type not found")
+    return modality_type.to_dict()
+
+
 @router.put("/modality-types/{modality_type_id}", response_model=ModalityTypeResponse)
 def update_modality_type(
     modality_type_id: UUID,
@@ -117,6 +151,21 @@ def update_modality_type(
     if modality_type_data.escaloes is not None:
         modality_type.escaloes = modality_type_data.escaloes_encoder()
         changes_made["escaloes"] = [i.to_dict() for i in modality_type_data.escaloes]
+    if modality_type_data.is_playoff is not None:
+        if modality_type_data.is_playoff and not modality_type.is_playoff:
+            # If trying to set this modality type as playoff, check if another playoff type already exists
+            existing_playoff = (
+                db.query(ModalityType)
+                .filter(ModalityType.is_playoff, ModalityType.id != modality_type_id)
+                .first()
+            )
+            if existing_playoff:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Another playoff modality type already exists",
+                )
+        modality_type.is_playoff = modality_type_data.is_playoff
+        changes_made["is_playoff"] = modality_type_data.is_playoff
     modality_type.updated_at = datetime.now(timezone.utc)
 
     # Emit modality type updated event
@@ -126,7 +175,14 @@ def update_modality_type(
             modality_type_id=modality_type.id,
             name=changes_made.get("name"),
             description=changes_made.get("description"),
-            escaloes=changes_made.get("escaloes"),
+            escaloes=[
+                _EscalaoData(
+                    min_participants=e.minParticipants,
+                    max_participants=e.maxParticipants,
+                    points=e.points,
+                )
+                for e in modality_type_data.escaloes
+            ],
         ),
     )
     outbox_publisher.emit_event(

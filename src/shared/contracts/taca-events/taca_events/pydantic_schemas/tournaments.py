@@ -20,6 +20,7 @@ class TournamentCreatedData(BaseModel):
     name: str
     start_date: str  # ISO 8601 date string
     status: str
+    scoring_format_id: UUID
 
 
 class TournamentUpdatedData(BaseModel):
@@ -27,6 +28,7 @@ class TournamentUpdatedData(BaseModel):
     name: Optional[str] = None
     start_date: Optional[str] = None
     status: Optional[str] = None
+    scoring_format_id: Optional[UUID] = None
 
 
 class TournamentDeletedData(BaseModel):
@@ -49,6 +51,8 @@ class TournamentCompetitorAddedData(BaseModel):
     tournament_id: UUID
     competitor_type: str  # "team" | "athlete"
     competitor_entity_id: UUID
+    competitor_id: UUID
+    competitor_course_id: UUID
 
 
 class TournamentCompetitorDeletedData(BaseModel):

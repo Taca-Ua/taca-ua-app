@@ -11,12 +11,17 @@ Typed Pydantic event schemas for the TACA system.
 """
 
 from .builder import EventBuilder
+from .pydantic_schemas import matches, modalities, ranking, tournaments
 from .types import EventType, RoutingKeys
 
 __all__ = [
     "EventBuilder",
     "EventType",
     "RoutingKeys",
+    "matches",
+    "modalities",
+    "ranking",
+    "tournaments",
 ]
 
 __version__ = "1.0.0"

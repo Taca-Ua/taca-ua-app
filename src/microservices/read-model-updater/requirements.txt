@@ -16,3 +16,4 @@ httpx==0.28.1
 -e /tmp/platform/taca-logging
 -e /tmp/platform/taca-outbox
 -e /tmp/platform/taca-messaging
+-e /tmp/platform/taca-rebuild

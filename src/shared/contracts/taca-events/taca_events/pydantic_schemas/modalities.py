@@ -5,7 +5,7 @@ Covers: Nucleo, Course, ModalityType, Modality, Student, Staff, Team,
 TeamPlayer events.
 """
 
-from typing import Any, Optional
+from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -131,20 +131,25 @@ class CourseDeletedV1(EventSchema):
 # ================================================================== #
 # ModalityType
 # ================================================================== #
+class _EscalaoData(BaseModel):
+    min_participants: Optional[int] = None
+    max_participants: Optional[int] = None
+    points: list[int]
 
 
 class ModalityTypeCreatedData(BaseModel):
+
     modality_type_id: UUID
     name: str
     description: str
-    escaloes: Any  # JSON-serialisable structure (list of dicts)
+    escaloes: list[_EscalaoData]
 
 
 class ModalityTypeUpdatedData(BaseModel):
     modality_type_id: UUID
     name: Optional[str] = None
     description: Optional[str] = None
-    escaloes: Optional[Any] = None
+    escaloes: Optional[list[_EscalaoData]] = None
 
 
 class ModalityTypeDeletedData(BaseModel):

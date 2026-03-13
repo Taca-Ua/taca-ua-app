@@ -34,6 +34,7 @@ class TournamentDTO:
     name: str
     status: str  # "draft", "active", "finished"
     modality_id: UUID
+    scoring_format_id: UUID
     start_date: Optional[str] = None  # ISO formatted datetime string
     competitors: List[CompetitorDTO] = field(default_factory=list)
     ranking_positions: List[_TournamentRankingPositionDTO] = field(default_factory=list)
@@ -106,9 +107,8 @@ class TournamentsService(BaseService):
         self,
         modality_id: UUID,
         name: str,
-        created_by: UUID,
+        scoring_format_id: UUID,
         start_date: Optional[str] = None,
-        teams_ids: Optional[List[UUID]] = None,
     ) -> TournamentDTO:
         """
         Create a new tournament
@@ -116,9 +116,8 @@ class TournamentsService(BaseService):
         Args:
             modality_id: ID of the modality
             name: Tournament name
-            created_by: ID of the user creating the tournament
+            scoring_format_id: ID of the scoring format (regular vs playoff)
             start_date: Optional start date (ISO format)
-            teams_ids: Optional list of team IDs
 
         Returns:
             Created tournament dictionary
@@ -126,14 +125,10 @@ class TournamentsService(BaseService):
         data = {
             "modality_id": str(modality_id),
             "name": name,
-            "created_by": str(created_by),
+            "scoring_format_id": str(scoring_format_id),
         }
         if start_date:
             data["start_date"] = start_date
-        if teams_ids:
-            data["teams_ids"] = [str(team_id) for team_id in teams_ids]
-        else:
-            data["teams_ids"] = []
 
         tournament_data = self.post("/tournaments", data=data)
         return TournamentDTO(**tournament_data)
@@ -144,6 +139,7 @@ class TournamentsService(BaseService):
         name: Optional[str] = None,
         start_date: Optional[str] = None,
         status: Optional[str] = None,
+        scoring_format_id: Optional[UUID] = None,
     ) -> TournamentDTO:
         """
         Update a tournament
@@ -153,7 +149,7 @@ class TournamentsService(BaseService):
             name: New tournament name
             start_date: New start date (ISO format)
             status: New status (draft, active, finished)
-
+            scoring_format_id: ID of the scoring format (regular vs playoff)
         Returns:
             Updated tournament dictionary
         """
@@ -164,8 +160,9 @@ class TournamentsService(BaseService):
             data["start_date"] = start_date
         if status is not None:
             data["status"] = status
+        if scoring_format_id is not None:
+            data["scoring_format_id"] = str(scoring_format_id)
 
-        print("Update tournament data:", data)
         tournament_data = self.put(f"/tournaments/{tournament_id}", data=data)
         return TournamentDTO(**tournament_data)
 
@@ -218,6 +215,7 @@ class TournamentsService(BaseService):
         """
         data = [competitor for competitor in competitors_data]
 
+        print(data)
         tournament_data = self.put(
             f"/tournaments/{tournament_id}/competitors/add", data=data
         )

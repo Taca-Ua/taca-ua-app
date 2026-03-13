@@ -8,8 +8,7 @@ Field names mirror the JSON keys currently returned by
 ``GET /internal/snapshot`` in the ranking-service.
 """
 
-from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import List
 
 from .base import SnapshotBase
 
@@ -18,38 +17,28 @@ from .base import SnapshotBase
 # ---------------------------------------------------------------------------
 
 
-class ModalityRankingSnapshotItem(SnapshotBase):
-    """A single modality-ranking record."""
+class GeneralRankingSnapshotItem(SnapshotBase):
+    """Points earned by a single course across all modalities."""
 
-    id: str
-    modality_id: str
-    season_id: str
     course_id: str
-    points: Optional[float] = None
-    details: Optional[Dict[str, Any]] = None
-    last_updated: Optional[datetime] = None
+    points: int
+    tournaments_participated: int = 0
+
+
+class ModalityRankingSnapshotItem(SnapshotBase):
+    """Points earned by a course within a specific modality."""
+
+    modality_id: str
+    course_id: str
+    points: int
 
 
 class CourseRankingSnapshotItem(SnapshotBase):
-    """A single course-ranking record."""
+    """Aggregated course ranking with per-modality breakdown."""
 
-    id: str
     course_id: str
-    season_id: str
-    total_points: Optional[float] = None
-    modality_breakdown: Optional[Dict[str, Any]] = None
-    last_updated: Optional[datetime] = None
-
-
-class GeneralRankingSnapshotItem(SnapshotBase):
-    """A single general-ranking record."""
-
-    id: str
-    season_id: str
-    course_id: str
-    position: Optional[int] = None
-    total_points: Optional[float] = None
-    last_updated: Optional[datetime] = None
+    points: int
+    modality_breakdown: List[int] = []
 
 
 # ---------------------------------------------------------------------------
@@ -67,6 +56,6 @@ class RankingSnapshotResponse(SnapshotBase):
     - **Consumers**: parsed from the raw JSON by the snapshot client.
     """
 
+    general_rankings: List[GeneralRankingSnapshotItem] = []
     modality_rankings: List[ModalityRankingSnapshotItem] = []
     course_rankings: List[CourseRankingSnapshotItem] = []
-    general_rankings: List[GeneralRankingSnapshotItem] = []

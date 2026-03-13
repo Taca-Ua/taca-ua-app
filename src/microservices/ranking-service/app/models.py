@@ -3,157 +3,99 @@ SQLAlchemy models for Ranking Service.
 Schema: ranking
 """
 
-import uuid
-from datetime import datetime, timezone
-
-from sqlalchemy import (
-    JSON,
-    Column,
-    DateTime,
-    Float,
-    ForeignKey,
-    Integer,
-    UniqueConstraint,
-)
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import ARRAY, UUID, Column, Integer
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
 from taca_outbox.models import create_outbox_model
 
 Base = declarative_base()
 
 
-# Core tables for ranking calculations
-class TournamentResult(Base):
-    """
-    Represents the results of a tournament.
-    This is the raw data that feeds into the ranking calculations.
-    """
-
-    __tablename__ = "tournament_result"
-    __table_args__ = (
-        UniqueConstraint("tournament_id", "position", name="uq_tournament_position"),
-        {"schema": "ranking"},
-    )
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tournament_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    competitor_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    position = Column(Integer, nullable=False)
+# OutboxEvent model — schema-bound via shared factory
+OutboxEvent = create_outbox_model(Base, schema="ranking")
 
 
+# Core tables populated by event handlers
 class ModalityTypeEscalao(Base):
-    """
-    Represents the scale/level of a modality (sport) for ranking purposes.
-    This can be used to differentiate between different levels of competition.
-    """
-
-    __tablename__ = "modality_type_escalao"
+    __tablename__ = "modality_type_escaloes"
     __table_args__ = {"schema": "ranking"}
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    min_participants = Column(Integer, nullable=False)
-    max_participants = Column(Integer, nullable=False)
-    points = Column(Float, nullable=False, default=0.0)
-    modality_type_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("ranking.modality_type.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
+    _id = Column(Integer, primary_key=True, autoincrement=True)
+    modality_type_id = Column(UUID(as_uuid=True))
+    min_participants = Column(Integer, nullable=True)
+    max_participants = Column(Integer, nullable=True)
+    points = Column(ARRAY(Integer), nullable=False)
 
 
 class ModalityType(Base):
-    """
-    Represents the type of modality (sport) for ranking purposes.
-    This is used to categorize tournaments and results.
-    """
+    __tablename__ = "modality_types"
+    __table_args__ = {"schema": "ranking"}
+    modality_type_id = Column(UUID(as_uuid=True), primary_key=True)
 
-    __tablename__ = "modality_type"
+
+class Modality(Base):
+    __tablename__ = "modalities"
     __table_args__ = {"schema": "ranking"}
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    escaloes = relationship(
-        "ModalityTypeEscalao", backref="modality_type", cascade="all, delete-orphan"
-    )
+    modality_id = Column(UUID(as_uuid=True), primary_key=True)
+    modality_type_id = Column(UUID(as_uuid=True), nullable=False)
 
 
-# Derived tables for rankings
+class Tournament(Base):
+    __tablename__ = "tournaments"
+    __table_args__ = {"schema": "ranking"}
+
+    tournament_id = Column(UUID(as_uuid=True), primary_key=True)
+    modality_id = Column(UUID(as_uuid=True), nullable=False)
+    scoring_format_id = Column(UUID(as_uuid=True), nullable=True)
+
+
+class TournamentCompetitor(Base):
+    __tablename__ = "tournament_competitors"
+    __table_args__ = {"schema": "ranking"}
+
+    tournament_id = Column(UUID(as_uuid=True), primary_key=True)
+    competitor_id = Column(UUID(as_uuid=True), primary_key=True)
+    competitor_course_id = Column(UUID(as_uuid=True), nullable=False)
+
+
+class TournamentResult(Base):
+    __tablename__ = "tournament_results"
+    __table_args__ = {"schema": "ranking"}
+
+    tournament_id = Column(UUID(as_uuid=True), primary_key=True)
+    competitor_id = Column(UUID(as_uuid=True), primary_key=True)
+    position = Column(Integer, nullable=False)
+
+
+class Course(Base):
+    __tablename__ = "courses"
+    __table_args__ = {"schema": "ranking"}
+
+    course_id = Column(UUID(as_uuid=True), primary_key=True)
+
+
+# Derived tables
+class GeneralRanking(Base):
+    __tablename__ = "general_rankings"
+    __table_args__ = {"schema": "ranking"}
+
+    course_id = Column(UUID(as_uuid=True), primary_key=True)
+    points = Column(Integer, nullable=False)
+
+
 class ModalityRanking(Base):
-    """
-    Represents rankings for a modality (sport) in a season.
-    Aggregates team/course performance across all tournaments of this modality.
-    """
-
-    __tablename__ = "modality_ranking"
+    __tablename__ = "modality_rankings"
     __table_args__ = {"schema": "ranking"}
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    modality_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    season_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    course_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    points = Column(Float, nullable=False, default=0.0)
-    details = Column(JSON, nullable=True)  # Additional ranking details
-    last_updated = Column(
-        DateTime,
-        nullable=False,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
-    )
-
-    def __repr__(self):
-        return f"<ModalityRanking {self.id} - Course {self.course_id} in Modality {self.modality_id}: {self.points} pts>"
+    modality_id = Column(UUID(as_uuid=True), primary_key=True)
+    course_id = Column(UUID(as_uuid=True), primary_key=True)
+    points = Column(Integer, nullable=False)
 
 
 class CourseRanking(Base):
-    """
-    Represents overall rankings for a course in a season.
-    Aggregates points from all modalities.
-    """
-
-    __tablename__ = "course_ranking"
+    __tablename__ = "course_rankings"
     __table_args__ = {"schema": "ranking"}
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    course_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    season_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    total_points = Column(Float, nullable=False, default=0.0)
-    modality_breakdown = Column(JSON, nullable=True)  # Points per modality
-    last_updated = Column(
-        DateTime,
-        nullable=False,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
-    )
-
-    def __repr__(self):
-        return f"<CourseRanking {self.id} - Course {self.course_id}: {self.total_points} pts>"
-
-
-class GeneralRanking(Base):
-    """
-    Represents the general/overall ranking across all courses.
-    This is a denormalized view for quick access.
-    """
-
-    __tablename__ = "general_ranking"
-    __table_args__ = {"schema": "ranking"}
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    season_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    course_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    position = Column(Integer, nullable=False)
-    total_points = Column(Float, nullable=False, default=0.0)
-    last_updated = Column(
-        DateTime,
-        nullable=False,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
-    )
-
-    def __repr__(self):
-        return f"<GeneralRanking {self.id} - Position {self.position}: Course {self.course_id} ({self.total_points} pts)>"
-
-
-# OutboxEvent model — schema-bound via shared factory
-OutboxEvent = create_outbox_model(Base, schema="ranking")
+    course_id = Column(UUID(as_uuid=True), primary_key=True)
+    points = Column(Integer, nullable=False)
+    modality_breakdown = Column(ARRAY(Integer), nullable=False)  # Points per modality

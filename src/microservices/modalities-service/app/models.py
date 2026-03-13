@@ -114,6 +114,11 @@ class ModalityType(Base):
     name = Column(Text, unique=True, nullable=False)
     description = Column(Text, nullable=True)
     escaloes = Column(JSON, nullable=True)  # Array of escaloes stored as JSON
+    is_playoff = Column(
+        Boolean, default=False
+    )  # Indicates if this is the playoff modality type
+
+    # bulshit fields
     created_by = Column(UUID(as_uuid=True), nullable=False)
     created_at = Column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
@@ -131,6 +136,7 @@ class ModalityType(Base):
             "name": self.name,
             "description": self.description,
             "escaloes": self.escaloes,
+            "is_playoff": self.is_playoff,
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
