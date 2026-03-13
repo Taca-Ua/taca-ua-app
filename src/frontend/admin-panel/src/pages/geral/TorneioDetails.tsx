@@ -583,10 +583,24 @@ const FinishTournamentModal = ({
   const MAX_POSITIONS = 12; // Configurable number of positions
   const numPositions = Math.min(MAX_POSITIONS, tournament.competitors.length);
 
-  // Map position number to competitor ID
-  const [positionAssignments, setPositionAssignments] = useState<Map<number, string>>(new Map());
+  // Map ranking position to competitor IDs (supports ties)
+  const [positionAssignments, setPositionAssignments] = useState<Map<number, string[]>>(() => {
+    const initial = new Map<number, string[]>();
+    for (let position = 1; position <= numPositions; position += 1) {
+      initial.set(position, ['']);
+    }
+    return initial;
+  });
   const { notify } = useNotification();
   const [finishing, setFinishing] = useState(false);
+
+  useEffect(() => {
+    const initial = new Map<number, string[]>();
+    for (let position = 1; position <= numPositions; position += 1) {
+      initial.set(position, ['']);
+    }
+    setPositionAssignments(initial);
+  }, [numPositions, tournament.id]);
 
   const getCompetitorId = (competitor: TournamentCompetitorDetail): string => {
     if (competitor.competitor_type === 'team' && competitor.team) {
@@ -608,14 +622,106 @@ const FinishTournamentModal = ({
     return 'Desconhecido';
   };
 
-  const handleCompetitorChange = (position: number, competitorId: string) => {
-    const newAssignments = new Map(positionAssignments);
-    if (competitorId === '') {
-      newAssignments.delete(position);
-    } else {
-      newAssignments.set(position, competitorId);
+  const getFilledCountAtPosition = (
+    assignments: Map<number, string[]>,
+    position: number
+  ): number => {
+    return (assignments.get(position) || []).filter(Boolean).length;
+  };
+
+  const getActivePositions = (assignments: Map<number, string[]> = positionAssignments): Set<number> => {
+    const active = new Set<number>();
+    let nextPosition = 1;
+
+    while (nextPosition <= numPositions) {
+      active.add(nextPosition);
+      const filledCount = getFilledCountAtPosition(assignments, nextPosition);
+      if (filledCount === 0) break;
+      nextPosition += filledCount;
     }
-    setPositionAssignments(newAssignments);
+
+    return active;
+  };
+
+  const normalizeAssignments = (assignments: Map<number, string[]>): Map<number, string[]> => {
+    const active = getActivePositions(assignments);
+    const normalized = new Map<number, string[]>();
+
+    for (let position = 1; position <= numPositions; position += 1) {
+      if (active.has(position)) {
+        const existing = assignments.get(position) || [''];
+        normalized.set(position, existing.length > 0 ? existing : ['']);
+      } else {
+        normalized.set(position, ['']);
+      }
+    }
+
+    return normalized;
+  };
+
+  const handleCompetitorChange = (position: number, index: number, competitorId: string) => {
+    const newAssignments = new Map(positionAssignments);
+    const competitorsAtPosition = [...(newAssignments.get(position) || [])];
+    competitorsAtPosition[index] = competitorId;
+    newAssignments.set(position, competitorsAtPosition);
+    setPositionAssignments(normalizeAssignments(newAssignments));
+  };
+
+  const addTieSlot = (position: number) => {
+    const newAssignments = new Map(positionAssignments);
+    const competitorsAtPosition = [...(newAssignments.get(position) || [])];
+    competitorsAtPosition.push('');
+    newAssignments.set(position, competitorsAtPosition);
+    setPositionAssignments(normalizeAssignments(newAssignments));
+  };
+
+  const removeTieSlot = (position: number, index: number) => {
+    const newAssignments = new Map(positionAssignments);
+    const competitorsAtPosition = [...(newAssignments.get(position) || [])];
+
+    if (competitorsAtPosition.length <= 1) {
+      competitorsAtPosition[0] = '';
+      newAssignments.set(position, competitorsAtPosition);
+      setPositionAssignments(normalizeAssignments(newAssignments));
+      return;
+    }
+
+    competitorsAtPosition.splice(index, 1);
+    newAssignments.set(position, competitorsAtPosition);
+    setPositionAssignments(normalizeAssignments(newAssignments));
+  };
+
+  const getAssignedCompetitorIds = (): string[] => {
+    const assigned: string[] = [];
+    positionAssignments.forEach((competitorsAtPosition) => {
+      competitorsAtPosition.forEach((competitorId) => {
+        if (competitorId) assigned.push(competitorId);
+      });
+    });
+    return assigned;
+  };
+
+  const validateCompetitionRanking = (): string | null => {
+    const activePositions = getActivePositions();
+
+    for (let position = 1; position <= numPositions; position += 1) {
+      const filledCount = getFilledCountAtPosition(positionAssignments, position);
+
+      if (!activePositions.has(position) && filledCount > 0) {
+        return `A posição ${position}º deve estar vazia devido a empates em posições anteriores`;
+      }
+    }
+
+    let expectedPosition = 1;
+    while (expectedPosition <= numPositions) {
+      const filledCount = getFilledCountAtPosition(positionAssignments, expectedPosition);
+      if (filledCount === 0) {
+        return `A posição ${expectedPosition}º precisa de pelo menos um competidor`;
+      }
+      expectedPosition += filledCount;
+    }
+
+    return null;
   };
 
   const getPositionLabel = (position: number): string => {
@@ -626,17 +732,27 @@ const FinishTournamentModal = ({
   };
 
   const handleSubmit = async () => {
-    // Validate that all positions are filled
-    if (positionAssignments.size < numPositions) {
-      notify(`Por favor, atribua competidores a todas as ${numPositions} posições`, 'error');
+    const assignedCompetitorIds = getAssignedCompetitorIds();
+
+    if (assignedCompetitorIds.length < numPositions) {
+      notify(`Por favor, atribua ${numPositions} competidores no total`, 'error');
       return;
     }
 
-    // Check for duplicate competitors
-    const competitorIds = Array.from(positionAssignments.values());
-    const uniqueCompetitors = new Set(competitorIds);
-    if (uniqueCompetitors.size !== competitorIds.length) {
-      notify('Cada competidor só pode ocupar uma posição', 'error');
+    if (assignedCompetitorIds.length > numPositions) {
+      notify(`Apenas ${numPositions} competidores podem ser classificados`, 'error');
+      return;
+    }
+
+    const uniqueCompetitors = new Set(assignedCompetitorIds);
+    if (uniqueCompetitors.size !== assignedCompetitorIds.length) {
+      notify('Cada competidor só pode ser atribuído uma vez', 'error');
+      return;
+    }
+
+    const rankingValidationError = validateCompetitionRanking();
+    if (rankingValidationError) {
+      notify(rankingValidationError, 'error');
       return;
     }
 
@@ -644,27 +760,35 @@ const FinishTournamentModal = ({
       setFinishing(true);
 
       // Build ranking entries
-      const ranking_entries: (TournamentCompetitor & { position: number })[] = [];
+      const ranking_entries: (TournamentCompetitor & { competitor_id: string; position: number })[] = [];
 
-      positionAssignments.forEach((competitorId, position) => {
-        const competitor = tournament.competitors.find(c => getCompetitorId(c) === competitorId);
+      positionAssignments.forEach((competitorsAtPosition, position) => {
+        competitorsAtPosition.forEach((competitorRecordId) => {
+          if (!competitorRecordId) return;
 
-        if (competitor) {
-          const entry: TournamentCompetitor & { competitor_id: string; position: number } = {
-            competitor_id: competitor.id,
-            competitor_type: competitor.competitor_type,
-            position
-          };
+          const competitor = tournament.competitors.find(c => c.id === competitorRecordId);
 
-          if (competitor.competitor_type === 'team') {
-            entry.team_id = competitorId;
-          } else {
-            entry.athlete_id = competitorId;
+          if (competitor) {
+            const entry: TournamentCompetitor & { competitor_id: string; position: number } = {
+              competitor_id: competitor.id,
+              competitor_type: competitor.competitor_type,
+              position
+            };
+
+            const participantId = getCompetitorId(competitor);
+
+            if (competitor.competitor_type === 'team') {
+              entry.team_id = participantId;
+            } else {
+              entry.athlete_id = participantId;
+            }
+
+            ranking_entries.push(entry);
           }
-
-          ranking_entries.push(entry);
-        }
+        });
       });
+
+      ranking_entries.sort((a, b) => a.position - b.position);
 
       await onFinish({ ranking_entries });
       onClose();
@@ -675,8 +799,7 @@ const FinishTournamentModal = ({
     }
   };
 
-  // Get list of already assigned competitors
-  const assignedCompetitors = new Set(positionAssignments.values());
+  const activePositions = getActivePositions();
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -684,47 +807,80 @@ const FinishTournamentModal = ({
         <h2 className="text-2xl font-bold mb-6 text-gray-800">Finalizar Torneio - Classificação Final</h2>
 
         <p className="text-gray-600 mb-6">
-          Atribua os competidores às posições finais do torneio (1º ao {numPositions}º lugar).
+          Selecione os competidores por posição final. Para empates, adicione mais competidores na mesma posição.
         </p>
 
         <div className="space-y-3 mb-6">
-          {Array.from({ length: numPositions }, (_, i) => i + 1).map((position) => {
-            const selectedCompetitorId = positionAssignments.get(position) || '';
+          {Array.from({ length: numPositions }, (_, i) => i + 1)
+            .filter((position) => activePositions.has(position))
+            .map((position) => {
+            const competitorsAtPosition = positionAssignments.get(position) || [''];
 
             return (
               <div
                 key={position}
-                className="flex items-center gap-4 p-4 bg-gray-50 rounded-md"
+                className="p-4 bg-gray-50 rounded-md"
               >
-                <div className="w-32">
-                  <label className="text-gray-800 font-semibold">
-                    {getPositionLabel(position)}
-                  </label>
-                </div>
-                <div className="flex-1">
-                  <select
-                    value={selectedCompetitorId}
-                    onChange={(e) => handleCompetitorChange(position, e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-gray-800 font-semibold">{getPositionLabel(position)}</label>
+                  <button
+                    type="button"
+                    onClick={() => addTieSlot(position)}
+                    className="text-sm px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors"
                   >
-                    <option value="">Selecione um competidor...</option>
-                    {tournament.competitors.map((competitor) => {
-                      const competitorId = getCompetitorId(competitor);
-                      const competitorName = getCompetitorName(competitor);
-                      const isAssigned = assignedCompetitors.has(competitorId) && selectedCompetitorId !== competitorId;
+                    + Empate
+                  </button>
+                </div>
 
-                      return (
-                        <option
-                          key={competitorId}
-                          value={competitorId}
-                          disabled={isAssigned}
+                <div className="space-y-2">
+                  {competitorsAtPosition.map((competitorRecordId, index) => {
+                    const selectedElsewhere = new Set(
+                      getAssignedCompetitorIds().filter((id, idx, arr) => {
+                        if (id !== competitorRecordId) return true;
+                        const first = arr.indexOf(id);
+                        return first !== idx;
+                      })
+                    );
+
+                    return (
+                      <div key={`${position}-${index}`} className="flex gap-2">
+                        <select
+                          value={competitorRecordId}
+                          onChange={(e) => handleCompetitorChange(position, index, e.target.value)}
+                          className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
                         >
-                          {competitorName} ({competitor.competitor_type === 'team' ? 'Equipa' : 'Atleta'})
-                          {isAssigned ? ' - Já atribuído' : ''}
-                        </option>
-                      );
-                    })}
-                  </select>
+                          <option value="">Selecione um competidor...</option>
+                          {tournament.competitors.map((competitor) => {
+                            const competitorRecordIdOption = competitor.id;
+                            const participantName = getCompetitorName(competitor);
+                            const isDisabled = selectedElsewhere.has(competitorRecordIdOption) && competitorRecordIdOption !== competitorRecordId;
+
+                            return (
+                              <option
+                                key={competitorRecordIdOption}
+                                value={competitorRecordIdOption}
+                                disabled={isDisabled}
+                              >
+                                {participantName} ({competitor.competitor_type === 'team' ? 'Equipa' : 'Atleta'})
+                                {isDisabled ? ' - Já atribuído' : ''}
+                              </option>
+                            );
+                          })}
+                        </select>
+
+                        {competitorsAtPosition.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeTieSlot(position, index)}
+                            className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors"
+                            title="Remover empate"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );

@@ -175,18 +175,30 @@ def compute_all_rankings(db: Session) -> None:
                 f"Tournament {tid} has {participant_count} participants, using escalao with points {escalao.points}"
             )
             print(f"Processing {len(results)} results for tournament {tid}")
+
+            # Group results by position to handle ties
+            results_by_position: Dict[int, List[TournamentResult]] = defaultdict(list)
             for result in results:
-                pts = _points_for_position(escalao, result.position)
+                results_by_position[result.position].append(result)
+
+            for position, tied_results in results_by_position.items():
+                n = len(tied_results)
+                # Average the points over the range of positions the tied competitors occupy
+                total_pts = sum(
+                    _points_for_position(escalao, position + i) for i in range(n)
+                )
+                pts = round(total_pts / n)
                 if pts:
-                    course_id = course_by_competitor.get(result.competitor_id)
-                    if course_id is None:
-                        logger.warning(
-                            "result_competitor_not_found_in_tournament_competitors",
-                            tournament_id=str(tid),
-                            competitor_id=str(result.competitor_id),
-                        )
-                        continue
-                    modality_course_points[modality.modality_id][course_id] += pts
+                    for result in tied_results:
+                        course_id = course_by_competitor.get(result.competitor_id)
+                        if course_id is None:
+                            logger.warning(
+                                "result_competitor_not_found_in_tournament_competitors",
+                                tournament_id=str(tid),
+                                competitor_id=str(result.competitor_id),
+                            )
+                            continue
+                        modality_course_points[modality.modality_id][course_id] += pts
 
     # --- 4. Persist ModalityRanking -----------------------------------------
     for modality_id, course_points in modality_course_points.items():
