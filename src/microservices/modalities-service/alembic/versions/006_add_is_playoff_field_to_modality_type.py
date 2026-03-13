@@ -1,7 +1,7 @@
 """Add is playoff field to modality_type
 
-Revision ID: 004
-Revises: 003
+Revision ID: 006
+Revises: 005
 Create Date: 2026-03-02
 
 """
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "004"
-down_revision: Union[str, None] = "003"
+revision: str = "006"
+down_revision: Union[str, None] = "005"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
