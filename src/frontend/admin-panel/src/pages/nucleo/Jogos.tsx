@@ -280,25 +280,25 @@ const Jogos = () => {
                             <div className="space-y-1">
                               {dayMatches.map((match) => {
                                 const { time } = formatDateTime(match.start_time);
+                                const tournament = tournamentMap[match.tournament_id]; // Buscar o torneio para ter a modalidade
+
                                 return (
                                   <button
                                     key={match.id}
                                     type="button"
                                     onClick={() => navigate(`/nucleo/jogos/${match.id}`)}
-                                    className="w-full text-left text-xs bg-teal-100 hover:bg-teal-200 px-2 py-1 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
-                                    title={`${time} - ${match.participants.map(p => {
-                                      if (p.team) return p.team.name;
-                                      if (p.athlete) return p.athlete.full_name;
-                                      return 'TBD';
-                                    }).join(' vs ')}`}
+                                    className="w-full text-left text-[10px] leading-tight bg-teal-100 hover:bg-teal-200 px-1.5 py-1 rounded mb-1 transition-colors"
+                                    title={`${tournament?.modality?.name || ''} - ${time}`}
                                   >
-                                    <div className="font-medium truncate">{time}</div>
-                                    <div className="truncate text-gray-600">
-                                      {match.participants.map(p => {
-                                        if (p.team) return p.team.name;
-                                        if (p.athlete) return p.athlete.full_name;
-                                        return 'TBD';
-                                      }).join(' vs ')}
+                                    <div className="flex justify-between items-center">
+                                      <span className="font-bold">{time}</span>
+                                      {/* Adição da Modalidade no Calendário */}
+                                      <span className="text-[9px] text-teal-700 font-medium truncate ml-1">
+                                        {tournament?.modality?.name}
+                                      </span>
+                                    </div>
+                                    <div className="truncate text-gray-600 italic">
+                                      {match.participants.map(p => p.team?.name || p.athlete?.full_name || 'TBD').join(' v ')}
                                     </div>
                                   </button>
                                 );
@@ -307,7 +307,6 @@ const Jogos = () => {
                           </div>
                         );
                       }
-
                       return days;
                     })()}
                   </div>
