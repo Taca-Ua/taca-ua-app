@@ -14,14 +14,9 @@ function Navbar() {
             {/* Logo */}
             <Link
               to="/"
-              className="text-xl font-bold text-teal-600 transition-all duration-300 ease-in-out hover:text-teal-700 group"
+              className="flex items-center transition-transform duration-300 ease-in-out hover:scale-105"
             >
-              <span className="inline-block transition-all duration-300 group-hover:scale-110 group-hover:-rotate-6">T</span>
-              <span className="inline-block transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 delay-75">a</span>
-              <span className="inline-block transition-all duration-300 group-hover:scale-110 group-hover:-rotate-6 delay-100">ç</span>
-              <span className="inline-block transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 delay-150">a</span>
-              <span className="inline-block transition-all duration-300 group-hover:scale-110 group-hover:-rotate-6 delay-200">U</span>
-              <span className="inline-block transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 delay-300">a</span>
+              <img src="/logo.png" alt="Taça UA" className="h-10 w-auto" />
             </Link>
 
             {/* Desktop Navigation Links */}
