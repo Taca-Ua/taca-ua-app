@@ -65,6 +65,16 @@ const Equipas = () => {
     fetchData();
   }, []);
 
+  // Default team name when creating team
+  useEffect(() => {
+    if (selectedCourse) {
+      const course = allCourses.find(c => String(c.id) === String(selectedCourse));
+      if (course) {
+        setNewTeamName(course.name);
+      }
+    }
+  }, [selectedCourse, allCourses]);
+
   const handleAddTeam = async () => {
     if (!newTeamName.trim()) {
       notify('Por favor, preencha o nome da equipa.', 'error');
@@ -223,6 +233,24 @@ const Equipas = () => {
 
             <div className="space-y-4">
               <div>
+                <label htmlFor="course" className="block text-gray-700 font-medium mb-2">
+                  Curso <HelpTooltip text="Curso académico que esta equipa representa. Afeta os filtros de pesquisa e a organização das equipas." className="ml-1" /> <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="course"
+                  value={selectedCourse}
+                  onChange={(e) => setSelectedCourse(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                >
+                  <option value="">Selecionar Curso</option>
+                  {allCourses.map((course) => (
+                    <option key={course.id} value={course.id}>
+                      {course.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
                 <label htmlFor="teamName" className="block text-gray-700 font-medium mb-2">
                   Nome da Equipa <HelpTooltip text="Nome pelo qual a equipa é identificada nos torneios e rankings. Deve ser único dentro do núcleo." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
@@ -255,24 +283,7 @@ const Equipas = () => {
                 </select>
               </div>
 
-              <div>
-                <label htmlFor="course" className="block text-gray-700 font-medium mb-2">
-                  Curso <HelpTooltip text="Curso académico que esta equipa representa. Afeta os filtros de pesquisa e a organização das equipas." className="ml-1" /> <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="course"
-                  value={selectedCourse}
-                  onChange={(e) => setSelectedCourse(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                  <option value="">Selecionar Curso</option>
-                  {allCourses.map((course) => (
-                    <option key={course.id} value={course.id}>
-                      {course.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+
             </div>
 
             <div className="flex gap-4 mt-6">
