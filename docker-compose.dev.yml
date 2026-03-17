@@ -168,6 +168,25 @@ services:
       keycloak:
         condition: service_started
 
+  competition-api-v2:
+    build:
+      context: .
+      dockerfile: src/apis/competition_api_v2/Dockerfile.dev
+    volumes:
+      - ./src/shared:/tmp
+      - ./src/apis/competition_api_v2:/app
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      loki:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      keycloak:
+        condition: service_started
+
   public-api:
     build:
       context: .
