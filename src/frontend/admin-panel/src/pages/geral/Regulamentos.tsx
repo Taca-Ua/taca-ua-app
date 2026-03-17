@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import ConfirmModal from "../../components/ConfirmModal";
 import Sidebar from "../../components/geral_navbar";
-import { regulationsApi, type Regulation, type RegulationCreate } from '../../api/regulations';
+import { regulationsApi, type Regulation } from '../../api/regulations';
 import { useNotification } from '../../contexts/NotificationProvider';
-import HelpTooltip from '../../components/HelpTooltip';
 import { btn } from '../../styles/buttonStyles';
 
 const Regulamentos: React.FC = () => {
@@ -184,26 +183,15 @@ const Regulamentos: React.FC = () => {
             </button>
           </header>
 
-          {/* Barra de Ferramentas: Teu Search + Filtro de Modalidade da dev */}
-          <div className="bg-white p-4 rounded-lg shadow-sm mb-6 border border-gray-200 flex flex-wrap gap-6 items-end">
-            <div className="relative max-w-md flex-1">
-              <label className="block mb-1 text-xs font-bold text-gray-400 uppercase tracking-widest">Pesquisar</label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </span>
-                <input
-                  type="text"
-                  placeholder="Por título..."
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 sm:text-sm"
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
-
+          {/* Barra de Ferramentas */}
+          <div className="flex gap-3 mb-6">
+            <input
+              type="text"
+              placeholder="Pesquisar regulamento..."
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
           </div>
 
           {/* Grid de Cards / Lista com Teu Loading */}
