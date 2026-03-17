@@ -6,7 +6,6 @@ function Home() {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       
-      {/* Hero Section with Background Image */}
       <div 
         className="relative flex items-center justify-center bg-cover bg-center"
         style={{ 
@@ -14,17 +13,16 @@ function Home() {
           backgroundImage: 'url(/images/ab204667-c021-499c-b1f9-db300bfd877c.webp)',
         }}
       >
-        {/* Overlay for blur/darkness effect */}
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
         
-        {/* Content */}
         <div className="relative z-10 text-center text-white px-4">
-          <h1 className="text-5xl md:text-6xl font-bold mb-4">TACA UA</h1>
+          <h1 className="text-5xl md:text-6xl font-bold mb-4">TAÇA UA</h1>
+          <h2 className="text-2xl md:text-3xl font-semibold mb-6">Glicínias Plaza</h2>
           <p className="text-xl md:text-2xl">Bem-vindo ao portal dos desportos universitários</p>
         </div>
       </div>
 
-      {/* Sobre Nós Section */}
+      {/* Sobre Nós Section (STILL WAITING FOR THE TEXT)*/}
       <section className="py-16 px-4 md:px-8 lg:px-16 bg-white">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-4xl md:text-5xl font-bold text-center mb-12 text-gray-800">
@@ -75,6 +73,7 @@ function Home() {
       </div>
 
       {/* Sponsors Section */}
+      {/* TODO: Add links and images to each sponsor */}
       <section className="py-16 px-4 md:px-8 lg:px-16 bg-teal-700">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-4xl md:text-5xl font-bold text-center mb-12 text-white">
