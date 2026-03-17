@@ -18,7 +18,7 @@ function Home() {
         <div className="relative z-10 text-center text-white px-4">
           <h1 className="text-5xl md:text-6xl font-bold mb-4">TAÇA UA</h1>
           <h2 className="text-2xl md:text-3xl font-semibold mb-6">Glicínias Plaza</h2>
-          <p className="text-xl md:text-2xl">Bem-vindo ao portal dos desportos universitários</p>
+          <p className="text-xl md:text-2xl">Bem-vindo ao portal do desporto universitário</p>
         </div>
       </div>
 
@@ -73,7 +73,6 @@ function Home() {
       </div>
 
       {/* Sponsors Section */}
-      {/* TODO: Add links and images to each sponsor */}
       <section className="py-16 px-4 md:px-8 lg:px-16 bg-teal-700">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-4xl md:text-5xl font-bold text-center mb-12 text-white">
@@ -81,24 +80,32 @@ function Home() {
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center justify-items-center">
             {/* Glicínias Plaza */}
-            <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
-              <span className="text-gray-800 font-bold text-lg text-center">Glicínias Plaza</span>
-            </div>
+            <a href="https://www.glicinias.pt/" target="_blank" rel="noopener noreferrer" className="w-full">
+              <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
+                <img src="/181_glicinias_plaza_1.png" alt="Glicínias Plaza" className="max-h-full max-w-full object-contain" />
+              </div>
+            </a>
             
             {/* Câmara Municipal de Aveiro */}
-            <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
-              <span className="text-gray-800 font-bold text-lg text-center">Câmara Municipal de Aveiro</span>
-            </div>
+            <a href="https://www.cm-aveiro.pt/" target="_blank" rel="noopener noreferrer" className="w-full">
+              <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
+                <img src="/cmaveiro.png" alt="Câmara Municipal de Aveiro" className="max-h-full max-w-full object-contain" />
+              </div>
+            </a>
             
             {/* Universidade de Aveiro */}
-            <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
-              <span className="text-gray-800 font-bold text-lg text-center">Universidade de Aveiro</span>
-            </div>
+            <a href="https://www.ua.pt/" target="_blank" rel="noopener noreferrer" className="w-full">
+              <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
+                <img src="/ua.png" alt="Universidade de Aveiro" className="max-h-full max-w-full object-contain" />
+              </div>
+            </a>
             
             {/* IPDJ */}
-            <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
-              <span className="text-gray-800 font-bold text-lg text-center">IPDJ</span>
-            </div>
+            <a href="https://ipdj.gov.pt/" target="_blank" rel="noopener noreferrer" className="w-full">
+              <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
+                <img src="/ipdj.png" alt="IPDJ" className="max-h-full max-w-full object-contain" />
+              </div>
+            </a>
           </div>
         </div>
       </section>
