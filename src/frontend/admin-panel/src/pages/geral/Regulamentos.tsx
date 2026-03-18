@@ -103,26 +103,26 @@ const Regulamentos: React.FC = () => {
 
   const formatDisplayDate = (dateStr: string | undefined) => {
     if (!dateStr) return "Data indisponível";
-    
+
     const date = new Date(dateStr);
-    
+
     if (isNaN(date.getTime())) {
       const fallbackDate = new Date(dateStr.split('.')[0] + 'Z');
       if (isNaN(fallbackDate.getTime())) return "Data indisponível";
       return fallbackDate.toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' });
     }
 
-    return date.toLocaleDateString('pt-PT', { 
-      day: '2-digit', 
-      month: 'long', 
-      year: 'numeric' 
+    return date.toLocaleDateString('pt-PT', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
     });
   };
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      
+
       const regulationsData = await regulationsApi.getAll();
 
       console.log("ESTRUTURA DO REGULAMENTO:", regulationsData[0]);
@@ -171,7 +171,7 @@ const Regulamentos: React.FC = () => {
       // Limpa o formulário e fecha o modal
       resetForm();
       setIsUploadModalOpen(false);
-      
+
       notify("Regulamento adicionado com sucesso!", "success");
     } catch (err: unknown) {
       console.error('Upload failed:', err);
@@ -187,7 +187,7 @@ const Regulamentos: React.FC = () => {
 
   const handleDelete = async () => {
     if (!selectedRegulation) return;
-    
+
     // Em vez do confirm do browser, abre o modal customizado da dev
     setIsDeleteModalOpen(true);
   };
@@ -197,24 +197,24 @@ const Regulamentos: React.FC = () => {
 
     try {
       setDeletingRegulation(true);
-      
+
       // Chamada à tua API
       await regulationsApi.delete(selectedRegulation.id);
-      
+
       // Atualiza a lista local
       setRegulations(prev => prev.filter(r => r.id !== selectedRegulation.id));
-      
+
       // Fecha ambos os modais (o de visualização e o de confirmação)
       setIsDeleteModalOpen(false);
       setIsViewModalOpen(false);
       setSelectedRegulation(null);
-      
+
       // Notificação de sucesso da dev
       notify('Regulamento eliminado com sucesso!', 'success');
-      
+
     } catch (err: unknown) {
       console.error('Failed to delete regulation:', err);
-      
+
       // Tratamento de erro padronizado
       if (err instanceof Error) {
         notify(err.message, 'error');
@@ -232,7 +232,7 @@ const Regulamentos: React.FC = () => {
 
       <main className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
-          
+
           <header className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-800">Gestão de Regulamentos</h1>
@@ -412,7 +412,7 @@ const Regulamentos: React.FC = () => {
       {isViewModalOpen && selectedRegulation && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
-            
+
             <div className="p-8">
               <div className="flex justify-between items-start">
                 <h2 className="text-2xl font-bold text-gray-900">{selectedRegulation.title}</h2>

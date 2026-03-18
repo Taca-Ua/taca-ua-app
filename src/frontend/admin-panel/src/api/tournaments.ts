@@ -23,6 +23,7 @@ export interface Tournament {
   name: string;
   status: string;
   modality: Modality;
+  start_date?: string;
 }
 
 export interface TournamentDetail extends Tournament {
