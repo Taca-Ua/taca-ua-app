@@ -539,6 +539,46 @@ def _update_tournament_ranks(session: Session, tournament_id: UUID) -> None:
         standing.updated_at = datetime.utcnow()
 
 
+# ==================== Ranking Views ====================
+
+
+def rebuild_general_ranking_projection(session: Session) -> None:
+    """
+    Rebuild general rankings view.
+
+    This is a placeholder function. The actual implementation would depend on the ranking logic,
+    which may involve aggregating points from courses, modalities, or other entities.
+    """
+    from .models import GeneralRankings, GeneralRankingView
+
+    # Clear existing general ranking view
+    session.query(GeneralRankingView).delete()
+
+    general_rankings_core_data = session.query(GeneralRankings).all()
+
+    for rank, entry in enumerate(
+        sorted(general_rankings_core_data, key=lambda x: x.points, reverse=True),
+        start=1,
+    ):
+        course = (
+            session.query(Course).filter(Course.course_id == entry.course_id).first()
+        )
+        nucleo = course.nucleo if course else None
+
+        projection = GeneralRankingView(
+            course_id=course.course_id,
+            course_name=course.name,
+            course_abbreviation=course.abbreviation,
+            nucleo_id=nucleo.nucleo_id,
+            nucleo_name=nucleo.name,
+            nucleo_abbreviation=nucleo.abbreviation,
+            points=entry.points,
+            rank=rank,
+            tournaments_participated=entry.tournaments_participated,
+        )
+        session.merge(projection)
+
+
 # ==================== Bulk Rebuild Utilities ====================
 
 

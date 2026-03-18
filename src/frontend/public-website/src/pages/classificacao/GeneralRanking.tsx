@@ -131,9 +131,6 @@ function GeneralRankingPage() {
                           <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Pontos
                           </th>
-                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Torneios Participados
-                          </th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -169,11 +166,6 @@ function GeneralRankingPage() {
                             <td className="px-6 py-4 text-center">
                               <span className="text-lg font-bold text-teal-600">
                                 {ranking.points}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 text-center">
-                              <span className="text-sm text-gray-700">
-                                {ranking.tournaments_participated}
                               </span>
                             </td>
                           </tr>

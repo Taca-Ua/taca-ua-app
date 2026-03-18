@@ -10,6 +10,7 @@ All models are now imported from the shared taca_models package.
 # Re-export all models from shared package
 from taca_models import (  # Enums; Core Read Models; Materialized Views
     Course,
+    GeneralRankings,
     GeneralRankingView,
     Match,
     MatchComment,
@@ -19,6 +20,7 @@ from taca_models import (  # Enums; Core Read Models; Materialized Views
     MatchResult,
     MatchStatus,
     Modality,
+    ModalityRankings,
     ModalityType,
     Nucleo,
     ParticipantType,
@@ -65,4 +67,6 @@ __all__ = [
     "MatchDetailView",
     "TournamentStandingsView",
     "GeneralRankingView",
+    "ModalityRankings",
+    "GeneralRankings",
 ]

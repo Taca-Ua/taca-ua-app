@@ -488,6 +488,49 @@ class MatchComment(Base):
     match = relationship("Match", back_populates="comments")
 
 
+class GeneralRankings(Base):
+    """General rankings for courses - populated from tournament.finished events."""
+
+    __tablename__ = "general_rankings"
+    __table_args__ = (
+        Index("ix_general_rankings_course_id", "course_id"),
+        UniqueConstraint("course_id", name="uq_general_rankings_course"),
+        {"schema": "public_read"},
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    course_id = Column(
+        UUID(as_uuid=True), ForeignKey("public_read.courses.course_id"), nullable=False
+    )
+    points = Column(Integer, nullable=False, default=0)
+    tournaments_participated = Column(Integer, nullable=False, default=0)
+
+
+class ModalityRankings(Base):
+    """Rankings for courses within a modality - populated from tournament.finished events."""
+
+    __tablename__ = "modality_rankings"
+    __table_args__ = (
+        Index("ix_modality_rankings_modality_id", "modality_id"),
+        Index("ix_modality_rankings_course_id", "course_id"),
+        UniqueConstraint(
+            "modality_id", "course_id", name="uq_modality_rankings_modality_course"
+        ),
+        {"schema": "public_read"},
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    modality_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("public_read.modalities.modality_id"),
+        nullable=False,
+    )
+    course_id = Column(
+        UUID(as_uuid=True), ForeignKey("public_read.courses.course_id"), nullable=False
+    )
+    points = Column(Integer, nullable=False, default=0)
+
+
 # ==================== Materialized Views ====================
 # These are reconstructed via joins from core read models
 
