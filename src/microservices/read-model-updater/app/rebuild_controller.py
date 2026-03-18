@@ -413,11 +413,11 @@ class ReadModelRebuildService(BaseRebuildService):
     def _rebuild_matches(self, matches: List[MatchSnapshotItem]) -> int:
         if not matches:
             return 0
-        avaible_tournament_ids = {
+        available_tournament_ids = {
             t.tournament_id for t in self.db.query(Tournament).all()
         }
         for item in matches:
-            if item.tournament_id not in avaible_tournament_ids:
+            if item.tournament_id not in available_tournament_ids:
                 logger.warning(
                     "match_with_missing_tournament_skipped",
                     match_id=item.match_id,
