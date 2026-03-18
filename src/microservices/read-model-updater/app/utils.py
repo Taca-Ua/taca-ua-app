@@ -544,10 +544,11 @@ def _update_tournament_ranks(session: Session, tournament_id: UUID) -> None:
 
 def rebuild_general_ranking_projection(session: Session) -> None:
     """
-    Rebuild general rankings view.
+    Rebuild the general rankings materialized view from core ranking data.
 
-    This is a placeholder function. The actual implementation would depend on the ranking logic,
-    which may involve aggregating points from courses, modalities, or other entities.
+    This function clears the existing ``GeneralRankingView`` entries, reads all rows from the
+    ``GeneralRankings`` core table, orders them by points in descending order, assigns ranks,
+    and enriches each entry with course and nucleo information before persisting the projection.
     """
     from .models import GeneralRankings, GeneralRankingView
 
