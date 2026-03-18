@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import ConfirmModal from "../../components/ConfirmModal";
 import Sidebar from "../../components/geral_navbar";
 import { regulationsApi, type Regulation } from '../../api/regulations';
@@ -20,6 +20,73 @@ const Regulamentos: React.FC = () => {
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragCounterRef = useRef(0);
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  };
+
+  const applyFile = useCallback((incoming: File | null) => {
+    if (!incoming) return;
+    if (incoming.type !== 'application/pdf') {
+      notify('Apenas ficheiros PDF são permitidos.', 'error');
+      return;
+    }
+    if (incoming.size > 10 * 1024 * 1024) {
+      notify('O ficheiro não pode exceder 10 MB.', 'error');
+      return;
+    }
+    setFile(incoming);
+  }, [notify]);
+
+  const resetForm = useCallback(() => {
+    setTitle("");
+    setDescription("");
+    setFile(null);
+    dragCounterRef.current = 0;
+    setIsDragOver(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }, []);
+
+  useEffect(() => {
+    const onDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounterRef.current += 1;
+      if (dragCounterRef.current === 1) {
+        const hasFile = Array.from(e.dataTransfer?.items ?? []).some(i => i.kind === 'file');
+        if (hasFile) {
+          setIsUploadModalOpen(true);
+          setIsDragOver(true);
+        }
+      }
+    };
+    const onDragOver = (e: DragEvent) => { e.preventDefault(); };
+    const onDragLeave = () => {
+      dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
+      if (dragCounterRef.current === 0) setIsDragOver(false);
+    };
+    const onDrop = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounterRef.current = 0;
+      setIsDragOver(false);
+      const dropped = e.dataTransfer?.files?.[0] ?? null;
+      if (dropped) applyFile(dropped);
+    };
+    document.addEventListener('dragenter', onDragEnter);
+    document.addEventListener('dragover', onDragOver);
+    document.addEventListener('dragleave', onDragLeave);
+    document.addEventListener('drop', onDrop);
+    return () => {
+      document.removeEventListener('dragenter', onDragEnter);
+      document.removeEventListener('dragover', onDragOver);
+      document.removeEventListener('dragleave', onDragLeave);
+      document.removeEventListener('drop', onDrop);
+    };
+  }, [applyFile]);
 
   useEffect(() => {
     fetchData();
@@ -102,9 +169,7 @@ const Regulamentos: React.FC = () => {
       setRegulations(prev => [newRegulation, ...prev]);
 
       // Limpa o formulário e fecha o modal
-      setTitle("");
-      setDescription("");
-      setFile(null);
+      resetForm();
       setIsUploadModalOpen(false);
       
       notify("Regulamento adicionado com sucesso!", "success");
@@ -168,7 +233,6 @@ const Regulamentos: React.FC = () => {
       <main className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           
-          {/* Header estilizado da HEAD */}
           <header className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-800">Gestão de Regulamentos</h1>
@@ -242,7 +306,7 @@ const Regulamentos: React.FC = () => {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center">
               <h2 className="text-xl font-bold text-gray-800">Novo Regulamento</h2>
-              <button onClick={() => setIsUploadModalOpen(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+              <button onClick={() => { setIsUploadModalOpen(false); resetForm(); }} className="text-gray-400 hover:text-gray-600">✕</button>
             </div>
 
             <form onSubmit={handleUpload} className="p-6 space-y-5">
@@ -269,33 +333,66 @@ const Regulamentos: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Ficheiro (Apenas PDF) *</label>
-                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-teal-400 transition-colors">
-                  <div className="space-y-1 text-center">
-                    <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+
+                {file ? (
+                  <div className="flex items-center gap-4 p-4 bg-teal-50 border border-teal-200 rounded-xl">
+                    {/* PDF badge */}
+                    <div className="flex-shrink-0 w-12 h-14 bg-red-100 border border-red-200 rounded-lg flex flex-col items-center justify-center gap-0.5 shadow-sm">
+                      <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-xs font-bold text-red-600 leading-none">PDF</span>
+                    </div>
+
+                    {/* File metadata */}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-800 text-sm truncate" title={file.name}>{file.name}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{formatFileSize(file.size)}</p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => { setFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                      className="flex-shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                      title="Remover ficheiro"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ) : (
+                  <label
+                    className={`mt-1 flex flex-col items-center justify-center px-6 py-8 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+                      isDragOver
+                        ? 'border-teal-500 bg-teal-50'
+                        : 'border-gray-300 bg-white hover:border-teal-400 hover:bg-gray-50'
+                    }`}
+                  >
+                    <svg className={`w-10 h-10 mb-3 transition-colors ${isDragOver ? 'text-teal-500' : 'text-gray-400'}`} stroke="currentColor" fill="none" viewBox="0 0 48 48">
                       <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
-                    <div className="flex text-sm text-gray-600">
-                      <label className="relative cursor-pointer bg-white rounded-md font-medium text-teal-600 hover:text-teal-500 focus-within:outline-none">
-                        <span>Carregar ficheiro</span>
-                        <input 
-                          type="file" 
-                          accept="application/pdf" 
-                          className="sr-only" 
-                          onChange={e => setFile(e.target.files?.[0] || null)}
-                          required
-                        />
-                      </label>
-                    </div>
-                    <p className="text-xs text-gray-500">{file ? file.name : "PDF até 10MB"}</p>
-                  </div>
-                </div>
+                    <span className={`text-sm font-medium transition-colors ${isDragOver ? 'text-teal-600' : 'text-teal-600 hover:text-teal-500'}`}>
+                      {isDragOver ? 'Solte o ficheiro aqui' : 'Clique ou arraste um ficheiro PDF'}
+                    </span>
+                    <span className="text-xs text-gray-400 mt-1">PDF até 10 MB</span>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="application/pdf"
+                      className="sr-only"
+                      onChange={e => applyFile(e.target.files?.[0] ?? null)}
+                      required
+                    />
+                  </label>
+                )}
               </div>
 
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
                   className={`flex-1 px-4 py-2 ${btn.secondaryAlt} font-semibold rounded-lg transition-colors`}
-                  onClick={() => setIsUploadModalOpen(false)}
+                  onClick={() => { setIsUploadModalOpen(false); resetForm(); }}
                 >
                   Cancelar
                 </button>
@@ -367,7 +464,7 @@ const Regulamentos: React.FC = () => {
               <div className="mt-10 pt-6 border-t border-gray-100 flex gap-4">
                 <button
                   onClick={handleDelete}
-                  className={`px-6 py-2.5 text-sm font-bold ${btn.dangerGhost} rounded-lg transition-colors`}
+                  className={`px-6 py-2.5 text-sm font-bold ${btn.danger} rounded-lg transition-colors`}
                 >
                   Eliminar Documento
                 </button>
