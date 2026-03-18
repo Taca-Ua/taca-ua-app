@@ -1,4 +1,4 @@
-"""Add modality_rankins materialized view
+"""Add modality_rankings materialized view
 
 Revision ID: 007
 Revises: 006
