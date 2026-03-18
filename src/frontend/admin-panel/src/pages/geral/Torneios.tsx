@@ -237,7 +237,6 @@ const Torneios = () => {
                 <div className="flex flex-col">
                   <span className="font-medium text-gray-800">{t.name}</span>
 
-                  {/* t agora é um TournamentDetail, logo tem start_date */}
                   <span className="text-xs text-gray-500 mt-1">
                     {t.start_date
                       ? `Início: ${new Date(t.start_date).toLocaleDateString('pt-PT')}`
