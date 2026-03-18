@@ -52,7 +52,6 @@ const Regulamentos: React.FC = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, []);
 
-  // Page-level drag-and-drop: opens modal when a file is dragged onto the page
   useEffect(() => {
     const onDragEnter = (e: DragEvent) => {
       e.preventDefault();
@@ -234,7 +233,6 @@ const Regulamentos: React.FC = () => {
       <main className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           
-          {/* Header estilizado da HEAD */}
           <header className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-800">Gestão de Regulamentos</h1>
@@ -337,7 +335,6 @@ const Regulamentos: React.FC = () => {
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Ficheiro (Apenas PDF) *</label>
 
                 {file ? (
-                  /* ── File selected: info card ── */
                   <div className="flex items-center gap-4 p-4 bg-teal-50 border border-teal-200 rounded-xl">
                     {/* PDF badge */}
                     <div className="flex-shrink-0 w-12 h-14 bg-red-100 border border-red-200 rounded-lg flex flex-col items-center justify-center gap-0.5 shadow-sm">
@@ -353,7 +350,6 @@ const Regulamentos: React.FC = () => {
                       <p className="text-xs text-gray-500 mt-0.5">{formatFileSize(file.size)}</p>
                     </div>
 
-                    {/* Remove button */}
                     <button
                       type="button"
                       onClick={() => { setFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
@@ -366,7 +362,6 @@ const Regulamentos: React.FC = () => {
                     </button>
                   </div>
                 ) : (
-                  /* ── No file: drag-drop zone ── */
                   <label
                     className={`mt-1 flex flex-col items-center justify-center px-6 py-8 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
                       isDragOver
@@ -469,7 +464,7 @@ const Regulamentos: React.FC = () => {
               <div className="mt-10 pt-6 border-t border-gray-100 flex gap-4">
                 <button
                   onClick={handleDelete}
-                  className={`px-6 py-2.5 text-sm font-bold ${btn.dangerGhost} rounded-lg transition-colors`}
+                  className={`px-6 py-2.5 text-sm font-bold ${btn.danger} rounded-lg transition-colors`}
                 >
                   Eliminar Documento
                 </button>
