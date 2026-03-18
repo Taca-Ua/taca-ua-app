@@ -489,7 +489,7 @@ class MatchComment(Base):
 
 
 class GeneralRankings(Base):
-    """General rankings for courses - populated from tournament.finished events."""
+    """General rankings for courses - populated from ranking.computed events."""
 
     __tablename__ = "general_rankings"
     __table_args__ = (
@@ -507,7 +507,7 @@ class GeneralRankings(Base):
 
 
 class ModalityRankings(Base):
-    """Rankings for courses within a modality - populated from tournament.finished events."""
+    """Rankings for courses within a modality - populated from ranking.computed events."""
 
     __tablename__ = "modality_rankings"
     __table_args__ = (
