@@ -51,6 +51,13 @@ function Navbar() {
                       Ranking Geral
                     </Link>
                     <Link
+                      to="/ranking/modalidade"
+                      className="block px-4 py-2 text-gray-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+                      onClick={() => setIsClassificacaoOpen(false)}
+                    >
+                      Ranking por Modalidade
+                    </Link>
+                    <Link
                       to="/torneios"
                       className="block px-4 py-2 text-gray-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
                       onClick={() => setIsClassificacaoOpen(false)}
@@ -149,6 +156,13 @@ function Navbar() {
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Ranking Geral
+                  </Link>
+                  <Link
+                    to="/ranking/modalidade"
+                    className="block pl-5 py-3 text-base text-gray-600 hover:text-teal-600 transition-colors rounded hover:bg-teal-50"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Ranking por Modalidade
                   </Link>
                   <Link
                     to="/torneios"
