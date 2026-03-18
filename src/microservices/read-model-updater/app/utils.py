@@ -6,7 +6,7 @@ They should be called after core table updates (from events or snapshot rebuilds
 """
 
 from datetime import datetime
-from typing import List
+from typing import Dict, List
 from uuid import UUID
 
 from sqlalchemy import func
@@ -577,6 +577,57 @@ def rebuild_general_ranking_projection(session: Session) -> None:
             tournaments_participated=entry.tournaments_participated,
         )
         session.merge(projection)
+
+
+def rebuild_modality_ranking_projection(session: Session) -> None:
+    """
+    Rebuild modality rankings view.
+
+    This is a placeholder function. The actual implementation would depend on the ranking logic,
+    which may involve aggregating points from modalities, tournaments, or other entities.
+    """
+    from .models import ModalityRankings, ModalityRankingView
+
+    # Clear existing modality ranking view
+    session.query(ModalityRankingView).delete()
+
+    modality_rankings_core_data = session.query(ModalityRankings).all()
+
+    # grup by modality_id
+    modality_groups: Dict[UUID, List[ModalityRankings]] = {}
+    for entry in modality_rankings_core_data:
+        modality_groups.setdefault(entry.modality_id, []).append(entry)
+
+    for modality_id, entries in modality_groups.items():
+        modality = (
+            session.query(Modality).filter(Modality.modality_id == modality_id).first()
+        )
+        modality_name = modality.name if modality else "Unknown Modality"
+
+        for rank, entry in enumerate(
+            sorted(entries, key=lambda x: x.points, reverse=True),
+            start=1,
+        ):
+            course = (
+                session.query(Course)
+                .filter(Course.course_id == entry.course_id)
+                .first()
+            )
+            nucleo = course.nucleo if course else None
+
+            projection = ModalityRankingView(
+                modality_id=modality_id,
+                modality_name=modality_name,
+                course_id=course.course_id,
+                course_name=course.name,
+                course_abbreviation=course.abbreviation,
+                nucleo_id=nucleo.nucleo_id,
+                nucleo_name=nucleo.name,
+                nucleo_abbreviation=nucleo.abbreviation,
+                points=entry.points,
+                rank=rank,
+            )
+            session.merge(projection)
 
 
 # ==================== Bulk Rebuild Utilities ====================

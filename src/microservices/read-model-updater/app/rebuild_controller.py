@@ -15,6 +15,7 @@ Exposed endpoints (all require ``X-INTERNAL-TOKEN``):
 from typing import Dict, List, Optional
 
 from sqlalchemy import text
+from taca_models.models import ModalityRankingView
 from taca_rebuild import BaseRebuildService, make_rebuild_router
 from taca_snapshots.matches import (
     MatchCommentSnapshotItem,
@@ -80,6 +81,7 @@ from .models import (
 from .utils import (
     rebuild_general_ranking_projection,
     rebuild_match_projection,
+    rebuild_modality_ranking_projection,
     rebuild_student_projection,
     rebuild_team_projection,
     rebuild_tournament_projection,
@@ -612,6 +614,9 @@ class ReadModelRebuildService(BaseRebuildService):
 
         rebuild_general_ranking_projection(self.db)
         total += self.db.query(GeneralRankingView).count()
+
+        rebuild_modality_ranking_projection(self.db)
+        total += self.db.query(ModalityRankingView).count()
 
         self.db.flush()
         return total

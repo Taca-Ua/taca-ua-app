@@ -765,3 +765,43 @@ class GeneralRankingView(Base):
     updated_at = Column(
         DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
     )
+
+
+class ModalityRankingView(Base):
+    """
+    Materialized view: Modality-specific ranking for courses.
+
+    Similar to GeneralRankingView but calculated separately for each modality.
+    Rebuilt when TournamentRanking entries are created/updated for tournaments of that modality.
+    """
+
+    __tablename__ = "mv_modality_rankings"
+    __table_args__ = (
+        Index("ix_mv_modality_rankings_rank", "modality_id", "rank"),
+        Index("ix_mv_modality_rankings_course_id", "modality_id", "course_id"),
+        UniqueConstraint(
+            "modality_id", "course_id", name="uq_modality_ranking_modality_course"
+        ),
+        {"schema": "public_read"},
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    modality_id = Column(UUID(as_uuid=True), nullable=False)
+    modality_name = Column(String, nullable=True)
+
+    course_id = Column(UUID(as_uuid=True), nullable=False)
+    course_name = Column(String, nullable=False)
+    course_abbreviation = Column(String, nullable=False)
+
+    # Nucleo information
+    nucleo_id = Column(UUID(as_uuid=True), nullable=False)
+    nucleo_name = Column(String, nullable=False)
+    nucleo_abbreviation = Column(String, nullable=False)
+
+    # Rankings
+    points = Column(Integer, nullable=False, default=0)
+    rank = Column(Integer, nullable=True)
+
+    updated_at = Column(
+        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )

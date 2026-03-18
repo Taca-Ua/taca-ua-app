@@ -19,6 +19,7 @@ from .models import (  # Enums; Core Read Models; Materialized Views
     MatchStatus,
     Modality,
     ModalityRankings,
+    ModalityRankingView,
     ModalityType,
     Nucleo,
     ParticipantType,
@@ -68,6 +69,7 @@ __all__ = [
     "GeneralRankingView",
     "GeneralRankings",
     "ModalityRankings",
+    "ModalityRankingView",
 ]
 
 __version__ = "0.1.0"

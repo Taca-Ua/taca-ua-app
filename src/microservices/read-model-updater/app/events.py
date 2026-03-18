@@ -81,7 +81,9 @@ from .utils import (
     rebuild_all_teams_for_course,
     rebuild_all_teams_for_modality,
     rebuild_all_tournaments_for_modality,
+    rebuild_general_ranking_projection,
     rebuild_match_projection,
+    rebuild_modality_ranking_projection,
     rebuild_student_projection,
     rebuild_team_projection,
     rebuild_tournament_projection,
@@ -1241,6 +1243,11 @@ def handle_ranking_computed(event: RankingComputedV1):
             )
 
         db.flush()
+
+        # Rebuild the GeneralRankingView and ModalityRankingView projections
+        rebuild_general_ranking_projection(db)
+        rebuild_modality_ranking_projection(db)
+
         logger.info(
             "rankings_updated",
             general_entries=len(general_entries),
