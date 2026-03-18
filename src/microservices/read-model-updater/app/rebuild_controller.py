@@ -103,6 +103,7 @@ class ReadModelRebuildService(BaseRebuildService):
         logger.info("projections_clearing")
         # Clear in reverse dependency order to respect foreign keys
         self.db.query(GeneralRankingView).delete()
+        self.db.query(ModalityRankingView).delete()
         self.db.query(TournamentStandingsView).delete()
         self.db.query(MatchDetailView).delete()
         self.db.query(TournamentDetailView).delete()
