@@ -449,7 +449,13 @@ const TournamentCompetitors = ({
         <p className="text-gray-500 text-center py-8">Nenhum competidor inscrito</p>
       ) : (
         <div className="space-y-2 max-h-96 overflow-y-auto">
-          {tournament.competitors.map((competitor, idx) => {
+          {[...tournament.competitors]
+            .sort((a, b) => {
+              const nameA = a.competitor_type === 'team' ? (a.team?.name ?? '') : (a.athlete?.full_name ?? '');
+              const nameB = b.competitor_type === 'team' ? (b.team?.name ?? '') : (b.athlete?.full_name ?? '');
+              return nameA.localeCompare(nameB);
+            })
+            .map((competitor, idx) => {
             const isTeam = competitor.competitor_type === 'team';
             const name = isTeam ? competitor.team?.name : competitor.athlete?.full_name;
             const subtitle = isTeam ? competitor.team?.course?.name : competitor.athlete?.course?.name;
@@ -511,7 +517,7 @@ const TournamentCompetitors = ({
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
                   >
                     <option value="">Selecione uma equipa</option>
-                    {availableTeams.map((team) => (
+                    {[...availableTeams].sort((a, b) => a.name.localeCompare(b.name)).map((team) => (
                       <option key={team.id} value={team.id}>
                         {team.name} - {team.course.name}
                       </option>
@@ -547,6 +553,7 @@ const TournamentCompetitors = ({
                         s.full_name.toLowerCase().includes(studentSearchTerm.toLowerCase()) ||
                         s.student_number.includes(studentSearchTerm)
                       )
+                      .sort((a, b) => a.full_name.localeCompare(b.full_name))
                       .map((student) => (
                         <option key={student.id} value={student.id}>
                           {student.full_name} ({student.student_number}) - {student.course.name}
@@ -878,7 +885,13 @@ const FinishTournamentModal = ({
                           className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
                         >
                           <option value="">Selecione um competidor...</option>
-                          {tournament.competitors.map((competitor) => {
+                          {[...tournament.competitors]
+                            .sort((a, b) => {
+                              const nameA = a.competitor_type === 'team' ? (a.team?.name ?? '') : (a.athlete?.full_name ?? '');
+                              const nameB = b.competitor_type === 'team' ? (b.team?.name ?? '') : (b.athlete?.full_name ?? '');
+                              return nameA.localeCompare(nameB);
+                            })
+                            .map((competitor) => {
                             const competitorRecordIdOption = competitor.id;
                             const participantName = getCompetitorName(competitor);
                             const isDisabled = selectedElsewhere.has(competitorRecordIdOption) && competitorRecordIdOption !== competitorRecordId;

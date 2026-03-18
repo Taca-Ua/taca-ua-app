@@ -26,13 +26,13 @@ const Equipas = () => {
   const [filterCourse, setFilterCourse] = useState('');
 
   // Get only modalities and courses that have teams (for filtering)
-  const availableModalities = allModalities.filter(modality =>
-    teams.some(team => team.modality.id === modality.id)
-  );
+                                                                                                                                          const availableModalities = allModalities
+    .filter(modality => teams.some(team => team.modality.id === modality.id))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
-  const availableCourses = allCourses.filter(course =>
-    teams.some(team => team.course.id === course.id)
-  );
+  const availableCourses = allCourses
+    .filter(course => teams.some(team => team.course.id === course.id))
+    .sort((a, b) => a.name.localeCompare(b.name));                          
 
   // Fetch teams, modalities, and courses from API
   useEffect(() => {
@@ -123,11 +123,13 @@ const Equipas = () => {
   };
 
   // Filter teams by modality and/or course
-  const filteredTeams = teams.filter((team) => {
-    const matchesModality = filterModality ? team.modality.id === filterModality : true;
-    const matchesCourse = filterCourse ? team.course.id === filterCourse : true;
-    return matchesModality && matchesCourse;
-  });
+  const filteredTeams = teams
+    .filter((team) => {
+      const matchesModality = filterModality ? team.modality.id === filterModality : true;
+      const matchesCourse = filterCourse ? team.course.id === filterCourse : true;
+      return matchesModality && matchesCourse;
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -243,7 +245,7 @@ const Equipas = () => {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <option value="">Selecionar Curso</option>
-                  {allCourses.map((course) => (
+                  {[...allCourses].sort((a, b) => a.name.localeCompare(b.name)).map((course) => (
                     <option key={course.id} value={course.id}>
                       {course.name}
                     </option>
@@ -275,7 +277,7 @@ const Equipas = () => {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <option value="">Selecionar Modalidade</option>
-                  {allModalities.map((modality) => (
+                  {[...allModalities].sort((a, b) => a.name.localeCompare(b.name)).map((modality) => (
                     <option key={modality.id} value={modality.id}>
                       {modality.name}
                     </option>

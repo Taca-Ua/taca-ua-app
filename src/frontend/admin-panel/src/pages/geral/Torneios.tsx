@@ -87,7 +87,7 @@ const TorneiosCreateModal = ({ isOpen, onClose, onCreate, modalities, setModalit
               required
             >
               <option value="" disabled>Selecione uma modalidade</option>
-              {modalities.map(m => (
+              {[...modalities].sort((a, b) => a.name.localeCompare(b.name)).map(m => (
                 <option key={m.id} value={m.id}>{m.name}</option>
               ))}
             </select>
@@ -227,6 +227,7 @@ const Torneios = () => {
                 (modalityFilter === '' || t.modality.id === modalityFilter) &&
                 (statusFilter === '' || t.status === statusFilter)
               )
+              .sort((a, b) => a.name.localeCompare(b.name))
               .map(t => (
               <button
                 key={t.id}
