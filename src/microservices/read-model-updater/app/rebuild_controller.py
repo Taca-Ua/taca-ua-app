@@ -630,6 +630,9 @@ class ReadModelRebuildService(BaseRebuildService):
             ("public_read.match_lineups", "id"),
             ("public_read.mv_tournament_standings", "id"),
             ("public_read.mv_general_ranking", "id"),
+            ("public_read.general_rankings", "id"),
+            ("public_read.modality_rankings", "id"),
+            ("public_read.mv_modality_rankings", "id"),
         ]
         for table_name, id_column in tables_with_sequences:
             self.db.execute(
