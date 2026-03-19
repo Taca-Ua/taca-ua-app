@@ -169,10 +169,10 @@ services:
   competition-api-v2:
     build:
       context: .
-      dockerfile: src/apis/competition_api_v2/Dockerfile.dev
+      dockerfile: src/apis/competition-api-v2/Dockerfile.dev
     volumes:
       - ./src/shared:/tmp
-      - ./src/apis/competition_api_v2:/app
+      - ./src/apis/competition-api-v2:/app
     depends_on:
       rabbitmq:
         condition: service_healthy
