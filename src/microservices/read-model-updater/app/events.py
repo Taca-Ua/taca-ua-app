@@ -56,7 +56,7 @@ from .database import get_db
 from .logger import logger
 from .models import (
     Course,
-    GeneralRankingView,
+    GeneralRankings,
     Match,
     MatchComment,
     MatchLineup,
@@ -64,6 +64,7 @@ from .models import (
     MatchResult,
     MatchStatus,
     Modality,
+    ModalityRankings,
     ModalityType,
     Nucleo,
     ParticipantType,
@@ -80,7 +81,9 @@ from .utils import (
     rebuild_all_teams_for_course,
     rebuild_all_teams_for_modality,
     rebuild_all_tournaments_for_modality,
+    rebuild_general_ranking_projection,
     rebuild_match_projection,
+    rebuild_modality_ranking_projection,
     rebuild_student_projection,
     rebuild_team_projection,
     rebuild_tournament_projection,
@@ -182,6 +185,7 @@ def _parse_dt(value: Any) -> datetime:
     if dt.tzinfo is not None:
         return dt.astimezone(timezone.utc).replace(tzinfo=None)
     return dt
+
 
 def _parse_date(value: Any) -> date:
     """Parse an ISO 8601 date string to a date object."""
@@ -518,7 +522,6 @@ def handle_student_deleted(event: StudentDeletedV1):
 
 
 # ==================== Staff Events ====================
-
 
 
 @rabbitmq_service.event_handler(StaffCreatedV1)
@@ -1206,67 +1209,47 @@ def handle_ranking_computed(event: RankingComputedV1):
     nucleo names stored locally.
     """
     general_entries = event.data.general_ranking
+    modality_entries = event.data.modality_rankings
     logger.info(
         "event_received",
         event_type="ranking.computed",
         general_entries=len(general_entries),
-        modality_entries=len(event.data.modality_rankings),
+        modality_entries=len(modality_entries),
     )
 
     with get_db() as db:
-        from sqlalchemy.orm import joinedload
+        # Clear existing general ranking view
+        db.query(GeneralRankings).delete()
+        db.query(ModalityRankings).delete()
 
-        # Replace the entire projection table atomically
-        db.query(GeneralRankingView).delete()
-
-        # Sort descending by points so we can assign ranks sequentially
-        sorted_entries = sorted(general_entries, key=lambda e: e.points, reverse=True)
-
-        rank = 1
-        for idx, entry in enumerate(sorted_entries):
-            # Handle ties — same rank for equal points
-            if idx > 0 and entry.points == sorted_entries[idx - 1].points:
-                current_rank = sorted_entries[idx - 1]._assigned_rank
-            else:
-                current_rank = rank
-
-            # Stash rank on the entry so tied entries can reference it
-            entry._assigned_rank = current_rank  # type: ignore[attr-defined]
-
-            course = (
-                db.query(Course)
-                .options(joinedload(Course.nucleo))
-                .filter(Course.course_id == entry.course_id)
-                .first()
-            )
-            if not course:
-                logger.warning(
-                    "course_not_found_for_ranking",
-                    course_id=str(entry.course_id),
+        # Insert new general ranking entries
+        for entry in general_entries:
+            db.add(
+                GeneralRankings(
+                    course_id=entry.course_id,
+                    points=entry.points,
+                    tournaments_participated=entry.tournaments_participated,
                 )
-                rank += 1
-                continue
-
-            nucleo = course.nucleo
-
-            ranking_view = GeneralRankingView(
-                course_id=entry.course_id,
-                course_name=course.name,
-                course_abbreviation=course.abbreviation,
-                nucleo_id=nucleo.nucleo_id if nucleo else None,
-                nucleo_name=nucleo.name if nucleo else "",
-                nucleo_abbreviation=nucleo.abbreviation if nucleo else "",
-                points=entry.points,
-                rank=current_rank,
-                tournaments_participated=entry.tournaments_participated,
-                updated_at=datetime.utcnow(),
             )
-            db.add(ranking_view)
 
-            rank += 1
+        # Clear existing modality rankings
+        for entry in modality_entries:
+            db.add(
+                ModalityRankings(
+                    modality_id=entry.modality_id,
+                    course_id=entry.course_id,
+                    points=entry.points,
+                )
+            )
 
         db.flush()
+
+        # Rebuild the GeneralRankingView and ModalityRankingView projections
+        rebuild_general_ranking_projection(db)
+        rebuild_modality_ranking_projection(db)
+
         logger.info(
-            "general_ranking_view_updated",
-            entries=len(sorted_entries),
+            "rankings_updated",
+            general_entries=len(general_entries),
+            modality_entries=len(modality_entries),
         )

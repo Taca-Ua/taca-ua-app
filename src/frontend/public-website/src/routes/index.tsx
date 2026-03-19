@@ -6,6 +6,7 @@ import Calendario from '../pages/Calendario';
 import Tournaments from '../pages/classificacao/Tournaments';
 import TournamentDetailPage from '../pages/classificacao/TournamentDetail';
 import GeneralRankingPage from '../pages/classificacao/GeneralRanking';
+import ModalityRankingPage from '../pages/classificacao/ModalityRanking';
 import Students from '../pages/Students';
 import Teams from '../pages/Teams';
 
@@ -29,6 +30,10 @@ export const router = createBrowserRouter([
   {
     path: '/ranking',
     element: <GeneralRankingPage />
+  },
+  {
+    path: '/ranking/modalidade',
+    element: <ModalityRankingPage />
   },
   {
     path: '/estudantes',
