@@ -26,13 +26,13 @@ const Equipas = () => {
   const [filterCourse, setFilterCourse] = useState('');
 
   // Get only modalities and courses that have teams (for filtering)
-                                                                                                                                          const availableModalities = allModalities
+  const availableModalities = allModalities
     .filter(modality => teams.some(team => team.modality.id === modality.id))
     .sort((a, b) => a.name.localeCompare(b.name));
 
   const availableCourses = allCourses
     .filter(course => teams.some(team => team.course.id === course.id))
-    .sort((a, b) => a.name.localeCompare(b.name));                          
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   // Fetch teams, modalities, and courses from API
   useEffect(() => {
