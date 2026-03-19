@@ -1,18 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import ConfirmModal from "../../components/ConfirmModal";
 import Sidebar from "../../components/geral_navbar";
-import { regulationsApi, type Regulation, type RegulationCreate } from '../../api/regulations';
-import { modalitiesApi, type Modality } from '../../api/modalities';
+import { regulationsApi, type Regulation } from '../../api/regulations';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { btn } from '../../styles/buttonStyles';
 
 const Regulamentos: React.FC = () => {
   const [regulations, setRegulations] = useState<Regulation[]>([]);
-  const [modalities, setModalities] = useState<Modality[]>([]);
   const [loading, setLoading] = useState(true);
   const { notify } = useNotification();
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterModality, setFilterModality] = useState("");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -23,6 +20,73 @@ const Regulamentos: React.FC = () => {
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragCounterRef = useRef(0);
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  };
+
+  const applyFile = useCallback((incoming: File | null) => {
+    if (!incoming) return;
+    if (incoming.type !== 'application/pdf') {
+      notify('Apenas ficheiros PDF são permitidos.', 'error');
+      return;
+    }
+    if (incoming.size > 10 * 1024 * 1024) {
+      notify('O ficheiro não pode exceder 10 MB.', 'error');
+      return;
+    }
+    setFile(incoming);
+  }, [notify]);
+
+  const resetForm = useCallback(() => {
+    setTitle("");
+    setDescription("");
+    setFile(null);
+    dragCounterRef.current = 0;
+    setIsDragOver(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }, []);
+
+  useEffect(() => {
+    const onDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounterRef.current += 1;
+      if (dragCounterRef.current === 1) {
+        const hasFile = Array.from(e.dataTransfer?.items ?? []).some(i => i.kind === 'file');
+        if (hasFile) {
+          setIsUploadModalOpen(true);
+          setIsDragOver(true);
+        }
+      }
+    };
+    const onDragOver = (e: DragEvent) => { e.preventDefault(); };
+    const onDragLeave = () => {
+      dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
+      if (dragCounterRef.current === 0) setIsDragOver(false);
+    };
+    const onDrop = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounterRef.current = 0;
+      setIsDragOver(false);
+      const dropped = e.dataTransfer?.files?.[0] ?? null;
+      if (dropped) applyFile(dropped);
+    };
+    document.addEventListener('dragenter', onDragEnter);
+    document.addEventListener('dragover', onDragOver);
+    document.addEventListener('dragleave', onDragLeave);
+    document.addEventListener('drop', onDrop);
+    return () => {
+      document.removeEventListener('dragenter', onDragEnter);
+      document.removeEventListener('dragover', onDragOver);
+      document.removeEventListener('dragleave', onDragLeave);
+      document.removeEventListener('drop', onDrop);
+    };
+  }, [applyFile]);
 
   useEffect(() => {
     fetchData();
@@ -39,30 +103,27 @@ const Regulamentos: React.FC = () => {
 
   const formatDisplayDate = (dateStr: string | undefined) => {
     if (!dateStr) return "Data indisponível";
-    
+
     const date = new Date(dateStr);
-    
+
     if (isNaN(date.getTime())) {
       const fallbackDate = new Date(dateStr.split('.')[0] + 'Z');
       if (isNaN(fallbackDate.getTime())) return "Data indisponível";
       return fallbackDate.toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' });
     }
 
-    return date.toLocaleDateString('pt-PT', { 
-      day: '2-digit', 
-      month: 'long', 
-      year: 'numeric' 
+    return date.toLocaleDateString('pt-PT', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
     });
   };
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      
-      const [regulationsData, modalitiesData] = await Promise.all([
-        regulationsApi.getAll(),
-        modalitiesApi.getAll(),
-      ]);
+
+      const regulationsData = await regulationsApi.getAll();
 
       console.log("ESTRUTURA DO REGULAMENTO:", regulationsData[0]);
 
@@ -74,7 +135,6 @@ const Regulamentos: React.FC = () => {
       );
 
       setRegulations(existingRegulations.filter((r): r is Regulation => r !== null));
-      setModalities(modalitiesData);
     } catch (err) {
       console.error('Failed to fetch data:', err);
       notify('Não foi possível carregar os regulamentos. Tente recarregar a página.', 'error');
@@ -109,11 +169,9 @@ const Regulamentos: React.FC = () => {
       setRegulations(prev => [newRegulation, ...prev]);
 
       // Limpa o formulário e fecha o modal
-      setTitle("");
-      setDescription("");
-      setFile(null);
+      resetForm();
       setIsUploadModalOpen(false);
-      
+
       notify("Regulamento adicionado com sucesso!", "success");
     } catch (err: unknown) {
       console.error('Upload failed:', err);
@@ -129,7 +187,7 @@ const Regulamentos: React.FC = () => {
 
   const handleDelete = async () => {
     if (!selectedRegulation) return;
-    
+
     // Em vez do confirm do browser, abre o modal customizado da dev
     setIsDeleteModalOpen(true);
   };
@@ -139,24 +197,24 @@ const Regulamentos: React.FC = () => {
 
     try {
       setDeletingRegulation(true);
-      
+
       // Chamada à tua API
       await regulationsApi.delete(selectedRegulation.id);
-      
+
       // Atualiza a lista local
       setRegulations(prev => prev.filter(r => r.id !== selectedRegulation.id));
-      
+
       // Fecha ambos os modais (o de visualização e o de confirmação)
       setIsDeleteModalOpen(false);
       setIsViewModalOpen(false);
       setSelectedRegulation(null);
-      
+
       // Notificação de sucesso da dev
       notify('Regulamento eliminado com sucesso!', 'success');
-      
+
     } catch (err: unknown) {
       console.error('Failed to delete regulation:', err);
-      
+
       // Tratamento de erro padronizado
       if (err instanceof Error) {
         notify(err.message, 'error');
@@ -174,8 +232,7 @@ const Regulamentos: React.FC = () => {
 
       <main className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
-          
-          {/* Header estilizado da HEAD */}
+
           <header className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-800">Gestão de Regulamentos</h1>
@@ -184,45 +241,21 @@ const Regulamentos: React.FC = () => {
 
             <button
               onClick={() => setIsUploadModalOpen(true)}
-              className="px-6 py-3 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 transition-shadow shadow-md"
+              className={`px-6 py-3 ${btn.primary} font-semibold rounded-lg shadow-md`}
             >
               + Novo Regulamento
             </button>
           </header>
 
-          {/* Barra de Ferramentas: Teu Search + Filtro de Modalidade da dev */}
-          <div className="bg-white p-4 rounded-lg shadow-sm mb-6 border border-gray-200 flex flex-wrap gap-6 items-end">
-            <div className="relative max-w-md flex-1">
-              <label className="block mb-1 text-xs font-bold text-gray-400 uppercase tracking-widest">Pesquisar</label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </span>
-                <input
-                  type="text"
-                  placeholder="Por título..."
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 sm:text-sm"
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="min-w-[200px]">
-              <label className="block mb-1 text-xs font-bold text-gray-400 uppercase tracking-widest">Modalidade</label>
-              <select
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-1 focus:ring-teal-500"
-                value={filterModality}
-                onChange={e => setFilterModality(e.target.value)}
-              >
-                <option value="">Todas as Modalidades</option>
-                {modalities.map(m => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
-              </select>
-            </div>
+          {/* Barra de Ferramentas */}
+          <div className="flex gap-3 mb-6">
+            <input
+              type="text"
+              placeholder="Pesquisar regulamento..."
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
           </div>
 
           {/* Grid de Cards / Lista com Teu Loading */}
@@ -273,7 +306,7 @@ const Regulamentos: React.FC = () => {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center">
               <h2 className="text-xl font-bold text-gray-800">Novo Regulamento</h2>
-              <button onClick={() => setIsUploadModalOpen(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+              <button onClick={() => { setIsUploadModalOpen(false); resetForm(); }} className="text-gray-400 hover:text-gray-600">✕</button>
             </div>
 
             <form onSubmit={handleUpload} className="p-6 space-y-5">
@@ -289,21 +322,7 @@ const Regulamentos: React.FC = () => {
               </div>
 
               <div>
-                <label className="font-medium">Modalidade <HelpTooltip text="Modalidade a que este regulamento se aplica. Selecione 'Nenhuma' para um regulamento geral que se aplica a toda a competição." className="ml-1" /></label>
-                <select
-                  className="border px-3 py-2 rounded-md w-full bg-white"
-                  value={modalityId}
-                  onChange={e => setModalityId(e.target.value)}
-                >
-                  <option value="">Nenhuma (Geral)</option>
-                  {modalities.map(m => (
-                    <option key={m.id} value={m.id}>{m.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="font-medium">Descrição</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Descrição</label>
                 <textarea
                   className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none min-h-[100px]"
                   value={description}
@@ -314,40 +333,73 @@ const Regulamentos: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Ficheiro (Apenas PDF) *</label>
-                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-teal-400 transition-colors">
-                  <div className="space-y-1 text-center">
-                    <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+
+                {file ? (
+                  <div className="flex items-center gap-4 p-4 bg-teal-50 border border-teal-200 rounded-xl">
+                    {/* PDF badge */}
+                    <div className="flex-shrink-0 w-12 h-14 bg-red-100 border border-red-200 rounded-lg flex flex-col items-center justify-center gap-0.5 shadow-sm">
+                      <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-xs font-bold text-red-600 leading-none">PDF</span>
+                    </div>
+
+                    {/* File metadata */}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-800 text-sm truncate" title={file.name}>{file.name}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{formatFileSize(file.size)}</p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => { setFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                      className="flex-shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                      title="Remover ficheiro"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ) : (
+                  <label
+                    className={`mt-1 flex flex-col items-center justify-center px-6 py-8 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+                      isDragOver
+                        ? 'border-teal-500 bg-teal-50'
+                        : 'border-gray-300 bg-white hover:border-teal-400 hover:bg-gray-50'
+                    }`}
+                  >
+                    <svg className={`w-10 h-10 mb-3 transition-colors ${isDragOver ? 'text-teal-500' : 'text-gray-400'}`} stroke="currentColor" fill="none" viewBox="0 0 48 48">
                       <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
-                    <div className="flex text-sm text-gray-600">
-                      <label className="relative cursor-pointer bg-white rounded-md font-medium text-teal-600 hover:text-teal-500 focus-within:outline-none">
-                        <span>Carregar ficheiro</span>
-                        <input 
-                          type="file" 
-                          accept="application/pdf" 
-                          className="sr-only" 
-                          onChange={e => setFile(e.target.files?.[0] || null)}
-                          required
-                        />
-                      </label>
-                    </div>
-                    <p className="text-xs text-gray-500">{file ? file.name : "PDF até 10MB"}</p>
-                  </div>
-                </div>
+                    <span className={`text-sm font-medium transition-colors ${isDragOver ? 'text-teal-600' : 'text-teal-600 hover:text-teal-500'}`}>
+                      {isDragOver ? 'Solte o ficheiro aqui' : 'Clique ou arraste um ficheiro PDF'}
+                    </span>
+                    <span className="text-xs text-gray-400 mt-1">PDF até 10 MB</span>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="application/pdf"
+                      className="sr-only"
+                      onChange={e => applyFile(e.target.files?.[0] ?? null)}
+                      required
+                    />
+                  </label>
+                )}
               </div>
 
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
-                  className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-colors"
-                  onClick={() => setIsUploadModalOpen(false)}
+                  className={`flex-1 px-4 py-2 ${btn.secondaryAlt} font-semibold rounded-lg transition-colors`}
+                  onClick={() => { setIsUploadModalOpen(false); resetForm(); }}
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={uploading}
-                  className="flex-1 px-4 py-2 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 shadow-lg disabled:bg-gray-400 transition-all"
+                  className={`flex-1 px-4 py-2 ${btn.primary} font-semibold rounded-lg shadow-lg disabled:opacity-50 transition-all`}
                 >
                   {uploading ? "A enviar..." : "Guardar Regulamento"}
                 </button>
@@ -360,7 +412,7 @@ const Regulamentos: React.FC = () => {
       {isViewModalOpen && selectedRegulation && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
-            
+
             <div className="p-8">
               <div className="flex justify-between items-start">
                 <h2 className="text-2xl font-bold text-gray-900">{selectedRegulation.title}</h2>
@@ -402,7 +454,7 @@ const Regulamentos: React.FC = () => {
                     href={selectedRegulation.file_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-all shadow-sm"
+                    className={`px-4 py-2 ${btn.infoStrong} text-sm font-bold rounded-lg shadow-sm`}
                   >
                     Visualizar
                   </a>
@@ -412,15 +464,15 @@ const Regulamentos: React.FC = () => {
               <div className="mt-10 pt-6 border-t border-gray-100 flex gap-4">
                 <button
                   onClick={handleDelete}
-                  className="px-6 py-2.5 text-sm font-bold bg-white text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+                  className={`px-6 py-2.5 text-sm font-bold ${btn.danger} rounded-lg transition-colors`}
                 >
                   Eliminar Documento
                 </button>
                 <button
                   onClick={() => setIsViewModalOpen(false)}
-                  className="flex-1 px-6 py-2.5 text-sm font-bold bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+                   className={`flex-1 px-6 py-2.5 text-sm font-bold ${btn.secondary} rounded-lg transition-colors`}
                 >
-                  Fechar Painel
+                  Fechar
                 </button>
               </div>
             </div>

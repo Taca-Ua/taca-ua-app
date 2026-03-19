@@ -8,7 +8,6 @@ function Students() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [memberFilter, setMemberFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -33,7 +32,6 @@ function Students() {
           page,
           page_size: 20,
           ...(debouncedSearch && { search: debouncedSearch }),
-          ...(memberFilter !== 'all' && { is_member: memberFilter === 'member' }),
         };
 
         const data = await studentsApi.getAll(params);
@@ -48,7 +46,7 @@ function Students() {
     };
 
     fetchStudents();
-  }, [page, debouncedSearch, memberFilter]);
+  }, [page, debouncedSearch]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -75,18 +73,6 @@ function Students() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1 min-w-[250px] px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
             />
-            <select
-              value={memberFilter}
-              onChange={(e) => {
-                setMemberFilter(e.target.value);
-                setPage(1);
-              }}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-            >
-              <option value="all">Todos</option>
-              <option value="member">Apenas Membros</option>
-              <option value="non-member">Não Membros</option>
-            </select>
           </div>
 
           {/* Error Message */}
@@ -123,9 +109,6 @@ function Students() {
                           Núcleo
                         </th>
                         <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
-                          Membro
-                        </th>
-                        <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
                           Equipas
                         </th>
                       </tr>
@@ -133,7 +116,7 @@ function Students() {
                     <tbody className="divide-y divide-gray-200">
                       {students.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                          <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
                             {debouncedSearch
                               ? 'Nenhum estudante encontrado com os filtros selecionados.'
                               : 'Não há estudantes disponíveis.'}
@@ -157,17 +140,6 @@ function Students() {
                             <td className="px-6 py-4">
                               <p className="text-gray-700">{student.nucleo_name}</p>
                               <p className="text-xs text-gray-500">{student.nucleo_abbreviation}</p>
-                            </td>
-                            <td className="px-6 py-4 text-center">
-                              {student.is_member ? (
-                                <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
-                                  Sim
-                                </span>
-                              ) : (
-                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold">
-                                  Não
-                                </span>
-                              )}
                             </td>
                             <td className="px-6 py-4 text-center">
                               <span className="text-gray-700 font-medium">

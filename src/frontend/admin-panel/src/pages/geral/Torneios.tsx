@@ -234,7 +234,15 @@ const Torneios = () => {
                 onClick={() => navigate(`/geral/torneios/${t.id}`)}
                 className="w-full text-left px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-teal-500"
               >
-                <div className="font-medium text-gray-800">{t.name}</div>
+                <div className="flex flex-col">
+                  <span className="font-medium text-gray-800">{t.name}</span>
+
+                  <span className="text-xs text-gray-500 mt-1">
+                    {t.start_date
+                      ? `Início: ${new Date(t.start_date).toLocaleDateString('pt-PT')}`
+                      : 'Data não definida'}
+                  </span>
+                </div>
                 <div className="flex items-center gap-3 text-sm">
                   <span className="text-teal-600 font-medium">{t.modality.name}</span>
                   <span className="text-gray-400">|</span>
