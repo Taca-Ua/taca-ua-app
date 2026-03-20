@@ -10,6 +10,7 @@ from taca_models import (
     GeneralRankingView,
     MatchDetailView,
     ModalityRankingView,
+    Regulation,
     StudentDetailView,
     TeamDetailView,
     TournamentDetailView,
@@ -23,5 +24,6 @@ __all__ = [
     "MatchDetailView",
     "TournamentStandingsView",
     "GeneralRankingView",
+    "Regulation",
     "ModalityRankingView",
 ]

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import ConfirmModal from "../../components/ConfirmModal";
+import HelpTooltip from "../../components/HelpTooltip";
 import Sidebar from "../../components/geral_navbar";
 import { regulationsApi, type Regulation } from '../../api/regulations';
 import { useNotification } from '../../contexts/NotificationProvider';

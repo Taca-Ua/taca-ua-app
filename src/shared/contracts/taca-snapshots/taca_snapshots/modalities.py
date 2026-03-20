@@ -113,6 +113,15 @@ class TeamPlayerSnapshotItem(SnapshotBase):
     student_id: str
 
 
+class RegulationSnapshotItem(SnapshotBase):
+    """A single regulation record."""
+
+    id: str
+    title: str
+    description: Optional[str] = None
+    file_url: Optional[str] = None
+
+
 # ---------------------------------------------------------------------------
 # Aggregate snapshot response (full HTTP response body)
 # ---------------------------------------------------------------------------
@@ -136,3 +145,4 @@ class ModalitiesSnapshotResponse(SnapshotBase):
     staff: List[StaffSnapshotItem] = []
     teams: List[TeamSnapshotItem] = []
     team_players: List[TeamPlayerSnapshotItem] = []
+    regulations: List[RegulationSnapshotItem] = []

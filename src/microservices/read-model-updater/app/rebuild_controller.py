@@ -31,6 +31,7 @@ from taca_snapshots.modalities import (
     ModalitySnapshotItem,
     ModalityTypeSnapshotItem,
     NucleoSnapshotItem,
+    RegulationSnapshotItem,
     StaffSnapshotItem,
     StudentSnapshotItem,
     TeamPlayerSnapshotItem,
@@ -66,6 +67,7 @@ from .models import (
     ModalityRankings,
     ModalityType,
     Nucleo,
+    Regulation,
     Staff,
     Student,
     StudentDetailView,
@@ -127,6 +129,7 @@ class ReadModelRebuildService(BaseRebuildService):
         self.db.query(Nucleo).delete()
         self.db.query(GeneralRankings).delete()
         self.db.query(ModalityRankings).delete()
+        self.db.query(Regulation).delete()
         self.db.commit()
         logger.info("projections_cleared")
 
@@ -160,6 +163,7 @@ class ReadModelRebuildService(BaseRebuildService):
             total += self._rebuild_staff(mod.staff)
             total += self._rebuild_teams(mod.teams)
             total += self._rebuild_team_players(mod.team_players)
+            total += self._rebuild_regulations(mod.regulations)
         logger.info("modality_projections_rebuilt", records_processed=total)
 
         if tour:
@@ -579,6 +583,22 @@ class ReadModelRebuildService(BaseRebuildService):
             )
         self.db.flush()
         return len(entries)
+
+    def _rebuild_regulations(self, regulations: List[RegulationSnapshotItem]) -> int:
+        if not regulations:
+            return 0
+
+        for item in regulations:
+            self.db.add(
+                Regulation(
+                    id=item.id,
+                    title=item.title,
+                    description=item.description,
+                    file_url=item.file_url,
+                )
+            )
+        self.db.flush()
+        return len(regulations)
 
     def _rebuild_materialized_views(self) -> int:
         total = 0
