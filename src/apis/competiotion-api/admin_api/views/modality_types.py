@@ -53,6 +53,9 @@ class ModalityTypeListCreateView(RoleRequiredMixin, APIView):
             description=serializer.validated_data.get("description", ""),
             escaloes=serializer.validated_data["escaloes"],
             is_playoff=serializer.validated_data.get("is_playoff", False),
+            tournament_competitor_type=serializer.validated_data.get(
+                "tournament_competitor_type"
+            ),
         )
         serializer = ModalityTypeListSerializer(modality_type)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -93,6 +96,9 @@ class ModalityTypeDetailView(RoleRequiredMixin, APIView):
             description=serializer.validated_data.get("description"),
             escaloes=serializer.validated_data.get("escaloes"),
             is_playoff=serializer.validated_data.get("is_playoff"),
+            tournament_competitor_type=serializer.validated_data.get(
+                "tournament_competitor_type"
+            ),
         )
 
         serializer = ModalityTypeDetailSerializer(modality_type)

@@ -85,6 +85,10 @@ class Tournament(Base):
     )  # draft, active, finished
     start_date = Column(DateTime(timezone=True), nullable=True)
     scoring_format_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+    competitor_type = Column(
+        Enum(CompetitorType, name="competitor_type"),
+        nullable=False,
+    )
 
     # bulshit fields
     created_by = Column(UUID(as_uuid=True), nullable=False)
@@ -118,6 +122,7 @@ class Tournament(Base):
             "scoring_format_id": (
                 str(self.scoring_format_id) if self.scoring_format_id else None
             ),
+            "competitor_type": self.competitor_type.value,
             "start_date": self.start_date.isoformat() if self.start_date else None,
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat() if self.created_at else None,

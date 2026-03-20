@@ -52,6 +52,7 @@ class ModalityTypeDTO:
     description: str
     escaloes: List[_EscalaDTO]
     is_playoff: bool = False
+    tournament_competitor_type: Optional[str] = None
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -352,6 +353,7 @@ class ModalitiesService(BaseService):
         description: str = "",
         escaloes: List[str] = None,
         is_playoff: bool = False,
+        tournament_competitor_type: Optional[str] = None,
     ) -> ModalityTypeDTO:
         """Create a new modality type
 
@@ -372,6 +374,7 @@ class ModalitiesService(BaseService):
             "description": description,
             "escaloes": escaloes,
             "is_playoff": is_playoff,
+            "tournament_competitor_type": tournament_competitor_type,
         }
         modality_type_data = self.post("/modality-types", data)
         return ModalityTypeDTO(**modality_type_data)
@@ -407,6 +410,7 @@ class ModalitiesService(BaseService):
         description: Optional[str] = None,
         escaloes: Optional[List[str]] = None,
         is_playoff: Optional[bool] = None,
+        tournament_competitor_type: Optional[str] = None,
     ) -> ModalityTypeDTO:
         """Update a modality type
 
@@ -428,6 +432,8 @@ class ModalitiesService(BaseService):
             data["escaloes"] = escaloes
         if is_playoff is not None:
             data["is_playoff"] = is_playoff
+        if tournament_competitor_type is not None:
+            data["tournament_competitor_type"] = tournament_competitor_type
 
         modality_type_data = self.put(f"/modality-types/{modality_type_id}", data)
         return ModalityTypeDTO(**modality_type_data)

@@ -38,6 +38,7 @@ const FormatosPontuacao = () => {
   const [escaloes, setEscaloes] = useState<EscalaoRow[]>([
     { escalao: 'A', minParticipants: null, maxParticipants: null, points: '' }
   ]);
+    const [tournamentCompetitorType, setTournamentCompetitorType] = useState<'individual' | 'team'>('individual');
 
 useEffect(() => {
 	let mounted = true;
@@ -108,6 +109,7 @@ useEffect(() => {
         description: formatDescription || undefined,
         is_playoff: isPlayoff,
         escaloes: escaloes.map(esc => ({ ...esc, points: parsePoints(esc.points) })),
+         tournament_competitor_type: tournamentCompetitorType,
       });
 
       setModalityTypes([...scoringFormats, newFormat]);
@@ -116,6 +118,7 @@ useEffect(() => {
       setFormatName('');
       setFormatDescription('');
       setIsPlayoff(false);
+        setTournamentCompetitorType('individual');
       setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: '' }]);
       setIsCreateModalOpen(false);
     } catch (err: unknown) {
@@ -139,6 +142,7 @@ useEffect(() => {
     setFormatName(format.name);
     setFormatDescription(format.description || '');
     setIsPlayoff(format.is_playoff);
+    setTournamentCompetitorType(format.tournament_competitor_type);
     setEscaloes(format.escaloes.map(esc => ({ ...esc, points: esc.points.join(' ') })));
     setIsViewModalOpen(false);
     setIsEditModalOpen(true);
@@ -167,6 +171,12 @@ useEffect(() => {
       }
     }
 
+    // If user is deselecting playoff, require tournament_competitor_type
+    if (selectedFormat?.is_playoff && !isPlayoff && !tournamentCompetitorType) {
+      notify('Selecione o tipo de competidor (Individual ou Equipa) ao remover o formato playoff.', 'error');
+      return;
+    }
+
     try {
 
       // TODO: API call to update scoring format
@@ -175,6 +185,7 @@ useEffect(() => {
         description: formatDescription || undefined,
         is_playoff: isPlayoff,
         escaloes: escaloes.map(esc => ({ ...esc, points: parsePoints(esc.points) })),
+         tournament_competitor_type: tournamentCompetitorType,
       });
 
       setModalityTypes(scoringFormats.map(f =>
@@ -185,6 +196,7 @@ useEffect(() => {
       setFormatName('');
       setFormatDescription('');
       setIsPlayoff(false);
+        setTournamentCompetitorType('individual');
       setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: '' }]);
       setSelectedFormat(null);
       setIsEditModalOpen(false);
@@ -274,6 +286,11 @@ useEffect(() => {
                         Playoff
                       </span>
                     )}
+                    {!format.is_playoff && format.tournament_competitor_type && (
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${format.tournament_competitor_type === 'individual' ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-green-100 text-green-700 border-green-300'}`}>
+                        {format.tournament_competitor_type === 'individual' ? 'Individual' : 'Equipa'}
+                      </span>
+                    )}
                   </div>
                   {format.description && (
                     <div className="text-sm text-gray-600 mt-1">{format.description}</div>
@@ -336,6 +353,30 @@ useEffect(() => {
                 </label>
                 <span className="text-sm text-gray-500">(só pode existir um formato de playoff de cada vez)</span>
               </div>
+
+              {!isPlayoff && (
+                <div>
+                  <label className="block font-medium mb-2">
+                    Tipo de Competidor <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      className={`flex-1 py-2 rounded-md border transition-colors font-semibold ${tournamentCompetitorType === 'team' ? 'bg-teal-500 text-white border-teal-600' : 'bg-white text-teal-700 border-gray-300'}`}
+                      onClick={() => setTournamentCompetitorType('team')}
+                    >
+                      Equipa
+                    </button>
+                    <button
+                      type="button"
+                      className={`flex-1 py-2 rounded-md border transition-colors font-semibold ${tournamentCompetitorType === 'individual' ? 'bg-teal-500 text-white border-teal-600' : 'bg-white text-teal-700 border-gray-300'}`}
+                      onClick={() => setTournamentCompetitorType('individual')}
+                    >
+                      Individual
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <div className="flex justify-between items-center mb-3">
@@ -465,9 +506,14 @@ useEffect(() => {
                   Formato Playoff
                 </span>
               ) : (
+                <>
                 <span className="px-3 py-1 bg-gray-100 text-gray-500 text-sm rounded-full border border-gray-200">
                   Formato Regular
                 </span>
+                <span className={`px-3 py-1 rounded-full text-sm font-semibold border ${selectedFormat.tournament_competitor_type === 'individual' ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-green-100 text-green-700 border-green-300'}`}>
+                  {selectedFormat.tournament_competitor_type === 'individual' ? 'Individual' : 'Equipa'}
+                </span>
+                </>
               )}
             </div>
 
@@ -574,18 +620,6 @@ useEffect(() => {
                   onChange={e => setFormatName(e.target.value)}
                 />
               </div>
-
-              <div>
-                <label className="block font-medium mb-2">Descrição</label>
-                <textarea
-                  className="border px-4 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  placeholder="Descrição opcional"
-                  rows={2}
-                  value={formatDescription}
-                  onChange={e => setFormatDescription(e.target.value)}
-                />
-              </div>
-
               <div className="flex items-center gap-3">
                 <input
                   type="checkbox"
@@ -599,6 +633,30 @@ useEffect(() => {
                 </label>
                 <span className="text-sm text-gray-500">(só pode existir um formato de playoff de cada vez)</span>
               </div>
+
+              {!isPlayoff && (
+                <div>
+                  <label className="block font-medium mb-2">
+                    Tipo de Competidor <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      className={`flex-1 py-2 rounded-md border transition-colors font-semibold ${tournamentCompetitorType === 'team' ? 'bg-teal-500 text-white border-teal-600' : 'bg-white text-teal-700 border-gray-300'}`}
+                      onClick={() => setTournamentCompetitorType('team')}
+                    >
+                      Equipa
+                    </button>
+                    <button
+                      type="button"
+                      className={`flex-1 py-2 rounded-md border transition-colors font-semibold ${tournamentCompetitorType === 'individual' ? 'bg-teal-500 text-white border-teal-600' : 'bg-white text-teal-700 border-gray-300'}`}
+                      onClick={() => setTournamentCompetitorType('individual')}
+                    >
+                      Individual
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <div className="flex justify-between items-center mb-3">

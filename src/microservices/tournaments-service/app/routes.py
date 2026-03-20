@@ -160,6 +160,18 @@ async def create_tournament(
     data: TournamentCreate, db: Session = Depends(get_db_session)
 ):
     """Create a new tournament"""
+    competitor_type_map = {
+        "team": CompetitorType.TEAM,
+        "athlete": CompetitorType.ATHLETE,
+    }
+
+    if data.competitor_type not in competitor_type_map:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid competitor_type: {data.competitor_type!r}",
+        )
+
+    competitor_type = competitor_type_map[data.competitor_type]
     try:
         # Create tournament
         tournament = Tournament(
@@ -168,6 +180,7 @@ async def create_tournament(
             start_date=data.start_date,
             status="draft",
             scoring_format_id=data.scoring_format_id,
+            competitor_type=competitor_type,
             created_by="00000000-0000-0000-0000-000000000000",  # Placeholder, should be replaced with actual user ID from auth context
         )
         db.add(tournament)
