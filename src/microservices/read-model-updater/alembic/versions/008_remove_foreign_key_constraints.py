@@ -119,19 +119,13 @@ def upgrade() -> None:
         type_="foreignkey",
     )
 
-    # MatchResult table (2 FKs)
+    # MatchResult table (1 FK)
     op.drop_constraint(
         "match_results_match_id_fkey",
         "match_results",
         schema="public_read",
         type_="foreignkey",
     )
-    # op.drop_constraint(
-    #     "match_results_participant_id_fkey",
-    #     "match_results",
-    #     schema="public_read",
-    #     type_="foreignkey",
-    # )
 
     # MatchLineup table
     op.drop_constraint(
