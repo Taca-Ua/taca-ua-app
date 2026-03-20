@@ -87,7 +87,7 @@ const TorneiosCreateModal = ({ isOpen, onClose, onCreate, modalities, setModalit
               required
             >
               <option value="" disabled>Selecione uma modalidade</option>
-              {modalities.map(m => (
+              {[...modalities].sort((a, b) => a.name.localeCompare(b.name)).map(m => (
                 <option key={m.id} value={m.id}>{m.name}</option>
               ))}
             </select>
@@ -140,6 +140,13 @@ const Torneios = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [modalityFilter, setModalityFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+
+  // Define custom order for statuses
+  const statusOrder: Record<string, number> = {
+    active: 0,
+    draft: 1,
+    finished: 2,
+  };
 
   // Fetch tournaments on component mount
   useEffect(() => {
@@ -227,6 +234,12 @@ const Torneios = () => {
                 (modalityFilter === '' || t.modality.id === modalityFilter) &&
                 (statusFilter === '' || t.status === statusFilter)
               )
+              .sort((a, b) => {
+                // console.log('Comparing statuses:', a.status, b.status, 'with order:', statusOrder[a.status], statusOrder[b.status]);
+                return (statusOrder[a.status] ?? 999) - (statusOrder[b.status] ?? 999) ||
+                       a.modality.name.localeCompare(b.modality.name) ||
+                       a.name.localeCompare(b.name);
+              })
               .map(t => (
               <button
                 key={t.id}
@@ -234,7 +247,15 @@ const Torneios = () => {
                 onClick={() => navigate(`/geral/torneios/${t.id}`)}
                 className="w-full text-left px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-teal-500"
               >
-                <div className="font-medium text-gray-800">{t.name}</div>
+                <div className="flex flex-col">
+                  <span className="font-medium text-gray-800">{t.name}</span>
+
+                  <span className="text-xs text-gray-500 mt-1">
+                    {t.start_date
+                      ? `Início: ${new Date(t.start_date).toLocaleDateString('pt-PT')}`
+                      : 'Data não definida'}
+                  </span>
+                </div>
                 <div className="flex items-center gap-3 text-sm">
                   <span className="text-teal-600 font-medium">{t.modality.name}</span>
                   <span className="text-gray-400">|</span>

@@ -13,13 +13,13 @@ from sqlalchemy.orm import Session
 from taca_models import (
     GeneralRankingView,
     MatchDetailView,
+    ModalityRankingView,
     Regulation,
     StudentDetailView,
     TeamDetailView,
     TournamentDetailView,
     TournamentStandingsView,
 )
-
 
 # ==================== Team Detail View Operations ====================
 
@@ -441,3 +441,71 @@ def get_regulations(
         )
 
     return query.order_by(Regulation.created_at.desc()).all()
+
+
+# ==================== Modality Ranking View Operations ====================
+
+
+def get_modality_ranking(
+    db: Session,
+    modality_id: Optional[UUID] = None,
+    nucleo_id: Optional[UUID] = None,
+) -> tuple[list[ModalityRankingView], int]:
+    """Get rankings of courses within modalities.
+
+    Results are ordered by rank (nulls last) and points descending.
+
+    Args:
+        db: Database session
+        modality_id: Optional filter by modality ID
+        nucleo_id: Optional filter by nucleo ID
+
+    Returns:
+        Tuple of (list of rankings, total count)
+    """
+    query = db.query(ModalityRankingView)
+
+    # Apply filters
+    if modality_id:
+        query = query.filter(ModalityRankingView.modality_id == modality_id)
+    if nucleo_id:
+        query = query.filter(ModalityRankingView.nucleo_id == nucleo_id)
+
+    # Order by modality, then rank (nulls last) and points
+    query = query.order_by(
+        ModalityRankingView.modality_id,
+        ModalityRankingView.rank.asc().nullslast(),
+        ModalityRankingView.points.desc(),
+    )
+
+    # Get total count
+    total = query.count()
+
+    # Get all rankings
+    rankings = query.all()
+
+    return rankings, total
+
+
+def get_course_modality_rankings(
+    db: Session,
+    course_id: UUID,
+) -> list[ModalityRankingView]:
+    """Get modality-specific rankings for a given course.
+
+    Args:
+        db: Database session
+        course_id: Course identifier
+
+    Returns:
+        List of rankings for the course across modalities (may be empty)
+    """
+    return (
+        db.query(ModalityRankingView)
+        .filter(ModalityRankingView.course_id == course_id)
+        .order_by(
+            ModalityRankingView.modality_name.asc().nullslast(),
+            ModalityRankingView.rank.asc().nullslast(),
+        )
+        .all()
+    )

@@ -22,7 +22,7 @@ function Footer() {
             <ul className="space-y-2">
               <li>
                 <Link to="/ranking" className="text-gray-300 hover:text-teal-400 transition-colors">
-                  Classificação Geral
+                  Ranking Geral
                 </Link>
               </li>
               <li>
@@ -49,11 +49,6 @@ function Footer() {
                 <Link to="/regulamentos" className="text-gray-300 hover:text-teal-400 transition-colors">
                   Regulamentos
                 </Link>
-              </li>
-              <li>
-                <a href="/admin/" className="text-gray-300 hover:text-teal-400 transition-colors">
-                  Admin Login
-                </a>
               </li>
             </ul>
           </div>

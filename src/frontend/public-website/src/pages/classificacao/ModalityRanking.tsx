@@ -1,38 +1,61 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState, type TouchEvent } from 'react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
-import { rankingApi, type GeneralRanking } from '../../api';
+import { modalityRankingApi, type ModalityRanking } from '../../api';
 
-function GeneralRankingPage() {
-  const [rankings, setRankings] = useState<GeneralRanking[]>([]);
+interface OptionItem {
+  id: string;
+  name: string;
+}
+
+function ModalityRankingPage() {
+  const [rankings, setRankings] = useState<ModalityRanking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [nucleoFilter, setNucleoFilter] = useState<string>('all');
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
 
-  // Extract unique nucleos from rankings
-  const uniqueNucleos = Array.from(
-    new Set(rankings.map((r) => JSON.stringify({ id: r.nucleo_id, name: r.nucleo_name })))
-  ).map((str) => JSON.parse(str));
+  const modalities: OptionItem[] = useMemo(
+    () =>
+      Array.from(
+        new Map(
+          rankings.map((r) => [
+            r.modality_id,
+            { id: r.modality_id, name: r.modality_name ?? 'Sem nome' },
+          ]),
+        ).values(),
+      ),
+    [rankings],
+  );
+
+  const selectedModality = modalities[currentIndex] ?? null;
+
+  const rankingsForSelected: ModalityRanking[] = useMemo(
+    () =>
+      selectedModality
+        ? rankings.filter((r) => r.modality_id === selectedModality.id)
+        : [],
+    [rankings, selectedModality],
+  );
 
   useEffect(() => {
     const fetchRankings = async () => {
       try {
         setLoading(true);
         setError(null);
-
-        const params = nucleoFilter !== 'all' ? { nucleo_id: nucleoFilter } : undefined;
-        const data = await rankingApi.getGeneralRanking(params);
+        const data = await modalityRankingApi.getModalityRanking();
         setRankings(data.items);
+        setCurrentIndex(0);
       } catch (err) {
-        console.error('Error fetching rankings:', err);
-        setError('Erro ao carregar ranking geral. Por favor, tente novamente.');
+        console.error('Error fetching modality rankings:', err);
+        setError('Erro ao carregar ranking por modalidade. Por favor, tente novamente.');
       } finally {
         setLoading(false);
       }
     };
 
     fetchRankings();
-  }, [nucleoFilter]);
+  }, []);
 
   const getMedalIcon = (rank: number | null) => {
     if (rank === null) return null;
@@ -54,6 +77,35 @@ function GeneralRankingPage() {
     return `${rank}º`;
   };
 
+  const goToPrevious = () => {
+    setCurrentIndex((index) => (index > 0 ? index - 1 : index));
+  };
+
+  const goToNext = () => {
+    setCurrentIndex((index) =>
+      index < modalities.length - 1 ? index + 1 : index,
+    );
+  };
+
+  const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    setTouchStartX(event.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
+    if (touchStartX === null) return;
+
+    const deltaX = event.changedTouches[0].clientX - touchStartX;
+    const threshold = 50;
+
+    if (deltaX > threshold) {
+      goToPrevious();
+    } else if (deltaX < -threshold) {
+      goToNext();
+    }
+
+    setTouchStartX(null);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
@@ -63,32 +115,47 @@ function GeneralRankingPage() {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
-              Ranking Geral
+              Ranking por Modalidade
             </h1>
             <p className="text-lg text-gray-600">
-              Classificação geral dos cursos com base nos resultados dos torneios
+              Classificação dos cursos em cada modalidade, com base nos resultados dos torneios
             </p>
           </div>
 
-          {/* Filters */}
-          {uniqueNucleos.length > 0 && (
-            <div className="mb-6">
-              <label htmlFor="nucleo-filter" className="block text-sm font-medium text-gray-700 mb-2">
-                Filtrar por Núcleo
-              </label>
-              <select
-                id="nucleo-filter"
-                value={nucleoFilter}
-                onChange={(e) => setNucleoFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+          {/* Carousel Modality Selector - mobile first */}
+          {modalities.length > 0 && (
+            <div className="mb-6 flex items-center justify-between gap-4">
+              <button
+                type="button"
+                onClick={goToPrevious}
+                disabled={currentIndex === 0}
+                className="px-3 py-2 rounded-full border border-gray-300 text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed bg-white shadow-sm active:scale-95"
               >
-                <option value="all">Todos os Núcleos</option>
-                {uniqueNucleos.map((nucleo: any) => (
-                  <option key={nucleo.id} value={nucleo.id}>
-                    {nucleo.name}
-                  </option>
-                ))}
-              </select>
+                ◀
+              </button>
+
+              <div className="flex-1 text-center">
+                <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">
+                  Modalidade
+                </p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {selectedModality?.name}
+                </p>
+                {modalities.length > 1 && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    {currentIndex + 1} de {modalities.length}
+                  </p>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={goToNext}
+                disabled={currentIndex >= modalities.length - 1}
+                className="px-3 py-2 rounded-full border border-gray-300 text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed bg-white shadow-sm active:scale-95"
+              >
+                ▶
+              </button>
             </div>
           )}
 
@@ -102,18 +169,26 @@ function GeneralRankingPage() {
           {/* Loading State */}
           {loading ? (
             <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
-              <p className="mt-4 text-gray-600">A carregar ranking...</p>
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600" />
+              <p className="mt-4 text-gray-600">A carregar ranking por modalidade...</p>
             </div>
           ) : (
             <>
               {/* Rankings Table */}
-              {rankings.length === 0 ? (
+              {!selectedModality ? (
                 <div className="bg-white rounded-lg shadow p-8 text-center">
-                  <p className="text-gray-500">Não há ranking disponível no momento.</p>
+                  <p className="text-gray-500">Não há modalidades com ranking disponíveis neste momento.</p>
+                </div>
+              ) : rankingsForSelected.length === 0 ? (
+                <div className="bg-white rounded-lg shadow p-8 text-center">
+                  <p className="text-gray-500">Não há ranking disponível para esta modalidade.</p>
                 </div>
               ) : (
-                <div className="bg-white rounded-lg shadow overflow-hidden">
+                <div
+                  className="bg-white rounded-lg shadow overflow-hidden"
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={handleTouchEnd}
+                >
                   {/* Desktop Table View */}
                   <div className="hidden md:block overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
@@ -134,7 +209,7 @@ function GeneralRankingPage() {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {rankings.map((ranking) => (
+                        {rankingsForSelected.map((ranking) => (
                           <tr
                             key={ranking.id}
                             className={`hover:bg-gray-50 transition-colors ${
@@ -176,7 +251,7 @@ function GeneralRankingPage() {
 
                   {/* Mobile Card View */}
                   <div className="md:hidden divide-y divide-gray-200">
-                    {rankings.map((ranking) => (
+                    {rankingsForSelected.map((ranking) => (
                       <div
                         key={ranking.id}
                         className={`p-4 ${
@@ -211,12 +286,6 @@ function GeneralRankingPage() {
                               {ranking.nucleo_abbreviation}
                             </p>
                           </div>
-
-                          <div className="pt-2 border-t border-gray-200">
-                            <p className="text-xs text-gray-600">
-                              Torneios: {ranking.tournaments_participated}
-                            </p>
-                          </div>
                         </div>
                       </div>
                     ))}
@@ -233,4 +302,4 @@ function GeneralRankingPage() {
   );
 }
 
-export default GeneralRankingPage;
+export default ModalityRankingPage;

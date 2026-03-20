@@ -391,32 +391,35 @@ function Calendario() {
                         return (
                           <div
                             key={day}
-                            className={`aspect-square border rounded-lg p-2 ${
+                            className={`min-h-[85px] border rounded-lg p-1 ${
                               isCurrentDay
                                 ? 'bg-teal-50 border-teal-500'
                                 : 'bg-white border-gray-200 hover:border-gray-300'
-                            } transition-colors`}
+                            } transition-colors overflow-hidden`}
                           >
-                            <div className={`text-sm font-semibold mb-1 ${
+                            <div className={`text-xs font-bold mb-1 px-1 ${
                               isCurrentDay ? 'text-teal-600' : 'text-gray-700'
                             }`}>
                               {day}
                             </div>
                             {dayMatches.length > 0 && (
-                              <div className="space-y-1">
-                                {dayMatches.slice(0, 2).map((match) => (
+                              <div className="flex flex-col gap-1">
+                                {dayMatches.slice(0, 3).map((match) => (
                                   <Link
                                     key={match.match_id}
                                     to={`/torneios/${match.tournament_id}`}
-                                    className="block text-xs bg-teal-100 text-teal-700 px-1 py-0.5 rounded truncate hover:bg-teal-200 transition-colors"
-                                    title={`${match.tournament_name} - ${formatTime(match.start_time)}`}
+                                    className="block text-[10px] leading-tight bg-teal-100 text-teal-800 px-1.5 py-0.5 rounded truncate hover:bg-teal-200 transition-colors"
+                                    title={`${match.modality_name || 'Jogo'}: ${match.tournament_name}`}
                                   >
-                                    {formatTime(match.start_time)}
+                                    <span className="font-semibold">{formatTime(match.start_time)}</span>
+                                    {match.modality_name && (
+                                      <span className="opacity-75"> - {match.modality_name}</span>
+                                    )}
                                   </Link>
                                 ))}
-                                {dayMatches.length > 2 && (
-                                  <div className="text-xs text-gray-500 px-1">
-                                    +{dayMatches.length - 2} mais
+                                {dayMatches.length > 3 && (
+                                  <div className="text-[9px] text-gray-500 px-1 font-medium italic">
+                                    +{dayMatches.length - 3} mais...
                                   </div>
                                 )}
                               </div>

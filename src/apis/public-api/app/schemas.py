@@ -287,3 +287,47 @@ class RegulationPublic(BaseModel):
     description: Optional[str] = Field(None, description="Optional description")
     file_url: str = Field(..., description="URL to the PDF file")
     created_at: datetime = Field(..., description="Creation timestamp")
+
+
+# ==================== ModalityRankingView Schemas ====================
+
+
+class ModalityRanking(BaseModel):
+    """Schema for modality-specific ranking view response."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int = Field(..., description="Unique identifier for the ranking entry")
+
+    # Modality info
+    modality_id: UUID = Field(..., description="Modality identifier")
+    modality_name: Optional[str] = Field(None, description="Modality name")
+
+    # Course info
+    course_id: UUID = Field(..., description="Course identifier")
+    course_name: str = Field(..., description="Full name of the course")
+    course_abbreviation: str = Field(..., description="Course abbreviation")
+
+    # Nucleo info
+    nucleo_id: UUID = Field(..., description="Nucleo identifier")
+    nucleo_name: str = Field(..., description="Full name of the nucleo")
+    nucleo_abbreviation: str = Field(..., description="Nucleo abbreviation")
+
+    # Ranking data
+    points: int = Field(
+        ..., ge=0, description="Total points earned by the course in the modality"
+    )
+    rank: Optional[int] = Field(
+        None, ge=1, description="Position in the ranking within the modality"
+    )
+
+    updated_at: datetime = Field(..., description="Last update timestamp")
+
+
+class ModalityRankingList(BaseModel):
+    """Schema for list of modality rankings."""
+
+    items: list[ModalityRanking] = Field(..., description="List of course rankings")
+    total: int = Field(
+        ..., ge=0, description="Total number of course rankings in the result"
+    )

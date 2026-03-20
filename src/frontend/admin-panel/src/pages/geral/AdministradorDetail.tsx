@@ -228,7 +228,7 @@ function AdminDetail() {
                     <span className="text-gray-500">Nenhum núcleo associado</span>
                   ) : (
                     <div className="flex flex-wrap gap-2">
-                      {member.nucleos.map(nucleo => (
+                      {[...member.nucleos].sort((a, b) => a.name.localeCompare(b.name)).map(nucleo => (
                         <span
                           key={nucleo.id}
                           className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-teal-100 text-teal-800 font-medium"
@@ -247,7 +247,7 @@ function AdminDetail() {
                 <label className="block text-teal-500 font-medium mb-2">Cursos Associados</label>
                 <div className="bg-gray-100 px-4 py-3 rounded-md">
                   <div className="flex flex-wrap gap-2">
-                    {adminCourses.map(course => (
+                    {[...adminCourses].sort((a, b) => a.name.localeCompare(b.name)).map(course => (
                       <span key={course.id} className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800 font-medium">
                         {course.name}<span className="ml-1 text-blue-600">({course.abbreviation})</span>
                       </span>

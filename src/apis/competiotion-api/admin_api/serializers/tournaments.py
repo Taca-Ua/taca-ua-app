@@ -69,6 +69,7 @@ class TournamentListSerializer(serializers.Serializer):
     name = serializers.CharField()
     status = serializers.ChoiceField(choices=STATUS_CHOICES)
     modality = ModalityListSerializer()
+    start_date = serializers.DateTimeField(required=False, allow_null=True)
 
 
 class TournamentDetailSerializer(TournamentListSerializer):

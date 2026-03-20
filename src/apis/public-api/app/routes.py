@@ -519,3 +519,78 @@ def list_regulations(
     regulations = crud.get_regulations(db=db, search=search)
     logger.info("regulations_listed", total=len(regulations))
     return regulations
+
+
+# ==================== Modality Ranking Endpoints ====================
+
+
+@router.get(
+    "/ranking/modality",
+    response_model=schemas.ModalityRankingList,
+    summary="Get modality rankings",
+    description=(
+        "Get rankings of courses per modality based on tournament performance. "
+        "You can optionally filter by modality or nucleo."
+    ),
+)
+def get_modality_ranking(
+    modality_id: Optional[UUID] = Query(
+        None, description="Optional filter by modality ID"
+    ),
+    nucleo_id: Optional[UUID] = Query(None, description="Optional filter by nucleo ID"),
+    db: Session = Depends(get_db),
+):
+    """Retrieve rankings of courses within modalities.
+
+    The ranking is calculated based on points earned in tournaments for each
+    modality separately. Rankings are ordered by rank and points.
+
+    - **modality_id**: Optional filter to show ranking only for a specific modality
+    - **nucleo_id**: Optional filter to show ranking only for a specific nucleo
+    """
+    rankings, total = crud.get_modality_ranking(
+        db=db,
+        modality_id=modality_id,
+        nucleo_id=nucleo_id,
+    )
+
+    logger.info(
+        "modality_ranking_retrieved",
+        total=total,
+        filters={
+            "modality_id": str(modality_id) if modality_id else None,
+            "nucleo_id": str(nucleo_id) if nucleo_id else None,
+        },
+    )
+
+    return schemas.ModalityRankingList(
+        items=rankings,
+        total=total,
+    )
+
+
+@router.get(
+    "/ranking/modality/course/{course_id}",
+    response_model=list[schemas.ModalityRanking],
+    summary="Get course modality rankings",
+    description="Get modality-specific ranking information for a given course",
+)
+def get_course_modality_rankings(
+    course_id: UUID,
+    db: Session = Depends(get_db),
+):
+    """Retrieve modality rankings for a specific course.
+
+    Returns one entry per modality in which the course has points.
+
+    - **course_id**: Unique identifier of the course
+    """
+    rankings = crud.get_course_modality_rankings(db=db, course_id=course_id)
+
+    logger.info(
+        "course_modality_rankings_retrieved",
+        course_id=str(course_id),
+        count=len(rankings),
+    )
+
+    return rankings

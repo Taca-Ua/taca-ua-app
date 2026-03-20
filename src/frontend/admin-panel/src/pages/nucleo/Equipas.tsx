@@ -26,13 +26,13 @@ const Equipas = () => {
   const [filterCourse, setFilterCourse] = useState('');
 
   // Get only modalities and courses that have teams (for filtering)
-  const availableModalities = allModalities.filter(modality =>
-    teams.some(team => team.modality.id === modality.id)
-  );
+  const availableModalities = allModalities
+    .filter(modality => teams.some(team => team.modality.id === modality.id))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
-  const availableCourses = allCourses.filter(course =>
-    teams.some(team => team.course.id === course.id)
-  );
+  const availableCourses = allCourses
+    .filter(course => teams.some(team => team.course.id === course.id))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   // Fetch teams, modalities, and courses from API
   useEffect(() => {
@@ -64,6 +64,16 @@ const Equipas = () => {
 
     fetchData();
   }, []);
+
+  // Default team name when creating team
+  useEffect(() => {
+    if (selectedCourse) {
+      const course = allCourses.find(c => String(c.id) === String(selectedCourse));
+      if (course) {
+        setNewTeamName(course.name);
+      }
+    }
+  }, [selectedCourse, allCourses]);
 
   const handleAddTeam = async () => {
     if (!newTeamName.trim()) {
@@ -113,11 +123,13 @@ const Equipas = () => {
   };
 
   // Filter teams by modality and/or course
-  const filteredTeams = teams.filter((team) => {
-    const matchesModality = filterModality ? team.modality.id === filterModality : true;
-    const matchesCourse = filterCourse ? team.course.id === filterCourse : true;
-    return matchesModality && matchesCourse;
-  });
+  const filteredTeams = teams
+    .filter((team) => {
+      const matchesModality = filterModality ? team.modality.id === filterModality : true;
+      const matchesCourse = filterCourse ? team.course.id === filterCourse : true;
+      return matchesModality && matchesCourse;
+    })
+    .sort((a, b) => a.modality.name.localeCompare(b.modality.name) || a.name.localeCompare(b.name));
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -223,6 +235,24 @@ const Equipas = () => {
 
             <div className="space-y-4">
               <div>
+                <label htmlFor="course" className="block text-gray-700 font-medium mb-2">
+                  Curso <HelpTooltip text="Curso académico que esta equipa representa. Afeta os filtros de pesquisa e a organização das equipas." className="ml-1" /> <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="course"
+                  value={selectedCourse}
+                  onChange={(e) => setSelectedCourse(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                >
+                  <option value="">Selecionar Curso</option>
+                  {[...allCourses].sort((a, b) => a.name.localeCompare(b.name)).map((course) => (
+                    <option key={course.id} value={course.id}>
+                      {course.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
                 <label htmlFor="teamName" className="block text-gray-700 font-medium mb-2">
                   Nome da Equipa <HelpTooltip text="Nome pelo qual a equipa é identificada nos torneios e rankings. Deve ser único dentro do núcleo." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
@@ -247,7 +277,7 @@ const Equipas = () => {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <option value="">Selecionar Modalidade</option>
-                  {allModalities.map((modality) => (
+                  {[...allModalities].sort((a, b) => a.name.localeCompare(b.name)).map((modality) => (
                     <option key={modality.id} value={modality.id}>
                       {modality.name}
                     </option>
@@ -255,24 +285,7 @@ const Equipas = () => {
                 </select>
               </div>
 
-              <div>
-                <label htmlFor="course" className="block text-gray-700 font-medium mb-2">
-                  Curso <HelpTooltip text="Curso académico que esta equipa representa. Afeta os filtros de pesquisa e a organização das equipas." className="ml-1" /> <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="course"
-                  value={selectedCourse}
-                  onChange={(e) => setSelectedCourse(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                  <option value="">Selecionar Curso</option>
-                  {allCourses.map((course) => (
-                    <option key={course.id} value={course.id}>
-                      {course.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+
             </div>
 
             <div className="flex gap-4 mt-6">

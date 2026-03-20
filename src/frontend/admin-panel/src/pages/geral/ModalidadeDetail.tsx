@@ -98,7 +98,7 @@ const ModalidadeDetailEditModal = ({
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
             >
               <option value="">Selecionar Tipo</option>
-              {modalityTypes.map((type) => (
+              {[...modalityTypes].sort((a, b) => a.name.localeCompare(b.name)).map((type) => (
       <option key={type.id} value={type.id}>{type.name}</option>
       ))}
             </select>
