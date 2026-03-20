@@ -128,6 +128,8 @@ def _register_defaults() -> None:
         NucleoCreatedV1,
         NucleoDeletedV1,
         NucleoUpdatedV1,
+        RegulationCreatedV1,
+        RegulationDeletedV1,
         StaffCreatedV1,
         StaffDeletedV1,
         StaffUpdatedV1,
@@ -200,6 +202,9 @@ def _register_defaults() -> None:
         TournamentCompetitorDeletedV1,
         # Ranking events
         RankingComputedV1,
+        # Regulation events
+        RegulationCreatedV1,
+        RegulationDeletedV1,
     ]
 
     for schema_cls in schemas:

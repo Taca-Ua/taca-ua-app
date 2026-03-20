@@ -17,6 +17,7 @@ from taca_snapshots.modalities import (
     ModalitySnapshotItem,
     ModalityTypeSnapshotItem,
     NucleoSnapshotItem,
+    RegulationSnapshotItem,
     StaffSnapshotItem,
     StudentSnapshotItem,
     TeamPlayerSnapshotItem,
@@ -30,6 +31,7 @@ from .models import (
     Modality,
     ModalityType,
     Nucleo,
+    Regulation,
     Staff,
     Student,
     Team,
@@ -79,6 +81,7 @@ def get_snapshot(
         staff = db.query(Staff).offset(offset).limit(limit).all()
         teams = db.query(Team).offset(offset).limit(limit).all()
         team_player_relationships = db.execute(team_players.select()).fetchall()
+        regulations = db.query(Regulation).offset(offset).limit(limit).all()
 
         # Build typed DTOs
         nucleo_dtos = [
@@ -190,6 +193,16 @@ def get_snapshot(
             for tp in team_player_relationships
         ]
 
+        regulation_dtos = [
+            RegulationSnapshotItem(
+                id=str(r.id),
+                title=r.title,
+                description=r.description,
+                file_url=r.file_url,
+            )
+            for r in regulations
+        ]
+
         snapshot = ModalitiesSnapshotResponse(
             nucleos=nucleo_dtos,
             courses=course_dtos,
@@ -199,6 +212,7 @@ def get_snapshot(
             staff=staff_dtos,
             teams=team_dtos,
             team_players=team_player_dtos,
+            regulations=regulation_dtos,
         )
 
         logger.info(
@@ -212,6 +226,7 @@ def get_snapshot(
             staff_count=len(staff_dtos),
             teams_count=len(team_dtos),
             team_players_count=len(team_player_dtos),
+            regulations_count=len(regulation_dtos),
         )
 
         return snapshot

@@ -817,7 +817,7 @@ class Regulation(Base):
     """
 
     __tablename__ = "regulation"
-    __table_args__ = {"schema": "modalities"}
+    __table_args__ = {"schema": "public_read"}
 
     id = Column(UUID(as_uuid=True), primary_key=True)
     title = Column(Text, nullable=False)

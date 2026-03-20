@@ -50,7 +50,12 @@ from taca_events.pydantic_schemas import (  # Nucleo; Course; Modality Type; Mod
     TournamentFinishedV1,
     TournamentUpdatedV1,
 )
+from taca_events.pydantic_schemas.modalities import (
+    RegulationCreatedV1,
+    RegulationDeletedV1,
+)
 from taca_messaging.rabbitmq_service import RabbitMQService
+from taca_models.models import Regulation
 
 from .database import get_db
 from .logger import logger
@@ -1253,3 +1258,43 @@ def handle_ranking_computed(event: RankingComputedV1):
             general_entries=len(general_entries),
             modality_entries=len(modality_entries),
         )
+
+
+# ==================== Regulation Events ====================
+@rabbitmq_service.event_handler(RegulationCreatedV1)
+def handle_regulation_created(event: RegulationCreatedV1):
+    """Handle regulation created event."""
+    regulation_id = event.data.regulation_id
+    logger.info(
+        "event_received",
+        event_type="regulation.created",
+        regulation_id=str(regulation_id),
+    )
+
+    with get_db() as db:
+        regulation = Regulation(
+            id=regulation_id,
+            title=event.data.title,
+            description=event.data.description,
+            file_url=event.data.file_url,
+        )
+        db.add(regulation)
+
+
+@rabbitmq_service.event_handler(RegulationDeletedV1)
+def handle_regulation_deleted(event: RegulationDeletedV1):
+    """Handle regulation deleted event."""
+    regulation_id = event.data.regulation_id
+    logger.info(
+        "event_received",
+        event_type="regulation.deleted",
+        regulation_id=str(regulation_id),
+    )
+
+    with get_db() as db:
+        regulation = db.query(Regulation).filter(Regulation.id == regulation_id).first()
+        if not regulation:
+            logger.warning("regulation_not_found", regulation_id=str(regulation_id))
+            return
+        db.delete(regulation)
+        db.flush()

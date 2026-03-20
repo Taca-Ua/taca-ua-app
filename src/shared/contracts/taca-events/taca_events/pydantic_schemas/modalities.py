@@ -460,3 +460,43 @@ class TeamPlayerRemovedV1(EventSchema):
     @classmethod
     def aggregate_type(cls) -> str:
         return "team"
+
+
+# ================================================================== #
+# Regulation
+# ================================================================== #
+
+
+class RegulationCreatedData(BaseModel):
+    regulation_id: UUID
+    title: str
+    description: str
+    file_url: Optional[str] = None
+
+
+class RegulationDeletedData(BaseModel):
+    regulation_id: UUID
+
+
+class RegulationCreatedV1(EventSchema):
+    data: RegulationCreatedData
+
+    @classmethod
+    def event_type(cls) -> str:
+        return "regulation.created.v1"
+
+    @classmethod
+    def aggregate_type(cls) -> str:
+        return "regulation"
+
+
+class RegulationDeletedV1(EventSchema):
+    data: RegulationDeletedData
+
+    @classmethod
+    def event_type(cls) -> str:
+        return "regulation.deleted.v1"
+
+    @classmethod
+    def aggregate_type(cls) -> str:
+        return "regulation"
