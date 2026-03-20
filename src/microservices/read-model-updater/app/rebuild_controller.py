@@ -417,18 +417,8 @@ class ReadModelRebuildService(BaseRebuildService):
     def _rebuild_matches(self, matches: List[MatchSnapshotItem]) -> int:
         if not matches:
             return 0
-        available_tournament_ids = {
-            t.tournament_id for t in self.db.query(Tournament).all()
-        }
-        for item in matches:
-            if item.tournament_id not in available_tournament_ids:
-                logger.warning(
-                    "match_with_missing_tournament_skipped",
-                    match_id=item.match_id,
-                    tournament_id=item.tournament_id,
-                )
-                continue
 
+        for item in matches:
             self.db.add(
                 Match(
                     match_id=item.match_id,
@@ -449,15 +439,8 @@ class ReadModelRebuildService(BaseRebuildService):
     ) -> int:
         if not participants:
             return 0
-        matches_available = {m.match_id for m in self.db.query(Match).all()}
+
         for item in participants:
-            if item.match_id not in matches_available:
-                logger.warning(
-                    "match_participant_with_missing_match_skipped",
-                    match_id=item.match_id,
-                    participant_id=item.participant_id,
-                )
-                continue
             self.db.add(
                 MatchParticipant(
                     match_id=item.match_id,
@@ -474,16 +457,7 @@ class ReadModelRebuildService(BaseRebuildService):
     def _rebuild_match_results(self, results: List[MatchResultSnapshotItem]) -> int:
         if not results:
             return 0
-        matches_available = {m.match_id for m in self.db.query(Match).all()}
         for item in results:
-            if item.match_id not in matches_available:
-                logger.warning(
-                    "match_result_with_missing_match_skipped",
-                    match_id=item.match_id,
-                    participant_id=item.participant_id,
-                )
-                continue
-
             self.db.add(
                 MatchResult(
                     match_id=item.match_id,
@@ -501,16 +475,7 @@ class ReadModelRebuildService(BaseRebuildService):
         if not lineups:
             return 0
 
-        avilable_matches = {m.match_id for m in self.db.query(Match).all()}
         for item in lineups:
-            if item.match_id not in avilable_matches:
-                logger.warning(
-                    "match_lineup_with_missing_match_skipped",
-                    match_id=item.match_id,
-                    team_id=item.team_id,
-                    player_id=item.player_id,
-                )
-                continue
             self.db.add(
                 MatchLineup(
                     match_id=item.match_id,
@@ -528,16 +493,7 @@ class ReadModelRebuildService(BaseRebuildService):
         if not comments:
             return 0
 
-        avilable_matches = {m.match_id for m in self.db.query(Match).all()}
         for item in comments:
-            if item.match_id not in avilable_matches:
-                logger.warning(
-                    "match_comment_with_missing_match_skipped",
-                    match_id=item.match_id,
-                    comment_id=item.comment_id,
-                )
-                continue
-
             self.db.add(
                 MatchComment(
                     comment_id=item.comment_id,

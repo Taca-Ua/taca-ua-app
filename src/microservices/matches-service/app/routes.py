@@ -207,6 +207,7 @@ def create_match(
             athlete_id=participant_data.athlete_id,
         )
         db.add(participant)
+    db.flush()  # Get participant IDs if needed for events
 
     # Emit event
     event = MatchCreatedV1.create(
