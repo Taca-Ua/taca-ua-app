@@ -18,10 +18,9 @@ Usage in a consumer::
         match_id = event.data.match_id
 """
 
-from typing import TYPE_CHECKING, Dict, Optional, Type
+from typing import Dict, Optional, Type
 
-if TYPE_CHECKING:
-    from .base import EventSchema
+from .base import EventSchema
 
 
 class EventRegistry:
