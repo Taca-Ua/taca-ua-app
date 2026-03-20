@@ -31,7 +31,9 @@ DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000"
 
 @router.get("/teams", response_model=List[TeamResponse])
 def list_teams(
-    admin_id: str = None, modality_id: str = None, db: Session = Depends(get_db_session)
+    admin_id: str = None,
+    modality_id: UUID = None,
+    db: Session = Depends(get_db_session),
 ):
     """List all teams"""
     query = db.query(Team)
