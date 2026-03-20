@@ -332,7 +332,14 @@ def handle_modality_type_created(event: ModalityTypeCreatedV1):
             modality_type_id=modality_type_id,
             name=event.data.name,
             description=event.data.description,
-            escaloes=event.data.escaloes,
+            escaloes=[
+                {
+                    "min_participants": e.min_participants,
+                    "max_participants": e.max_participants,
+                    "points": e.points,
+                }
+                for e in event.data.escaloes
+            ],
         )
         db.add(modality_type)
 
@@ -364,7 +371,14 @@ def handle_modality_type_updated(event: ModalityTypeUpdatedV1):
         if event.data.description is not None:
             modality_type.description = event.data.description
         if event.data.escaloes is not None:
-            modality_type.escaloes = event.data.escaloes
+            modality_type.escaloes = [
+                {
+                    "min_participants": e.min_participants,
+                    "max_participants": e.max_participants,
+                    "points": e.points,
+                }
+                for e in event.data.escaloes
+            ]
 
         modality_type.updated_at = datetime.utcnow()
 

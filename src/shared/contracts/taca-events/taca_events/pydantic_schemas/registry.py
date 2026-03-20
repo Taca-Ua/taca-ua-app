@@ -1,8 +1,11 @@
 """
 EventRegistry – maps RabbitMQ routing keys to typed ``EventSchema`` classes.
 
-The registry is populated automatically when this module is imported via
-``_register_defaults()``.  Custom schemas can be added at runtime with
+The registry is populated automatically via ``EventSchema.__init_subclass__``:
+each subclass registers itself when its module is first imported.  The
+``taca_events.pydantic_schemas`` package ensures all built-in schema modules
+are imported at package-import time, so the registry is fully populated once
+you import from the package.  Custom schemas can be added at runtime with
 ``EventRegistry.register()``.
 
 Usage in a consumer::
@@ -18,10 +21,9 @@ Usage in a consumer::
         match_id = event.data.match_id
 """
 
-from typing import TYPE_CHECKING, Dict, Optional, Type
+from typing import Dict, Optional, Type
 
-if TYPE_CHECKING:
-    from .base import EventSchema
+from .base import EventSchema
 
 
 class EventRegistry:
@@ -37,10 +39,10 @@ class EventRegistry:
     * ``list_keys()`` – enumerate all registered routing keys
     """
 
-    _registry: Dict[str, Type["EventSchema"]] = {}
+    _registry: Dict[str, Type[EventSchema]] = {}
 
     @classmethod
-    def register(cls, routing_key: str, schema_class: Type["EventSchema"]) -> None:
+    def register(cls, routing_key: str, schema_class: Type[EventSchema]) -> None:
         """
         Register a schema class for the given routing key.
 
@@ -51,14 +53,14 @@ class EventRegistry:
         cls._registry[routing_key] = schema_class
 
     @classmethod
-    def get(cls, routing_key: str) -> Optional[Type["EventSchema"]]:
+    def get(cls, routing_key: str) -> Optional[Type[EventSchema]]:
         """
         Return the schema class registered for *routing_key*, or ``None``.
         """
         return cls._registry.get(routing_key)
 
     @classmethod
-    def parse(cls, routing_key: str, raw_data: dict) -> "EventSchema":
+    def parse(cls, routing_key: str, raw_data: dict) -> EventSchema:
         """
         Parse a raw inner-data dict (received by a RabbitMQ handler) into a
         typed ``EventSchema`` instance.
@@ -93,123 +95,3 @@ class EventRegistry:
     def list_keys(cls) -> list:
         """Return a sorted list of all registered routing keys."""
         return sorted(cls._registry.keys())
-
-
-# --------------------------------------------------------------------------- #
-# Auto-registration of built-in schemas
-# --------------------------------------------------------------------------- #
-
-
-def _register_defaults() -> None:
-    """Register all built-in TACA event schemas with the ``EventRegistry``."""
-
-    # Avoid circular imports by deferring imports inside the function.
-    from .matches import (
-        MatchCommentAddedV1,
-        MatchCommentDeletedV1,
-        MatchCreatedV1,
-        MatchDeletedV1,
-        MatchLineupAssignedV1,
-        MatchParticipantAddedV1,
-        MatchParticipantRemovedV1,
-        MatchResultUpdatedV1,
-        MatchUpdatedV1,
-    )
-    from .modalities import (
-        CourseCreatedV1,
-        CourseDeletedV1,
-        CourseUpdatedV1,
-        ModalityCreatedV1,
-        ModalityDeletedV1,
-        ModalityTypeCreatedV1,
-        ModalityTypeDeletedV1,
-        ModalityTypeUpdatedV1,
-        ModalityUpdatedV1,
-        NucleoCreatedV1,
-        NucleoDeletedV1,
-        NucleoUpdatedV1,
-        RegulationCreatedV1,
-        RegulationDeletedV1,
-        StaffCreatedV1,
-        StaffDeletedV1,
-        StaffUpdatedV1,
-        StudentCreatedV1,
-        StudentDeletedV1,
-        StudentUpdatedV1,
-        TeamCreatedV1,
-        TeamDeletedV1,
-        TeamPlayerAddedV1,
-        TeamPlayerRemovedV1,
-        TeamUpdatedV1,
-    )
-    from .ranking import RankingComputedV1
-    from .tournaments import (
-        TournamentCompetitorAddedV1,
-        TournamentCompetitorDeletedV1,
-        TournamentCreatedV1,
-        TournamentDeletedV1,
-        TournamentFinishedV1,
-        TournamentUpdatedV1,
-    )
-
-    schemas = [
-        # Match events
-        MatchCreatedV1,
-        MatchUpdatedV1,
-        MatchDeletedV1,
-        MatchParticipantAddedV1,
-        MatchParticipantRemovedV1,
-        MatchLineupAssignedV1,
-        MatchCommentAddedV1,
-        MatchCommentDeletedV1,
-        MatchResultUpdatedV1,
-        # Nucleo events
-        NucleoCreatedV1,
-        NucleoUpdatedV1,
-        NucleoDeletedV1,
-        # Course events
-        CourseCreatedV1,
-        CourseUpdatedV1,
-        CourseDeletedV1,
-        # ModalityType events
-        ModalityTypeCreatedV1,
-        ModalityTypeUpdatedV1,
-        ModalityTypeDeletedV1,
-        # Modality events
-        ModalityCreatedV1,
-        ModalityUpdatedV1,
-        ModalityDeletedV1,
-        # Student events
-        StudentCreatedV1,
-        StudentUpdatedV1,
-        StudentDeletedV1,
-        # Staff events
-        StaffCreatedV1,
-        StaffUpdatedV1,
-        StaffDeletedV1,
-        # Team events
-        TeamCreatedV1,
-        TeamUpdatedV1,
-        TeamDeletedV1,
-        TeamPlayerAddedV1,
-        TeamPlayerRemovedV1,
-        # Tournament events
-        TournamentCreatedV1,
-        TournamentUpdatedV1,
-        TournamentDeletedV1,
-        TournamentFinishedV1,
-        TournamentCompetitorAddedV1,
-        TournamentCompetitorDeletedV1,
-        # Ranking events
-        RankingComputedV1,
-        # Regulation events
-        RegulationCreatedV1,
-        RegulationDeletedV1,
-    ]
-
-    for schema_cls in schemas:
-        EventRegistry.register(schema_cls.routing_key(), schema_cls)
-
-
-# Run registration immediately on import.
-_register_defaults()
