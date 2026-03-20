@@ -143,9 +143,9 @@ const Regulamentos: React.FC = () => {
     }
   };
 
-  const filteredRegulations = regulations.filter(r =>
-    r.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredRegulations = regulations
+    .filter(r => r.title.toLowerCase().includes(searchTerm.toLowerCase()))
+    .sort((a, b) => a.title.localeCompare(b.title));
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();

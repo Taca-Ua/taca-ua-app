@@ -151,7 +151,7 @@ const NucleoDetails = () => {
                 <label className="block text-teal-500 font-medium mb-2">Cursos Associados</label>
                 <div className="bg-gray-100 px-4 py-3 rounded-md">
                   <div className="flex flex-wrap gap-2">
-                    {nucleoCourses.map(course => (
+                    {[...nucleoCourses].sort((a, b) => a.name.localeCompare(b.name)).map(course => (
                       <span
                         key={course.id}
                         className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800 font-medium"

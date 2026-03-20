@@ -79,12 +79,13 @@ function Membros() {
   }, []);
 
   // Filter members based on type and search query
-  const filteredMembers = members.filter(member => {
-    const matchesType = filterType === 'all' || member.memberType === filterType;
-
-    const matchesSearch = (member.data.full_name).toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesType && matchesSearch;
-  });
+  const filteredMembers = members
+    .filter(member => {
+      const matchesType = filterType === 'all' || member.memberType === filterType;
+      const matchesSearch = (member.data.full_name).toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesType && matchesSearch;
+    })
+    .sort((a, b) => a.data.full_name.localeCompare(b.data.full_name));
 
   const handleAddMember = async () => {
     // Validation: Name is required
@@ -359,7 +360,7 @@ function Membros() {
                       className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                     >
                       <option value="">Selecionar Curso</option>
-                      {courses.map((course) => (
+                      {[...courses].sort((a, b) => a.name.localeCompare(b.name)).map((course) => (
                         <option key={course.id} value={course.id}>
                           {course.name}
                         </option>

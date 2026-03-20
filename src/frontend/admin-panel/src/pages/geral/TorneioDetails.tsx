@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import HelpTooltip from '../../components/HelpTooltip';
 import { useParams, useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../components/ConfirmModal';
@@ -319,6 +319,17 @@ const EditTournamentModal = ({
   );
 };
 
+// Helper to get the display name of a tournament competitor
+const getCompetitorName = (competitor: TournamentCompetitorDetail): string => {
+  if (competitor.competitor_type === 'team' && competitor.team) {
+    return competitor.team.name;
+  }
+  if (competitor.competitor_type === 'athlete' && competitor.athlete) {
+    return competitor.athlete.full_name;
+  }
+  return 'Desconhecido';
+};
+
 // Component to manage competitors in tournament
 const TournamentCompetitors = ({
   tournament,
@@ -425,6 +436,11 @@ const TournamentCompetitors = ({
     }
   };
 
+  const sortedCompetitors = useMemo(
+    () => [...tournament.competitors].sort((a, b) => getCompetitorName(a).localeCompare(getCompetitorName(b))),
+    [tournament.competitors]
+  );
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex justify-between items-center mb-4">
@@ -449,7 +465,7 @@ const TournamentCompetitors = ({
         <p className="text-gray-500 text-center py-8">Nenhum competidor inscrito</p>
       ) : (
         <div className="space-y-2 max-h-96 overflow-y-auto">
-          {tournament.competitors.map((competitor, idx) => {
+          {sortedCompetitors.map((competitor, idx) => {
             const isTeam = competitor.competitor_type === 'team';
             const name = isTeam ? competitor.team?.name : competitor.athlete?.full_name;
             const subtitle = isTeam ? competitor.team?.course?.name : competitor.athlete?.course?.name;
@@ -511,7 +527,7 @@ const TournamentCompetitors = ({
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
                   >
                     <option value="">Selecione uma equipa</option>
-                    {availableTeams.map((team) => (
+                    {[...availableTeams].sort((a, b) => a.name.localeCompare(b.name)).map((team) => (
                       <option key={team.id} value={team.id}>
                         {team.name} - {team.course.name}
                       </option>
@@ -547,6 +563,7 @@ const TournamentCompetitors = ({
                         s.full_name.toLowerCase().includes(studentSearchTerm.toLowerCase()) ||
                         s.student_number.includes(studentSearchTerm)
                       )
+                      .sort((a, b) => a.full_name.localeCompare(b.full_name))
                       .map((student) => (
                         <option key={student.id} value={student.id}>
                           {student.full_name} ({student.student_number}) - {student.course.name}
@@ -640,15 +657,10 @@ const FinishTournamentModal = ({
     return '';
   };
 
-  const getCompetitorName = (competitor: TournamentCompetitorDetail): string => {
-    if (competitor.competitor_type === 'team' && competitor.team) {
-      return competitor.team.name;
-    }
-    if (competitor.competitor_type === 'athlete' && competitor.athlete) {
-      return competitor.athlete.full_name;
-    }
-    return 'Desconhecido';
-  };
+  const sortedCompetitors = useMemo(
+    () => [...tournament.competitors].sort((a, b) => getCompetitorName(a).localeCompare(getCompetitorName(b))),
+    [tournament.competitors]
+  );
 
   const getFilledCountAtPosition = (
     assignments: Map<number, string[]>,
@@ -878,7 +890,7 @@ const FinishTournamentModal = ({
                           className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
                         >
                           <option value="">Selecione um competidor...</option>
-                          {tournament.competitors.map((competitor) => {
+                          {sortedCompetitors.map((competitor) => {
                             const competitorRecordIdOption = competitor.id;
                             const participantName = getCompetitorName(competitor);
                             const isDisabled = selectedElsewhere.has(competitorRecordIdOption) && competitorRecordIdOption !== competitorRecordId;

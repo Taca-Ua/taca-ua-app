@@ -144,10 +144,12 @@ const TeamParticipantsEdditModal = ({
     }
   };
 
-  const filteredParticipants = availableParticipants.filter(p =>
-    p.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.student_number.includes(searchQuery)
-  );
+  const filteredParticipants = availableParticipants
+    .filter(p =>
+      p.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.student_number.includes(searchQuery)
+    )
+    .sort((a, b) => a.full_name.localeCompare(b.full_name));
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">

@@ -259,7 +259,7 @@ useEffect(() => {
               <p className="mt-2 text-gray-600">A carregar...</p>
             </div>
           ) : scoringFormats.length > 0 ? (
-            scoringFormats.map(format => (
+            [...scoringFormats].sort((a, b) => a.name.localeCompare(b.name)).map(format => (
               <button
                 key={format.id}
                 type="button"
