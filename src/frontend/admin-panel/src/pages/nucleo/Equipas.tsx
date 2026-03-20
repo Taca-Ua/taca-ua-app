@@ -129,7 +129,7 @@ const Equipas = () => {
       const matchesCourse = filterCourse ? team.course.id === filterCourse : true;
       return matchesModality && matchesCourse;
     })
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => a.modality.name.localeCompare(b.modality.name) || a.name.localeCompare(b.name));
 
   return (
     <div className="flex min-h-screen bg-gray-50">
