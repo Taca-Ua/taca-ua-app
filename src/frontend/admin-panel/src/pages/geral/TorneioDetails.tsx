@@ -342,7 +342,6 @@ const TournamentCompetitors = ({
   const [availableStudents, setAvailableStudents] = useState<Student[]>([]);
   const [studentSearchTerm, setStudentSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedCompetitorType, setSelectedCompetitorType] = useState<'team' | 'athlete'>('team');
   const [selectedTeamId, setSelectedTeamId] = useState('');
   const [selectedAthleteId, setSelectedAthleteId] = useState('');
   const [loading, setLoading] = useState(false);
@@ -388,11 +387,11 @@ const TournamentCompetitors = ({
   };
 
   const handleAddCompetitor = async () => {
-    if (selectedCompetitorType === 'team' && !selectedTeamId) {
+    if (tournament.competitor_type === 'team' && !selectedTeamId) {
       notify('Selecione uma equipa', 'error');
       return;
     }
-    if (selectedCompetitorType === 'athlete' && !selectedAthleteId) {
+    if (tournament.competitor_type === 'athlete' && !selectedAthleteId) {
       notify('Selecione um atleta', 'error');
       return;
     }
@@ -400,7 +399,7 @@ const TournamentCompetitors = ({
     try {
       setLoading(true);
 
-      const competitor: TournamentCompetitor = selectedCompetitorType === 'team'
+      const competitor: TournamentCompetitor = tournament.competitor_type === 'team'
         ? { competitor_type: 'team', team_id: selectedTeamId }
         : { competitor_type: 'athlete', athlete_id: selectedAthleteId };
 
@@ -453,7 +452,6 @@ const TournamentCompetitors = ({
             setSelectedTeamId('');
             setSelectedAthleteId('');
             setStudentSearchTerm('');
-            setSelectedCompetitorType('team');
           }}
           className={`px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors`}
         >
@@ -502,21 +500,7 @@ const TournamentCompetitors = ({
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Adicionar Competidor</h2>
 
             <div className="space-y-4 mb-6">
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">
-                  Tipo <HelpTooltip text="Equipa: inscrição de uma equipa como unidade. Atleta: inscrição individual de um estudante membro do núcleo." className="ml-1" /> <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={selectedCompetitorType}
-                  onChange={(e) => setSelectedCompetitorType(e.target.value as 'team' | 'athlete')}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
-                >
-                  <option value="team">Equipa</option>
-                  <option value="athlete">Atleta</option>
-                </select>
-              </div>
-
-              {selectedCompetitorType === 'team' ? (
+              {tournament.competitor_type === 'team' ? (
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">
                     Equipa <span className="text-red-500">*</span>

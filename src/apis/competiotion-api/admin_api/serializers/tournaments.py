@@ -77,6 +77,7 @@ class TournamentDetailSerializer(TournamentListSerializer):
 
     start_date = serializers.DateTimeField(required=False, allow_null=True)
     scoring_format = ModalityTypeListSerializer()
+    competitor_type = serializers.ChoiceField(choices=COMPETITOR_TYPE_CHOICES)
 
     competitors = TournamentCompetitorDetailSerializer(many=True)
     matches = MatchListSerializer(many=True)
