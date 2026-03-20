@@ -38,7 +38,7 @@ def list_teams(
     """List all teams"""
     query = db.query(Team)
     # need to check if the team belongs to a course that belongs to a nucleo managed by the admin_id
-    print(f"Filtering teams for admin_id: {admin_id}")
+    logger.debug(f"Filtering teams for admin_id: {admin_id}")
     if admin_id:
         query = (
             query.join(Team.course)
