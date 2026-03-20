@@ -19,6 +19,7 @@ export interface ModalityType {
   description?: string;
   escaloes: EscalaoRow[];
   is_playoff: boolean;
+  tournament_competitor_type: 'individual' | 'team';
   created_at: string;
 }
 
@@ -31,6 +32,7 @@ export interface ModalityTypeCreate {
   description?: string;
   escaloes: EscalaoRow[];
   is_playoff: boolean;
+  tournament_competitor_type: 'individual' | 'team';
 }
 
 export interface ModalityTypeUpdate {
@@ -38,6 +40,7 @@ export interface ModalityTypeUpdate {
   description?: string;
   escaloes?: EscalaoRow[];
   is_playoff?: boolean;
+  tournament_competitor_type?: 'individual' | 'team';
 }
 
 // API methods

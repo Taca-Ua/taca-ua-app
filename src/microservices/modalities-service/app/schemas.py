@@ -79,6 +79,7 @@ class ModalityTypeCreate(BaseModel):
     description: Optional[str] = None
     escaloes: Optional[List[_Escalao]] = None
     is_playoff: bool = False
+    tournament_competitor_type: Optional[str] = None
 
     def escaloes_encoder(self):
         if not self.escaloes:
@@ -96,6 +97,7 @@ class ModalityTypeUpdate(BaseModel):
     description: Optional[str] = None
     escaloes: Optional[List[_Escalao]] = None
     is_playoff: Optional[bool] = None
+    tournament_competitor_type: Optional[str] = None
 
     def escaloes_encoder(self):
         if not self.escaloes:
@@ -114,6 +116,7 @@ class ModalityTypeResponse(BaseModel):
     description: Optional[str] = None
     escaloes: Optional[List[_Escalao]] = None
     is_playoff: bool = False
+    tournament_competitor_type: Optional[str] = None
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -229,10 +232,6 @@ class TeamResponse(BaseModel):
         from_attributes = True
 
 
-
-
-
-
 # ==================== REGULATION SCHEMAS ====================
 
 
@@ -240,6 +239,7 @@ class RegulationInternalCreate(BaseModel):
     title: str
     description: Optional[str] = None
     file_url: str
+
 
 class RegulationResponse(BaseModel):
     id: UUID

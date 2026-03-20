@@ -32,6 +32,8 @@ def populate_modalities_types(step_by_step=False, delete_existing=False):
         {
             "name": "Modalidades Coletivas Recorrentes",
             "description": "Modalidades coletivas que ocorrem de forma recorrente ao longo da época desportiva.",
+            "tournament_competitor_type": "team",
+            "is_playoff": False,
             "escaloes": [
                 {
                     "escalao": "A",
@@ -68,6 +70,8 @@ def populate_modalities_types(step_by_step=False, delete_existing=False):
         {
             "name": "Modalidades Coletivas Pontuais",
             "description": "Modalidades coletivas que ocorrem de forma pontual ao longo da época desportiva.",
+            "tournament_competitor_type": "team",
+            "is_playoff": False,
             "escaloes": [
                 {
                     "escalao": "A",
@@ -98,6 +102,8 @@ def populate_modalities_types(step_by_step=False, delete_existing=False):
         {
             "name": "Modalidades Duplas/pares",
             "description": "Modalidades praticadas em duplas ou pares.",
+            "tournament_competitor_type": "team",
+            "is_playoff": False,
             "escaloes": [
                 {
                     "escalao": "A",
@@ -128,6 +134,8 @@ def populate_modalities_types(step_by_step=False, delete_existing=False):
         {
             "name": "Modalidades Individuais",
             "description": "Modalidades praticadas individualmente.",
+            "tournament_competitor_type": "individual",
+            "is_playoff": False,
             "escaloes": [
                 {
                     "escalao": "A",
@@ -164,6 +172,8 @@ def populate_modalities_types(step_by_step=False, delete_existing=False):
         {
             "name": "Troféus Coletivos",
             "description": "Troféus atribuídos a equipas coletivas com base no desempenho em várias competições.",
+            "tournament_competitor_type": "team",
+            "is_playoff": False,
             "escaloes": [
                 {
                     "escalao": "A",
@@ -194,6 +204,7 @@ def populate_modalities_types(step_by_step=False, delete_existing=False):
         {
             "name": "Apuramento para os Playoffs",
             "description": "Apuramento para os playoffs com base no desempenho em competições.",
+            "is_playoff": True,
             "escaloes": [
                 {
                     "escalao": "-",

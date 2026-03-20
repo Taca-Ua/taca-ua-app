@@ -65,6 +65,7 @@ def create_modality_type(
             description=modality_type_data.description,
             escaloes=modality_type_data.escaloes_encoder(),
             is_playoff=modality_type_data.is_playoff,
+            tournament_competitor_type=modality_type_data.tournament_competitor_type,
             created_by=DEFAULT_USER_ID,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
@@ -166,6 +167,13 @@ def update_modality_type(
                 )
         modality_type.is_playoff = modality_type_data.is_playoff
         changes_made["is_playoff"] = modality_type_data.is_playoff
+    if modality_type_data.tournament_competitor_type is not None:
+        modality_type.tournament_competitor_type = (
+            modality_type_data.tournament_competitor_type
+        )
+        changes_made["tournament_competitor_type"] = (
+            modality_type_data.tournament_competitor_type
+        )
     modality_type.updated_at = datetime.now(timezone.utc)
 
     # Emit modality type updated event
