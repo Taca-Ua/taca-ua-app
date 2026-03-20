@@ -27,4 +27,8 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_column("modality_type", "tournament_competitor_type")
+    op.drop_column(
+        "modality_type",
+        "tournament_competitor_type",
+        schema="modalities",
+    )
