@@ -976,20 +976,15 @@ const JogoDetails = () => {
       <Sidebar />
 
       <div className="flex-1 p-8 max-w-6xl mx-auto">
-        <button
-          onClick={() => navigate(-1)}
-          className="mb-6 flex items-center text-teal-600 hover:text-teal-700 font-medium transition-colors group focus:outline-none focus:ring-2 focus:ring-teal-400 rounded"
-        >
-          <svg
-            className="w-5 h-5 mr-2 transform group-hover:-translate-x-1 transition-transform"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <div className="mb-8 flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-gray-800">Detalhes do Jogo</h1>
+          <button
+            onClick={() => navigate(`/geral/torneios/${match.tournament_id}`)}
+            className={`px-6 py-3 ${btn.secondary} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400`}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Voltar
-        </button>
+            Voltar
+          </button>
+        </div>
 
         <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
           <MatchHeader match={match} />

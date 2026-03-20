@@ -16,6 +16,7 @@ const TorneiosCreateModal = ({ isOpen, onClose, onCreate, modalities, setModalit
   setModalities: React.Dispatch<React.SetStateAction<Modality[]>>;
 }) => {
   const [name, setName] = useState('');
+  const [nameManuallyEdited, setNameManuallyEdited] = useState(false);
   const [modalityId, setModalityId] = useState('');
   const [isPlayoff, setIsPlayoff] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -37,6 +38,13 @@ const TorneiosCreateModal = ({ isOpen, onClose, onCreate, modalities, setModalit
       fetchModalities();
     }
   }, []);
+
+  useEffect(() => {
+    if (!nameManuallyEdited && modalityId) {
+      const selected = modalities.find(m => m.id === modalityId);
+      if (selected) setName(selected.name);
+    }
+  }, [modalityId, modalities]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +80,7 @@ const TorneiosCreateModal = ({ isOpen, onClose, onCreate, modalities, setModalit
             <input
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => { setName(e.target.value); setNameManuallyEdited(true); }}
               className="w-full border border-gray-300 rounded-md p-2"
               required
             />
