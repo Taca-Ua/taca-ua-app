@@ -92,19 +92,3 @@ class EventRegistry:
     def list_keys(cls) -> list:
         """Return a sorted list of all registered routing keys."""
         return sorted(cls._registry.keys())
-
-
-# --------------------------------------------------------------------------- #
-# Auto-registration of built-in schemas
-# --------------------------------------------------------------------------- #
-
-
-def _register_defaults() -> None:
-    """Register all built-in TACA event schemas with the ``EventRegistry``."""
-
-    for schema_cls in EventSchema.__subclasses__():
-        EventRegistry.register(schema_cls.routing_key(), schema_cls)
-
-
-# Run registration immediately on import.
-_register_defaults()

@@ -79,9 +79,7 @@ class EventSchema(BaseModel):
         :class:`~taca_events.types.RoutingKeys` when a concrete
         ``EventSchema`` subclass is defined.
 
-        This removes the need to manually maintain the string catalogs in
-        ``types.py`` — the Pydantic schema class itself is the single source
-        of truth for its event-type string.
+        Also auto-register the schema in EventRegistry.
         """
         super().__init_subclass__(**kwargs)
         try:
@@ -93,11 +91,18 @@ class EventSchema(BaseModel):
         rk_attr = routing_key.upper().replace(".", "_")
 
         # Deferred import to avoid circular dependency
-        # (types.py has no dependency on pydantic_schemas)
         from taca_events.types import EventType, RoutingKeys
 
         setattr(EventType, attr, event_str)
         setattr(RoutingKeys, rk_attr, routing_key)
+
+        # Auto-register schema in EventRegistry
+        try:
+            from taca_events.pydantic_schemas.registry import EventRegistry
+
+            EventRegistry.register(routing_key, cls)
+        except ImportError:
+            pass  # Avoid issues if registry is not available yet
 
     # ------------------------------------------------------------------ #
     # Class-level metadata (override in subclasses)
