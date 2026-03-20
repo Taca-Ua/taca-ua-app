@@ -12,7 +12,7 @@ from datetime import datetime
 
 from sqlalchemy import JSON, Boolean, Column, Date, DateTime
 from sqlalchemy import Enum as SQLEnum
-from sqlalchemy import ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -67,7 +67,11 @@ class Nucleo(Base):
     deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
-    courses = relationship("Course", back_populates="nucleo")
+    courses = relationship(
+        "Course",
+        primaryjoin="Nucleo.nucleo_id == foreign(Course.nucleo_id)",
+        back_populates="nucleo",
+    )
 
 
 class Course(Base):
@@ -77,9 +81,7 @@ class Course(Base):
     __table_args__ = {"schema": "public_read"}
 
     course_id = Column(UUID(as_uuid=True), primary_key=True)
-    nucleo_id = Column(
-        UUID(as_uuid=True), ForeignKey("public_read.nucleos.nucleo_id"), nullable=False
-    )
+    nucleo_id = Column(UUID(as_uuid=True), nullable=False)
     name = Column(String, nullable=False)
     abbreviation = Column(String, nullable=False)
 
@@ -90,9 +92,24 @@ class Course(Base):
     deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
-    nucleo = relationship("Nucleo", back_populates="courses")
-    students = relationship("Student", back_populates="course")
-    teams = relationship("Team", back_populates="course")
+    nucleo = relationship(
+        "Nucleo",
+        primaryjoin="Course.nucleo_id == Nucleo.nucleo_id",
+        foreign_keys=[nucleo_id],
+        back_populates="courses",
+    )
+    students = relationship(
+        "Student",
+        primaryjoin="Course.course_id == Student.course_id",
+        foreign_keys="[Student.course_id]",
+        back_populates="course",
+    )
+    teams = relationship(
+        "Team",
+        primaryjoin="Course.course_id == Team.course_id",
+        foreign_keys="[Team.course_id]",
+        back_populates="course",
+    )
 
 
 class ModalityType(Base):
@@ -113,7 +130,12 @@ class ModalityType(Base):
     deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
-    modalities = relationship("Modality", back_populates="modality_type")
+    modalities = relationship(
+        "Modality",
+        primaryjoin="ModalityType.modality_type_id == Modality.modality_type_id",
+        foreign_keys="[Modality.modality_type_id]",
+        back_populates="modality_type",
+    )
 
 
 class Modality(Base):
@@ -123,11 +145,7 @@ class Modality(Base):
     __table_args__ = {"schema": "public_read"}
 
     modality_id = Column(UUID(as_uuid=True), primary_key=True)
-    modality_type_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("public_read.modality_types.modality_type_id"),
-        nullable=False,
-    )
+    modality_type_id = Column(UUID(as_uuid=True), nullable=False)
     name = Column(String, nullable=True)
 
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
@@ -137,9 +155,24 @@ class Modality(Base):
     deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
-    modality_type = relationship("ModalityType", back_populates="modalities")
-    teams = relationship("Team", back_populates="modality")
-    tournaments = relationship("Tournament", back_populates="modality")
+    modality_type = relationship(
+        "ModalityType",
+        primaryjoin="Modality.modality_type_id == ModalityType.modality_type_id",
+        foreign_keys=[modality_type_id],
+        back_populates="modalities",
+    )
+    teams = relationship(
+        "Team",
+        primaryjoin="Modality.modality_id == Team.modality_id",
+        foreign_keys="[Team.modality_id]",
+        back_populates="modality",
+    )
+    tournaments = relationship(
+        "Tournament",
+        primaryjoin="Modality.modality_id == Tournament.modality_id",
+        foreign_keys="[Tournament.modality_id]",
+        back_populates="modality",
+    )
 
 
 class Student(Base):
@@ -152,9 +185,7 @@ class Student(Base):
     )
 
     student_id = Column(UUID(as_uuid=True), primary_key=True)
-    course_id = Column(
-        UUID(as_uuid=True), ForeignKey("public_read.courses.course_id"), nullable=False
-    )
+    course_id = Column(UUID(as_uuid=True), nullable=False)
     student_number = Column(String, nullable=False, unique=True)
     full_name = Column(String, nullable=False)
     is_member = Column(Boolean, nullable=False, default=False)
@@ -166,8 +197,18 @@ class Student(Base):
     deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
-    course = relationship("Course", back_populates="students")
-    team_memberships = relationship("TeamPlayer", back_populates="student")
+    course = relationship(
+        "Course",
+        primaryjoin="Student.course_id == Course.course_id",
+        foreign_keys=[course_id],
+        back_populates="students",
+    )
+    team_memberships = relationship(
+        "TeamPlayer",
+        primaryjoin="Student.student_id == TeamPlayer.student_id",
+        foreign_keys="[TeamPlayer.student_id]",
+        back_populates="student",
+    )
 
 
 class Staff(Base):
@@ -198,14 +239,8 @@ class Team(Base):
     __table_args__ = {"schema": "public_read"}
 
     team_id = Column(UUID(as_uuid=True), primary_key=True)
-    modality_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("public_read.modalities.modality_id"),
-        nullable=False,
-    )
-    course_id = Column(
-        UUID(as_uuid=True), ForeignKey("public_read.courses.course_id"), nullable=False
-    )
+    modality_id = Column(UUID(as_uuid=True), nullable=False)
+    course_id = Column(UUID(as_uuid=True), nullable=False)
     name = Column(String, nullable=False)
 
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
@@ -215,9 +250,24 @@ class Team(Base):
     deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
-    modality = relationship("Modality", back_populates="teams")
-    course = relationship("Course", back_populates="teams")
-    players = relationship("TeamPlayer", back_populates="team")
+    modality = relationship(
+        "Modality",
+        primaryjoin="Team.modality_id == Modality.modality_id",
+        foreign_keys=[modality_id],
+        back_populates="teams",
+    )
+    course = relationship(
+        "Course",
+        primaryjoin="Team.course_id == Course.course_id",
+        foreign_keys=[course_id],
+        back_populates="teams",
+    )
+    players = relationship(
+        "TeamPlayer",
+        primaryjoin="Team.team_id == TeamPlayer.team_id",
+        foreign_keys="[TeamPlayer.team_id]",
+        back_populates="team",
+    )
     tournament_entries = relationship(
         "TournamentCompetitor",
         foreign_keys="[TournamentCompetitor.competitor_entity_id]",
@@ -238,21 +288,25 @@ class TeamPlayer(Base):
     )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    team_id = Column(
-        UUID(as_uuid=True), ForeignKey("public_read.teams.team_id"), nullable=False
-    )
-    student_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("public_read.students.student_id"),
-        nullable=False,
-    )
+    team_id = Column(UUID(as_uuid=True), nullable=False)
+    student_id = Column(UUID(as_uuid=True), nullable=False)
 
     added_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     removed_at = Column(DateTime, nullable=True)
 
     # Relationships
-    team = relationship("Team", back_populates="players")
-    student = relationship("Student", back_populates="team_memberships")
+    team = relationship(
+        "Team",
+        primaryjoin="TeamPlayer.team_id == Team.team_id",
+        foreign_keys=[team_id],
+        back_populates="players",
+    )
+    student = relationship(
+        "Student",
+        primaryjoin="TeamPlayer.student_id == Student.student_id",
+        foreign_keys=[student_id],
+        back_populates="team_memberships",
+    )
 
 
 class Tournament(Base):
@@ -262,11 +316,7 @@ class Tournament(Base):
     __table_args__ = {"schema": "public_read"}
 
     tournament_id = Column(UUID(as_uuid=True), primary_key=True)
-    modality_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("public_read.modalities.modality_id"),
-        nullable=False,
-    )
+    modality_id = Column(UUID(as_uuid=True), nullable=False)
     name = Column(String, nullable=False)
     start_date = Column(Date, nullable=False)
     status = Column(String, nullable=False)
@@ -279,9 +329,24 @@ class Tournament(Base):
     finished_at = Column(DateTime, nullable=True)
 
     # Relationships
-    modality = relationship("Modality", back_populates="tournaments")
-    competitors = relationship("TournamentCompetitor", back_populates="tournament")
-    matches = relationship("Match", back_populates="tournament")
+    modality = relationship(
+        "Modality",
+        primaryjoin="Tournament.modality_id == Modality.modality_id",
+        foreign_keys=[modality_id],
+        back_populates="tournaments",
+    )
+    competitors = relationship(
+        "TournamentCompetitor",
+        primaryjoin="Tournament.tournament_id == TournamentCompetitor.tournament_id",
+        foreign_keys="[TournamentCompetitor.tournament_id]",
+        back_populates="tournament",
+    )
+    matches = relationship(
+        "Match",
+        primaryjoin="Tournament.tournament_id == Match.tournament_id",
+        foreign_keys="[Match.tournament_id]",
+        back_populates="tournament",
+    )
 
 
 class TournamentCompetitor(Base):
@@ -298,11 +363,7 @@ class TournamentCompetitor(Base):
     )
 
     competitor_id = Column(UUID(as_uuid=True), primary_key=True)
-    tournament_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("public_read.tournaments.tournament_id"),
-        nullable=False,
-    )
+    tournament_id = Column(UUID(as_uuid=True), nullable=False)
     competitor_type = Column(SQLEnum(ParticipantType), nullable=False)
     competitor_entity_id = Column(
         UUID(as_uuid=True), nullable=False
@@ -312,7 +373,12 @@ class TournamentCompetitor(Base):
     deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
-    tournament = relationship("Tournament", back_populates="competitors")
+    tournament = relationship(
+        "Tournament",
+        primaryjoin="TournamentCompetitor.tournament_id == Tournament.tournament_id",
+        foreign_keys=[tournament_id],
+        back_populates="competitors",
+    )
 
 
 class TournamentRanking(Base):
@@ -329,18 +395,18 @@ class TournamentRanking(Base):
     )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    tournament_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("public_read.tournaments.tournament_id"),
-        nullable=False,
-    )
+    tournament_id = Column(UUID(as_uuid=True), nullable=False)
     competitor_id = Column(UUID(as_uuid=True), nullable=False)
     position = Column(Integer, nullable=False)
 
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
     # Relationships
-    tournament = relationship("Tournament", foreign_keys=[tournament_id])
+    tournament = relationship(
+        "Tournament",
+        primaryjoin="TournamentRanking.tournament_id == Tournament.tournament_id",
+        foreign_keys=[tournament_id],
+    )
 
 
 class Match(Base):
@@ -355,11 +421,7 @@ class Match(Base):
     )
 
     match_id = Column(UUID(as_uuid=True), primary_key=True)
-    tournament_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("public_read.tournaments.tournament_id"),
-        nullable=False,
-    )
+    tournament_id = Column(UUID(as_uuid=True), nullable=False)
     location = Column(String, nullable=False)
     status = Column(SQLEnum(MatchStatus), nullable=False)
     start_time = Column(DateTime, nullable=False)
@@ -371,11 +433,36 @@ class Match(Base):
     deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
-    tournament = relationship("Tournament", back_populates="matches")
-    participants = relationship("MatchParticipant", back_populates="match")
-    results = relationship("MatchResult", back_populates="match")
-    lineups = relationship("MatchLineup", back_populates="match")
-    comments = relationship("MatchComment", back_populates="match")
+    tournament = relationship(
+        "Tournament",
+        primaryjoin="Match.tournament_id == Tournament.tournament_id",
+        foreign_keys=[tournament_id],
+        back_populates="matches",
+    )
+    participants = relationship(
+        "MatchParticipant",
+        primaryjoin="Match.match_id == MatchParticipant.match_id",
+        foreign_keys="[MatchParticipant.match_id]",
+        back_populates="match",
+    )
+    results = relationship(
+        "MatchResult",
+        primaryjoin="Match.match_id == MatchResult.match_id",
+        foreign_keys="[MatchResult.match_id]",
+        back_populates="match",
+    )
+    lineups = relationship(
+        "MatchLineup",
+        primaryjoin="Match.match_id == MatchLineup.match_id",
+        foreign_keys="[MatchLineup.match_id]",
+        back_populates="match",
+    )
+    comments = relationship(
+        "MatchComment",
+        primaryjoin="Match.match_id == MatchComment.match_id",
+        foreign_keys="[MatchComment.match_id]",
+        back_populates="match",
+    )
 
 
 class MatchParticipant(Base):
@@ -390,9 +477,7 @@ class MatchParticipant(Base):
     )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    match_id = Column(
-        UUID(as_uuid=True), ForeignKey("public_read.matches.match_id"), nullable=False
-    )
+    match_id = Column(UUID(as_uuid=True), nullable=False)
     participant_id = Column(UUID(as_uuid=True), nullable=False, unique=True)
     participant_type = Column(SQLEnum(ParticipantType), nullable=False)
     participant_entity_id = Column(
@@ -403,8 +488,19 @@ class MatchParticipant(Base):
     removed_at = Column(DateTime, nullable=True)
 
     # Relationships
-    match = relationship("Match", back_populates="participants")
-    result = relationship("MatchResult", back_populates="participant", uselist=False)
+    match = relationship(
+        "Match",
+        primaryjoin="MatchParticipant.match_id == Match.match_id",
+        foreign_keys=[match_id],
+        back_populates="participants",
+    )
+    result = relationship(
+        "MatchResult",
+        primaryjoin="MatchParticipant.participant_id == MatchResult.participant_id",
+        foreign_keys="[MatchResult.participant_id]",
+        back_populates="participant",
+        uselist=False,
+    )
 
 
 class MatchResult(Base):
@@ -419,14 +515,8 @@ class MatchResult(Base):
     )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    match_id = Column(
-        UUID(as_uuid=True), ForeignKey("public_read.matches.match_id"), nullable=False
-    )
-    participant_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("public_read.match_participants.participant_id"),
-        nullable=False,
-    )
+    match_id = Column(UUID(as_uuid=True), nullable=False)
+    participant_id = Column(UUID(as_uuid=True), nullable=False)
     score = Column(Integer, nullable=True)
     position = Column(Integer, nullable=True)
     results_metadata = Column(JSON, nullable=True)
@@ -436,8 +526,18 @@ class MatchResult(Base):
     )
 
     # Relationships
-    match = relationship("Match", back_populates="results")
-    participant = relationship("MatchParticipant", back_populates="result")
+    match = relationship(
+        "Match",
+        primaryjoin="MatchResult.match_id == Match.match_id",
+        foreign_keys=[match_id],
+        back_populates="results",
+    )
+    participant = relationship(
+        "MatchParticipant",
+        primaryjoin="MatchResult.participant_id == MatchParticipant.participant_id",
+        foreign_keys=[participant_id],
+        back_populates="result",
+    )
 
 
 class MatchLineup(Base):
@@ -452,9 +552,7 @@ class MatchLineup(Base):
     )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    match_id = Column(
-        UUID(as_uuid=True), ForeignKey("public_read.matches.match_id"), nullable=False
-    )
+    match_id = Column(UUID(as_uuid=True), nullable=False)
     team_id = Column(UUID(as_uuid=True), nullable=False)
     player_id = Column(UUID(as_uuid=True), nullable=False)
     jersey_number = Column(Integer, nullable=False)
@@ -463,7 +561,12 @@ class MatchLineup(Base):
     assigned_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
     # Relationships
-    match = relationship("Match", back_populates="lineups")
+    match = relationship(
+        "Match",
+        primaryjoin="MatchLineup.match_id == Match.match_id",
+        foreign_keys=[match_id],
+        back_populates="lineups",
+    )
 
 
 class MatchComment(Base):
@@ -476,16 +579,19 @@ class MatchComment(Base):
     )
 
     comment_id = Column(UUID(as_uuid=True), primary_key=True)
-    match_id = Column(
-        UUID(as_uuid=True), ForeignKey("public_read.matches.match_id"), nullable=False
-    )
+    match_id = Column(UUID(as_uuid=True), nullable=False)
     message = Column(Text, nullable=False)
 
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
-    match = relationship("Match", back_populates="comments")
+    match = relationship(
+        "Match",
+        primaryjoin="MatchComment.match_id == Match.match_id",
+        foreign_keys=[match_id],
+        back_populates="comments",
+    )
 
 
 class GeneralRankings(Base):
@@ -499,9 +605,7 @@ class GeneralRankings(Base):
     )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    course_id = Column(
-        UUID(as_uuid=True), ForeignKey("public_read.courses.course_id"), nullable=False
-    )
+    course_id = Column(UUID(as_uuid=True), nullable=False)
     points = Column(Integer, nullable=False, default=0)
     tournaments_participated = Column(Integer, nullable=False, default=0)
 
@@ -520,14 +624,8 @@ class ModalityRankings(Base):
     )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    modality_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("public_read.modalities.modality_id"),
-        nullable=False,
-    )
-    course_id = Column(
-        UUID(as_uuid=True), ForeignKey("public_read.courses.course_id"), nullable=False
-    )
+    modality_id = Column(UUID(as_uuid=True), nullable=False)
+    course_id = Column(UUID(as_uuid=True), nullable=False)
     points = Column(Integer, nullable=False, default=0)
 
 
