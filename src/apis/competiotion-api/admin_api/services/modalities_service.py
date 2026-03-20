@@ -711,8 +711,11 @@ class ModalitiesService(BaseService):
     def list_teams(
         self, admin_id: str = None, modality_id: str = None
     ) -> List[TeamDTO]:
-        """List teams - optionally filtered by admin user ID
+        """List teams, optionally filtered by admin user ID and/or modality ID
 
+        Args:
+            admin_id (str, optional): ID of the admin user to filter teams by. Defaults to None.
+            modality_id (str, optional): ID of the modality to filter teams by. Defaults to None.
         Returns:
             List[TeamDTO]: List of TeamDTO objects representing the teams
         """
