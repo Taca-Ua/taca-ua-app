@@ -1,8 +1,11 @@
 """
 EventRegistry – maps RabbitMQ routing keys to typed ``EventSchema`` classes.
 
-The registry is populated automatically when this module is imported via
-``_register_defaults()``.  Custom schemas can be added at runtime with
+The registry is populated automatically via ``EventSchema.__init_subclass__``:
+each subclass registers itself when its module is first imported.  The
+``taca_events.pydantic_schemas`` package ensures all built-in schema modules
+are imported at package-import time, so the registry is fully populated once
+you import from the package.  Custom schemas can be added at runtime with
 ``EventRegistry.register()``.
 
 Usage in a consumer::
@@ -36,10 +39,10 @@ class EventRegistry:
     * ``list_keys()`` – enumerate all registered routing keys
     """
 
-    _registry: Dict[str, Type["EventSchema"]] = {}
+    _registry: Dict[str, Type[EventSchema]] = {}
 
     @classmethod
-    def register(cls, routing_key: str, schema_class: Type["EventSchema"]) -> None:
+    def register(cls, routing_key: str, schema_class: Type[EventSchema]) -> None:
         """
         Register a schema class for the given routing key.
 
@@ -50,14 +53,14 @@ class EventRegistry:
         cls._registry[routing_key] = schema_class
 
     @classmethod
-    def get(cls, routing_key: str) -> Optional[Type["EventSchema"]]:
+    def get(cls, routing_key: str) -> Optional[Type[EventSchema]]:
         """
         Return the schema class registered for *routing_key*, or ``None``.
         """
         return cls._registry.get(routing_key)
 
     @classmethod
-    def parse(cls, routing_key: str, raw_data: dict) -> "EventSchema":
+    def parse(cls, routing_key: str, raw_data: dict) -> EventSchema:
         """
         Parse a raw inner-data dict (received by a RabbitMQ handler) into a
         typed ``EventSchema`` instance.
