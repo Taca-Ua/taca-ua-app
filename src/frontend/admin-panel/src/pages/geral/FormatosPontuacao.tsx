@@ -286,10 +286,10 @@ useEffect(() => {
                         Playoff
                       </span>
                     )}
-                    {format.is_playoff || (
+                    {!format.is_playoff && format.tournament_competitor_type && (
                       <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${format.tournament_competitor_type === 'individual' ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-green-100 text-green-700 border-green-300'}`}>
-                      {format.tournament_competitor_type === 'individual' ? 'Individual' : 'Equipa'}
-                    </span>
+                        {format.tournament_competitor_type === 'individual' ? 'Individual' : 'Equipa'}
+                      </span>
                     )}
                   </div>
                   {format.description && (
