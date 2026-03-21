@@ -177,6 +177,20 @@ class StudentResponse(BaseModel):
         from_attributes = True
 
 
+class StudentMembershipSyncRequest(BaseModel):
+    """NMEC values to mark as sócios after resetting everyone in scope to não-sócio."""
+
+    student_numbers: List[str] = Field(default_factory=list)
+
+
+class StudentMembershipSyncResponse(BaseModel):
+    participants_in_scope: int
+    reset_to_non_socio: int
+    set_as_socio: int
+    # NMECs no ficheiro que não correspondem a nenhum participante no âmbito
+    unmatched_numbers: List[str]
+
+
 # ==================== STAFF SCHEMAS ====================
 class StaffCreate(BaseModel):
     full_name: str
