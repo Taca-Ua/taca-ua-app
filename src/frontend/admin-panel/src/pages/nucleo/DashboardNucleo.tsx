@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import NucleoSidebar from "../../components/nucleo_navbar";
 import { studentsApi } from '../../api/members';
 import { teamsApi } from '../../api/teams';
-import { matchesApi, type Match } from '../../api/matches'; // Importamos o tipo Match
+import { matchesApi, type Match } from '../../api/matches';
 import { useAuth } from '../../hooks/useAuth';
 
 function DashboardNucleo() {
@@ -88,7 +88,6 @@ function DashboardNucleo() {
             </div>
           ) : (
             <>
-              {/* Stats Grid */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <button onClick={() => navigate('/nucleo/membros')} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left">
                   <h2 className="text-xl font-semibold mb-2 text-teal-600">Membros</h2>
