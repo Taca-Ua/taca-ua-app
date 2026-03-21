@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import HelpTooltip from '../../components/HelpTooltip';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import ConfirmModal from '../../components/ConfirmModal';
 import Sidebar from '../../components/geral_navbar';
 import { useNotification } from '../../contexts/NotificationProvider';
@@ -1321,6 +1321,7 @@ const TournamentMatches = ({
 const TorneioDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [tournament, setTournament] = useState<TournamentDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1331,6 +1332,16 @@ const TorneioDetails = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingTournament, setDeletingTournament] = useState(false);
   const { notify } = useNotification();
+
+  // Determine where to navigate back to
+  const fromModalityId = searchParams.get('fromModality');
+  const handleBack = () => {
+    if (fromModalityId) {
+      navigate(`/geral/modalidades/${fromModalityId}`);
+    } else {
+      navigate('/geral/torneios');
+    }
+  };
 
   useEffect(() => {
     loadTournament();
@@ -1346,7 +1357,7 @@ const TorneioDetails = () => {
     } catch (err) {
       console.error('Failed to fetch tournament:', err);
       notify('Não foi possível carregar os dados do torneio. Tente recarregar a página.', 'error');
-      navigate('/geral/torneios');
+      handleBack();
     } finally {
       setLoading(false);
     }
@@ -1394,7 +1405,7 @@ const TorneioDetails = () => {
     try {
       setDeletingTournament(true);
       await tournamentsApi.delete(id);
-      navigate('/geral/torneios');
+      handleBack();
     } catch (err) {
       console.error('Failed to delete tournament:', err);
       notify('Não foi possível eliminar o torneio. Poderá ter jogos ou competidores associados.', 'error');
@@ -1433,7 +1444,7 @@ const TorneioDetails = () => {
           <div className="mb-8 flex justify-between items-center">
             <h1 className="text-3xl font-bold text-gray-800">Detalhes do Torneio</h1>
             <button
-              onClick={() => navigate('/geral/torneios')}
+              onClick={handleBack}
               className={`px-6 py-3 ${btn.secondary} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400`}
             >
               Voltar
