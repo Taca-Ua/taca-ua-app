@@ -620,6 +620,18 @@ useEffect(() => {
                   onChange={e => setFormatName(e.target.value)}
                 />
               </div>
+
+              <div>
+                <label className="block font-medium mb-2">Descrição</label>
+                <textarea
+                  className="border px-4 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  placeholder="Descrição opcional"
+                  rows={2}
+                  value={formatDescription}
+                  onChange={e => setFormatDescription(e.target.value)}
+                />
+              </div>
+
               <div className="flex items-center gap-3">
                 <input
                   type="checkbox"
