@@ -14,7 +14,7 @@ export default function Sidebar() {
     { to: "/geral/cursos", label: "Cursos", short: "Cur" },
     { to: "/geral/torneios", label: "Torneios", short: "Tor" },
     { to: "/geral/regulamentos", label: "Regulamentos", short: "Reg" },
-    { to: "/socios", label: "Sócios", short: "Sóc" },
+    { to: "/geral/socios", label: "Sócios", short: "Sóc" },
   ];
 
   return (

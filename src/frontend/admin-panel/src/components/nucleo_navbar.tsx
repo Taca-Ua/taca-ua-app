@@ -8,6 +8,7 @@ export default function NucleoSidebar() {
 
   const navItems = [
     { to: "/nucleo/membros", label: "Membros", short: "Mem" },
+    { to: "/nucleo/socios", label: "Sócios", short: "Sóc" },
     { to: "/nucleo/equipas", label: "Equipas", short: "Equ" },
     { to: "/nucleo/jogos", label: "Jogos", short: "Jog" },
   ];

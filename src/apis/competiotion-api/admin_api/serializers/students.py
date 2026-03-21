@@ -46,3 +46,13 @@ class StudentUpdateSerializer(serializers.Serializer):
     course_id = serializers.UUIDField(required=False)
     student_number = serializers.CharField(required=False)
     is_member = serializers.BooleanField(required=False)
+
+
+class StudentMembershipSyncSerializer(serializers.Serializer):
+    """Lista de NMECs a marcar como sócios (após reset a todos no âmbito)."""
+
+    student_numbers = serializers.ListField(
+        child=serializers.CharField(max_length=64, allow_blank=True),
+        required=False,
+        allow_empty=True,
+    )

@@ -14,6 +14,7 @@ from ..serializers.students import (
     StudentDetailSerializer,
     StudentListRequestSerializer,
     StudentListSerializer,
+    StudentMembershipSyncSerializer,
     StudentUpdateSerializer,
 )
 from ..services.modalities_service import modalities_service_client
@@ -108,7 +109,38 @@ class StudentDetailView(RoleRequiredMixin, APIView):
         )
 
 
+@extend_schema_view(
+    post=extend_schema(
+        request=StudentMembershipSyncSerializer,
+        responses={200: dict},
+        description=(
+            "Reset o estado de sócio de todos os participantes no âmbito (núcleo ou global) "
+            "e define como sócio os NMECs enviados."
+        ),
+        tags=["Student Management"],
+    ),
+)
+class StudentMembershipSyncView(RoleRequiredMixin, APIView):
+    def post(self, request):
+        serializer = StudentMembershipSyncSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        admin_id = (
+            str(request.user_id) if "nucleo_admin" in request.roles else None
+        )
+        result = modalities_service_client.sync_student_membership(
+            student_numbers=serializer.validated_data.get("student_numbers") or [],
+            admin_id=admin_id,
+        )
+        return Response(result, status=status.HTTP_200_OK)
+
+
 urlpatterns = [
+    path(
+        "sync-membership/",
+        StudentMembershipSyncView.as_view(),
+        name="student-membership-sync",
+    ),
     path("", StudentListCreateView.as_view(), name="student-list"),
     path("<uuid:student_id>/", StudentDetailView.as_view(), name="student-detail"),
 ]

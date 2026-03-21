@@ -18,12 +18,50 @@ from ..database import get_db_session
 from ..logger import logger
 from ..models import Course, Nucleo, Student
 from ..outbox_publisher import outbox_publisher
-from ..schemas import StudentCreate, StudentResponse, StudentUpdate
+from ..schemas import (
+    StudentCreate,
+    StudentMembershipSyncRequest,
+    StudentMembershipSyncResponse,
+    StudentResponse,
+    StudentUpdate,
+)
 
 router = APIRouter()
 
 # Default user ID for operations (replace with actual auth later)
 DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000"
+
+
+def _normalize_nmec(raw: str) -> str:
+    return raw.strip().lstrip("\ufeff")
+
+
+def _students_scope_query(db: Session, admin_id: str = None):
+    q = db.query(Student)
+    if admin_id is not None:
+        q = (
+            q.join(Student.course)
+            .join(Course.nucleo)
+            .filter(Nucleo.admins_ids.any(admin_id))
+        )
+    return q
+
+
+def _emit_student_is_member_update(db: Session, student: Student, is_member: bool) -> None:
+    event = StudentUpdatedV1.create(
+        aggregate_id=student.id,
+        data=StudentUpdatedData(
+            student_id=student.id,
+            is_member=is_member,
+        ),
+    )
+    outbox_publisher.emit_event(
+        db=db,
+        event_type=event.event_type(),
+        aggregate_type="student",
+        aggregate_id=student.id,
+        data=event.to_data_dict(),
+    )
 
 
 @router.get("/students", response_model=List[StudentResponse])
@@ -91,6 +129,67 @@ def create_student(student_data: StudentCreate, db: Session = Depends(get_db_ses
         raise HTTPException(
             status_code=400, detail="Student with this student number already exists"
         )
+
+
+@router.post("/students/sync-membership", response_model=StudentMembershipSyncResponse)
+def sync_membership(
+    body: StudentMembershipSyncRequest,
+    admin_id: str = None,
+    db: Session = Depends(get_db_session),
+):
+    """Reset sócio status for all participants in scope, then set sócio for listed NMECs.
+
+    Scope: all students (admin_id omitted) or students whose course belongs to a núcleo
+    where the given admin_id is in admins_ids.
+    """
+    if len(body.student_numbers) > 50_000:
+        raise HTTPException(
+            status_code=400,
+            detail="Too many student numbers in one request (max 50000)",
+        )
+
+    nmec_set = set()
+    for raw in body.student_numbers:
+        n = _normalize_nmec(raw)
+        if n:
+            nmec_set.add(n)
+
+    students = _students_scope_query(db, admin_id).all()
+    in_scope_keys = {_normalize_nmec(s.student_number) for s in students}
+
+    reset_to_non_socio = 0
+    set_as_socio = 0
+    unmatched = sorted(nmec_set - in_scope_keys)
+
+    now = datetime.now(timezone.utc)
+    for student in students:
+        key = _normalize_nmec(student.student_number)
+        new_member = key in nmec_set
+        if student.is_member == new_member:
+            continue
+        student.is_member = new_member
+        student.updated_at = now
+        if new_member:
+            set_as_socio += 1
+        else:
+            reset_to_non_socio += 1
+        _emit_student_is_member_update(db, student, new_member)
+
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="Could not persist student membership sync",
+        )
+
+    return StudentMembershipSyncResponse(
+        participants_in_scope=len(students),
+        reset_to_non_socio=reset_to_non_socio,
+        set_as_socio=set_as_socio,
+        unmatched_numbers=unmatched,
+    )
 
 
 @router.get("/students/{student_id}", response_model=StudentResponse)
