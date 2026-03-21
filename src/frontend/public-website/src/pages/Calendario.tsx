@@ -12,7 +12,7 @@ function Calendario() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('calendar');
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
 
@@ -63,7 +63,6 @@ function Calendario() {
     const statusColors = {
       scheduled: 'bg-blue-100 text-blue-800',
       in_progress: 'bg-yellow-100 text-yellow-800',
-      completed: 'bg-green-100 text-green-800',
       finished: 'bg-gray-100 text-gray-800',
       cancelled: 'bg-red-100 text-red-800',
     };
@@ -71,7 +70,6 @@ function Calendario() {
     const statusLabels = {
       scheduled: 'Agendado',
       in_progress: 'Em Curso',
-      completed: 'Concluído',
       finished: 'Finalizado',
       cancelled: 'Cancelado',
     };
@@ -202,7 +200,6 @@ function Calendario() {
               <option value="all">Todos os Estados</option>
               <option value="scheduled">Agendado</option>
               <option value="in_progress">Em Curso</option>
-              <option value="completed">Concluído</option>
               <option value="finished">Finalizado</option>
               <option value="cancelled">Cancelado</option>
             </select>
