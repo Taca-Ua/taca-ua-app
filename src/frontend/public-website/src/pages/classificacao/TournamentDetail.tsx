@@ -68,7 +68,6 @@ function TournamentDetailPage() {
       cancelled: 'bg-red-100 text-red-800',
       scheduled: 'bg-blue-100 text-blue-800',
       in_progress: 'bg-yellow-100 text-yellow-800',
-      completed: 'bg-green-100 text-green-800',
     };
 
     const statusLabels = {
@@ -78,7 +77,6 @@ function TournamentDetailPage() {
       cancelled: 'Cancelado',
       scheduled: 'Agendado',
       in_progress: 'Em Curso',
-      completed: 'Concluído',
     };
 
     const colorClass = statusColors[status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800';
@@ -294,14 +292,25 @@ function TournamentDetailPage() {
                           <div className="border-t pt-3">
                             <p className="text-sm font-semibold text-gray-700 mb-2">Resultados:</p>
                             <div className="space-y-1">
-                              {match.results.map((result, idx) => (
-                                <div key={idx} className="flex justify-between text-sm">
-                                  <span>{result.name || result.team_name || 'Participante'}</span>
-                                  <span className="font-semibold">
-                                    {result.score !== undefined ? result.score : result.position}
-                                  </span>
-                                </div>
-                              ))}
+                              {match.results.map((result, idx) => {
+                                const participant = match.participants?.find(
+                                  (p: Record<string, any>) => p.participant_id === result.participant_id
+                                );
+                                const name = participant?.participant_name || 'Participante';
+                                const hasScore = result.score !== undefined && result.score !== null;
+                                return (
+                                  <div key={idx} className="flex justify-between items-center text-sm">
+                                    <span>{name}</span>
+                                    {hasScore ? (
+                                      <span className="font-semibold">{result.score} pts</span>
+                                    ) : result.position !== undefined && result.position !== null ? (
+                                      <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold">
+                                        {result.position}º lugar
+                                      </span>
+                                    ) : null}
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
                         )}
