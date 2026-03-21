@@ -92,18 +92,22 @@ function DashboardNucleo() {
                 <button onClick={() => navigate('/nucleo/membros')} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left">
                   <h2 className="text-xl font-semibold mb-2 text-teal-600">Membros</h2>
                   <p className="text-3xl font-bold text-gray-800">{stats.members}</p>
+                  <p className="text-sm text-gray-500 mt-2">Membros registados</p>
                 </button>
                 <button onClick={() => navigate('/nucleo/equipas')} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left">
                   <h2 className="text-xl font-semibold mb-2 text-teal-600">Equipas</h2>
                   <p className="text-3xl font-bold text-gray-800">{stats.teams}</p>
+                  <p className="text-sm text-gray-500 mt-2">Equipas criadas</p>
                 </button>
                 <button onClick={() => navigate('/nucleo/jogos')} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left">
                   <h2 className="text-xl font-semibold mb-2 text-teal-600">Jogos</h2>
                   <p className="text-3xl font-bold text-gray-800">{stats.matches}</p>
+                  <p className="text-sm text-gray-500 mt-2">Total de jogos</p>
                 </button>
                 <div className="bg-white p-6 rounded-lg shadow-md">
                   <h2 className="text-xl font-semibold mb-2 text-orange-600">Próximos</h2>
                   <p className="text-3xl font-bold text-gray-800">{stats.upcomingMatches}</p>
+                  <p className="text-sm text-gray-500 mt-2">Jogos agendados</p>
                 </div>
               </div>
 
