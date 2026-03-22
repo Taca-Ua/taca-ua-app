@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import HelpTooltip from '../../components/HelpTooltip';
 import { studentsApi, type Student } from '../../api/members';
@@ -9,13 +9,15 @@ export type SociosVariant = 'geral' | 'nucleo';
 
 /** Ficheiro CSV (ou Excel guardado como CSV): primeira coluna = NMEC por linha. */
 export function parseNmecColumnText(text: string): string[] {
-  const lines = text.split(/\r?\n/);
+  // Strip UTF-8 BOM if present (common in Excel-exported CSVs)
+  const stripped = text.replace(/^\uFEFF/, '');
+  const lines = stripped.split(/\r?\n/);
   const out: string[] = [];
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed) continue;
     const firstCell = trimmed.split(/[,;\t]/)[0]?.trim() ?? '';
-    const unquoted = firstCell.replace(/^["']|["']$/g, '');
+    const unquoted = firstCell.replace(/^["']|["']$/g, '').trim();
     if (unquoted) out.push(unquoted);
   }
   return out;
@@ -73,6 +75,7 @@ export default function SociosContent({ variant }: SociosContentProps) {
   const [csvFileName, setCsvFileName] = useState<string | null>(null);
   const [parsedPreview, setParsedPreview] = useState<string[]>([]);
   const [csvSubmitting, setCsvSubmitting] = useState(false);
+  const csvFileInputRef = useRef<HTMLInputElement>(null);
 
   const loadStudents = useCallback(async () => {
     try {
@@ -149,6 +152,7 @@ export default function SociosContent({ variant }: SociosContentProps) {
       setCsvModalOpen(false);
       setCsvFileName(null);
       setParsedPreview([]);
+      if (csvFileInputRef.current) csvFileInputRef.current.value = '';
     } catch (e) {
       console.error(e);
       notify('Não foi possível aplicar a lista de NMECs.', 'error');
@@ -273,6 +277,7 @@ export default function SociosContent({ variant }: SociosContentProps) {
               NMECs desta lista.
             </p>
             <input
+              ref={csvFileInputRef}
               type="file"
               accept=".csv,text/csv,text/plain"
               onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
@@ -302,6 +307,7 @@ export default function SociosContent({ variant }: SociosContentProps) {
                   setCsvModalOpen(false);
                   setCsvFileName(null);
                   setParsedPreview([]);
+                  if (csvFileInputRef.current) csvFileInputRef.current.value = '';
                 }}
                 className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md font-medium`}
                 disabled={csvSubmitting}
