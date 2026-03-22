@@ -141,7 +141,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/nucleo/socios',
-    element: <ProtectedRoute requiredRole="nucleo"><SociosNucleo /></ProtectedRoute>,
+    element: <ProtectedRoute requiredRole="geral"><SociosNucleo /></ProtectedRoute>,
   },
   {
     path: '/nucleo/membros',
