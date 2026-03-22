@@ -127,7 +127,7 @@ def list_matches(
             raise HTTPException(status_code=400, detail=f"Invalid status: {status}")
 
     total = query.count()
-    matches = query.offset(offset).limit(limit).all()
+    matches = query.all()
 
     logger.info(
         "Matches listed successfully",

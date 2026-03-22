@@ -221,3 +221,4 @@ temp/
 temp_*
 *_temp.*
 .vscode/
+/tools/data/step*

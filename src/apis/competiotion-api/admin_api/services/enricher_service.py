@@ -90,7 +90,8 @@ class EnricherService:
 
         # Fetch and enrich matches data
         tournament_matches = matches_service_client.list_matches(
-            tournament_id=tournament.id
+            tournament_id=tournament.id,
+            limit=None,
         )
 
         self.complete_matches_info(tournament_matches)
