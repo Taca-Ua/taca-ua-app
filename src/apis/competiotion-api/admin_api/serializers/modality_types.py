@@ -27,6 +27,9 @@ class ModalityTypeListSerializer(serializers.Serializer):
     )
     escaloes = _EscalaoSerializer(many=True)
     is_playoff = serializers.BooleanField(default=False)
+    tournament_competitor_type = serializers.ChoiceField(
+        choices=["individual", "team"], required=False, allow_null=True
+    )
 
     created_at = serializers.DateTimeField(default_timezone=None)
 
@@ -46,6 +49,9 @@ class ModalityTypeCreateSerializer(serializers.Serializer):
     )
     escaloes = _EscalaoSerializer(many=True)
     is_playoff = serializers.BooleanField(default=False)
+    tournament_competitor_type = serializers.ChoiceField(
+        choices=["individual", "team"], required=False, allow_null=True
+    )
 
 
 class ModalityTypeUpdateSerializer(serializers.Serializer):
@@ -57,3 +63,6 @@ class ModalityTypeUpdateSerializer(serializers.Serializer):
     )
     escaloes = _EscalaoSerializer(many=True, required=False)
     is_playoff = serializers.BooleanField(required=False)
+    tournament_competitor_type = serializers.ChoiceField(
+        choices=["individual", "team"], required=False, allow_null=True
+    )

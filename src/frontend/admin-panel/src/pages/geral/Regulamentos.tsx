@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import ConfirmModal from "../../components/ConfirmModal";
+import HelpTooltip from "../../components/HelpTooltip";
 import Sidebar from "../../components/geral_navbar";
 import { regulationsApi, type Regulation } from '../../api/regulations';
 import { useNotification } from '../../contexts/NotificationProvider';
@@ -92,15 +93,6 @@ const Regulamentos: React.FC = () => {
     fetchData();
   }, []);
 
-  const checkFileExists = async (url: string) => {
-    try {
-      const response = await fetch(url, { method: 'HEAD' });
-      return response.ok;
-    } catch (err) {
-      return false;
-    }
-  };
-
   const formatDisplayDate = (dateStr: string | undefined) => {
     if (!dateStr) return "Data indisponível";
 
@@ -125,16 +117,7 @@ const Regulamentos: React.FC = () => {
 
       const regulationsData = await regulationsApi.getAll();
 
-      console.log("ESTRUTURA DO REGULAMENTO:", regulationsData[0]);
-
-      const existingRegulations = await Promise.all(
-        regulationsData.map(async (reg) => {
-          const exists = await checkFileExists(reg.file_url);
-          return exists ? reg : null;
-        })
-      );
-
-      setRegulations(existingRegulations.filter((r): r is Regulation => r !== null));
+      setRegulations(regulationsData);
     } catch (err) {
       console.error('Failed to fetch data:', err);
       notify('Não foi possível carregar os regulamentos. Tente recarregar a página.', 'error');
@@ -143,9 +126,9 @@ const Regulamentos: React.FC = () => {
     }
   };
 
-  const filteredRegulations = regulations.filter(r =>
-    r.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredRegulations = regulations
+    .filter(r => r.title.toLowerCase().includes(searchTerm.toLowerCase()))
+    .sort((a, b) => a.title.localeCompare(b.title));
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -311,7 +294,9 @@ const Regulamentos: React.FC = () => {
 
             <form onSubmit={handleUpload} className="p-6 space-y-5">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Título do Documento *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Título do Documento <HelpTooltip text="Nome identificativo do regulamento. Deve ser claro e descritivo para facilitar a pesquisa. Ex: 'Regulamento de Basquetebol 2026'." className="ml-1" /> <span className="text-red-500">*</span>
+                </label>
                 <input
                   required
                   className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
@@ -322,7 +307,9 @@ const Regulamentos: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Descrição</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Descrição <HelpTooltip text="Informação adicional sobre o documento, como o âmbito de aplicação, alterações face à versão anterior ou notas relevantes. Campo opcional." className="ml-1" />
+                </label>
                 <textarea
                   className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none min-h-[100px]"
                   value={description}
@@ -332,7 +319,9 @@ const Regulamentos: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Ficheiro (Apenas PDF) *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Ficheiro <HelpTooltip text="Apenas ficheiros PDF são aceites, com tamanho máximo de 10 MB. O ficheiro ficará disponível publicamente para download na página de regulamentos." className="ml-1" /> <span className="text-red-500">*</span>
+                </label>
 
                 {file ? (
                   <div className="flex items-center gap-4 p-4 bg-teal-50 border border-teal-200 rounded-xl">

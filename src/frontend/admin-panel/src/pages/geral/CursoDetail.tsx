@@ -232,7 +232,7 @@ const CursoDetail = () => {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <option value="">Selecionar Núcleo</option>
-                  {nucleos.map((nucleo) => (
+                  {[...nucleos].sort((a, b) => a.name.localeCompare(b.name)).map((nucleo) => (
                     <option key={nucleo.id} value={nucleo.id}>
                       {nucleo.name}
                     </option>

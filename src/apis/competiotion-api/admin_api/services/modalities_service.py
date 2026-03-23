@@ -52,6 +52,7 @@ class ModalityTypeDTO:
     description: str
     escaloes: List[_EscalaDTO]
     is_playoff: bool = False
+    tournament_competitor_type: Optional[str] = None
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -352,6 +353,7 @@ class ModalitiesService(BaseService):
         description: str = "",
         escaloes: List[str] = None,
         is_playoff: bool = False,
+        tournament_competitor_type: Optional[str] = None,
     ) -> ModalityTypeDTO:
         """Create a new modality type
 
@@ -372,6 +374,7 @@ class ModalitiesService(BaseService):
             "description": description,
             "escaloes": escaloes,
             "is_playoff": is_playoff,
+            "tournament_competitor_type": tournament_competitor_type,
         }
         modality_type_data = self.post("/modality-types", data)
         return ModalityTypeDTO(**modality_type_data)
@@ -407,6 +410,7 @@ class ModalitiesService(BaseService):
         description: Optional[str] = None,
         escaloes: Optional[List[str]] = None,
         is_playoff: Optional[bool] = None,
+        tournament_competitor_type: Optional[str] = None,
     ) -> ModalityTypeDTO:
         """Update a modality type
 
@@ -428,6 +432,8 @@ class ModalitiesService(BaseService):
             data["escaloes"] = escaloes
         if is_playoff is not None:
             data["is_playoff"] = is_playoff
+        if tournament_competitor_type is not None:
+            data["tournament_competitor_type"] = tournament_competitor_type
 
         modality_type_data = self.put(f"/modality-types/{modality_type_id}", data)
         return ModalityTypeDTO(**modality_type_data)
@@ -607,6 +613,21 @@ class ModalitiesService(BaseService):
         student_data = self.put(f"/students/{student_id}", data)
         return StudentDTO(**student_data)
 
+    def sync_student_membership(
+        self,
+        student_numbers: List[str],
+        admin_id: Optional[str] = None,
+    ) -> Dict:
+        """Reset sócio status for all participants in scope, then set sócios from NMEC list."""
+        params: Optional[Dict[str, str]] = None
+        if admin_id is not None:
+            params = {"admin_id": admin_id}
+        return self.post(
+            "/students/sync-membership",
+            {"student_numbers": student_numbers},
+            params=params,
+        )
+
     def delete_student(self, student_id: str) -> None:
         """Delete a student
 
@@ -708,16 +729,25 @@ class ModalitiesService(BaseService):
         self.delete(f"/staff/{staff_id}")
 
     # ==================== TEAM METHODS ====================
-    def list_teams(self, admin_id: str = None) -> List[TeamDTO]:
-        """List teams - optionally filtered by admin user ID
+    def list_teams(
+        self, admin_id: str = None, modality_id: str = None
+    ) -> List[TeamDTO]:
+        """List teams, optionally filtered by admin user ID and/or modality ID
 
+        Args:
+            admin_id (str, optional): ID of the admin user to filter teams by. Defaults to None.
+            modality_id (str, optional): ID of the modality to filter teams by. Defaults to None.
         Returns:
             List[TeamDTO]: List of TeamDTO objects representing the teams
         """
+
+        params = {}
         if admin_id is not None:
-            teams_data = self.get(f"/teams?admin_id={admin_id}")
-        else:
-            teams_data = self.get("/teams")
+            params["admin_id"] = admin_id
+        if modality_id is not None:
+            params["modality_id"] = modality_id
+
+        teams_data = self.get("/teams", params=params)
         return [TeamDTO(**team) for team in teams_data]
 
     def create_team(self, name: str, modality_id: str, course_id: str) -> TeamDTO:

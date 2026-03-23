@@ -59,8 +59,12 @@ function Administradores() {
     const matchesRole = roleFilter === 'all' || m.role === roleFilter;
     return matchesSearch && matchesRole;
   });
-  const AdminG = filteredMembers.filter(m => m.role === 'general_admin');
-  const AdminN = filteredMembers.filter(m => m.role === 'nucleo_admin');
+  const AdminG = filteredMembers
+    .filter(m => m.role === 'general_admin')
+    .sort((a, b) => a.username.localeCompare(b.username));
+  const AdminN = filteredMembers
+    .filter(m => m.role === 'nucleo_admin')
+    .sort((a, b) => a.username.localeCompare(b.username));
 
   const handleAddMember = async () => {
     if (!memberUserName.trim()) {

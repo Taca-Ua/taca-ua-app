@@ -35,6 +35,7 @@ class TournamentDTO:
     status: str  # "draft", "active", "finished"
     modality_id: UUID
     scoring_format_id: UUID
+    competitor_type: str  # "team" or "athlete"
     start_date: Optional[str] = None  # ISO formatted datetime string
     competitors: List[CompetitorDTO] = field(default_factory=list)
     ranking_positions: List[_TournamentRankingPositionDTO] = field(default_factory=list)
@@ -108,6 +109,7 @@ class TournamentsService(BaseService):
         modality_id: UUID,
         name: str,
         scoring_format_id: UUID,
+        competitor_type: str,
         start_date: Optional[str] = None,
     ) -> TournamentDTO:
         """
@@ -126,6 +128,7 @@ class TournamentsService(BaseService):
             "modality_id": str(modality_id),
             "name": name,
             "scoring_format_id": str(scoring_format_id),
+            "competitor_type": competitor_type,
         }
         if start_date:
             data["start_date"] = start_date

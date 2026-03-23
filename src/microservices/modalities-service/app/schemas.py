@@ -79,6 +79,7 @@ class ModalityTypeCreate(BaseModel):
     description: Optional[str] = None
     escaloes: Optional[List[_Escalao]] = None
     is_playoff: bool = False
+    tournament_competitor_type: Optional[str] = None
 
     def escaloes_encoder(self):
         if not self.escaloes:
@@ -96,6 +97,7 @@ class ModalityTypeUpdate(BaseModel):
     description: Optional[str] = None
     escaloes: Optional[List[_Escalao]] = None
     is_playoff: Optional[bool] = None
+    tournament_competitor_type: Optional[str] = None
 
     def escaloes_encoder(self):
         if not self.escaloes:
@@ -114,6 +116,7 @@ class ModalityTypeResponse(BaseModel):
     description: Optional[str] = None
     escaloes: Optional[List[_Escalao]] = None
     is_playoff: bool = False
+    tournament_competitor_type: Optional[str] = None
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -174,6 +177,20 @@ class StudentResponse(BaseModel):
         from_attributes = True
 
 
+class StudentMembershipSyncRequest(BaseModel):
+    """NMEC values to mark as sócios after resetting everyone in scope to não-sócio."""
+
+    student_numbers: List[str] = Field(default_factory=list)
+
+
+class StudentMembershipSyncResponse(BaseModel):
+    participants_in_scope: int
+    reset_to_non_socio: int
+    set_as_socio: int
+    # NMECs no ficheiro que não correspondem a nenhum participante no âmbito
+    unmatched_numbers: List[str]
+
+
 # ==================== STAFF SCHEMAS ====================
 class StaffCreate(BaseModel):
     full_name: str
@@ -229,10 +246,6 @@ class TeamResponse(BaseModel):
         from_attributes = True
 
 
-
-
-
-
 # ==================== REGULATION SCHEMAS ====================
 
 
@@ -240,6 +253,7 @@ class RegulationInternalCreate(BaseModel):
     title: str
     description: Optional[str] = None
     file_url: str
+
 
 class RegulationResponse(BaseModel):
     id: UUID

@@ -6,7 +6,13 @@ import Sidebar from '../../components/geral_navbar';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { modalitiesApi, type ModalityDetail } from '../../api/modalities';
 import { modalityTypesApi } from '../../api/modality-types';
+import { tournamentsApi, type Tournament } from '../../api/tournaments';
 import { btn } from '../../styles/buttonStyles';
+import {
+  TournamentCreateModal,
+  TournamentFilters,
+  TournamentList,
+} from '../../components/tournaments';
 
 interface ModalityType {
 	  id: string;
@@ -98,7 +104,7 @@ const ModalidadeDetailEditModal = ({
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
             >
               <option value="">Selecionar Tipo</option>
-              {modalityTypes.map((type) => (
+              {[...modalityTypes].sort((a, b) => a.name.localeCompare(b.name)).map((type) => (
       <option key={type.id} value={type.id}>{type.name}</option>
       ))}
             </select>
@@ -124,6 +130,88 @@ const ModalidadeDetailEditModal = ({
   ); // Modal implementation is now in the main component
 };
 
+const TournamentsTab = ({ modalityId, modalityName }: { modalityId: string; modalityName: string }) => {
+  const { notify } = useNotification();
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+
+  useEffect(() => {
+    const fetchTournaments = async () => {
+      try {
+        setLoading(true);
+        const allTournaments = await tournamentsApi.getAll();
+        // Filter tournaments by this modality
+        const filtered = allTournaments.filter((t) => t.modality.id === modalityId);
+        setTournaments(filtered);
+      } catch (err) {
+        console.error('Failed to fetch tournaments:', err);
+        notify('Erro ao carregar torneios', 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTournaments();
+  }, [modalityId]);
+
+  const handleCreateTournament = (newTournament: Tournament) => {
+    setTournaments([...tournaments, newTournament]);
+  };
+
+  const filteredTournaments = tournaments.filter(
+    (t) =>
+      t.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+      (statusFilter === '' || t.status === statusFilter)
+  );
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold text-gray-800">Torneios</h2>
+        <button
+          onClick={() => setIsCreateModalOpen(true)}
+          className={`px-4 py-2 ${btn.primary} rounded-md`}
+        >
+          + Criar Torneio
+        </button>
+      </div>
+
+      <TournamentFilters
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+        showModalityFilter={false}
+      />
+
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <TournamentList
+          tournaments={filteredTournaments}
+          loading={loading}
+          showModality={false}
+          fromModalityId={modalityId}
+          emptyMessage={
+            searchQuery || statusFilter
+              ? 'Nenhum torneio encontrado com os filtros aplicados.'
+              : 'Ainda não existem torneios para esta modalidade.'
+          }
+        />
+      </div>
+
+      <TournamentCreateModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreate={handleCreateTournament}
+        fixedModalityId={modalityId}
+        fixedModalityName={modalityName}
+      />
+    </div>
+  );
+};
+
 
 function ModalidadeDetail() {
   const { id } = useParams();
@@ -134,6 +222,7 @@ function ModalidadeDetail() {
   const [loading, setLoading] = useState(true);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [activeTab, setActiveTab] = useState<'tournaments'>('tournaments');
   const { notify } = useNotification();
 
   useEffect(() => {
@@ -194,7 +283,7 @@ function ModalidadeDetail() {
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
 
-      <div className="flex-1 p-8 max-w-3xl mx-auto">
+      <div className="flex-1 p-8 max-w-5xl mx-auto">
         <div className="mb-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-800">Detalhes da Modalidade</h1>
           <button
@@ -205,7 +294,8 @@ function ModalidadeDetail() {
           </button>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-8">
+        {/* Modality Information - Always visible at top */}
+        <div className="bg-white rounded-lg shadow-md p-8 mb-6">
           <div className="space-y-6">
             <div>
               <label className="block text-teal-500 font-medium mb-2">Nome</label>
@@ -213,17 +303,52 @@ function ModalidadeDetail() {
             </div>
             <div>
               <label className="block text-teal-500 font-medium mb-2">Tipo</label>
-              <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800 capitalize">{modality.modality_type.name}</div>
+              <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800 capitalize">
+                {modality.modality_type.name}
+              </div>
             </div>
           </div>
 
           <div className="flex gap-4 mt-8">
-            <button onClick={handleEdit} className={`flex-1 px-6 py-3 ${btn.primary} rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-teal-400`}>
+            <button
+              onClick={handleEdit}
+              className={`flex-1 px-6 py-3 ${btn.primary} rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-teal-400`}
+            >
               Editar
             </button>
-            <button onClick={handleDelete} className={`flex-1 px-6 py-3 ${btn.danger} rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-red-400`}>
+            <button
+              onClick={handleDelete}
+              className={`flex-1 px-6 py-3 ${btn.danger} rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-red-400`}
+            >
               Eliminar
             </button>
+          </div>
+        </div>
+
+        {/* Tab System */}
+        <div className="bg-white rounded-lg shadow-md">
+          {/* Tab Headers */}
+          <div className="border-b border-gray-200">
+            <div className="flex">
+              <button
+                onClick={() => setActiveTab('tournaments')}
+                className={`px-6 py-4 font-medium transition-colors border-b-2 ${
+                  activeTab === 'tournaments'
+                    ? 'border-teal-500 text-teal-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Torneios
+              </button>
+              {/* Future tabs can be added here */}
+            </div>
+          </div>
+
+          {/* Tab Content */}
+          <div className="p-6">
+            {activeTab === 'tournaments' && (
+              <TournamentsTab modalityId={String(id)} modalityName={modality.name} />
+            )}
           </div>
         </div>
       </div>

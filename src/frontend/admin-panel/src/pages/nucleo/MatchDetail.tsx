@@ -280,9 +280,9 @@ const LineupEditorModal = ({
     onClose();
   };
 
-  const filteredPlayers = team.players?.filter(player =>
+  const filteredPlayers = (team.players?.filter(player =>
     player.full_name.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  ) || []).sort((a, b) => a.full_name.localeCompare(b.full_name));
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

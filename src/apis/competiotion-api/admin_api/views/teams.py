@@ -40,9 +40,14 @@ class TeamListCreateView(RoleRequiredMixin, APIView):
         serializer = TeamListRequestSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
-        # TODO: Pass filters to the modalities service client
+        # TODO: Pass remaining filters (e.g., course_id, tournament_id) to the modalities service client when supported
         teams = modalities_service_client.list_teams(
-            admin_id=str(request.user_id) if "nucleo_admin" in request.roles else None
+            admin_id=str(request.user_id) if "nucleo_admin" in request.roles else None,
+            modality_id=(
+                str(serializer.validated_data["modality_id"])
+                if "modality_id" in serializer.validated_data
+                else None
+            ),
         )
 
         # Serialize output data

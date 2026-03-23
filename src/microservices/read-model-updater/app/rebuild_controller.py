@@ -31,6 +31,7 @@ from taca_snapshots.modalities import (
     ModalitySnapshotItem,
     ModalityTypeSnapshotItem,
     NucleoSnapshotItem,
+    RegulationSnapshotItem,
     StaffSnapshotItem,
     StudentSnapshotItem,
     TeamPlayerSnapshotItem,
@@ -66,6 +67,7 @@ from .models import (
     ModalityRankings,
     ModalityType,
     Nucleo,
+    Regulation,
     Staff,
     Student,
     StudentDetailView,
@@ -127,6 +129,7 @@ class ReadModelRebuildService(BaseRebuildService):
         self.db.query(Nucleo).delete()
         self.db.query(GeneralRankings).delete()
         self.db.query(ModalityRankings).delete()
+        self.db.query(Regulation).delete()
         self.db.commit()
         logger.info("projections_cleared")
 
@@ -160,6 +163,7 @@ class ReadModelRebuildService(BaseRebuildService):
             total += self._rebuild_staff(mod.staff)
             total += self._rebuild_teams(mod.teams)
             total += self._rebuild_team_players(mod.team_players)
+            total += self._rebuild_regulations(mod.regulations)
         logger.info("modality_projections_rebuilt", records_processed=total)
 
         if tour:
@@ -413,18 +417,8 @@ class ReadModelRebuildService(BaseRebuildService):
     def _rebuild_matches(self, matches: List[MatchSnapshotItem]) -> int:
         if not matches:
             return 0
-        available_tournament_ids = {
-            t.tournament_id for t in self.db.query(Tournament).all()
-        }
-        for item in matches:
-            if item.tournament_id not in available_tournament_ids:
-                logger.warning(
-                    "match_with_missing_tournament_skipped",
-                    match_id=item.match_id,
-                    tournament_id=item.tournament_id,
-                )
-                continue
 
+        for item in matches:
             self.db.add(
                 Match(
                     match_id=item.match_id,
@@ -445,15 +439,8 @@ class ReadModelRebuildService(BaseRebuildService):
     ) -> int:
         if not participants:
             return 0
-        matches_available = {m.match_id for m in self.db.query(Match).all()}
+
         for item in participants:
-            if item.match_id not in matches_available:
-                logger.warning(
-                    "match_participant_with_missing_match_skipped",
-                    match_id=item.match_id,
-                    participant_id=item.participant_id,
-                )
-                continue
             self.db.add(
                 MatchParticipant(
                     match_id=item.match_id,
@@ -470,16 +457,7 @@ class ReadModelRebuildService(BaseRebuildService):
     def _rebuild_match_results(self, results: List[MatchResultSnapshotItem]) -> int:
         if not results:
             return 0
-        matches_available = {m.match_id for m in self.db.query(Match).all()}
         for item in results:
-            if item.match_id not in matches_available:
-                logger.warning(
-                    "match_result_with_missing_match_skipped",
-                    match_id=item.match_id,
-                    participant_id=item.participant_id,
-                )
-                continue
-
             self.db.add(
                 MatchResult(
                     match_id=item.match_id,
@@ -497,16 +475,7 @@ class ReadModelRebuildService(BaseRebuildService):
         if not lineups:
             return 0
 
-        avilable_matches = {m.match_id for m in self.db.query(Match).all()}
         for item in lineups:
-            if item.match_id not in avilable_matches:
-                logger.warning(
-                    "match_lineup_with_missing_match_skipped",
-                    match_id=item.match_id,
-                    team_id=item.team_id,
-                    player_id=item.player_id,
-                )
-                continue
             self.db.add(
                 MatchLineup(
                     match_id=item.match_id,
@@ -524,16 +493,7 @@ class ReadModelRebuildService(BaseRebuildService):
         if not comments:
             return 0
 
-        avilable_matches = {m.match_id for m in self.db.query(Match).all()}
         for item in comments:
-            if item.match_id not in avilable_matches:
-                logger.warning(
-                    "match_comment_with_missing_match_skipped",
-                    match_id=item.match_id,
-                    comment_id=item.comment_id,
-                )
-                continue
-
             self.db.add(
                 MatchComment(
                     comment_id=item.comment_id,
@@ -579,6 +539,22 @@ class ReadModelRebuildService(BaseRebuildService):
             )
         self.db.flush()
         return len(entries)
+
+    def _rebuild_regulations(self, regulations: List[RegulationSnapshotItem]) -> int:
+        if not regulations:
+            return 0
+
+        for item in regulations:
+            self.db.add(
+                Regulation(
+                    id=item.id,
+                    title=item.title,
+                    description=item.description,
+                    file_url=item.file_url,
+                )
+            )
+        self.db.flush()
+        return len(regulations)
 
     def _rebuild_materialized_views(self) -> int:
         total = 0

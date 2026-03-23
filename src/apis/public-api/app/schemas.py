@@ -274,6 +274,21 @@ class GeneralRankingList(BaseModel):
     total: int = Field(..., ge=0, description="Total number of courses ranked")
 
 
+# ==================== Regulation Schemas ====================
+
+
+class RegulationPublic(BaseModel):
+    """Schema for a public regulation document."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID = Field(..., description="Unique identifier")
+    title: str = Field(..., description="Regulation title")
+    description: Optional[str] = Field(None, description="Optional description")
+    file_url: str = Field(..., description="URL to the PDF file")
+    created_at: datetime = Field(..., description="Creation timestamp")
+
+
 # ==================== ModalityRankingView Schemas ====================
 
 

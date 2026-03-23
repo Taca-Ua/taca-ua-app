@@ -23,6 +23,7 @@ from .models import (  # Enums; Core Read Models; Materialized Views
     ModalityType,
     Nucleo,
     ParticipantType,
+    Regulation,
     Staff,
     Student,
     StudentDetailView,
@@ -67,6 +68,8 @@ __all__ = [
     "MatchDetailView",
     "TournamentStandingsView",
     "GeneralRankingView",
+    # Shared Operational Tables
+    "Regulation",
     "GeneralRankings",
     "ModalityRankings",
     "ModalityRankingView",

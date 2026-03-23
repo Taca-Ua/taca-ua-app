@@ -20,6 +20,7 @@ import FormatosPontuacao from '../pages/geral/FormatosPontuacao';
 import Torneios from '../pages/geral/Torneios';
 import TorneioDetails from '../pages/geral/TorneioDetails';
 import JogoDetails from '../pages/geral/JogoDetails';
+import SociosGeral from '../pages/geral/Socios';
 
 // Nucleo admin pages
 import DashboardNucleo from '../pages/nucleo/DashboardNucleo';
@@ -29,6 +30,7 @@ import Equipas from '../pages/nucleo/Equipas';
 import TeamDetailPage from '../pages/nucleo/TeamDetail';
 import Jogos from '../pages/nucleo/Jogos';
 import MatchDetailPage from '../pages/nucleo/MatchDetail';
+import SociosNucleo from '../pages/nucleo/Socios';
 
 // Components
 import ProtectedRoute from '../components/ProtectedRoute';
@@ -125,6 +127,10 @@ export const router = createBrowserRouter([
     path: '/geral/jogos/:id',
     element: <ProtectedRoute requiredRole="geral"><JogoDetails /></ProtectedRoute>,
   },
+  {
+    path: '/geral/socios',
+    element: <ProtectedRoute requiredRole="geral"><SociosGeral /></ProtectedRoute>,
+  },
 
   // ============================================
   // Nucleo Admin Routes
@@ -132,6 +138,10 @@ export const router = createBrowserRouter([
   {
     path: '/nucleo/dashboard',
     element: <ProtectedRoute requiredRole="nucleo"><DashboardNucleo /></ProtectedRoute>,
+  },
+  {
+    path: '/nucleo/socios',
+    element: <ProtectedRoute requiredRole="geral"><SociosNucleo /></ProtectedRoute>,
   },
   {
     path: '/nucleo/membros',

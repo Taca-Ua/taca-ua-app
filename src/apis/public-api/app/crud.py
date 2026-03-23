@@ -14,6 +14,7 @@ from taca_models import (
     GeneralRankingView,
     MatchDetailView,
     ModalityRankingView,
+    Regulation,
     StudentDetailView,
     TeamDetailView,
     TournamentDetailView,
@@ -409,6 +410,37 @@ def get_course_ranking(db: Session, course_id: UUID) -> Optional[GeneralRankingV
         .filter(GeneralRankingView.course_id == course_id)
         .first()
     )
+
+
+# ==================== Regulation Operations ====================
+
+
+def get_regulations(
+    db: Session,
+    search: Optional[str] = None,
+) -> list[Regulation]:
+    """
+    Get all regulations, optionally filtered by a search term.
+
+    Args:
+        db: Database session
+        search: Optional search string matched against title and description
+
+    Returns:
+        List of regulations ordered by creation date (newest first)
+    """
+    query = db.query(Regulation)
+
+    if search:
+        term = f"%{search}%"
+        query = query.filter(
+            or_(
+                Regulation.title.ilike(term),
+                Regulation.description.ilike(term),
+            )
+        )
+
+    return query.order_by(Regulation.created_at.desc()).all()
 
 
 # ==================== Modality Ranking View Operations ====================

@@ -61,6 +61,7 @@ class TournamentCreate(BaseModel):
     modality_id: UUID
     scoring_format_id: UUID
     start_date: Optional[datetime]
+    competitor_type: str  # "team" or "athlete"
 
 
 class TournamentUpdate(BaseModel):
@@ -97,6 +98,7 @@ class TournamentResponse(BaseModel):
     start_date: Optional[datetime]
     scoring_format_id: UUID
     competitors: List[CompetitorResponse]
+    competitor_type: str
 
     created_by: UUID
     created_at: datetime

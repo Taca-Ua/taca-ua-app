@@ -31,6 +31,7 @@ export interface TournamentDetail extends Tournament {
   scoring_format: ModalityType;
   competitors: TournamentCompetitorDetail[];
   matches: Match[];
+  competitor_type: 'team' | 'athlete';
 }
 
 export interface TournamentCreate {

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import HelpTooltip from '../../components/HelpTooltip';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import ConfirmModal from '../../components/ConfirmModal';
 import Sidebar from '../../components/geral_navbar';
 import { useNotification } from '../../contexts/NotificationProvider';
@@ -319,6 +319,17 @@ const EditTournamentModal = ({
   );
 };
 
+// Helper to get the display name of a tournament competitor
+const getCompetitorName = (competitor: TournamentCompetitorDetail): string => {
+  if (competitor.competitor_type === 'team' && competitor.team) {
+    return competitor.team.name;
+  }
+  if (competitor.competitor_type === 'athlete' && competitor.athlete) {
+    return competitor.athlete.full_name;
+  }
+  return 'Desconhecido';
+};
+
 // Component to manage competitors in tournament
 const TournamentCompetitors = ({
   tournament,
@@ -331,7 +342,6 @@ const TournamentCompetitors = ({
   const [availableStudents, setAvailableStudents] = useState<Student[]>([]);
   const [studentSearchTerm, setStudentSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedCompetitorType, setSelectedCompetitorType] = useState<'team' | 'athlete'>('team');
   const [selectedTeamId, setSelectedTeamId] = useState('');
   const [selectedAthleteId, setSelectedAthleteId] = useState('');
   const [loading, setLoading] = useState(false);
@@ -377,11 +387,11 @@ const TournamentCompetitors = ({
   };
 
   const handleAddCompetitor = async () => {
-    if (selectedCompetitorType === 'team' && !selectedTeamId) {
+    if (tournament.competitor_type === 'team' && !selectedTeamId) {
       notify('Selecione uma equipa', 'error');
       return;
     }
-    if (selectedCompetitorType === 'athlete' && !selectedAthleteId) {
+    if (tournament.competitor_type === 'athlete' && !selectedAthleteId) {
       notify('Selecione um atleta', 'error');
       return;
     }
@@ -389,7 +399,7 @@ const TournamentCompetitors = ({
     try {
       setLoading(true);
 
-      const competitor: TournamentCompetitor = selectedCompetitorType === 'team'
+      const competitor: TournamentCompetitor = tournament.competitor_type === 'team'
         ? { competitor_type: 'team', team_id: selectedTeamId }
         : { competitor_type: 'athlete', athlete_id: selectedAthleteId };
 
@@ -425,6 +435,11 @@ const TournamentCompetitors = ({
     }
   };
 
+  const sortedCompetitors = useMemo(
+    () => [...tournament.competitors].sort((a, b) => getCompetitorName(a).localeCompare(getCompetitorName(b))),
+    [tournament.competitors]
+  );
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex justify-between items-center mb-4">
@@ -437,7 +452,6 @@ const TournamentCompetitors = ({
             setSelectedTeamId('');
             setSelectedAthleteId('');
             setStudentSearchTerm('');
-            setSelectedCompetitorType('team');
           }}
           className={`px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors`}
         >
@@ -449,7 +463,7 @@ const TournamentCompetitors = ({
         <p className="text-gray-500 text-center py-8">Nenhum competidor inscrito</p>
       ) : (
         <div className="space-y-2 max-h-96 overflow-y-auto">
-          {tournament.competitors.map((competitor, idx) => {
+          {sortedCompetitors.map((competitor, idx) => {
             const isTeam = competitor.competitor_type === 'team';
             const name = isTeam ? competitor.team?.name : competitor.athlete?.full_name;
             const subtitle = isTeam ? competitor.team?.course?.name : competitor.athlete?.course?.name;
@@ -486,21 +500,7 @@ const TournamentCompetitors = ({
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Adicionar Competidor</h2>
 
             <div className="space-y-4 mb-6">
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">
-                  Tipo <HelpTooltip text="Equipa: inscrição de uma equipa como unidade. Atleta: inscrição individual de um estudante membro do núcleo." className="ml-1" /> <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={selectedCompetitorType}
-                  onChange={(e) => setSelectedCompetitorType(e.target.value as 'team' | 'athlete')}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
-                >
-                  <option value="team">Equipa</option>
-                  <option value="athlete">Atleta</option>
-                </select>
-              </div>
-
-              {selectedCompetitorType === 'team' ? (
+              {tournament.competitor_type === 'team' ? (
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">
                     Equipa <span className="text-red-500">*</span>
@@ -511,7 +511,7 @@ const TournamentCompetitors = ({
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
                   >
                     <option value="">Selecione uma equipa</option>
-                    {availableTeams.map((team) => (
+                    {[...availableTeams].sort((a, b) => a.name.localeCompare(b.name)).map((team) => (
                       <option key={team.id} value={team.id}>
                         {team.name} - {team.course.name}
                       </option>
@@ -547,6 +547,7 @@ const TournamentCompetitors = ({
                         s.full_name.toLowerCase().includes(studentSearchTerm.toLowerCase()) ||
                         s.student_number.includes(studentSearchTerm)
                       )
+                      .sort((a, b) => a.full_name.localeCompare(b.full_name))
                       .map((student) => (
                         <option key={student.id} value={student.id}>
                           {student.full_name} ({student.student_number}) - {student.course.name}
@@ -640,15 +641,10 @@ const FinishTournamentModal = ({
     return '';
   };
 
-  const getCompetitorName = (competitor: TournamentCompetitorDetail): string => {
-    if (competitor.competitor_type === 'team' && competitor.team) {
-      return competitor.team.name;
-    }
-    if (competitor.competitor_type === 'athlete' && competitor.athlete) {
-      return competitor.athlete.full_name;
-    }
-    return 'Desconhecido';
-  };
+  const sortedCompetitors = useMemo(
+    () => [...tournament.competitors].sort((a, b) => getCompetitorName(a).localeCompare(getCompetitorName(b))),
+    [tournament.competitors]
+  );
 
   const getFilledCountAtPosition = (
     assignments: Map<number, string[]>,
@@ -878,7 +874,7 @@ const FinishTournamentModal = ({
                           className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
                         >
                           <option value="">Selecione um competidor...</option>
-                          {tournament.competitors.map((competitor) => {
+                          {sortedCompetitors.map((competitor) => {
                             const competitorRecordIdOption = competitor.id;
                             const participantName = getCompetitorName(competitor);
                             const isDisabled = selectedElsewhere.has(competitorRecordIdOption) && competitorRecordIdOption !== competitorRecordId;
@@ -1325,6 +1321,7 @@ const TournamentMatches = ({
 const TorneioDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [tournament, setTournament] = useState<TournamentDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1335,6 +1332,16 @@ const TorneioDetails = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingTournament, setDeletingTournament] = useState(false);
   const { notify } = useNotification();
+
+  // Determine where to navigate back to
+  const fromModalityId = searchParams.get('fromModality');
+  const handleBack = () => {
+    if (fromModalityId) {
+      navigate(`/geral/modalidades/${fromModalityId}`);
+    } else {
+      navigate('/geral/torneios');
+    }
+  };
 
   useEffect(() => {
     loadTournament();
@@ -1350,7 +1357,7 @@ const TorneioDetails = () => {
     } catch (err) {
       console.error('Failed to fetch tournament:', err);
       notify('Não foi possível carregar os dados do torneio. Tente recarregar a página.', 'error');
-      navigate('/geral/torneios');
+      handleBack();
     } finally {
       setLoading(false);
     }
@@ -1398,7 +1405,7 @@ const TorneioDetails = () => {
     try {
       setDeletingTournament(true);
       await tournamentsApi.delete(id);
-      navigate('/geral/torneios');
+      handleBack();
     } catch (err) {
       console.error('Failed to delete tournament:', err);
       notify('Não foi possível eliminar o torneio. Poderá ter jogos ou competidores associados.', 'error');
@@ -1437,7 +1444,7 @@ const TorneioDetails = () => {
           <div className="mb-8 flex justify-between items-center">
             <h1 className="text-3xl font-bold text-gray-800">Detalhes do Torneio</h1>
             <button
-              onClick={() => navigate('/geral/torneios')}
+              onClick={handleBack}
               className={`px-6 py-3 ${btn.secondary} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400`}
             >
               Voltar

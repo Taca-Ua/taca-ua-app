@@ -127,7 +127,7 @@ def list_matches(
             raise HTTPException(status_code=400, detail=f"Invalid status: {status}")
 
     total = query.count()
-    matches = query.offset(offset).limit(limit).all()
+    matches = query.all()
 
     logger.info(
         "Matches listed successfully",
@@ -207,6 +207,7 @@ def create_match(
             athlete_id=participant_data.athlete_id,
         )
         db.add(participant)
+    db.flush()  # Get participant IDs if needed for events
 
     # Emit event
     event = MatchCreatedV1.create(

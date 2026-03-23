@@ -58,6 +58,9 @@ class TournamentListCreateView(RoleRequiredMixin, APIView):
         data = serializer.validated_data
 
         try:
+            # get modality
+            modality = modalities_service_client.get_modality(data["modality_id"])
+
             # Determine modality type (playoff vs regular) to validate modality_id and set correct one for tournament creation
             scoring_format_id = None
             if data["is_playoff"]:
@@ -73,7 +76,6 @@ class TournamentListCreateView(RoleRequiredMixin, APIView):
                     )
                 scoring_format_id = playoff_modality_type.id
             else:
-                modality = modalities_service_client.get_modality(data["modality_id"])
                 scoring_format_id = modality.modality_type.id
 
             # Create tournament
@@ -86,6 +88,11 @@ class TournamentListCreateView(RoleRequiredMixin, APIView):
                     else datetime.now().isoformat()
                 ),
                 scoring_format_id=scoring_format_id,
+                competitor_type=(
+                    "team"
+                    if modality.modality_type.tournament_competitor_type == "team"
+                    else "athlete"
+                ),
             )
 
             # Enrich tournament info
