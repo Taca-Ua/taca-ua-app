@@ -795,16 +795,25 @@ class TeamModalitiesService(BaseService):
         )
         super().__init__(base_url)
 
-    def list_teams(self, admin_id: str = None) -> List[TeamDTO]:
-        """List teams - optionally filtered by admin user ID
+    def list_teams(
+        self, admin_id: str = None, modality_id: str = None
+    ) -> List[TeamDTO]:
+        """List teams, optionally filtered by admin user ID and/or modality ID
 
+        Args:
+            admin_id (str, optional): ID of the admin user to filter teams by. Defaults to None.
+            modality_id (str, optional): ID of the modality to filter teams by. Defaults to None.
         Returns:
             List[TeamDTO]: List of TeamDTO objects representing the teams
         """
+
+        params = {}
         if admin_id is not None:
-            teams_data = self.get(f"/teams?admin_id={admin_id}")
-        else:
-            teams_data = self.get("/teams")
+            params["admin_id"] = admin_id
+        if modality_id is not None:
+            params["modality_id"] = modality_id
+
+        teams_data = self.get("/teams", params=params)
         return [TeamDTO(**team) for team in teams_data]
 
     def create_team(self, name: str, modality_id: str, course_id: str) -> TeamDTO:
