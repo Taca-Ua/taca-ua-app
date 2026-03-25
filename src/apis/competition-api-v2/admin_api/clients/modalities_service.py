@@ -654,6 +654,21 @@ class StudentModalitiesService(BaseService):
         student_data = self.put(f"/students/{student_id}", data)
         return StudentDTO(**student_data)
 
+    def sync_student_membership(
+        self,
+        student_numbers: List[str],
+        admin_id: Optional[str] = None,
+    ) -> Dict:
+        """Reset sócio status for all participants in scope, then set sócios from NMEC list."""
+        params: Optional[Dict[str, str]] = None
+        if admin_id is not None:
+            params = {"admin_id": admin_id}
+        return self.post(
+            "/students/sync-membership",
+            {"student_numbers": student_numbers},
+            params=params,
+        )
+
     def delete_student(self, student_id: str) -> None:
         """Delete a student
 
