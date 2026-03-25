@@ -70,10 +70,12 @@ def add_competitor(db: Session, tournament_id: UUID, competitor_input: Competito
     )
 
     if competitor_type == CompetitorType.TEAM:
-        query = query.filter(TournamentCompetitor.team_id == competitor_input.team_id)
+        query = query.filter(
+            TournamentCompetitor.team_id == competitor_input.competitor_entity_id
+        )
     else:
         query = query.filter(
-            TournamentCompetitor.athlete_id == competitor_input.athlete_id
+            TournamentCompetitor.athlete_id == competitor_input.competitor_entity_id
         )
 
     existing = query.first()
@@ -85,10 +87,12 @@ def add_competitor(db: Session, tournament_id: UUID, competitor_input: Competito
         tournament_id=tournament_id,
         competitor_type=competitor_type,
         team_id=(
-            competitor_input.team_id if competitor_type == CompetitorType.TEAM else None
+            competitor_input.competitor_entity_id
+            if competitor_type == CompetitorType.TEAM
+            else None
         ),
         athlete_id=(
-            competitor_input.athlete_id
+            competitor_input.competitor_entity_id
             if competitor_type == CompetitorType.ATHLETE
             else None
         ),
@@ -103,8 +107,7 @@ def add_competitor(db: Session, tournament_id: UUID, competitor_input: Competito
         data=TournamentCompetitorAddedData(
             tournament_id=tournament_id,
             competitor_type=competitor_input.competitor_type,
-            competitor_entity_id=competitor_input.team_id
-            or competitor_input.athlete_id,
+            competitor_entity_id=competitor_input.competitor_entity_id,
             competitor_id=tournament_competitor.id,
             competitor_course_id=competitor_input.competitor_course_id,
         ),
@@ -112,7 +115,7 @@ def add_competitor(db: Session, tournament_id: UUID, competitor_input: Competito
     outbox_publisher.emit_event(
         db=db,
         event_type=event.event_type(),
-        aggregate_type="tournament_competitor",
+        aggregate_type=event.aggregate_type(),
         aggregate_id=str(tournament_competitor.id),
         data=event.to_data_dict(),
     )

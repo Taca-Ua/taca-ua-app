@@ -61,6 +61,9 @@ class TournamentCompetitor(Base):
             "tournament_id": str(self.tournament_id),
             "competitor_type": self.competitor_type.value,
             "created_at": self.created_at.isoformat() if self.created_at else None,
+            "competitor_entity_id": (
+                str(self.team_id) if self.team_id else str(self.athlete_id)
+            ),
         }
 
         if self.competitor_type == CompetitorType.TEAM:

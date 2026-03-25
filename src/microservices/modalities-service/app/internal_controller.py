@@ -120,6 +120,7 @@ def get_snapshot(
                             min_participants=e["minParticipants"],
                             max_participants=e["maxParticipants"],
                             points=e["points"],
+                            name=e["escalao"],
                         )
                         for e in mt.escaloes
                     ]

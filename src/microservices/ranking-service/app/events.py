@@ -48,6 +48,7 @@ def handle_modality_type_created(event: modalities.ModalityTypeCreatedV1):
                 min_participants=escalao_data.min_participants,
                 max_participants=escalao_data.max_participants,
                 points=escalao_data.points,
+                name=escalao_data.name if escalao_data.name else "Unnamed Tier",
             )
             db.add(escalao)
         db.flush()
@@ -97,6 +98,7 @@ def handle_modality_type_updated(event: modalities.ModalityTypeUpdatedV1):
                     min_participants=escalao_data.min_participants,
                     max_participants=escalao_data.max_participants,
                     points=escalao_data.points,
+                    name=escalao_data.name if escalao_data.name else "Unnamed Tier",
                 )
                 db.add(escalao)
         db.flush()

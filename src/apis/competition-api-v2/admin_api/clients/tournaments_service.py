@@ -16,6 +16,7 @@ class CompetitorDTO:
     tournament_id: UUID
     competitor_type: str  # "team" or "athlete"
     competitor: Dict[str, UUID]  # {"team_id": UUID} or {"athlete_id": UUID}
+    competitor_entity_id: UUID  # ID of the team or athlete entity
     created_at: str  # ISO formatted datetime string
 
 
@@ -216,11 +217,8 @@ class TournamentsService(BaseService):
         Returns:
             Updated tournament dictionary
         """
-        data = [competitor for competitor in competitors_data]
-
-        print(data)
         tournament_data = self.put(
-            f"/tournaments/{tournament_id}/competitors/add", data=data
+            f"/tournaments/{tournament_id}/competitors/add", data=competitors_data
         )
         return TournamentDTO(**tournament_data)
 

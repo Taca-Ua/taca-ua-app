@@ -8,6 +8,7 @@ from .internal_controller import router as internal_router
 from .logger import logger
 from .outbox_publisher import outbox_publisher
 from .rebuild_controller import router as rebuild_router
+from .routes import router as api_router
 
 
 @asynccontextmanager
@@ -31,6 +32,7 @@ app = FastAPI(lifespan=lifespan)
 Instrumentator().instrument(app).expose(app)  # Prometheus metrics endpoint
 
 # Include routers
+app.include_router(api_router)
 app.include_router(internal_router)
 app.include_router(rebuild_router)
 

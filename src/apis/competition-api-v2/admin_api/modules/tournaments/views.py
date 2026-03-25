@@ -5,18 +5,26 @@ Tournament management views - Updated to use tournaments-service microservice
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .serializers import (
+    TournamentCompetitorsAddEntrySerializer,
+    TournamentCompetitorsDeleteSerializer,
     TournamentCreateSerializer,
+    TournamentDetailSerializer,
+    TournamentFinishSerializer,
+    TournamentListQuerySerializer,
     TournamentListSerializer,
     TournamentUpdateSerializer,
 )
+from .service import tournaments_service
 
 
 @extend_schema_view(
     get=extend_schema(
+        parameters=[TournamentListQuerySerializer],
         responses=TournamentListSerializer(many=True),
         description="List all tournaments",
         tags=["Tournament Management"],
@@ -31,28 +39,41 @@ from .serializers import (
 class TournamentListCreateView(APIView):
     def get(self, request):
         """List all tournaments"""
-        return Response({"detail": "List all tournaments"}, status=status.HTTP_200_OK)
+        serializer = TournamentListQuerySerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+
+        tournaments = tournaments_service.list_tournaments(
+            status=serializer.validated_data.get("status", None),
+            modality_id=serializer.validated_data.get("modality_id", None),
+        )
+
+        serializer = TournamentListSerializer(tournaments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
         """Create a new tournament"""
         serializer = TournamentCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        return Response(
-            {"detail": "Tournament created successfully"},
-            status=status.HTTP_201_CREATED,
+        tournament = tournaments_service.create_tournament(
+            name=serializer.validated_data["name"],
+            modality_id=serializer.validated_data["modality_id"],
+            is_playoff=serializer.validated_data.get("is_playoff", False),
         )
+
+        serializer = TournamentListSerializer(tournament)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
     get=extend_schema(
-        responses=TournamentListSerializer,
+        responses=TournamentDetailSerializer,
         description="Get tournament by ID",
         tags=["Tournament Management"],
     ),
     put=extend_schema(
         request=TournamentUpdateSerializer,
-        responses=TournamentListSerializer,
+        responses=TournamentDetailSerializer,
         description="Update a tournament",
         tags=["Tournament Management"],
     ),
@@ -64,22 +85,119 @@ class TournamentListCreateView(APIView):
 class TournamentDetailView(APIView):
     def get(self, request, tournament_id):
         """Get tournament details by ID"""
-        return Response(
-            {"detail": "Get tournament details by ID"}, status=status.HTTP_200_OK
-        )
+        tournament = tournaments_service.get_tournament(tournament_id)
+
+        serializer = TournamentDetailSerializer(tournament)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, tournament_id):
         """Update a tournament"""
         serializer = TournamentUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        return Response(
-            {"detail": "Tournament updated successfully"}, status=status.HTTP_200_OK
+        tournament = tournaments_service.update_tournament(
+            tournament_id=tournament_id,
+            name=serializer.validated_data.get("name", None),
+            start_date=serializer.validated_data.get("start_date", None),
+            status=serializer.validated_data.get("status", None),
+            is_playoff=serializer.validated_data.get("is_playoff", None),
         )
+
+        serializer = TournamentDetailSerializer(tournament)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, tournament_id):
         """Delete a tournament"""
+        try:
+            tournaments_service.delete_tournament(tournament_id)
+        except Exception as e:
+            return Response(
+                {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema(
+    request=TournamentFinishSerializer,
+    responses={200: TournamentDetailSerializer},
+    description="Finish a tournament",
+    tags=["Tournament Management"],
+)
+@api_view(["POST"])
+def tournament_finish(request, tournament_id):
+    """Mark a tournament as finished"""
+    serializer = TournamentFinishSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    # Prepare ranking entries - extract competitor_id based on type
+    ranking_entries = []
+    for entry in serializer.validated_data["ranking_entries"]:
+        ranking_entries.append(
+            {
+                "competitor_id": str(entry["competitor_id"]),
+                "position": entry["position"],
+            }
+        )
+
+    tournament = tournaments_service.finish_tournament(
+        tournament_id=tournament_id,
+        ranking_entries=ranking_entries,
+    )
+
+    serializer = TournamentDetailSerializer(tournament)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    request=TournamentCompetitorsAddEntrySerializer(many=True),
+    responses={200: TournamentDetailSerializer},
+    description="Add competitors to a tournament",
+    tags=["Tournament Management"],
+)
+@api_view(["PUT"])
+def tournament_add_competitors(request, tournament_id):
+    """Add competitors to a tournament"""
+    serializer = TournamentCompetitorsAddEntrySerializer(data=request.data, many=True)
+    serializer.is_valid(raise_exception=True)
+
+    extracted_competitors_data = []
+    for competitor in serializer.validated_data:
+        extracted_competitors_data.append(
+            {
+                "competitor_type": competitor["competitor_type"],
+                "entity_id": str(competitor["entity_id"]),
+            }
+        )
+
+    tournament = tournaments_service.add_competitors(
+        tournament_id=tournament_id,
+        competitors_data=extracted_competitors_data,
+    )
+
+    serializer = TournamentDetailSerializer(tournament)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    request=TournamentCompetitorsDeleteSerializer,
+    responses={200: TournamentDetailSerializer},
+    description="Remove competitors from a tournament",
+    tags=["Tournament Management"],
+)
+@api_view(["PUT"])
+def tournament_remove_competitors(request, tournament_id):
+    """Remove competitors from a tournament"""
+    serializer = TournamentCompetitorsDeleteSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    tournament = tournaments_service.remove_competitors(
+        tournament_id=tournament_id,
+        competitors_ids=serializer.validated_data["competitors_ids"],
+    )
+
+    serializer = TournamentDetailSerializer(tournament)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 urlpatterns = [
@@ -88,5 +206,20 @@ urlpatterns = [
         "<uuid:tournament_id>/",
         TournamentDetailView.as_view(),
         name="tournament-detail",
+    ),
+    path(
+        "<uuid:tournament_id>/finish/",
+        tournament_finish,
+        name="tournament-finish",
+    ),
+    path(
+        "<uuid:tournament_id>/competitors/add/",
+        tournament_add_competitors,
+        name="tournament-add-competitors",
+    ),
+    path(
+        "<uuid:tournament_id>/competitors/remove/",
+        tournament_remove_competitors,
+        name="tournament-remove-competitors",
     ),
 ]

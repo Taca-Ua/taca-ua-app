@@ -25,23 +25,23 @@ class AdminListSerializer(serializers.Serializer):
 class AdminDetailSerializer(AdminListSerializer):
     """Serializer for detailed admin user view"""
 
-    class _NucleoSummarySerializer(serializers.Serializer):
+    class _AdminNucleoSummarySerializer(serializers.Serializer):
         id = serializers.UUIDField(read_only=True)
         name = serializers.CharField(read_only=True)
         abbreviation = serializers.CharField(read_only=True)
 
-    class _CourseSummarySerializer(serializers.Serializer):
+    class _AdminCourseSummarySerializer(serializers.Serializer):
         id = serializers.UUIDField(read_only=True)
         name = serializers.CharField(read_only=True)
         abbreviation = serializers.CharField(read_only=True)
 
     nucleos = serializers.ListField(
-        child=_NucleoSummarySerializer(),
+        child=_AdminNucleoSummarySerializer(),
         read_only=True,
         help_text="List of nucleus associated with the admin (only for 'admin_nucleo' role)",
     )
     courses = serializers.ListField(
-        child=_CourseSummarySerializer(),
+        child=_AdminCourseSummarySerializer(),
         read_only=True,
         help_text="List of courses associated with the admin (only for 'admin_nucleo' role)",
     )

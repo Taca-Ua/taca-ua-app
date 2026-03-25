@@ -45,6 +45,7 @@ class ModalityTypeSnapshotItem(SnapshotBase):
     """A single modality-type record."""
 
     class EscaloType(SnapshotBase):
+        name: str
         min_participants: Optional[int] = None
         max_participants: Optional[int] = None
         points: Optional[List[int]] = None

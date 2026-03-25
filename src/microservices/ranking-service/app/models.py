@@ -3,7 +3,7 @@ SQLAlchemy models for Ranking Service.
 Schema: ranking
 """
 
-from sqlalchemy import ARRAY, UUID, Column, Integer
+from sqlalchemy import ARRAY, UUID, Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from taca_outbox.models import create_outbox_model
 
@@ -21,6 +21,7 @@ class ModalityTypeEscalao(Base):
 
     _id = Column(Integer, primary_key=True, autoincrement=True)
     modality_type_id = Column(UUID(as_uuid=True))
+    name = Column(String, nullable=False)
     min_participants = Column(Integer, nullable=True)
     max_participants = Column(Integer, nullable=True)
     points = Column(ARRAY(Integer), nullable=False)

@@ -177,6 +177,7 @@ class RankingRebuildService(BaseRebuildService):
                         min_participants=escalao.min_participants,
                         max_participants=escalao.max_participants,
                         points=escalao.points,
+                        name=escalao.name,
                     )
                 )
         self.db.flush()

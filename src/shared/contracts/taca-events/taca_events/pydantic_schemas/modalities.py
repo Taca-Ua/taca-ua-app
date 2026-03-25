@@ -132,6 +132,7 @@ class CourseDeletedV1(EventSchema):
 # ModalityType
 # ================================================================== #
 class _EscalaoData(BaseModel):
+    name: str
     min_participants: Optional[int] = None
     max_participants: Optional[int] = None
     points: list[int]

@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import List
+from typing import Dict, List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -47,7 +47,9 @@ def _students_scope_query(db: Session, admin_id: str = None):
     return q
 
 
-def _emit_student_is_member_update(db: Session, student: Student, is_member: bool) -> None:
+def _emit_student_is_member_update(
+    db: Session, student: Student, is_member: bool
+) -> None:
     event = StudentUpdatedV1.create(
         aggregate_id=student.id,
         data=StudentUpdatedData(
@@ -286,8 +288,8 @@ def delete_student(student_id: UUID, db: Session = Depends(get_db_session)):
     logger.info(f"Deleted student: {student_id}")
 
 
-@router.post("/students/batch-get", response_model=List[StudentResponse])
+@router.post("/students/batch-get", response_model=Dict[str, StudentResponse])
 def get_students_by_ids(student_ids: List[UUID], db: Session = Depends(get_db_session)):
     """Get multiple students by their IDs"""
     students = db.query(Student).filter(Student.id.in_(student_ids)).all()
-    return [student.to_dict() for student in students]
+    return {str(student.id): student.to_dict() for student in students}
