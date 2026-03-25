@@ -50,6 +50,7 @@ class ModalityTypeDTO:
     id: UUID
     name: str
     description: str
+    tournament_competitor_type: str
     escaloes: List[_EscalaDTO]
     is_playoff: bool = False
     created_by: Optional[str] = None

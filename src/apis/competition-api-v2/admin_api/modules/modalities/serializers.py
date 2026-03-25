@@ -1,20 +1,28 @@
 from rest_framework import serializers
 
-from ..modality_types.serializers import ModalityTypeListSerializer
+
+# Helper serializers
+class _ModalityTypeSummarySerializer(serializers.Serializer):
+    """Serializer for modality type summary"""
+
+    id = serializers.UUIDField()
+    name = serializers.CharField()
 
 
+# Response serializers
 class ModalityListSerializer(serializers.Serializer):
     """Serializer for listing modalities"""
 
     id = serializers.UUIDField()
     name = serializers.CharField()
-    modality_type = ModalityTypeListSerializer()
+    modality_type = _ModalityTypeSummarySerializer()
 
 
 class ModalitySerializer(ModalityListSerializer):
     """Serializer for retrieving a modality"""
 
 
+# Request serializers
 class ModalityCreateSerializer(serializers.Serializer):
     """Serializer for creating a modality"""
 

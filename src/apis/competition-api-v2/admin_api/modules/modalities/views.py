@@ -14,6 +14,7 @@ from .serializers import (
     ModalitySerializer,
     ModalityUpdateSerializer,
 )
+from .service import modalities_service
 
 
 # Views
@@ -32,19 +33,22 @@ from .serializers import (
 )
 class ModalityListCreateView(APIView):
     def get(self, request: Request):
-        return Response(
-            {"detail": "Listing modalities is not implemented yet."},
-            status=status.HTTP_200_OK,
-        )
+        modalities = modalities_service.list_modalities()
+
+        serializer = ModalitySerializer(modalities, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request: Request):
         # Serialize input data
         serializer = ModalityCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        return Response(
-            {"detail": "Modality created successfully."}, status=status.HTTP_201_CREATED
+        modality = modalities_service.create_modality(
+            name=serializer.validated_data["name"],
+            modality_type_id=str(serializer.validated_data.get("modality_type_id")),
         )
+        response_serializer = ModalitySerializer(modality)
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
@@ -67,25 +71,32 @@ class ModalityListCreateView(APIView):
 )
 class ModalityDetailView(APIView):
     def get(self, request, modality_id):
-        return Response(
-            {"detail": "Getting modality details is not implemented yet."},
-            status=status.HTTP_200_OK,
-        )
+        modality = modalities_service.get_modality(modality_id)
+
+        serializer = ModalitySerializer(modality)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, modality_id):
         # Serialize input data
         serializer = ModalityUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        return Response(
-            {"detail": "Modality updated successfully."}, status=status.HTTP_200_OK
+        modality = modalities_service.update_modality(
+            modality_id=modality_id,
+            name=serializer.validated_data.get("name"),
+            modality_type_id=(
+                str(serializer.validated_data.get("modality_type_id"))
+                if serializer.validated_data.get("modality_type_id")
+                else None
+            ),
         )
 
+        response_serializer = ModalitySerializer(modality)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
+
     def delete(self, request, modality_id):
-        return Response(
-            {"detail": "Modality deleted successfully."},
-            status=status.HTTP_204_NO_CONTENT,
-        )
+        modalities_service.delete_modality(modality_id)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # URL patterns

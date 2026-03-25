@@ -7,6 +7,7 @@ from rest_framework import serializers
 
 # Helpers
 class _NucleoSummarySerializer(serializers.Serializer):
+    id = serializers.UUIDField()
     name = serializers.CharField()
     abbreviation = serializers.CharField()
 
