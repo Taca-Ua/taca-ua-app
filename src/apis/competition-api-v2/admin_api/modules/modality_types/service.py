@@ -22,6 +22,7 @@ class ModalityType:
     description: str
     is_playoff: bool
     escaloes: List[_Escalao]
+    tournament_competitor_type: str
 
 
 class ModalityTypesService:
@@ -43,6 +44,7 @@ class ModalityTypesService:
                 )
                 for escalao in modality.escaloes
             ],
+            tournament_competitor_type=modality.tournament_competitor_type,
         )
 
     def list_modality_types(self, include_playoff=False) -> List[ModalityType]:
@@ -59,7 +61,12 @@ class ModalityTypesService:
         ]
 
     def create_modality_type(
-        self, name, description="", escaloes=None, is_playoff=False
+        self,
+        name,
+        description="",
+        escaloes=None,
+        is_playoff=False,
+        tournament_competitor_type=None,
     ) -> List[ModalityType]:
         """Create a new modality type
 
@@ -68,12 +75,14 @@ class ModalityTypesService:
             description (str, optional): Description of the modality type. Defaults to "".
             escaloes (list, optional): List of escaloes for the modality type. Defaults to None.
             is_playoff (bool, optional): Whether the modality type is a playoff. Defaults to False.
+            tournament_competitor_type (str, optional): Type of competitors in the tournament. Defaults to None.
         """
         answer = modalities_service_client.modality_types.create_modality_type(
             name=name,
             description=description,
             escaloes=escaloes or [],
             is_playoff=is_playoff,
+            tournament_competitor_type=tournament_competitor_type,
         )
         return self._build_admin_from_modalities_answer(answer)
 
@@ -95,6 +104,7 @@ class ModalityTypesService:
         description=None,
         escaloes=None,
         is_playoff=None,
+        tournament_competitor_type=None,
     ):
         """Update an existing modality type
 
@@ -104,6 +114,7 @@ class ModalityTypesService:
             description (str, optional): New description for the modality type. Defaults to None.
             escaloes (list, optional): New list of escaloes for the modality type. Defaults to None.
             is_playoff (bool, optional): Whether the modality type is a playoff. Defaults to None.
+            tournament_competitor_type (str, optional): Type of competitors in the tournament. Defaults to None.
         """
         answer = modalities_service_client.modality_types.update_modality_type(
             modality_type_id=modality_type_id,
@@ -111,6 +122,7 @@ class ModalityTypesService:
             description=description,
             escaloes=escaloes,
             is_playoff=is_playoff,
+            tournament_competitor_type=tournament_competitor_type,
         )
         return self._build_admin_from_modalities_answer(answer)
 

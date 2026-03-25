@@ -382,6 +382,7 @@ class ModalityTypesModalitiesService(BaseService):
         description: str = "",
         escaloes: List[str] = None,
         is_playoff: bool = False,
+        tournament_competitor_type: str = None,
     ) -> ModalityTypeDTO:
         """Create a new modality type
 
@@ -402,6 +403,7 @@ class ModalityTypesModalitiesService(BaseService):
             "description": description,
             "escaloes": escaloes,
             "is_playoff": is_playoff,
+            "tournament_competitor_type": tournament_competitor_type,
         }
         modality_type_data = self.post("/modality-types", data)
         return ModalityTypeDTO(**modality_type_data)
@@ -437,6 +439,7 @@ class ModalityTypesModalitiesService(BaseService):
         description: Optional[str] = None,
         escaloes: Optional[List[str]] = None,
         is_playoff: Optional[bool] = None,
+        tournament_competitor_type: Optional[str] = None,
     ) -> ModalityTypeDTO:
         """Update a modality type
 
@@ -446,6 +449,7 @@ class ModalityTypesModalitiesService(BaseService):
             description (Optional[str], optional): New description of the modality type. Defaults to None.
             escaloes (Optional[List[str]], optional): New list of escaloes. Defaults to None.
             is_playoff (Optional[bool], optional): New value for the is_playoff flag. Defaults to None.
+            tournament_competitor_type (Optional[str], optional): New type of competitors in the tournament. Defaults to None.
         Returns:
             ModalityTypeDTO: Updated ModalityTypeDTO object
         """
@@ -458,6 +462,8 @@ class ModalityTypesModalitiesService(BaseService):
             data["escaloes"] = escaloes
         if is_playoff is not None:
             data["is_playoff"] = is_playoff
+        if tournament_competitor_type is not None:
+            data["tournament_competitor_type"] = tournament_competitor_type
 
         modality_type_data = self.put(f"/modality-types/{modality_type_id}", data)
         return ModalityTypeDTO(**modality_type_data)
