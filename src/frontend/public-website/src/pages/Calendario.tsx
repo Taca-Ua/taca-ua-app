@@ -15,6 +15,12 @@ function Calendario() {
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('calendar');
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
+  const [selectedDay, setSelectedDay] = useState<Date>(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
+  const [dayPage, setDayPage] = useState(1);
 
   useEffect(() => {
     const fetchMatches = async () => {
@@ -22,15 +28,30 @@ function Calendario() {
         setLoading(true);
         setError(null);
 
-        const params = {
-          page: viewMode === 'calendar' ? 1 : page,
-          page_size: viewMode === 'calendar' ? 100 : 20, // Fetch more for calendar view
-          ...(statusFilter !== 'all' && { status: statusFilter }),
-        };
-
-        const data = await matchesApi.getAll(params);
-        setMatches(data.items);
-        setTotalPages(Math.ceil(data.total / data.page_size));
+        if (viewMode === 'calendar') {
+          // Fetch all pages (API max page_size is 100)
+          const PAGE_SIZE = 100;
+          const first = await matchesApi.getAll({ page: 1, page_size: PAGE_SIZE });
+          const totalPages = Math.ceil(first.total / PAGE_SIZE);
+          if (totalPages <= 1) {
+            setMatches(first.items);
+          } else {
+            const rest = await Promise.all(
+              Array.from({ length: totalPages - 1 }, (_, i) =>
+                matchesApi.getAll({ page: i + 2, page_size: PAGE_SIZE })
+              )
+            );
+            setMatches([...first.items, ...rest.flatMap(r => r.items)]);
+          }
+        } else {
+          const data = await matchesApi.getAll({
+            page,
+            page_size: 20,
+            ...(statusFilter !== 'all' && { status: statusFilter }),
+          });
+          setMatches(data.items);
+          setTotalPages(Math.ceil(data.total / data.page_size));
+        }
       } catch (err) {
         console.error('Error fetching matches:', err);
         setError('Erro ao carregar jogos. Por favor, tente novamente.');
@@ -141,7 +162,7 @@ function Calendario() {
 
     // Build "A vs B vs C" format
     const participantNames = match.participants.map(
-      (p) => p.participant_name || 'Participante'
+      (p) => p.name || 'Participante'
     );
     return participantNames.join(' vs ');
   };
@@ -188,21 +209,23 @@ function Calendario() {
               </button>
             </div>
 
-            {/* Status Filter */}
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setPage(1);
-              }}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-            >
-              <option value="all">Todos os Estados</option>
-              <option value="scheduled">Agendado</option>
-              <option value="in_progress">Em Curso</option>
-              <option value="finished">Finalizado</option>
-              <option value="cancelled">Cancelado</option>
-            </select>
+            {/* Status Filter - List view only */}
+            {viewMode === 'list' && (
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setPage(1);
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              >
+                <option value="all">Todos os Estados</option>
+                <option value="scheduled">Agendado</option>
+                <option value="in_progress">Em Curso</option>
+                <option value="finished">Finalizado</option>
+                <option value="cancelled">Cancelado</option>
+              </select>
+            )}
           </div>
 
           {/* Error Message */}
@@ -333,106 +356,159 @@ function Calendario() {
 
               {/* Calendar View */}
               {viewMode === 'calendar' && (
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                  {/* Calendar Header */}
-                  <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-b">
-                    <button
-                      onClick={prevMonth}
-                      className="p-2 hover:bg-gray-200 rounded-md transition-colors"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
-                    <h2 className="text-xl font-semibold text-gray-800">
-                      {monthNames[currentMonth]} {currentYear}
-                    </h2>
-                    <button
-                      onClick={nextMonth}
-                      className="p-2 hover:bg-gray-200 rounded-md transition-colors"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
-
+                <div className="flex flex-col lg:flex-row gap-6">
                   {/* Calendar Grid */}
-                  <div className="p-4">
-                    {/* Day Names */}
-                    <div className="grid grid-cols-7 mb-2">
-                      {dayNames.map((day) => (
-                        <div
-                          key={day}
-                          className="text-center text-sm font-semibold text-gray-600 py-2"
-                        >
-                          {day}
-                        </div>
-                      ))}
+                  <div className="lg:w-3/5 bg-white rounded-lg shadow overflow-hidden">
+                    {/* Calendar Header */}
+                    <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-b">
+                      <button
+                        onClick={prevMonth}
+                        className="p-2 hover:bg-gray-200 rounded-md transition-colors"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                      <h2 className="text-xl font-semibold text-gray-800">
+                        {monthNames[currentMonth]} {currentYear}
+                      </h2>
+                      <button
+                        onClick={nextMonth}
+                        className="p-2 hover:bg-gray-200 rounded-md transition-colors"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
                     </div>
 
-                    {/* Calendar Days */}
-                    <div className="grid grid-cols-7 gap-2">
-                      {/* Empty cells for days before month starts */}
-                      {Array.from({ length: getFirstDayOfMonth(currentMonth, currentYear) }).map((_, idx) => (
-                        <div key={`empty-${idx}`} className="aspect-square"></div>
-                      ))}
+                    {/* Calendar Grid */}
+                    <div className="p-4">
+                      <div className="grid grid-cols-7 mb-2">
+                        {dayNames.map((day) => (
+                          <div key={day} className="text-center text-sm font-semibold text-gray-600 py-2">
+                            {day}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="grid grid-cols-7 gap-1">
+                        {Array.from({ length: getFirstDayOfMonth(currentMonth, currentYear) }).map((_, idx) => (
+                          <div key={`empty-${idx}`} className="aspect-square"></div>
+                        ))}
+                        {Array.from({ length: getDaysInMonth(currentMonth, currentYear) }).map((_, idx) => {
+                          const day = idx + 1;
+                          const date = new Date(currentYear, currentMonth, day);
+                          date.setHours(0, 0, 0, 0);
+                          const dayMatches = getMatchesForDate(date);
+                          const isCurrentDay = isToday(day);
+                          const isSelected =
+                            selectedDay.getDate() === day &&
+                            selectedDay.getMonth() === currentMonth &&
+                            selectedDay.getFullYear() === currentYear;
 
-                      {/* Days of the month */}
-                      {Array.from({ length: getDaysInMonth(currentMonth, currentYear) }).map((_, idx) => {
-                        const day = idx + 1;
-                        const date = new Date(currentYear, currentMonth, day);
-                        const dayMatches = getMatchesForDate(date);
-                        const isCurrentDay = isToday(day);
+                          return (
+                            <button
+                              key={day}
+                              type="button"
+                              onClick={() => { setSelectedDay(date); setDayPage(1); }}
+                              className={`aspect-square flex flex-col items-center justify-center rounded-lg border-2 transition-colors ${
+                                isSelected
+                                  ? 'border-teal-500 bg-teal-50'
+                                  : isCurrentDay
+                                  ? 'border-teal-200 bg-teal-50/50 hover:border-teal-400'
+                                  : 'border-transparent hover:border-gray-300 bg-white'
+                              }`}
+                            >
+                              <span className={`text-sm font-semibold ${
+                                isSelected || isCurrentDay ? 'text-teal-600' : 'text-gray-700'
+                              }`}>
+                                {day}
+                              </span>
+                              {dayMatches.length > 0 && (
+                                <span className="mt-0.5 w-2 h-2 rounded-full bg-green-500 block"></span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
 
+                    {/* Legend */}
+                    <div className="px-6 py-3 bg-gray-50 border-t flex items-center gap-4 text-sm text-gray-600">
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-green-500 inline-block"></span>
+                        Com jogos
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Side Panel */}
+                  <div className="lg:w-2/5">
+                    <div className="bg-white rounded-lg shadow p-5 sticky top-4">
+                      <h3 className="text-lg font-bold text-gray-800 mb-1 capitalize">
+                        {selectedDay.toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                      </h3>
+                      {(() => {
+                        const dayMatches = getMatchesForDate(selectedDay);
+                        const GAMES_PER_PAGE = 10;
+                        const totalDayPages = Math.ceil(dayMatches.length / GAMES_PER_PAGE);
+                        const paginated = dayMatches.slice(
+                          (dayPage - 1) * GAMES_PER_PAGE,
+                          dayPage * GAMES_PER_PAGE
+                        );
+                        if (dayMatches.length === 0) {
+                          return (
+                            <p className="text-gray-500 text-sm py-6 text-center">
+                              Não há jogos neste dia.
+                            </p>
+                          );
+                        }
                         return (
-                          <div
-                            key={day}
-                            className={`min-h-[85px] border rounded-lg p-1 ${
-                              isCurrentDay
-                                ? 'bg-teal-50 border-teal-500'
-                                : 'bg-white border-gray-200 hover:border-gray-300'
-                            } transition-colors overflow-hidden`}
-                          >
-                            <div className={`text-xs font-bold mb-1 px-1 ${
-                              isCurrentDay ? 'text-teal-600' : 'text-gray-700'
-                            }`}>
-                              {day}
-                            </div>
-                            {dayMatches.length > 0 && (
-                              <div className="flex flex-col gap-1">
-                                {dayMatches.slice(0, 3).map((match) => (
-                                  <Link
-                                    key={match.match_id}
-                                    to={`/torneios/${match.tournament_id}`}
-                                    className="block text-[10px] leading-tight bg-teal-100 text-teal-800 px-1.5 py-0.5 rounded truncate hover:bg-teal-200 transition-colors"
-                                    title={`${match.modality_name || 'Jogo'}: ${match.tournament_name}`}
-                                  >
-                                    <span className="font-semibold">{formatTime(match.start_time)}</span>
+                          <>
+                            <p className="text-sm text-gray-500 mb-3">{dayMatches.length} jogo{dayMatches.length !== 1 ? 's' : ''}</p>
+                            <div className="space-y-2">
+                              {paginated.map((match) => (
+                                <Link
+                                  key={match.match_id}
+                                  to={`/torneios/${match.tournament_id}`}
+                                  className="block p-3 bg-gray-50 rounded-lg hover:bg-teal-50 transition-colors border border-transparent hover:border-teal-200"
+                                >
+                                  <div className="flex justify-between items-start mb-1">
+                                    <span className="font-semibold text-sm text-gray-800">
+                                      {formatTime(match.start_time)}
+                                    </span>
                                     {match.modality_name && (
-                                      <span className="opacity-75"> - {match.modality_name}</span>
+                                      <span className="text-xs text-teal-600 font-medium">{match.modality_name}</span>
                                     )}
-                                  </Link>
-                                ))}
-                                {dayMatches.length > 3 && (
-                                  <div className="text-[9px] text-gray-500 px-1 font-medium italic">
-                                    +{dayMatches.length - 3} mais...
                                   </div>
-                                )}
+                                  <p className="text-sm text-gray-700">{getMatchTitle(match)}</p>
+                                  <p className="text-xs text-gray-500 mt-0.5">{match.location}</p>
+                                </Link>
+                              ))}
+                            </div>
+                            {totalDayPages > 1 && (
+                              <div className="mt-4 flex justify-between items-center">
+                                <button
+                                  onClick={() => setDayPage(p => Math.max(1, p - 1))}
+                                  disabled={dayPage === 1}
+                                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  Anterior
+                                </button>
+                                <span className="text-sm text-gray-600">{dayPage} / {totalDayPages}</span>
+                                <button
+                                  onClick={() => setDayPage(p => Math.min(totalDayPages, p + 1))}
+                                  disabled={dayPage === totalDayPages}
+                                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  Próxima
+                                </button>
                               </div>
                             )}
-                          </div>
+                          </>
                         );
-                      })}
+                      })()}
                     </div>
-                  </div>
-
-                  {/* Calendar Legend */}
-                  <div className="px-6 py-4 bg-gray-50 border-t">
-                    <p className="text-sm text-gray-600">
-                      <span className="inline-block w-3 h-3 bg-teal-100 rounded mr-2"></span>
-                      Jogos agendados
-                    </p>
                   </div>
                 </div>
               )}
