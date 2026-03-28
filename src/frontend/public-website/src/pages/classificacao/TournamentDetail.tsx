@@ -203,7 +203,14 @@ function TournamentDetailPage() {
                             </td>
                           </tr>
                         ) : (
-                          standings.map((standing, index) => (
+                          [...standings]
+                            .sort((a, b) => {
+                              const rankA = a.rank ?? Infinity;
+                              const rankB = b.rank ?? Infinity;
+                              if (rankA !== rankB) return rankA - rankB;
+                              return (b.points ?? 0) - (a.points ?? 0);
+                            })
+                            .map((standing, index) => (
                             <tr key={standing.id} className="hover:bg-gray-50">
                               <td className="px-6 py-4">
                                 <span className="font-semibold text-gray-700">
