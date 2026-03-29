@@ -636,17 +636,17 @@ class ModalitiesService(BaseService):
         """
         self.delete(f"/students/{student_id}")
 
-    def get_students_by_ids(self, student_ids: List[str]) -> List[StudentDTO]:
+    def get_students_by_ids(self, student_ids: List[str]) -> Dict[str, StudentDTO]:
         """Get multiple students by their IDs
 
         Args:
             student_ids (List[str]): List of student IDs
 
         Returns:
-            List[StudentDTO]: List of StudentDTO objects representing the students
+            Dict[str, StudentDTO]: Dictionary mapping student IDs to StudentDTO objects
         """
         students_data = self.post("/students/batch-get", student_ids)
-        return [StudentDTO(**student) for student in students_data]
+        return {id: StudentDTO(**student) for id, student in students_data.items()}
 
     # ==================== STAFF METHODS ====================
     def list_staff(self) -> List[StaffDTO]:
@@ -780,17 +780,17 @@ class ModalitiesService(BaseService):
         team_data = self.get(f"/teams/{team_id}")
         return TeamDTO(**team_data)
 
-    def get_teams_by_ids(self, team_ids: List[str]) -> List[TeamDTO]:
+    def get_teams_by_ids(self, team_ids: List[str]) -> Dict[str, TeamDTO]:
         """Get multiple teams by their IDs
 
         Args:
             team_ids (List[str]): List of team IDs
 
         Returns:
-            List[TeamDTO]: List of TeamDTO objects
+            Dict[str, TeamDTO]: Dictionary mapping team IDs to TeamDTO objects
         """
         teams_data = self.post("/teams/batch-get", team_ids)
-        return [TeamDTO(**team) for team in teams_data]
+        return {id: TeamDTO(**team) for id, team in teams_data.items()}
 
     def update_team(
         self,

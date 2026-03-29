@@ -17,6 +17,7 @@ class CompetitorDTO:
     competitor_type: str  # "team" or "athlete"
     competitor: Dict[str, UUID]  # {"team_id": UUID} or {"athlete_id": UUID}
     created_at: str  # ISO formatted datetime string
+    competitor_entity_id: Optional[UUID] = None  # ID of the team or athlete entity
 
 
 @dataclass

@@ -129,11 +129,11 @@ class TournamentDetailView(RoleRequiredMixin, APIView):
         try:
             tournament = tournaments_service_client.get_tournament(tournament_id)
 
-            # Enrich tournament info
-            enricher_service.complete_tournament_info(tournament)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
+        # Enrich tournament info
+        enricher_service.complete_tournament_info(tournament)
         serializer = TournamentDetailSerializer(tournament)
         return Response(serializer.data, status=status.HTTP_200_OK)
 

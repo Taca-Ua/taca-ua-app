@@ -71,12 +71,12 @@ class EnricherService:
         teams_data_map = {}
         athletes_data_map = {}
         if team_ids:
-            teams_data = modalities_service_client.get_teams_by_ids(team_ids)
-            teams_data_map = {team.id: team for team in teams_data}
+            teams_data_map = modalities_service_client.get_teams_by_ids(team_ids)
 
         if athlete_ids:
-            athletes_data = modalities_service_client.get_students_by_ids(athlete_ids)
-            athletes_data_map = {athlete.id: athlete for athlete in athletes_data}
+            athletes_data_map = modalities_service_client.get_students_by_ids(
+                athlete_ids
+            )
 
         for competitor in tournament.competitors:
             if competitor.competitor_type == "team":
@@ -132,11 +132,9 @@ class EnricherService:
 
         # Fetch all athletes data in a single call
         if athlete_ids_to_fetch:
-            students_data = modalities_service_client.get_students_by_ids(
+            students_data_map = modalities_service_client.get_students_by_ids(
                 list(athlete_ids_to_fetch.keys())
             )
-            students_data_map = {student.id: student for student in students_data}
-
             for athlete_id, participants in athlete_ids_to_fetch.items():
                 for participant in participants:
                     participant.athlete = students_data_map.get(athlete_id, None)
@@ -144,11 +142,9 @@ class EnricherService:
 
         # Fetch all teams data in a single call
         if teams_ids_to_fetch:
-            teams_data = modalities_service_client.get_teams_by_ids(
+            teams_data_map = modalities_service_client.get_teams_by_ids(
                 list(teams_ids_to_fetch.keys())
             )
-            teams_data_map = {team.id: team for team in teams_data}
-
             for team_id, participants in teams_ids_to_fetch.items():
                 for participant in participants:
                     participant.athlete = None
