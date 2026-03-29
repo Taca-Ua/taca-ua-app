@@ -62,15 +62,9 @@ export class ApiClient {
 
   async post<T>(endpoint: string, data: unknown): Promise<T> {
     const isFormData = data instanceof FormData;
-    
-    // Precisamos do await aqui para obter os headers de autenticação
     const authHeader = await this.getAuthHeader();
+    const headers: Record<string, string> = { ...authHeader };
 
-    const headers: Record<string, string> = {
-      ...authHeader,
-    };
-
-    // Se for FormData (ficheiro), o fetch define o Content-Type automaticamente com o boundary correto
     if (!isFormData) {
       headers['Content-Type'] = 'application/json';
     }
@@ -82,33 +76,31 @@ export class ApiClient {
     });
 
     if (!response.ok) {
-      const error: ApiError = await response.json().catch(() => ({
-        error: 'Network error',
-      }));
-      const new_error = new Error(error.error || 'API request failed');
-      throw new_error;
+      const error = await response.json().catch(() => ({ error: 'API request failed' }));
+      throw new Error(error.error || 'Network error');
     }
-
     return response.json();
   }
 
   async put<T>(endpoint: string, data: unknown): Promise<T> {
+    const isFormData = data instanceof FormData;
+    const authHeader = await this.getAuthHeader();
+    const headers: Record<string, string> = { ...authHeader };
+
+    if (!isFormData) {
+      headers['Content-Type'] = 'application/json';
+    }
+
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(await this.getAuthHeader()),
-      },
-      body: JSON.stringify(data),
+      headers,
+      body: isFormData ? (data as FormData) : JSON.stringify(data),
     });
 
     if (!response.ok) {
-      const error: ApiError = await response.json().catch(() => ({
-        error: 'Network error',
-      }));
-      throw new Error(error.error || 'API request failed');
+      const error = await response.json().catch(() => ({ error: 'API request failed' }));
+      throw new Error(error.error || 'Network error');
     }
-
     return response.json();
   }
 
