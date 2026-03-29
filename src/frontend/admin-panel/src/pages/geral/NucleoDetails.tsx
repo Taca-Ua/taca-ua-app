@@ -17,9 +17,13 @@ const NucleoDetails = () => {
   const { notify } = useNotification();
   const [nucleoCourses, setNucleoCourses] = useState<Course[]>([]);
 
+  // Estados para Edição
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editedAbbreviation, setEditedAbbreviation] = useState('');
   const [editedName, setEditedName] = useState('');
+  const [editedLogoFile, setEditedLogoFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -33,7 +37,7 @@ const NucleoDetails = () => {
         setNucleoCourses(allCourses.filter(c => c.nucleo.id === String(id)));
       } catch (err) {
         console.error('Failed to fetch núcleo:', err);
-        notify('Não foi possível carregar os dados do núcleo. Tente recarregar a página.', 'error');
+        notify('Não foi possível carregar os dados do núcleo.', 'error');
         navigate('/geral/nucleos');
       } finally {
         setLoading(false);
@@ -43,35 +47,47 @@ const NucleoDetails = () => {
     if (id) {
       fetchData();
     }
-  }, [id, navigate]);
+  }, [id, navigate, notify]);
 
   const handleEdit = () => {
     if (!nucleus) return;
     setEditedAbbreviation(nucleus.abbreviation);
     setEditedName(nucleus.name);
+    setPreviewUrl(nucleus.logo_url || null);
+    setEditedLogoFile(null);
     setIsEditModalOpen(true);
   };
 
   const handleSave = async () => {
-    if (!editedAbbreviation.trim()) {
-      notify('Abreviatura é obrigatória', 'error');
-      return;
-    }
-    if (!editedName.trim()) {
-      notify('Nome é obrigatório', 'error');
+    if (!editedAbbreviation.trim() || !editedName.trim()) {
+      notify('Campos obrigatórios em falta.', 'error');
       return;
     }
 
     try {
-      const updatedNucleus = await nucleosApi.update(String(id), {
-        abbreviation: editedAbbreviation,
-        name: editedName,
-      });
+      const formData = new FormData();
+      formData.append('name', editedName.trim());
+      formData.append('abbreviation', editedAbbreviation.trim());
+      
+      if (editedLogoFile) {
+        formData.append('logo', editedLogoFile);
+      }
+
+      const updatedNucleus = await nucleosApi.update(String(id), formData);
       setNucleus(updatedNucleus);
       setIsEditModalOpen(false);
+      notify('Núcleo atualizado com sucesso!', 'success');
     } catch (err) {
-      console.error('Failed to update course:', err);
-      notify('Não foi possível guardar as alterações ao núcleo. Tente novamente.', 'error');
+      console.error('Failed to update nucleus:', err);
+      notify('Não foi possível guardar as alterações.', 'error');
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setEditedLogoFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
     }
   };
 
@@ -83,10 +99,11 @@ const NucleoDetails = () => {
     try {
       setDeleting(true);
       await nucleosApi.delete(String(id));
+      notify('Núcleo eliminado com sucesso.', 'success');
       navigate('/geral/nucleos');
     } catch (err) {
-      console.error('Failed to delete course:', err);
-      notify('Não foi possível eliminar o núcleo. Poderá ter cursos ou membros associados.', 'error');
+      console.error('Failed to delete nucleus:', err);
+      notify('Não foi possível eliminar o núcleo.', 'error');
     } finally {
       setDeleting(false);
     }
@@ -126,15 +143,19 @@ const NucleoDetails = () => {
             <div>
               <label className="block text-teal-500 font-medium mb-2">Logo</label>
               <div className="flex items-center gap-4">
-                <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-teal-500">
-					<span className="text-teal-600 font-bold text-2xl">{nucleus.abbreviation}</span>
+                <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-teal-500 shadow-sm">
+                  {nucleus.logo_url ? (
+                    <img src={nucleus.logo_url} alt="Logo" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-teal-600 font-bold text-2xl">{nucleus.abbreviation.substring(0, 3).toUpperCase()}</span>
+                  )}
                 </div>
               </div>
             </div>
 
             <div>
-              <label className="block text-teal-500 font-medium mb-2">Abreviatura <HelpTooltip text="Sigla ou código curto do núcleo, ex: NEECT, NEEEC. Utilizado como identificador visual no sistema." className="ml-1" /></label>
-              <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
+              <label className="block text-teal-500 font-medium mb-2">Abreviatura <HelpTooltip text="Sigla do núcleo." className="ml-1" /></label>
+              <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800 font-medium uppercase">
                 {nucleus.abbreviation}
               </div>
             </div>
@@ -187,20 +208,33 @@ const NucleoDetails = () => {
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
-
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Editar Núcleo</h2>
 
             <div className="space-y-4">
+              <div className="flex flex-col items-center mb-4">
+                <div className="w-20 h-20 rounded-full border-2 border-teal-500 overflow-hidden mb-3 bg-gray-50 flex items-center justify-center">
+                  {previewUrl ? (
+                    <img src={previewUrl} className="w-full h-full object-cover" alt="Preview" />
+                  ) : (
+                    <span className="text-gray-400 text-xs">Sem Logo</span>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100"
+                />
+              </div>
+
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
-                  Abreviatura <HelpTooltip text="Sigla ou código curto do núcleo. Utilizado como identificador visual." className="ml-1" /> <span className="text-red-500">*</span>
+                  Abreviatura <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={editedAbbreviation}
                   onChange={(e) => setEditedAbbreviation(e.target.value)}
-                  placeholder="Ex: MECT, LEI, LECI"
-                  required
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
               </div>
@@ -213,8 +247,6 @@ const NucleoDetails = () => {
                   type="text"
                   value={editedName}
                   onChange={(e) => setEditedName(e.target.value)}
-                  placeholder="Digite o nome completo"
-                  required
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
               </div>
@@ -222,14 +254,11 @@ const NucleoDetails = () => {
 
             <div className="flex gap-4 mt-6">
               <button
-                onClick={() => {
-                  setIsEditModalOpen(false);
-                }}
+                onClick={() => setIsEditModalOpen(false)}
                 className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md`}
               >
                 Cancelar
               </button>
-
               <button
                 onClick={handleSave}
                 className={`flex-1 px-4 py-2 ${btn.primary} rounded-md`}
@@ -237,7 +266,6 @@ const NucleoDetails = () => {
                 Guardar
               </button>
             </div>
-
           </div>
         </div>
       )}
@@ -249,11 +277,7 @@ const NucleoDetails = () => {
         confirmLabel="Eliminar"
         variant="danger"
         loading={deleting}
-        onCancel={() => {
-          if (!deleting) {
-            setIsDeleteModalOpen(false);
-          }
-        }}
+        onCancel={() => !deleting && setIsDeleteModalOpen(false)}
         onConfirm={confirmDelete}
       />
     </div>
