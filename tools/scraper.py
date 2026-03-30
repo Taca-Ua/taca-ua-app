@@ -4,7 +4,7 @@ import os
 from dataclasses import dataclass
 from typing import List, Tuple
 
-import httpx
+import requests as httpx
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
