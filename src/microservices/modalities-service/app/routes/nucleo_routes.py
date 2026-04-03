@@ -43,6 +43,7 @@ def create_nucleo(nucleo_data: NucleoCreate, db: Session = Depends(get_db_sessio
         nucleo = Nucleo(
             name=nucleo_data.name,
             abbreviation=nucleo_data.abbreviation,
+            logo_url=nucleo_data.logo_url,
             created_by=DEFAULT_USER_ID,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
@@ -117,6 +118,8 @@ def update_nucleo(
     if nucleo_data.abbreviation is not None:
         nucleo.abbreviation = nucleo_data.abbreviation
         changes_made["abbreviation"] = nucleo_data.abbreviation
+    if nucleo_data.logo_url is not None:
+        nucleo.logo_url = nucleo_data.logo_url
     nucleo.updated_at = datetime.now(timezone.utc)
 
     try:
