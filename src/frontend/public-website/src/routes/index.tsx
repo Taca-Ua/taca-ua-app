@@ -3,6 +3,7 @@ import Home from '../pages/Home';
 import NotFound from '../pages/NotFound';
 import Regulamentos from '../pages/Regulamentos';
 import Calendario from '../pages/Calendario';
+import MatchDetailPage from '../pages/MatchDetail';
 import Tournaments from '../pages/classificacao/Tournaments';
 import TournamentDetailPage from '../pages/classificacao/TournamentDetail';
 import GeneralRankingPage from '../pages/classificacao/GeneralRanking';
@@ -18,6 +19,10 @@ export const router = createBrowserRouter([
   {
     path: '/calendario',
     element: <Calendario />
+  },
+  {
+    path: '/jogos/:id',
+    element: <MatchDetailPage />
   },
   {
     path: '/torneios',
