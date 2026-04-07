@@ -350,3 +350,25 @@ class ModalityRankingList(BaseModel):
     total: int = Field(
         ..., ge=0, description="Total number of course rankings in the result"
     )
+
+
+# ==================== Nucleo Schemas ====================
+
+
+class NucleoPublic(BaseModel):
+    """Schema for a nucleo (organisational unit)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    nucleo_id: UUID = Field(..., description="Unique identifier for the nucleo")
+    name: str = Field(..., description="Full name of the nucleo")
+    abbreviation: str = Field(..., description="Short abbreviation")
+
+
+class NucleoList(BaseModel):
+    """Schema for paginated list of nucleos."""
+
+    items: list[NucleoPublic] = Field(..., description="List of nucleos")
+    total: int = Field(..., ge=0, description="Total number of nucleos")
+    page: int = Field(..., ge=1, description="Current page number")
+    page_size: int = Field(..., ge=1, description="Number of items per page")
