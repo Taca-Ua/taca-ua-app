@@ -52,6 +52,25 @@ class TeamDetailList(BaseModel):
     page: int = Field(..., ge=1, description="Current page number")
     page_size: int = Field(..., ge=1, description="Number of items per page")
 
+class TeamMember(BaseModel):
+    """Schema for a team member (student) in a team."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    student_id: UUID = Field(..., description="Student identifier")
+    student_number: str = Field(..., description="Student number")
+    full_name: str = Field(..., description="Full name of the student")
+    course_name: str = Field(..., description="Course name")
+    course_abbreviation: str = Field(..., description="Course abbreviation")
+    added_at: datetime = Field(..., description="When the student joined the team")
+
+
+class TeamMemberList(BaseModel):
+    """Schema for list of team members."""
+
+    items: list[TeamMember] = Field(..., description="List of team members")
+    total: int = Field(..., ge=0, description="Total number of active members")
+
 
 # ==================== StudentDetailView Schemas ====================
 

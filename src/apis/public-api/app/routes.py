@@ -90,6 +90,42 @@ def get_team(
     return team
 
 
+@router.get(
+    "/teams/{team_id}/members",
+    response_model=schemas.TeamMemberList,
+    summary="Get team members",
+    description="Get the active members (students) belonging to a team",
+)
+def get_team_members(
+    team_id: UUID,
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve the active members of a specific team.
+
+    - **team_id**: Unique identifier of the team
+    """
+    team = crud.get_team_by_id(db=db, team_id=team_id)
+    if not team:
+        raise HTTPException(status_code=404, detail="Team not found")
+
+    rows = crud.get_team_members(db=db, team_id=team_id)
+    members = [
+        schemas.TeamMember(
+            student_id=student.student_id,
+            student_number=student.student_number,
+            full_name=student.full_name,
+            course_name=student.course_name,
+            course_abbreviation=student.course_abbreviation,
+            added_at=tp.added_at,
+        )
+        for tp, student in rows
+    ]
+
+    logger.info("team_members_retrieved", team_id=str(team_id), count=len(members))
+    return schemas.TeamMemberList(items=members, total=len(members))
+
+
 # ==================== Student Endpoints ====================
 
 

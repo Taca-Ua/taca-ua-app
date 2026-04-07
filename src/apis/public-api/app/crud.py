@@ -17,6 +17,7 @@ from taca_models import (
     Regulation,
     StudentDetailView,
     TeamDetailView,
+    TeamPlayer,
     TournamentDetailView,
     TournamentStandingsView,
 )
@@ -77,6 +78,28 @@ def get_team_by_id(db: Session, team_id: UUID) -> Optional[TeamDetailView]:
         Team detail or None if not found
     """
     return db.query(TeamDetailView).filter(TeamDetailView.team_id == team_id).first()
+
+
+def get_team_members(
+    db: Session, team_id: UUID
+) -> list[tuple[TeamPlayer, StudentDetailView]]:
+    """
+    Get active members of a team (removed_at IS NULL).
+
+    Args:
+        db: Database session
+        team_id: Team identifier
+
+    Returns:
+        List of (TeamPlayer, StudentDetailView) tuples
+    """
+    return (
+        db.query(TeamPlayer, StudentDetailView)
+        .join(StudentDetailView, TeamPlayer.student_id == StudentDetailView.student_id)
+        .filter(TeamPlayer.team_id == team_id, TeamPlayer.removed_at.is_(None))
+        .order_by(StudentDetailView.full_name)
+        .all()
+    )
 
 
 # ==================== Student Detail View Operations ====================
