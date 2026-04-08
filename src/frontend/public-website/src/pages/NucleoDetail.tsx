@@ -67,8 +67,16 @@ function NucleoDetailPage() {
           {/* Nucleo header */}
           {nucleo && (
             <div className="bg-white rounded-lg shadow p-6 mb-8 flex items-center gap-5">
-              <div className="w-16 h-16 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
-                <span className="text-teal-700 font-bold text-xl">{nucleo.abbreviation}</span>
+              <div className="w-16 h-16 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                {nucleo.logo_url ? (
+                  <img
+                    src={nucleo.logo_url}
+                    alt={nucleo.abbreviation}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-teal-700 font-bold text-xl">{nucleo.abbreviation}</span>
+                )}
               </div>
               <div>
                 <h1 className="text-3xl md:text-4xl font-bold text-gray-800">{nucleo.name}</h1>

@@ -213,6 +213,7 @@ def handle_nucleo_created(event: NucleoCreatedV1):
             nucleo_id=nucleo_id,
             name=event.data.name,
             abbreviation=event.data.abbreviation,
+            logo_url=event.data.logo_url,
         )
         db.add(nucleo)
 
@@ -232,6 +233,8 @@ def handle_nucleo_updated(event: NucleoUpdatedV1):
             nucleo.name = event.data.name
         if event.data.abbreviation is not None:
             nucleo.abbreviation = event.data.abbreviation
+        if event.data.logo_url is not None:
+            nucleo.logo_url = event.data.logo_url
         nucleo.updated_at = datetime.utcnow()
 
         # Rebuild affected projections

@@ -4,6 +4,7 @@ export interface NucleoPublic {
   nucleo_id: string;
   name: string;
   abbreviation: string;
+  logo_url?: string;
 }
 
 export interface NucleoList {

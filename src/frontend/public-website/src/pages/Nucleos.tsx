@@ -81,10 +81,18 @@ function Nucleos() {
                       to={`/nucleos/${nucleo.nucleo_id}`}
                       className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-6 flex items-center gap-4 text-inherit"
                     >
-                      <div className="w-14 h-14 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
-                        <span className="text-teal-700 font-bold text-lg">
-                          {nucleo.abbreviation}
-                        </span>
+                      <div className="w-14 h-14 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        {nucleo.logo_url ? (
+                          <img
+                            src={nucleo.logo_url}
+                            alt={nucleo.abbreviation}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-teal-700 font-bold text-lg">
+                            {nucleo.abbreviation}
+                          </span>
+                        )}
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-gray-800">{nucleo.name}</h3>

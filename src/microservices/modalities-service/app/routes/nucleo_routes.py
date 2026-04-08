@@ -58,6 +58,7 @@ def create_nucleo(nucleo_data: NucleoCreate, db: Session = Depends(get_db_sessio
                 nucleo_id=nucleo.id,
                 name=nucleo.name,
                 abbreviation=nucleo.abbreviation,
+                logo_url=nucleo.logo_url,
             ),
         )
         outbox_publisher.emit_event(
@@ -130,6 +131,7 @@ def update_nucleo(
                 nucleo_id=nucleo.id,
                 name=changes_made.get("name"),
                 abbreviation=changes_made.get("abbreviation"),
+                logo_url=nucleo_data.logo_url,
             ),
         )
         outbox_publisher.emit_event(
