@@ -201,7 +201,8 @@ function Membros() {
 
   const getDisplayInfo = (member: CombinedMember): string => {
     if (member.memberType === 'participant') {
-      return `NMEC: ${member.data.student_number}`;
+      const courseName = member.data.course?.name || 'N/A';
+      return `NMEC: ${member.data.student_number} | Curso: ${courseName}`;
     } else {
       if ('contact' in member.data && member.data.contact) {
         return `Tel: ${member.data.contact}`;
