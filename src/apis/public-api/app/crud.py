@@ -14,12 +14,47 @@ from taca_models import (
     GeneralRankingView,
     MatchDetailView,
     ModalityRankingView,
+    Nucleo,
     Regulation,
     StudentDetailView,
     TeamDetailView,
+    TeamPlayer,
     TournamentDetailView,
     TournamentStandingsView,
 )
+
+# ==================== Team Detail View Operations ====================
+
+
+def get_nucleos(
+    db: Session,
+    skip: int = 0,
+    limit: int = 100,
+) -> tuple[list[Nucleo], int]:
+    """
+    Get list of nucleos (active only) with pagination.
+
+    Returns:
+        Tuple of (list of nucleos, total count)
+    """
+    query = db.query(Nucleo).filter(Nucleo.deleted_at.is_(None)).order_by(Nucleo.name)
+    total = query.count()
+    return query.offset(skip).limit(limit).all(), total
+
+
+def get_nucleo_by_id(db: Session, nucleo_id: UUID) -> Optional[Nucleo]:
+    """
+    Get a specific nucleo by ID.
+
+    Returns:
+        Nucleo or None if not found
+    """
+    return (
+        db.query(Nucleo)
+        .filter(Nucleo.nucleo_id == nucleo_id, Nucleo.deleted_at.is_(None))
+        .first()
+    )
+
 
 # ==================== Team Detail View Operations ====================
 
@@ -77,6 +112,28 @@ def get_team_by_id(db: Session, team_id: UUID) -> Optional[TeamDetailView]:
         Team detail or None if not found
     """
     return db.query(TeamDetailView).filter(TeamDetailView.team_id == team_id).first()
+
+
+def get_team_members(
+    db: Session, team_id: UUID
+) -> list[tuple[TeamPlayer, StudentDetailView]]:
+    """
+    Get active members of a team (removed_at IS NULL).
+
+    Args:
+        db: Database session
+        team_id: Team identifier
+
+    Returns:
+        List of (TeamPlayer, StudentDetailView) tuples
+    """
+    return (
+        db.query(TeamPlayer, StudentDetailView)
+        .join(StudentDetailView, TeamPlayer.student_id == StudentDetailView.student_id)
+        .filter(TeamPlayer.team_id == team_id, TeamPlayer.removed_at.is_(None))
+        .order_by(StudentDetailView.full_name)
+        .all()
+    )
 
 
 # ==================== Student Detail View Operations ====================

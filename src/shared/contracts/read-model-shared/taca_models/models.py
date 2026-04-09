@@ -59,6 +59,7 @@ class Nucleo(Base):
     nucleo_id = Column(UUID(as_uuid=True), primary_key=True)
     name = Column(String, nullable=False)
     abbreviation = Column(String, nullable=False)
+    logo_url = Column(Text, nullable=True)
 
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(
