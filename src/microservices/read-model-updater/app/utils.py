@@ -19,6 +19,7 @@ from .models import (
     MatchParticipant,
     MatchResult,
     Modality,
+    Nucleo,
     Student,
     StudentDetailView,
     Team,
@@ -64,14 +65,15 @@ def rebuild_team_projection(session: Session, team_id: UUID) -> None:
         return
 
     # Compute player count
-    player_count = (
-        session.query(func.count(TeamPlayer.id))
+    players_data = (
+        session.query(TeamPlayer, Student)
+        .join(Student, TeamPlayer.student_id == Student.student_id)
         .filter(
             TeamPlayer.team_id == team_id,
             TeamPlayer.removed_at.is_(None),
+            Student.deleted_at.is_(None),
         )
-        .scalar()
-        or 0
+        .all()
     )
 
     course = team.course
@@ -93,7 +95,16 @@ def rebuild_team_projection(session: Session, team_id: UUID) -> None:
         modality_name=modality.name if modality else None,
         modality_type_id=modality_type.modality_type_id if modality_type else None,
         modality_type_name=modality_type.name if modality_type else "",
-        player_count=player_count,
+        player_count=len(players_data),
+        players=[
+            {
+                "student_id": str(s.student_id),
+                "student_number": s.student_number,
+                "full_name": s.full_name,
+                "is_member": s.is_member,
+            }
+            for _, s in players_data
+        ],
     )
 
     # UPSERT (merge = deterministic projection rebuild)
@@ -639,6 +650,38 @@ def rebuild_modality_ranking_projection(session: Session) -> None:
             session.merge(projection)
 
 
+# ==================== Nucleo Views ====================
+
+
+def rebuild_nucleo_projection(session: Session, nucleo_id: UUID) -> None:
+    """Rebuild the projection for a specific nucleo.
+
+    Dependencies: Nucleo
+
+    Call when:
+        - Nucleo created/updated/deleted
+    """
+    from .models import Nucleo, NucleoDetailView
+
+    nucleo = session.query(Nucleo).filter(Nucleo.nucleo_id == nucleo_id).first()
+
+    if not nucleo or nucleo.deleted_at:
+        # Delete projection if nucleo no longer exists or is deleted
+        session.query(NucleoDetailView).filter(
+            NucleoDetailView.nucleo_id == nucleo_id
+        ).delete()
+        return
+
+    projection = NucleoDetailView(
+        nucleo_id=nucleo.nucleo_id,
+        name=nucleo.name,
+        abbreviation=nucleo.abbreviation,
+        logo_url=nucleo.logo_url,
+    )
+
+    session.merge(projection)
+
+
 # ==================== Bulk Rebuild Utilities ====================
 
 
@@ -683,3 +726,10 @@ def rebuild_all_matches_for_tournament(session: Session, tournament_id: UUID) ->
     )
     for (match_id,) in matches:
         rebuild_match_projection(session, match_id)
+
+
+def rebuild_all_nucleos(session: Session) -> None:
+    """Rebuild projections for all nucleos."""
+    nucleos = session.query(Nucleo.nucleo_id).all()
+    for (nucleo_id,) in nucleos:
+        rebuild_nucleo_projection(session, nucleo_id)

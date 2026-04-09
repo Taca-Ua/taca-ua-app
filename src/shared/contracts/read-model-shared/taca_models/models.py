@@ -63,6 +63,7 @@ class TeamDetailView(Base):
 
     # Player count
     player_count = Column(Integer, nullable=False, default=0)
+    players = Column(JSON, nullable=False, default=list)  # Array of player details
 
 
 class StudentDetailView(Base):
@@ -271,6 +272,25 @@ class ModalityRankingView(Base):
     # Rankings
     points = Column(Integer, nullable=False, default=0)
     rank = Column(Integer, nullable=True)
+
+
+class NucleoDetailView(Base):
+    """
+    Materialized view: Nucleo details with aggregated statistics.
+    Rebuilt when Nucleo, Course, Student, or Team events are processed.
+    """
+
+    __tablename__ = "mv_nucleo_details"
+    __table_args__ = (
+        Index("ix_mv_nucleo_details_nucleo_id", "id"),
+        {"schema": "public_read"},
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    nucleo_id = Column(UUID(as_uuid=True), nullable=False)
+    name = Column(String, nullable=False)
+    abbreviation = Column(String, nullable=False)
+    logo_url = Column(String(500), nullable=True)
 
 
 # ==================== Shared Operational Tables ====================

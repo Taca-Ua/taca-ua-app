@@ -14,12 +14,46 @@ from taca_models import (
     GeneralRankingView,
     MatchDetailView,
     ModalityRankingView,
+    NucleoDetailView,
     Regulation,
     StudentDetailView,
     TeamDetailView,
     TournamentDetailView,
     TournamentStandingsView,
 )
+
+# ==================== Team Detail View Operations ====================
+
+
+def get_nucleos(
+    db: Session,
+    skip: int = 0,
+    limit: int = 100,
+) -> tuple[list[NucleoDetailView], int]:
+    """
+    Get list of nucleos (active only) with pagination.
+
+    Returns:
+        Tuple of (list of nucleos, total count)
+    """
+    query = db.query(NucleoDetailView).order_by(NucleoDetailView.name)
+    total = query.count()
+    return query.offset(skip).limit(limit).all(), total
+
+
+def get_nucleo_by_id(db: Session, nucleo_id: UUID) -> Optional[NucleoDetailView]:
+    """
+    Get a specific nucleo by ID.
+
+    Returns:
+        Nucleo or None if not found
+    """
+    return (
+        db.query(NucleoDetailView)
+        .filter(NucleoDetailView.nucleo_id == nucleo_id)
+        .first()
+    )
+
 
 # ==================== Team Detail View Operations ====================
 

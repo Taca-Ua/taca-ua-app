@@ -5,7 +5,6 @@ Publishes and consumes events via RabbitMQ.
 Supports pause/resume for rebuild operations.
 """
 
-import uuid
 from datetime import date, datetime, timezone
 from typing import Any
 
@@ -82,6 +81,7 @@ from .utils import (
     rebuild_general_ranking_projection,
     rebuild_match_projection,
     rebuild_modality_ranking_projection,
+    rebuild_nucleo_projection,
     rebuild_student_projection,
     rebuild_team_projection,
     rebuild_tournament_projection,
@@ -206,8 +206,11 @@ def handle_nucleo_created(event: NucleoCreatedV1):
             nucleo_id=nucleo_id,
             name=event.data.name,
             abbreviation=event.data.abbreviation,
+            logo_url=event.data.logo_url,
         )
         db.add(nucleo)
+        db.flush()
+        rebuild_nucleo_projection(db, nucleo_id)
 
 
 @rabbitmq_service.event_handler(NucleoUpdatedV1)
@@ -225,10 +228,13 @@ def handle_nucleo_updated(event: NucleoUpdatedV1):
             nucleo.name = event.data.name
         if event.data.abbreviation is not None:
             nucleo.abbreviation = event.data.abbreviation
+        if event.data.logo_url is not None:
+            nucleo.logo_url = event.data.logo_url
 
         # Rebuild affected projections
         db.flush()
         courses = db.query(Course.course_id).filter(Course.nucleo_id == nucleo_id).all()
+        rebuild_nucleo_projection(db, nucleo_id)
         for (course_id,) in courses:
             rebuild_all_teams_for_course(db, course_id)
             rebuild_all_students_for_course(db, course_id)
@@ -246,6 +252,8 @@ def handle_nucleo_deleted(event: NucleoDeletedV1):
             logger.warning("nucleo_not_found", nucleo_id=str(nucleo_id))
             return
         nucleo.deleted_at = datetime.utcnow()
+        db.flush()
+        rebuild_nucleo_projection(db, nucleo_id)
 
 
 # ==================== Course Events ====================
@@ -787,7 +795,7 @@ def handle_tournament_competitor_added(event: TournamentCompetitorAddedV1):
 
     with get_db() as db:
         competitor = TournamentCompetitor(
-            competitor_id=uuid.uuid4(),
+            competitor_id=event.data.competitor_id,
             tournament_id=tournament_id,
             competitor_type=ParticipantType(event.data.competitor_type),
             competitor_entity_id=event.data.competitor_entity_id,
@@ -861,6 +869,10 @@ def handle_match_created(event: MatchCreatedV1):
         db.flush()
 
         for participant_data in event.data.participants:
+            print(
+                f"Adding participant {participant_data.participant_id} to match {match_id}",
+                flush=True,
+            )
             participant = MatchParticipant(
                 match_id=match_id,
                 participant_id=participant_data.participant_id,

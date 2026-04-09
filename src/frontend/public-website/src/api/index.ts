@@ -6,3 +6,4 @@ export * from './matches';
 export * from './competitors';
 export * from './ranking';
 export * from './regulations';
+export * from './nucleos';
