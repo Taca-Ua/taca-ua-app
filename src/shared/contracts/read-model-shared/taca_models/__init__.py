@@ -10,6 +10,7 @@ from .models import (  # Enums; Core Read Models; Materialized Views
     GeneralRankingView,
     MatchDetailView,
     ModalityRankingView,
+    NucleoDetailView,
     Regulation,
     StudentDetailView,
     TeamDetailView,
@@ -26,6 +27,7 @@ __all__ = [
     "MatchDetailView",
     "TournamentStandingsView",
     "GeneralRankingView",
+    "NucleoDetailView",
     # Shared Operational Tables
     "Regulation",
     "GeneralRankings",

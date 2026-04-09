@@ -21,6 +21,7 @@ from taca_models import (  # Materialized Views
     GeneralRankingView,
     MatchDetailView,
     ModalityRankingView,
+    NucleoDetailView,
     Regulation,
     StudentDetailView,
     TeamDetailView,
@@ -71,6 +72,7 @@ class Nucleo(Base):
     nucleo_id = Column(UUID(as_uuid=True), primary_key=True)
     name = Column(String, nullable=False)
     abbreviation = Column(String, nullable=False)
+    logo_url = Column(String, nullable=True)
     deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
@@ -535,4 +537,5 @@ __all__ = [
     "ModalityRankings",
     "GeneralRankings",
     "ModalityRankingView",
+    "NucleoDetailView",
 ]

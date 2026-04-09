@@ -15,7 +15,7 @@ from typing import Dict, List
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from taca_models.models import ModalityRankingView
+from taca_models.models import ModalityRankingView, NucleoDetailView
 from taca_rebuild import BaseSSERebuildService, make_sse_rebuild_router
 from taca_snapshots import matches as match_snapshots
 from taca_snapshots import modalities as modality_snapshots
@@ -51,6 +51,7 @@ from .models import (
     TournamentStandingsView,
 )
 from .utils import (
+    rebuild_all_nucleos,
     rebuild_general_ranking_projection,
     rebuild_match_projection,
     rebuild_modality_ranking_projection,
@@ -93,6 +94,7 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
         self.db.query(MatchDetailView).delete()
         self.db.query(TournamentDetailView).delete()
         self.db.query(StudentDetailView).delete()
+        self.db.query(NucleoDetailView).delete()
         self.db.query(TeamDetailView).delete()
         self.db.query(MatchComment).delete()
         self.db.query(MatchResult).delete()
@@ -187,6 +189,7 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
                         "nucleo_id": item.id,
                         "name": item.name,
                         "abbreviation": item.abbreviation,
+                        "logo_url": item.logo_url,
                         "created_at": item.created_at,
                         "updated_at": item.updated_at,
                     }
@@ -582,6 +585,9 @@ async def run_post_rebuild_tasks(db_session: Session) -> int:
     rebuild_modality_ranking_projection(db_session)
     total += db_session.query(ModalityRankingView).count()
 
+    rebuild_all_nucleos(db_session)
+    total += db_session.query(NucleoDetailView).count()
+
     # Reset sequences
     tables_with_sequences = [
         ("public_read.team_players", "id"),
@@ -592,6 +598,7 @@ async def run_post_rebuild_tasks(db_session: Session) -> int:
         ("public_read.general_rankings", "id"),
         ("public_read.modality_rankings", "id"),
         ("public_read.mv_modality_rankings", "id"),
+        ("public_read.mv_nucleo_details", "id"),
     ]
     for table_name, id_column in tables_with_sequences:
         db_session.execute(

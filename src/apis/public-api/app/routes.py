@@ -502,6 +502,45 @@ def get_course_ranking(
 
 
 @router.get(
+    "/nucleos",
+    response_model=schemas.NucleoList,
+    summary="List all nucleos",
+    description="Get a paginated list of all active nucleos",
+)
+def list_nucleos(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(50, ge=1, le=100, description="Items per page"),
+    db: Session = Depends(get_db),
+):
+    skip = (page - 1) * page_size
+    nucleos, total = crud.get_nucleos(db=db, skip=skip, limit=page_size)
+    logger.info("nucleos_listed", total=total, page=page)
+    return schemas.NucleoList(
+        items=nucleos, total=total, page=page, page_size=page_size
+    )
+
+
+@router.get(
+    "/nucleos/{nucleo_id}",
+    response_model=schemas.NucleoPublic,
+    summary="Get nucleo by ID",
+    description="Get a specific nucleo",
+)
+def get_nucleo(
+    nucleo_id: UUID,
+    db: Session = Depends(get_db),
+):
+    nucleo = crud.get_nucleo_by_id(db=db, nucleo_id=nucleo_id)
+    if not nucleo:
+        raise HTTPException(status_code=404, detail="Nucleo not found")
+    logger.info("nucleo_retrieved", nucleo_id=str(nucleo_id))
+    return nucleo
+
+
+# ==================== Regulation Endpoints ====================
+
+
+@router.get(
     "/regulations",
     response_model=list[schemas.RegulationPublic],
     summary="List all regulations",

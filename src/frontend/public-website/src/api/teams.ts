@@ -14,6 +14,12 @@ export interface TeamDetail {
   modality_type_id: string;
   modality_type_name: string;
   player_count: number;
+  players?: {
+    student_id: string;
+    student_number: string;
+    full_name: string;
+    is_member: boolean;
+  }[];
 }
 
 export interface TeamDetailList {
