@@ -102,22 +102,6 @@ class MatchesService(BaseService):
         params = {}
         if tournament_id is not None:
             params["tournament_id"] = str(tournament_id)
-        if team_id is not None:
-            params["team_id"] = str(team_id)
-        if athlete_id is not None:
-            params["athlete_id"] = str(athlete_id)
-        if date is not None:
-            params["date"] = date
-        if date_from is not None:
-            params["date_from"] = date_from
-        if date_to is not None:
-            params["date_to"] = date_to
-        if status is not None:
-            params["status"] = status
-        if limit != 50:
-            params["limit"] = limit
-        if offset != 0:
-            params["offset"] = offset
 
         matches_data = self.get("/matches", params=params)
         matches = [MatchDTO(**match) for match in matches_data.get("matches", [])]

@@ -7,10 +7,10 @@ import enum
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, Enum, ForeignKey, Integer, Text
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 from taca_outbox.models import create_outbox_model
 
 Base = declarative_base()
@@ -21,11 +21,6 @@ class MatchStatus(enum.Enum):
     IN_PROGRESS = "in_progress"
     FINISHED = "finished"
     CANCELLED = "cancelled"
-
-
-class ParticipantType(enum.Enum):
-    TEAM = "team"
-    ATHLETE = "athlete"
 
 
 class Match(Base):
@@ -39,18 +34,19 @@ class Match(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
-    # Optional reference to tournament domain
-    tournament_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+    # Reference to tournament domain
+    tournament_id = Column(UUID(as_uuid=True), nullable=False, index=True)
 
     location = Column(Text, nullable=False)
     start_time = Column(DateTime(timezone=True), nullable=False)
 
     status = Column(
-        Enum(MatchStatus, name="match_status"),
+        Enum(MatchStatus, name="match_status", inherit_schema=True),
         nullable=False,
         default=MatchStatus.SCHEDULED,
     )
 
+    # Bullsh*t fields for auditing and traceability
     created_by = Column(UUID(as_uuid=True), nullable=False)
     created_at = Column(
         DateTime(timezone=True),
@@ -63,9 +59,14 @@ class Match(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    participants = relationship(
+    participants: Mapped[list["MatchParticipant"]] = relationship(
         "MatchParticipant",
         back_populates="match",
+        cascade="all, delete-orphan",
+    )
+    commnets: Mapped[list["Comment"]] = relationship(
+        "Comment",
+        backref="match",
         cascade="all, delete-orphan",
     )
 
@@ -81,35 +82,32 @@ class MatchParticipant(Base):
     __tablename__ = "match_participant"
     __table_args__ = {"schema": "matches"}
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-
     match_id = Column(
         UUID(as_uuid=True),
         ForeignKey("matches.match.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
+        primary_key=True,
     )
 
-    participant_type = Column(
-        Enum(ParticipantType, name="participant_type"),
+    # Reference to the competitor of the tournament domain
+    participant = Column(
+        UUID(as_uuid=True),
         nullable=False,
+        index=True,
+        primary_key=True,
     )
-
-    # External references
-    team_id = Column(UUID(as_uuid=True), nullable=True, index=True)
-    athlete_id = Column(UUID(as_uuid=True), nullable=True, index=True)
 
     # Outcome
     score = Column(Integer, nullable=True)
     position = Column(Integer, nullable=True)
 
-    # Escape hatch for sport-specific facts
-    result_metadata = Column(JSON, nullable=True)
-
     match = relationship("Match", back_populates="participants")
 
     def __repr__(self) -> str:
-        return f"<MatchParticipant match={self.match_id}>"
+        return (
+            f"<MatchParticipant match={self.match_id} participant={self.participant}>"
+        )
 
 
 class Lineup(Base):
@@ -120,23 +118,27 @@ class Lineup(Base):
     __tablename__ = "lineup"
     __table_args__ = {"schema": "matches"}
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-
     match_id = Column(
         UUID(as_uuid=True),
         ForeignKey("matches.match.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
+        primary_key=True,
     )
 
-    # Team Service reference
-    team_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    # Reference to the participant of the tournament domain
+    participant = Column(
+        UUID(as_uuid=True),
+        nullable=False,
+        index=True,
+        primary_key=True,
+    )
 
     # Student / Athlete Service reference
     player_id = Column(UUID(as_uuid=True), nullable=False, index=True)
 
-    jersey_number = Column(Integer, nullable=False)
-    is_starter = Column(Boolean, nullable=False, default=True)
+    jersey_number = Column(Integer, nullable=True)
+    is_starter = Column(Boolean, nullable=True, default=True)
 
     created_at = Column(
         DateTime(timezone=True),
@@ -145,7 +147,7 @@ class Lineup(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<Lineup match={self.match_id} player={self.player_id}>"
+        return f"<Lineup match={self.match_id} participant={self.participant} player={self.player_id}>"
 
 
 class Comment(Base):

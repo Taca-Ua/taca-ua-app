@@ -30,7 +30,12 @@ def upgrade() -> None:
         sa.Column(
             "status",
             sa.Enum(
-                "SCHEDULED", "IN_PROGRESS", "FINISHED", "CANCELLED", name="match_status"
+                "SCHEDULED",
+                "IN_PROGRESS",
+                "FINISHED",
+                "CANCELLED",
+                name="match_status",
+                inherit_schema=True,
             ),
             nullable=False,
         ),
@@ -148,7 +153,7 @@ def upgrade() -> None:
         sa.Column("match_id", sa.UUID(), nullable=False),
         sa.Column(
             "participant_type",
-            sa.Enum("TEAM", "ATHLETE", name="participant_type"),
+            sa.Enum("TEAM", "ATHLETE", name="participant_type", inherit_schema=True),
             nullable=False,
         ),
         sa.Column("team_id", sa.UUID(), nullable=True),

@@ -20,11 +20,7 @@ from taca_events.pydantic_schemas.matches import (
     MatchDeletedV1,
     MatchLineupAssignedData,
     MatchLineupAssignedV1,
-    MatchParticipantAddedData,
-    MatchParticipantAddedV1,
     MatchParticipantData,
-    MatchParticipantRemovedData,
-    MatchParticipantRemovedV1,
     MatchResultEntryData,
     MatchResultUpdatedData,
     MatchResultUpdatedV1,
@@ -35,14 +31,7 @@ from taca_events.pydantic_schemas.matches import (
 from . import schemas
 from .database import get_db_session
 from .logger import logger
-from .models import (
-    Comment,
-    Lineup,
-    Match,
-    MatchParticipant,
-    MatchStatus,
-    ParticipantType,
-)
+from .models import Comment, Lineup, Match, MatchParticipant, MatchStatus
 from .outbox_publisher import outbox_publisher
 
 router = APIRouter()
@@ -51,14 +40,7 @@ router = APIRouter()
 @router.get("/matches")
 def list_matches(
     tournament_id: Optional[UUID] = Query(None),
-    team_id: Optional[UUID] = Query(None),
-    athlete_id: Optional[UUID] = Query(None),
-    date: Optional[str] = Query(None),
-    date_from: Optional[str] = Query(None),
-    date_to: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
-    limit: int = Query(50, ge=1, le=100),
-    offset: int = Query(0, ge=0),
     db: Session = Depends(get_db_session),
 ):
     """List matches with optional filters."""
@@ -66,11 +48,7 @@ def list_matches(
         "Listing matches",
         extra={
             "tournament_id": str(tournament_id) if tournament_id else None,
-            "team_id": str(team_id) if team_id else None,
-            "athlete_id": str(athlete_id) if athlete_id else None,
             "status": status,
-            "limit": limit,
-            "offset": offset,
         },
     )
 
@@ -78,45 +56,6 @@ def list_matches(
 
     if tournament_id:
         query = query.filter(Match.tournament_id == tournament_id)
-
-    if team_id or athlete_id:
-        # Join with participants to filter by team or athlete
-        query = query.join(MatchParticipant)
-        if team_id:
-            query = query.filter(MatchParticipant.team_id == team_id)
-        if athlete_id:
-            query = query.filter(MatchParticipant.athlete_id == athlete_id)
-
-    if date:
-        try:
-            date_obj = datetime.fromisoformat(date)
-            query = query.filter(Match.start_time >= date_obj)
-            query = query.filter(
-                Match.start_time < date_obj.replace(hour=23, minute=59, second=59)
-            )
-        except ValueError:
-            logger.warning("Invalid date format", extra={"date": date})
-            raise HTTPException(status_code=400, detail=f"Invalid date format: {date}")
-
-    if date_from:
-        try:
-            date_from_obj = datetime.fromisoformat(date_from)
-            query = query.filter(Match.start_time >= date_from_obj)
-        except ValueError:
-            logger.warning("Invalid date_from format", extra={"date_from": date_from})
-            raise HTTPException(
-                status_code=400, detail=f"Invalid date_from format: {date_from}"
-            )
-
-    if date_to:
-        try:
-            date_to_obj = datetime.fromisoformat(date_to)
-            query = query.filter(Match.start_time <= date_to_obj)
-        except ValueError:
-            logger.warning("Invalid date_to format", extra={"date_to": date_to})
-            raise HTTPException(
-                status_code=400, detail=f"Invalid date_to format: {date_to}"
-            )
 
     if status:
         try:
@@ -137,8 +76,6 @@ def list_matches(
     return {
         "matches": [schemas.MatchResponse.from_orm(m) for m in matches],
         "total": total,
-        "limit": limit,
-        "offset": offset,
     }
 
 
@@ -175,36 +112,9 @@ def create_match(
 
     # Create participants
     for participant_data in match_data.participants:
-        try:
-            participant_type = ParticipantType(participant_data.participant_type)
-        except ValueError:
-            logger.error(
-                "Invalid participant type",
-                extra={"participant_type": participant_data.participant_type},
-            )
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid participant type: {participant_data.participant_type}",
-            )
-
-        # Validate participant has appropriate ID
-        if participant_type == ParticipantType.TEAM and not participant_data.team_id:
-            raise HTTPException(
-                status_code=400, detail="Team participant must have team_id"
-            )
-        if (
-            participant_type == ParticipantType.ATHLETE
-            and not participant_data.athlete_id
-        ):
-            raise HTTPException(
-                status_code=400, detail="Athlete participant must have athlete_id"
-            )
-
         participant = MatchParticipant(
             match_id=match.id,
-            participant_type=participant_type,
-            team_id=participant_data.team_id,
-            athlete_id=participant_data.athlete_id,
+            participant=participant_data.participant,
         )
         db.add(participant)
     db.flush()  # Get participant IDs if needed for events
@@ -220,9 +130,9 @@ def create_match(
             start_time=match.start_time.isoformat(),
             participants=[
                 MatchParticipantData(
-                    participant_id=p.id,
-                    participant_type=p.participant_type.value,
-                    participant_entity_id=p.team_id or p.athlete_id,
+                    participant_id=p.participant,
+                    participant_type=None,  # Not needed since we have the competitor ID
+                    participant_entity_id=None,  # Not needed since we have the competitor ID
                 )
                 for p in match.participants
             ],
@@ -269,7 +179,6 @@ def get_match(
 def update_match(
     match_id: UUID,
     match_data: schemas.MatchUpdate,
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db_session),
 ):
     """Update a match."""
@@ -354,7 +263,6 @@ def update_match(
 @router.delete("/matches/{match_id}", status_code=204)
 def delete_match(
     match_id: UUID,
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db_session),
 ):
     """Delete a match."""
@@ -397,184 +305,11 @@ def delete_match(
     return None
 
 
-# Participant routes
-@router.post(
-    "/matches/{match_id}/participants",
-    response_model=schemas.MatchParticipantResponse,
-    status_code=201,
-)
-def add_participant(
-    match_id: UUID,
-    participant_data: schemas.MatchParticipantCreate,
-    background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db_session),
-):
-    """Add a participant to a match."""
-    logger.info(
-        "Adding participant to match",
-        extra={
-            "match_id": str(match_id),
-            "participant_type": participant_data.participant_type,
-            "team_id": (
-                str(participant_data.team_id) if participant_data.team_id else None
-            ),
-            "athlete_id": (
-                str(participant_data.athlete_id)
-                if participant_data.athlete_id
-                else None
-            ),
-        },
-    )
-
-    match = db.query(Match).filter(Match.id == match_id).first()
-
-    if not match:
-        logger.warning(
-            "Match not found for adding participant", extra={"match_id": str(match_id)}
-        )
-        raise HTTPException(status_code=404, detail="Match not found")
-
-    if match.status == MatchStatus.FINISHED:
-        logger.warning(
-            "Attempted to add participant to finished match",
-            extra={"match_id": str(match_id)},
-        )
-        raise HTTPException(
-            status_code=409, detail="Cannot modify participants for finished match"
-        )
-
-    try:
-        participant_type = ParticipantType(participant_data.participant_type)
-    except ValueError:
-        logger.error(
-            "Invalid participant type",
-            extra={"participant_type": participant_data.participant_type},
-        )
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid participant type: {participant_data.participant_type}",
-        )
-
-    # Validate participant has appropriate ID
-    if participant_type == ParticipantType.TEAM and not participant_data.team_id:
-        raise HTTPException(
-            status_code=400, detail="Team participant must have team_id"
-        )
-    if participant_type == ParticipantType.ATHLETE and not participant_data.athlete_id:
-        raise HTTPException(
-            status_code=400, detail="Athlete participant must have athlete_id"
-        )
-
-    participant = MatchParticipant(
-        match_id=match_id,
-        participant_type=participant_type,
-        team_id=participant_data.team_id,
-        athlete_id=participant_data.athlete_id,
-    )
-    db.add(participant)
-    db.flush()  # Get participant.id
-
-    # Emit event
-    event = MatchParticipantAddedV1.create(
-        aggregate_id=match_id,
-        data=MatchParticipantAddedData(
-            match_id=match_id,
-            participant_id=participant.id,
-            participant_type=participant_type.value,
-            participant_entity_id=participant_data.team_id
-            or participant_data.athlete_id,
-        ),
-    )
-    outbox_publisher.emit_event(
-        db,
-        event_type=event.event_type(),
-        aggregate_type="match",
-        aggregate_id=match_id,
-        data=event.to_data_dict(),
-    )
-
-    db.commit()
-    db.refresh(participant)
-
-    logger.info(
-        "Participant added successfully",
-        extra={"match_id": str(match_id), "participant_id": str(participant.id)},
-    )
-
-    return participant
-
-
-@router.delete("/matches/{match_id}/participants/{participant_id}", status_code=204)
-def remove_participant(
-    match_id: UUID,
-    participant_id: UUID,
-    background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db_session),
-):
-    """Remove a participant from a match."""
-    logger.info(
-        "Removing participant from match",
-        extra={"match_id": str(match_id), "participant_id": str(participant_id)},
-    )
-
-    participant = (
-        db.query(MatchParticipant)
-        .filter(
-            MatchParticipant.id == participant_id,
-            MatchParticipant.match_id == match_id,
-        )
-        .first()
-    )
-
-    if not participant:
-        logger.warning(
-            "Participant not found for removal",
-            extra={"match_id": str(match_id), "participant_id": str(participant_id)},
-        )
-        raise HTTPException(status_code=404, detail="Participant not found")
-
-    match = db.query(Match).filter(Match.id == match_id).first()
-    if match and match.status == MatchStatus.FINISHED:
-        logger.warning(
-            "Attempted to remove participant from finished match",
-            extra={"match_id": str(match_id)},
-        )
-        raise HTTPException(
-            status_code=409, detail="Cannot modify participants for finished match"
-        )
-
-    # Emit event before deletion
-    event = MatchParticipantRemovedV1.create(
-        aggregate_id=match_id,
-        data=MatchParticipantRemovedData(
-            match_id=match_id, participant_id=participant_id
-        ),
-    )
-    outbox_publisher.emit_event(
-        db,
-        event_type=event.event_type(),
-        aggregate_type="match",
-        aggregate_id=match_id,
-        data=event.to_data_dict(),
-    )
-
-    db.delete(participant)
-
-    db.commit()
-
-    logger.info(
-        "Participant removed successfully",
-        extra={"match_id": str(match_id), "participant_id": str(participant_id)},
-    )
-    return None
-
-
 # Lineup routes
 @router.post("/matches/{match_id}/lineup", status_code=201)
 def assign_lineup(
     match_id: UUID,
     lineup_data: schemas.LineupBatchCreate,
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db_session),
 ):
     """Assign lineup for a team in a match."""
@@ -607,8 +342,6 @@ def assign_lineup(
         db.query(MatchParticipant)
         .filter(
             MatchParticipant.match_id == match_id,
-            MatchParticipant.team_id == lineup_data.team_id,
-            MatchParticipant.participant_type == ParticipantType.TEAM,
         )
         .first()
     )
@@ -724,7 +457,6 @@ def get_lineup(
 def add_comment(
     match_id: UUID,
     comment_data: schemas.CommentCreate,
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db_session),
 ):
     """Add a comment to a match."""
@@ -777,44 +509,10 @@ def add_comment(
     return comment
 
 
-@router.get(
-    "/matches/{match_id}/comments", response_model=list[schemas.CommentResponse]
-)
-def get_comments(
-    match_id: UUID,
-    db: Session = Depends(get_db_session),
-):
-    """Get all comments for a match."""
-    logger.info("Fetching comments", extra={"match_id": str(match_id)})
-
-    match = db.query(Match).filter(Match.id == match_id).first()
-
-    if not match:
-        logger.warning(
-            "Match not found for comments", extra={"match_id": str(match_id)}
-        )
-        raise HTTPException(status_code=404, detail="Match not found")
-
-    comments = (
-        db.query(Comment)
-        .filter(Comment.match_id == match_id)
-        .order_by(Comment.created_at.desc())
-        .all()
-    )
-
-    logger.info(
-        "Comments fetched successfully",
-        extra={"match_id": str(match_id), "comment_count": len(comments)},
-    )
-
-    return comments
-
-
 @router.delete("/matches/{match_id}/comments/{comment_id}", status_code=204)
 def delete_comment(
     match_id: UUID,
     comment_id: UUID,
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db_session),
 ):
     """Delete a comment."""

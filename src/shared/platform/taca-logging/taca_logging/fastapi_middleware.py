@@ -33,6 +33,7 @@ class StructlogMiddleware(BaseHTTPMiddleware):
 
         # Log request
         logger = structlog.get_logger()
+        # if action != "list_metrics":  # Avoid logging Prometheus scrape requests
         # logger.info(
         #     "request_received",
         #     action=action,
@@ -52,12 +53,13 @@ class StructlogMiddleware(BaseHTTPMiddleware):
             duration_ms = round((time.time() - start_time) * 1000, 2)
 
             # Log response
-            logger.info(
-                "request_completed",
-                action=action,
-                status_code=response.status_code,
-                duration_ms=duration_ms,
-            )
+            if action != "list_metrics":  # Avoid logging Prometheus scrape requests
+                logger.info(
+                    "request_completed",
+                    action=action,
+                    status_code=response.status_code,
+                    duration_ms=duration_ms,
+                )
 
             # Add request ID to response headers
             response.headers["X-Request-ID"] = request_id

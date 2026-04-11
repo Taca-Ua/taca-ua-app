@@ -3,28 +3,19 @@ Pydantic schemas for Matches Service API requests and responses.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 
-# MatchParticipant Schemas
-class MatchParticipantCreate(BaseModel):
-    """Schema for creating a match participant."""
-
-    participant_type: str  # "team" or "athlete"
-    team_id: Optional[UUID] = None
-    athlete_id: Optional[UUID] = None
-
-
+# Helper Schemas
 class MatchParticipantUpdate(BaseModel):
     """Schema for updating a match participant."""
 
     participant_id: UUID
     score: Optional[int] = Field(None, ge=0)
     position: Optional[int] = Field(None, ge=1)
-    result_metadata: Optional[Dict[str, Any]] = None
 
 
 class MatchParticipantResponse(BaseModel):
@@ -32,12 +23,8 @@ class MatchParticipantResponse(BaseModel):
 
     id: UUID
     match_id: UUID
-    participant_type: str
-    team_id: Optional[UUID] = None
-    athlete_id: Optional[UUID] = None
     score: Optional[int] = None
     position: Optional[int] = None
-    result_metadata: Optional[Dict[str, Any]] = None
 
     class Config:
         from_attributes = True
@@ -51,7 +38,7 @@ class MatchCreate(BaseModel):
     location: str
     start_time: datetime
     created_by: UUID
-    participants: List[MatchParticipantCreate] = Field(default_factory=list)
+    participants: List[UUID] = Field(default_factory=list)
 
 
 class MatchUpdate(BaseModel):
@@ -70,10 +57,12 @@ class MatchResponse(BaseModel):
     location: str
     start_time: datetime
     status: str
+    participants: List[MatchParticipantResponse] = Field(default_factory=list)
+    comments: Optional[List["CommentResponse"]] = None
+
     created_by: UUID
     created_at: datetime
     updated_at: Optional[datetime] = None
-    participants: List[MatchParticipantResponse] = Field(default_factory=list)
 
     class Config:
         from_attributes = True
@@ -83,19 +72,17 @@ class MatchResponse(BaseModel):
 class LineupCreate(BaseModel):
     """Schema for creating a lineup entry."""
 
-    team_id: UUID
-    player_id: UUID
-    jersey_number: int = Field(..., ge=0)
+    participant: UUID
+    jersey_number: Optional[int] = None
     is_starter: bool = True
 
 
 class LineupBatchCreate(BaseModel):
     """Schema for creating multiple lineup entries at once."""
 
-    team_id: UUID
-    players: List[dict] = Field(
-        ...,
-        description="List of players with player_id, jersey_number, and is_starter",
+    participant: UUID
+    players: List[UUID] = Field(
+        ..., description="List of players to assign to the lineup"
     )
 
 
