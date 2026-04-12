@@ -21,4 +21,4 @@ class SeasonListSerializer(serializers.Serializer):
 class SeasonCreateSerializer(serializers.Serializer):
     """Serializer for creating a season"""
 
-    year = serializers.IntegerField(required=True, min_value=2000, max_value=2100)
+    year = serializers.IntegerField(required=True, min_value=2000)

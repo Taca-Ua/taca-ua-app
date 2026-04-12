@@ -15,7 +15,7 @@ function GeneralRankingPage() {
     seasonsApi.getAll().then((data) => {
       setSeasons(data);
       const statusPriority = (s: Season) => s.status === 'finished' ? 0 : s.status === 'active' ? 1 : 2;
-      const mostRecent = [...data].sort((a, b) => b.year - a.year || statusPriority(a) - statusPriority(b))[0];
+      const mostRecent = [...data].sort((a, b) => statusPriority(a) - statusPriority(b) || b.year - a.year)[0];
       setSeasonId(mostRecent ? mostRecent.season_id : '');
     }).catch(() => { setSeasonId(''); });
   }, []);
