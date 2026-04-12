@@ -371,6 +371,7 @@ class ReadModelRebuildService(BaseRebuildService):
                     name=item.name,
                     start_date=item.start_date,
                     status=item.status,
+                    season_id=item.season_id,
                     created_at=item.created_at,
                     updated_at=item.updated_at,
                     finished_at=item.finished_at,

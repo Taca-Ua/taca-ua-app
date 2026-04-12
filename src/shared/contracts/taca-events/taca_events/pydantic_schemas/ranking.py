@@ -2,7 +2,7 @@
 Typed Pydantic event schemas for the Ranking Service.
 """
 
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -33,6 +33,7 @@ class ModalityRankingEntryData(BaseModel):
 class RankingComputedData(BaseModel):
     """Payload emitted whenever all ranking tables are recomputed."""
 
+    season_id: Optional[UUID] = None
     general_ranking: List[GeneralRankingEntryData] = []
     modality_rankings: List[ModalityRankingEntryData] = []
 

@@ -3,7 +3,7 @@ SQLAlchemy models for Ranking Service.
 Schema: ranking
 """
 
-from sqlalchemy import ARRAY, UUID, Column, Integer
+from sqlalchemy import ARRAY, UUID, Column, Integer, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from taca_outbox.models import create_outbox_model
 
@@ -47,6 +47,7 @@ class Tournament(Base):
     tournament_id = Column(UUID(as_uuid=True), primary_key=True)
     modality_id = Column(UUID(as_uuid=True), nullable=False)
     scoring_format_id = Column(UUID(as_uuid=True), nullable=True)
+    season_id = Column(UUID(as_uuid=True), nullable=True)
 
 
 class TournamentCompetitor(Base):
@@ -77,25 +78,40 @@ class Course(Base):
 # Derived tables
 class GeneralRanking(Base):
     __tablename__ = "general_rankings"
-    __table_args__ = {"schema": "ranking"}
+    __table_args__ = (
+        UniqueConstraint("course_id", "season_id", name="uq_general_rankings_course_season"),
+        {"schema": "ranking"},
+    )
 
-    course_id = Column(UUID(as_uuid=True), primary_key=True)
+    _id = Column(Integer, primary_key=True, autoincrement=True)
+    course_id = Column(UUID(as_uuid=True), nullable=False)
+    season_id = Column(UUID(as_uuid=True), nullable=True)
     points = Column(Integer, nullable=False)
 
 
 class ModalityRanking(Base):
     __tablename__ = "modality_rankings"
-    __table_args__ = {"schema": "ranking"}
+    __table_args__ = (
+        UniqueConstraint("modality_id", "course_id", "season_id", name="uq_modality_rankings_modality_course_season"),
+        {"schema": "ranking"},
+    )
 
-    modality_id = Column(UUID(as_uuid=True), primary_key=True)
-    course_id = Column(UUID(as_uuid=True), primary_key=True)
+    _id = Column(Integer, primary_key=True, autoincrement=True)
+    modality_id = Column(UUID(as_uuid=True), nullable=False)
+    course_id = Column(UUID(as_uuid=True), nullable=False)
+    season_id = Column(UUID(as_uuid=True), nullable=True)
     points = Column(Integer, nullable=False)
 
 
 class CourseRanking(Base):
     __tablename__ = "course_rankings"
-    __table_args__ = {"schema": "ranking"}
+    __table_args__ = (
+        UniqueConstraint("course_id", "season_id", name="uq_course_rankings_course_season"),
+        {"schema": "ranking"},
+    )
 
-    course_id = Column(UUID(as_uuid=True), primary_key=True)
+    _id = Column(Integer, primary_key=True, autoincrement=True)
+    course_id = Column(UUID(as_uuid=True), nullable=False)
+    season_id = Column(UUID(as_uuid=True), nullable=True)
     points = Column(Integer, nullable=False)
     modality_breakdown = Column(ARRAY(Integer), nullable=False)  # Points per modality

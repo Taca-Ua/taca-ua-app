@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Sidebar from '../../components/geral_navbar';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { tournamentsApi, type Tournament } from '../../api/tournaments';
+import { seasonsApi, type Season } from '../../api/seasons';
 import { btn } from '../../styles/buttonStyles';
 import {
   TournamentCreateModal,
@@ -14,17 +15,23 @@ const Torneios = () => {
   const { notify: notifyPage } = useNotification();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [seasons, setSeasons] = useState<Season[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [modalityFilter, setModalityFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [seasonFilter, setSeasonFilter] = useState('');
 
   // Fetch tournaments on component mount
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const tournamentsData = await tournamentsApi.getAll();
+        const [tournamentsData, seasonsData] = await Promise.all([
+          tournamentsApi.getAll(),
+          seasonsApi.getAll(),
+        ]);
         setTournaments(tournamentsData);
+        setSeasons(seasonsData);
       } catch (err) {
         console.error('Failed to fetch data:', err);
         notifyPage('Erro ao carregar dados', 'error');
@@ -41,7 +48,8 @@ const Torneios = () => {
     (t) =>
       t.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
       (modalityFilter === '' || t.modality.id === modalityFilter) &&
-      (statusFilter === '' || t.status === statusFilter)
+      (statusFilter === '' || t.status === statusFilter) &&
+      (seasonFilter === '' || t.season_id === seasonFilter)
   );
 
   return (
@@ -69,6 +77,9 @@ const Torneios = () => {
           onStatusChange={setStatusFilter}
           availableTournaments={tournaments}
           showModalityFilter={true}
+          seasonFilter={seasonFilter}
+          onSeasonChange={setSeasonFilter}
+          availableSeasons={seasons}
         />
 
         <div className="bg-white shadow-md rounded-lg p-6 mt-6">
@@ -76,6 +87,7 @@ const Torneios = () => {
             tournaments={filteredTournaments}
             loading={loading}
             showModality={true}
+            seasons={seasons}
             emptyMessage={
               searchQuery || modalityFilter || statusFilter
                 ? 'Nenhum torneio encontrado com os filtros aplicados.'

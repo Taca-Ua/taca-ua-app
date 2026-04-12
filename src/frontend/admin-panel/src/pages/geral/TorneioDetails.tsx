@@ -5,6 +5,7 @@ import ConfirmModal from '../../components/ConfirmModal';
 import Sidebar from '../../components/geral_navbar';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { tournamentsApi, type TournamentDetail, type TournamentUpdate, type TournamentCompetitor, type TournamentCompetitorDetail, type TournamentFinish } from '../../api/tournaments';
+import { seasonsApi, type Season } from '../../api/seasons';
 import { teamsApi, type Team } from '../../api/teams';
 import { matchesApi, type Match, type MatchCreate, type ParticipantCreate } from '../../api/matches';
 import { studentsApi, type Student } from '../../api/members';
@@ -16,13 +17,15 @@ const TournamentInfo = ({
   onEdit,
   onDelete,
   onActivate,
-  onFinish
+  onFinish,
+  seasons = [],
 }: {
   tournament: TournamentDetail;
   onEdit: () => void;
   onDelete: () => void;
   onActivate: () => void;
   onFinish: () => void;
+  seasons?: Season[];
 }) => {
   const [showScoringModal, setShowScoringModal] = useState(false);
   const [selectedEscalaoIdx, setSelectedEscalaoIdx] = useState(0);
@@ -48,6 +51,7 @@ const TournamentInfo = ({
   const scoringFormat = tournament.scoring_format;
   const escaloes = scoringFormat?.escaloes ?? [];
   const activeEscalao = escaloes[selectedEscalaoIdx];
+  const season = seasons.find(s => s.id === tournament.season_id);
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 space-y-4">
@@ -66,6 +70,22 @@ const TournamentInfo = ({
           {tournament.modality.name}
         </div>
       </div>
+
+      {season && (
+        <div>
+          <label className="block text-teal-500 font-medium mb-2">Época</label>
+          <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800 flex items-center gap-2">
+            <span>{season.year}</span>
+            <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${
+              season.status === 'active' ? 'bg-green-100 text-green-800' :
+              season.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
+              'bg-gray-100 text-gray-800'
+            }`}>
+              {season.status === 'active' ? 'Ativa' : season.status === 'draft' ? 'Rascunho' : 'Finalizada'}
+            </span>
+          </div>
+        </div>
+      )}
 
       <div>
         <label className="block text-teal-500 font-medium mb-2">Estado</label>
@@ -1149,11 +1169,13 @@ const TournamentMatches = ({
       ) : (
         <div className="space-y-3">
           {filteredMatches.map((match) => (
-            <button
+            <div
               key={match.id}
-              type="button"
+              role="button"
+              tabIndex={0}
               onClick={() => navigate(`/geral/jogos/${match.id}`)}
-              className="w-full text-left p-4 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`/geral/jogos/${match.id}`); }}
+              className="w-full text-left p-4 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
             >
               <div className="flex justify-between items-start mb-2">
                 <div className="flex-1">
@@ -1189,7 +1211,7 @@ const TournamentMatches = ({
                   </button>
                 </div>
               </div>
-            </button>
+            </div>
           ))}
         </div>
       )}
@@ -1324,6 +1346,7 @@ const TorneioDetails = () => {
   const [searchParams] = useSearchParams();
 
   const [tournament, setTournament] = useState<TournamentDetail | null>(null);
+  const [seasons, setSeasons] = useState<Season[]>([]);
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showFinishModal, setShowFinishModal] = useState(false);
@@ -1352,8 +1375,12 @@ const TorneioDetails = () => {
 
     try {
       setLoading(true);
-      const data = await tournamentsApi.getById(id);
+      const [data, seasonsData] = await Promise.all([
+        tournamentsApi.getById(id),
+        seasonsApi.getAll(),
+      ]);
       setTournament(data);
+      setSeasons(seasonsData);
     } catch (err) {
       console.error('Failed to fetch tournament:', err);
       notify('Não foi possível carregar os dados do torneio. Tente recarregar a página.', 'error');
@@ -1459,6 +1486,7 @@ const TorneioDetails = () => {
                 onDelete={handleDelete}
                 onActivate={handleActivate}
                 onFinish={() => setShowFinishModal(true)}
+                seasons={seasons}
               />
             </div>
 

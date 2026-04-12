@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type TouchEvent } from 'react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
-import { modalityRankingApi, type ModalityRanking } from '../../api';
+import { modalityRankingApi, type ModalityRanking, seasonsApi, type Season } from '../../api';
 
 interface OptionItem {
   id: string;
@@ -14,6 +14,8 @@ function ModalityRankingPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [seasons, setSeasons] = useState<Season[]>([]);
+  const [seasonId, setSeasonId] = useState<string | null>(null);
 
   const modalities: OptionItem[] = useMemo(
     () =>
@@ -39,11 +41,23 @@ function ModalityRankingPage() {
   );
 
   useEffect(() => {
+    seasonsApi.getAll().then((data) => {
+      setSeasons(data);
+      const statusPriority = (s: Season) => s.status === 'finished' ? 0 : s.status === 'active' ? 1 : 2;
+      const mostRecent = [...data].sort((a, b) => b.year - a.year || statusPriority(a) - statusPriority(b))[0];
+      setSeasonId(mostRecent ? mostRecent.season_id : '');
+    }).catch(() => { setSeasonId(''); });
+  }, []);
+
+  useEffect(() => {
+    if (seasonId === null) return; // wait for seasons to load
     const fetchRankings = async () => {
       try {
         setLoading(true);
         setError(null);
-        const data = await modalityRankingApi.getModalityRanking();
+        const data = await modalityRankingApi.getModalityRanking(
+          seasonId ? { season_id: seasonId } : undefined
+        );
         setRankings(data.items);
         setCurrentIndex(0);
       } catch (err) {
@@ -55,7 +69,7 @@ function ModalityRankingPage() {
     };
 
     fetchRankings();
-  }, []);
+  }, [seasonId]);
 
   const getMedalIcon = (rank: number | null) => {
     if (rank === null) return null;
@@ -121,6 +135,28 @@ function ModalityRankingPage() {
               Classificação dos cursos em cada modalidade, com base nos resultados dos torneios
             </p>
           </div>
+
+          {/* Season selector */}
+          {seasons.length > 0 && (
+            <div className="mb-6">
+              <label htmlFor="season-filter-modality" className="block text-sm font-medium text-gray-700 mb-2">
+                Época
+              </label>
+              <select
+                id="season-filter-modality"
+                value={seasonId ?? ''}
+                onChange={(e) => { setSeasonId(e.target.value); setCurrentIndex(0); }}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              >
+                <option value="">Todas as Épocas</option>
+                {[...seasons].sort((a, b) => b.year - a.year).map((s) => (
+                  <option key={s.season_id} value={s.season_id}>
+                    {s.year}{s.status === 'active' ? ' (ativa)' : s.status === 'draft' ? ' (rascunho)' : ' (finalizada)'}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Carousel Modality Selector - mobile first */}
           {modalities.length > 0 && (

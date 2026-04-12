@@ -50,6 +50,23 @@ class TournamentStatus(str, enum.Enum):
 # ==================== Core Read Models ====================
 
 
+class Season(Base):
+    """Season - populated from tournaments service season events."""
+
+    __tablename__ = "seasons"
+    __table_args__ = (
+        UniqueConstraint("year", name="uq_season_year"),
+        {"schema": "public_read"},
+    )
+
+    season_id = Column(UUID(as_uuid=True), primary_key=True)
+    year = Column(Integer, nullable=False)
+    status = Column(String(20), nullable=False, default="draft")
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    started_at = Column(DateTime, nullable=True)
+    finished_at = Column(DateTime, nullable=True)
+
+
 class Nucleo(Base):
     """Organizational unit (nucleo) - populated from modalities service events."""
 
@@ -321,6 +338,7 @@ class Tournament(Base):
     name = Column(String, nullable=False)
     start_date = Column(Date, nullable=False)
     status = Column(String, nullable=False)
+    season_id = Column(UUID(as_uuid=True), nullable=True)
 
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(
@@ -601,12 +619,13 @@ class GeneralRankings(Base):
     __tablename__ = "general_rankings"
     __table_args__ = (
         Index("ix_general_rankings_course_id", "course_id"),
-        UniqueConstraint("course_id", name="uq_general_rankings_course"),
+        UniqueConstraint("course_id", "season_id", name="uq_general_rankings_course_season"),
         {"schema": "public_read"},
     )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     course_id = Column(UUID(as_uuid=True), nullable=False)
+    season_id = Column(UUID(as_uuid=True), nullable=True)
     points = Column(Integer, nullable=False, default=0)
     tournaments_participated = Column(Integer, nullable=False, default=0)
 
@@ -619,7 +638,7 @@ class ModalityRankings(Base):
         Index("ix_modality_rankings_modality_id", "modality_id"),
         Index("ix_modality_rankings_course_id", "course_id"),
         UniqueConstraint(
-            "modality_id", "course_id", name="uq_modality_rankings_modality_course"
+            "modality_id", "course_id", "season_id", name="uq_modality_rankings_modality_course_season"
         ),
         {"schema": "public_read"},
     )
@@ -627,6 +646,7 @@ class ModalityRankings(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     modality_id = Column(UUID(as_uuid=True), nullable=False)
     course_id = Column(UUID(as_uuid=True), nullable=False)
+    season_id = Column(UUID(as_uuid=True), nullable=True)
     points = Column(Integer, nullable=False, default=0)
 
 
@@ -721,6 +741,7 @@ class TournamentDetailView(Base):
         Index("ix_mv_tournament_details_modality_id", "modality_id"),
         Index("ix_mv_tournament_details_status", "status"),
         Index("ix_mv_tournament_details_start_date", "start_date"),
+        Index("ix_mv_tournament_details_season_id", "season_id"),
         {"schema": "public_read"},
     )
 
@@ -728,6 +749,7 @@ class TournamentDetailView(Base):
     tournament_name = Column(String, nullable=False)
     start_date = Column(Date, nullable=False)
     status = Column(String, nullable=False)
+    season_id = Column(UUID(as_uuid=True), nullable=True)
 
     # Modality info
     modality_id = Column(UUID(as_uuid=True), nullable=False)
@@ -840,12 +862,13 @@ class GeneralRankingView(Base):
     __table_args__ = (
         Index("ix_mv_general_ranking_rank", "rank"),
         Index("ix_mv_general_ranking_course_id", "course_id"),
-        UniqueConstraint("course_id", name="uq_general_ranking_course"),
+        UniqueConstraint("course_id", "season_id", name="uq_general_ranking_course_season"),
         {"schema": "public_read"},
     )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     course_id = Column(UUID(as_uuid=True), nullable=False)
+    season_id = Column(UUID(as_uuid=True), nullable=True)
     course_name = Column(String, nullable=False)
     course_abbreviation = Column(String, nullable=False)
 
@@ -879,13 +902,14 @@ class ModalityRankingView(Base):
         Index("ix_mv_modality_rankings_rank", "modality_id", "rank"),
         Index("ix_mv_modality_rankings_course_id", "modality_id", "course_id"),
         UniqueConstraint(
-            "modality_id", "course_id", name="uq_modality_ranking_modality_course"
+            "modality_id", "course_id", "season_id", name="uq_modality_ranking_modality_course_season"
         ),
         {"schema": "public_read"},
     )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     modality_id = Column(UUID(as_uuid=True), nullable=False)
+    season_id = Column(UUID(as_uuid=True), nullable=True)
     modality_name = Column(String, nullable=True)
 
     course_id = Column(UUID(as_uuid=True), nullable=False)

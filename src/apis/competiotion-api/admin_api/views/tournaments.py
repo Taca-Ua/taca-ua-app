@@ -93,6 +93,7 @@ class TournamentListCreateView(RoleRequiredMixin, APIView):
                     if modality.modality_type.tournament_competitor_type == "team"
                     else "athlete"
                 ),
+                season_id=serializer.validated_data.get("season_id"),
             )
 
             # Enrich tournament info
