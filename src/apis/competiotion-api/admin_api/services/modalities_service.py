@@ -34,6 +34,7 @@ class CourseDTO:
 
     def __post_init__(self):
         if not isinstance(self.nucleo, NucleoDTO):
+            del self.nucleo["courses"]
             self.nucleo = NucleoDTO(**self.nucleo)
 
 

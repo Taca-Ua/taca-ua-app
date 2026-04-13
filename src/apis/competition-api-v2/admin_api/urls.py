@@ -5,11 +5,9 @@ from admin_api.modules.matches import urlpatterns as matches_urls
 from admin_api.modules.modalities import urlpatterns as modality_urls
 from admin_api.modules.modality_types import urlpatterns as modality_type_urls
 from admin_api.modules.nucleos import urlpatterns as nucleos_urls
+from admin_api.modules.teams import urlpatterns as teams_urls
 from admin_api.modules.tournaments import urlpatterns as tournament_urls
 from django.urls import include, path
-
-# from .modules.tournaments.views import urlpatterns as tournament_urls
-
 
 urlpatterns = [
     path("admins/", include(admin_urls)),
@@ -20,4 +18,5 @@ urlpatterns = [
     path("courses/", include(courses_urls)),
     path("athletes/", include(athletes_urls)),
     path("matches/", include(matches_urls)),
+    path("teams/", include(teams_urls)),
 ]

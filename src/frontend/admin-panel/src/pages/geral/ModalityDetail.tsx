@@ -2,19 +2,17 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Sidebar from '../../components/geral_navbar';
 import { useNotification } from '../../contexts/NotificationProvider';
-import { tournamentsApi, type Tournament } from '../../api/tournaments';
+import { tournamentsApi, type TournamentListItem } from '../../api/tournaments';
 import { btn } from '../../styles/buttonStyles';
 import {
-  TournamentCreateModal,
-  TournamentFilters,
-  TournamentList,
+  TournamentCreateModal,  TournamentList,
 } from '../../components/tournaments';
 import ModalityDetailComponent from '../../components/modalities/ModalityDetailComponent';
 
 
 const TournamentsTab = ({ modalityId, modalityName }: { modalityId: string; modalityName: string }) => {
   const { notify } = useNotification();
-  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [tournaments, setTournaments] = useState<TournamentListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -39,7 +37,7 @@ const TournamentsTab = ({ modalityId, modalityName }: { modalityId: string; moda
     fetchTournaments();
   }, [modalityId]);
 
-  const handleCreateTournament = (newTournament: Tournament) => {
+  const handleCreateTournament = (newTournament: TournamentListItem) => {
     setTournaments([...tournaments, newTournament]);
   };
 
@@ -61,27 +59,13 @@ const TournamentsTab = ({ modalityId, modalityName }: { modalityId: string; moda
         </button>
       </div>
 
-      <TournamentFilters
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        statusFilter={statusFilter}
-        onStatusChange={setStatusFilter}
-        showModalityFilter={false}
+      <TournamentList
+        showModality={false}
+        loadTournaments={async () => tournamentsApi.getAll({
+          modality_id: modalityId
+        })}
+        fromModalityId={modalityId}
       />
-
-      <div className="bg-white border border-gray-200 rounded-lg p-4">
-        <TournamentList
-          tournaments={filteredTournaments}
-          loading={loading}
-          showModality={false}
-          fromModalityId={modalityId}
-          emptyMessage={
-            searchQuery || statusFilter
-              ? 'Nenhum torneio encontrado com os filtros aplicados.'
-              : 'Ainda não existem torneios para esta modalidade.'
-          }
-        />
-      </div>
 
       <TournamentCreateModal
         isOpen={isCreateModalOpen}

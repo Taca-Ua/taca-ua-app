@@ -26,7 +26,7 @@ import SociosGeral from '../pages/geral/Socios';
 import DashboardNucleo from '../pages/nucleo/DashboardNucleo';
 import Membros from '../pages/nucleo/Membros';
 import MemberDetail from '../pages/nucleo/MemberDetail';
-import Equipas from '../pages/nucleo/Equipas';
+import Equipas from '../pages/nucleo/Teams';
 import TeamDetailPage from '../pages/nucleo/TeamDetail';
 import Jogos from '../pages/nucleo/Jogos';
 import MatchDetailPage from '../pages/nucleo/MatchDetail';

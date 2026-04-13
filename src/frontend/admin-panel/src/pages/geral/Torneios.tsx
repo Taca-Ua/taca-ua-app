@@ -1,48 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Sidebar from '../../components/geral_navbar';
-import { useNotification } from '../../contexts/NotificationProvider';
-import { tournamentsApi, type Tournament } from '../../api/tournaments';
+import { tournamentsApi, type TournamentListItem } from '../../api/tournaments';
 import { btn } from '../../styles/buttonStyles';
 import {
   TournamentCreateModal,
-  TournamentFilters,
   TournamentList,
 } from '../../components/tournaments';
 
 const Torneios = () => {
-  const [loading, setLoading] = useState(true);
-  const { notify: notifyPage } = useNotification();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [tournaments, setTournaments] = useState<Tournament[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [modalityFilter, setModalityFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [tournaments, setTournaments] = useState<TournamentListItem[]>([]);
 
-  // Fetch tournaments on component mount
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const tournamentsData = await tournamentsApi.getAll();
-        setTournaments(tournamentsData);
-      } catch (err) {
-        console.error('Failed to fetch data:', err);
-        notifyPage('Erro ao carregar dados', 'error');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  // Filter tournaments based on search and filters
-  const filteredTournaments = tournaments.filter(
-    (t) =>
-      t.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      (modalityFilter === '' || t.modality.id === modalityFilter) &&
-      (statusFilter === '' || t.status === statusFilter)
-  );
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -60,29 +28,11 @@ const Torneios = () => {
           </button>
         </div>
 
-        <TournamentFilters
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          modalityFilter={modalityFilter}
-          onModalityChange={setModalityFilter}
-          statusFilter={statusFilter}
-          onStatusChange={setStatusFilter}
-          availableTournaments={tournaments}
-          showModalityFilter={true}
+        <TournamentList
+          tournamentsState={[tournaments, setTournaments]}
+          showModality={true}
+          loadTournaments={async () => tournamentsApi.getAll()}
         />
-
-        <div className="bg-white shadow-md rounded-lg p-6 mt-6">
-          <TournamentList
-            tournaments={filteredTournaments}
-            loading={loading}
-            showModality={true}
-            emptyMessage={
-              searchQuery || modalityFilter || statusFilter
-                ? 'Nenhum torneio encontrado com os filtros aplicados.'
-                : 'Nenhum torneio encontrado.'
-            }
-          />
-        </div>
 
         <TournamentCreateModal
           isOpen={isModalOpen}

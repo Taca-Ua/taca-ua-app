@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { apiClient } from './client2';
 
 // Choices
 type tournamentStatusChoices = 'draft' | 'active' | 'finished';
@@ -69,7 +69,7 @@ export interface TournamentCompetitorsDelete {
 
 export const tournamentsApi = {
   async getAll(params?: TournamentListParams): Promise<TournamentListItem[]> {
-    return apiClient.get<TournamentListItem[]>('/tournaments/', { params });
+    return apiClient.get<TournamentListItem[]>('/tournaments/', params );
   },
 
   async create(data: TournamentCreate): Promise<TournamentListItem> {

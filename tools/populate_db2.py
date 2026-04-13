@@ -2,7 +2,7 @@ from typing import List
 
 import requests
 
-API_URL = "http://localhost/api/admin"
+API_URL = "http://localhost/api2/admin"
 
 HEADERS = {
     "X-Dev-Auth-Token": "super-secret-dev-token",
