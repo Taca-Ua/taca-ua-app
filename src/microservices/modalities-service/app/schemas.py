@@ -24,6 +24,7 @@ class NucleoResponse(BaseModel):
     name: str
     abbreviation: str
     admins_ids: List[str] = Field(default_factory=list)
+    courses: List["CourseResponse"] = Field(default_factory=list)
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -49,7 +50,7 @@ class CourseResponse(BaseModel):
     id: str
     name: str
     abbreviation: str
-    nucleo: NucleoResponse
+    nucleo: Optional[NucleoResponse] = None
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None

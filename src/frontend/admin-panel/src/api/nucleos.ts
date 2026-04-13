@@ -1,14 +1,18 @@
-import { apiClient } from './client';
+import { apiClient } from './client2';
 
-export interface Nucleo {
+export interface NucleoListItem {
   id: string;
   name: string;
   abbreviation: string;
 }
 
-export interface NucleoDetail extends Nucleo {
-  // Additional fields can be added here if needed
-}
+export interface NucleoDetail extends NucleoListItem {
+  courses: {
+    id: string;
+    name: string;
+    abbreviation: string;
+  }[];
+};
 
 export interface NucleoCreate {
   name: string;
@@ -21,12 +25,12 @@ export interface NucleoUpdate {
 }
 
 export const nucleosApi = {
-  async getAll(): Promise<Nucleo[]> {
-	return apiClient.get<Nucleo[]>('/nucleos/');
+  async getAll(): Promise<NucleoListItem[]> {
+	return apiClient.get<NucleoListItem[]>('/nucleos/');
   },
 
-  async getById(nucleoId: string): Promise<Nucleo> {
-	return apiClient.get<Nucleo>(`/nucleos/${nucleoId}/`);
+  async getById(nucleoId: string): Promise<NucleoDetail> {
+	return apiClient.get<NucleoDetail>(`/nucleos/${nucleoId}/`);
   },
 
   async create(data: NucleoCreate): Promise<NucleoDetail> {

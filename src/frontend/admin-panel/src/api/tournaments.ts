@@ -1,72 +1,79 @@
 import { apiClient } from './client';
-import { type Match } from "./matches";
-import type { Modality } from './modalities';
-import type { Team } from './teams';
-import type { Student } from './members';
-import type { ModalityType } from "./modality-types";
 
-export interface TournamentCompetitor {
-  competitor_type: 'team' | 'athlete';
-  team_id?: string;
-  athlete_id?: string;
-}
+// Choices
+type tournamentStatusChoices = 'draft' | 'active' | 'finished';
+type tournamentCompetitorTypeChoices = 'team' | 'athlete';
 
-export interface TournamentCompetitorDetail {
-  id: string;
-  competitor_type: 'team' | 'athlete';
-  team: Team;
-  athlete: Student;
-}
-
-export interface Tournament {
+// Response interfaces
+export interface TournamentListItem {
   id: string;
   name: string;
-  status: string;
-  modality: Modality;
+  status: tournamentStatusChoices;
+  modality: {
+    id: string;
+    name: string;
+  };
   start_date?: string;
 }
 
-export interface TournamentDetail extends Tournament {
-  start_date: string;
-  scoring_format: ModalityType;
-  competitors: TournamentCompetitorDetail[];
-  matches: Match[];
-  competitor_type: 'team' | 'athlete';
+export interface TournamentDetail extends TournamentListItem {
+  competitor_type: tournamentCompetitorTypeChoices;
+  competitors: {
+    id: string;
+    entity_id: string;
+    name: string;
+    course_name: string;
+  }[];
+  scoring_format: {
+    name: string;
+    rank: string;
+    points: number[];
+  };
 }
+
+// Input interfaces
+export interface TournamentListParams {
+  status?: tournamentStatusChoices;
+  modality_id?: string;
+};
 
 export interface TournamentCreate {
   name: string;
   modality_id: string;
-  is_playoff?: boolean;
-  competitors: TournamentCompetitor[];
   start_date?: string;
-}
+  is_playoff?: boolean;
+};
 
 export interface TournamentUpdate {
   name?: string;
   start_date?: string;
-  status?: 'draft' | 'active' | 'finished';
-  competitors_add?: TournamentCompetitor[];
-  competitors_remove?: TournamentCompetitor[];
+  status?: tournamentStatusChoices;
   is_playoff?: boolean;
-}
-
-// Input interfaces
-interface TournamentFinishEntry extends TournamentCompetitor {
-  position: number;
-}
+};
 
 export interface TournamentFinish {
-  ranking_entries?: TournamentFinishEntry[];
+  ranking_entries: {
+    position: number;
+    competitor_id: string;
+  }[];
+};
+
+export interface TournamentCompetitorsAddEntry {
+  competitor_type: tournamentCompetitorTypeChoices;
+  entity_id: string;
+};
+
+export interface TournamentCompetitorsDelete {
+  competitors_ids: string[];
 }
 
 export const tournamentsApi = {
-  async getAll(): Promise<Tournament[]> {
-    return apiClient.get<Tournament[]>('/tournaments/');
+  async getAll(params?: TournamentListParams): Promise<TournamentListItem[]> {
+    return apiClient.get<TournamentListItem[]>('/tournaments/', { params });
   },
 
-  async create(data: TournamentCreate): Promise<Tournament> {
-    return apiClient.post<Tournament>('/tournaments/', data);
+  async create(data: TournamentCreate): Promise<TournamentListItem> {
+    return apiClient.post<TournamentListItem>('/tournaments/', data);
   },
 
   async getById(id: string): Promise<TournamentDetail> {
@@ -85,11 +92,11 @@ export const tournamentsApi = {
     return apiClient.post<TournamentDetail>(`/tournaments/${id}/finish/`, data);
   },
 
-  async addCompetitors(id: string, competitors: TournamentCompetitor[]): Promise<TournamentDetail> {
+  async addCompetitors(id: string, competitors: TournamentCompetitorsAddEntry[]): Promise<TournamentDetail> {
     return apiClient.put<TournamentDetail>(`/tournaments/${id}/competitors/add/`, competitors );
   },
 
-  async removeCompetitors(id: string, competitors_ids: string[]): Promise<TournamentDetail> {
-    return apiClient.put<TournamentDetail>(`/tournaments/${id}/competitors/remove/`, { competitors_ids });
+  async removeCompetitors(id: string, competitors_ids: TournamentCompetitorsDelete): Promise<TournamentDetail> {
+    return apiClient.put<TournamentDetail>(`/tournaments/${id}/competitors/remove/`, competitors_ids);
   }
 };

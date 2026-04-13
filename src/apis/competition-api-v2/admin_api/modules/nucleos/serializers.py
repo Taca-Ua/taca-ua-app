@@ -5,6 +5,12 @@ Nucleos management serializers
 from rest_framework import serializers
 
 
+class _NucleoCourseSummary(serializers.Serializer):
+    id = serializers.UUIDField()
+    name = serializers.CharField()
+    abbreviation = serializers.CharField()
+
+
 # Response serializers
 class NucleosListSerializer(serializers.Serializer):
     id = serializers.UUIDField()
@@ -12,7 +18,8 @@ class NucleosListSerializer(serializers.Serializer):
     abbreviation = serializers.CharField()
 
 
-class NucleosDetailSerializer(NucleosListSerializer): ...
+class NucleosDetailSerializer(NucleosListSerializer):
+    courses = _NucleoCourseSummary(many=True)
 
 
 # Request serializers

@@ -9,6 +9,7 @@ import { teamsApi, type Team } from '../../api/teams';
 import { matchesApi, type Match, type MatchCreate, type ParticipantCreate } from '../../api/matches';
 import { studentsApi, type Student } from '../../api/members';
 import { btn } from '../../styles/buttonStyles';
+import ListMatchesComponent from '../../components/matches/ListMatches';
 
 // Component to display tournament information
 const TournamentInfo = ({
@@ -1471,11 +1472,7 @@ const TorneioDetails = () => {
           </div>
 
           <div className="mt-6">
-            <TournamentMatches
-              tournament={tournament}
-              onMatchesChange={loadTournament}
-              onMatchDeleted={(matchId) => setTournament(prev => prev ? { ...prev, matches: prev.matches.filter(m => m.id !== matchId) } : null)}
-            />
+            <ListMatchesComponent tournamentId={tournament.id} />
           </div>
         </div>
       </div>

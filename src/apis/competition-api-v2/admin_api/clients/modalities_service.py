@@ -17,9 +17,16 @@ class NucleoDTO:
     name: str
     abbreviation: str
     admins_ids: List[str] = field(default_factory=list)
+    courses: List["CourseDTO"] = field(default_factory=list)
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
+
+    def __post_init__(self):
+        self.courses = [
+            course if isinstance(course, CourseDTO) else CourseDTO(**course)
+            for course in self.courses
+        ]
 
 
 @dataclass
@@ -27,12 +34,15 @@ class CourseDTO:
     id: UUID
     name: str
     abbreviation: str
-    nucleo: NucleoDTO
+    nucleo: Optional[NucleoDTO] = None
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
 
     def __post_init__(self):
+        if self.nucleo is None or isinstance(self.nucleo, NucleoDTO):
+            return
+
         if not isinstance(self.nucleo, NucleoDTO):
             self.nucleo = NucleoDTO(**self.nucleo)
 

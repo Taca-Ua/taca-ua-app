@@ -2,9 +2,16 @@
 Nucleos management service
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from admin_api.clients.modalities_service import NucleoDTO, modalities_service_client
+
+
+@dataclass
+class _NucleoCourse:
+    id: str
+    name: str
+    abbreviation: str
 
 
 @dataclass
@@ -12,12 +19,24 @@ class Nucleo:
     id: str
     name: str
     abbreviation: str
+    courses: list[_NucleoCourse] = field(default_factory=list)
 
 
 class NucleosService:
 
     def _build_nucleo_from_modalities_answer(self, data: NucleoDTO) -> Nucleo:
-        return Nucleo(id=data.id, name=data.name, abbreviation=data.abbreviation)
+
+        return Nucleo(
+            id=data.id,
+            name=data.name,
+            abbreviation=data.abbreviation,
+            courses=[
+                _NucleoCourse(
+                    id=course.id, name=course.name, abbreviation=course.abbreviation
+                )
+                for course in data.courses
+            ],
+        )
 
     def list_nucleos(self) -> list[Nucleo]:
         answer_data = modalities_service_client.nucleos.list_nucleos()

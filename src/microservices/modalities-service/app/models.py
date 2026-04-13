@@ -64,6 +64,9 @@ class Nucleo(Base):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "admins_ids": self.admins_ids,
+            "courses": [
+                course.to_dict(include_nucleo=False) for course in self.courses
+            ],
         }
 
 
@@ -92,12 +95,12 @@ class Course(Base):
     students = relationship("Student", back_populates="course")
     teams = relationship("Team", back_populates="course")
 
-    def to_dict(self):
+    def to_dict(self, *, include_nucleo=True):
         return {
             "id": str(self.id),
             "name": self.name,
             "abbreviation": self.abbreviation,
-            "nucleo": self.nucleo.to_dict() if self.nucleo else None,
+            "nucleo": self.nucleo.to_dict() if self.nucleo and include_nucleo else None,
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,

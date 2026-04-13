@@ -1,0 +1,153 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useNotification } from "../../contexts/NotificationProvider";
+import { type NucleoDetail, nucleosApi } from "../../api/nucleos";
+import HelpTooltip from "../HelpTooltip";
+import ConfirmModal from "../ConfirmModal";
+import { btn } from "../../styles/buttonStyles";
+import NucleusEditModel from "./NucleusEditModel";
+
+const NucleusDetailComponent = ( { nucleusId } : { nucleusId: string }) => {
+  const { notify } = useNotification();
+  const navigate = useNavigate();
+
+  const editModelController = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const [nucleus, setNucleus] = useState<NucleoDetail>();
+
+  useEffect(() => {
+    // Fetch nucleus details from API
+    const fetchNucleus = async () => {
+      try {
+        const nucleusData = await nucleosApi.getById(nucleusId);
+        setNucleus(nucleusData);
+      } catch (error) {
+        console.error("Error fetching nucleus details:", error);
+      }
+    };
+
+    fetchNucleus();
+  }, [nucleusId]);
+
+  const handleDelete = async () => {
+    try {
+      setDeleting(true);
+      await nucleosApi.delete(String(nucleusId));
+      navigate('/geral/nucleos');
+    } catch (err) {
+      console.error('Failed to delete course:', err);
+      notify('Não foi possível eliminar o núcleo. Poderá ter cursos ou membros associados.', 'error');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  if (!nucleus) {
+    return (
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <p className="text-gray-500">Carregando detalhes do núcleo...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
+      <div>
+        <label className="block text-teal-500 font-medium mb-2">Logo</label>
+        <div className="flex items-center gap-4">
+          <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-teal-500">
+            <span className="text-teal-600 font-bold text-2xl">
+              {nucleus.abbreviation}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-teal-500 font-medium mb-2">
+          Abreviatura{" "}
+          <HelpTooltip
+            text="Sigla ou código curto do núcleo, ex: NEECT, NEEEC. Utilizado como identificador visual no sistema."
+            className="ml-1"
+          />
+        </label>
+        <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
+          {nucleus.abbreviation}
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-teal-500 font-medium mb-2">Nome</label>
+        <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
+          {nucleus.name}
+        </div>
+      </div>
+
+      {nucleus.courses.length > 0 && (
+        <div>
+          <label className="block text-teal-500 font-medium mb-2">
+            Cursos Associados
+          </label>
+          <div className="bg-gray-100 px-4 py-3 rounded-md">
+            <div className="flex flex-wrap gap-2">
+              {[...nucleus.courses]
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((course) => (
+                  <span
+                    key={course.id}
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800 font-medium"
+                  >
+                    {course.name}
+                    <span className="ml-1 text-blue-600">
+                      ({course.abbreviation})
+                    </span>
+                  </span>
+                ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex gap-4 pt-4">
+        <button
+          onClick={() => editModelController[1](true)}
+          className={`flex-1 px-6 py-3 ${btn.primary} rounded-md font-medium transition-colors`}
+        >
+          Editar
+        </button>
+
+        <button
+          onClick={handleDelete}
+          className={`flex-1 px-6 py-3 ${btn.danger} rounded-md font-medium transition-colors`}
+        >
+          Eliminar
+        </button>
+      </div>
+
+      <NucleusEditModel
+        controller={editModelController}
+        onSave={(updatedNucleus) => setNucleus(updatedNucleus)}
+        nucleusData={nucleus}
+      />
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        title="Eliminar núcleo"
+        message={`Tem certeza que deseja eliminar "${nucleus.name}"?`}
+        confirmLabel="Eliminar"
+        variant="danger"
+        loading={deleting}
+        onCancel={() => {
+          if (!deleting) {
+            setIsDeleteModalOpen(false);
+          }
+        }}
+        onConfirm={handleDelete}
+      />
+    </div>
+  );
+};
+
+export default NucleusDetailComponent;

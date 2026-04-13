@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import HelpTooltip from '../../components/HelpTooltip';
 import ConfirmModal from "../../components/ConfirmModal";
 import Sidebar from "../../components/geral_navbar";
-import { modalityTypesApi, type ModalityType } from "../../api/modality-types";
+import { modalityTypesApi, type ModalityTypeListItem } from "../../api/modality-types";
 import { useNotification } from '../../contexts/NotificationProvider';
 import { btn } from '../../styles/buttonStyles';
 
@@ -19,7 +19,7 @@ const parsePoints = (raw: string): number[] =>
 
 
 const FormatosPontuacao = () => {
-  const [scoringFormats, setModalityTypes] = useState<ModalityType[]>([]);
+  const [scoringFormats, setModalityTypes] = useState<ModalityTypeListItem[]>([]);
   const [loading] = useState(false);
   const { notify } = useNotification();
 
@@ -28,7 +28,7 @@ const FormatosPontuacao = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedFormat, setSelectedFormat] = useState<ModalityType | null>(null);
+  const [selectedFormat, setSelectedFormat] = useState<ModalityTypeListItem | null>(null);
   const [deletingFormat, setDeletingFormat] = useState(false);
 
   // Form states
@@ -132,12 +132,12 @@ useEffect(() => {
     }
   };
 
-  const handleViewFormat = (format: ModalityType) => {
+  const handleViewFormat = (format: ModalityTypeListItem) => {
     setSelectedFormat(format);
     setIsViewModalOpen(true);
   };
 
-  const handleEditFormat = (format: ModalityType) => {
+  const handleEditFormat = (format: ModalityTypeListItem) => {
     setSelectedFormat(format);
     setFormatName(format.name);
     setFormatDescription(format.description || '');
