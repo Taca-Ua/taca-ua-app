@@ -8,6 +8,30 @@ from uuid import UUID
 
 from pydantic import BaseModel, field_validator
 
+
+# ==================== Season Schemas ====================
+
+
+class SeasonCreate(BaseModel):
+    """Schema for creating a season"""
+
+    year: int
+
+
+class SeasonResponse(BaseModel):
+    """Schema for season response"""
+
+    id: UUID
+    year: int
+    status: str
+    created_at: Optional[datetime] = None
+    started_at: Optional[datetime] = None
+    finished_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
 # ==================== Tournament Schemas ====================
 
 
@@ -62,6 +86,7 @@ class TournamentCreate(BaseModel):
     scoring_format_id: UUID
     start_date: Optional[datetime]
     competitor_type: str  # "team" or "athlete"
+    season_id: Optional[UUID] = None
 
 
 class TournamentUpdate(BaseModel):
@@ -97,6 +122,7 @@ class TournamentResponse(BaseModel):
     modality_id: UUID
     start_date: Optional[datetime]
     scoring_format_id: UUID
+    season_id: Optional[UUID] = None
     competitors: List[CompetitorResponse]
     competitor_type: str
 

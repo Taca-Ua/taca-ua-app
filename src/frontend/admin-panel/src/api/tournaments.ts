@@ -24,6 +24,7 @@ export interface Tournament {
   status: string;
   modality: Modality;
   start_date?: string;
+  season_id?: string;
 }
 
 export interface TournamentDetail extends Tournament {
@@ -40,6 +41,7 @@ export interface TournamentCreate {
   is_playoff?: boolean;
   competitors: TournamentCompetitor[];
   start_date?: string;
+  season_id?: string;
 }
 
 export interface TournamentUpdate {

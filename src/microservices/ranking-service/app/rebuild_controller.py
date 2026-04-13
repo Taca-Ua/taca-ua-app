@@ -124,10 +124,14 @@ class RankingRebuildService(BaseRebuildService):
             # Recompute derived rankings from freshly populated core tables
             # and emit the RankingComputedV1 event so the read-model-updater
             # can synchronise its GeneralRankingView projection.
-            compute_all_rankings(self.db)
-            emit_ranking_computed_event(self.db, outbox_publisher)
+            # Compute for every distinct season present in the data.
+            distinct_seasons = self.db.query(Tournament.season_id).distinct().all()
+            season_ids = [row[0] for row in distinct_seasons]
+            for sid in season_ids:
+                compute_all_rankings(self.db, sid)
+                emit_ranking_computed_event(self.db, outbox_publisher, sid)
             self.db.commit()
-            logger.info("derived_tables_computed")
+            logger.info("derived_tables_computed", seasons_computed=len(season_ids))
 
             return total
 
@@ -213,6 +217,7 @@ class RankingRebuildService(BaseRebuildService):
                     tournament_id=item.id,
                     modality_id=item.modality_id,
                     scoring_format_id=item.scoring_format_id,
+                    season_id=item.season_id,
                 )
             )
         self.db.flush()

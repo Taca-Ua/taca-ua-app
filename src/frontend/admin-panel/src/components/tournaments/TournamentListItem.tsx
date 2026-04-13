@@ -6,9 +6,10 @@ interface TournamentListItemProps {
   tournament: Tournament;
   showModality?: boolean; // Whether to show the modality name
   fromModalityId?: string; // If provided, adds return context to navigation
+  seasonYear?: number | null;
 }
 
-const TournamentListItem = ({ tournament, showModality = true, fromModalityId }: TournamentListItemProps) => {
+const TournamentListItem = ({ tournament, showModality = true, fromModalityId, seasonYear }: TournamentListItemProps) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -36,6 +37,12 @@ const TournamentListItem = ({ tournament, showModality = true, fromModalityId }:
         {showModality && (
           <>
             <span className="text-teal-600 font-medium">{tournament.modality.name}</span>
+            <span className="text-gray-400">|</span>
+          </>
+        )}
+        {seasonYear != null && (
+          <>
+            <span className="text-gray-500 text-xs">Época {seasonYear}</span>
             <span className="text-gray-400">|</span>
           </>
         )}

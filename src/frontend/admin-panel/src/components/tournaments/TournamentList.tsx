@@ -1,4 +1,5 @@
 import { type Tournament } from '../../api/tournaments';
+import { type Season } from '../../api/seasons';
 import { TOURNAMENT_STATUS_ORDER } from '../../constants/tournaments';
 import TournamentListItem from './TournamentListItem';
 
@@ -9,6 +10,7 @@ interface TournamentListProps {
   showModality?: boolean; // Whether to show modality in list items
   emptyMessage?: string;
   fromModalityId?: string; // If provided, adds return context to navigation
+  seasons?: Season[];
 }
 
 const TournamentList = ({
@@ -18,6 +20,7 @@ const TournamentList = ({
   showModality = true,
   emptyMessage = 'Nenhum torneio encontrado.',
   fromModalityId,
+  seasons = [],
 }: TournamentListProps) => {
   if (loading) {
     return (
@@ -54,6 +57,7 @@ const TournamentList = ({
           tournament={tournament}
           showModality={showModality}
           fromModalityId={fromModalityId}
+          seasonYear={seasons.find(s => s.id === tournament.season_id)?.year ?? null}
         />
       ))}
     </div>

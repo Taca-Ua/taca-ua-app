@@ -26,6 +26,7 @@ from taca_models import (  # Enums; Core Read Models; Materialized Views
     Nucleo,
     ParticipantType,
     Regulation,
+    Season,
     Staff,
     Student,
     StudentDetailView,
@@ -46,6 +47,7 @@ __all__ = [
     "MatchStatus",
     "TournamentStatus",
     # Core Read Models
+    "Season",
     "Nucleo",
     "Course",
     "ModalityType",

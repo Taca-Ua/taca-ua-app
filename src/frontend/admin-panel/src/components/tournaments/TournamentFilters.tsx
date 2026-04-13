@@ -1,4 +1,5 @@
 import { type Tournament } from '../../api/tournaments';
+import { type Season } from '../../api/seasons';
 
 interface TournamentFiltersProps {
   searchQuery: string;
@@ -9,6 +10,9 @@ interface TournamentFiltersProps {
   onModalityChange?: (value: string) => void;
   availableTournaments?: Tournament[]; // To extract unique modalities
   showModalityFilter?: boolean;
+  seasonFilter?: string;
+  onSeasonChange?: (value: string) => void;
+  availableSeasons?: Season[];
 }
 
 const TournamentFilters = ({
@@ -20,6 +24,9 @@ const TournamentFilters = ({
   onModalityChange,
   availableTournaments = [],
   showModalityFilter = true,
+  seasonFilter = '',
+  onSeasonChange,
+  availableSeasons = [],
 }: TournamentFiltersProps) => {
   // Extract unique modalities from tournaments
   const uniqueModalities = showModalityFilter
@@ -48,6 +55,21 @@ const TournamentFilters = ({
           {uniqueModalities.map((m) => (
             <option key={m.id} value={m.id}>
               {m.name}
+            </option>
+          ))}
+        </select>
+      )}
+
+      {availableSeasons.length > 0 && onSeasonChange && (
+        <select
+          value={seasonFilter}
+          onChange={(e) => onSeasonChange(e.target.value)}
+          className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+        >
+          <option value="">Todas as épocas</option>
+          {availableSeasons.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.year}{s.status === 'active' ? ' (ativa)' : s.status === 'draft' ? ' (rascunho)' : ' (finalizada)'}
             </option>
           ))}
         </select>

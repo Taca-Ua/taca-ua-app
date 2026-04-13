@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 
 from ..decorators import RoleRequiredMixin, require_auth
 from ..serializers.seasons import SeasonCreateSerializer, SeasonListSerializer
+from ..services.seasons_service import seasons_service_client
 
 
 @extend_schema_view(
@@ -28,18 +29,19 @@ from ..serializers.seasons import SeasonCreateSerializer, SeasonListSerializer
 )
 class SeasonListCreateView(RoleRequiredMixin, APIView):
     def get(self, request):
-        dummy_data = [
-            {"id": 1, "year": 2024, "status": "finished"},
-            {"id": 2, "year": 2025, "status": "active"},
-            {"id": 3, "year": 2026, "status": "draft"},
-        ]
-        return Response(dummy_data)
+        seasons = seasons_service_client.list_seasons()
+        serializer = SeasonListSerializer(
+            [vars(s) for s in seasons], many=True
+        )
+        return Response(serializer.data)
 
     def post(self, request):
         serializer = SeasonCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        dummy_response = {"id": 4, "status": "draft", **serializer.validated_data}
-        return Response(dummy_response, status=status.HTTP_201_CREATED)
+        season = seasons_service_client.create_season(
+            year=serializer.validated_data["year"]
+        )
+        return Response(vars(season), status=status.HTTP_201_CREATED)
 
 
 @extend_schema(
@@ -51,21 +53,21 @@ class SeasonListCreateView(RoleRequiredMixin, APIView):
 @api_view(["POST"])
 @require_auth
 def season_start(request, season_id):
-    dummy_response = {"id": season_id, "year": 2025, "status": "active"}
-    return Response(dummy_response)
+    season = seasons_service_client.start_season(season_id)
+    return Response(vars(season))
 
 
 @extend_schema(
     request=None,
     responses={200: SeasonListSerializer},
-    description="Finish a season",
+    description="Finish a season. Fails if any tournament in the season is still open.",
     tags=["Season Management"],
 )
 @api_view(["POST"])
 @require_auth
 def season_finish(request, season_id):
-    dummy_response = {"id": season_id, "year": 2025, "status": "finished"}
-    return Response(dummy_response)
+    season = seasons_service_client.finish_season(season_id)
+    return Response(vars(season))
 
 
 urlpatterns = [
