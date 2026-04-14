@@ -17,7 +17,7 @@ import Cursos from '../pages/geral/Courses';
 import CursoDetail from '../pages/geral/CourseDetail';
 import Regulamentos from '../pages/geral/Regulamentos';
 import FormatosPontuacao from '../pages/geral/FormatosPontuacao';
-import Torneios from '../pages/geral/Torneios';
+import Torneios from '../pages/geral/Tournaments';
 import TorneioDetails from '../pages/geral/TorneioDetails';
 import JogoDetails from '../pages/geral/JogoDetails';
 import SociosGeral from '../pages/geral/Socios';

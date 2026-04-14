@@ -66,11 +66,15 @@ const TournamentList = ({
   showModality = true,
   fromModalityId,
   loadTournaments,
+  showModalityFilter = true,
+  showStatusFilter = true,
 }: {
   tournamentsState?: [TournamentListItem[], React.Dispatch<React.SetStateAction<TournamentListItem[]>>];
   showModality?: boolean;
   fromModalityId?: string;
   loadTournaments?: () => Promise<TournamentListItem[]>;
+  showModalityFilter?: boolean;
+  showStatusFilter?: boolean;
 }) => {
   const [tournaments, setTournaments] = tournamentsState
     ? tournamentsState
@@ -125,14 +129,6 @@ const TournamentList = ({
     statusFilter ? tournament.status === statusFilter : true
   );
 
-  if (filteredTournaments.length === 0) {
-    return (
-      <p className="text-gray-500 text-center py-8">
-        Nenhum torneio encontrado para "{searchQuery}".
-      </p>
-    );
-  }
-
   // Sort tournaments by status, modality (if shown), and name
   const sortedTournaments = [...filteredTournaments].sort((a, b) => {
     const statusComparison =
@@ -149,7 +145,7 @@ const TournamentList = ({
   });
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-6 mt-6 space-y-3">
+    <div className="space-y-3">
       {/* Search and Filters */}
       <div className="flex gap-3">
         <input
@@ -160,7 +156,7 @@ const TournamentList = ({
           className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
         />
 
-        {showModality && (
+        {showModalityFilter && (
           <select
             value={modalityFilter}
             onChange={(e) => setModalityFilter(e.target.value)}
@@ -175,28 +171,34 @@ const TournamentList = ({
           </select>
         )}
 
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
-        >
-          <option value="">Todos os estados</option>
-          <option value="draft">Rascunho</option>
-          <option value="active">Ativo</option>
-          <option value="finished">Finalizado</option>
-        </select>
+        {showStatusFilter && (
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+          >
+            <option value="">Todos os estados</option>
+            <option value="draft">Rascunho</option>
+            <option value="active">Ativo</option>
+            <option value="finished">Finalizado</option>
+          </select>
+        )}
       </div>
 
       {/* Tournament List */}
       <div className="space-y-3">
-        {sortedTournaments.map((tournament) => (
+        {sortedTournaments.length > 0 ? sortedTournaments.map((tournament) => (
           <TournamentListItemComponent
             key={tournament.id}
             tournament={tournament}
             showModality={showModality}
             fromModalityId={fromModalityId}
           />
-        ))}
+        )) : (
+          <p className="text-gray-500 text-center py-8">
+            Nenhum torneio encontrado para os filtros selecionados.
+          </p>
+        )}
       </div>
     </div>
   );

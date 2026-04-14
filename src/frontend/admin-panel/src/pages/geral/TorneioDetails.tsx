@@ -10,6 +10,7 @@ import { matchesApi, type Match, type MatchCreate, type ParticipantCreate } from
 import { studentsApi, type Student } from '../../api/members';
 import { btn } from '../../styles/buttonStyles';
 import ListMatchesComponent from '../../components/matches/ListMatches';
+import TournamentDetailComponent from '../../components/tournaments/TournamentDetailComponent';
 
 // Component to display tournament information
 const TournamentInfo = ({
@@ -1453,15 +1454,15 @@ const TorneioDetails = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div>
-              <TournamentInfo
-                tournament={tournament}
-                onEdit={() => setShowEditModal(true)}
-                onDelete={handleDelete}
-                onActivate={handleActivate}
-                onFinish={() => setShowFinishModal(true)}
-              />
-            </div>
+            <TournamentDetailComponent tournamentId={id!}/>
+
+            <TournamentInfo
+              tournament={tournament}
+              onEdit={() => setShowEditModal(true)}
+              onDelete={handleDelete}
+              onActivate={handleActivate}
+              onFinish={() => setShowFinishModal(true)}
+            />
 
             <div>
               <TournamentCompetitors

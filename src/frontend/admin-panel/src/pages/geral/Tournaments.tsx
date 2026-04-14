@@ -2,10 +2,8 @@ import { useState } from 'react';
 import Sidebar from '../../components/geral_navbar';
 import { tournamentsApi, type TournamentListItem } from '../../api/tournaments';
 import { btn } from '../../styles/buttonStyles';
-import {
-  TournamentCreateModal,
-  TournamentList,
-} from '../../components/tournaments';
+import TournamentCreateModal from '../../components/tournaments/TournamentCreateModal';
+import TournamentList from '../../components/tournaments/TournamentList';
 
 const Torneios = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -28,15 +26,16 @@ const Torneios = () => {
           </button>
         </div>
 
-        <TournamentList
-          tournamentsState={[tournaments, setTournaments]}
-          showModality={true}
-          loadTournaments={async () => tournamentsApi.getAll()}
-        />
+        <div className="bg-white shadow-md rounded-lg p-6 mt-6">
+          <TournamentList
+            tournamentsState={[tournaments, setTournaments]}
+            showModality={true}
+            loadTournaments={async () => tournamentsApi.getAll()}
+          />
+        </div>
 
         <TournamentCreateModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+          controller={[isModalOpen, setIsModalOpen]}
           onCreate={(newTournament) => setTournaments([...tournaments, newTournament])}
         />
       </div>

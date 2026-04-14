@@ -1,38 +1,34 @@
 import { useState, useEffect } from 'react';
 import HelpTooltip from '../HelpTooltip';
 import { useNotification } from '../../contexts/NotificationProvider';
-import { tournamentsApi, type Tournament, type TournamentCreate } from '../../api/tournaments';
-import { modalitiesApi, type Modality } from '../../api/modalities';
+import { tournamentsApi, type TournamentListItem, type TournamentCreate } from '../../api/tournaments';
+import { modalitiesApi, type ModalityListItem } from '../../api/modalities';
 import { btn } from '../../styles/buttonStyles';
 
-interface TournamentCreateModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onCreate: (tournament: Tournament) => void;
-  fixedModalityId?: string; // If provided, modality is fixed and not selectable
-  fixedModalityName?: string; // Display name for fixed modality
-}
 
 const TournamentCreateModal = ({
-  isOpen,
-  onClose,
+  controller,
   onCreate,
-  fixedModalityId,
-  fixedModalityName,
-}: TournamentCreateModalProps) => {
-  const [name, setName] = useState(fixedModalityName || '');
-  const [nameManuallyEdited, setNameManuallyEdited] = useState(!!fixedModalityName);
-  const [modalityId, setModalityId] = useState(fixedModalityId || '');
-  const [isPlayoff, setIsPlayoff] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [modalities, setModalities] = useState<Modality[]>([]);
+  modalityId,
+}: {
+  controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
+  onCreate: (tournament: TournamentListItem) => void;
+  modalityId?: string;
+}) => {
   const { notify } = useNotification();
 
-  const isFixedModality = !!fixedModalityId;
+  const [isOpen, setIsOpen] = controller;
+  const [modalities, setModalities] = useState<ModalityListItem[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const [name, setName] = useState('');
+  const [chosenModality, setChosenModality] = useState<ModalityListItem | null>(null);
+  const [isPlayoff, setIsPlayoff] = useState(false);
 
   // Fetch modalities if needed (only when modality is not fixed)
   useEffect(() => {
-    if (isFixedModality) return;
+    if (!isOpen) return;  // Only fetch when modal is opened
+    if (modalityId) return;  // No need to fetch if modality is fixed
 
     const fetchModalities = async () => {
       try {
@@ -46,29 +42,31 @@ const TournamentCreateModal = ({
     if (modalities.length === 0) {
       fetchModalities();
     }
-  }, [isFixedModality]);
+  }, [isOpen]);
 
-  // Auto-fill name when modality changes (only if not manually edited)
-  useEffect(() => {
-    if (!nameManuallyEdited && modalityId && !isFixedModality) {
-      const selected = modalities.find((m) => m.id === modalityId);
-      if (selected) setName(selected.name);
-    }
-  }, [modalityId, modalities, nameManuallyEdited, isFixedModality]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setLoading(true);
+    if (name.trim() === '') {
+      notify('O nome do torneio é obrigatório.', 'error');
+      setLoading(false);
+      return;
+    }
+
+    if (chosenModality === null) {
+      notify('Por favor, selecione uma modalidade.', 'error');
+      setLoading(false);
+      return;
+    }
+
     try {
       const newTournament: TournamentCreate = {
         name,
-        modality_id: modalityId,
+        modality_id: chosenModality.id,
         is_playoff: isPlayoff,
-        competitors: [],
       };
       const createdTournament = await tournamentsApi.create(newTournament);
       onCreate(createdTournament);
-      handleClose();
+      onClose();
     } catch (err) {
       console.error('Failed to create tournament:', err);
       notify('Não foi possível criar o torneio. Verifique os dados e tente novamente.', 'error');
@@ -77,14 +75,12 @@ const TournamentCreateModal = ({
     }
   };
 
-  const handleClose = () => {
-    onClose();
-    // Reset form
-    setName(fixedModalityName || '');
-    setNameManuallyEdited(!!fixedModalityName);
-    setModalityId(fixedModalityId || '');
+  const onClose = () => {
+    setName('');
     setIsPlayoff(false);
-  };
+    setChosenModality(null);
+    setIsOpen(false);
+  }
 
   if (!isOpen) return null;
 
@@ -106,48 +102,39 @@ const TournamentCreateModal = ({
             <input
               type="text"
               value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                setNameManuallyEdited(true);
-              }}
+              onChange={(e) => setName(e.target.value)}
               className="w-full border border-gray-300 rounded-md p-2"
               required
             />
           </div>
 
-          <div>
-            <label className="font-medium">
-              Modalidade{' '}
-              {!isFixedModality && (
+          {/* Modalidade */}
+          {modalityId ? null : (
+            <div>
+              <label className="font-medium">
+                Modalidade{' '}
                 <HelpTooltip
                   text="Desporto ou atividade para o qual este torneio é organizado. A modalidade determina as regras de inscrição (equipas vs atletas)."
                   className="ml-1"
-                />
-              )}{' '}
-              {!isFixedModality && <span className="text-red-500">*</span>}
+              />
+              <span className="text-red-500">*</span>
             </label>
-            {isFixedModality ? (
-              <div className="w-full border border-gray-300 rounded-md p-2 bg-gray-100 text-gray-700">
-                {fixedModalityName}
-              </div>
-            ) : (
-              <select
-                value={modalityId}
-                onChange={(e) => setModalityId(e.target.value)}
-                className="w-full border border-gray-300 rounded-md p-2"
-                required
-              >
-                <option value="" disabled>
-                  Selecione uma modalidade
+            <select
+              value={chosenModality?.id || ''}
+              onChange={(e) => setChosenModality(modalities.find((m) => m.id === e.target.value) || null)}
+              className="w-full border border-gray-300 rounded-md p-2"
+              required
+            >
+              <option value="" disabled>
+                Selecione uma modalidade
+              </option>
+              {[...modalities].sort((a, b) => a.name.localeCompare(b.name)).map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
                 </option>
-                {[...modalities].sort((a, b) => a.name.localeCompare(b.name)).map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
+              ))}
+            </select>
+          </div>)}
 
           <div className="flex items-center gap-3">
             <input
@@ -165,7 +152,7 @@ const TournamentCreateModal = ({
           <div className="flex justify-end space-x-2">
             <button
               type="button"
-              onClick={handleClose}
+              onClick={onClose}
               className={`px-4 py-2 ${btn.secondary} rounded-md`}
               disabled={loading}
             >

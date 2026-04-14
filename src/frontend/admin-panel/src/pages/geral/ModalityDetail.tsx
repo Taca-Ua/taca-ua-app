@@ -1,51 +1,20 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Sidebar from '../../components/geral_navbar';
-import { useNotification } from '../../contexts/NotificationProvider';
 import { tournamentsApi, type TournamentListItem } from '../../api/tournaments';
 import { btn } from '../../styles/buttonStyles';
-import {
-  TournamentCreateModal,  TournamentList,
-} from '../../components/tournaments';
+import TournamentList from '../../components/tournaments/TournamentList';
+import TournamentCreateModal from '../../components/tournaments/TournamentCreateModal';
 import ModalityDetailComponent from '../../components/modalities/ModalityDetailComponent';
 
 
-const TournamentsTab = ({ modalityId, modalityName }: { modalityId: string; modalityName: string }) => {
-  const { notify } = useNotification();
+const TournamentsTab = ({ modalityId }: { modalityId: string }) => {
   const [tournaments, setTournaments] = useState<TournamentListItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-
-  useEffect(() => {
-    const fetchTournaments = async () => {
-      try {
-        setLoading(true);
-        const allTournaments = await tournamentsApi.getAll();
-        // Filter tournaments by this modality
-        const filtered = allTournaments.filter((t) => t.modality.id === modalityId);
-        setTournaments(filtered);
-      } catch (err) {
-        console.error('Failed to fetch tournaments:', err);
-        notify('Erro ao carregar torneios', 'error');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTournaments();
-  }, [modalityId]);
 
   const handleCreateTournament = (newTournament: TournamentListItem) => {
     setTournaments([...tournaments, newTournament]);
   };
-
-  const filteredTournaments = tournaments.filter(
-    (t) =>
-      t.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      (statusFilter === '' || t.status === statusFilter)
-  );
 
   return (
     <div className="space-y-6">
@@ -65,14 +34,13 @@ const TournamentsTab = ({ modalityId, modalityName }: { modalityId: string; moda
           modality_id: modalityId
         })}
         fromModalityId={modalityId}
+        showModalityFilter={false}
       />
 
       <TournamentCreateModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        controller={[isCreateModalOpen, setIsCreateModalOpen]}
         onCreate={handleCreateTournament}
-        fixedModalityId={modalityId}
-        fixedModalityName={modalityName}
+        modalityId={modalityId}
       />
     </div>
   );
@@ -128,7 +96,7 @@ function ModalidadeDetail() {
           {/* Tab Content */}
           <div className="p-6">
             {activeTab === 'tournaments' && (
-              <TournamentsTab modalityId={modalityId} modalityName={""} />
+              <TournamentsTab modalityId={modalityId} />
             )}
           </div>
         </div>
