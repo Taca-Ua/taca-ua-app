@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { btn } from "../styles/buttonStyles";
 
 export interface GenericElement {
@@ -63,21 +63,27 @@ const EditSummary = ({
 
 const ChooseMultipleModal = ({
     controller,
-    allElements,
+    allElementsLoader,
     initialChosenElementsIds = [],
     onSave,
 }: {
     controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>]
-    allElements: GenericElement[];
+    allElementsLoader: () => Promise<GenericElement[]>;
     initialChosenElementsIds?: string[];
     onSave: (chosen: GenericElement[]) => void;
 }) => {
     const [isOpen, setIsOpen] = controller;
 
+    const [allElements, setAllElements] = useState<GenericElement[]>([]);
     const [chosenElements, setChosenElements] = useState<string[]>(initialChosenElementsIds);
 
     const [searchQuery, setSearchQuery] = useState("");
     const [isMobileSummaryOpen, setIsMobileSummaryOpen] = useState(false);
+
+
+    useEffect(() => {
+        allElementsLoader().then(setAllElements);
+    }, [allElementsLoader]);
 
     const filteredElements = allElements.filter((element) =>
         element.title.toLowerCase().includes(searchQuery.toLowerCase()),

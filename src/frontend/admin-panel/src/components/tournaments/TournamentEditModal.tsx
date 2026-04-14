@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { tournamentsApi, type TournamentDetail } from "../../api/tournaments";
+import HelpTooltip from "../HelpTooltip";
+import { btn } from "../../styles/buttonStyles";
 
 const TournamentEditModal = ({
   controller,
@@ -16,6 +18,24 @@ const TournamentEditModal = ({
   const [startDate, setStartDate] = useState(tournament.start_date || "");
   const [isPlayoff, setIsPlayoff] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async () => {
+    setSaving(true);
+    try {
+      const updated = await tournamentsApi.update(tournament.id, {
+        name: name.trim(),
+        start_date: startDate || undefined,
+        is_playoff: isPlayoff,
+      });
+      onSave(updated);
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Erro ao atualizar torneio:", error);
+      alert("Ocorreu um erro ao atualizar o torneio. Tente novamente.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -74,7 +94,7 @@ const TournamentEditModal = ({
 
         <div className="flex gap-4 mt-6">
           <button
-            onClick={onClose}
+            onClick={() => setIsOpen(false)}
             disabled={saving}
             className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md disabled:opacity-50`}
           >

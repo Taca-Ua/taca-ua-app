@@ -387,7 +387,7 @@ class TournamentsService:
         """Remove competitors from a tournament"""
 
         tournament_dto = tournaments_service_client.remove_competitors(
-            tournament_id=tournament_id, competitor_ids=competitor_ids
+            tournament_id=tournament_id, competitors_ids=competitor_ids
         )
 
         return self._build_tournament_from_dto(

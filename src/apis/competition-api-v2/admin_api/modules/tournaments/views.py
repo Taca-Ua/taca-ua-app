@@ -193,7 +193,7 @@ def tournament_remove_competitors(request, tournament_id):
 
     tournament = tournaments_service.remove_competitors(
         tournament_id=tournament_id,
-        competitors_ids=serializer.validated_data["competitors_ids"],
+        competitor_ids=serializer.validated_data["competitors_ids"],
     )
 
     serializer = TournamentDetailSerializer(tournament)

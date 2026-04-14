@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { tournamentsApi, type TournamentDetail } from "../../api/tournaments";
 import { btn } from "../../styles/buttonStyles";
 import ConfirmModal from "../ConfirmModal";
@@ -26,30 +26,19 @@ const getStatusText = (status: string) => {
 };
 
 
-const TournamentDetailComponent = ({ tournamentId }: { tournamentId: string }) => {
-  const [tournament, setTournament] = useState<TournamentDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+const TournamentInfoComponent = ({
+  tournamentState
+}: {
+  tournamentState: [TournamentDetail, React.Dispatch<React.SetStateAction<TournamentDetail | null>>]
+}) => {
+
+  const [tournament, setTournament] = tournamentState;
 
   // Modal state
   const [showActivateModal, setShowActivateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showFinishModal, setShowFinishModal] = useState(false);
-
-  useEffect(() => {
-    const fetchTournament = async () => {
-      setLoading(true);
-      try {
-        const data = await tournamentsApi.getById(tournamentId);
-        setTournament(data);
-      } catch (error) {
-        console.error("Failed to fetch tournament details:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchTournament();
-  }, [tournamentId]);
 
 
   const handleActivate = async () => {
@@ -73,14 +62,6 @@ const TournamentDetailComponent = ({ tournamentId }: { tournamentId: string }) =
       console.error("Failed to delete tournament:", error);
     }
   };
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!tournament) {
-    return <div>Failed to load tournament details.</div>;
-  }
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 space-y-4">
@@ -200,17 +181,17 @@ const TournamentDetailComponent = ({ tournamentId }: { tournamentId: string }) =
 
       <TournamentEditModal
         controller={[showEditModal, setShowEditModal]}
-        tournamentId={tournament.id}
+        tournament={tournament}
         onSave={(updatedTournament) => setTournament(updatedTournament)}
       />
 
       <TournamentFinishModal
         controller={[showFinishModal, setShowFinishModal]}
-        tournamentId={tournament.id}
+        tournament={tournament}
         onSave={(updatedTournament) => setTournament(updatedTournament)}
       />
     </div>
   );
 };
 
-export default TournamentDetailComponent;
+export default TournamentInfoComponent;
