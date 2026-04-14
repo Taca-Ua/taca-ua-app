@@ -82,8 +82,9 @@ const ChooseMultipleModal = ({
 
 
     useEffect(() => {
+        if (!isOpen) return;
         allElementsLoader().then(setAllElements);
-    }, [allElementsLoader]);
+    }, [isOpen]);
 
     const filteredElements = allElements.filter((element) =>
         element.title.toLowerCase().includes(searchQuery.toLowerCase()),
