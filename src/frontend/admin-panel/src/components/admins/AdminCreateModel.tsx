@@ -7,13 +7,11 @@ import { nucleosApi } from "../../api/nucleos";
 import ChooseMultipleModal from "../utils/costum_menus/ChoseMultipleModel";
 import DefinedStatesMenuComponent from "../utils/costum_menus/DefinedStatesMenuComponent";
 
-interface AdminCreateModelProps {
-	isOpen: boolean;
-	onClose: () => void;
-	onCreated?: (admin: any) => void;
-}
-
-const AdminCreateModel = ({ isOpen, onClose, onCreated }: AdminCreateModelProps) => {
+const AdminCreateModel = ({ isOpen, onClose, onCreated }: {
+  isOpen: boolean;
+  onClose: () => void;
+  onCreated?: (admin: any) => void;
+}) => {
 	const [memberUserName, setMemberUserName] = useState('');
 	const [memberFirstName, setMemberFirstName] = useState('');
 	const [memberLastName, setMemberLastName] = useState('');

@@ -3,12 +3,14 @@ import { useState } from "react";
 const DefinedStatesMenuComponent = ( {
     states,
     onSelect,
+    initialValue
 } : {
     states: {value: string, label: string}[],
     onSelect: (state: string) => void,
+    initialValue?: string
 } ) => {
 
-    const [selectedState, setSelectedState] = useState<string | null>(null);
+    const [selectedState, setSelectedState] = useState<string | null>(initialValue || null);
 
     const handleSelect = (state: string) => {
         setSelectedState(state);
