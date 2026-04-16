@@ -86,6 +86,7 @@ const ChooseMultipleModal = ({
     useEffect(() => {
         if (!isOpen) return;
         allElementsLoader().then(setAllElements);
+        setChosenElements(initialChosenElementsIds);
     }, [isOpen]);
 
 

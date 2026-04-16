@@ -2,8 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
-import { administratorsApi, type AdminList as Admin } from '../../api/admins';
-import { nucleosApi, type Nucleo } from '../../api/nucleos';
+import { administratorsApi, type AdminListItem } from '../../api/admins';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { btn } from '../../styles/buttonStyles';
 import AdminCreateModel from '../../components/admins/AdminCreateModel';
@@ -12,10 +11,9 @@ import AdminCreateModel from '../../components/admins/AdminCreateModel';
 function Administradores() {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [members, setMembers] = useState<Admin[]>([]);
+  const [members, setMembers] = useState<AdminListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState<'all' | 'general_admin' | 'nucleo_admin'>('all');
   const { notify } = useNotification();
 
   useEffect(() => {
@@ -42,8 +40,7 @@ function Administradores() {
       m.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       m.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       m.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesRole = roleFilter === 'all' || m.role === roleFilter;
-    return matchesSearch && matchesRole;
+    return matchesSearch;
   });
   const AdminG = filteredMembers
     .filter(m => m.role === 'general_admin')
@@ -127,15 +124,13 @@ function Administradores() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-            <AdminCreateModel
-              isOpen={isModalOpen}
-              onClose={() => setIsModalOpen(false)}
-              onCreated={admin => setMembers(prev => [...prev, admin])}
-            />
-          </div>
         </div>
       </div>
+      <AdminCreateModel
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCreated={admin => setMembers(prev => [...prev, admin])}
+      />
     </div>
   );
 }
