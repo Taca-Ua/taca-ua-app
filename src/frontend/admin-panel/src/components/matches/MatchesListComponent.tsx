@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react"
 import { matchesApi, type MatchListItem } from "../../api/matches"
-import MatchCreateModal from "./MatchCreateModal";
 import { btn } from "../../styles/buttonStyles";
-import type { TournamentDetail } from "../../api/tournaments";
 import { useNavigate } from "react-router";
 import ConfirmModal from "../ConfirmModal";
 import { useNotification } from "../../contexts/NotificationProvider";
@@ -126,22 +124,23 @@ const MatchesListItemComponent = ( { match, onDeleted } : { match: MatchListItem
 }
 
 const MatchesListComponent = ( {
-    tournament
+    matchesState,
+    tournamentId
 } : {
-    tournament: TournamentDetail
+    matchesState?: [MatchListItem[], React.Dispatch<React.SetStateAction<MatchListItem[]>>];
+    tournamentId?: string
 } ) => {
-    const [matches, setMatches] = useState<MatchListItem[]>([]);
+    const [matches, setMatches] = matchesState ? matchesState : useState<MatchListItem[]>([]);
     const [loading, setLoading] = useState<boolean>( true );
 
     const [matchStatusFilter, setMatchStatusFilter] = useState<string>( 'all' );
-    const [showCreateModal, setShowCreateModal] = useState<boolean>( false );
 
     useEffect( () => {
         const fetchMatches = async () => {
             setLoading( true );
             try {
                 const response = await matchesApi.getAll( {
-                    tournament_id: tournament.id
+                    tournament_id: tournamentId
                 } );
                 setMatches( response );
             } catch ( error ) {
@@ -151,7 +150,7 @@ const MatchesListComponent = ( {
             }
         };
         fetchMatches();
-    }, [ tournament.id ] );
+    }, [ tournamentId ] );
 
 
     const filteredMatches = matches.filter( match => {
@@ -165,7 +164,7 @@ const MatchesListComponent = ( {
     }
 
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-gray-800">
             Jogos ({filteredMatches.length})
@@ -182,18 +181,6 @@ const MatchesListComponent = ( {
               <option value="finished">Finalizados</option>
               <option value="cancelled">Cancelados</option>
             </select>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              disabled={tournament.competitors.length < 2}
-              className={`px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
-              title={
-                tournament.competitors.length < 2
-                  ? "É necessário pelo menos 2 competidores"
-                  : ""
-              }
-            >
-              + Criar Jogo
-            </button>
           </div>
         </div>
 
@@ -207,12 +194,6 @@ const MatchesListComponent = ( {
             </p>
           )}
         </div>
-
-        <MatchCreateModal
-          controller={[showCreateModal, setShowCreateModal]}
-          tournament={tournament}
-          onCreated={(newMatch) => setMatches((prev) => [...prev, newMatch])}
-        />
       </div>
     );
 }

@@ -3,10 +3,12 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { tournamentsApi, type TournamentDetail } from '../../api/tournaments';
+import { type MatchListItem } from '../../api/matches';
 import { btn } from '../../styles/buttonStyles';
 import TournamentInfoComponent from '../../components/tournaments/TournamentInfoComponent';
 import TournamentCompetitorsComponent from '../../components/tournaments/TournamentCompetitorsComponent';
 import MatchesListComponent from '../../components/matches/MatchesListComponent';
+import MatchCreateModal from '../../components/matches/MatchCreateModal';
 
 // Main component
 const TorneioDetails = () => {
@@ -17,6 +19,8 @@ const TorneioDetails = () => {
   const [tournament, setTournament] = useState<TournamentDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const { notify } = useNotification();
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [matches, setMatches] = useState<MatchListItem[]>([]);
 
   // Determine where to navigate back to
   const fromModalityId = searchParams.get('fromModality');
@@ -85,11 +89,30 @@ const TorneioDetails = () => {
             </div>
           </div>
 
-          <div className="mt-6">
-            <MatchesListComponent tournament={tournament} />
+          <div className="bg-white rounded-lg shadow-md p-6 mt-6 flex flex-col gap-6">
+            <button
+              onClick={() => setShowCreateModal(true)}
+              disabled={tournament.competitors.length < 2}
+              className={`px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+              title={
+                tournament.competitors.length < 2
+                  ? "É necessário pelo menos 2 competidores"
+                  : ""
+              }
+            >
+              + Criar Jogo
+            </button>
+            <MatchesListComponent tournamentId={tournament.id} matchesState={[matches, setMatches]} />
           </div>
         </div>
       </div>
+      <MatchCreateModal
+        controller={[showCreateModal, setShowCreateModal]}
+        tournament={tournament}
+        onCreated={(newMatch) => {
+          setMatches((prev) => [...prev, newMatch]);
+        }}
+      />
     </div>
   );
 };
