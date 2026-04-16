@@ -1,21 +1,147 @@
 import { useEffect, useState } from "react"
 import { matchesApi, type MatchListItem } from "../../api/matches"
+import MatchCreateModal from "./MatchCreateModal";
+import { btn } from "../../styles/buttonStyles";
+import type { TournamentDetail } from "../../api/tournaments";
+import { useNavigate } from "react-router";
+import ConfirmModal from "../ConfirmModal";
+import { useNotification } from "../../contexts/NotificationProvider";
+
+
+const MatchesListItemComponent = ( { match, onDeleted } : { match: MatchListItem; onDeleted: () => void } ) => {
+    const navigate = useNavigate();
+    const { notify } = useNotification();
+
+    const [showDeleteModal, setShowDeleteModal] = useState<boolean>( false );
+
+    const getStatusText = (status: string) => {
+        switch (status) {
+            case 'scheduled': return 'Agendado';
+            case 'in_progress': return 'Em Progresso';
+            case 'finished': return 'Finalizado';
+            case 'cancelled': return 'Cancelado';
+            default: return status;
+        }
+    };
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'scheduled': return 'bg-blue-100 text-blue-800';
+            case 'in_progress': return 'bg-green-100 text-green-800';
+            case 'finished': return 'bg-gray-100 text-gray-800';
+            case 'cancelled': return 'bg-red-100 text-red-800';
+            default: return 'bg-gray-100 text-gray-800';
+        }
+    };
+
+    const getParticipantNames = (participants: MatchListItem['participants']): string => {
+        const names = participants.map(p => {
+            if (p.name) {
+                return p.name;
+            }
+            return 'Desconecido';
+        });
+        return names.join(' vs ');
+    };
+
+    const getParticipantScores = (participants: MatchListItem['participants']): string | null => {
+        if (participants.every(p => p.score !== null && p.score !== undefined)) {
+            return participants.map(p => p.score).join(' - ');
+        }
+        return null;
+    };
+
+    const handleDelete = async () => {
+        try {
+            await matchesApi.delete(match.id);
+            notify("Jogo eliminado com sucesso!", "success");
+            if (onDeleted) onDeleted();
+        } catch (error) {
+            console.error("Error deleting match:", error);
+            notify("Ocorreu um erro ao eliminar o jogo. Por favor, tente novamente.", "error");
+        } finally {
+            setShowDeleteModal(false);
+        }
+    };
+
+    return (
+      <button
+        type="button"
+        onClick={() => navigate(`/geral/jogos/${match.id}`)}
+        className="w-full text-left p-4 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
+      >
+        <div className="flex justify-between items-start mb-2">
+          <div className="flex-1">
+            <div className="font-medium text-gray-800 mb-2">
+              {getParticipantNames(match.participants)}
+            </div>
+            {getParticipantScores(match.participants) && (
+              <div className="text-lg font-bold text-teal-600 mb-2">
+                {getParticipantScores(match.participants)}
+              </div>
+            )}
+            <div className="flex gap-4 text-sm text-gray-600">
+              <span>{match.location}</span>
+              <span>
+                {new Date(match.start_time).toLocaleString("pt-PT", {
+                  year: "numeric",
+                  month: "2-digit",
+                  day: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+            </div>
+            <div className="mt-2">
+              <span
+                className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(match.status)}`}
+              >
+                {getStatusText(match.status)}
+              </span>
+            </div>
+          </div>
+          <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => setShowDeleteModal(true)}
+              className={`px-3 py-1 ${btn.dangerLight} rounded-md text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-red-400`}
+            >
+              Eliminar
+            </button>
+          </div>
+        </div>
+
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        title="Eliminar jogo"
+        message="Tem certeza que deseja eliminar este jogo?"
+        confirmLabel="Eliminar"
+        variant="danger"
+        onCancel={() => setShowDeleteModal(false)}
+        onConfirm={handleDelete}
+      />
+
+      </button>
+    );
+}
 
 const MatchesListComponent = ( {
-    tournamentId
+    tournament
 } : {
-    tournamentId: string
+    tournament: TournamentDetail
 } ) => {
-
     const [matches, setMatches] = useState<MatchListItem[]>([]);
     const [loading, setLoading] = useState<boolean>( true );
+
+    const [matchStatusFilter, setMatchStatusFilter] = useState<string>( 'all' );
+    const [showCreateModal, setShowCreateModal] = useState<boolean>( false );
 
     useEffect( () => {
         const fetchMatches = async () => {
             setLoading( true );
             try {
                 const response = await matchesApi.getAll( {
-                    tournament_id: tournamentId
+                    tournament_id: tournament.id
                 } );
                 setMatches( response );
             } catch ( error ) {
@@ -25,23 +151,69 @@ const MatchesListComponent = ( {
             }
         };
         fetchMatches();
-    }, [ tournamentId ] );
+    }, [ tournament.id ] );
+
+
+    const filteredMatches = matches.filter( match => {
+            if ( matchStatusFilter === 'all' ) return true;
+            return match.status === matchStatusFilter;
+        }
+    );
 
     if ( loading ) {
         return <div>Loading matches...</div>;
     }
 
     return (
-        <div>
-            <h2>Matches List</h2>
-            <ul>
-                {matches.map( ( match ) => (
-                    <li key={match.id}>
-                        Match ID: {match.id}, Players: {match.participants.map( ( p ) => p.name ).join( " vs " )}, Status: {match.status}
-                    </li>
-                ) )}
-            </ul>
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-gray-800">
+            Jogos ({filteredMatches.length})
+          </h2>
+          <div className="flex items-center gap-3">
+            <select
+              value={matchStatusFilter}
+              onChange={(e) => setMatchStatusFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+            >
+              <option value="all">Todos os estados</option>
+              <option value="scheduled">Agendados</option>
+              <option value="in_progress">Em Progresso</option>
+              <option value="finished">Finalizados</option>
+              <option value="cancelled">Cancelados</option>
+            </select>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              disabled={tournament.competitors.length < 2}
+              className={`px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+              title={
+                tournament.competitors.length < 2
+                  ? "É necessário pelo menos 2 competidores"
+                  : ""
+              }
+            >
+              + Criar Jogo
+            </button>
+          </div>
         </div>
+
+        <div className="space-y-3">
+          {filteredMatches.length > 0 ? (
+            filteredMatches.map((match) =>
+              <MatchesListItemComponent key={match.id} match={match} onDeleted={() => setMatches((prev) => prev.filter((m) => m.id !== match.id))} />)
+          ) : (
+            <p className="text-gray-500 text-center py-8">
+              Nenhum jogo encontrado.
+            </p>
+          )}
+        </div>
+
+        <MatchCreateModal
+          controller={[showCreateModal, setShowCreateModal]}
+          tournament={tournament}
+          onCreated={(newMatch) => setMatches((prev) => [...prev, newMatch])}
+        />
+      </div>
     );
 }
 

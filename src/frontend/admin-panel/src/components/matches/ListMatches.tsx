@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   matchesApi,
-  type MatchList,
+  type MatchListItem,
   type MatchListFilter,
 } from "../../api/matches";
 import { btn } from '../../styles/buttonStyles';
@@ -10,7 +10,7 @@ import { btn } from '../../styles/buttonStyles';
 const ListMatchesComponent = ({ tournamentId }: { tournamentId?: string }) => {
   const navigate = useNavigate();
 
-  const [matches, setMatches] = useState<MatchList[]>([]);
+  const [matches, setMatches] = useState<MatchListItem[]>([]);
   const [matchStatusFilter, setMatchStatusFilter] = useState<string>('all');
 
   useEffect(() => {
@@ -48,7 +48,7 @@ const ListMatchesComponent = ({ tournamentId }: { tournamentId?: string }) => {
     }
   };
 
-  const getParticipantNames = (participants: MatchList['participants']): string => {
+  const getParticipantNames = (participants: MatchListItem['participants']): string => {
     const names = participants.map(p => {
       if (p.name) {
         return p.name;
@@ -58,7 +58,7 @@ const ListMatchesComponent = ({ tournamentId }: { tournamentId?: string }) => {
     return names.join(' vs ');
   };
 
-  const getParticipantScores = (participants: MatchList['participants']): string | null => {
+  const getParticipantScores = (participants: MatchListItem['participants']): string | null => {
     if (participants.every(p => p.score !== null && p.score !== undefined)) {
       return participants.map(p => p.score).join(' - ');
     }

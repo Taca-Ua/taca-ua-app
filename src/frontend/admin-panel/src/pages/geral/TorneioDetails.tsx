@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import Sidebar from '../../components/geral_navbar';
 import { useNotification } from '../../contexts/NotificationProvider';
-import { tournamentsApi, type TournamentDetail, type TournamentFinish } from '../../api/tournaments';
+import { tournamentsApi, type TournamentDetail } from '../../api/tournaments';
 import { btn } from '../../styles/buttonStyles';
-import ListMatchesComponent from '../../components/matches/ListMatches';
 import TournamentInfoComponent from '../../components/tournaments/TournamentInfoComponent';
 import TournamentCompetitorsComponent from '../../components/tournaments/TournamentCompetitorsComponent';
 import MatchesListComponent from '../../components/matches/MatchesListComponent';
@@ -87,8 +86,7 @@ const TorneioDetails = () => {
           </div>
 
           <div className="mt-6">
-            <MatchesListComponent tournamentId={tournament.id} />
-            {/* <ListMatchesComponent tournamentId={tournament.id} /> */}
+            <MatchesListComponent tournament={tournament} />
           </div>
         </div>
       </div>

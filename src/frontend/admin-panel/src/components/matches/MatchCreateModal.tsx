@@ -1,17 +1,21 @@
 import { useState } from "react";
-import { matchesApi } from "../../api/matches"
+import { matchesApi, type MatchListItem } from "../../api/matches"
 import { type TournamentDetail } from "../../api/tournaments";
 import { btn } from "../../styles/buttonStyles";
 import HelpTooltip from "../HelpTooltip";
 import ChooseMultipleModal from "../utils/costum_menus/ChoseMultipleModel";
+import { useNotification } from "../../contexts/NotificationProvider";
 
 const MatchCreateModal = ( {
   controller,
-  tournament
+  tournament,
+  onCreated,
 } : {
   controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>],
-  tournament: TournamentDetail
+  tournament: TournamentDetail,
+  onCreated?: (match: MatchListItem) => void
 } ) => {
+  const { notify } = useNotification();
 
   const [isOpen, setIsOpen] = controller;
 
@@ -24,32 +28,33 @@ const MatchCreateModal = ( {
 
   const handleCreateMatch = async () => {
     if (selectedParticipants.length < 2 || selectedParticipants.includes("")) {
-      alert("Por favor, selecione pelo menos 2 participantes para o jogo.");
+      notify("Por favor, selecione pelo menos 2 participantes para o jogo.", "error");
       return;
     }
     if (!location.trim()) {
-      alert("Por favor, insira o local do jogo.");
+      notify("Por favor, insira o local do jogo.", "error");
       return;
     }
     if (!startTime) {
-      alert("Por favor, selecione a data e hora do jogo.");
+      notify("Por favor, selecione a data e hora do jogo.", "error");
       return;
     }
 
     setLoading( true );
     try {
-      await matchesApi.create( {
+      let newMatch = await matchesApi.create( {
         tournament_id: tournament.id,
         competitors: selectedParticipants,
         location,
         start_time: startTime
       } );
-      alert("Jogo criado com sucesso!");
+      notify("Jogo criado com sucesso!", "success");
       // Aqui você pode adicionar lógica para fechar o modal ou atualizar a lista de jogos
+      if (onCreated) onCreated(newMatch);
       setIsOpen(false);
     } catch ( error ) {
       console.error( "Error creating match:", error );
-      alert("Ocorreu um erro ao criar o jogo. Por favor, tente novamente.");
+      notify("Ocorreu um erro ao criar o jogo. Por favor, tente novamente.", "error");
     } finally {
       setLoading( false );
     }

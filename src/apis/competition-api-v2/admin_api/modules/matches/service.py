@@ -184,7 +184,6 @@ class MatchesService:
         """Delete a match"""
         matches_service_client.delete_match(
             match_id=match_id,
-            deleted_by="00000000-0000-0000-0000-000000000000",  # Placeholder for deleted_by
         )
 
     def publish_match_results(self, match_id: str) -> Match:
