@@ -82,7 +82,6 @@ def list_matches(
 @router.post("/matches", response_model=schemas.MatchResponse, status_code=201)
 def create_match(
     match_data: schemas.MatchCreate,
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db_session),
 ):
     """Create a new match with participants."""
@@ -114,7 +113,7 @@ def create_match(
     for participant_data in match_data.participants:
         participant = MatchParticipant(
             match_id=match.id,
-            participant=participant_data.participant,
+            participant=participant_data,
         )
         db.add(participant)
     db.flush()  # Get participant IDs if needed for events

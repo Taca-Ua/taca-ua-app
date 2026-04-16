@@ -66,11 +66,13 @@ const ChooseMultipleModal = ({
     allElementsLoader,
     initialChosenElementsIds = [],
     onSave,
+    showSummary = false,
 }: {
     controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>]
     allElementsLoader: () => Promise<GenericElement[]>;
     initialChosenElementsIds?: string[];
     onSave: (chosen: GenericElement[]) => void;
+    showSummary?: boolean;
 }) => {
     const [isOpen, setIsOpen] = controller;
 
@@ -86,9 +88,18 @@ const ChooseMultipleModal = ({
         allElementsLoader().then(setAllElements);
     }, [isOpen]);
 
-    const filteredElements = allElements.filter((element) =>
-        element.title.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
+
+    // Filter type: 'all', 'selected', 'not_selected'
+    const [filterType, setFilterType] = useState<'all' | 'selected' | 'not_selected'>('all');
+
+    const filteredElements = allElements.filter((element) => {
+      const matchesSearch = element.title.toLowerCase().includes(searchQuery.toLowerCase());
+      if (!matchesSearch) return false;
+      if (filterType === 'all') return true;
+      if (filterType === 'selected') return chosenElements.includes(element.id);
+      if (filterType === 'not_selected') return !chosenElements.includes(element.id);
+      return true;
+    });
 
     const { newlySelected, newlyDeselected } = useMemo(() => {
       const initialIds = new Set(initialChosenElementsIds);
@@ -135,7 +146,8 @@ const ChooseMultipleModal = ({
             Gerir Membros da Equipa
           </h2>
 
-          <div className="lg:hidden border border-gray-200 rounded-md bg-gray-50 mb-4">
+          {/* Summary for Mobile */}
+          {showSummary && (<div className="lg:hidden border border-gray-200 rounded-md bg-gray-50 mb-4">
             <button
               type="button"
               onClick={() => setIsMobileSummaryOpen((prev) => !prev)}
@@ -157,17 +169,44 @@ const ChooseMultipleModal = ({
                 />
               </div>
             ) : null}
-          </div>
+          </div>)}
 
-          <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6 flex-1 min-h-0">
+
+          {/* Search, Filter, and Results */}
+          <div className={`grid grid-cols-1 ${(showSummary ? "lg:grid-cols-[2fr_1fr]" : "")} gap-6 flex-1 min-h-0`}>
             <div className="min-h-0 flex flex-col">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Pesquisar ..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 mb-4"
-              />
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Pesquisar ..."
+                  className="w-full sm:w-auto flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+                <div className="flex gap-1 mt-2 sm:mt-0">
+                  <button
+                    type="button"
+                    className={`px-3 py-1 rounded-md text-sm font-medium border transition-colors ${filterType === 'all' ? 'bg-teal-500 text-white border-teal-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}`}
+                    onClick={() => setFilterType('all')}
+                  >
+                    Todos
+                  </button>
+                  <button
+                    type="button"
+                    className={`px-3 py-1 rounded-md text-sm font-medium border transition-colors ${filterType === 'selected' ? 'bg-teal-500 text-white border-teal-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}`}
+                    onClick={() => setFilterType('selected')}
+                  >
+                    Selecionados
+                  </button>
+                  <button
+                    type="button"
+                    className={`px-3 py-1 rounded-md text-sm font-medium border transition-colors ${filterType === 'not_selected' ? 'bg-teal-500 text-white border-teal-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}`}
+                    onClick={() => setFilterType('not_selected')}
+                  >
+                    Não selecionados
+                  </button>
+                </div>
+              </div>
 
               <div className="flex-1 overflow-y-auto space-y-2 mb-3 max-h-96 lg:max-h-none">
                 {filteredElements.length === 0 ? (
@@ -244,7 +283,7 @@ const ChooseMultipleModal = ({
               </div>
             </div>
 
-            <div className="hidden lg:flex border border-gray-200 rounded-md p-4 bg-gray-50 min-h-0 flex-col">
+            {showSummary && (<div className="hidden lg:flex border border-gray-200 rounded-md p-4 bg-gray-50 min-h-0 flex-col">
               <h3 className="text-sm font-semibold text-gray-700 mb-3">
                 Resumo desta edição
               </h3>
@@ -253,13 +292,15 @@ const ChooseMultipleModal = ({
                 newlySelected={newlySelected}
                 newlyDeselected={newlyDeselected}
               />
-            </div>
+            </div>)}
           </div>
 
+          {/* Count Message */}
           <p className="text-sm text-gray-500 mb-4">
             {chosenElements.length} elemento(s) selecionado(s)
           </p>
 
+          {/* Buttons */}
           <div className="flex gap-4 flex-shrink-0">
             <button
               onClick={onClose}

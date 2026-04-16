@@ -20,8 +20,8 @@ class MatchParticipantData(BaseModel):
     """Participant entry embedded in MatchCreatedData."""
 
     participant_id: UUID
-    participant_type: str  # "team" | "athlete"
-    participant_entity_id: UUID
+    participant_type: Optional[str]  # "team" | "athlete"
+    participant_entity_id: Optional[UUID]
 
 
 class MatchCreatedData(BaseModel):

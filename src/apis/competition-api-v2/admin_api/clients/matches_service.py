@@ -12,11 +12,11 @@ from ..utils.base_service import BaseService
 
 @dataclass
 class MatchParticipantDTO:
-    id: UUID
+    participant: UUID
     match_id: UUID
-    participant_type: str  # "team" or "athlete"
-    team_id: Optional[UUID] = None
-    athlete_id: Optional[UUID] = None
+    # participant_type: str  # "team" or "athlete"
+    # team_id: Optional[UUID] = None
+    # athlete_id: Optional[UUID] = None
     score: Optional[int] = None
     position: Optional[int] = None
     result_metadata: Optional[Dict[str, Any]] = None
@@ -33,6 +33,7 @@ class MatchDTO:
     created_at: str  # ISO format
     updated_at: str  # ISO format
     participants: List[MatchParticipantDTO] = field(default_factory=list)
+    comments: List["CommentDTO"] = field(default_factory=list)
 
     def __post_init__(self):
         # Convert participants dicts to MatchParticipantDTO if necessary

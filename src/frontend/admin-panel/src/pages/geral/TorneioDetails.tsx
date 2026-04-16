@@ -7,6 +7,7 @@ import { btn } from '../../styles/buttonStyles';
 import ListMatchesComponent from '../../components/matches/ListMatches';
 import TournamentInfoComponent from '../../components/tournaments/TournamentInfoComponent';
 import TournamentCompetitorsComponent from '../../components/tournaments/TournamentCompetitorsComponent';
+import MatchesListComponent from '../../components/matches/MatchesListComponent';
 
 // Main component
 const TorneioDetails = () => {
@@ -86,7 +87,8 @@ const TorneioDetails = () => {
           </div>
 
           <div className="mt-6">
-            <ListMatchesComponent tournamentId={tournament.id} />
+            <MatchesListComponent tournamentId={tournament.id} />
+            {/* <ListMatchesComponent tournamentId={tournament.id} /> */}
           </div>
         </div>
       </div>

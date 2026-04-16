@@ -231,7 +231,9 @@ class TournamentsService:
             modality_id=modality_id,
             name=name,
             scoring_format_id=scoring_format_id,
-            competitor_type=modality.modality_type.tournament_competitor_type,
+            competitor_type=modality.modality_type.tournament_competitor_type.replace(
+                "individual", "athlete"
+            ),  # the tournaments service expects "athlete" instead of "individual"
             start_date=datetime.now().isoformat(),
         )
 

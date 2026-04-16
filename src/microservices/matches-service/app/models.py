@@ -102,7 +102,7 @@ class MatchParticipant(Base):
     score = Column(Integer, nullable=True)
     position = Column(Integer, nullable=True)
 
-    match = relationship("Match", back_populates="participants")
+    match: Mapped[Match] = relationship("Match", back_populates="participants")
 
     def __repr__(self) -> str:
         return (

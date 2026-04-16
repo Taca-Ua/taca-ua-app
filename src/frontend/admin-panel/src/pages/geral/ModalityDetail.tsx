@@ -29,6 +29,7 @@ const TournamentsTab = ({ modalityId }: { modalityId: string }) => {
       </div>
 
       <TournamentList
+        tournamentsState={[tournaments, setTournaments]}
         showModality={false}
         loadTournaments={async () => tournamentsApi.getAll({
           modality_id: modalityId

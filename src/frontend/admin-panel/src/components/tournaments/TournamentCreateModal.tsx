@@ -52,7 +52,9 @@ const TournamentCreateModal = ({
       return;
     }
 
-    if (chosenModality === null) {
+    let modalityIdToUse = chosenModality ? chosenModality.id : modalityId;
+
+    if (!modalityIdToUse) {
       notify('Por favor, selecione uma modalidade.', 'error');
       setLoading(false);
       return;
@@ -61,9 +63,10 @@ const TournamentCreateModal = ({
     try {
       const newTournament: TournamentCreate = {
         name,
-        modality_id: chosenModality.id,
+        modality_id: modalityIdToUse,
         is_playoff: isPlayoff,
       };
+      console.log('Creating tournament with data:', newTournament);
       const createdTournament = await tournamentsApi.create(newTournament);
       onCreate(createdTournament);
       onClose();
@@ -89,7 +92,7 @@ const TournamentCreateModal = ({
       <div className="bg-white p-8 rounded-lg w-full max-w-lg">
         <h2 className="text-2xl font-bold mb-4">Criar Torneio</h2>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-4">
           <div>
             <label className="font-medium">
               Nome do Torneio{' '}
@@ -159,14 +162,15 @@ const TournamentCreateModal = ({
               Cancelar
             </button>
             <button
-              type="submit"
+              type="button"
+              onClick={handleSubmit}
               className={`px-4 py-2 ${btn.primary} rounded-md`}
               disabled={loading}
             >
               {loading ? 'A criar...' : 'Criar'}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

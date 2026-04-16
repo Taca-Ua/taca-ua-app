@@ -34,6 +34,7 @@ import SociosNucleo from '../pages/nucleo/Socios';
 
 // Components
 import ProtectedRoute from '../components/ProtectedRoute';
+import TestPage from '../pages/TestPage';
 
 /**
  * Post-login landing: redirect each authenticated user to their own
@@ -66,6 +67,10 @@ export const router = createBrowserRouter([
   {
     path: '/unauthorized',
     element: <Unauthorized />,
+  },
+  {
+    path: '/test',
+    element: <TestPage />,
   },
 
   // ============================================

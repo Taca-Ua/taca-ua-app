@@ -69,7 +69,10 @@ class MatchListCreateView(APIView):
             tournament_id=serializer.validated_data.get("tournament_id"),
             location=serializer.validated_data.get("location"),
             start_time=serializer.validated_data.get("start_time").isoformat(),
-            participants_ids=serializer.validated_data.get("participants", []),
+            participants_ids=[
+                str(competitor)
+                for competitor in serializer.validated_data.get("competitors", [])
+            ],
         )
 
         response_serializer = MatchListSerializer(match)

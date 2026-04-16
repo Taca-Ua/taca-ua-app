@@ -1,5 +1,5 @@
 import keycloak from '../lib/keycloak';
-import { apiClient } from './client';
+import { apiClient } from './client2';
 
 
 // Response types
@@ -72,7 +72,7 @@ export interface LineupAssign {
 
 export const matchesApi = {
   async getAll(params?: MatchListFilter): Promise<MatchListItem[]> {
-    return apiClient.get<MatchListItem[]>('/matches/', { params });
+    return apiClient.get<MatchListItem[]>('/matches/', params );
   },
 
   async create(data: MatchCreate): Promise<MatchListItem> {

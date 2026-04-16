@@ -40,7 +40,7 @@ class MatchListSerializer(serializers.Serializer):
     location = serializers.CharField()
     start_time = serializers.DateTimeField()
     status = serializers.CharField()
-    competitors = ParticipantsListSerializer(many=True)
+    participants = ParticipantsListSerializer(many=True)
 
 
 class MatchDetailSerializer(MatchListSerializer):

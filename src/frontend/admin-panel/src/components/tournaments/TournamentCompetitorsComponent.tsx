@@ -4,6 +4,7 @@ import ChooseMultipleModal, { type GenericElement } from "../ChoseMultipleModel"
 import { useState } from "react";
 import { teamsApi } from "../../api/teams";
 import { tournamentsApi } from "../../api/tournaments";
+import { athletesApi } from "../../api/athletes";
 
 const TournamentCompetitorsComponent = ({
   tournamentState,
@@ -55,6 +56,36 @@ const TournamentCompetitorsComponent = ({
     }
   }
 
+  const loadTeamsForModal = async () => {
+    try {
+      const teams = await teamsApi.getAll({
+        modality_id: tournament.modality.id,
+      });
+      return teams.map((team) => ({
+        id: team.id,
+        title: team.name,
+        subTitle: team.course.name,
+      }));
+    } catch (error) {
+      console.error("Error loading teams for modal:", error);
+      return [];
+    }
+  };
+
+  const loadAthletesForModal = async () => {
+    try {
+      const athletes = await athletesApi.getAll({});
+      return athletes.map((athlete) => ({
+        id: athlete.id,
+        title: athlete.full_name,
+        subTitle: athlete.course.name,
+      }));
+    } catch (error) {
+      console.error("Error loading athletes for modal:", error);
+      return [];
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6 max-h-full overflow-y-auto">
       <div className="flex justify-between items-center mb-4">
@@ -104,13 +135,7 @@ const TournamentCompetitorsComponent = ({
 
       <ChooseMultipleModal
         controller={[showAddModal, setShowAddModal]}
-        allElementsLoader={() => teamsApi.getAll({
-          modality_id: tournament.modality.id,
-        }).then((teams) => teams.map((team) => ({
-          id: team.id,
-          title: team.name,
-          subTitle: team.course.name,
-        })))}
+        allElementsLoader={() => tournament.competitor_type === "team" ? loadTeamsForModal() : loadAthletesForModal()}
         initialChosenElementsIds={tournament.competitors.map(
           (c) => c.entity_id,
         )}

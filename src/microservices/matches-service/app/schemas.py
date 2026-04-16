@@ -21,7 +21,7 @@ class MatchParticipantUpdate(BaseModel):
 class MatchParticipantResponse(BaseModel):
     """Schema for match participant response."""
 
-    id: UUID
+    participant: UUID
     match_id: UUID
     score: Optional[int] = None
     position: Optional[int] = None
