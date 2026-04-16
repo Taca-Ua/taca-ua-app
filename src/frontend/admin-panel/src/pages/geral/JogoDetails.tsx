@@ -603,31 +603,15 @@ const LineupsSection = ({ match }: { match: MatchDetail }) => {
 };
 
 // Comments Section Component
-const CommentsSection = ({ matchId }: { matchId: string }) => {
-  const [comments, setComments] = useState<CommentDetail[]>([]);
-  const [loading, setLoading] = useState(true);
+const CommentsSection = ({ match }: { match: MatchDetail }) => {
+  // const [comments, setComments] = useState<CommentDetail[]>([]);
   const { notify } = useNotification();
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
   const [deletingComment, setDeletingComment] = useState(false);
 
-  useEffect(() => {
-    fetchComments();
-  }, [matchId]);
-
-  const fetchComments = async () => {
-    try {
-      setLoading(true);
-      const data = await matchesApi.getComments(matchId);
-      setComments(data);
-    } catch (err) {
-      console.error('Error loading comments:', err);
-      notify(err instanceof Error ? err.message : 'Não foi possível carregar os comentários. Tente recarregar a página.', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const comments = match.comments || [];
 
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
@@ -635,8 +619,7 @@ const CommentsSection = ({ matchId }: { matchId: string }) => {
     try {
       setSubmitting(true);
       const commentData: CommentCreate = { message: newComment.trim() };
-      const addedComment = await matchesApi.addComment(matchId, commentData);
-      setComments([...comments, addedComment]);
+      await matchesApi.addComment(match.id, commentData);
       setNewComment('');
     } catch (err) {
       console.error('Error adding comment:', err);
@@ -655,8 +638,8 @@ const CommentsSection = ({ matchId }: { matchId: string }) => {
 
     try {
       setDeletingComment(true);
-      await matchesApi.deleteComment(matchId, commentToDelete);
-      setComments(comments.filter(c => c.id !== commentToDelete));
+      await matchesApi.deleteComment(match.id, commentToDelete);
+      // setComments(comments.filter(c => c.id !== commentToDelete));
       setCommentToDelete(null);
     } catch (err) {
       console.error('Error deleting comment:', err);
@@ -677,10 +660,63 @@ const CommentsSection = ({ matchId }: { matchId: string }) => {
     }
   };
 
+  const renderCommentListArea = () => {
+    if (comments.length === 0) {
+      return <p className="text-gray-600 text-center py-4">Nenhum comentário ainda.</p>;
+    }
+
+    return (
+      <div className="space-y-4">
+        {comments.map((comment) => (
+          <div key={comment.id} className="p-4 bg-gray-50 rounded-lg">
+            <div className="flex justify-between items-start mb-2">
+              {/* <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-teal-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                  {comment.created_by.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-gray-800">
+                    {comment.created_by}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {formatCommentDate(comment.created_at)}
+                  </p>
+                </div>
+              </div> */}
+              <button
+                onClick={() => handleDeleteComment(comment.id)}
+                className="text-red-600 hover:text-red-700 p-1"
+                title="Eliminar comentário"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+              </button>
+            </div>
+            <p className="text-gray-700 whitespace-pre-wrap">
+              {comment.message}
+            </p>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <h3 className="text-xl font-bold text-gray-800 mb-4">Comentários</h3>
 
+      {/* Comment Input */}
       <div className="mb-6">
         <textarea
           className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
@@ -698,41 +734,8 @@ const CommentsSection = ({ matchId }: { matchId: string }) => {
         </button>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
-        </div>
-      ) : comments.length === 0 ? (
-        <p className="text-gray-600 text-center py-4">Nenhum comentário ainda.</p>
-      ) : (
-        <div className="space-y-4">
-          {comments.map((comment) => (
-            <div key={comment.id} className="p-4 bg-gray-50 rounded-lg">
-              <div className="flex justify-between items-start mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-teal-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
-                    {comment.created_by.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-sm text-gray-800">{comment.created_by}</p>
-                    <p className="text-xs text-gray-500">{formatCommentDate(comment.created_at)}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleDeleteComment(comment.id)}
-                  className="text-red-600 hover:text-red-700 p-1"
-                  title="Eliminar comentário"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              </div>
-              <p className="text-gray-700 whitespace-pre-wrap">{comment.message}</p>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Comments List */}
+      {renderCommentListArea()}
 
       <ConfirmModal
         isOpen={commentToDelete !== null}
@@ -748,53 +751,6 @@ const CommentsSection = ({ matchId }: { matchId: string }) => {
         }}
         onConfirm={confirmDeleteComment}
       />
-    </div>
-  );
-};
-
-// Delete Modal Component
-const DeleteModal = ({
-  show,
-  onClose,
-  onConfirm
-}: {
-  show: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-}) => {
-  if (!show) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 animate-fade-in">
-        <div className="flex items-center mb-4">
-          <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mr-4">
-            <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-          </div>
-          <h3 className="text-xl font-bold text-gray-900">Confirmar Eliminação</h3>
-        </div>
-
-        <p className="text-gray-600 mb-6">
-          Tem a certeza que deseja eliminar este jogo? Esta ação não pode ser revertida e todos os dados associados serão permanentemente removidos.
-        </p>
-
-        <div className="flex gap-3">
-          <button
-            onClick={onClose}
-            className={`flex-1 px-4 py-2 ${btn.secondaryAlt} rounded-md font-medium transition-colors`}
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={onConfirm}
-            className={`flex-1 px-4 py-2 ${btn.danger} rounded-md font-medium transition-colors`}
-          >
-            Sim, Eliminar
-          </button>
-        </div>
-      </div>
     </div>
   );
 };
@@ -1048,14 +1004,18 @@ const JogoDetails = () => {
           <div className="lg:col-span-2 space-y-6">
             <ResultsSection match={match} onUpdate={fetchMatch} />
             <LineupsSection match={match} />
-            <CommentsSection matchId={match.id} />
+            <CommentsSection match={match} />
           </div>
         </div>
       </div>
 
-      <DeleteModal
-        show={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        title="Eliminar jogo"
+        message="Tem a certeza que deseja eliminar este jogo? Esta ação não pode ser revertida e todos os dados associados serão permanentemente removidos."
+        confirmLabel="Sim, Eliminar"
+        variant="danger"
+        onCancel={() => setShowDeleteModal(false)}
         onConfirm={handleDelete}
       />
     </div>

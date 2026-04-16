@@ -207,8 +207,8 @@ class MatchesService:
         """Add a comment to a match"""
         match_dto = matches_service_client.add_comment(
             match_id=match_id,
-            comment_text=comment_text,
-            commented_by="00000000-0000-0000-0000-000000000000",  # Placeholder for commented_by
+            message=comment_text,
+            created_by="00000000-0000-0000-0000-000000000000",  # Placeholder for commented_by
         )
         return self._build_match_from_dto(match_dto)
 

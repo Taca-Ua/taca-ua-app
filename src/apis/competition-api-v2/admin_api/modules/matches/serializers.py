@@ -46,8 +46,8 @@ class MatchListSerializer(serializers.Serializer):
 class MatchDetailSerializer(MatchListSerializer):
     """Serializer for detailed match view"""
 
-    comments = CommentListSerializer(many=True)
-    lineups = LineupDetailSerializer(many=True)
+    comments = CommentListSerializer(many=True, required=False, allow_null=True)
+    lineups = LineupDetailSerializer(many=True, required=False, allow_null=True)
 
 
 # Request serializers

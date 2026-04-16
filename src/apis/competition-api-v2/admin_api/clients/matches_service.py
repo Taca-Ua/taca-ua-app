@@ -61,6 +61,7 @@ class CommentDTO:
     message: str
     created_by: UUID
     created_at: str  # ISO format
+    tournament_id: Optional[UUID] = None
 
 
 class MatchesService(BaseService):

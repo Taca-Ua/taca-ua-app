@@ -218,7 +218,7 @@ def add_comment(request, match_id):
 
     match = matches_service.add_comment(
         match_id=match_id,
-        message=serializer.validated_data["message"],
+        comment_text=serializer.validated_data["message"],
     )
 
     response_serializer = MatchDetailSerializer(match)
