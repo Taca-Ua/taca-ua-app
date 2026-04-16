@@ -1,6 +1,6 @@
 import type { TournamentDetail } from "../../api/tournaments";
 import { btn } from "../../styles/buttonStyles";
-import ChooseMultipleModal, { type GenericElement } from "../ChoseMultipleModel";
+import ChooseMultipleModal, { type GenericElement } from "../utils/costum_menus/ChoseMultipleModel";
 import { useState } from "react";
 import { teamsApi } from "../../api/teams";
 import { tournamentsApi } from "../../api/tournaments";
@@ -140,6 +140,7 @@ const TournamentCompetitorsComponent = ({
           (c) => c.entity_id,
         )}
         onSave={handleEditCompetitors}
+        title="Selecionar Competidores do Torneio"
       />
     </div>
   );

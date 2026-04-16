@@ -5,6 +5,7 @@ import Sidebar from "../../components/geral_navbar";
 import { modalityTypesApi, type ModalityTypeListItem } from "../../api/modality-types";
 import { useNotification } from '../../contexts/NotificationProvider';
 import { btn } from '../../styles/buttonStyles';
+import DefinedStatesMenuComponent from "../../components/utils/costum_menus/DefinedStatesMenuComponent";
 
 // Types for the scoring format structure
 interface EscalaoRow {
@@ -359,22 +360,13 @@ useEffect(() => {
                   <label className="block font-medium mb-2">
                     Tipo de Competidor <span className="text-red-500">*</span>
                   </label>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      className={`flex-1 py-2 rounded-md border transition-colors font-semibold ${tournamentCompetitorType === 'team' ? 'bg-teal-500 text-white border-teal-600' : 'bg-white text-teal-700 border-gray-300'}`}
-                      onClick={() => setTournamentCompetitorType('team')}
-                    >
-                      Equipa
-                    </button>
-                    <button
-                      type="button"
-                      className={`flex-1 py-2 rounded-md border transition-colors font-semibold ${tournamentCompetitorType === 'individual' ? 'bg-teal-500 text-white border-teal-600' : 'bg-white text-teal-700 border-gray-300'}`}
-                      onClick={() => setTournamentCompetitorType('individual')}
-                    >
-                      Individual
-                    </button>
-                  </div>
+                  <DefinedStatesMenuComponent
+                    states={[
+                      {value: 'individual', label: 'Individual'},
+                      {value: 'team', label: 'Equipa'},
+                    ]}
+                    onSelect={(value) => setTournamentCompetitorType(value as 'individual' | 'team')}
+                  />
                 </div>
               )}
 

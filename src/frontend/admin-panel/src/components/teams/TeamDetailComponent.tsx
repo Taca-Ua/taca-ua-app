@@ -6,7 +6,7 @@ import ConfirmModal from "../ConfirmModal";
 import TeamEditModel from "./TeamEditModel";
 import ChooseMultipleModal, {
   type GenericElement,
-} from "../ChoseMultipleModel";
+} from "../utils/costum_menus/ChoseMultipleModel";
 import { studentsApi, type Student } from "../../api/members";
 
 const TeamDetailComponent = ({ teamId }: { teamId: string }) => {
@@ -255,13 +255,14 @@ const TeamDetailComponent = ({ teamId }: { teamId: string }) => {
 
       <ChooseMultipleModal
         controller={playersModelController}
-        allElements={avaiblePlayers.map((player) => ({
+        allElementsLoader={() => Promise.resolve(avaiblePlayers.map((player) => ({
           id: player.id,
           title: player.full_name,
           subTitle: `NMEC: ${player.student_number}`,
-        }))}
+        })))}
         initialChosenElementsIds={team.players.map((ele) => ele.id)}
         onSave={(chosenElements) => handleUpdatePlayers(chosenElements)}
+        title="Selecionar Membros da Equipa"
       />
     </div>
   );

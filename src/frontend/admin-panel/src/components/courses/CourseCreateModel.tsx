@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { coursesApi, type CourseListItem } from "../../api/courses";
-import { nucleosApi, type NucleoListItem } from "../../api/nucleos";
+import { nucleosApi } from "../../api/nucleos";
 import HelpTooltip from "../HelpTooltip";
 import { btn } from "../../styles/buttonStyles";
+import ChoseOneModal from "../utils/costum_menus/ChoseOneModal";
 
 const CourseCreateModel = ({
   controller,
@@ -15,25 +16,9 @@ const CourseCreateModel = ({
 
   const [newCourseName, setNewCourseName] = useState("");
   const [newCourseAbbreviation, setNewCourseAbbreviation] = useState("");
-  const [selectedNucleoId, setSelectedNucleoId] = useState("");
+  const [selectedNucleo, setSelectedNucleo] = useState<{id: string, title: string, subTitle?: string} | null>(null);
 
-  const [nucleos, setNucleos] = useState<NucleoListItem[]>([]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    if (nucleos.length > 0) return; // Evita refetch se já temos os núcleos carregados
-
-    const fetchNucleos = async () => {
-      try {
-        const data = await nucleosApi.getAll();
-        setNucleos(data);
-      } catch (err) {
-        console.error("Failed to fetch nucleos:", err);
-      }
-    };
-    fetchNucleos();
-  }, [isOpen]);
+  const [nucleosSelectModalOpen, setNucleosSelectModalOpen] = useState(false);
 
   const handleAddCourse = async () => {
     if (!newCourseName.trim()) {
@@ -44,7 +29,7 @@ const CourseCreateModel = ({
       alert("Por favor, preencha a abreviatura do curso.");
       return;
     }
-    if (!selectedNucleoId) {
+    if (!selectedNucleo) {
       alert("Por favor, selecione um núcleo.");
       return;
     }
@@ -53,7 +38,7 @@ const CourseCreateModel = ({
       const newCourse = await coursesApi.create({
         name: newCourseName,
         abbreviation: newCourseAbbreviation,
-        nucleo_id: selectedNucleoId,
+        nucleo_id: selectedNucleo.id,
       });
       if (onCreate) onCreate(newCourse);
 
@@ -67,7 +52,7 @@ const CourseCreateModel = ({
   const onClose = () => {
     setNewCourseName("");
     setNewCourseAbbreviation("");
-    setSelectedNucleoId("");
+    setSelectedNucleo(null);
     setIsOpen(false);
   };
 
@@ -123,20 +108,14 @@ const CourseCreateModel = ({
               />{" "}
               <span className="text-red-500">*</span>
             </label>
-            <select
-              value={selectedNucleoId}
-              onChange={(e) => setSelectedNucleoId(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+            <div
+              onClick={() => setNucleosSelectModalOpen(true)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700 cursor-pointer"
             >
-              <option value="">Selecionar Núcleo</option>
-              {[...nucleos]
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .map((nucleo) => (
-                  <option key={nucleo.id} value={nucleo.id}>
-                    {nucleo.name}
-                  </option>
-                ))}
-            </select>
+              {selectedNucleo
+                ? selectedNucleo.title
+                : "Selecionar Núcleo"}
+            </div>
           </div>
         </div>
 
@@ -155,6 +134,18 @@ const CourseCreateModel = ({
           </button>
         </div>
       </div>
+
+      {/* Nucleo Selection */}
+      <ChoseOneModal
+        controller={[nucleosSelectModalOpen, setNucleosSelectModalOpen]}
+        allElementsLoader={() => nucleosApi.getAll().then(data => data.map((nucleo) => ({
+          id: nucleo.id,
+          title: nucleo.abbreviation,
+          subTitle: nucleo.name,
+        })))}
+        onSelect={(nucleo) => setSelectedNucleo(nucleo)}
+        title="Selecionar Núcleo"
+      />
     </div>
   );
 }

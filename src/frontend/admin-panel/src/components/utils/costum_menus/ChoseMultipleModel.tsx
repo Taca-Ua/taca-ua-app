@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { btn } from "../styles/buttonStyles";
+import { btn } from "../../../styles/buttonStyles";
 
 export interface GenericElement {
     id: string;
@@ -66,12 +66,14 @@ const ChooseMultipleModal = ({
     allElementsLoader,
     initialChosenElementsIds = [],
     onSave,
+    title = "Escolha os elementos",
     showSummary = false,
 }: {
     controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>]
     allElementsLoader: () => Promise<GenericElement[]>;
     initialChosenElementsIds?: string[];
     onSave: (chosen: GenericElement[]) => void;
+    title?: string;
     showSummary?: boolean;
 }) => {
     const [isOpen, setIsOpen] = controller;
@@ -144,7 +146,7 @@ const ChooseMultipleModal = ({
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
         <div className="bg-white rounded-lg p-8 max-w-5xl w-full mx-4 animate-slideUp max-h-[90vh] flex flex-col">
           <h2 className="text-2xl font-bold mb-4 text-gray-800">
-            Gerir Membros da Equipa
+            {title}
           </h2>
 
           {/* Summary for Mobile */}

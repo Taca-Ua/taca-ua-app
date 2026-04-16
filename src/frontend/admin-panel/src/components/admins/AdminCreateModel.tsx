@@ -4,7 +4,8 @@ import { btn } from '../../styles/buttonStyles';
 import { useNotification } from "../../contexts/NotificationProvider";
 import { administratorsApi } from "../../api/admins";
 import { nucleosApi } from "../../api/nucleos";
-import ChooseMultipleModal from "../ChoseMultipleModel";
+import ChooseMultipleModal from "../utils/costum_menus/ChoseMultipleModel";
+import DefinedStatesMenuComponent from "../utils/costum_menus/DefinedStatesMenuComponent";
 
 interface AdminCreateModelProps {
 	isOpen: boolean;
@@ -22,7 +23,6 @@ const AdminCreateModel = ({ isOpen, onClose, onCreated }: AdminCreateModelProps)
 	const [confirmPassword, setConfirmPassword] = useState('');
 	const [showPassword, setShowPassword] = useState(false);
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-	const [nucleoSearch, setNucleoSearch] = useState('');
 	const [allNucleos, setAllNucleos] = useState<any[]>([]);
 	const [selectedNucleos, setSelectedNucleos] = useState<string[]>([]);
 
@@ -100,7 +100,6 @@ const AdminCreateModel = ({ isOpen, onClose, onCreated }: AdminCreateModelProps)
 		setMemberRole('general_admin');
 		setEmail('');
 		setSelectedNucleos([]);
-		setNucleoSearch('');
 		if (onClose) onClose();
 	};
 
@@ -318,22 +317,13 @@ const AdminCreateModel = ({ isOpen, onClose, onCreated }: AdminCreateModelProps)
                 />{" "}
                 <span className="text-red-500">*</span>
               </label>
-              <div className="flex gap-2 mb-2">
-                <button
-                  type="button"
-                  className={`flex-1 py-2 rounded-md border transition-colors font-semibold ${memberRole === "general_admin" ? "bg-teal-500 text-white border-teal-600" : "bg-white text-teal-700 border-gray-300"}`}
-                  onClick={() => setMemberRole("general_admin")}
-                >
-                  Administrador Geral
-                </button>
-                <button
-                  type="button"
-                  className={`flex-1 py-2 rounded-md border transition-colors font-semibold ${memberRole === "nucleo_admin" ? "bg-teal-500 text-white border-teal-600" : "bg-white text-teal-700 border-gray-300"}`}
-                  onClick={() => setMemberRole("nucleo_admin")}
-                >
-                  Administrador Núcleo
-                </button>
-              </div>
+              <DefinedStatesMenuComponent
+                states={[
+                  { value: 'general_admin', label: 'Administrador Geral' },
+                  { value: 'nucleo_admin', label: 'Administrador Núcleo' },
+                ]}
+                onSelect={(state) => setMemberRole(state as 'general_admin' | 'nucleo_admin')}
+              />
             </div>
           </div>
           {memberRole === "nucleo_admin" && (
@@ -424,6 +414,7 @@ const AdminCreateModel = ({ isOpen, onClose, onCreated }: AdminCreateModelProps)
         onSave={(chosenIds) =>
           setSelectedNucleos(chosenIds.map((elem) => elem.id))
         }
+        title="Selecionar Núcleos"
       />
     </div>
   );

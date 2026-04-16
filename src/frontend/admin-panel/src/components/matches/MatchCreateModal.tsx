@@ -3,7 +3,7 @@ import { matchesApi } from "../../api/matches"
 import { type TournamentDetail } from "../../api/tournaments";
 import { btn } from "../../styles/buttonStyles";
 import HelpTooltip from "../HelpTooltip";
-import ChooseMultipleModal from "../ChoseMultipleModel";
+import ChooseMultipleModal from "../utils/costum_menus/ChoseMultipleModel";
 
 const MatchCreateModal = ( {
   controller,
@@ -92,6 +92,7 @@ const MatchCreateModal = ( {
               initialChosenElementsIds={selectedParticipants}
               onSave={(chosenIds) => setSelectedParticipants(chosenIds.map(ele => ele.id))}
               showSummary={true}
+              title="Selecionar Participantes do Jogo"
             />
 
             <div className="space-y-2">
