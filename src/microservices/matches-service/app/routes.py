@@ -73,8 +73,9 @@ def list_matches(
         extra={"total": total, "returned": len(matches)},
     )
 
+    print("Check", flush=True)
     return {
-        "matches": [schemas.MatchResponse.from_orm(m) for m in matches],
+        "matches": [m.to_dict(include_details=False) for m in matches],
         "total": total,
     }
 
@@ -153,7 +154,7 @@ def create_match(
         extra={"match_id": str(match.id), "status": match.status.value},
     )
 
-    return match
+    return match.to_dict(include_details=False)
 
 
 @router.get("/matches/{match_id}", response_model=schemas.MatchResponse)
@@ -171,7 +172,7 @@ def get_match(
         raise HTTPException(status_code=404, detail="Match not found")
 
     logger.info("Match fetched successfully", extra={"match_id": str(match_id)})
-    return match
+    return match.to_dict(include_details=True)
 
 
 @router.put("/matches/{match_id}", response_model=schemas.MatchResponse)
@@ -256,7 +257,7 @@ def update_match(
         extra={"match_id": str(match_id), "changes": changes_made},
     )
 
-    return match
+    return match.to_dict(include_details=True)
 
 
 @router.delete("/matches/{match_id}", status_code=204)
@@ -450,7 +451,7 @@ def get_lineup(
 # Comment routes
 @router.post(
     "/matches/{match_id}/comments",
-    response_model=schemas.CommentResponse,
+    response_model=schemas.MatchResponse,
     status_code=201,
 )
 def add_comment(
@@ -505,10 +506,14 @@ def add_comment(
         extra={"match_id": str(match_id), "comment_id": str(comment.id)},
     )
 
-    return comment
+    return comment.match.to_dict(include_details=True)
 
 
-@router.delete("/matches/{match_id}/comments/{comment_id}", status_code=204)
+@router.delete(
+    "/matches/{match_id}/comments/{comment_id}",
+    status_code=200,
+    response_model=schemas.MatchResponse,
+)
 def delete_comment(
     match_id: UUID,
     comment_id: UUID,
@@ -532,6 +537,9 @@ def delete_comment(
             extra={"match_id": str(match_id), "comment_id": str(comment_id)},
         )
         raise HTTPException(status_code=404, detail="Comment not found")
+
+    # Access the match before deletion for event data
+    match = comment.match
 
     # Emit event before deletion
     event = MatchCommentDeletedV1.create(
@@ -557,7 +565,7 @@ def delete_comment(
         extra={"match_id": str(match_id), "comment_id": str(comment_id)},
     )
 
-    return None
+    return match.to_dict(include_details=True)
 
 
 # Batch result update
@@ -694,4 +702,4 @@ def update_match_results(
         },
     )
 
-    return match
+    return match.to_dict(include_details=True)

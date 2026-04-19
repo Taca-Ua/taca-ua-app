@@ -30,13 +30,15 @@ class Match:
     start_time: str
     status: str
     participants: List[Participant] = field(default_factory=list)
+    comments: List[Dict] = field(default_factory=list)
+    lineups: List[Dict] = field(default_factory=list)
 
 
 class MatchesService:
     """Service for managing matches"""
 
     def _build_multiple_matches_from_dtos(
-        self, matches_dto: List[MatchDTO]
+        self, matches_dto: List[MatchDTO], include_details: bool = False
     ) -> List[Match]:
 
         # tournament phase
@@ -93,6 +95,7 @@ class MatchesService:
         # build matches
         resp = []
         for match_dto in matches_dto:
+            # participants info
             participants = []
             for participant in match_dto.participants:
                 entity_key = tournament_competitors_info[match_dto.tournament_id][
@@ -112,6 +115,7 @@ class MatchesService:
                     )
                 )
 
+            # build match
             resp.append(
                 Match(
                     id=match_dto.id,
@@ -120,14 +124,38 @@ class MatchesService:
                     start_time=match_dto.start_time,
                     status=match_dto.status,
                     participants=participants,
+                    comments=(
+                        [
+                            {
+                                "id": comment.id,
+                                "message": comment.message,
+                                "created_at": comment.created_at,
+                            }
+                            for comment in match_dto.comments
+                        ]
+                        if include_details and match_dto.comments
+                        else []
+                    ),
+                    lineups=(
+                        [
+                            {"participant_id": part.participant, "lineup": []}
+                            for part in match_dto.participants
+                        ]
+                        if include_details
+                        else []
+                    ),
                 )
             )
 
         return resp
 
-    def _build_match_from_dto(self, match_dto: MatchDTO) -> Match:
+    def _build_match_from_dto(
+        self, match_dto: MatchDTO, include_details: bool = False
+    ) -> Match:
         """Helper method to convert MatchDTO to Match domain model"""
-        matches = self._build_multiple_matches_from_dtos([match_dto])
+        matches = self._build_multiple_matches_from_dtos(
+            [match_dto], include_details=include_details
+        )
         return matches[0] if matches else None
 
     def list_matches(
@@ -135,9 +163,11 @@ class MatchesService:
     ) -> List[Match]:
         """List matches, optionally filtered by tournament"""
 
+        print("Check", flush=True)
         matches_data = matches_service_client.list_matches(
             tournament_id=tournament_id, status=status
         )
+        print("Check", flush=True)
 
         return self._build_multiple_matches_from_dtos(matches_data)
 
@@ -161,7 +191,7 @@ class MatchesService:
     def get_match(self, match_id: str) -> Match:
         """Get match details by ID"""
         match_dto = matches_service_client.get_match(match_id=match_id)
-        return self._build_match_from_dto(match_dto)
+        return self._build_match_from_dto(match_dto, include_details=True)
 
     def update_match(
         self,
@@ -178,7 +208,7 @@ class MatchesService:
             status=status,
             updated_by="00000000-0000-0000-0000-000000000000",  # Placeholder for updated_by
         )
-        return self._build_match_from_dto(match_dto)
+        return self._build_match_from_dto(match_dto, include_details=True)
 
     def delete_match(self, match_id: str) -> None:
         """Delete a match"""
@@ -195,7 +225,7 @@ class MatchesService:
             participant_results=participant_results,
             status="finished",  # Assuming publishing results also sets status to finished
         )
-        return self._build_match_from_dto(match_dto)
+        return self._build_match_from_dto(match_dto, include_details=True)
 
     def assign_lineup(self, match_id: str, participant_ids: List[str]) -> Match:
         """Assign lineup to a match"""
@@ -204,7 +234,7 @@ class MatchesService:
             participant_ids=participant_ids,
             assigned_by="00000000-0000-0000-0000-000000000000",  # Placeholder for assigned_by
         )
-        return self._build_match_from_dto(match_dto)
+        return self._build_match_from_dto(match_dto, include_details=True)
 
     def add_comment(self, match_id: str, comment_text: str) -> Match:
         """Add a comment to a match"""
@@ -213,16 +243,16 @@ class MatchesService:
             message=comment_text,
             created_by="00000000-0000-0000-0000-000000000000",  # Placeholder for commented_by
         )
-        return self._build_match_from_dto(match_dto)
+        return self._build_match_from_dto(match_dto, include_details=True)
 
     def delete_comment(self, match_id: str, comment_id: str) -> Match:
         """Delete a comment from a match"""
-        match_dto = matches_service_client.delete_comment(
+        matches_service_client.delete_comment(
             match_id=match_id,
             comment_id=comment_id,
-            deleted_by="00000000-0000-0000-0000-000000000000",  # Placeholder for deleted_by
+            # deleted_by="00000000-0000-0000-0000-000000000000",  # Placeholder for deleted_by
         )
-        return self._build_match_from_dto(match_dto)
+        return
 
     def generate_match_report(self, match_id: str) -> bytes:
         """Generate a PDF report for a match"""

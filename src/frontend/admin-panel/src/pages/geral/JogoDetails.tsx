@@ -104,39 +104,75 @@ const MatchHeader = ({ match }: { match: MatchDetail }) => {
 
 // Lineups Section Component
 const LineupsSection = ({ match }: { match: MatchDetail }) => {
-  const [lineups, setLineups] = useState<typeof match.lineups>(match.lineups || []);
-  const [loading, setLoading] = useState(true);
   const { notify } = useNotification();
+
+  const getParticipantName = (participant_id: string) => {
+    const participant = match.participants.find(p => p.id === participant_id);
+    return participant ? participant.name : 'Participante';
+  };
+
+  const handleDownloadTeamSheet = async (teamId: string) => {
+    try {
+        const blob = await matchesApi.getMatchTeamSheet(match.id, teamId);
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        // Optionally revoke after some time
+        setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+    } catch (err) {
+        console.error('Error downloading team sheet:', err);
+        notify(err instanceof Error ? err.message : 'Não foi possível descarregar a ficha de equipa. Tente novamente.', 'error');
+    }
+  };
+
+  if (match.lineups === null || match.lineups === undefined) {
+    return (
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">Convocatórias</h3>
+        <p className="text-gray-600">Dados de convocatória não disponíveis.</p>
+      </div>
+    );
+  }
+
+  if (match.lineups?.length === 0) {
+    return (
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">Convocatórias</h3>
+        <p className="text-gray-600">Nenhuma convocatória definida.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <h3 className="text-xl font-bold text-gray-800 mb-4">Convocatórias</h3>
 
-      {loading ? (
-        <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
-        </div>
-      ) : lineups.length === 0 ? (
-        <p className="text-gray-600">Nenhuma convocatória definida.</p>
-      ) : (
-        <div className="space-y-6">
-          {Object.entries(lineupsByTeam).map(([teamId, teamLineups]) => {
-            const starters = teamLineups.filter(l => l.is_starter);
-            const bench = teamLineups.filter(l => !l.is_starter);
-            const team = teamMap[teamId];
+      <div className="space-y-6">
+          {match.lineups.map((participant) => {
+            const starters = participant.lineup.filter(l => l.is_starter);
+            const bench = participant.lineup.filter(l => !l.is_starter);
 
             return (
-              <div key={teamId} className="border-l-4 border-teal-500 pl-4">
+              <div key={participant.participant_id} className="border-l-4 border-teal-500 pl-4">
                 <div className="flex justify-between items-center mb-3">
                   <h4 className="font-semibold text-lg text-gray-800">
-                    {team?.name || `Equipa ${teamId.substring(0, 8)}`}
+                    {getParticipantName(participant.participant_id)}
                   </h4>
                   <button
-                    onClick={() => handleDownloadTeamSheet(teamId)}
+                    onClick={() => handleDownloadTeamSheet(participant.participant_id)}
                     className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-md text-sm font-medium transition-colors flex items-center gap-1"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
                     </svg>
                     Ficha de Equipa
                   </button>
@@ -144,15 +180,20 @@ const LineupsSection = ({ match }: { match: MatchDetail }) => {
 
                 {starters.length > 0 && (
                   <div className="mb-3">
-                    <p className="text-sm font-medium text-gray-600 mb-2">Titulares</p>
+                    <p className="text-sm font-medium text-gray-600 mb-2">
+                      Titulares
+                    </p>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {starters.map(lineup => (
-                        <div key={lineup.id} className="flex items-center gap-2 p-2 bg-teal-50 rounded">
+                      {starters.map((lineup) => (
+                        <div
+                          key={lineup.player_id}
+                          className="flex items-center gap-2 p-2 bg-teal-50 rounded"
+                        >
                           <span className="flex-shrink-0 w-8 h-8 bg-teal-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
                             {lineup.jersey_number}
                           </span>
                           <span className="text-sm text-gray-800 truncate">
-                            {lineup.player?.full_name || 'Jogador'}
+                            {lineup.name || "Jogador"}
                           </span>
                         </div>
                       ))}
@@ -162,15 +203,20 @@ const LineupsSection = ({ match }: { match: MatchDetail }) => {
 
                 {bench.length > 0 && (
                   <div>
-                    <p className="text-sm font-medium text-gray-600 mb-2">Suplentes</p>
+                    <p className="text-sm font-medium text-gray-600 mb-2">
+                      Suplentes
+                    </p>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {bench.map(lineup => (
-                        <div key={lineup.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                      {bench.map((lineup) => (
+                        <div
+                          key={lineup.player_id}
+                          className="flex items-center gap-2 p-2 bg-gray-50 rounded"
+                        >
                           <span className="flex-shrink-0 w-8 h-8 bg-gray-400 text-white rounded-full flex items-center justify-center text-sm font-bold">
                             {lineup.jersey_number}
                           </span>
                           <span className="text-sm text-gray-800 truncate">
-                            {lineup.player?.full_name || 'Jogador'}
+                            {lineup.name || "Jogador"}
                           </span>
                         </div>
                       ))}
@@ -181,21 +227,20 @@ const LineupsSection = ({ match }: { match: MatchDetail }) => {
             );
           })}
         </div>
-      )}
     </div>
   );
 };
 
 // Comments Section Component
 const CommentsSection = ({ match }: { match: MatchDetail }) => {
-  // const [comments, setComments] = useState<CommentDetail[]>([]);
+  const [comments, setComments] = useState<typeof match.comments[0][]>([... (match.comments || [])]);
   const { notify } = useNotification();
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
   const [deletingComment, setDeletingComment] = useState(false);
 
-  const comments = match.comments || [];
+  // const comments = match.comments || [];
 
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
@@ -203,8 +248,9 @@ const CommentsSection = ({ match }: { match: MatchDetail }) => {
     try {
       setSubmitting(true);
       const commentData: CommentCreate = { message: newComment.trim() };
-      await matchesApi.addComment(match.id, commentData);
+      let updatedMatch = await matchesApi.addComment(match.id, commentData);
       setNewComment('');
+      setComments([ ...updatedMatch.comments ]);
     } catch (err) {
       console.error('Error adding comment:', err);
       notify(err instanceof Error ? err.message : 'Não foi possível adicionar o comentário. Tente novamente.', 'error');
@@ -222,9 +268,10 @@ const CommentsSection = ({ match }: { match: MatchDetail }) => {
 
     try {
       setDeletingComment(true);
+      console.log('Deleting comment with ID:', commentToDelete);
       await matchesApi.deleteComment(match.id, commentToDelete);
-      // setComments(comments.filter(c => c.id !== commentToDelete));
       setCommentToDelete(null);
+      setComments(prev => prev.filter(c => c.id !== commentToDelete));
     } catch (err) {
       console.error('Error deleting comment:', err);
       notify(err instanceof Error ? err.message : 'Não foi possível eliminar o comentário. Tente novamente.', 'error');

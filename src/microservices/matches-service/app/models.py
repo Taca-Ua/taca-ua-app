@@ -64,14 +64,41 @@ class Match(Base):
         back_populates="match",
         cascade="all, delete-orphan",
     )
-    commnets: Mapped[list["Comment"]] = relationship(
+    comments: Mapped[list["Comment"]] = relationship(
         "Comment",
-        backref="match",
+        back_populates="match",
         cascade="all, delete-orphan",
     )
 
     def __repr__(self) -> str:
         return f"<Match {self.id} status={self.status.value}>"
+
+    def to_dict(self, include_details: bool = False) -> dict:
+        """Convert Match to dictionary for API responses"""
+        return {
+            "id": str(self.id),
+            "tournament_id": str(self.tournament_id),
+            "location": self.location,
+            "start_time": self.start_time.isoformat(),
+            "status": self.status.value,
+            "participants": [p for p in self.participants],
+            "comments": (
+                [
+                    {
+                        "id": str(c.id),
+                        "message": c.message,
+                        "created_at": c.created_at.isoformat(),
+                        "created_by": str(c.created_by),
+                    }
+                    for c in self.comments
+                ]
+                if include_details
+                else []
+            ),
+            "created_by": str(self.created_by),
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
 
 
 class MatchParticipant(Base):
@@ -169,6 +196,8 @@ class Comment(Base):
 
     message = Column(Text, nullable=False)
     created_by = Column(UUID(as_uuid=True), nullable=False)
+
+    match: Mapped[Match] = relationship("Match", back_populates="comments")
 
     created_at = Column(
         DateTime(timezone=True),

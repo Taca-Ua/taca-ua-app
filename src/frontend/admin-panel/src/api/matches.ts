@@ -23,11 +23,14 @@ export interface MatchDetail extends MatchListItem {
     message: string;
   }[];
   lineups: {
-    competitor_id: string;
-    competitor_name: string;
-    is_starter: boolean;
-    jersey_number?: number;
-  };
+    participant_id: string;
+    lineup: {
+      player_id: string;
+      name: string;
+      is_starter: boolean;
+      jersey_number?: number;
+    }[];
+  }[];
 }
 
 // Request types

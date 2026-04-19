@@ -113,7 +113,7 @@ class CommentResponse(BaseModel):
     """Schema for comment response."""
 
     id: UUID
-    match_id: UUID
+    # match_id: UUID
     message: str
     created_by: UUID
     created_at: datetime

@@ -42,6 +42,11 @@ class MatchDTO:
             for p in self.participants
         ]
 
+        self.comments = [
+            CommentDTO(**c) if not isinstance(c, CommentDTO) else c
+            for c in self.comments
+        ]
+
 
 @dataclass
 class LineupDTO:
@@ -57,7 +62,7 @@ class LineupDTO:
 @dataclass
 class CommentDTO:
     id: UUID
-    match_id: UUID
+    # match_id: UUID
     message: str
     created_by: UUID
     created_at: str  # ISO format
@@ -352,7 +357,7 @@ class MatchesService(BaseService):
         }
 
         comment_data = self.post(f"/matches/{match_id}/comments", data=data)
-        return CommentDTO(**comment_data)
+        return MatchDTO(**comment_data)
 
     def get_comments(self, match_id: UUID) -> List[CommentDTO]:
         """

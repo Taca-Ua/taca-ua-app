@@ -74,7 +74,7 @@ class BaseService:
                     error_data = {"detail": response.text}
 
                 logger.error(
-                    f"Microservice error: {response.status_code} - {error_data}"
+                    f"Microservice error: {response.status_code} - {error_data} - {self.base_url}{endpoint}"
                 )
                 raise ValidationError(error_data)
 
