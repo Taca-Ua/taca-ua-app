@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from taca_events.pydantic_schemas.matches import (
     LineupPlayerData,
@@ -565,7 +565,6 @@ def delete_comment(
 def update_match_results(
     match_id: UUID,
     result_data: schemas.MatchResultUpdate,
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db_session),
 ):
     """Update results for multiple participants and optionally finish the match."""
@@ -597,7 +596,7 @@ def update_match_results(
         participant = (
             db.query(MatchParticipant)
             .filter(
-                MatchParticipant.id == participant_result.participant_id,
+                MatchParticipant.participant == participant_result.participant_id,
                 MatchParticipant.match_id == match_id,
             )
             .first()
@@ -622,15 +621,11 @@ def update_match_results(
         if participant_result.position is not None:
             participant.position = participant_result.position
 
-        if participant_result.result_metadata is not None:
-            participant.result_metadata = participant_result.result_metadata
-
         updated_participants.append(
             {
-                "participant_id": str(participant.id),
+                "participant_id": str(participant.participant),
                 "score": participant.score,
                 "position": participant.position,
-                "results_metadata": participant.result_metadata,
             }
         )
 

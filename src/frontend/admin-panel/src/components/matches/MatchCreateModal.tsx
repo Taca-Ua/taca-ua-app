@@ -44,7 +44,7 @@ const MatchCreateModal = ( {
     try {
       let newMatch = await matchesApi.create( {
         tournament_id: tournament.id,
-        competitors: selectedParticipants,
+        participants: selectedParticipants,
         location,
         start_time: startTime
       } );

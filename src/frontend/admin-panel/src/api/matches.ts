@@ -10,6 +10,7 @@ export interface MatchListItem {
   start_time: string;
   status: string;
   participants: {
+    id: string;
     name: string;
     score?: number;
     position?: number;
@@ -39,7 +40,7 @@ export interface MatchCreate {
   tournament_id: string;
   location: string;
   start_time: string;
-  competitors: string[];
+  participants: string[];
 }
 
 export interface MatchUpdate {
@@ -50,7 +51,7 @@ export interface MatchUpdate {
 
 export interface MatchPublishResults {
   participant_results: {
-    competitor_id: string;
+    participant_id: string;
     score?: number;
     position?: number;
   }[];

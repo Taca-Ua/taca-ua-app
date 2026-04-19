@@ -16,7 +16,7 @@ from admin_api.clients.tournaments_service import tournaments_service_client
 
 @dataclass
 class Participant:
-    participant_id: str
+    id: str
     name: str
     score: int
     position: int
@@ -101,7 +101,7 @@ class MatchesService:
                 entity_data = tournament_competitor_entities_info[entity_key]
                 participants.append(
                     Participant(
-                        participant_id=entity_data.id,
+                        id=participant.participant,
                         name=(
                             entity_data.name
                             if isinstance(entity_data, TeamDTO)
@@ -186,11 +186,14 @@ class MatchesService:
             match_id=match_id,
         )
 
-    def publish_match_results(self, match_id: str) -> Match:
+    def publish_match_results(
+        self, match_id: str, participant_results: List[dict]
+    ) -> Match:
         """Publish match results"""
-        match_dto = matches_service_client.publish_match_results(
+        match_dto = matches_service_client.update_match_results(
             match_id=match_id,
-            published_by="00000000-0000-0000-0000-000000000000",  # Placeholder for published_by
+            participant_results=participant_results,
+            status="finished",  # Assuming publishing results also sets status to finished
         )
         return self._build_match_from_dto(match_dto)
 

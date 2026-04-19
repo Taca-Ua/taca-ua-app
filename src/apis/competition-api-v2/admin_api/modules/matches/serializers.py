@@ -9,6 +9,7 @@ from rest_framework import serializers
 class ParticipantsListSerializer(serializers.Serializer):
     """Serializer for listing match participants"""
 
+    id = serializers.UUIDField()
     name = serializers.CharField()
     score = serializers.IntegerField(required=False, allow_null=True)
     position = serializers.IntegerField(required=False, allow_null=True)
@@ -25,10 +26,16 @@ class CommentListSerializer(serializers.Serializer):
 class LineupDetailSerializer(serializers.Serializer):
     """Serializer for lineup details"""
 
-    competitor_id = serializers.UUIDField()
-    competitor_name = serializers.CharField()
-    is_starter = serializers.BooleanField()
-    jersey_number = serializers.IntegerField(required=False, allow_null=True)
+    class PlayerLineupSerializer(serializers.Serializer):
+        """Serializer for individual player in lineup"""
+
+        player_id = serializers.UUIDField()
+        name = serializers.CharField()
+        is_starter = serializers.BooleanField()
+        jersey_number = serializers.IntegerField(required=False, allow_null=True)
+
+    participant_id = serializers.UUIDField()
+    lineup = PlayerLineupSerializer(many=True)
 
 
 # Response serializers
@@ -67,17 +74,17 @@ class MatchCreateSerializer(serializers.Serializer):
     tournament_id = serializers.UUIDField(required=False, allow_null=True)
     location = serializers.CharField(required=True, max_length=255)
     start_time = serializers.DateTimeField(required=True)
-    competitors = serializers.ListField(
+    participants = serializers.ListField(
         child=serializers.UUIDField(),
         required=True,
         allow_empty=False,
-        help_text="List of tournament competitors IDs participating in the match",
+        help_text="List of tournament participants IDs participating in the match",
     )
 
-    def validate_competitors(self, value):
+    def validate_participants(self, value):
         if value and len(value) < 2:
             raise serializers.ValidationError(
-                "A match must have at least 2 competitors."
+                "A match must have at least 2 participants."
             )
         return value
 
@@ -98,7 +105,7 @@ class MatchPublishResultsSerializer(serializers.Serializer):
     class ParticipantResultSerializer(serializers.Serializer):
         """Serializer for individual participant result"""
 
-        competitor_id = serializers.UUIDField(required=True)
+        participant_id = serializers.UUIDField(required=True)
         score = serializers.IntegerField(required=False, allow_null=True)
         position = serializers.IntegerField(required=False, allow_null=True)
 

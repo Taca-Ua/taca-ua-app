@@ -70,8 +70,8 @@ class MatchListCreateView(APIView):
             location=serializer.validated_data.get("location"),
             start_time=serializer.validated_data.get("start_time").isoformat(),
             participants_ids=[
-                str(competitor)
-                for competitor in serializer.validated_data.get("competitors", [])
+                str(participant)
+                for participant in serializer.validated_data.get("participants", [])
             ],
         )
 
@@ -149,7 +149,7 @@ def publish_match_results(request, match_id):
     # Prepare participant results
     participant_results = []
     for result_data in serializer.validated_data["participant_results"]:
-        result = {"participant": str(result_data["participant"])}
+        result = {"participant_id": str(result_data["participant_id"])}
         if result_data.get("score") is not None:
             result["score"] = result_data["score"]
         if result_data.get("position") is not None:

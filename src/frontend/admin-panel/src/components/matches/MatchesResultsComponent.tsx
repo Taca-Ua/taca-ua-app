@@ -6,13 +6,21 @@ import { btn } from "../../styles/buttonStyles";
 
 
 const MatchResultsComponent = ( {
-    match
+    matchState
 } : {
-    match: MatchDetail;
+    matchState: [MatchDetail, React.Dispatch<React.SetStateAction<MatchDetail | null>>];
 } ) => {
 
+    const [match, setMatch] = matchState;
     const [isPublishing, setIsPublishing] = useState(false);
-    const [publishMode, setPublishMode] = useState<'score' | 'position'>('score');
+
+    const renderPosition = (position: number | null) => {
+        if (position === null) return '-';
+        if (position === 1) return '1º Lugar';
+        if (position === 2) return '2º Lugar';
+        if (position === 3) return '3º Lugar';
+        return `${position}º Lugar`;
+    };
 
     return (
         <div className="bg-white rounded-lg shadow-md p-6">
@@ -31,16 +39,16 @@ const MatchResultsComponent = ( {
 
             <div className="space-y-4">
                 {match.participants.map((participant, index) => (
-                    <div key={index} className="flex justify-between items-center">
+                    <div key={index} className="flex items-center gap-4 p-4 bg-gray-50 rounded-md">
                         <div>
-                            <p className="text-lg font-medium text-gray-700">{participant.name || `Participante ${index + 1}`}</p>
-                            {publishMode === 'score' && (
-                                <p className="text-sm text-gray-500">Pontuação: {participant.score !== null ? participant.score : 'N/A'}</p>
+                            {participant.score !== null && (
+                                <p className="text-lg font-bold text-gray-800">{participant.score}</p>
                             )}
-                            {publishMode === 'position' && (
-                                <p className="text-sm text-gray-500">Posição: {participant.position !== null ? participant.position : 'N/A'}</p>
+                            {participant.position !== null && (
+                                <p className="text-lg font-bold text-gray-800">{renderPosition(participant.position!)}</p>
                             )}
                         </div>
+                        <p className="text-lg font-medium text-gray-700">{participant.name || `Participante ${index + 1}`}</p>
                     </div>
                 ))}
             </div>
@@ -48,7 +56,7 @@ const MatchResultsComponent = ( {
         <MatchPublishResultsModal
             controller={[isPublishing, setIsPublishing]}
             match={match}
-            onSave={(updatedMatch) => {}}
+            onSave={(updatedMatch) => setMatch(updatedMatch)}
         />
         </div>
     );
