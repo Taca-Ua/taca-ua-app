@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { type AdminDetail } from "../../api/admins"
+import { type AdminDetail, administratorsApi } from "../../api/admins"
 import { btn } from "../../styles/buttonStyles";
 import HelpTooltip from "../HelpTooltip";
 import AdminEditModal from "./AdminEditModal";
 import ConfirmModal from "../ConfirmModal";
 import AdminChangePasswordModal from "./AdminChangePasswordModal";
+import { useAuth } from "../../hooks/useAuth";
 
 const AdminInfoComponent = ( {
     adminState,
@@ -16,9 +17,18 @@ const AdminInfoComponent = ( {
     const [editModalOpen, setEditModalOpen] = useState( false );
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState( false );
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState( false );
+    const { isAdminGeneral } = useAuth();
+
 
     const handleDelete = async () => {
-
+        try {
+          await administratorsApi.delete(admin.id);
+          setIsDeleteModalOpen(false);
+          // Optionally, you could navigate back to the list of administrators or show a success message here
+        } catch (err) {
+          console.error('Failed to delete administrator:', err);
+          // Optionally, show an error notification here
+        }
     }
 
     return (
@@ -141,19 +151,22 @@ const AdminInfoComponent = ( {
         <div className="flex gap-4 mt-8">
           <button
             onClick={() => setEditModalOpen(true)}
-            className={`flex-1 px-6 py-3 ${btn.primary} rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-teal-400`}
+            className={`flex-1 px-6 py-3 ${btn.primary} rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-teal-400 disabled:opacity-50 disabled:cursor-not-allowed`}
+            disabled={!isAdminGeneral}
           >
             Editar
           </button>
           <button
             onClick={() => setIsPasswordModalOpen(true)}
-            className={`flex-1 px-6 py-3 ${btn.info} rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-blue-400`}
+            className={`flex-1 px-6 py-3 ${btn.info} rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50 disabled:cursor-not-allowed`}
+            disabled={!isAdminGeneral}
           >
             Alterar Password
           </button>
           <button
             onClick={() => setIsDeleteModalOpen(true)}
-            className={`flex-1 px-6 py-3 ${btn.danger} rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-red-400`}
+            className={`flex-1 px-6 py-3 ${btn.danger} rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-red-400 disabled:opacity-50 disabled:cursor-not-allowed`}
+            disabled={!isAdminGeneral}
           >
             Eliminar
           </button>

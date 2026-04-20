@@ -5,6 +5,7 @@ import { administratorsApi, type AdminListItem } from '../../api/admins';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { btn } from '../../styles/buttonStyles';
 import AdminCreateModel from '../../components/admins/AdminCreateModel';
+import { useAuth } from '../../hooks/useAuth';
 
 
 function Administradores() {
@@ -14,6 +15,7 @@ function Administradores() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const { notify } = useNotification();
+  const { isAdminGeneral } = useAuth();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -63,7 +65,8 @@ function Administradores() {
             <h1 className="text-3xl font-bold text-gray-800">Administradores</h1>
             <button
               onClick={() => setIsModalOpen(true)}
-              className={`${btn.primary} px-6 py-2 rounded-md font-medium transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-teal-400`}
+              className={`${btn.primary} px-6 py-2 rounded-md font-medium transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed`}
+              disabled={!isAdminGeneral} // Only general admins can add new admins
             >
               <span>+</span>
               Adicionar Administrador

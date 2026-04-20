@@ -3,10 +3,13 @@ import { btn } from '../../styles/buttonStyles';
 import NucleusListComponent from '../../components/nucleos/NucleusListComponent';
 import NucleoCreateModel from '../../components/nucleos/NucleoCreateModel';
 import { type NucleoListItem } from '../../api/nucleos';
+import { useAuth } from '../../hooks/useAuth';
 
 const Nucleo = () => {
 
   const createModalController = useState(false);
+  const { isAdminGeneral } = useAuth();
+
   const [nucleus, setNucleus] = useState<NucleoListItem[]>([]);
 
   return (
@@ -16,7 +19,8 @@ const Nucleo = () => {
             <h1 className="text-3xl font-bold text-gray-800">Núcleos</h1>
             <button
               onClick={() => createModalController[1](true)}
-              className={`px-6 py-3 ${btn.primary} rounded-md font-medium transition-colors flex items-center gap-2`}
+              className={`px-6 py-3 ${btn.primary} rounded-md font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed`}
+              disabled={!isAdminGeneral}
             >
               <span>+</span>
               Adicionar Núcleo

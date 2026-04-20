@@ -145,6 +145,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     login,
     logout,
     hasRole,
+    isAdminGeneral: adminRole === 'general_admin',
+    isAdminNucleo: adminRole === 'nucleo_admin',
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

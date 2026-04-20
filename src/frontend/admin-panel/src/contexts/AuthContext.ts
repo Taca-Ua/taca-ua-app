@@ -20,6 +20,9 @@ export interface AuthContextType {
   logout: () => void;
   /** Convenience: check whether a specific KcRole is held. */
   hasRole: (role: KcRole) => boolean;
+
+  isAdminGeneral: boolean;
+  isAdminNucleo: boolean;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { type AdminDetail, administratorsApi } from "../../api/admins"
 import HelpTooltip from "../HelpTooltip";
 import { btn } from "../../styles/buttonStyles";
+import { useAuth } from "../../hooks/useAuth";
 
 const AdminChangePasswordModal = ( {
     controller,
@@ -14,6 +15,7 @@ const AdminChangePasswordModal = ( {
 } ) => {
     const [isOpen, setIsOpen] = controller;
     const admin = adminState[0];
+    const { isAdminGeneral } = useAuth();
 
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
@@ -60,6 +62,7 @@ const AdminChangePasswordModal = ( {
     };
 
     if ( !isOpen ) return null;
+    if ( !isAdminGeneral ) return null; // Only general admins can change passwords
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

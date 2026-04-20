@@ -5,9 +5,11 @@ import { type CourseDetail, coursesApi } from "../../api/courses";
 import ConfirmModal from "../ConfirmModal";
 import CourseEditModel from "./CourseEditModel";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
 
 const CourseDetailComponent = ( {courseId} : { courseId: string } ) => {
   const navigate = useNavigate();
+  const { isAdminGeneral } = useAuth();
 
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -111,14 +113,16 @@ const CourseDetailComponent = ( {courseId} : { courseId: string } ) => {
           onClick={() => {
             editModalController[1](true)
           }}
-          className={`flex-1 px-6 py-3 ${btn.primary} rounded-md font-medium transition-colors`}
+          className={`flex-1 px-6 py-3 ${btn.primary} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-teal-400 disabled:opacity-50 disabled:cursor-not-allowed`}
+          disabled={!isAdminGeneral}
         >
           Editar
         </button>
 
         <button
           onClick={() => setIsDeleteModalOpen(true)}
-          className={`flex-1 px-6 py-3 ${btn.danger} rounded-md font-medium transition-colors`}
+          className={`flex-1 px-6 py-3 ${btn.danger} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-teal-400 disabled:opacity-50 disabled:cursor-not-allowed`}
+          disabled={!isAdminGeneral}
         >
           Eliminar
         </button>

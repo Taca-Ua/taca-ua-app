@@ -4,11 +4,14 @@ import HelpTooltip from "../../components/HelpTooltip";
 import { regulationsApi, type Regulation } from '../../api/regulations';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { btn } from '../../styles/buttonStyles';
+import { useAuth } from "../../hooks/useAuth";
 
 const Regulamentos: React.FC = () => {
   const [regulations, setRegulations] = useState<Regulation[]>([]);
   const [loading, setLoading] = useState(true);
   const { notify } = useNotification();
+  const { isAdminGeneral } = useAuth();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -58,7 +61,7 @@ const Regulamentos: React.FC = () => {
       dragCounterRef.current += 1;
       if (dragCounterRef.current === 1) {
         const hasFile = Array.from(e.dataTransfer?.items ?? []).some(i => i.kind === 'file');
-        if (hasFile) {
+        if (hasFile && isAdminGeneral) {
           setIsUploadModalOpen(true);
           setIsDragOver(true);
         }
@@ -222,7 +225,8 @@ const Regulamentos: React.FC = () => {
 
             <button
               onClick={() => setIsUploadModalOpen(true)}
-              className={`px-6 py-3 ${btn.primary} font-semibold rounded-lg shadow-md`}
+              className={`px-6 py-3 ${btn.primary} font-semibold rounded-lg shadow-md disabled:opacity-50 disabled:cursor-not-allowed`}
+              disabled={!isAdminGeneral}
             >
               + Novo Regulamento
             </button>

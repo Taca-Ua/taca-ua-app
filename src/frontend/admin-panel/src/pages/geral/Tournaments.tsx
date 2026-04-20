@@ -3,9 +3,11 @@ import { tournamentsApi, type TournamentListItem } from '../../api/tournaments';
 import { btn } from '../../styles/buttonStyles';
 import TournamentCreateModal from '../../components/tournaments/TournamentCreateModal';
 import TournamentList from '../../components/tournaments/TournamentList';
+import { useAuth } from '../../hooks/useAuth';
 
 const Torneios = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { isAdminGeneral } = useAuth();
   const [tournaments, setTournaments] = useState<TournamentListItem[]>([]);
 
 
@@ -16,7 +18,8 @@ const Torneios = () => {
 
           <button
             onClick={() => setIsModalOpen(true)}
-            className={`px-6 py-3 ${btn.primary} rounded-md`}
+            className={`px-6 py-3 ${btn.primary} rounded-md font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed`}
+            disabled={!isAdminGeneral}
           >
             + Criar Torneio
           </button>

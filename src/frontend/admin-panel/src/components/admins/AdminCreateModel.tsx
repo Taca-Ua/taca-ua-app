@@ -6,6 +6,7 @@ import { administratorsApi } from "../../api/admins";
 import { nucleosApi } from "../../api/nucleos";
 import ChooseMultipleModal from "../utils/costum_menus/ChoseMultipleModel";
 import DefinedStatesMenuComponent from "../utils/costum_menus/DefinedStatesMenuComponent";
+import { useAuth } from "../../hooks/useAuth";
 
 const AdminCreateModel = ({ isOpen, onClose, onCreated }: {
   isOpen: boolean;
@@ -26,6 +27,7 @@ const AdminCreateModel = ({ isOpen, onClose, onCreated }: {
 
 	const [nucleusSelectModalOpen, setNucleusSelectModalOpen] = useState(false);
 	const { notify } = useNotification();
+  const { isAdminGeneral } = useAuth();
 
 	useEffect(() => {
 		if (!isOpen) return;
@@ -102,6 +104,7 @@ const AdminCreateModel = ({ isOpen, onClose, onCreated }: {
 	};
 
 	if (!isOpen) return null;
+	if (!isAdminGeneral) return null; // Only general admins can create new admins
 
 	return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">

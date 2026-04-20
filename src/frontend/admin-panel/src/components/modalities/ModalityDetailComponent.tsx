@@ -4,10 +4,12 @@ import { modalitiesApi, type ModalityDetail } from '../../api/modalities';
 import ConfirmModal from '../ConfirmModal';
 import ModalityEditModel from './ModalityEditModel';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 
 
 const ModalityDetailComponent = ( {modalityId} : { modalityId: string }) => {
   const navigate = useNavigate();
+  const { isAdminGeneral } = useAuth();
 
   const [modality, setModality] = useState<ModalityDetail | null>(null);
 
@@ -65,13 +67,15 @@ const ModalityDetailComponent = ( {modalityId} : { modalityId: string }) => {
       <div className="flex gap-4 mt-8">
         <button
           onClick={() => editModalController[1](true)}
-          className={`flex-1 px-6 py-3 ${btn.primary} rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-teal-400`}
+          className={`flex-1 px-6 py-3 ${btn.primary} rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-teal-400 disabled:opacity-50 disabled:cursor-not-allowed`}
+          disabled={!isAdminGeneral}
         >
           Editar
         </button>
         <button
           onClick={() => setIsDeleteModalOpen(true)}
-          className={`flex-1 px-6 py-3 ${btn.danger} rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-red-400`}
+          className={`flex-1 px-6 py-3 ${btn.danger} rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-red-400 disabled:opacity-50 disabled:cursor-not-allowed`}
+          disabled={!isAdminGeneral}
         >
           Eliminar
         </button>

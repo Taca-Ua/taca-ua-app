@@ -6,6 +6,7 @@ import { useNotification } from '../../contexts/NotificationProvider';
 import { type AdminDetail, administratorsApi } from '../../api/admins';
 import DefinedStatesMenuComponent from '../utils/costum_menus/DefinedStatesMenuComponent';
 import ChooseMultipleModal from '../utils/costum_menus/ChoseMultipleModel';
+import { useAuth } from '../../hooks/useAuth';
 
 
 interface Nucleo {
@@ -26,6 +27,7 @@ const AdminEditModal = ({
   const { notify } = useNotification();
   const [isOpen, setIsOpen] = controller;
   const admin = adminState[0];
+  const { isAdminGeneral } = useAuth();
 
   const [editedFirstName, setEditedFirstName] = useState(admin.first_name);
   const [editedLastName, setEditedLastName] = useState(admin.last_name);
@@ -96,6 +98,7 @@ const AdminEditModal = ({
   }
 
   if (!isOpen || !admin) return null;
+  if ( !isAdminGeneral ) return null; // should never happen since only general admins can open this modal, but just in case
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
