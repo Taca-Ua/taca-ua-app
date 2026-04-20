@@ -2,7 +2,7 @@ import { tournamentsApi, type TournamentDetail } from "../../api/tournaments";
 import { useNotification } from "../../contexts/NotificationProvider";
 import { useState, useMemo, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
-import { btn } from "../../styles/buttonStyles";
+import Button from "../utils/Button";
 
 interface TournamentCompetitor {
   id: string;
@@ -276,18 +276,20 @@ const TournamentFinishModal = ({
         )}
 
         <div className="flex gap-4">
-          <button
+          <Button
             onClick={onClose}
-            className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md disabled:opacity-50`}
+            type="secondary"
+            flexible={true}
           >
             Cancelar
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleSave}
-            className={`flex-1 px-4 py-2 ${btn.infoStrong} rounded-md disabled:opacity-50`}
+            type="info"
+            flexible={true}
           >
             Finalizar Torneio
-          </button>
+          </Button>
         </div>
       </div>
     </div>

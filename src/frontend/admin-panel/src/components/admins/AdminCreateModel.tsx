@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import HelpTooltip from "../HelpTooltip";
-import { btn } from '../../styles/buttonStyles';
 import { useNotification } from "../../contexts/NotificationProvider";
 import { administratorsApi } from "../../api/admins";
 import { nucleosApi } from "../../api/nucleos";
 import ChooseMultipleModal from "../utils/costum_menus/ChoseMultipleModel";
 import DefinedStatesMenuComponent from "../utils/costum_menus/DefinedStatesMenuComponent";
 import { useAuth } from "../../hooks/useAuth";
+import Button from "../utils/Button";
 
 const AdminCreateModel = ({ isOpen, onClose, onCreated }: {
   isOpen: boolean;
@@ -336,13 +336,12 @@ const AdminCreateModel = ({ isOpen, onClose, onCreated }: {
                   className="ml-1"
                 />
               </label>
-              <button
-                type="button"
+              <Button
                 onClick={() => setNucleusSelectModalOpen(true)}
-                className={`w-full mb-4 px-4 py-2.5 ${btn.secondary} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 hover:shadow-md`}
+                type="secondary"
               >
                 Selecionar Núcleos
-              </button>
+              </Button>
               {selectedNucleos.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-gray-300">
                   <p className="text-gray-600 text-sm font-semibold mb-3">
@@ -382,18 +381,20 @@ const AdminCreateModel = ({ isOpen, onClose, onCreated }: {
           )}
         </div>
         <div className="flex gap-4 mt-6 flex-shrink-0">
-          <button
+          <Button
             onClick={handleClose}
-            className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400`}
+            type="secondary"
+            flexible={true}
           >
             Cancelar
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleAddMember}
-            className={`flex-1 px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-teal-400`}
+            type="primary"
+            flexible={true}
           >
             Adicionar
-          </button>
+          </Button>
         </div>
       </div>
       <ChooseMultipleModal

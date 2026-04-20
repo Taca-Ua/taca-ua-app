@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { type AdminDetail, administratorsApi } from "../../api/admins"
-import { btn } from "../../styles/buttonStyles";
 import HelpTooltip from "../HelpTooltip";
 import AdminEditModal from "./AdminEditModal";
-import ConfirmModal from "../ConfirmModal";
 import AdminChangePasswordModal from "./AdminChangePasswordModal";
 import { useAuth } from "../../hooks/useAuth";
+import Button from "../utils/Button";
+import { useNavigate } from "react-router-dom";
+import { useNotification } from "../../contexts/NotificationProvider";
 
 const AdminInfoComponent = ( {
     adminState,
@@ -13,21 +14,22 @@ const AdminInfoComponent = ( {
     adminState: [AdminDetail, React.Dispatch<React.SetStateAction<AdminDetail | null>>],
 } ) => {
 
+    const navigate = useNavigate();
+    const { notify } = useNotification();
+
     const [admin, setAdmin] = adminState;
     const [editModalOpen, setEditModalOpen] = useState( false );
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState( false );
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState( false );
     const { isAdminGeneral } = useAuth();
 
 
     const handleDelete = async () => {
         try {
           await administratorsApi.delete(admin.id);
-          setIsDeleteModalOpen(false);
-          // Optionally, you could navigate back to the list of administrators or show a success message here
+          navigate("/admin/geral/administradores");
         } catch (err) {
           console.error('Failed to delete administrator:', err);
-          // Optionally, show an error notification here
+          notify("Failed to delete administrator.", "error");
         }
     }
 
@@ -149,27 +151,36 @@ const AdminInfoComponent = ( {
         </div>
 
         <div className="flex gap-4 mt-8">
-          <button
+          <Button
             onClick={() => setEditModalOpen(true)}
-            className={`flex-1 px-6 py-3 ${btn.primary} rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-teal-400 disabled:opacity-50 disabled:cursor-not-allowed`}
-            disabled={!isAdminGeneral}
+            type="primary"
+            active={isAdminGeneral}
+            flexible={true}
           >
             Editar
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setIsPasswordModalOpen(true)}
-            className={`flex-1 px-6 py-3 ${btn.info} rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50 disabled:cursor-not-allowed`}
-            disabled={!isAdminGeneral}
+            type="info"
+            active={isAdminGeneral}
+            flexible={true}
           >
             Alterar Password
-          </button>
-          <button
-            onClick={() => setIsDeleteModalOpen(true)}
-            className={`flex-1 px-6 py-3 ${btn.danger} rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-red-400 disabled:opacity-50 disabled:cursor-not-allowed`}
-            disabled={!isAdminGeneral}
+          </Button>
+          <Button
+            onClick={handleDelete}
+            type="danger"
+            active={isAdminGeneral}
+            confirmation={{
+              title: "Confirmar Eliminação",
+              message: `Tem a certeza que deseja eliminar o administrador "${admin.username}"? Esta ação não pode ser desfeita.`,
+              confirmLabel: "Eliminar",
+              cancelLabel: "Cancelar",
+            }}
+            flexible={true}
           >
             Eliminar
-          </button>
+          </Button>
         </div>
 
       <AdminEditModal
@@ -181,17 +192,6 @@ const AdminInfoComponent = ( {
       <AdminChangePasswordModal
         controller={[isPasswordModalOpen, setIsPasswordModalOpen]}
         adminState={[admin, setAdmin]}
-      />
-
-      <ConfirmModal
-        isOpen={isDeleteModalOpen}
-        title="Confirmar Eliminação"
-        message={`Tem a certeza que deseja eliminar o administrador "${admin.username}"? Esta ação não pode ser desfeita.`}
-        confirmLabel="Eliminar"
-        cancelLabel="Cancelar"
-        variant="danger"
-        onConfirm={handleDelete}
-        onCancel={() => setIsDeleteModalOpen(false)}
       />
       </div>
     );

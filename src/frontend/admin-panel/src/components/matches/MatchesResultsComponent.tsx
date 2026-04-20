@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { MatchDetail } from "../../api/matches";
 import MatchPublishResultsModal from "./MatchPublishResultsModal";
-import { btn } from "../../styles/buttonStyles";
+import Button from "../utils/Button";
 
 
 
@@ -24,17 +24,15 @@ const MatchResultsComponent = ( {
 
     return (
         <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-800 mb-4">Resultados do Jogo</h2>
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-800">Resultados do Jogo</h2>
 
-                <div className="flex gap-4 mb-4">
-                    <button
-                        onClick={() => setIsPublishing(!isPublishing)}
-                        className={`flex-1 px-4 py-2 ${btn.primary} rounded-md`}
-                    >
-                        Publicar Resultados
-                    </button>
-                </div>
+                <Button
+                    onClick={() => setIsPublishing(!isPublishing)}
+                    type="primary"
+                >
+                    Publicar Resultados
+                </Button>
             </div>
 
             <div className="space-y-4">

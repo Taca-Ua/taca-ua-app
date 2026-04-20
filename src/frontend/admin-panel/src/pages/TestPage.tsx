@@ -2,58 +2,58 @@ import { useEffect, useState } from "react";
 import { type TournamentDetail, tournamentsApi } from "../api/tournaments";
 import { type AdminDetail, administratorsApi } from "../api/admins";
 import AdminEditModal from "../components/admins/AdminEditModal";
+import { btn } from "../styles/buttonStyles";
+import Button from "../components/utils/Button";
 
 const TestPage = () => {
 
-    const [tournament, setTournament] = useState<TournamentDetail | null>( null );
-    const [admin, setAdmin] = useState<AdminDetail | null>( null );
-
-    useEffect(() => {
-        const fetchTournament = async () => {
-            try {
-                const data = await tournamentsApi.getById("4cf87fe9-9209-4013-8aed-ccf97a7439cf");
-                setTournament(data);
-            } catch (error) {
-                console.error("Error fetching tournament:", error);
-            }
-        };
-
-        const fetchAdmin = async () => {
-            try {
-                // const data = await administratorsApi.getById("da8d9f7d-2513-43d1-92cb-f8502da8e71c");
-                const data = await administratorsApi.getById("3d1c7c87-de40-4828-9f3b-970e81648505");
-                setAdmin(data);
-            } catch (error) {
-                console.error("Error fetching admin:", error);
-            }
-        };
-
-
-        // fetchTournament();
-        fetchAdmin();
-    }, []);
-
-    // if (!tournament) {
-    //     return <div>Loading...</div>;
-    // }
-
-    if (!admin) {
-        return <div>Loading...</div>;
+    const renderButton = (style: string) => {
+        return (
+            <button className={`flex-1 px-4 py-2 rounded-md ${style}`}>
+                Button
+            </button>
+        );
     }
 
     return (
         <div className="p-4 bg-black text-white min-h-screen">
             <h1 className="text-2xl font-bold mb-4">Página de Teste</h1>
-            {/* <MatchesListComponent tournamentId={"4cf87fe9-9209-4013-8aed-ccf97a7439cf"} />
-            <MatchCreateModal
-                controller={[true, () => {}]}
-                tournament={tournament}
-            /> */}
-            <AdminEditModal
-                controller={[true, () => {}]}
-                adminState={[admin, setAdmin]}
-                onSaved={() => console.log("Fechar modal")}
-            />
+            <div className="flex gap-4 mt-6">
+                {renderButton(btn.primary)}
+                {renderButton(btn.danger)}
+                {/* {renderButton(btn.dangerLight)} */}
+                {/* {renderButton(btn.dangerGhost)} */}
+                {renderButton(btn.secondary)}
+                {/* {renderButton(btn.secondaryAlt)} */}
+                {/* {renderButton(btn.info)} */}
+                {renderButton(btn.infoStrong)}
+                {renderButton(btn.success)}
+            </div>
+            <div className="flex gap-4 mt-6">
+                <Button
+                    onClick={() => alert("Button clicked!")}
+                    label="Primary Button"
+                    type="primary"
+                    confirmation={{
+                        title: "Confirm Action",
+                        message: "Are you sure you want to perform this action?",
+                        confirmLabel: "Yes, do it!",
+                        cancelLabel: "No, cancel"
+                    }}
+                />
+
+                <Button
+                    onClick={() => alert("Danger Button clicked!")}
+                    label="Danger Button"
+                    type="danger"
+                    confirmation={{
+                        title: "Confirm Deletion",
+                        message: "Are you sure you want to delete this item? This action cannot be undone.",
+                        confirmLabel: "Yes, delete it!",
+                        cancelLabel: "No, keep it"
+                    }}
+                />
+            </div>
         </div>
     )
 }

@@ -3,9 +3,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { administratorsApi, type AdminListItem } from '../../api/admins';
 import { useNotification } from '../../contexts/NotificationProvider';
-import { btn } from '../../styles/buttonStyles';
 import AdminCreateModel from '../../components/admins/AdminCreateModel';
 import { useAuth } from '../../hooks/useAuth';
+import Button from '../../components/utils/Button';
 
 
 function Administradores() {
@@ -63,14 +63,16 @@ function Administradores() {
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold text-gray-800">Administradores</h1>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className={`${btn.primary} px-6 py-2 rounded-md font-medium transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed`}
-              disabled={!isAdminGeneral} // Only general admins can add new admins
-            >
-              <span>+</span>
-              Adicionar Administrador
-            </button>
+            <div>
+              <Button
+                onClick={() => setIsModalOpen(true)}
+                type='primary'
+                active={isAdminGeneral} // Only general admins can add new admins
+              >
+                <span className="text-xl">+ </span>
+                Adicionar Administrador
+              </Button>
+            </div>
           </div>
 
           <div className="flex gap-3 mb-6">

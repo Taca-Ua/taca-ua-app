@@ -1,10 +1,10 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { tournamentsApi, type TournamentListItem } from '../../api/tournaments';
-import { btn } from '../../styles/buttonStyles';
 import TournamentList from '../../components/tournaments/TournamentList';
 import TournamentCreateModal from '../../components/tournaments/TournamentCreateModal';
 import ModalityDetailComponent from '../../components/modalities/ModalityDetailComponent';
+import Button from '../../components/utils/Button';
 
 
 const TournamentsTab = ({ modalityId }: { modalityId: string }) => {
@@ -19,12 +19,13 @@ const TournamentsTab = ({ modalityId }: { modalityId: string }) => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold text-gray-800">Torneios</h2>
-        <button
+        <Button
           onClick={() => setIsCreateModalOpen(true)}
-          className={`px-4 py-2 ${btn.primary} rounded-md`}
+          type='primary'
+          padding='px-4 py-2'
         >
           + Criar Torneio
-        </button>
+        </Button>
       </div>
 
       <TournamentList
@@ -60,12 +61,13 @@ function ModalidadeDetail() {
       <div className="flex-1 p-8 max-w-5xl mx-auto">
         <div className="mb-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-800">Detalhes da Modalidade</h1>
-          <button
+          <Button
             onClick={() => navigate('/geral/modalidades')}
-            className={`px-6 py-3 ${btn.secondary} rounded-md font-medium transition-colors`}
+            type='secondary'
+            padding='px-6 py-3'
           >
             Voltar
-          </button>
+          </Button>
         </div>
 
         {/* Modality Information - Always visible at top */}

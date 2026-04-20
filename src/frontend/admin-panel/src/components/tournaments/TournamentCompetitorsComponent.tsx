@@ -1,10 +1,10 @@
 import type { TournamentDetail } from "../../api/tournaments";
-import { btn } from "../../styles/buttonStyles";
 import ChooseMultipleModal, { type GenericElement } from "../utils/costum_menus/ChoseMultipleModel";
 import { useState } from "react";
 import { teamsApi } from "../../api/teams";
 import { tournamentsApi } from "../../api/tournaments";
 import { athletesApi } from "../../api/athletes";
+import Button from "../utils/Button";
 
 const TournamentCompetitorsComponent = ({
   tournamentState,
@@ -92,12 +92,12 @@ const TournamentCompetitorsComponent = ({
         <h2 className="text-xl font-bold text-gray-800">
           Competidores Inscritos ({tournament.competitors.length})
         </h2>
-        <button
+        <Button
           onClick={() => setShowAddModal(true)}
-          className={`px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors`}
+          type="primary"
         >
           +/- Editar Competidor
-        </button>
+        </Button>
       </div>
 
       <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -141,6 +141,7 @@ const TournamentCompetitorsComponent = ({
         )}
         onSave={handleEditCompetitors}
         title="Selecionar Competidores do Torneio"
+        showSummary={true}
       />
     </div>
   );

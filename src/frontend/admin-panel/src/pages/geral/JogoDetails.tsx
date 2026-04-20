@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../components/ConfirmModal';
 import { useNotification } from '../../contexts/NotificationProvider';
-import { btn } from '../../styles/buttonStyles';
 import {
   matchesApi,
   type MatchDetail,
@@ -10,6 +9,7 @@ import {
 } from '../../api/matches';
 import MatchInfoComponent from '../../components/matches/MatchInfoComponent';
 import MatchResultsComponent from '../../components/matches/MatchesResultsComponent';
+import Button from '../../components/utils/Button';
 
 // ==================== Private Components ====================
 
@@ -332,7 +332,18 @@ const CommentsSection = ({ match }: { match: MatchDetail }) => {
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
-      <h3 className="text-xl font-bold text-gray-800 mb-4">Comentários</h3>
+      <div className="flex justify-between items-center">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">Comentários</h3>
+        <div className='flex gap-4 mb-4'>
+          <Button
+            onClick={handleAddComment}
+            type='primary'
+            disabled={submitting || !newComment.trim()}
+          >
+            {submitting ? 'A Adicionar...' : 'Adicionar Comentário'}
+          </Button>
+        </div>
+      </div>
 
       {/* Comment Input */}
       <div className="mb-6">
@@ -343,13 +354,6 @@ const CommentsSection = ({ match }: { match: MatchDetail }) => {
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
         ></textarea>
-        <button
-          onClick={handleAddComment}
-          disabled={submitting || !newComment.trim()}
-          className={`mt-2 px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
-        >
-          {submitting ? 'A Adicionar...' : 'Adicionar Comentário'}
-        </button>
       </div>
 
       {/* Comments List */}
@@ -448,12 +452,13 @@ const JogoDetails = () => {
             <div className="text-6xl mb-4">⚽</div>
             <h2 className="text-2xl font-bold text-gray-800 mb-2">Jogo não encontrado</h2>
             <p className="text-gray-600 mb-6">O jogo que procura não existe ou foi removido.</p>
-            <button
-              onClick={() => navigate('/dashboard')}
-              className={`px-6 py-3 ${btn.primary} rounded-md font-medium transition-colors`}
+            <Button
+              onClick={() => navigate(`/dashboard`)}
+              type='secondary'
+              padding='px-6 py-3'
             >
-              Voltar ao Dashboard
-            </button>
+              Voltar
+            </Button>
           </div>
         </div>
     );
@@ -463,12 +468,14 @@ const JogoDetails = () => {
       <div className="flex-1 p-8 max-w-6xl mx-auto">
         <div className="mb-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-800">Detalhes do Jogo</h1>
-          <button
+
+          <Button
             onClick={() => navigate(`/geral/torneios/${match.tournament_id}`)}
-            className={`px-6 py-3 ${btn.secondary} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400`}
+            type='secondary'
+            padding='px-6 py-3'
           >
             Voltar
-          </button>
+          </Button>
         </div>
 
         <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
@@ -485,25 +492,32 @@ const JogoDetails = () => {
             <div className="bg-white rounded-lg shadow-md p-6">
               <h3 className="text-xl font-bold text-gray-800 mb-4">Ações</h3>
               <div className="space-y-3">
-                <button
+                <Button
                   onClick={handleDownloadSheet}
-                  className={`w-full px-4 py-3 ${btn.info} rounded-md font-medium transition-colors flex items-center justify-center`}
+                  type='info'
+                  padding='w-full px-4 py-3 flex items-center justify-center'
                 >
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                   Baixar Ficha de Jogo
-                </button>
+                </Button>
 
-                <button
-                  onClick={() => setShowDeleteModal(true)}
-                  className={`w-full px-4 py-3 ${btn.danger} rounded-md font-medium transition-colors flex items-center justify-center`}
+                <Button
+                  onClick={handleDelete}
+                  type='danger'
+                  padding='w-full px-4 py-3 flex items-center justify-center'
+                  confirmation={{
+                    title: 'Eliminar jogo',
+                    message: 'Tem a certeza que deseja eliminar este jogo? Esta ação não pode ser revertida e todos os dados associados serão permanentemente removidos.',
+                    confirmLabel: 'Sim, Eliminar',
+                  }}
                 >
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
                   Eliminar Jogo
-                </button>
+                </Button>
               </div>
             </div>
           </div>

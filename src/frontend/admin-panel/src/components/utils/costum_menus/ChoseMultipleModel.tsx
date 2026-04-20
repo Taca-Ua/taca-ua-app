@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { btn } from "../../../styles/buttonStyles";
+import Button from "../Button";
 
 export interface GenericElement {
     id: string;
@@ -305,18 +305,20 @@ const ChooseMultipleModal = ({
 
           {/* Buttons */}
           <div className="flex gap-4 flex-shrink-0">
-            <button
+            <Button
               onClick={onClose}
-              className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md font-medium transition-colors`}
+              type="secondary"
+              flexible={true}
             >
               Cancelar
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleSave}
-              className={`flex-1 px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors`}
+              type="primary"
+              flexible={true}
             >
-              Guardar
-            </button>
+              Salvar
+            </Button>
           </div>
         </div>
       </div>

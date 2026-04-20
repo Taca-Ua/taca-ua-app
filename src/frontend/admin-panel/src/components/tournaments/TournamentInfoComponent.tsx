@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { tournamentsApi, type TournamentDetail } from "../../api/tournaments";
-import { btn } from "../../styles/buttonStyles";
-import ConfirmModal from "../ConfirmModal";
 import { useNavigate } from "react-router-dom";
 import TournamentEditModal from "./TournamentEditModal";
 import TournamentFinishModal from "./TournamentFinishModal";
+import Button from "../utils/Button";
 
 // Helper functions to get status text and badge color
 const getStatusBadgeColor = (status: string) => {
@@ -35,8 +34,6 @@ const TournamentInfoComponent = ({
   const [tournament, setTournament] = tournamentState;
 
   // Modal state
-  const [showActivateModal, setShowActivateModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showFinishModal, setShowFinishModal] = useState(false);
 
@@ -46,7 +43,6 @@ const TournamentInfoComponent = ({
     try {
       let result = await tournamentsApi.update(tournament.id, { status: 'active' });
       setTournament(result);
-      setShowActivateModal(false);
     } catch (error) {
       console.error("Failed to activate tournament:", error);
     }
@@ -56,7 +52,6 @@ const TournamentInfoComponent = ({
     if (!tournament) return;
     try {
       await tournamentsApi.delete(tournament.id);
-      setShowDeleteModal(false);
       useNavigate()('/tournaments');
     } catch (error) {
       console.error("Failed to delete tournament:", error);
@@ -123,61 +118,54 @@ const TournamentInfoComponent = ({
       )}
 
       <div className="flex gap-4 pt-4">
-        <button
+        <Button
           onClick={() => setShowEditModal(true)}
-          className={`flex-1 px-6 py-3 ${btn.primary} rounded-md font-medium transition-colors`}
+          type="primary"
+          flexible={true}
         >
           Editar
-        </button>
-        <button
-          onClick={() => setShowDeleteModal(true)}
-          className={`flex-1 px-6 py-3 ${btn.danger} rounded-md font-medium transition-colors`}
+        </Button>
+        <Button
+          onClick={handleDelete}
+          type="danger"
+          confirmation={{
+            title: "Eliminar torneio",
+            message: tournament ? `Tem certeza que deseja eliminar "${tournament.name}"?` : '',
+            confirmLabel: "Eliminar",
+          }}
+          flexible={true}
         >
           Eliminar
-        </button>
+        </Button>
       </div>
 
-      {tournament.status === "draft" && (
-        <div className="pt-4 border-t mt-4">
-          <button
-            onClick={() => setShowActivateModal(true)}
-            className={`w-full px-6 py-3 ${btn.success} rounded-md font-medium transition-colors`}
+      <div className="flex gap-4 pt-4 border-t mt-4">
+
+        {tournament.status === "draft" && (
+          <Button
+            onClick={handleActivate}
+            type="success"
+            confirmation={{
+              title: "Ativar torneio",
+              message: tournament ? `Tem certeza que deseja ativar "${tournament.name}"?` : '',
+              confirmLabel: "Ativar",
+            }}
+            flexible={true}
           >
             Ativar Torneio
-          </button>
-        </div>
-      )}
+          </Button>
+        )}
 
-      {tournament.status === "active" && (
-        <div className="pt-4 border-t mt-4">
-          <button
+        {tournament.status === "active" && (
+          <Button
             onClick={() => setShowFinishModal(true)}
-            className={`w-full px-6 py-3 ${btn.infoStrong} rounded-md font-medium transition-colors`}
+            type="info"
+            flexible={true}
           >
             Finalizar Torneio
-          </button>
-        </div>
-      )}
-
-      <ConfirmModal
-        isOpen={showActivateModal}
-        title="Ativar torneio"
-        message={tournament ? `Ativar o torneio "${tournament.name}"? O torneio passará a estar ativo e visível.` : ''}
-        confirmLabel="Ativar"
-        variant="success"
-        onCancel={() => {setShowActivateModal(false)}}
-        onConfirm={handleActivate}
-      />
-
-      <ConfirmModal
-        isOpen={showDeleteModal}
-        title="Eliminar torneio"
-        message={tournament ? `Tem certeza que deseja eliminar "${tournament.name}"?` : ''}
-        confirmLabel="Eliminar"
-        variant="danger"
-        onCancel={() => setShowDeleteModal(false)}
-        onConfirm={handleDelete}
-      />
+          </Button>
+        )}
+      </div>
 
       <TournamentEditModal
         controller={[showEditModal, setShowEditModal]}

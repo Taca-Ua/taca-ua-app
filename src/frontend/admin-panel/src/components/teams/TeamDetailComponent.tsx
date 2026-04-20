@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import { teamsApi, type TeamDetail } from "../../api/teams";
 import HelpTooltip from "../HelpTooltip";
-import { btn } from "../../styles/buttonStyles";
-import ConfirmModal from "../ConfirmModal";
 import TeamEditModel from "./TeamEditModel";
 import ChooseMultipleModal, {
   type GenericElement,
 } from "../utils/costum_menus/ChoseMultipleModel";
 import { studentsApi, type Student } from "../../api/members";
+import Button from "../utils/Button";
 
 const TeamDetailComponent = ({ teamId }: { teamId: string }) => {
   const [team, setTeam] = useState<TeamDetail | null>(null);
@@ -15,7 +14,6 @@ const TeamDetailComponent = ({ teamId }: { teamId: string }) => {
 
   const editModelController = useState(false);
   const playersModelController = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const [avaiblePlayers, setAvailablePlayers] = useState<Student[]>([]);
 
@@ -54,8 +52,6 @@ const TeamDetailComponent = ({ teamId }: { teamId: string }) => {
       // Redirect or update UI after deletion
     } catch (error) {
       console.error("Error deleting team:", error);
-    } finally {
-      setIsDeleteModalOpen(false);
     }
   };
 
@@ -178,18 +174,25 @@ const TeamDetailComponent = ({ teamId }: { teamId: string }) => {
 
         {/* Ações */}
         <div className="flex gap-4 mt-6">
-          <button
+          <Button
             onClick={() => editModelController[1](true)}
-            className={`flex-1 px-6 py-3 ${btn.primary} rounded-md font-medium transition-colors`}
+            type="primary"
+            flexible={true}
           >
             Editar
-          </button>
-          <button
-            onClick={() => setIsDeleteModalOpen(true)}
-            className={`flex-1 px-6 py-3 ${btn.danger} rounded-md font-medium transition-colors`}
+          </Button>
+          <Button
+            onClick={handleDelete}
+            type="danger"
+            confirmation={{
+              title: "Eliminar equipa",
+              message: `Tem certeza que deseja eliminar a equipa "${team.name}"? Esta ação não pode ser desfeita.`,
+              confirmLabel: "Eliminar",
+            }}
+            flexible={true}
           >
             Eliminar
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -197,13 +200,14 @@ const TeamDetailComponent = ({ teamId }: { teamId: string }) => {
       <div className="bg-white rounded-lg shadow-md p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-800">Equipa</h2>
-          <button
-            onClick={() => playersModelController[1](true)}
-            className={`px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors flex items-center gap-2`}
-          >
-            <span>+/-</span>
-            Editar Membros
-          </button>
+          <div>
+            <Button
+              onClick={() => editModelController[1](true)}
+              type="primary"
+            >
+              +/- Editar Membros
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-3 max-h-[600px] overflow-y-auto">
@@ -235,17 +239,6 @@ const TeamDetailComponent = ({ teamId }: { teamId: string }) => {
           )}
         </div>
       </div>
-
-      <ConfirmModal
-        isOpen={isDeleteModalOpen}
-        title="Confirmar Eliminação"
-        message={`Tem certeza que deseja eliminar a equipa "${team.name}"? Esta ação não pode ser desfeita.`}
-        confirmLabel="Eliminar"
-        variant="danger"
-        loading={false}
-        onCancel={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleDelete}
-      />
 
       <TeamEditModel
         controller={editModelController}

@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import HelpTooltip from "../HelpTooltip";
-import { btn } from "../../styles/buttonStyles";
 import { type CourseDetail, coursesApi } from "../../api/courses";
-import ConfirmModal from "../ConfirmModal";
 import CourseEditModel from "./CourseEditModel";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import Button from "../utils/Button";
 
 const CourseDetailComponent = ( {courseId} : { courseId: string } ) => {
   const navigate = useNavigate();
@@ -14,20 +13,15 @@ const CourseDetailComponent = ( {courseId} : { courseId: string } ) => {
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const editModalController = useState(false);
 
   const handleDelete = async () => {
-    setDeleting(true);
     try {
       await coursesApi.delete(courseId);
       navigate('/geral/cursos');
     } catch (error) {
       console.error("Erro ao eliminar curso:", error);
     } finally {
-      setDeleting(false);
-      setIsDeleteModalOpen(false);
     }
   };
 
@@ -109,40 +103,34 @@ const CourseDetailComponent = ( {courseId} : { courseId: string } ) => {
       </div>
 
       <div className="flex gap-4 pt-4">
-        <button
-          onClick={() => {
-            editModalController[1](true)
-          }}
-          className={`flex-1 px-6 py-3 ${btn.primary} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-teal-400 disabled:opacity-50 disabled:cursor-not-allowed`}
-          disabled={!isAdminGeneral}
+        <Button
+          onClick={() => editModalController[1](true)}
+          type="primary"
+          active={isAdminGeneral}
+          flexible={true}
         >
           Editar
-        </button>
-
-        <button
-          onClick={() => setIsDeleteModalOpen(true)}
-          className={`flex-1 px-6 py-3 ${btn.danger} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-teal-400 disabled:opacity-50 disabled:cursor-not-allowed`}
-          disabled={!isAdminGeneral}
+        </Button>
+        <Button
+          onClick={handleDelete}
+          type="danger"
+          active={isAdminGeneral}
+          confirmation={{
+            title: "Eliminar curso",
+            message: `Tem certeza que deseja eliminar "${course.name}"? Esta ação não pode ser desfeita.`,
+            confirmLabel: "Eliminar",
+            cancelLabel: "Cancelar",
+          }}
+          flexible={true}
         >
           Eliminar
-        </button>
+        </Button>
       </div>
 
       <CourseEditModel
         controller={editModalController}
         onSave={(courseData) => setCourse(courseData)}
         courseData={course}
-      />
-
-      <ConfirmModal
-        isOpen={isDeleteModalOpen}
-        title="Eliminar curso"
-        message={`Tem certeza que deseja eliminar "${course.name}"?`}
-        confirmLabel="Eliminar"
-        variant="danger"
-        loading={deleting}
-        onCancel={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleDelete}
       />
     </div>
   );

@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { btn } from '../../styles/buttonStyles';
 import NucleusListComponent from '../../components/nucleos/NucleusListComponent';
 import NucleoCreateModel from '../../components/nucleos/NucleoCreateModel';
 import { type NucleoListItem } from '../../api/nucleos';
 import { useAuth } from '../../hooks/useAuth';
+import Button from '../../components/utils/Button';
 
 const Nucleo = () => {
 
@@ -17,14 +17,14 @@ const Nucleo = () => {
         <div className="max-w-7xl mx-auto">
           <div className="mb-6 flex justify-between items-center">
             <h1 className="text-3xl font-bold text-gray-800">Núcleos</h1>
-            <button
+            <Button
               onClick={() => createModalController[1](true)}
-              className={`px-6 py-3 ${btn.primary} rounded-md font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed`}
+              type='primary'
+              padding='px-6 py-3'
               disabled={!isAdminGeneral}
             >
-              <span>+</span>
-              Adicionar Núcleo
-            </button>
+              + Adicionar Núcleo
+            </Button>
           </div>
 
           <div className="bg-white rounded-lg shadow-md p-6">

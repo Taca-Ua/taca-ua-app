@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { btn } from '../../styles/buttonStyles';
 import TeamDetailComponent from '../../components/teams/TeamDetailComponent';
+import Button from '../../components/utils/Button';
 
 const TeamDetailPage = () => {
   const teamId = useParams<{ id: string }>().id || "";
@@ -11,12 +11,15 @@ const TeamDetailPage = () => {
         <div className="max-w-7xl mx-auto">
           <div className="mb-8 flex justify-between items-center">
             <h1 className="text-3xl font-bold text-gray-800">Detalhes da Equipa</h1>
-            <button
-              onClick={() => navigate('/nucleo/equipas')}
-              className={`px-6 py-3 ${btn.secondary} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400`}
-            >
-              Voltar
-            </button>
+            <div>
+              <Button
+                onClick={() => navigate(`/nucleo/equipas/`)}
+                type='secondary'
+                padding='px-6 py-3'
+              >
+                Voltar
+              </Button>
+            </div>
           </div>
 
           <TeamDetailComponent

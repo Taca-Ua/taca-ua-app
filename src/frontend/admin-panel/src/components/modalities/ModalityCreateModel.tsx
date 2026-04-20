@@ -3,7 +3,7 @@ import HelpTooltip from '../../components/HelpTooltip';
 import { useNotification } from "../../contexts/NotificationProvider";
 import { modalitiesApi, type ModalityListItem } from "../../api/modalities";
 import { modalityTypesApi, type ModalityTypeMinimal } from "../../api/modality-types";
-import { btn } from '../../styles/buttonStyles';
+import Button from "../utils/Button";
 
 const ModalityCreateModel = ({
   onCreate,
@@ -106,22 +106,24 @@ const ModalityCreateModel = ({
         </div>
 
         <div className="flex gap-4 mt-6">
-          <button
+          <Button
             onClick={() => {
               setNewModalityName("");
               setModalityType("");
               if (onClose) onClose();
             }}
-            className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md font-medium transition-colors`}
+            type="secondary"
+            flexible={true}
           >
             Cancelar
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleAddModality}
-            className={`flex-1 px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors`}
+            type="primary"
+            flexible={true}
           >
             Adicionar
-          </button>
+          </Button>
         </div>
       </div>
     </div>

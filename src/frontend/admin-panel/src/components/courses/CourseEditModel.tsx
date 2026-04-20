@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import HelpTooltip from "../HelpTooltip";
-import { btn } from "../../styles/buttonStyles";
 import { type NucleoListItem, nucleosApi } from "../../api/nucleos";
 import { type CourseDetail, coursesApi } from "../../api/courses";
 import { useNotification } from "../../contexts/NotificationProvider";
+import Button from "../utils/Button";
 
 const CourseEditModel = ({
   controller,
@@ -178,19 +178,20 @@ const CourseEditModel = ({
         </div>
 
         <div className="flex gap-4 mt-6">
-          <button
+          <Button
             onClick={onClose}
-            className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md`}
+            type="secondary"
+            flexible={true}
           >
             Cancelar
-          </button>
-
-          <button
+          </Button>
+          <Button
             onClick={handleSave}
-            className={`flex-1 px-4 py-2 ${btn.primary} rounded-md`}
+            type="primary"
+            flexible={true}
           >
-            Guardar
-          </button>
+            Salvar
+          </Button>
         </div>
       </div>
     </div>

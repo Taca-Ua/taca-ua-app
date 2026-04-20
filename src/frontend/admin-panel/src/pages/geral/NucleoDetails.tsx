@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import { btn } from '../../styles/buttonStyles';
 import NucleusDetailComponent from '../../components/nucleos/NucleusDetailComponent';
+import Button from '../../components/utils/Button';
 
 const NucleoDetails = () => {
   const navigate = useNavigate();
@@ -15,12 +15,13 @@ const NucleoDetails = () => {
         <div className="max-w-4xl mx-auto">
           <div className="mb-8 flex justify-between items-center">
             <h1 className="text-3xl font-bold text-gray-800">Detalhes do Núcleo</h1>
-            <button
+            <Button
               onClick={() => navigate('/geral/nucleos')}
-              className={`px-6 py-3 ${btn.secondary} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400`}
+              type='secondary'
+              padding='px-6 py-3'
             >
               Voltar
-            </button>
+            </Button>
           </div>
 
           {/* Nucleus Detail Component */}

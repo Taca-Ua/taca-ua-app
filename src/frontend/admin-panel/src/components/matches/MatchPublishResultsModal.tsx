@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { type MatchDetail, matchesApi } from "../../api/matches";
 import DefinedStatesMenuComponent from "../utils/costum_menus/DefinedStatesMenuComponent";
-import { btn } from "../../styles/buttonStyles";
 import { useNotification } from "../../contexts/NotificationProvider";
+import Button from "../utils/Button";
 
 const ScoreFormComponent = ({
     participants,
@@ -213,18 +213,20 @@ const MatchPublishResultsModal = ( {
                 </div>
 
                 <div className="flex gap-4">
-                    <button
+                    <Button
                         onClick={onClose}
-                        className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md`}
+                        type="secondary"
+                        flexible={true}
                     >
                         Cancelar
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         onClick={handleSave}
-                        className={`flex-1 px-4 py-2 ${btn.primary} rounded-md`}
+                        type="primary"
+                        flexible={true}
                     >
                         Publicar
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>

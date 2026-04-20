@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { teamsApi, type TeamDetail } from "../../api/teams";
 import HelpTooltip from "../HelpTooltip";
-import { btn } from "../../styles/buttonStyles";
 import { useNotification } from "../../contexts/NotificationProvider";
+import Button from "../utils/Button";
 
 const TeamEditModel = ({
   controller,
@@ -110,18 +110,20 @@ const TeamEditModel = ({
         </div>
 
         <div className="flex gap-4 mt-6">
-          <button
+          <Button
             onClick={onClose}
-            className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md font-medium transition-colors`}
+            type="secondary"
+            flexible={true}
           >
             Cancelar
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleSave}
-            className={`flex-1 px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors`}
+            type="primary"
+            flexible={true}
           >
             Guardar
-          </button>
+          </Button>
         </div>
       </div>
     </div>

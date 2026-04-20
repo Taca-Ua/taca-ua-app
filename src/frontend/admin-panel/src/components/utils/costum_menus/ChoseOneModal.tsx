@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { btn } from "../../../styles/buttonStyles";
+import Button from "../Button";
 
 const ChoseOneModal = ( {
     controller,
@@ -9,7 +9,7 @@ const ChoseOneModal = ( {
 } : {
     controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>],
     allElementsLoader: () => Promise<{id: string, title: string, subTitle?: string}[]>,
-    onSelect: (element: {id: string, title: string, subTitle?: string}) => void,
+    onSelect: (element: {id: string, title: string, subTitle?: string} | null) => void,
     title?: string
 } ) => {
     const [isOpen, setIsOpen] = controller;
@@ -115,18 +115,24 @@ const ChoseOneModal = ( {
 
           {/* Buttons */}
           <div className="flex gap-4 flex-shrink-0">
-            <button
+            <Button
               onClick={onClose}
-              className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md font-medium transition-colors`}
+              type="secondary"
+              flexible={true}
             >
               Cancelar
-            </button>
-            <button
-              onClick={() => setChosenElement("")}
-              className={`flex-1 px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors`}
+            </Button>
+            <Button
+              onClick={() => {
+                setChosenElement("")
+                onSelect(null)
+                onClose()
+              }}
+              type="primary"
+              flexible={true}
             >
               Limpar
-            </button>
+            </Button>
           </div>
         </div>
       </div>

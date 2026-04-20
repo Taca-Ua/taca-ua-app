@@ -3,17 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { useNotification } from "../../contexts/NotificationProvider";
 import { type NucleoDetail, nucleosApi } from "../../api/nucleos";
 import HelpTooltip from "../HelpTooltip";
-import ConfirmModal from "../ConfirmModal";
-import { btn } from "../../styles/buttonStyles";
 import NucleusEditModel from "./NucleusEditModel";
+import Button from "../utils/Button";
 
 const NucleusDetailComponent = ( { nucleusId } : { nucleusId: string }) => {
   const { notify } = useNotification();
   const navigate = useNavigate();
 
   const editModelController = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [deleting, setDeleting] = useState(false);
 
   const [nucleus, setNucleus] = useState<NucleoDetail>();
 
@@ -33,14 +30,11 @@ const NucleusDetailComponent = ( { nucleusId } : { nucleusId: string }) => {
 
   const handleDelete = async () => {
     try {
-      setDeleting(true);
       await nucleosApi.delete(String(nucleusId));
       navigate('/geral/nucleos');
     } catch (err) {
       console.error('Failed to delete course:', err);
       notify('Não foi possível eliminar o núcleo. Poderá ter cursos ou membros associados.', 'error');
-    } finally {
-      setDeleting(false);
     }
   };
 
@@ -111,19 +105,25 @@ const NucleusDetailComponent = ( { nucleusId } : { nucleusId: string }) => {
       )}
 
       <div className="flex gap-4 pt-4">
-        <button
+        <Button
           onClick={() => editModelController[1](true)}
-          className={`flex-1 px-6 py-3 ${btn.primary} rounded-md font-medium transition-colors`}
+          type="primary"
+          flexible={true}
         >
           Editar
-        </button>
-
-        <button
+        </Button>
+        <Button
           onClick={handleDelete}
-          className={`flex-1 px-6 py-3 ${btn.danger} rounded-md font-medium transition-colors`}
+          type="danger"
+          confirmation={{
+            title: "Eliminar núcleo",
+            message: `Tem certeza que deseja eliminar "${nucleus.name}"?`,
+            confirmLabel: "Eliminar",
+          }}
+          flexible={true}
         >
           Eliminar
-        </button>
+        </Button>
       </div>
 
       <NucleusEditModel
@@ -132,20 +132,6 @@ const NucleusDetailComponent = ( { nucleusId } : { nucleusId: string }) => {
         nucleusData={nucleus}
       />
 
-      <ConfirmModal
-        isOpen={isDeleteModalOpen}
-        title="Eliminar núcleo"
-        message={`Tem certeza que deseja eliminar "${nucleus.name}"?`}
-        confirmLabel="Eliminar"
-        variant="danger"
-        loading={deleting}
-        onCancel={() => {
-          if (!deleting) {
-            setIsDeleteModalOpen(false);
-          }
-        }}
-        onConfirm={handleDelete}
-      />
     </div>
   );
 };

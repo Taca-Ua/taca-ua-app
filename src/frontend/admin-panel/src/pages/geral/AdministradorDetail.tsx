@@ -3,8 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { administratorsApi, type AdminDetail } from '../../api/admins';
 import { useNotification } from '../../contexts/NotificationProvider';
-import { btn } from '../../styles/buttonStyles';
 import AdminInfoComponent from '../../components/admins/AdminInfoComponent';
+import Button from '../../components/utils/Button';
 
 function AdminDetailPage() {
   const { id } = useParams();
@@ -49,12 +49,15 @@ function AdminDetailPage() {
       <div className="flex-1 p-8 max-w-3xl mx-auto">
         <div className="mb-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-800">Detalhes do Administrador</h1>
-          <button
-            onClick={() => navigate('/geral/administradores')}
-            className={`px-6 py-3 ${btn.secondary} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400`}
-          >
-            Voltar
-          </button>
+          <div>
+            <Button
+              onClick={() => navigate(`/geral/administradores/`)}
+              type='secondary'
+              padding='px-6 py-3'
+            >
+              Voltar
+            </Button>
+          </div>
         </div>
 
         <AdminInfoComponent

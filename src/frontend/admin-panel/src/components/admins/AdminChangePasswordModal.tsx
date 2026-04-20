@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { type AdminDetail, administratorsApi } from "../../api/admins"
 import HelpTooltip from "../HelpTooltip";
-import { btn } from "../../styles/buttonStyles";
 import { useAuth } from "../../hooks/useAuth";
+import Button from "../utils/Button";
 
 const AdminChangePasswordModal = ( {
     controller,
@@ -118,18 +118,20 @@ const AdminChangePasswordModal = ( {
             </div>
 
             <div className="flex gap-4 mt-6">
-              <button
+              <Button
                 onClick={onClose}
-                className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md`}
+                type="secondary"
+                flexible={true}
               >
                 Cancelar
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleChangePassword}
-                className={`flex-1 px-4 py-2 ${btn.primary} rounded-md`}
+                type="primary"
+                flexible={true}
               >
                 Alterar Password
-              </button>
+              </Button>
             </div>
           </div>
         </div>

@@ -92,7 +92,11 @@ class AdminService:
             first_name=admin_data.first_name,
             last_name=admin_data.last_name,
             enabled=admin_data.enabled,
-            role=admin_data.roles[0] if admin_data.roles else None,
+            role=(
+                [i for i in admin_data.roles if not i.startswith("default-roles")][0]
+                if admin_data.roles
+                else None
+            ),
             nucleos=[
                 _NucleoSummaryDTO(
                     id=nucleo.id, name=nucleo.name, abbreviation=nucleo.abbreviation

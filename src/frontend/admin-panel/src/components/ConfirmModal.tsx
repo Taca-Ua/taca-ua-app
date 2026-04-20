@@ -1,4 +1,5 @@
-import { btn } from '../styles/buttonStyles';
+import Button from "./utils/Button";
+
 type ConfirmModalProps = {
   isOpen: boolean;
   title: string;
@@ -9,12 +10,6 @@ type ConfirmModalProps = {
   loading?: boolean;
   onConfirm: () => void | Promise<void>;
   onCancel: () => void;
-};
-
-const variantClasses: Record<NonNullable<ConfirmModalProps['variant']>, string> = {
-  danger: 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
-  primary: 'bg-teal-500 hover:bg-teal-600 focus:ring-teal-500',
-  success: 'bg-green-600 hover:bg-green-700 focus:ring-green-500'
 };
 
 const ConfirmModal = ({
@@ -47,22 +42,22 @@ const ConfirmModal = ({
         <p className="text-gray-600 mb-6">{message}</p>
 
         <div className="flex gap-4">
-          <button
-            type="button"
+          <Button
             onClick={onCancel}
-            disabled={loading}
-            className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-gray-400`}
+            type="secondary"
+            active={!loading}
+            flexible={true}
           >
             {cancelLabel}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
             onClick={onConfirm}
-            disabled={loading}
-            className={`flex-1 px-4 py-2 text-white rounded-md transition-colors focus:outline-none focus:ring-2 disabled:opacity-50 ${variantClasses[variant]}`}
+            type={variant}
+            active={!loading}
+            flexible={true}
           >
             {loading ? 'A processar...' : confirmLabel}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

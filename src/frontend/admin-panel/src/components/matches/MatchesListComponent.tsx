@@ -1,16 +1,13 @@
 import { useEffect, useState } from "react"
 import { matchesApi, type MatchListItem } from "../../api/matches"
-import { btn } from "../../styles/buttonStyles";
 import { useNavigate } from "react-router";
-import ConfirmModal from "../ConfirmModal";
 import { useNotification } from "../../contexts/NotificationProvider";
+import Button from "../utils/Button";
 
 
 const MatchesListItemComponent = ( { match, onDeleted } : { match: MatchListItem; onDeleted: () => void } ) => {
     const navigate = useNavigate();
     const { notify } = useNotification();
-
-    const [showDeleteModal, setShowDeleteModal] = useState<boolean>( false );
 
     const getStatusText = (status: string) => {
         switch (status) {
@@ -57,8 +54,6 @@ const MatchesListItemComponent = ( { match, onDeleted } : { match: MatchListItem
         } catch (error) {
             console.error("Error deleting match:", error);
             notify("Ocorreu um erro ao eliminar o jogo. Por favor, tente novamente.", "error");
-        } finally {
-            setShowDeleteModal(false);
         }
     };
 
@@ -99,26 +94,21 @@ const MatchesListItemComponent = ( { match, onDeleted } : { match: MatchListItem
             </div>
           </div>
           <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              onClick={() => setShowDeleteModal(true)}
-              className={`px-3 py-1 ${btn.dangerLight} rounded-md text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-red-400`}
+            <Button
+              onClick={handleDelete}
+              type="danger"
+              confirmation={{
+                title: "Eliminar jogo",
+                message: "Tem certeza que deseja eliminar este jogo?",
+                confirmLabel: "Eliminar",
+              }}
+              flexible={true}
+              padding="px-4 py-2"
             >
               Eliminar
-            </button>
+            </Button>
           </div>
         </div>
-
-      <ConfirmModal
-        isOpen={showDeleteModal}
-        title="Eliminar jogo"
-        message="Tem certeza que deseja eliminar este jogo?"
-        confirmLabel="Eliminar"
-        variant="danger"
-        onCancel={() => setShowDeleteModal(false)}
-        onConfirm={handleDelete}
-      />
-
       </button>
     );
 }

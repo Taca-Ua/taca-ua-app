@@ -2,8 +2,8 @@ import { useState } from "react";
 import { coursesApi, type CourseListItem } from "../../api/courses";
 import { nucleosApi } from "../../api/nucleos";
 import HelpTooltip from "../HelpTooltip";
-import { btn } from "../../styles/buttonStyles";
 import ChoseOneModal from "../utils/costum_menus/ChoseOneModal";
+import Button from "../utils/Button";
 
 const CourseCreateModel = ({
   controller,
@@ -119,19 +119,21 @@ const CourseCreateModel = ({
           </div>
         </div>
 
-        <div className="flex gap-4 mt-6">
-          <button
+        <div className="flex gap-4 mt-8">
+          <Button
             onClick={onClose}
-            className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md font-medium transition-colors`}
+            type="secondary"
+            flexible={true}
           >
             Cancelar
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleAddCourse}
-            className={`flex-1 px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors`}
+            type="primary"
+            flexible={true}
           >
             Adicionar
-          </button>
+          </Button>
         </div>
       </div>
 

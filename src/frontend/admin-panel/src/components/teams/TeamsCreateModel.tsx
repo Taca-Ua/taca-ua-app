@@ -3,8 +3,8 @@ import { teamsApi, type TeamListItem } from "../../api/teams";
 import { modalitiesApi, type ModalityListItem } from "../../api/modalities";
 import { coursesApi, type CourseListItem } from "../../api/courses";
 import HelpTooltip from "../HelpTooltip";
-import { btn } from "../../styles/buttonStyles";
 import { useNotification } from "../../contexts/NotificationProvider";
+import Button from "../utils/Button";
 
 const TeamsCreateModel = ({
   controller,
@@ -173,18 +173,20 @@ const TeamsCreateModel = ({
         </div>
 
         <div className="flex gap-4 mt-6">
-          <button
+          <Button
             onClick={onClose}
-            className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md font-medium transition-colors`}
+            type="secondary"
+            flexible={true}
           >
             Cancelar
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleAddTeam}
-            className={`flex-1 px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors`}
+            type="primary"
+            flexible={true}
           >
             Adicionar
-          </button>
+          </Button>
         </div>
       </div>
     </div>

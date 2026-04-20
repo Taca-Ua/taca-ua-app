@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { nucleosApi } from "../../api/nucleos";
 import HelpTooltip from "../HelpTooltip";
-import { btn } from "../../styles/buttonStyles";
+import Button from "../utils/Button";
 
 const NucleoCreateModel = ({
   controller,
@@ -89,18 +89,20 @@ const NucleoCreateModel = ({
         </div>
 
         <div className="flex gap-4 mt-6">
-          <button
+          <Button
             onClick={onClose}
-            className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md font-medium transition-colors`}
+            type="secondary"
+            flexible={true}
           >
             Cancelar
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleCreateNucleus}
-            className={`flex-1 px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors`}
+            type="primary"
+            flexible={true}
           >
             Adicionar
-          </button>
+          </Button>
         </div>
       </div>
     </div>

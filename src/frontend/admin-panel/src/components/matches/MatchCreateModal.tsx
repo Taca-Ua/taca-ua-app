@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { matchesApi, type MatchListItem } from "../../api/matches"
 import { type TournamentDetail } from "../../api/tournaments";
-import { btn } from "../../styles/buttonStyles";
 import HelpTooltip from "../HelpTooltip";
 import ChooseMultipleModal from "../utils/costum_menus/ChoseMultipleModel";
 import { useNotification } from "../../contexts/NotificationProvider";
+import Button from "../utils/Button";
 
 const MatchCreateModal = ( {
   controller,
@@ -79,13 +79,16 @@ const MatchCreateModal = ( {
                 />{" "}
                 <span className="text-red-500">*</span>
               </label>
-              <button
-                type="button"
-                onClick={() => choseParticipantsController[1]( true )}
-                className={`text-sm px-3 py-1 ${btn.info} rounded-md transition-colors`}
-              >
-                + Adicionar Participante
-              </button>
+              <div>
+                <Button
+                  onClick={() => choseParticipantsController[1]( true )}
+                  type="info"
+                  flexible={true}
+                  padding="px-4 py-2"
+                >
+                  +/- Editar Participantes
+                </Button>
+              </div>
             </div>
             <ChooseMultipleModal
               controller={choseParticipantsController}
@@ -151,20 +154,20 @@ const MatchCreateModal = ( {
         </div>
 
         <div className="flex gap-4 mt-6">
-          <button
+          <Button
             onClick={() => setIsOpen(false)}
-            disabled={loading}
-            className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md disabled:opacity-50`}
+            type="secondary"
+            flexible={true}
           >
             Cancelar
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleCreateMatch}
-            disabled={loading}
-            className={`flex-1 px-4 py-2 ${btn.primary} rounded-md disabled:opacity-50`}
+            type="primary"
+            flexible={true}
           >
             {loading ? "A criar..." : "Criar"}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

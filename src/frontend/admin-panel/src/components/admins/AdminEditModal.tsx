@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import HelpTooltip from '../HelpTooltip';
-import { btn } from '../../styles/buttonStyles';
 import { nucleosApi } from '../../api/nucleos';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { type AdminDetail, administratorsApi } from '../../api/admins';
 import DefinedStatesMenuComponent from '../utils/costum_menus/DefinedStatesMenuComponent';
 import ChooseMultipleModal from '../utils/costum_menus/ChoseMultipleModel';
 import { useAuth } from '../../hooks/useAuth';
+import Button from '../utils/Button';
 
 
 interface Nucleo {
@@ -167,13 +167,12 @@ const AdminEditModal = ({
                   className="ml-1"
                 />
               </label>
-              <button
-                type="button"
+              <Button
                 onClick={() => setNucleusSelectModalOpen(true)}
-                className={`w-full mb-4 px-4 py-2.5 ${btn.secondary} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 hover:shadow-md`}
+                type="secondary"
               >
                 Selecionar Núcleos
-              </button>
+              </Button>
               {selectedNucleos.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-gray-300">
                   <p className="text-gray-600 text-sm font-semibold mb-3">
@@ -213,18 +212,20 @@ const AdminEditModal = ({
           )}
         </div>
         <div className="flex gap-4 mt-6 flex-shrink-0">
-          <button
+          <Button
             onClick={onClose}
-            className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md`}
+            type="secondary"
+            flexible={true}
           >
             Cancelar
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleSave}
-            className={`flex-1 px-4 py-2 ${btn.primary} rounded-md`}
+            type="primary"
+            flexible={true}
           >
             Guardar
-          </button>
+          </Button>
         </div>
       </div>
 

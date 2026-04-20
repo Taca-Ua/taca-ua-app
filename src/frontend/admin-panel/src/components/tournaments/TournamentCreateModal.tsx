@@ -3,7 +3,7 @@ import HelpTooltip from '../HelpTooltip';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { tournamentsApi, type TournamentListItem, type TournamentCreate } from '../../api/tournaments';
 import { modalitiesApi, type ModalityListItem } from '../../api/modalities';
-import { btn } from '../../styles/buttonStyles';
+import Button from '../utils/Button';
 
 
 const TournamentCreateModal = ({
@@ -153,22 +153,20 @@ const TournamentCreateModal = ({
           </div>
 
           <div className="flex justify-end space-x-2">
-            <button
-              type="button"
+            <Button
               onClick={onClose}
-              className={`px-4 py-2 ${btn.secondary} rounded-md`}
-              disabled={loading}
+              type="secondary"
+              flexible={true}
             >
               Cancelar
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
               onClick={handleSubmit}
-              className={`px-4 py-2 ${btn.primary} rounded-md`}
-              disabled={loading}
+              type="primary"
+              flexible={true}
             >
               {loading ? 'A criar...' : 'Criar'}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

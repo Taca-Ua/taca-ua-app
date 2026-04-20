@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { tournamentsApi, type TournamentDetail } from "../../api/tournaments";
 import HelpTooltip from "../HelpTooltip";
-import { btn } from "../../styles/buttonStyles";
+import Button from "../utils/Button";
 
 const TournamentEditModal = ({
   controller,
@@ -93,20 +93,20 @@ const TournamentEditModal = ({
         </div>
 
         <div className="flex gap-4 mt-6">
-          <button
+          <Button
             onClick={() => setIsOpen(false)}
-            disabled={saving}
-            className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md disabled:opacity-50`}
+            type="secondary"
+            flexible={true}
           >
             Cancelar
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleSubmit}
-            disabled={saving}
-            className={`flex-1 px-4 py-2 ${btn.primary} rounded-md disabled:opacity-50`}
+            type="primary"
+            flexible={true}
           >
             {saving ? "A guardar..." : "Guardar"}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

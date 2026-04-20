@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
-import { btn } from '../../styles/buttonStyles';
 import { modalitiesApi, type ModalityDetail } from '../../api/modalities';
-import ConfirmModal from '../ConfirmModal';
 import ModalityEditModel from './ModalityEditModel';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import Button from '../utils/Button';
 
 
 const ModalityDetailComponent = ( {modalityId} : { modalityId: string }) => {
@@ -13,8 +12,6 @@ const ModalityDetailComponent = ( {modalityId} : { modalityId: string }) => {
 
   const [modality, setModality] = useState<ModalityDetail | null>(null);
 
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const editModalController = useState(false);
 
   useEffect(() => {
@@ -31,15 +28,11 @@ const ModalityDetailComponent = ( {modalityId} : { modalityId: string }) => {
   }, []);
 
   const handleDelete = async () => {
-    setDeleting(true);
     try {
       await modalitiesApi.delete(modalityId);
       navigate('/geral/modalidades');
     } catch (error) {
       console.error('Error deleting modality:', error);
-    } finally {
-      setDeleting(false);
-      setIsDeleteModalOpen(false);
     }
   };
 
@@ -65,20 +58,27 @@ const ModalityDetailComponent = ( {modalityId} : { modalityId: string }) => {
       </div>
 
       <div className="flex gap-4 mt-8">
-        <button
+        <Button
           onClick={() => editModalController[1](true)}
-          className={`flex-1 px-6 py-3 ${btn.primary} rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-teal-400 disabled:opacity-50 disabled:cursor-not-allowed`}
-          disabled={!isAdminGeneral}
+          type="primary"
+          active={isAdminGeneral}
+          flexible={true}
         >
           Editar
-        </button>
-        <button
-          onClick={() => setIsDeleteModalOpen(true)}
-          className={`flex-1 px-6 py-3 ${btn.danger} rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-red-400 disabled:opacity-50 disabled:cursor-not-allowed`}
-          disabled={!isAdminGeneral}
+        </Button>
+        <Button
+          onClick={handleDelete}
+          type="danger"
+          active={isAdminGeneral}
+          confirmation={{
+            title: 'Eliminar modalidade',
+            message: 'Tem certeza que deseja eliminar esta modalidade?',
+            confirmLabel: 'Eliminar',
+          }}
+          flexible={true}
         >
           Eliminar
-        </button>
+        </Button>
       </div>
 
       <ModalityEditModel
@@ -87,21 +87,6 @@ const ModalityDetailComponent = ( {modalityId} : { modalityId: string }) => {
           setModality(updatedModality);
         }}
         modalityData={modality}
-      />
-
-      <ConfirmModal
-        isOpen={isDeleteModalOpen}
-        title="Eliminar modalidade"
-        message="Tem certeza que deseja eliminar esta modalidade?"
-        confirmLabel="Eliminar"
-        variant="danger"
-        loading={deleting}
-        onCancel={() => {
-          if (!deleting) {
-            setIsDeleteModalOpen(false);
-          }
-        }}
-        onConfirm={handleDelete}
       />
     </div>
   );

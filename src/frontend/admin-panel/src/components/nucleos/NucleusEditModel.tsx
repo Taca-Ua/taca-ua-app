@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { type NucleoDetail, nucleosApi } from "../../api/nucleos";
 import HelpTooltip from "../HelpTooltip";
-import { btn } from "../../styles/buttonStyles";
+import Button from "../utils/Button";
 
 const NucleusEditModel = ( {
   controller,
@@ -119,19 +119,20 @@ const NucleusEditModel = ( {
         </div>
 
         <div className="flex gap-4 mt-6">
-          <button
+          <Button
             onClick={onClose}
-            className={`flex-1 px-4 py-2 ${btn.secondary} rounded-md`}
+            type="secondary"
+            flexible={true}
           >
             Cancelar
-          </button>
-
-          <button
+          </Button>
+          <Button
             onClick={handleSave}
-            className={`flex-1 px-4 py-2 ${btn.primary} rounded-md`}
+            type="primary"
+            flexible={true}
           >
             Guardar
-          </button>
+          </Button>
         </div>
       </div>
     </div>

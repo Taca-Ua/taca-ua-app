@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { tournamentsApi, type TournamentListItem } from '../../api/tournaments';
-import { btn } from '../../styles/buttonStyles';
 import TournamentCreateModal from '../../components/tournaments/TournamentCreateModal';
 import TournamentList from '../../components/tournaments/TournamentList';
 import { useAuth } from '../../hooks/useAuth';
+import Button from '../../components/utils/Button';
 
 const Torneios = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -15,14 +15,14 @@ const Torneios = () => {
       <div className="flex-1 p-8 max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Torneios</h1>
-
-          <button
+          <Button
             onClick={() => setIsModalOpen(true)}
-            className={`px-6 py-3 ${btn.primary} rounded-md font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed`}
+            type='primary'
+            padding='px-6 py-3'
             disabled={!isAdminGeneral}
           >
             + Criar Torneio
-          </button>
+          </Button>
         </div>
 
         <div className="bg-white shadow-md rounded-lg p-6 mt-6">

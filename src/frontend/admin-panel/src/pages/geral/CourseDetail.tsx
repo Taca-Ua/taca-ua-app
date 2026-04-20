@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { btn } from '../../styles/buttonStyles';
 import CourseDetailComponent from '../../components/courses/CourseDetailComponent';
+import Button from '../../components/utils/Button';
 
 const CursoDetail = () => {
   const navigate = useNavigate();
@@ -16,12 +16,15 @@ const CursoDetail = () => {
       <div className="max-w-4xl mx-auto">
         <div className="mb-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-800">Detalhes do Curso</h1>
-          <button
-            onClick={() => navigate('/geral/cursos')}
-            className={`px-6 py-3 ${btn.secondary} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400`}
-          >
-            Voltar
-          </button>
+          <div>
+            <Button
+              onClick={() => navigate(`/geral/cursos/`)}
+              type='secondary'
+              padding='px-6 py-3'
+            >
+              Voltar
+            </Button>
+          </div>
         </div>
 
         <CourseDetailComponent courseId={courseId} />

@@ -3,11 +3,11 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { tournamentsApi, type TournamentDetail } from '../../api/tournaments';
 import { type MatchListItem } from '../../api/matches';
-import { btn } from '../../styles/buttonStyles';
 import TournamentInfoComponent from '../../components/tournaments/TournamentInfoComponent';
 import TournamentCompetitorsComponent from '../../components/tournaments/TournamentCompetitorsComponent';
 import MatchesListComponent from '../../components/matches/MatchesListComponent';
 import MatchCreateModal from '../../components/matches/MatchCreateModal';
+import Button from '../../components/utils/Button';
 
 // Main component
 const TorneioDetails = () => {
@@ -66,12 +66,13 @@ const TorneioDetails = () => {
         <div className="max-w-6xl mx-auto">
           <div className="mb-8 flex justify-between items-center">
             <h1 className="text-3xl font-bold text-gray-800">Detalhes do Torneio</h1>
-            <button
+            <Button
               onClick={handleBack}
-              className={`px-6 py-3 ${btn.secondary} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400`}
+              type='secondary'
+              padding='px-6 py-3'
             >
               Voltar
-            </button>
+            </Button>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -83,21 +84,17 @@ const TorneioDetails = () => {
           </div>
 
           <div className="bg-white rounded-lg shadow-md p-6 mt-6 flex flex-col gap-6">
-            <button
+            <Button
               onClick={() => setShowCreateModal(true)}
-              disabled={tournament.competitors.length < 2}
-              className={`px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
-              title={
-                tournament.competitors.length < 2
-                  ? "É necessário pelo menos 2 competidores"
-                  : ""
-              }
+              active={tournament.competitors.length >= 2}
+              flexible={true}
             >
               + Criar Jogo
-            </button>
+            </Button>
             <MatchesListComponent tournamentId={tournament.id} matchesState={[matches, setMatches]} />
           </div>
         </div>
+
       <MatchCreateModal
         controller={[showCreateModal, setShowCreateModal]}
         tournament={tournament}
