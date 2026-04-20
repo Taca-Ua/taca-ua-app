@@ -69,8 +69,7 @@ function Administradores() {
                 type='primary'
                 active={isAdminGeneral} // Only general admins can add new admins
               >
-                <span className="text-xl">+ </span>
-                Adicionar Administrador
+                + Adicionar Administrador
               </Button>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { apiClient } from './client2';
 
 // Types
 export interface EscalaoRow {
@@ -19,11 +19,11 @@ export interface ModalityTypeListItem {
   description?: string;
   is_playoff: boolean;
   tournament_competitor_type: 'individual' | 'team';
-  created_at: string;
-  escaloes: EscalaoRow[];
+  num_escaloes: number;
 }
 
 export interface ModalityTypeDetail extends ModalityTypeListItem {
+  escaloes: EscalaoRow[];
 }
 
 export interface ModalityTypeCreate {

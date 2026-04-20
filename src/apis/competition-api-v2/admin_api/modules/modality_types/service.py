@@ -21,6 +21,7 @@ class ModalityType:
     name: str
     description: str
     is_playoff: bool
+    num_escaloes: int
     escaloes: List[_Escalao]
     tournament_competitor_type: str
 
@@ -35,6 +36,7 @@ class ModalityTypesService:
             name=modality.name,
             description=modality.description,
             is_playoff=modality.is_playoff,
+            num_escaloes=len(modality.escaloes),
             escaloes=[
                 _Escalao(
                     escalao=escalao.escalao,

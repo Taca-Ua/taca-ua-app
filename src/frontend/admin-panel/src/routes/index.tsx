@@ -17,7 +17,7 @@ import NucleoDetails from '../pages/geral/NucleoDetails';
 import Cursos from '../pages/geral/Courses';
 import CursoDetail from '../pages/geral/CourseDetail';
 import Regulamentos from '../pages/geral/Regulamentos';
-import FormatosPontuacao from '../pages/geral/FormatosPontuacao';
+import ModalityTypes from '../pages/geral/ModalityTypes.js';
 import Torneios from '../pages/geral/Tournaments';
 import TorneioDetails from '../pages/geral/TorneioDetails';
 import JogoDetails from '../pages/geral/JogoDetails';
@@ -88,7 +88,7 @@ export const router = createBrowserRouter([
       { path: '/geral/cursos',              element: <ProtectedRoute> <Cursos /></ProtectedRoute> },
       { path: '/geral/cursos/:id',          element: <ProtectedRoute> <CursoDetail /></ProtectedRoute> },
       { path: '/geral/regulamentos',        element: <ProtectedRoute> <Regulamentos /></ProtectedRoute> },
-      { path: '/geral/formatos-prova',      element: <ProtectedRoute> <FormatosPontuacao /></ProtectedRoute> },
+      { path: '/geral/formatos-prova',      element: <ProtectedRoute> <ModalityTypes /></ProtectedRoute> },
       { path: '/geral/torneios',            element: <ProtectedRoute> <Torneios /></ProtectedRoute> },
       { path: '/geral/torneios/:id',        element: <ProtectedRoute> <TorneioDetails /></ProtectedRoute> },
       { path: '/geral/jogos/:id',           element: <ProtectedRoute> <JogoDetails /></ProtectedRoute> },

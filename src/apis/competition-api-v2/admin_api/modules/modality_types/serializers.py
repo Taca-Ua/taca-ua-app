@@ -31,11 +31,13 @@ class ModalityTypeListSerializer(serializers.Serializer):
     tournament_competitor_type = serializers.ChoiceField(
         choices=["individual", "team"], required=True, allow_null=True
     )
-    escaloes = _EscalaoSerializer(many=True)
+    num_escaloes = serializers.IntegerField()
 
 
 class ModalityTypeDetailSerializer(ModalityTypeListSerializer):
     """Serializer for modality type details"""
+
+    escaloes = _EscalaoSerializer(many=True)
 
 
 class ModalityTypeCreateSerializer(serializers.Serializer):
