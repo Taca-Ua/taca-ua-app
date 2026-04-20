@@ -1,6 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import Sidebar from '../../components/geral_navbar';
 import { tournamentsApi, type TournamentListItem } from '../../api/tournaments';
 import { btn } from '../../styles/buttonStyles';
 import TournamentList from '../../components/tournaments/TournamentList';
@@ -58,9 +57,6 @@ function ModalidadeDetail() {
   const [activeTab, setActiveTab] = useState<'tournaments'>('tournaments');
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-
       <div className="flex-1 p-8 max-w-5xl mx-auto">
         <div className="mb-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-800">Detalhes da Modalidade</h1>
@@ -102,7 +98,6 @@ function ModalidadeDetail() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 

@@ -1,5 +1,4 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import NucleoSidebar from '../../components/nucleo_navbar';
 import { btn } from '../../styles/buttonStyles';
 import TeamDetailComponent from '../../components/teams/TeamDetailComponent';
 
@@ -8,9 +7,6 @@ const TeamDetailPage = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <NucleoSidebar />
-
       <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8 flex justify-between items-center">
@@ -28,7 +24,6 @@ const TeamDetailPage = () => {
           />
         </div>
       </div>
-    </div>
   );
 };
 

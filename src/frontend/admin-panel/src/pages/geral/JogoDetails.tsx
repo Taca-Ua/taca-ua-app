@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
-import HelpTooltip from '../../components/HelpTooltip';
 import { useParams, useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../components/ConfirmModal';
-import Sidebar from '../../components/geral_navbar';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { btn } from '../../styles/buttonStyles';
 import {
@@ -437,40 +435,31 @@ const JogoDetails = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <Sidebar />
-        <div className="flex-1 flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
-        </div>
+      <div className="flex-1 flex justify-center items-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
       </div>
     );
   }
 
   if (!match) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <Sidebar />
         <div className="flex-1 p-8 max-w-4xl mx-auto">
           <div className="bg-white rounded-lg shadow-md p-8 text-center">
             <div className="text-6xl mb-4">⚽</div>
             <h2 className="text-2xl font-bold text-gray-800 mb-2">Jogo não encontrado</h2>
             <p className="text-gray-600 mb-6">O jogo que procura não existe ou foi removido.</p>
             <button
-              onClick={() => navigate('/geral/dashboard')}
+              onClick={() => navigate('/dashboard')}
               className={`px-6 py-3 ${btn.primary} rounded-md font-medium transition-colors`}
             >
               Voltar ao Dashboard
             </button>
           </div>
         </div>
-      </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-
       <div className="flex-1 p-8 max-w-6xl mx-auto">
         <div className="mb-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-800">Detalhes do Jogo</h1>
@@ -525,18 +514,17 @@ const JogoDetails = () => {
             <CommentsSection match={match} />
           </div>
         </div>
-      </div>
 
-      <ConfirmModal
-        isOpen={showDeleteModal}
-        title="Eliminar jogo"
-        message="Tem a certeza que deseja eliminar este jogo? Esta ação não pode ser revertida e todos os dados associados serão permanentemente removidos."
-        confirmLabel="Sim, Eliminar"
-        variant="danger"
-        onCancel={() => setShowDeleteModal(false)}
-        onConfirm={handleDelete}
-      />
-    </div>
+        <ConfirmModal
+          isOpen={showDeleteModal}
+          title="Eliminar jogo"
+          message="Tem a certeza que deseja eliminar este jogo? Esta ação não pode ser revertida e todos os dados associados serão permanentemente removidos."
+          confirmLabel="Sim, Eliminar"
+          variant="danger"
+          onCancel={() => setShowDeleteModal(false)}
+          onConfirm={handleDelete}
+        />
+      </div>
   );
 };
 

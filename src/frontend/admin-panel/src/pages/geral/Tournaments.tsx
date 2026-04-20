@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import Sidebar from '../../components/geral_navbar';
 import { tournamentsApi, type TournamentListItem } from '../../api/tournaments';
 import { btn } from '../../styles/buttonStyles';
 import TournamentCreateModal from '../../components/tournaments/TournamentCreateModal';
@@ -11,9 +10,6 @@ const Torneios = () => {
 
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-
       <div className="flex-1 p-8 max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Torneios</h1>
@@ -39,7 +35,6 @@ const Torneios = () => {
           onCreate={(newTournament) => setTournaments([...tournaments, newTournament])}
         />
       </div>
-    </div>
   );
 };
 

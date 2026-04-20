@@ -1,14 +1,15 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import DashboardLayout from '../layouts/DashboardLayout';
 
 // Common pages
 import NotFound from '../pages/NotFound';
 import Unauthorized from '../pages/Unauthorized';
+import Dashboard from '../pages/Dashboard';
 
 // Geral admin pages
-import DashboardGeral from '../pages/geral/DashboardGeral';
 import Administradores from '../pages/geral/Administradores';
-import AdminDetail from '../pages/geral/AdministradorDetail';
+import AdminDetailPage from '../pages/geral/AdministradorDetail.js';
 import Modalities from '../pages/geral/Modalities';
 import ModalityDetails from '../pages/geral/ModalityDetail';
 import NucleoListPage from '../pages/geral/Nucleos';
@@ -23,7 +24,6 @@ import JogoDetails from '../pages/geral/JogoDetails';
 import SociosGeral from '../pages/geral/Socios';
 
 // Nucleo admin pages
-import DashboardNucleo from '../pages/nucleo/DashboardNucleo';
 import Membros from '../pages/nucleo/Membros';
 import MemberDetail from '../pages/nucleo/MemberDetail';
 import Equipas from '../pages/nucleo/Teams';
@@ -51,15 +51,13 @@ const RootRedirect = () => {
     );
   }
 
-  if (adminRole === 'general_admin') return <Navigate to="/geral/dashboard" replace />;
-  if (adminRole === 'nucleo_admin') return <Navigate to="/nucleo/dashboard" replace />;
+  if (adminRole === 'general_admin') return <Navigate to="/dashboard" replace />;
+  if (adminRole === 'nucleo_admin') return <Navigate to="/dashboard" replace />;
   return <Navigate to="/unauthorized" replace />;
 };
 
 export const router = createBrowserRouter([
-  // ============================================
-  // Root redirect (Keycloak handles login itself)
-  // ============================================
+  // Public/unauthenticated routes
   {
     path: '/',
     element: <RootRedirect />,
@@ -73,113 +71,44 @@ export const router = createBrowserRouter([
     element: <TestPage />,
   },
 
-  // ============================================
-  // Geral Admin Routes
-  // ============================================
+  // Authenticated area with sidebar
   {
-    path: '/geral/dashboard',
-    element: <ProtectedRoute requiredRole="geral"><DashboardGeral /></ProtectedRoute>,
-  },
-  {
-    path: '/geral/administradores',
-    element: <ProtectedRoute requiredRole="geral"><Administradores /></ProtectedRoute>,
-  },
-  {
-    path: '/geral/administradores/:id',
-    element: <ProtectedRoute requiredRole="geral"><AdminDetail /></ProtectedRoute>,
-  },
-  {
-    path: '/geral/modalidades',
-    element: <ProtectedRoute requiredRole="geral"><Modalities /></ProtectedRoute>,
-  },
-  {
-    path: '/geral/modalidades/:id',
-    element: <ProtectedRoute requiredRole="geral"><ModalityDetails /></ProtectedRoute>,
-  },
-  {
-    path: '/geral/nucleos',
-    element: <ProtectedRoute requiredRole="geral"><NucleoListPage /></ProtectedRoute>,
-  },
-  {
-    path: '/geral/nucleos/:id',
-    element: <ProtectedRoute requiredRole="geral"><NucleoDetails /></ProtectedRoute>,
-  },
-  {
-    path: '/geral/cursos',
-    element: <ProtectedRoute requiredRole="geral"><Cursos /></ProtectedRoute>,
-  },
-  {
-    path: '/geral/cursos/:id',
-    element: <ProtectedRoute requiredRole="geral"><CursoDetail /></ProtectedRoute>,
-  },
-  {
-    path: '/geral/regulamentos',
-    element: <ProtectedRoute requiredRole="geral"><Regulamentos /></ProtectedRoute>,
-  },
-  {
-    path: '/geral/formatos-prova',
-    element: <ProtectedRoute requiredRole="geral"><FormatosPontuacao /></ProtectedRoute>,
-  },
-  {
-    path: '/geral/torneios',
-    element: <ProtectedRoute requiredRole="geral"><Torneios /></ProtectedRoute>,
-  },
-  {
-    path: '/geral/torneios/:id',
-    element: <ProtectedRoute requiredRole="geral"><TorneioDetails /></ProtectedRoute>,
-  },
-  {
-    path: '/geral/jogos/:id',
-    element: <ProtectedRoute requiredRole="geral"><JogoDetails /></ProtectedRoute>,
-  },
-  {
-    path: '/geral/socios',
-    element: <ProtectedRoute requiredRole="geral"><SociosGeral /></ProtectedRoute>,
-  },
+    element: <DashboardLayout />, // This layout checks authentication and renders the sidebar
+    children: [
+      // Global Routes
+      { path: '/dashboard',           element: <ProtectedRoute> <Dashboard /></ProtectedRoute> },
 
-  // ============================================
-  // Nucleo Admin Routes
-  // ============================================
-  {
-    path: '/nucleo/dashboard',
-    element: <ProtectedRoute requiredRole="nucleo"><DashboardNucleo /></ProtectedRoute>,
-  },
-  {
-    path: '/nucleo/socios',
-    element: <ProtectedRoute requiredRole="geral"><SociosNucleo /></ProtectedRoute>,
-  },
-  {
-    path: '/nucleo/membros',
-    element: <ProtectedRoute requiredRole="nucleo"><Membros /></ProtectedRoute>,
-  },
-  {
-    path: '/nucleo/membros/:type/:id',
-    element: <ProtectedRoute requiredRole="nucleo"><MemberDetail /></ProtectedRoute>,
-  },
-  {
-    path: '/nucleo/equipas',
-    element: <ProtectedRoute requiredRole="nucleo"><Equipas /></ProtectedRoute>,
-  },
-  {
-    path: '/nucleo/equipas/:id',
-    element: <ProtectedRoute requiredRole="nucleo"><TeamDetailPage /></ProtectedRoute>,
-  },
-  {
-    path: '/nucleo/jogos',
-    element: <ProtectedRoute requiredRole="nucleo"><Jogos /></ProtectedRoute>,
-  },
-  {
-    path: '/nucleo/jogos/:id',
-    element: <ProtectedRoute requiredRole="nucleo"><MatchDetailPage /></ProtectedRoute>,
-  },
+      // Geral Admin Routes
+      { path: '/geral/administradores',     element: <ProtectedRoute> <Administradores /></ProtectedRoute> },
+      { path: '/geral/administradores/:id', element: <ProtectedRoute> <AdminDetailPage /></ProtectedRoute> },
+      { path: '/geral/modalidades',         element: <ProtectedRoute> <Modalities /></ProtectedRoute> },
+      { path: '/geral/modalidades/:id',     element: <ProtectedRoute> <ModalityDetails /></ProtectedRoute> },
+      { path: '/geral/nucleos',             element: <ProtectedRoute> <NucleoListPage /></ProtectedRoute> },
+      { path: '/geral/nucleos/:id',         element: <ProtectedRoute> <NucleoDetails /></ProtectedRoute> },
+      { path: '/geral/cursos',              element: <ProtectedRoute> <Cursos /></ProtectedRoute> },
+      { path: '/geral/cursos/:id',          element: <ProtectedRoute> <CursoDetail /></ProtectedRoute> },
+      { path: '/geral/regulamentos',        element: <ProtectedRoute> <Regulamentos /></ProtectedRoute> },
+      { path: '/geral/formatos-prova',      element: <ProtectedRoute> <FormatosPontuacao /></ProtectedRoute> },
+      { path: '/geral/torneios',            element: <ProtectedRoute> <Torneios /></ProtectedRoute> },
+      { path: '/geral/torneios/:id',        element: <ProtectedRoute> <TorneioDetails /></ProtectedRoute> },
+      { path: '/geral/jogos/:id',           element: <ProtectedRoute> <JogoDetails /></ProtectedRoute> },
+      { path: '/geral/socios',              element: <ProtectedRoute> <SociosGeral /></ProtectedRoute> },
 
-  // ============================================
-  // Fallback Route
-  // ============================================
+      // Nucleo Admin Routes
+      { path: '/nucleo/socios',             element: <ProtectedRoute> <SociosNucleo /></ProtectedRoute> },
+      { path: '/nucleo/membros',            element: <ProtectedRoute> <Membros /></ProtectedRoute> },
+      { path: '/nucleo/membros/:type/:id',  element: <ProtectedRoute> <MemberDetail /></ProtectedRoute> },
+      { path: '/nucleo/equipas',            element: <ProtectedRoute> <Equipas /></ProtectedRoute> },
+      { path: '/nucleo/equipas/:id',        element: <ProtectedRoute> <TeamDetailPage /></ProtectedRoute> },
+      { path: '/nucleo/jogos',              element: <ProtectedRoute> <Jogos /></ProtectedRoute> },
+      { path: '/nucleo/jogos/:id',          element: <ProtectedRoute> <MatchDetailPage /></ProtectedRoute> },
+    ],
+  },
+  // Fallback Route (404)
   {
     path: '*',
     element: <NotFound />,
   },
 ], {
-  basename: '/admin'
+  basename: '/admin',
 });

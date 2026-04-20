@@ -514,9 +514,6 @@ const handleDownloadMatchSheet = async () => {
   const teamParticipants = match.participants.filter(p => p.team);
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <NucleoSidebar />
-
       <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <button
@@ -582,8 +579,6 @@ const handleDownloadMatchSheet = async () => {
             </div>
           </div>
         </div>
-      </div>
-
       <LineupEditorModal
         show={showLineupModal}
         team={editingParticipant?.team || null}
@@ -594,7 +589,7 @@ const handleDownloadMatchSheet = async () => {
           setEditingParticipant(null);
         }}
       />
-    </div>
+      </div>
   );
 };
 

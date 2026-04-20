@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import ConfirmModal from "../../components/ConfirmModal";
 import HelpTooltip from "../../components/HelpTooltip";
-import Sidebar from "../../components/geral_navbar";
 import { regulationsApi, type Regulation } from '../../api/regulations';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { btn } from '../../styles/buttonStyles';
@@ -210,8 +209,7 @@ const Regulamentos: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <Sidebar />
+    <>
 
       <main className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
@@ -483,8 +481,7 @@ const Regulamentos: React.FC = () => {
         }}
         onConfirm={confirmDelete}
       />
-
-    </div>
+    </>
   );
 };
 

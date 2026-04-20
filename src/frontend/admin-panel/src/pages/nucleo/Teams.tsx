@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import NucleoSidebar from '../../components/nucleo_navbar';
 import { type TeamListItem } from '../../api/teams';
 import { btn } from '../../styles/buttonStyles';
 import TeamsListComponent from '../../components/teams/TeamsListComponent';
@@ -11,9 +10,6 @@ const Equipas = () => {
   const [teams, setTeams] = useState<TeamListItem[]>([]);
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <NucleoSidebar />
-
       <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8 flex justify-between items-center">
@@ -31,13 +27,11 @@ const Equipas = () => {
             teamsState={[teams, setTeams]}
           />
         </div>
+        <TeamsCreateModel
+          controller={createTeamController}
+          onCreate={(newTeam) => setTeams([...teams, newTeam])}
+        />
       </div>
-
-      <TeamsCreateModel
-        controller={createTeamController}
-        onCreate={(newTeam) => setTeams([...teams, newTeam])}
-      />
-    </div>
   );
 };
 

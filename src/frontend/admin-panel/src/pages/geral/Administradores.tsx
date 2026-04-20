@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from '../../components/geral_navbar';
 import { administratorsApi, type AdminListItem } from '../../api/admins';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { btn } from '../../styles/buttonStyles';
@@ -51,18 +50,13 @@ function Administradores() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <Sidebar />
-        <div className="flex-1 flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
-        </div>
+      <div className="flex-1 flex justify-center items-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
       <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mb-6">
@@ -125,13 +119,12 @@ function Administradores() {
           </div>
 
         </div>
+        <AdminCreateModel
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onCreated={admin => setMembers(prev => [...prev, admin])}
+        />
       </div>
-      <AdminCreateModel
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onCreated={admin => setMembers(prev => [...prev, admin])}
-      />
-    </div>
   );
 }
 

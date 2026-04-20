@@ -15,6 +15,10 @@ export default function Sidebar() {
     { to: "/geral/torneios", label: "Torneios", short: "Tor" },
     { to: "/geral/regulamentos", label: "Regulamentos", short: "Reg" },
     { to: "/geral/socios", label: "Sócios", short: "Sóc" },
+
+    { to: "/nucleo/membros", label: "Membros", short: "Mem" },
+    { to: "/nucleo/equipas", label: "Equipas", short: "Equ" },
+    { to: "/nucleo/jogos", label: "Jogos", short: "Jog" },
   ];
 
   return (
@@ -26,7 +30,7 @@ export default function Sidebar() {
           {isOpen ? (
             <>
               <Link
-                to="/geral/dashboard"
+                to="/dashboard"
                 className="flex items-center gap-2 min-w-0 text-lg font-bold text-teal-600 hover:text-teal-700"
               >
                 <img
@@ -59,8 +63,26 @@ export default function Sidebar() {
           )}
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-2">
-          {navItems.map((item) => (
+        <nav className="flex-1 py-2">
+          {navItems.filter((item) => item.to.startsWith("/geral")).map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              onClick={() => setIsOpen(false)}
+              className="flex items-center h-11 px-3 text-gray-700 hover:text-teal-600 hover:bg-teal-50 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-teal-400"
+              title={!isOpen ? item.label : undefined}
+            >
+              {isOpen ? (
+                <span className="font-medium truncate">{item.label}</span>
+              ) : (
+                <span className="text-xs font-bold w-full text-center">{item.short}</span>
+              )}
+            </Link>
+          ))}
+        </nav>
+
+        <nav className="flex-1 py-2 border-t border-gray-200">
+          {navItems.filter((item) => item.to.startsWith("/nucleo")).map((item) => (
             <Link
               key={item.to}
               to={item.to}

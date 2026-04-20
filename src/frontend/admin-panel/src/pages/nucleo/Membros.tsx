@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import HelpTooltip from '../../components/HelpTooltip';
 import { useNavigate } from 'react-router-dom';
-import NucleoSidebar from '../../components/nucleo_navbar';
 import {
   studentsApi,
   staffApi,
@@ -214,8 +213,6 @@ function Membros() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <NucleoSidebar />
       <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
@@ -297,8 +294,6 @@ function Membros() {
             </div>
           )}
         </div>
-      </div>
-
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
@@ -447,7 +442,7 @@ function Membros() {
           </div>
         </div>
       )}
-    </div>
+      </div>
   );
 }
 

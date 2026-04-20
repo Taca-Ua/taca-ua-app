@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import HelpTooltip from '../../components/HelpTooltip';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from "../../components/geral_navbar";
 import { modalitiesApi } from '../../api/modalities';
 import { teamsApi } from '../../api/teams';
 import { tournamentsApi } from '../../api/tournaments';
@@ -122,8 +121,6 @@ function DashboardGeral() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
       <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-4xl font-bold mb-4 text-gray-800">Dashboard - Administrador Geral</h1>
@@ -228,119 +225,117 @@ function DashboardGeral() {
             </>
           )}
         </div>
+        {showStartModal && draftSeason && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <div className="bg-white p-8 rounded-lg max-w-md w-full">
+              <h2 className="text-2xl font-bold mb-4 text-gray-800">Confirmar Início de Época</h2>
+              <div className="mb-6 space-y-3">
+                <p className="text-gray-700">
+                  Tem certeza que deseja <span className="font-bold">iniciar a época {draftSeason.year}</span>?
+                </p>
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                  <p className="text-sm text-yellow-800 font-semibold mb-2">ATENÇÃO:</p>
+                  <ul className="text-sm text-yellow-700 space-y-1 list-disc list-inside">
+                    <li>Esta ação irá marcar a época como <strong>ATIVA</strong></li>
+                    <li>Apenas uma época pode estar ativa de cada vez</li>
+                    <li>Se houver uma época ativa, ela será automaticamente finalizada</li>
+                    <li>Certifique-se de que todas as configurações estão corretas</li>
+                  </ul>
+                </div>
+                <p className="text-sm text-gray-600 italic mt-4 flex items-center gap-1">
+                  Digite "INICIAR" para confirmar:
+                  <HelpTooltip text="Esta confirmação previne ativações acidentais. Se existir uma época ativa, ela será automaticamente finalizada antes de ativar a nova." position="right" />
+                </p>
+                <input
+                  type="text"
+                  className="border border-gray-300 rounded-md px-4 py-2 w-full"
+                  placeholder="Digite INICIAR"
+                  id="confirm-start-input"
+                />
+              </div>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setShowStartModal(false)}
+                  disabled={seasonLoading}
+                  className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded-md font-medium disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    const input = document.getElementById('confirm-start-input') as HTMLInputElement;
+                    if (input?.value === 'INICIAR') {
+                      handleStartSeason();
+                    } else {
+                      notify('Por favor, digite "INICIAR" para confirmar', 'error');
+                    }
+                  }}
+                  disabled={seasonLoading}
+                  className={`flex-1 px-4 py-2 ${btn.success} rounded-md font-bold disabled:opacity-50`}
+                >
+                  {seasonLoading ? 'A iniciar...' : 'Iniciar Época'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showFinishModal && currentSeason && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <div className="bg-white p-8 rounded-lg max-w-md w-full">
+              <h2 className="text-2xl font-bold mb-4 text-gray-800">Confirmar Finalização de Época</h2>
+              <div className="mb-6 space-y-3">
+                <p className="text-gray-700">
+                  Tem certeza que deseja <span className="font-bold text-red-600">finalizar a época {currentSeason.year}</span>?
+                </p>
+                <div className="bg-red-50 border-l-4 border-red-500 p-4">
+                  <p className="text-sm text-red-800 font-semibold mb-2">ATENÇÃO - AÇÃO IRREVERSÍVEL:</p>
+                  <ul className="text-sm text-red-700 space-y-1 list-disc list-inside">
+                    <li><strong>Esta ação NÃO pode ser revertida!</strong></li>
+                    <li>A época será marcada como <strong>FINALIZADA</strong></li>
+                    <li>Não será possível modificar jogos ou torneios desta época</li>
+                    <li>Os resultados serão permanentemente arquivados</li>
+                    <li>Verifique que todos os jogos foram concluídos</li>
+                  </ul>
+                </div>
+                <p className="text-sm text-gray-600 italic mt-4 flex items-center gap-1">
+                  Digite "FINALIZAR" para confirmar:
+                  <HelpTooltip text="Esta confirmação é obrigatória pois a ação é irreversível. Todos os resultados e dados da época serão arquivados permanentemente e não poderão ser modificados." position="right" />
+                </p>
+                <input
+                  type="text"
+                  className="border border-gray-300 rounded-md px-4 py-2 w-full"
+                  placeholder="Digite FINALIZAR"
+                  id="confirm-finish-input"
+                />
+              </div>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setShowFinishModal(false)}
+                  disabled={seasonLoading}
+                  className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded-md font-medium disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    const input = document.getElementById('confirm-finish-input') as HTMLInputElement;
+                    if (input?.value === 'FINALIZAR') {
+                      handleFinishSeason();
+                    } else {
+                      notify('Por favor, digite "FINALIZAR" para confirmar', 'error');
+                    }
+                  }}
+                  disabled={seasonLoading}
+                  className={`flex-1 px-4 py-2 ${btn.danger} rounded-md font-bold disabled:opacity-50`}
+                >
+                  {seasonLoading ? 'A finalizar...' : 'Finalizar Época'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-
-      {showStartModal && draftSeason && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-8 rounded-lg max-w-md w-full">
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">Confirmar Início de Época</h2>
-            <div className="mb-6 space-y-3">
-              <p className="text-gray-700">
-                Tem certeza que deseja <span className="font-bold">iniciar a época {draftSeason.year}</span>?
-              </p>
-              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-                <p className="text-sm text-yellow-800 font-semibold mb-2">ATENÇÃO:</p>
-                <ul className="text-sm text-yellow-700 space-y-1 list-disc list-inside">
-                  <li>Esta ação irá marcar a época como <strong>ATIVA</strong></li>
-                  <li>Apenas uma época pode estar ativa de cada vez</li>
-                  <li>Se houver uma época ativa, ela será automaticamente finalizada</li>
-                  <li>Certifique-se de que todas as configurações estão corretas</li>
-                </ul>
-              </div>
-              <p className="text-sm text-gray-600 italic mt-4 flex items-center gap-1">
-                Digite "INICIAR" para confirmar:
-                <HelpTooltip text="Esta confirmação previne ativações acidentais. Se existir uma época ativa, ela será automaticamente finalizada antes de ativar a nova." position="right" />
-              </p>
-              <input
-                type="text"
-                className="border border-gray-300 rounded-md px-4 py-2 w-full"
-                placeholder="Digite INICIAR"
-                id="confirm-start-input"
-              />
-            </div>
-            <div className="flex gap-4">
-              <button
-                onClick={() => setShowStartModal(false)}
-                disabled={seasonLoading}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded-md font-medium disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => {
-                  const input = document.getElementById('confirm-start-input') as HTMLInputElement;
-                  if (input?.value === 'INICIAR') {
-                    handleStartSeason();
-                  } else {
-                    notify('Por favor, digite "INICIAR" para confirmar', 'error');
-                  }
-                }}
-                disabled={seasonLoading}
-                className={`flex-1 px-4 py-2 ${btn.success} rounded-md font-bold disabled:opacity-50`}
-              >
-                {seasonLoading ? 'A iniciar...' : 'Iniciar Época'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showFinishModal && currentSeason && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-8 rounded-lg max-w-md w-full">
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">Confirmar Finalização de Época</h2>
-            <div className="mb-6 space-y-3">
-              <p className="text-gray-700">
-                Tem certeza que deseja <span className="font-bold text-red-600">finalizar a época {currentSeason.year}</span>?
-              </p>
-              <div className="bg-red-50 border-l-4 border-red-500 p-4">
-                <p className="text-sm text-red-800 font-semibold mb-2">ATENÇÃO - AÇÃO IRREVERSÍVEL:</p>
-                <ul className="text-sm text-red-700 space-y-1 list-disc list-inside">
-                  <li><strong>Esta ação NÃO pode ser revertida!</strong></li>
-                  <li>A época será marcada como <strong>FINALIZADA</strong></li>
-                  <li>Não será possível modificar jogos ou torneios desta época</li>
-                  <li>Os resultados serão permanentemente arquivados</li>
-                  <li>Verifique que todos os jogos foram concluídos</li>
-                </ul>
-              </div>
-              <p className="text-sm text-gray-600 italic mt-4 flex items-center gap-1">
-                Digite "FINALIZAR" para confirmar:
-                <HelpTooltip text="Esta confirmação é obrigatória pois a ação é irreversível. Todos os resultados e dados da época serão arquivados permanentemente e não poderão ser modificados." position="right" />
-              </p>
-              <input
-                type="text"
-                className="border border-gray-300 rounded-md px-4 py-2 w-full"
-                placeholder="Digite FINALIZAR"
-                id="confirm-finish-input"
-              />
-            </div>
-            <div className="flex gap-4">
-              <button
-                onClick={() => setShowFinishModal(false)}
-                disabled={seasonLoading}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded-md font-medium disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => {
-                  const input = document.getElementById('confirm-finish-input') as HTMLInputElement;
-                  if (input?.value === 'FINALIZAR') {
-                    handleFinishSeason();
-                  } else {
-                    notify('Por favor, digite "FINALIZAR" para confirmar', 'error');
-                  }
-                }}
-                disabled={seasonLoading}
-                className={`flex-1 px-4 py-2 ${btn.danger} rounded-md font-bold disabled:opacity-50`}
-              >
-                {seasonLoading ? 'A finalizar...' : 'Finalizar Época'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
   );
 }
 

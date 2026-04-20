@@ -1,5 +1,4 @@
 import { useState } from "react";
-import Sidebar from "../../components/geral_navbar";
 import { type ModalityListItem } from "../../api/modalities";
 import { btn } from '../../styles/buttonStyles';
 import ModalitiesListComponent from "../../components/modalities/ModalitiesListComponent";
@@ -14,9 +13,6 @@ const Modalities = () => {
   const [modalityTypes, setModalityTypes] = modalitiesState;  // Desestruturação para obter o estado e a função de atualização
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-
       <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6 flex justify-between items-center">
@@ -36,18 +32,17 @@ const Modalities = () => {
             />
           </div>
         </div>
-      </div>
 
-      {isModalOpen && (
-        <ModalityCreateModel
-          onCreate={(newModality) => {
-            setModalityTypes((prev) => [...prev, newModality]);
-            setIsModalOpen(false);
-          }}
-          onClose={() => setIsModalOpen(false)}
-        />
-      )}
-    </div>
+        {isModalOpen && (
+          <ModalityCreateModel
+            onCreate={(newModality) => {
+              setModalityTypes((prev) => [...prev, newModality]);
+              setIsModalOpen(false);
+            }}
+            onClose={() => setIsModalOpen(false)}
+          />
+        )}
+      </div>
   );
 };
 

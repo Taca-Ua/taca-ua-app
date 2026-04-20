@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import NucleoSidebar from "../../components/nucleo_navbar";
 import { studentsApi } from '../../api/members';
 import { teamsApi } from '../../api/teams';
 import { matchesApi, type Match } from '../../api/matches';
@@ -53,6 +52,7 @@ function DashboardNucleo() {
       }
     };
 
+    console.log('Mounting DashboardNucleo, fetching stats...');
     fetchStats();
   }, []);
 
@@ -97,8 +97,6 @@ function DashboardNucleo() {
   const monthName = currentMonth.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' });
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <NucleoSidebar />
       <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-4xl font-bold mb-4 text-gray-800">Dashboard - Administrador</h1>
@@ -238,8 +236,8 @@ function DashboardNucleo() {
                       const dayMatches = allMatches.filter(m => {
                         const d = new Date(m.start_time);
                         return d.getDate() === selectedDay.getDate() &&
-                               d.getMonth() === selectedDay.getMonth() &&
-                               d.getFullYear() === selectedDay.getFullYear();
+                                d.getMonth() === selectedDay.getMonth() &&
+                                d.getFullYear() === selectedDay.getFullYear();
                       });
                       const GAMES_PER_PAGE = 10;
                       const totalDayPages = Math.ceil(dayMatches.length / GAMES_PER_PAGE);
@@ -271,8 +269,8 @@ function DashboardNucleo() {
                                     'bg-red-100 text-red-700'
                                   }`}>
                                     {m.status === 'scheduled' ? 'Agendado' :
-                                     m.status === 'in_progress' ? 'Em curso' :
-                                     m.status === 'finished' ? 'Terminado' : 'Cancelado'}
+                                      m.status === 'in_progress' ? 'Em curso' :
+                                      m.status === 'finished' ? 'Terminado' : 'Cancelado'}
                                   </span>
                                 </div>
                                 <p className="text-xs text-gray-600 mt-0.5 truncate">
@@ -310,7 +308,6 @@ function DashboardNucleo() {
           )}
         </div>
       </div>
-    </div>
   );
 }
 

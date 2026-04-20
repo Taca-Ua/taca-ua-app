@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import Sidebar from '../../components/geral_navbar';
 import { btn } from '../../styles/buttonStyles';
 import NucleusListComponent from '../../components/nucleos/NucleusListComponent';
 import NucleoCreateModel from '../../components/nucleos/NucleoCreateModel';
@@ -11,9 +10,6 @@ const Nucleo = () => {
   const [nucleus, setNucleus] = useState<NucleoListItem[]>([]);
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-
       <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6 flex justify-between items-center">
@@ -33,13 +29,12 @@ const Nucleo = () => {
             />
           </div>
         </div>
-      </div>
 
-      <NucleoCreateModel
-        controller={createModalController}
-        onCreate={(newNucleus) => setNucleus([...nucleus, newNucleus])}
-      />
-    </div>
+        <NucleoCreateModel
+          controller={createModalController}
+          onCreate={(newNucleus) => setNucleus([...nucleus, newNucleus])}
+        />
+      </div>
   );
 };
 

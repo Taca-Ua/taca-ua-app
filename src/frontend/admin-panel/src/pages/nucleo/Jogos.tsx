@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import NucleoSidebar from '../../components/nucleo_navbar';
 import { matchesApi } from '../../api/matches';
 import type { Match } from '../../api/matches';
 import { tournamentsApi } from '../../api/tournaments';
@@ -113,9 +112,6 @@ const Jogos = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <NucleoSidebar />
-
       <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -436,7 +432,6 @@ const Jogos = () => {
           )}
         </div>
       </div>
-    </div>
   );
 };
 

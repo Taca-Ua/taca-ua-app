@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import HelpTooltip from '../../components/HelpTooltip';
 import ConfirmModal from "../../components/ConfirmModal";
-import Sidebar from "../../components/geral_navbar";
 import { modalityTypesApi, type ModalityTypeListItem } from "../../api/modality-types";
 import { useNotification } from '../../contexts/NotificationProvider';
 import { btn } from '../../styles/buttonStyles';
@@ -250,9 +249,6 @@ useEffect(() => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-
       <div className="flex-1 p-8 max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Formatos de Prova</h1>
@@ -309,482 +305,480 @@ useEffect(() => {
             <p className="text-gray-500 text-center py-8">Nenhum formato de prova encontrado.</p>
           )}
         </div>
-      </div>
+        {isCreateModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white p-8 rounded-lg w-full max-w-4xl my-8">
+              <h2 className="text-2xl font-bold mb-6">Criar Formato de Prova</h2>
 
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white p-8 rounded-lg w-full max-w-4xl my-8">
-            <h2 className="text-2xl font-bold mb-6">Criar Formato de Prova</h2>
-
-            <div className="space-y-6">
-              <div>
-                <label className="block font-medium mb-2">
-                  Nome do Formato <HelpTooltip text="Nome único que identifica este conjunto de regras de pontuação. Ex: 'Modalidades Coletivas Recorrentes'." className="ml-1" /> <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  className="border px-4 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  placeholder="Ex: Modalidades Coletivas Recorrentes"
-                  value={formatName}
-                  onChange={e => setFormatName(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="block font-medium mb-2">Descrição</label>
-                <textarea
-                  className="border px-4 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  placeholder="Descrição opcional"
-                  rows={2}
-                  value={formatDescription}
-                  onChange={e => setFormatDescription(e.target.value)}
-                />
-              </div>
-
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="create-is-playoff"
-                  checked={isPlayoff}
-                  onChange={e => setIsPlayoff(e.target.checked)}
-                  className="w-4 h-4 accent-amber-500 cursor-pointer"
-                />
-                <label htmlFor="create-is-playoff" className="font-medium cursor-pointer select-none">
-                  Formato Playoff
-                </label>
-                <span className="text-sm text-gray-500">(só pode existir um formato de playoff de cada vez)</span>
-              </div>
-
-              {!isPlayoff && (
+              <div className="space-y-6">
                 <div>
                   <label className="block font-medium mb-2">
-                    Tipo de Competidor <span className="text-red-500">*</span>
+                    Nome do Formato <HelpTooltip text="Nome único que identifica este conjunto de regras de pontuação. Ex: 'Modalidades Coletivas Recorrentes'." className="ml-1" /> <span className="text-red-500">*</span>
                   </label>
-                  <DefinedStatesMenuComponent
-                    states={[
-                      {value: 'individual', label: 'Individual'},
-                      {value: 'team', label: 'Equipa'},
-                    ]}
-                    onSelect={(value) => setTournamentCompetitorType(value as 'individual' | 'team')}
+                  <input
+                    type="text"
+                    className="border px-4 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    placeholder="Ex: Modalidades Coletivas Recorrentes"
+                    value={formatName}
+                    onChange={e => setFormatName(e.target.value)}
                   />
                 </div>
-              )}
 
-              <div>
-                <div className="flex justify-between items-center mb-3">
-                  <label className="block font-medium">
-                    Escalões <HelpTooltip text="Categorias de participação dentro do formato (ex: A, B, C). Cada escalão tem os seus próprios limites de participantes e tabela de pontuações." className="ml-1" /> <span className="text-red-500">*</span>
-                  </label>
-                  <button
-                    onClick={handleAddEscalao}
-                    className={`px-4 py-2 ${btn.info} rounded-md transition-colors text-sm`}
-                  >
-                    + Adicionar Escalão
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  {escaloes.map((esc, index) => (
-                    <div key={index} className="border border-gray-300 rounded-md p-4 bg-gray-50">
-                      <div className="flex justify-between items-start mb-3">
-                        <h3 className="font-medium text-lg">Escalão {esc.escalao}</h3>
-                        {escaloes.length > 1 && (
-                          <button
-                            onClick={() => handleRemoveEscalao(index)}
-                            className="text-red-500 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-400 rounded"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Nome do Escalão <HelpTooltip text="Identificador do escalão, tipicamente uma letra (A, B, C) ou nome descritivo." className="ml-1" /></label>
-                          <input
-                            type="text"
-                            className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
-                            placeholder="A, B, C..."
-                            value={esc.escalao}
-                            onChange={e => handleEscalaoChange(index, 'escalao', e.target.value)}
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Mín. Participantes <HelpTooltip text="Número mínimo de equipas/participantes necessários para este escalão se realizar. Deixe vazio se não aplicar." className="ml-1" /></label>
-                          <input
-                            type="number"
-                            className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
-                            placeholder="Ex: 32"
-                            value={esc.minParticipants ?? ''}
-                            onChange={e => handleEscalaoChange(index, 'minParticipants', e.target.value ? parseInt(e.target.value) : null)}
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Máx. Participantes <HelpTooltip text="Número máximo de equipas/participantes permitidos neste escalão. Deixe vazio se não aplicar." className="ml-1" /></label>
-                          <input
-                            type="number"
-                            className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
-                            placeholder="Ex: 40"
-                            value={esc.maxParticipants ?? ''}
-                            onChange={e => handleEscalaoChange(index, 'maxParticipants', e.target.value ? parseInt(e.target.value) : null)}
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium mb-1">
-                          Pontuações (1º, 2º, 3º, ...) <HelpTooltip text="Pontos atribuídos por posição final. O 1º valor é para o 1º lugar, o 2º para o 2º lugar, etc. Separe por espaços ou vírgulas." className="ml-1" position="top" /> <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
-                          placeholder="Ex: 140 130 120 110 90 80 70 60 40 30 20 10"
-                          value={esc.points}
-                          onChange={e => handleEscalaoChange(index, 'points', e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-4 mt-6">
-              <button
-                className={`flex-1 ${btn.secondary} py-2 rounded-md`}
-                onClick={() => {
-                  setIsCreateModalOpen(false);
-                  setFormatName('');
-                  setFormatDescription('');
-                  setIsPlayoff(false);
-                  setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: '' }]);
-                }}
-              >
-                Cancelar
-              </button>
-              <button
-                className={`flex-1 ${btn.primary} py-2 rounded-md transition-colors`}
-                onClick={handleCreateFormat}
-              >
-                Criar Formato
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {isViewModalOpen && selectedFormat && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white p-8 rounded-lg w-full max-w-5xl my-8">
-            <div className="flex justify-between items-start mb-6">
-              <h2 className="text-2xl font-bold">{selectedFormat.name}</h2>
-              <button
-                onClick={() => setIsViewModalOpen(false)}
-                className="text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 rounded"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="mb-4 flex items-center gap-2">
-              {selectedFormat.is_playoff ? (
-                <span className="px-3 py-1 bg-amber-100 text-amber-700 text-sm font-semibold rounded-full border border-amber-300">
-                  Formato Playoff
-                </span>
-              ) : (
-                <>
-                <span className="px-3 py-1 bg-gray-100 text-gray-500 text-sm rounded-full border border-gray-200">
-                  Formato Regular
-                </span>
-                <span className={`px-3 py-1 rounded-full text-sm font-semibold border ${selectedFormat.tournament_competitor_type === 'individual' ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-green-100 text-green-700 border-green-300'}`}>
-                  {selectedFormat.tournament_competitor_type === 'individual' ? 'Individual' : 'Equipa'}
-                </span>
-                </>
-              )}
-            </div>
-
-            {selectedFormat.description && (
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-500 mb-1">Descrição</label>
-                <p className="text-gray-900">{selectedFormat.description}</p>
-              </div>
-            )}
-
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-3">Tabela de Prova</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse border border-gray-300">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="border border-gray-300 px-4 py-2 text-left">Escalão</th>
-                      <th className="border border-gray-300 px-4 py-2 text-left">Participantes</th>
-                      <th className="border border-gray-300 px-4 py-2 text-left">1º</th>
-                      <th className="border border-gray-300 px-4 py-2 text-left">2º</th>
-                      <th className="border border-gray-300 px-4 py-2 text-left">3º</th>
-                      <th className="border border-gray-300 px-4 py-2 text-left">4º</th>
-                      <th className="border border-gray-300 px-4 py-2 text-left">5º</th>
-                      <th className="border border-gray-300 px-4 py-2 text-left">6º</th>
-                      <th className="border border-gray-300 px-4 py-2 text-left">7º</th>
-                      <th className="border border-gray-300 px-4 py-2 text-left">8º</th>
-                      <th className="border border-gray-300 px-4 py-2 text-left">9º</th>
-                      <th className="border border-gray-300 px-4 py-2 text-left">10º</th>
-                      <th className="border border-gray-300 px-4 py-2 text-left">11º</th>
-                      <th className="border border-gray-300 px-4 py-2 text-left">12º</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedFormat.escaloes.map((esc, idx) => (
-                      <tr key={idx} className="hover:bg-gray-50">
-                        <td className="border border-gray-300 px-4 py-2 font-medium">{esc.escalao}</td>
-                        <td className="border border-gray-300 px-4 py-2">
-                          {getParticipantsText(esc.minParticipants, esc.maxParticipants)}
-                        </td>
-                        {[...Array(12)].map((_, i) => (
-                          <td key={i} className="border border-gray-300 px-4 py-2 text-center">
-                            {esc.points[i] ?? '—'}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {selectedFormat.created_at && (
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-500 mb-1">Data de Criação</label>
-                <p className="text-gray-900">
-                  {new Date(selectedFormat.created_at).toLocaleDateString('pt-PT', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                  })}
-                </p>
-              </div>
-            )}
-
-            <div className="flex gap-4 pt-4 border-t">
-              <button
-                onClick={handleDeleteFormat}
-                className={`px-6 py-2 ${btn.dangerLight} rounded transition-colors`}
-              >
-                Eliminar
-              </button>
-              <button
-                onClick={() => handleEditFormat(selectedFormat)}
-                className={`px-6 py-2 ${btn.info} rounded transition-colors`}
-              >
-                Editar
-              </button>
-              <button
-                onClick={() => setIsViewModalOpen(false)}
-                className={`flex-1 px-6 py-2 ${btn.secondaryAlt} rounded transition-colors`}
-              >
-                Fechar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {isEditModalOpen && selectedFormat && (
-		<div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 overflow-y-auto">
-          <div className="bg-white p-8 rounded-lg w-full max-w-4xl my-8">
-            <h2 className="text-2xl font-bold mb-6">Editar Formato de Prova</h2>
-
-            <div className="space-y-6">
-              <div>
-                <label className="block font-medium mb-2">
-                  Nome do Formato <HelpTooltip text="Nome único que identifica este conjunto de regras de pontuação. Ex: 'Modalidades Coletivas Recorrentes'." className="ml-1" /> <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  className="border px-4 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  placeholder="Ex: Modalidades Coletivas Recorrentes"
-                  value={formatName}
-                  onChange={e => setFormatName(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="block font-medium mb-2">Descrição</label>
-                <textarea
-                  className="border px-4 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  placeholder="Descrição opcional"
-                  rows={2}
-                  value={formatDescription}
-                  onChange={e => setFormatDescription(e.target.value)}
-                />
-              </div>
-
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="edit-is-playoff"
-                  checked={isPlayoff}
-                  onChange={e => setIsPlayoff(e.target.checked)}
-                  className="w-4 h-4 accent-amber-500 cursor-pointer"
-                />
-                <label htmlFor="edit-is-playoff" className="font-medium cursor-pointer select-none">
-                  Formato Playoff
-                </label>
-                <span className="text-sm text-gray-500">(só pode existir um formato de playoff de cada vez)</span>
-              </div>
-
-              {!isPlayoff && (
                 <div>
-                  <label className="block font-medium mb-2">
-                    Tipo de Competidor <span className="text-red-500">*</span>
+                  <label className="block font-medium mb-2">Descrição</label>
+                  <textarea
+                    className="border px-4 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    placeholder="Descrição opcional"
+                    rows={2}
+                    value={formatDescription}
+                    onChange={e => setFormatDescription(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="create-is-playoff"
+                    checked={isPlayoff}
+                    onChange={e => setIsPlayoff(e.target.checked)}
+                    className="w-4 h-4 accent-amber-500 cursor-pointer"
+                  />
+                  <label htmlFor="create-is-playoff" className="font-medium cursor-pointer select-none">
+                    Formato Playoff
                   </label>
-                  <div className="flex gap-2">
+                  <span className="text-sm text-gray-500">(só pode existir um formato de playoff de cada vez)</span>
+                </div>
+
+                {!isPlayoff && (
+                  <div>
+                    <label className="block font-medium mb-2">
+                      Tipo de Competidor <span className="text-red-500">*</span>
+                    </label>
+                    <DefinedStatesMenuComponent
+                      states={[
+                        {value: 'individual', label: 'Individual'},
+                        {value: 'team', label: 'Equipa'},
+                      ]}
+                      onSelect={(value) => setTournamentCompetitorType(value as 'individual' | 'team')}
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <label className="block font-medium">
+                      Escalões <HelpTooltip text="Categorias de participação dentro do formato (ex: A, B, C). Cada escalão tem os seus próprios limites de participantes e tabela de pontuações." className="ml-1" /> <span className="text-red-500">*</span>
+                    </label>
                     <button
-                      type="button"
-                      className={`flex-1 py-2 rounded-md border transition-colors font-semibold ${tournamentCompetitorType === 'team' ? 'bg-teal-500 text-white border-teal-600' : 'bg-white text-teal-700 border-gray-300'}`}
-                      onClick={() => setTournamentCompetitorType('team')}
+                      onClick={handleAddEscalao}
+                      className={`px-4 py-2 ${btn.info} rounded-md transition-colors text-sm`}
                     >
-                      Equipa
-                    </button>
-                    <button
-                      type="button"
-                      className={`flex-1 py-2 rounded-md border transition-colors font-semibold ${tournamentCompetitorType === 'individual' ? 'bg-teal-500 text-white border-teal-600' : 'bg-white text-teal-700 border-gray-300'}`}
-                      onClick={() => setTournamentCompetitorType('individual')}
-                    >
-                      Individual
+                      + Adicionar Escalão
                     </button>
                   </div>
-                </div>
-              )}
 
-              <div>
-                <div className="flex justify-between items-center mb-3">
-                  <label className="block font-medium">
-                    Escalões <HelpTooltip text="Categorias de participação dentro do formato (ex: A, B, C). Cada escalão tem os seus próprios limites de participantes e tabela de pontuações." className="ml-1" /> <span className="text-red-500">*</span>
-                  </label>
-                </div>
+                  <div className="space-y-4">
+                    {escaloes.map((esc, index) => (
+                      <div key={index} className="border border-gray-300 rounded-md p-4 bg-gray-50">
+                        <div className="flex justify-between items-start mb-3">
+                          <h3 className="font-medium text-lg">Escalão {esc.escalao}</h3>
+                          {escaloes.length > 1 && (
+                            <button
+                              onClick={() => handleRemoveEscalao(index)}
+                              className="text-red-500 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-400 rounded"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
 
-                <div className="space-y-4">
-                  {escaloes.map((esc, index) => (
-                    <div key={index} className="border border-gray-300 rounded-md p-4 bg-gray-50">
-                      <div className="flex justify-between items-start mb-3">
-                        <h3 className="font-medium text-lg">Escalão {esc.escalao}</h3>
-                        {escaloes.length > 1 && (
-                          <button
-                            onClick={() => handleRemoveEscalao(index)}
-                            className="text-red-500 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-400 rounded"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        )}
-                      </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Nome do Escalão <HelpTooltip text="Identificador do escalão, tipicamente uma letra (A, B, C) ou nome descritivo." className="ml-1" /></label>
+                            <input
+                              type="text"
+                              className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
+                              placeholder="A, B, C..."
+                              value={esc.escalao}
+                              onChange={e => handleEscalaoChange(index, 'escalao', e.target.value)}
+                            />
+                          </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Mín. Participantes <HelpTooltip text="Número mínimo de equipas/participantes necessários para este escalão se realizar. Deixe vazio se não aplicar." className="ml-1" /></label>
+                            <input
+                              type="number"
+                              className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
+                              placeholder="Ex: 32"
+                              value={esc.minParticipants ?? ''}
+                              onChange={e => handleEscalaoChange(index, 'minParticipants', e.target.value ? parseInt(e.target.value) : null)}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Máx. Participantes <HelpTooltip text="Número máximo de equipas/participantes permitidos neste escalão. Deixe vazio se não aplicar." className="ml-1" /></label>
+                            <input
+                              type="number"
+                              className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
+                              placeholder="Ex: 40"
+                              value={esc.maxParticipants ?? ''}
+                              onChange={e => handleEscalaoChange(index, 'maxParticipants', e.target.value ? parseInt(e.target.value) : null)}
+                            />
+                          </div>
+                        </div>
+
                         <div>
-                          <label className="block text-sm font-medium mb-1">Nome do Escalão <HelpTooltip text="Identificador do escalão, tipicamente uma letra (A, B, C) ou nome descritivo." className="ml-1" /></label>
+                          <label className="block text-sm font-medium mb-1">
+                            Pontuações (1º, 2º, 3º, ...) <HelpTooltip text="Pontos atribuídos por posição final. O 1º valor é para o 1º lugar, o 2º para o 2º lugar, etc. Separe por espaços ou vírgulas." className="ml-1" position="top" /> <span className="text-red-500">*</span>
+                          </label>
                           <input
                             type="text"
                             className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
-                            placeholder="A, B, C..."
-                            value={esc.escalao}
-                            onChange={e => handleEscalaoChange(index, 'escalao', e.target.value)}
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Mín. Participantes <HelpTooltip text="Número mínimo de equipas/participantes necessários para este escalão se realizar. Deixe vazio se não aplicar." className="ml-1" /></label>
-                          <input
-                            type="number"
-                            className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
-                            placeholder="Ex: 32"
-                            value={esc.minParticipants ?? ''}
-                            onChange={e => handleEscalaoChange(index, 'minParticipants', e.target.value ? parseInt(e.target.value) : null)}
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Máx. Participantes <HelpTooltip text="Número máximo de equipas/participantes permitidos neste escalão. Deixe vazio se não aplicar." className="ml-1" /></label>
-                          <input
-                            type="number"
-                            className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
-                            placeholder="Ex: 40"
-                            value={esc.maxParticipants ?? ''}
-                            onChange={e => handleEscalaoChange(index, 'maxParticipants', e.target.value ? parseInt(e.target.value) : null)}
+                            placeholder="Ex: 140 130 120 110 90 80 70 60 40 30 20 10"
+                            value={esc.points}
+                            onChange={e => handleEscalaoChange(index, 'points', e.target.value)}
                           />
                         </div>
                       </div>
-
-                      <div>
-                        <label className="block text-sm font-medium mb-1">
-                          Pontuações (1º, 2º, 3º, ...) <HelpTooltip text="Pontos atribuídos por posição final. O 1º valor é para o 1º lugar, o 2º para o 2º lugar, etc. Separe por espaços ou vírgulas." className="ml-1" position="top" /> <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
-                          placeholder="Ex: 140 130 120 110 90 80 70 60 40 30 20 10"
-                          value={esc.points}
-                          onChange={e => handleEscalaoChange(index, 'points', e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  ))}
-				  <button
-					onClick={handleAddEscalao}
-					className={`px-4 py-2 ${btn.info} rounded-md transition-colors text-sm`}
-				  >
-					+ Adicionar Escalão
-				  </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="flex gap-4 mt-6">
-              <button
-                className={`flex-1 ${btn.secondary} py-2 rounded-md`}
-                onClick={() => {
-                  setIsEditModalOpen(false);
-                  setFormatName('');
-                  setFormatDescription('');
-                  setIsPlayoff(false);
-                  setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: '' }]);
-                  setSelectedFormat(null);
-                }}
-              >
-                Cancelar
-              </button>
-              <button
-                className={`flex-1 ${btn.primary} py-2 rounded-md transition-colors`}
-                onClick={handleUpdateFormat}
-              >
-                Guardar Alterações
-              </button>
+              <div className="flex gap-4 mt-6">
+                <button
+                  className={`flex-1 ${btn.secondary} py-2 rounded-md`}
+                  onClick={() => {
+                    setIsCreateModalOpen(false);
+                    setFormatName('');
+                    setFormatDescription('');
+                    setIsPlayoff(false);
+                    setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: '' }]);
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  className={`flex-1 ${btn.primary} py-2 rounded-md transition-colors`}
+                  onClick={handleCreateFormat}
+                >
+                  Criar Formato
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <ConfirmModal
-        isOpen={isDeleteModalOpen}
-        title="Eliminar formato de prova"
-        message={selectedFormat ? `Tem certeza que deseja eliminar "${selectedFormat.name}"?` : ''}
-        confirmLabel="Eliminar"
-        variant="danger"
-        loading={deletingFormat}
-        onCancel={() => {
-          if (!deletingFormat) {
-            setIsDeleteModalOpen(false);
-          }
-        }}
-        onConfirm={confirmDeleteFormat}
-      />
-    </div>
+        {isViewModalOpen && selectedFormat && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white p-8 rounded-lg w-full max-w-5xl my-8">
+              <div className="flex justify-between items-start mb-6">
+                <h2 className="text-2xl font-bold">{selectedFormat.name}</h2>
+                <button
+                  onClick={() => setIsViewModalOpen(false)}
+                  className="text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 rounded"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="mb-4 flex items-center gap-2">
+                {selectedFormat.is_playoff ? (
+                  <span className="px-3 py-1 bg-amber-100 text-amber-700 text-sm font-semibold rounded-full border border-amber-300">
+                    Formato Playoff
+                  </span>
+                ) : (
+                  <>
+                  <span className="px-3 py-1 bg-gray-100 text-gray-500 text-sm rounded-full border border-gray-200">
+                    Formato Regular
+                  </span>
+                  <span className={`px-3 py-1 rounded-full text-sm font-semibold border ${selectedFormat.tournament_competitor_type === 'individual' ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-green-100 text-green-700 border-green-300'}`}>
+                    {selectedFormat.tournament_competitor_type === 'individual' ? 'Individual' : 'Equipa'}
+                  </span>
+                  </>
+                )}
+              </div>
+
+              {selectedFormat.description && (
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-500 mb-1">Descrição</label>
+                  <p className="text-gray-900">{selectedFormat.description}</p>
+                </div>
+              )}
+
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Tabela de Prova</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse border border-gray-300">
+                    <thead>
+                      <tr className="bg-gray-100">
+                        <th className="border border-gray-300 px-4 py-2 text-left">Escalão</th>
+                        <th className="border border-gray-300 px-4 py-2 text-left">Participantes</th>
+                        <th className="border border-gray-300 px-4 py-2 text-left">1º</th>
+                        <th className="border border-gray-300 px-4 py-2 text-left">2º</th>
+                        <th className="border border-gray-300 px-4 py-2 text-left">3º</th>
+                        <th className="border border-gray-300 px-4 py-2 text-left">4º</th>
+                        <th className="border border-gray-300 px-4 py-2 text-left">5º</th>
+                        <th className="border border-gray-300 px-4 py-2 text-left">6º</th>
+                        <th className="border border-gray-300 px-4 py-2 text-left">7º</th>
+                        <th className="border border-gray-300 px-4 py-2 text-left">8º</th>
+                        <th className="border border-gray-300 px-4 py-2 text-left">9º</th>
+                        <th className="border border-gray-300 px-4 py-2 text-left">10º</th>
+                        <th className="border border-gray-300 px-4 py-2 text-left">11º</th>
+                        <th className="border border-gray-300 px-4 py-2 text-left">12º</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedFormat.escaloes.map((esc, idx) => (
+                        <tr key={idx} className="hover:bg-gray-50">
+                          <td className="border border-gray-300 px-4 py-2 font-medium">{esc.escalao}</td>
+                          <td className="border border-gray-300 px-4 py-2">
+                            {getParticipantsText(esc.minParticipants, esc.maxParticipants)}
+                          </td>
+                          {[...Array(12)].map((_, i) => (
+                            <td key={i} className="border border-gray-300 px-4 py-2 text-center">
+                              {esc.points[i] ?? '—'}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {selectedFormat.created_at && (
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-500 mb-1">Data de Criação</label>
+                  <p className="text-gray-900">
+                    {new Date(selectedFormat.created_at).toLocaleDateString('pt-PT', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                    })}
+                  </p>
+                </div>
+              )}
+
+              <div className="flex gap-4 pt-4 border-t">
+                <button
+                  onClick={handleDeleteFormat}
+                  className={`px-6 py-2 ${btn.dangerLight} rounded transition-colors`}
+                >
+                  Eliminar
+                </button>
+                <button
+                  onClick={() => handleEditFormat(selectedFormat)}
+                  className={`px-6 py-2 ${btn.info} rounded transition-colors`}
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => setIsViewModalOpen(false)}
+                  className={`flex-1 px-6 py-2 ${btn.secondaryAlt} rounded transition-colors`}
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isEditModalOpen && selectedFormat && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 overflow-y-auto">
+            <div className="bg-white p-8 rounded-lg w-full max-w-4xl my-8">
+              <h2 className="text-2xl font-bold mb-6">Editar Formato de Prova</h2>
+
+              <div className="space-y-6">
+                <div>
+                  <label className="block font-medium mb-2">
+                    Nome do Formato <HelpTooltip text="Nome único que identifica este conjunto de regras de pontuação. Ex: 'Modalidades Coletivas Recorrentes'." className="ml-1" /> <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="border px-4 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    placeholder="Ex: Modalidades Coletivas Recorrentes"
+                    value={formatName}
+                    onChange={e => setFormatName(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-medium mb-2">Descrição</label>
+                  <textarea
+                    className="border px-4 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    placeholder="Descrição opcional"
+                    rows={2}
+                    value={formatDescription}
+                    onChange={e => setFormatDescription(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="edit-is-playoff"
+                    checked={isPlayoff}
+                    onChange={e => setIsPlayoff(e.target.checked)}
+                    className="w-4 h-4 accent-amber-500 cursor-pointer"
+                  />
+                  <label htmlFor="edit-is-playoff" className="font-medium cursor-pointer select-none">
+                    Formato Playoff
+                  </label>
+                  <span className="text-sm text-gray-500">(só pode existir um formato de playoff de cada vez)</span>
+                </div>
+
+                {!isPlayoff && (
+                  <div>
+                    <label className="block font-medium mb-2">
+                      Tipo de Competidor <span className="text-red-500">*</span>
+                    </label>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        className={`flex-1 py-2 rounded-md border transition-colors font-semibold ${tournamentCompetitorType === 'team' ? 'bg-teal-500 text-white border-teal-600' : 'bg-white text-teal-700 border-gray-300'}`}
+                        onClick={() => setTournamentCompetitorType('team')}
+                      >
+                        Equipa
+                      </button>
+                      <button
+                        type="button"
+                        className={`flex-1 py-2 rounded-md border transition-colors font-semibold ${tournamentCompetitorType === 'individual' ? 'bg-teal-500 text-white border-teal-600' : 'bg-white text-teal-700 border-gray-300'}`}
+                        onClick={() => setTournamentCompetitorType('individual')}
+                      >
+                        Individual
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <label className="block font-medium">
+                      Escalões <HelpTooltip text="Categorias de participação dentro do formato (ex: A, B, C). Cada escalão tem os seus próprios limites de participantes e tabela de pontuações." className="ml-1" /> <span className="text-red-500">*</span>
+                    </label>
+                  </div>
+
+                  <div className="space-y-4">
+                    {escaloes.map((esc, index) => (
+                      <div key={index} className="border border-gray-300 rounded-md p-4 bg-gray-50">
+                        <div className="flex justify-between items-start mb-3">
+                          <h3 className="font-medium text-lg">Escalão {esc.escalao}</h3>
+                          {escaloes.length > 1 && (
+                            <button
+                              onClick={() => handleRemoveEscalao(index)}
+                              className="text-red-500 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-400 rounded"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Nome do Escalão <HelpTooltip text="Identificador do escalão, tipicamente uma letra (A, B, C) ou nome descritivo." className="ml-1" /></label>
+                            <input
+                              type="text"
+                              className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
+                              placeholder="A, B, C..."
+                              value={esc.escalao}
+                              onChange={e => handleEscalaoChange(index, 'escalao', e.target.value)}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Mín. Participantes <HelpTooltip text="Número mínimo de equipas/participantes necessários para este escalão se realizar. Deixe vazio se não aplicar." className="ml-1" /></label>
+                            <input
+                              type="number"
+                              className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
+                              placeholder="Ex: 32"
+                              value={esc.minParticipants ?? ''}
+                              onChange={e => handleEscalaoChange(index, 'minParticipants', e.target.value ? parseInt(e.target.value) : null)}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Máx. Participantes <HelpTooltip text="Número máximo de equipas/participantes permitidos neste escalão. Deixe vazio se não aplicar." className="ml-1" /></label>
+                            <input
+                              type="number"
+                              className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
+                              placeholder="Ex: 40"
+                              value={esc.maxParticipants ?? ''}
+                              onChange={e => handleEscalaoChange(index, 'maxParticipants', e.target.value ? parseInt(e.target.value) : null)}
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-1">
+                            Pontuações (1º, 2º, 3º, ...) <HelpTooltip text="Pontos atribuídos por posição final. O 1º valor é para o 1º lugar, o 2º para o 2º lugar, etc. Separe por espaços ou vírgulas." className="ml-1" position="top" /> <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
+                            placeholder="Ex: 140 130 120 110 90 80 70 60 40 30 20 10"
+                            value={esc.points}
+                            onChange={e => handleEscalaoChange(index, 'points', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    ))}
+            <button
+            onClick={handleAddEscalao}
+            className={`px-4 py-2 ${btn.info} rounded-md transition-colors text-sm`}
+            >
+            + Adicionar Escalão
+            </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-4 mt-6">
+                <button
+                  className={`flex-1 ${btn.secondary} py-2 rounded-md`}
+                  onClick={() => {
+                    setIsEditModalOpen(false);
+                    setFormatName('');
+                    setFormatDescription('');
+                    setIsPlayoff(false);
+                    setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: '' }]);
+                    setSelectedFormat(null);
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  className={`flex-1 ${btn.primary} py-2 rounded-md transition-colors`}
+                  onClick={handleUpdateFormat}
+                >
+                  Guardar Alterações
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <ConfirmModal
+          isOpen={isDeleteModalOpen}
+          title="Eliminar formato de prova"
+          message={selectedFormat ? `Tem certeza que deseja eliminar "${selectedFormat.name}"?` : ''}
+          confirmLabel="Eliminar"
+          variant="danger"
+          loading={deletingFormat}
+          onCancel={() => {
+            if (!deletingFormat) {
+              setIsDeleteModalOpen(false);
+            }
+          }}
+          onConfirm={confirmDeleteFormat}
+        />
+      </div>
   );
 };
 

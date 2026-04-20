@@ -1,13 +1,12 @@
 
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import Sidebar from '../../components/geral_navbar';
 import { administratorsApi, type AdminDetail } from '../../api/admins';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { btn } from '../../styles/buttonStyles';
 import AdminInfoComponent from '../../components/admins/AdminInfoComponent';
 
-function AdminDetail() {
+function AdminDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -38,11 +37,8 @@ function AdminDetail() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <Sidebar />
-        <div className="flex-1 flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
-        </div>
+      <div className="flex-1 flex justify-center items-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
       </div>
     );
   }
@@ -50,8 +46,6 @@ function AdminDetail() {
   if (!member) return null;
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
       <div className="flex-1 p-8 max-w-3xl mx-auto">
         <div className="mb-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-800">Detalhes do Administrador</h1>
@@ -67,8 +61,7 @@ function AdminDetail() {
           adminState={[member, setMember]}
         />
       </div>
-    </div>
   );
 }
 
-export default AdminDetail;
+export default AdminDetailPage;

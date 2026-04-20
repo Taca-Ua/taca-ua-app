@@ -1,7 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import HelpTooltip from '../../components/HelpTooltip';
 import { useState, useEffect } from 'react';
-import NucleoSidebar from '../../components/nucleo_navbar';
 import { staffApi, studentsApi, type StaffDetail, type StudentDetail } from '../../api/members';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { btn } from '../../styles/buttonStyles';
@@ -66,14 +65,11 @@ function MemberDetail() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <NucleoSidebar />
         <div className="flex-1 p-8">
           <div className="max-w-3xl mx-auto flex justify-center items-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
           </div>
         </div>
-      </div>
     );
   }
 
@@ -144,8 +140,6 @@ function MemberDetail() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <NucleoSidebar />
       <div className="flex-1 p-8">
         <div className="max-w-3xl mx-auto">
           <div className="mb-6 flex items-center">
@@ -260,8 +254,6 @@ function MemberDetail() {
             </div>
           </div>
         </div>
-      </div>
-
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
@@ -401,7 +393,7 @@ function MemberDetail() {
           </div>
         </div>
       )}
-    </div>
+      </div>
   );
 }
 

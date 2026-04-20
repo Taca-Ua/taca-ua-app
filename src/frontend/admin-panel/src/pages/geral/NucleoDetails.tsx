@@ -1,5 +1,4 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import Sidebar from '../../components/geral_navbar';
 import { btn } from '../../styles/buttonStyles';
 import NucleusDetailComponent from '../../components/nucleos/NucleusDetailComponent';
 
@@ -12,9 +11,6 @@ const NucleoDetails = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-
       <div className="flex-1 p-8">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8 flex justify-between items-center">
@@ -31,7 +27,6 @@ const NucleoDetails = () => {
           <NucleusDetailComponent nucleusId={nucleusId} />
         </div>
       </div>
-    </div>
   );
 };
 

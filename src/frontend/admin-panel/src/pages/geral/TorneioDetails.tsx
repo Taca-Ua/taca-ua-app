@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import Sidebar from '../../components/geral_navbar';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { tournamentsApi, type TournamentDetail } from '../../api/tournaments';
 import { type MatchListItem } from '../../api/matches';
@@ -54,11 +53,8 @@ const TorneioDetails = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <Sidebar />
-        <div className="flex-1 flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
-        </div>
+      <div className="flex-1 flex justify-center items-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
       </div>
     );
   }
@@ -66,9 +62,6 @@ const TorneioDetails = () => {
   if (!tournament) return null;
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-
       <div className="flex-1 p-8">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8 flex justify-between items-center">
@@ -105,7 +98,6 @@ const TorneioDetails = () => {
             <MatchesListComponent tournamentId={tournament.id} matchesState={[matches, setMatches]} />
           </div>
         </div>
-      </div>
       <MatchCreateModal
         controller={[showCreateModal, setShowCreateModal]}
         tournament={tournament}
@@ -113,7 +105,7 @@ const TorneioDetails = () => {
           setMatches((prev) => [...prev, newMatch]);
         }}
       />
-    </div>
+      </div>
   );
 };
 
