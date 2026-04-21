@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import ConfirmModal from "../../components/ConfirmModal";
 import HelpTooltip from "../../components/HelpTooltip";
-import { regulationsApi, type Regulation } from '../../api/regulations';
+import { regulationsApi, type RegulationListItem as Regulation } from '../../api/regulations';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { btn } from '../../styles/buttonStyles';
 import { useAuth } from "../../hooks/useAuth";

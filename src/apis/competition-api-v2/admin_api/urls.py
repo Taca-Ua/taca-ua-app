@@ -5,6 +5,7 @@ from admin_api.modules.matches import urlpatterns as matches_urls
 from admin_api.modules.modalities import urlpatterns as modality_urls
 from admin_api.modules.modality_types import urlpatterns as modality_type_urls
 from admin_api.modules.nucleos import urlpatterns as nucleos_urls
+from admin_api.modules.regulations import urlpatterns as regulations_urls
 from admin_api.modules.staff import urlpatterns as staff_urls
 from admin_api.modules.teams import urlpatterns as teams_urls
 from admin_api.modules.tournaments import urlpatterns as tournament_urls
@@ -21,4 +22,5 @@ urlpatterns = [
     path("staff/", include(staff_urls)),
     path("matches/", include(matches_urls)),
     path("teams/", include(teams_urls)),
+    path("regulations/", include(regulations_urls)),
 ]

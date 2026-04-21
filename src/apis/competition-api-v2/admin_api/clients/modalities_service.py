@@ -140,6 +140,14 @@ class TeamDTO:
         ]
 
 
+@dataclass
+class RegulationDTO:
+    id: UUID
+    title: str
+    file_url: str
+    description: Optional[str] = None
+
+
 class NucleoModalitiesService(BaseService):
     """Service for managing nucleos via modalities-service"""
 
@@ -917,6 +925,83 @@ class TeamModalitiesService(BaseService):
         self.delete(f"/teams/{team_id}")
 
 
+class RegulationsModalitiesService(BaseService):
+    """Service for managing regulations via modalities-service"""
+
+    def __init__(self):
+        base_url = os.environ.get(
+            "MODALITIES_SERVICE_URL", "http://modalities-service:8000"
+        )
+        super().__init__(base_url)
+
+    def list_regulations(self) -> List[RegulationDTO]:
+        """List all regulations
+
+        Returns:
+            List[RegulationDTO]: List of RegulationDTO objects representing the regulations
+        """
+        regulations_data = self.get("/regulations")
+        return [RegulationDTO(**regulation) for regulation in regulations_data]
+
+    def create_regulation_internal(
+        self, title: str, file_url: str, description: Optional[str] = None
+    ) -> RegulationDTO:
+        """Create a new regulation"""
+        regulation_data = self.post(
+            "/regulations/internal",
+            {
+                "title": title,
+                "file_url": file_url,
+                "description": description,
+            },
+        )
+        return RegulationDTO(**regulation_data)
+
+    def get_regulation(self, regulation_id: str) -> RegulationDTO:
+        """Get a regulation by ID
+
+        Args:
+            regulation_id (str): ID of the regulation
+
+        Returns:
+            RegulationDTO: RegulationDTO object representing the regulation
+        """
+        regulation_data = self.get(f"/regulations/{regulation_id}")
+        return RegulationDTO(**regulation_data)
+
+    def update_regulation(
+        self,
+        regulation_id: str,
+        title: Optional[str] = None,
+        file_url: Optional[str] = None,
+        description: Optional[str] = None,
+    ) -> RegulationDTO:
+        """Update a regulation
+
+        Args:
+            regulation_id (str): ID of the regulation
+            title (Optional[str], optional): New title of the regulation. Defaults to None.
+            file_url (Optional[str], optional): New file URL of the regulation. Defaults to None.
+            description (Optional[str], optional): New description of the regulation. Defaults to None.
+
+        Returns:
+            RegulationDTO: Updated RegulationDTO object
+        """
+        regulation_data = self.put(
+            f"/regulations/{regulation_id}",
+            {
+                "title": title,
+                "file_url": file_url,
+                "description": description,
+            },
+        )
+        return RegulationDTO(**regulation_data)
+
+    def delete_regulation(self, regulation_id: str) -> None:
+        """Delete a regulation"""
+        self.delete(f"/regulations/{regulation_id}")
+
+
 class ModalitiesService(BaseService):
     """Service for managing courses, modalities, teams, and students via modalities-service"""
 
@@ -933,6 +1018,7 @@ class ModalitiesService(BaseService):
         self.students = StudentModalitiesService()
         self.staff = StaffModalitiesService()
         self.teams = TeamModalitiesService()
+        self.regulations = RegulationsModalitiesService()
 
 
 # Singleton instance
