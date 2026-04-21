@@ -13,8 +13,8 @@ export interface StaffDetail extends StaffListItem {
 
 export interface StaffCreate {
   full_name: string;
-  staff_number: string;
-  contact: string;
+  staff_number?: string;
+  contact?: string;
 }
 
 export interface StaffUpdate {

@@ -62,4 +62,15 @@ export const athletesApi = {
   async delete(athleteId: string): Promise<void> {
     return apiClient.delete(`/athletes/${athleteId}/`);
   },
+
+  async syncMembershipFromNmecList(studentNumbers: string[]): Promise<{
+      participants_in_scope: number;
+      reset_to_non_socio: number;
+      set_as_socio: number;
+      unmatched_numbers: string[];
+    }> {
+      return apiClient.post('/students/sync-membership/', {
+        student_numbers: studentNumbers,
+      });
+    },
 };

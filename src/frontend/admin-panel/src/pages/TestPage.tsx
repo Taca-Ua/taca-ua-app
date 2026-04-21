@@ -4,6 +4,9 @@ import { type StaffListItem, staffApi } from "../api/staff";
 import AthletesListComponent from "../components/athletes/AthletesListComponent";
 import StaffListComponent from "../components/staff/StaffListComponent";
 import { useNotification } from "../contexts/NotificationProvider";
+import Button from "../components/utils/Button";
+import AthleteCreateModal from "../components/athletes/AthleteCreateModal";
+import StaffCreateModal from "../components/staff/StaffCreateModal";
 
 const TestPage = () => {
     const { notify } = useNotification();
@@ -13,6 +16,9 @@ const TestPage = () => {
 
     const [activeTab, setActiveTab] = useState<'athletes' | 'staff'>('athletes');
     const [searchQuery, setSearchQuery] = useState("");
+
+    const [isCreateAthleteModalOpen, setIsCreateAthleteModalOpen] = useState(false);
+    const [isCreateStaffModalOpen, setIsCreateStaffModalOpen] = useState(false);
 
     useEffect(() => {
         if (activeTab !== 'athletes') return;
@@ -46,12 +52,27 @@ const TestPage = () => {
     const filteredStaff = staff ? staff.filter((member) => {
         const query = searchQuery.toLowerCase();
         return (member.full_name.toLowerCase().includes(query) ||
-            member.staff_number!.toString().includes(query) ||
-            member.contact!.toLowerCase().includes(query));
+            member.staff_number?.toString().includes(query) ||
+            member.contact?.toLowerCase().includes(query));
     }) : null;
 
     return (
       <div className="space-y-6">
+        <Button
+          onClick={() => {
+            switch (activeTab) {
+              case "athletes":
+                setIsCreateAthleteModalOpen(true);
+                break;
+              case "staff":
+                setIsCreateStaffModalOpen(true);
+                break;
+            }
+          }}
+          flexible={true}
+        >
+          + Adicionar {activeTab === "athletes" ? "Atleta" : "Staff"}
+        </Button>
         <div className="flex-1">
           <input
             type="text"
@@ -61,6 +82,7 @@ const TestPage = () => {
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
           />
         </div>
+
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <div className="border-b border-gray-200">
             <div className="flex">
@@ -95,6 +117,17 @@ const TestPage = () => {
             )}
           </div>
         </div>
+
+        <AthleteCreateModal
+          controller={[isCreateAthleteModalOpen, setIsCreateAthleteModalOpen]}
+          onCreate={(newAthlete) => {setAthletes((prev) => prev ? [newAthlete, ...prev] : [newAthlete])}}
+        />
+
+        <StaffCreateModal
+          controller={[isCreateStaffModalOpen, setIsCreateStaffModalOpen]}
+          onCreate={(newMember) => {setStaff((prev) => prev ? [newMember, ...prev] : [newMember])}}
+        />
+
       </div>
     );
 }
