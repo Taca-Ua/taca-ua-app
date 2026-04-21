@@ -14,7 +14,11 @@ from taca_events.pydantic_schemas.modalities import (
 from ..database import get_db_session
 from ..models import Regulation
 from ..outbox_publisher import outbox_publisher
-from ..schemas import RegulationInternalCreate, RegulationResponse
+from ..schemas import (
+    RegulationInternalCreate,
+    RegulationInternalUpdate,
+    RegulationResponse,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +81,30 @@ def get_regulation(regulation_id: UUID, db: Session = Depends(get_db_session)):
     if not regulation:
         raise HTTPException(status_code=404, detail="Regulamento não encontrado")
     return regulation.to_dict()
+
+
+@router.put("/{regulation_id}", response_model=RegulationResponse)
+def update_regulation(
+    regulation_id: UUID,
+    payload: RegulationInternalUpdate,
+    db: Session = Depends(get_db_session),
+):
+    regulation = db.query(Regulation).filter(Regulation.id == regulation_id).first()
+    if not regulation:
+        raise HTTPException(status_code=404, detail="Regulamento não encontrado")
+
+    try:
+        if payload.title is not None:
+            regulation.title = payload.title
+        if payload.description is not None:
+            regulation.description = payload.description
+        db.commit()
+        db.refresh(regulation)
+        return regulation.to_dict()
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Erro ao atualizar: {str(e)}")
+        raise HTTPException(status_code=500, detail="Erro interno ao atualizar.")
 
 
 @router.delete("/{regulation_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -56,6 +56,15 @@ export const regulationsApi = {
     if (data.description) {
       formData.append('description', data.description);
     }
+    console.log('Updating regulation with ID:', id);
+    console.log('FormData entries:');
+    formData.forEach((value, key) => {
+      if (value instanceof File) {
+        console.log(`  ${key}: [File] ${value.name}`);
+      } else {
+        console.log(`  ${key}: ${value}`);
+      }
+    });
 
     return apiClient.put<RegulationDetail>(`/regulations/${id}/`, formData);
   },

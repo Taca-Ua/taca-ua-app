@@ -1,101 +1,12 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import ConfirmModal from "../../components/ConfirmModal";
-import HelpTooltip from "../../components/HelpTooltip";
+import { useState, useEffect, useRef } from "react";
 import { regulationsApi, type RegulationListItem as Regulation } from '../../api/regulations';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { btn } from '../../styles/buttonStyles';
 import { useAuth } from "../../hooks/useAuth";
+import RegulationCreateModal from "../../components/regulations/RegulationCreateModal";
+import RegulationInfoModal from "../../components/regulations/RegulationInfoModal";
 
-const Regulamentos: React.FC = () => {
-  const [regulations, setRegulations] = useState<Regulation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { notify } = useNotification();
-  const { isAdminGeneral } = useAuth();
-
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedRegulation, setSelectedRegulation] = useState<Regulation | null>(null);
-  const [deletingRegulation, setDeletingRegulation] = useState(false);
-
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [file, setFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [isDragOver, setIsDragOver] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const dragCounterRef = useRef(0);
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-  };
-
-  const applyFile = useCallback((incoming: File | null) => {
-    if (!incoming) return;
-    if (incoming.type !== 'application/pdf') {
-      notify('Apenas ficheiros PDF são permitidos.', 'error');
-      return;
-    }
-    if (incoming.size > 10 * 1024 * 1024) {
-      notify('O ficheiro não pode exceder 10 MB.', 'error');
-      return;
-    }
-    setFile(incoming);
-  }, [notify]);
-
-  const resetForm = useCallback(() => {
-    setTitle("");
-    setDescription("");
-    setFile(null);
-    dragCounterRef.current = 0;
-    setIsDragOver(false);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  }, []);
-
-  useEffect(() => {
-    const onDragEnter = (e: DragEvent) => {
-      e.preventDefault();
-      dragCounterRef.current += 1;
-      if (dragCounterRef.current === 1) {
-        const hasFile = Array.from(e.dataTransfer?.items ?? []).some(i => i.kind === 'file');
-        if (hasFile && isAdminGeneral) {
-          setIsUploadModalOpen(true);
-          setIsDragOver(true);
-        }
-      }
-    };
-    const onDragOver = (e: DragEvent) => { e.preventDefault(); };
-    const onDragLeave = () => {
-      dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
-      if (dragCounterRef.current === 0) setIsDragOver(false);
-    };
-    const onDrop = (e: DragEvent) => {
-      e.preventDefault();
-      dragCounterRef.current = 0;
-      setIsDragOver(false);
-      const dropped = e.dataTransfer?.files?.[0] ?? null;
-      if (dropped) applyFile(dropped);
-    };
-    document.addEventListener('dragenter', onDragEnter);
-    document.addEventListener('dragover', onDragOver);
-    document.addEventListener('dragleave', onDragLeave);
-    document.addEventListener('drop', onDrop);
-    return () => {
-      document.removeEventListener('dragenter', onDragEnter);
-      document.removeEventListener('dragover', onDragOver);
-      document.removeEventListener('dragleave', onDragLeave);
-      document.removeEventListener('drop', onDrop);
-    };
-  }, [applyFile]);
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const formatDisplayDate = (dateStr: string | undefined) => {
+const formatDisplayDate = (dateStr: string | undefined) => {
     if (!dateStr) return "Data indisponível";
 
     const date = new Date(dateStr);
@@ -111,110 +22,87 @@ const Regulamentos: React.FC = () => {
       month: 'long',
       year: 'numeric'
     });
-  };
+};
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
+const Regulamentos = () => {
+  const [regulations, setRegulations] = useState<Regulation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { notify } = useNotification();
+  const { isAdminGeneral } = useAuth();
 
-      const regulationsData = await regulationsApi.getAll();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedRegulation, setSelectedRegulation] = useState<Regulation | null>(null);
 
-      setRegulations(regulationsData);
-    } catch (err) {
-      console.error('Failed to fetch data:', err);
-      notify('Não foi possível carregar os regulamentos. Tente recarregar a página.', 'error');
-    } finally {
+  // Remove global drag state and file state, handle drag events only on main area
+  const mainRef = useRef<HTMLDivElement>(null);
+  const dragCounterRef = useRef(0);
+
+  useEffect(() => {
+    const main = mainRef.current;
+    if (!main) return;
+
+    const onDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounterRef.current++;
+      // Only show modal if dragging a file
+      const hasFile = Array.from(e.dataTransfer?.items ?? []).some(i => i.kind === 'file');
+      if (hasFile && isAdminGeneral) {
+        setIsUploadModalOpen(true);
+      }
+    };
+    const onDragOver = (e: DragEvent) => {
+      e.preventDefault();
+    };
+    const onDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
+    };
+    const onDrop = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounterRef.current = 0;
+    };
+    main.addEventListener('dragenter', onDragEnter);
+    main.addEventListener('dragover', onDragOver);
+    main.addEventListener('dragleave', onDragLeave);
+    main.addEventListener('drop', onDrop);
+    return () => {
+      main.removeEventListener('dragenter', onDragEnter);
+      main.removeEventListener('dragover', onDragOver);
+      main.removeEventListener('dragleave', onDragLeave);
+      main.removeEventListener('drop', onDrop);
+    };
+  }, [isAdminGeneral]);
+
+  useEffect(() => {
+    setLoading(true);
+    regulationsApi.getAll().then(data => {
+      setRegulations(data);
       setLoading(false);
-    }
-  };
+    }).catch((err: unknown) => {
+      console.error('Failed to fetch regulations:', err);
+      notify('Failed to load regulations.', 'error');
+      setLoading(false);
+    });
+  }, []);
 
   const filteredRegulations = regulations
     .filter(r => r.title.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort((a, b) => a.title.localeCompare(b.title));
 
-  const handleUpload = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim() || !file) {
-      notify('Título e ficheiro são obrigatórios', 'error');
-      return;
-    }
-
-    try {
-      setUploading(true);
-      // O setError(''); foi removido pois já não usamos esse estado
-
-      // Chamada à API usando os teus dados
-      const newRegulation = await regulationsApi.create({
-        title,
-        file,
-        description: description || undefined,
-      });
-
-      // Atualiza a lista local com o que veio do servidor
-      setRegulations(prev => [newRegulation, ...prev]);
-
-      // Limpa o formulário e fecha o modal
-      resetForm();
-      setIsUploadModalOpen(false);
-
-      notify("Regulamento adicionado com sucesso!", "success");
-    } catch (err: unknown) {
-      console.error('Upload failed:', err);
-      if (err instanceof Error) {
-        notify(err.message, 'error');
-      } else {
-        notify('Não foi possível processar o upload do ficheiro.', 'error');
-      }
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!selectedRegulation) return;
-
-    // Em vez do confirm do browser, abre o modal customizado da dev
-    setIsDeleteModalOpen(true);
-  };
-
-  const confirmDelete = async () => {
-    if (!selectedRegulation) return;
-
-    try {
-      setDeletingRegulation(true);
-
-      // Chamada à tua API
-      await regulationsApi.delete(selectedRegulation.id);
-
-      // Atualiza a lista local
-      setRegulations(prev => prev.filter(r => r.id !== selectedRegulation.id));
-
-      // Fecha ambos os modais (o de visualização e o de confirmação)
-      setIsDeleteModalOpen(false);
-      setIsViewModalOpen(false);
-      setSelectedRegulation(null);
-
-      // Notificação de sucesso da dev
-      notify('Regulamento eliminado com sucesso!', 'success');
-
-    } catch (err: unknown) {
-      console.error('Failed to delete regulation:', err);
-
-      // Tratamento de erro padronizado
-      if (err instanceof Error) {
-        notify(err.message, 'error');
-      } else {
-        notify('Não foi possível eliminar o regulamento. Tente novamente.', 'error');
-      }
-    } finally {
-      setDeletingRegulation(false);
-    }
-  };
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-teal-500 border-t-transparent"></div>
+        <p className="mt-4 text-gray-600 font-medium">A sincronizar com o servidor...</p>
+      </div>
+    );
+  }
 
   return (
     <>
-
-      <main className="flex-1 p-8">
+      <div className="flex-1 p-8" ref={mainRef}>
         <div className="max-w-7xl mx-auto">
 
           <header className="flex justify-between items-center mb-8">
@@ -284,206 +172,16 @@ const Regulamentos: React.FC = () => {
             </div>
           )}
         </div>
-      </main>
+      </div>
 
-      {isUploadModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-800">Novo Regulamento</h2>
-              <button onClick={() => { setIsUploadModalOpen(false); resetForm(); }} className="text-gray-400 hover:text-gray-600">✕</button>
-            </div>
+      <RegulationInfoModal
+        controller={[isViewModalOpen, setIsViewModalOpen]}
+        regulationState={[selectedRegulation, setSelectedRegulation]}
+      />
 
-            <form onSubmit={handleUpload} className="p-6 space-y-5">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Título do Documento <HelpTooltip text="Nome identificativo do regulamento. Deve ser claro e descritivo para facilitar a pesquisa. Ex: 'Regulamento de Basquetebol 2026'." className="ml-1" /> <span className="text-red-500">*</span>
-                </label>
-                <input
-                  required
-                  className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
-                  value={title}
-                  onChange={e => setTitle(e.target.value)}
-                  placeholder="Ex: Regulamento de Basquetebol 2026"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Descrição <HelpTooltip text="Informação adicional sobre o documento, como o âmbito de aplicação, alterações face à versão anterior ou notas relevantes. Campo opcional." className="ml-1" />
-                </label>
-                <textarea
-                  className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none min-h-[100px]"
-                  value={description}
-                  onChange={e => setDescription(e.target.value)}
-                  placeholder="Opcional: detalhes sobre as regras ou atualizações..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Ficheiro <HelpTooltip text="Apenas ficheiros PDF são aceites, com tamanho máximo de 10 MB. O ficheiro ficará disponível publicamente para download na página de regulamentos." className="ml-1" /> <span className="text-red-500">*</span>
-                </label>
-
-                {file ? (
-                  <div className="flex items-center gap-4 p-4 bg-teal-50 border border-teal-200 rounded-xl">
-                    {/* PDF badge */}
-                    <div className="flex-shrink-0 w-12 h-14 bg-red-100 border border-red-200 rounded-lg flex flex-col items-center justify-center gap-0.5 shadow-sm">
-                      <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-                      </svg>
-                      <span className="text-xs font-bold text-red-600 leading-none">PDF</span>
-                    </div>
-
-                    {/* File metadata */}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-800 text-sm truncate" title={file.name}>{file.name}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">{formatFileSize(file.size)}</p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => { setFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
-                      className="flex-shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                      title="Remover ficheiro"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                ) : (
-                  <label
-                    className={`mt-1 flex flex-col items-center justify-center px-6 py-8 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
-                      isDragOver
-                        ? 'border-teal-500 bg-teal-50'
-                        : 'border-gray-300 bg-white hover:border-teal-400 hover:bg-gray-50'
-                    }`}
-                  >
-                    <svg className={`w-10 h-10 mb-3 transition-colors ${isDragOver ? 'text-teal-500' : 'text-gray-400'}`} stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                      <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    <span className={`text-sm font-medium transition-colors ${isDragOver ? 'text-teal-600' : 'text-teal-600 hover:text-teal-500'}`}>
-                      {isDragOver ? 'Solte o ficheiro aqui' : 'Clique ou arraste um ficheiro PDF'}
-                    </span>
-                    <span className="text-xs text-gray-400 mt-1">PDF até 10 MB</span>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="application/pdf"
-                      className="sr-only"
-                      onChange={e => applyFile(e.target.files?.[0] ?? null)}
-                      required
-                    />
-                  </label>
-                )}
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  className={`flex-1 px-4 py-2 ${btn.secondaryAlt} font-semibold rounded-lg transition-colors`}
-                  onClick={() => { setIsUploadModalOpen(false); resetForm(); }}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={uploading}
-                  className={`flex-1 px-4 py-2 ${btn.primary} font-semibold rounded-lg shadow-lg disabled:opacity-50 transition-all`}
-                >
-                  {uploading ? "A enviar..." : "Guardar Regulamento"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {isViewModalOpen && selectedRegulation && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
-
-            <div className="p-8">
-              <div className="flex justify-between items-start">
-                <h2 className="text-2xl font-bold text-gray-900">{selectedRegulation.title}</h2>
-                <button onClick={() => setIsViewModalOpen(false)} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
-              </div>
-
-              <div className="mt-8 space-y-6">
-                <div className="grid grid-cols-2 gap-8">
-                   <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Data de Submissão</label>
-                    <p className="mt-1 text-gray-900 font-medium">
-                      {formatDisplayDate(selectedRegulation.created_at)}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Tipo de Ficheiro</label>
-                    <p className="mt-1 text-gray-900 font-medium">Documento PDF</p>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Descrição</label>
-                  <p className="mt-2 text-gray-700 bg-gray-50 p-4 rounded-lg italic border-l-4 border-gray-200">
-                    {selectedRegulation.description || "Nenhuma descrição adicional para este documento."}
-                  </p>
-                </div>
-
-                <div className="p-4 bg-blue-50 rounded-xl flex items-center justify-between border border-blue-100">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-blue-500 p-2 rounded-lg text-white">
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-blue-900">Aceder ao Ficheiro</p>
-                      <p className="text-xs text-blue-700">O documento será aberto num novo separador.</p>
-                    </div>
-                  </div>
-                  <a
-                    href={selectedRegulation.file_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`px-4 py-2 ${btn.infoStrong} text-sm font-bold rounded-lg shadow-sm`}
-                  >
-                    Visualizar
-                  </a>
-                </div>
-              </div>
-
-              <div className="mt-10 pt-6 border-t border-gray-100 flex gap-4">
-                <button
-                  onClick={handleDelete}
-                  className={`px-6 py-2.5 text-sm font-bold ${btn.danger} rounded-lg transition-colors`}
-                >
-                  Eliminar Documento
-                </button>
-                <button
-                  onClick={() => setIsViewModalOpen(false)}
-                   className={`flex-1 px-6 py-2.5 text-sm font-bold ${btn.secondary} rounded-lg transition-colors`}
-                >
-                  Fechar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <ConfirmModal
-        isOpen={isDeleteModalOpen}
-        title="Eliminar regulamento"
-        message={selectedRegulation ? `Tem certeza que deseja eliminar "${selectedRegulation.title}"?` : ''}
-        confirmLabel="Eliminar"
-        variant="danger"
-        loading={deletingRegulation}
-        onCancel={() => {
-          if (!deletingRegulation) {
-            setIsDeleteModalOpen(false);
-          }
-        }}
-        onConfirm={confirmDelete}
+      <RegulationCreateModal
+        controller={[isUploadModalOpen, setIsUploadModalOpen]}
+        onCreate={(newRegulation) => setRegulations(prev => [newRegulation, ...prev])}
       />
     </>
   );

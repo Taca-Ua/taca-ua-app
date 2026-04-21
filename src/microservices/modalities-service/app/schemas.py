@@ -256,6 +256,11 @@ class RegulationInternalCreate(BaseModel):
     file_url: str
 
 
+class RegulationInternalUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+
+
 class RegulationResponse(BaseModel):
     id: UUID
     title: str
