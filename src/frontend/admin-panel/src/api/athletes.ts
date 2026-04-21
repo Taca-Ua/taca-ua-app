@@ -39,7 +39,7 @@ export interface AthleteMembershipSync {
 }
 
 export const athletesApi = {
-  async getAll(params: AthleteListParams): Promise<AthleteListItem[]> {
+  async getAll(params?: AthleteListParams): Promise<AthleteListItem[]> {
     return apiClient.get<AthleteListItem[]>('/athletes/', { params });
   },
 

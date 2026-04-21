@@ -66,10 +66,6 @@ export const router = createBrowserRouter([
     path: '/unauthorized',
     element: <Unauthorized />,
   },
-  {
-    path: '/test',
-    element: <TestPage />,
-  },
 
   // Authenticated area with sidebar
   {
@@ -77,6 +73,7 @@ export const router = createBrowserRouter([
     children: [
       // Global Routes
       { path: '/dashboard',           element: <ProtectedRoute> <Dashboard /></ProtectedRoute> },
+      { path: '/test',                element: <ProtectedRoute> <TestPage /></ProtectedRoute> },
 
       // Geral Admin Routes
       { path: '/geral/administradores',     element: <ProtectedRoute> <Administradores /></ProtectedRoute> },

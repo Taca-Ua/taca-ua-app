@@ -10,6 +10,8 @@ import {
 import { coursesApi, type Course } from '../../api/courses';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { btn } from '../../styles/buttonStyles';
+import DefinedStatesMenuComponent from '../../components/utils/costum_menus/DefinedStatesMenuComponent';
+import ChoseOneModal from '../../components/utils/costum_menus/ChoseOneModal';
 
 type CombinedMember =
   | { memberType: 'participant'; data: Student }
@@ -33,6 +35,8 @@ function Membros() {
   const { notify } = useNotification();
   const [filterType, setFilterType] = useState<'all' | 'participant' | 'staff'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const [choseCourseModalOpen, setChoseCourseModalOpen] = useState(false);
 
   // Fetch all members from both APIs
   useEffect(() => {
@@ -318,15 +322,14 @@ function Membros() {
                 <label htmlFor="memberType" className="block text-gray-700 font-medium mb-2">
                   Tipo <HelpTooltip text="Participante: estudante que compete nas provas desportivas. Staff: pessoal de apoio (treinadores, dirigentes) sem competição direta." className="ml-1" /> <span className="text-red-500">*</span>
                 </label>
-                <select
-                  id="memberType"
-                  value={memberType}
-                  onChange={(e) => setMemberType(e.target.value as 'participant' | 'staff')}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                  <option value="participant">Participante</option>
-                  <option value="staff">Staff</option>
-                </select>
+                <DefinedStatesMenuComponent
+                  states={[
+                    { value: 'participant', label: 'Participante' },
+                    { value: 'staff', label: 'Staff' },
+                  ]}
+                  onSelect={(value) => setMemberType(value as 'participant' | 'staff')}
+                  initialValue={memberType}
+                />
               </div>
 
               {memberType === 'participant' && (
@@ -348,19 +351,12 @@ function Membros() {
                     <label htmlFor="courseId" className="block text-gray-700 font-medium mb-2">
                       Curso <HelpTooltip text="Curso académico do estudante na Universidade de Aveiro. Utilizado para organização e filtros de equipas." className="ml-1" /> <span className="text-red-500">*</span>
                     </label>
-                    <select
-                      id="courseId"
-                      value={courseId}
-                      onChange={(e) => setCourseId(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    <div
+                      onClick={() => setChoseCourseModalOpen(true)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700 cursor-pointer"
                     >
-                      <option value="">Selecionar Curso</option>
-                      {[...courses].sort((a, b) => a.name.localeCompare(b.name)).map((course) => (
-                        <option key={course.id} value={course.id}>
-                          {course.name}
-                        </option>
-                      ))}
-                    </select>
+                      {courseId ? courses.find(c => c.id === courseId)?.abbreviation || 'Selecionar Curso' : 'Selecionar Curso'}
+                    </div>
                   </div>
                 </>
               )}
@@ -370,30 +366,14 @@ function Membros() {
                   <label className="block text-gray-700 font-medium mb-2">
                     Identificação <HelpTooltip text="Escolha como identificar o colaborador: por contacto telefónico ou número de staff. Pelo menos um é obrigatório para o registo." className="ml-1" /> <span className="text-red-500">*</span>
                   </label>
-                  <div className="flex gap-4 mb-3">
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="identifierType"
-                        value="contact"
-                        checked={identifierType === 'contact'}
-                        onChange={() => setIdentifierType('contact')}
-                        className="mr-2"
-                      />
-                      <span className="text-gray-700">Contacto</span>
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="identifierType"
-                        value="staff_number"
-                        checked={identifierType === 'staff_number'}
-                        onChange={() => setIdentifierType('staff_number')}
-                        className="mr-2"
-                      />
-                      <span className="text-gray-700">Nº Staff</span>
-                    </label>
-                  </div>
+                  <DefinedStatesMenuComponent
+                    states={[
+                      { value: 'contact', label: 'Contacto' },
+                      { value: 'staff_number', label: 'Nº Staff' },
+                    ]}
+                    onSelect={(value) => setIdentifierType(value as 'contact' | 'staff_number')}
+                    initialValue={identifierType}
+                  />
 
                   {identifierType === 'contact' ? (
                     <input
@@ -442,6 +422,14 @@ function Membros() {
           </div>
         </div>
       )}
+        <ChoseOneModal
+          controller={[choseCourseModalOpen, setChoseCourseModalOpen]}
+          allElementsLoader={() => coursesApi.getAll().then(courses => courses.map(course => ({ id: course.id, title: course.abbreviation, subTitle: course.name })))}
+          onSelect={(element) => {
+            setCourseId(element? element.id : '');
+            setChoseCourseModalOpen(false);
+          }}
+        />
       </div>
   );
 }

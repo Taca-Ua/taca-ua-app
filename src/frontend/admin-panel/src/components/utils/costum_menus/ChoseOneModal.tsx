@@ -28,8 +28,9 @@ const ChoseOneModal = ( {
             const elements = await allElementsLoader();
             setAllElements(elements);
         };
+        if (!isOpen) return;
         loadElements();
-    }, [allElementsLoader]);
+    }, [allElementsLoader, isOpen]);
 
     const onClose = () => {
         setIsOpen(false);
