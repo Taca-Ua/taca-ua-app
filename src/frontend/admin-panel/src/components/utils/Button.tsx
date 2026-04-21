@@ -28,7 +28,7 @@ const Button = ( {
 
     const [showConfirm, setShowConfirm] = useState(false);
 
-    const baseClasses = `${flexible ? "flex-1" : ""} ${padding} rounded-md font-medium transition-colors text-center`;
+    const baseClasses = `${flexible ? "flex-1" : ""} ${padding} rounded-md font-semibold transition-colors text-center shadow-md`;
     const typeClasses = {
         primary: "bg-teal-700 hover:bg-teal-800 text-white disabled:opacity-50 disabled:hover:bg-teal-700",
         secondary: "bg-gray-300 hover:bg-gray-400 text-gray-800 disabled:opacity-50 disabled:hover:bg-gray-200",

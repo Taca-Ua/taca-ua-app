@@ -4,6 +4,7 @@ import { useNotification } from '../../contexts/NotificationProvider';
 import { btn } from '../../styles/buttonStyles';
 import ModalityTypeCreateModal from "../../components/modality-types/ModalityTypeCreateModal";
 import ModalityTypeInfoModal from "../../components/modality-types/ModalityTypeInfoModal";
+import Button from "../../components/utils/Button";
 
 const ModalityTypes = () => {
   const [scoringFormats, setModalityTypes] = useState<ModalityTypeListItem[]>([]);
@@ -63,12 +64,12 @@ const ModalityTypes = () => {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Formatos de Prova</h1>
 
-          <button
+          <Button
             onClick={() => setIsCreateModalOpen(true)}
-            className={`px-6 py-3 ${btn.primary} rounded-md transition-colors`}
+            type="primary"
           >
             + Adicionar Formato
-          </button>
+          </Button>
         </div>
 
         <div className="bg-white rounded-lg shadow p-6 space-y-4">

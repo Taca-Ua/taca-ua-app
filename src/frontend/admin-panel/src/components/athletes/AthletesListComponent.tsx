@@ -14,6 +14,7 @@ const AthletesListBanner = ({ athlete }: { athlete: AthleteListItem }) => {
             is_member: !checked,
         }).then(updated => {
             setChecked(updated.is_member);
+            notify(`Sócio ${updated.is_member ? "ativado" : "desativado"} para ${updated.full_name}.`);
         }).catch(err => {
             console.error("Failed to update athlete:", err);
             notify("Erro ao atualizar sócio. Tente novamente.");

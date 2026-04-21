@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { apiClient } from './client2';
 
 export interface StaffListItem {
   id: string;
