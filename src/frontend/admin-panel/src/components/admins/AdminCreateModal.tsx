@@ -3,16 +3,22 @@ import HelpTooltip from "../HelpTooltip";
 import { useNotification } from "../../contexts/NotificationProvider";
 import { administratorsApi } from "../../api/admins";
 import { nucleosApi } from "../../api/nucleos";
-import ChooseMultipleModal from "../utils/costum_menus/ChoseMultipleModel";
+import ChooseMultipleModal from "../utils/costum_menus/ChoseMultipleModal";
 import DefinedStatesMenuComponent from "../utils/costum_menus/DefinedStatesMenuComponent";
 import { useAuth } from "../../hooks/useAuth";
 import Button from "../utils/Button";
 
-const AdminCreateModel = ({ isOpen, onClose, onCreated }: {
-  isOpen: boolean;
-  onClose: () => void;
+const AdminCreateModal = ({
+  controller,
+  onCreated
+} : {
+  controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
   onCreated?: (admin: any) => void;
 }) => {
+  const [isOpen, setIsOpen] = controller;
+	const { notify } = useNotification();
+  const { isAdminGeneral } = useAuth();
+
 	const [memberUserName, setMemberUserName] = useState('');
 	const [memberFirstName, setMemberFirstName] = useState('');
 	const [memberLastName, setMemberLastName] = useState('');
@@ -26,8 +32,6 @@ const AdminCreateModel = ({ isOpen, onClose, onCreated }: {
 	const [selectedNucleos, setSelectedNucleos] = useState<string[]>([]);
 
 	const [nucleusSelectModalOpen, setNucleusSelectModalOpen] = useState(false);
-	const { notify } = useNotification();
-  const { isAdminGeneral } = useAuth();
 
 	useEffect(() => {
 		if (!isOpen) return;
@@ -83,13 +87,15 @@ const AdminCreateModel = ({ isOpen, onClose, onCreated }: {
 				nucleos: memberRole === 'nucleo_admin' ? selectedNucleos : [],
 			});
 			if (onCreated) onCreated(newAdmin);
-			handleClose();
+			onClose();
+      notify('Administrador criado com sucesso!', 'success');
 		} catch (err) {
 			notify('Não foi possível criar o administrador. Erro interno.', 'error');
 		}
 	};
 
-	const handleClose = () => {
+	const onClose = () => {
+    setIsOpen(false);
 		setMemberUserName('');
 		setMemberFirstName('');
 		setMemberLastName('');
@@ -100,7 +106,6 @@ const AdminCreateModel = ({ isOpen, onClose, onCreated }: {
 		setMemberRole('general_admin');
 		setEmail('');
 		setSelectedNucleos([]);
-		if (onClose) onClose();
 	};
 
 	if (!isOpen) return null;
@@ -382,7 +387,7 @@ const AdminCreateModel = ({ isOpen, onClose, onCreated }: {
         </div>
         <div className="flex gap-4 mt-6 flex-shrink-0">
           <Button
-            onClick={handleClose}
+            onClick={onClose}
             type="secondary"
             flexible={true}
           >
@@ -397,6 +402,7 @@ const AdminCreateModel = ({ isOpen, onClose, onCreated }: {
           </Button>
         </div>
       </div>
+
       <ChooseMultipleModal
         controller={[nucleusSelectModalOpen, setNucleusSelectModalOpen]}
         allElementsLoader={() => {
@@ -422,4 +428,4 @@ const AdminCreateModel = ({ isOpen, onClose, onCreated }: {
   );
 };
 
-export default AdminCreateModel;
+export default AdminCreateModal;

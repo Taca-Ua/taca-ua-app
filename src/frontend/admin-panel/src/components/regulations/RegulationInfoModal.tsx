@@ -29,13 +29,13 @@ const RegulationInfoModal = ( {
     regulationState
 } : {
     controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>]
-    regulationState: [RegulationDetail | null, React.Dispatch<React.SetStateAction<RegulationDetail | null>>]
+    regulationState: [RegulationDetail, React.Dispatch<React.SetStateAction<RegulationDetail | null>>]
 } ) => {
 
     const [ isOpen, setIsOpen ] = controller;
+    const [ regulation, setRegulation ] = regulationState;
     const { notify } = useNotification();
 
-    const [ regulation, setRegulation ] = regulationState;
     const [ editModalOpen, setEditModalOpen ] = useState(false);
 
     const onClose = () => {
@@ -44,8 +44,6 @@ const RegulationInfoModal = ( {
     };
 
     const handleDelete = () => {
-        if ( !regulation ) return;
-
         regulationsApi.delete(regulation.id).then(() => {
             onClose();
             notify('Regulation deleted successfully.', 'success');
@@ -56,7 +54,6 @@ const RegulationInfoModal = ( {
     }
 
     if ( !isOpen ) return null;
-    if ( !regulation ) return null;
 
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
@@ -165,9 +162,8 @@ const RegulationInfoModal = ( {
         </div>
 
         <RegulationEditModal
-            controller={[editModalOpen, setEditModalOpen]}
-            regulation={regulation}
-            onUpdate={(updatedReg) => setRegulation(updatedReg)}
+          controller={[editModalOpen, setEditModalOpen]}
+          regulationState={[regulation, setRegulation]}
         />
       </div>
     );

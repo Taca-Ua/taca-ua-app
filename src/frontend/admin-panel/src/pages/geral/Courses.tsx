@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { type CourseListItem } from '../../api/courses';
 import CoursesListComponent from '../../components/courses/CoursesListComponent';
-import CourseCreateModel from '../../components/courses/CourseCreateModel';
+import CourseCreateModal from '../../components/courses/CourseCreateModal';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../../components/utils/Button';
 
@@ -30,7 +30,7 @@ const Cursos = () => {
 
           <CoursesListComponent coursesState={[courses, setCourses]} />
         </div>
-        <CourseCreateModel
+        <CourseCreateModal
           controller={[isModalOpen, setIsModalOpen]}
           onCreate={(newCourse) => setCourses([...courses, newCourse])}
         />

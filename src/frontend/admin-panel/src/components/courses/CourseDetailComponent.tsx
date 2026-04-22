@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import HelpTooltip from "../HelpTooltip";
 import { type CourseDetail, coursesApi } from "../../api/courses";
-import CourseEditModel from "./CourseEditModel";
+import CourseEditModal from "./CourseEditModal";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import Button from "../utils/Button";
@@ -127,10 +127,9 @@ const CourseDetailComponent = ( {courseId} : { courseId: string } ) => {
         </Button>
       </div>
 
-      <CourseEditModel
+      <CourseEditModal
         controller={editModalController}
-        onSave={(courseData) => setCourse(courseData)}
-        courseData={course}
+        courseState={[course, setCourse]}
       />
     </div>
   );

@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { teamsApi, type TeamDetail } from "../../api/teams";
 import HelpTooltip from "../HelpTooltip";
-import TeamEditModel from "./TeamEditModel";
+import TeamEditModal from "./TeamEditModal";
 import ChooseMultipleModal, {
   type GenericElement,
-} from "../utils/costum_menus/ChoseMultipleModel";
+} from "../utils/costum_menus/ChoseMultipleModal";
 import { studentsApi, type Student } from "../../api/members";
 import Button from "../utils/Button";
 
@@ -240,10 +240,9 @@ const TeamDetailComponent = ({ teamId }: { teamId: string }) => {
         </div>
       </div>
 
-      <TeamEditModel
+      <TeamEditModal
         controller={editModelController}
-        onSave={(updatedTeam) => setTeam(updatedTeam)}
-        teamData={team}
+        teamState={[team, setTeam]}
       />
 
       <ChooseMultipleModal

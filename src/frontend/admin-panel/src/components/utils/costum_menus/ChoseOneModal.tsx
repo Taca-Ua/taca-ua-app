@@ -5,12 +5,14 @@ const ChoseOneModal = ( {
     controller,
     allElementsLoader,
     onSelect,
-    title = "Escolha uma opção"
+    title = "Escolha uma opção",
+    initialSelectedId
 } : {
     controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>],
     allElementsLoader: () => Promise<{id: string, title: string, subTitle?: string}[]>,
     onSelect: (element: {id: string, title: string, subTitle?: string} | null) => void,
     title?: string
+    initialSelectedId?: string
 } ) => {
     const [isOpen, setIsOpen] = controller;
 
@@ -24,12 +26,14 @@ const ChoseOneModal = ( {
     );
 
     useEffect(() => {
-        const loadElements = async () => {
-            const elements = await allElementsLoader();
-            setAllElements(elements);
-        };
         if (!isOpen) return;
-        loadElements();
+
+        allElementsLoader().then(elements => {
+            setAllElements(elements);
+        }).catch(err => {
+            console.error("Failed to load elements:", err);
+            setAllElements([]);
+        });
     }, [allElementsLoader, isOpen]);
 
     const onClose = () => {

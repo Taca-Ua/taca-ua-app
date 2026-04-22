@@ -6,7 +6,7 @@ import HelpTooltip from "../HelpTooltip";
 import { useNotification } from "../../contexts/NotificationProvider";
 import Button from "../utils/Button";
 
-const TeamsCreateModel = ({
+const TeamsCreateModal = ({
   controller,
   onCreate,
 }: {
@@ -193,4 +193,4 @@ const TeamsCreateModel = ({
   );
 };
 
-export default TeamsCreateModel;
+export default TeamsCreateModal;

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { modalitiesApi, type ModalityDetail } from '../../api/modalities';
-import ModalityEditModel from './ModalityEditModel';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../utils/Button';
+import ModalityEditModal from './ModalityEditModel';
 
 
 const ModalityDetailComponent = ( {modalityId} : { modalityId: string }) => {
@@ -81,12 +81,9 @@ const ModalityDetailComponent = ( {modalityId} : { modalityId: string }) => {
         </Button>
       </div>
 
-      <ModalityEditModel
+      <ModalityEditModal
         controller={editModalController}
-        onSave={(updatedModality) => {
-          setModality(updatedModality);
-        }}
-        modalityData={modality}
+        modalityState={[modality, setModality]}
       />
     </div>
   );

@@ -186,7 +186,6 @@ const AdminInfoComponent = ( {
       <AdminEditModal
         controller={[editModalOpen, setEditModalOpen]}
         adminState={[admin, setAdmin]}
-        onSaved={(updatedAdmin) => setAdmin(updatedAdmin)}
       />
 
       <AdminChangePasswordModal

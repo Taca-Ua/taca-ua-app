@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useNotification } from "../../contexts/NotificationProvider";
 import { type NucleoDetail, nucleosApi } from "../../api/nucleos";
 import HelpTooltip from "../HelpTooltip";
-import NucleusEditModel from "./NucleusEditModel";
+import NucleusEditModal from "./NucleusEditModal";
 import Button from "../utils/Button";
 
 const NucleusDetailComponent = ( { nucleusId } : { nucleusId: string }) => {
@@ -12,7 +12,7 @@ const NucleusDetailComponent = ( { nucleusId } : { nucleusId: string }) => {
 
   const editModelController = useState(false);
 
-  const [nucleus, setNucleus] = useState<NucleoDetail>();
+  const [nucleus, setNucleus] = useState<NucleoDetail | null>(null);
 
   useEffect(() => {
     // Fetch nucleus details from API
@@ -126,10 +126,9 @@ const NucleusDetailComponent = ( { nucleusId } : { nucleusId: string }) => {
         </Button>
       </div>
 
-      <NucleusEditModel
+      <NucleusEditModal
         controller={editModelController}
-        onSave={(updatedNucleus) => setNucleus(updatedNucleus)}
-        nucleusData={nucleus}
+        nucleusState={[nucleus, setNucleus]}
       />
 
     </div>

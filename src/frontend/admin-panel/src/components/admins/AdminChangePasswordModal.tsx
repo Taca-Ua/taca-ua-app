@@ -3,6 +3,7 @@ import { type AdminDetail, administratorsApi } from "../../api/admins"
 import HelpTooltip from "../HelpTooltip";
 import { useAuth } from "../../hooks/useAuth";
 import Button from "../utils/Button";
+import { useNotification } from "../../contexts/NotificationProvider";
 
 const AdminChangePasswordModal = ( {
     controller,
@@ -14,8 +15,9 @@ const AdminChangePasswordModal = ( {
     onChangePasswordSuccess?: () => void,
 } ) => {
     const [isOpen, setIsOpen] = controller;
-    const admin = adminState[0];
+    const [admin, ] = adminState;
     const { isAdminGeneral } = useAuth();
+    const { notify } = useNotification();
 
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
@@ -30,35 +32,31 @@ const AdminChangePasswordModal = ( {
         setShowConfirmNewPassword(false);
     };
 
-    const handleChangePassword = async () => {
-        if (!newPassword.trim()) {
-            alert('Password é obrigatória');
-            return;
-        }
-        if (!confirmNewPassword.trim()) {
-            alert('Confirmação de password é obrigatória');
-            return;
-        }
-        if (newPassword !== confirmNewPassword) {
-            alert('As passwords não coincidem');
-            return;
-        }
+    const handleChangePassword = () => {
+      if (!newPassword.trim()) {
+          notify('Password é obrigatória', 'error');
+          return;
+      }
+      if (!confirmNewPassword.trim()) {
+          notify('Confirmação de password é obrigatória', 'error');
+          return;
+      }
+      if (newPassword !== confirmNewPassword) {
+          notify('As passwords não coincidem', 'error');
+          return;
+      }
 
-        const changePasswordResult = async () => {
-            try {
-                await administratorsApi.changePassword(admin.id, {
-                    new_password: newPassword,
-                    temporary: false
-                });
-                alert('Password alterada com sucesso!');
-                if (onChangePasswordSuccess) onChangePasswordSuccess();
-                onClose();
-            } catch (error) {
-                console.error('Error changing password:', error);
-                alert('Ocorreu um erro ao alterar a password. Por favor, tente novamente.');
-            }
-        };
-        await changePasswordResult();
+      administratorsApi.changePassword(admin.id, {
+          new_password: newPassword,
+          temporary: false
+      }).then(() => {
+          notify('Password alterada com sucesso!', 'success');
+          if (onChangePasswordSuccess) onChangePasswordSuccess();
+          onClose();
+      }).catch((error) => {
+          console.error('Error changing password:', error);
+          notify('Ocorreu um erro ao alterar a password. Por favor, tente novamente.', 'error');
+      });
     };
 
     if ( !isOpen ) return null;

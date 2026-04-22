@@ -4,52 +4,29 @@ import HelpTooltip from "../HelpTooltip";
 import { useNotification } from "../../contexts/NotificationProvider";
 import Button from "../utils/Button";
 
-const TeamEditModel = ({
+const TeamEditModal = ({
   controller,
+  teamState,
   onSave,
-  teamData,
-  teamId,
 }: {
   controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
-  onSave: (updatedTeam: TeamDetail) => void;
-  teamData?: TeamDetail;
-  teamId?: string;
+  teamState: [TeamDetail, React.Dispatch<React.SetStateAction<TeamDetail | null>>];
+  onSave?: (updatedTeam: TeamDetail) => void;
 }) => {
-  if (!teamId && !teamData) {
-    throw new Error("TeamEditModel requires either teamId or teamData");
-  }
 
-  teamId = teamId || teamData!.id; // Use the provided teamId or extract it from teamData
-
-  const { notify } = useNotification();
   const [isOpen, setIsOpen] = controller;
+  const [teamData, setTeamData] = teamState;
+  const { notify } = useNotification();
 
-  const [editedName, setEditedName] = useState("");
+  const [editedName, setEditedName] = useState(teamData.name);
 
   useEffect(() => {
-    if (teamData) {
-      setEditedName(teamData.name);
-    }
-
-    const fetchTeam = async () => {
-      try {
-        const data = await teamsApi.get(teamId!);
-        setEditedName(data.name);
-      } catch (error) {
-        console.error("Error fetching team data:", error);
-        notify(
-          "Não foi possível carregar os dados da equipa. Tente novamente.",
-          "error",
-        );
-        setIsOpen(false); // Close the modal if team data cannot be loaded
-      }
-    };
-
-    fetchTeam();
-  }, [teamId]);
+    if (!isOpen) return;
+    setEditedName(teamData.name);
+  }, [isOpen, teamData]);
 
   const onClose = () => {
-    setEditedName(teamData ? teamData.name : ""); // Reset to original name on close
+    setEditedName(teamData.name); // Reset to original name on close
     setIsOpen(false);
   };
 
@@ -59,26 +36,20 @@ const TeamEditModel = ({
       return;
     }
 
-    try {
-      const teamData = await teamsApi.update(teamId, {
-        name: editedName,
-      });
-
-      onSave(teamData);
-
+    teamsApi.update(teamData.id, {
+      name: editedName,
+    }).then((updatedTeam) => {
+      setTeamData(updatedTeam);
+      if (onSave) onSave(updatedTeam);
       onClose();
-    } catch (err) {
+      notify("Equipa atualizada com sucesso!", "success");
+    }).catch((err) => {
       console.error("Error updating team:", err);
-      notify(
-        "Não foi possível guardar as alterações à equipa. Tente novamente.",
-        "error",
-      );
-    }
+      notify("Não foi possível guardar as alterações à equipa. Tente novamente.", "error");
+    });
   };
 
-  if (!isOpen) {
-    return null; // Don't render the modal if it's not open
-  }
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
@@ -130,4 +101,4 @@ const TeamEditModel = ({
   );
 };
 
-export default TeamEditModel;
+export default TeamEditModal;

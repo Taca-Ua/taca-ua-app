@@ -1,83 +1,46 @@
 import { useEffect, useState } from "react";
 import HelpTooltip from "../HelpTooltip";
-import { type NucleoListItem, nucleosApi } from "../../api/nucleos";
+import { nucleosApi } from "../../api/nucleos";
 import { type CourseDetail, coursesApi } from "../../api/courses";
 import { useNotification } from "../../contexts/NotificationProvider";
 import Button from "../utils/Button";
+import ChoseOneInput from "../utils/inputs/ChoseOneInput";
 
-const CourseEditModel = ({
+const CourseEditModal = ({
   controller,
+  courseState,
   onSave,
-  courseData,
-  courseId,
 }: {
   controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
-  onSave: (courseData: CourseDetail) => void;
-  courseData: CourseDetail;
-  courseId?: string;
+  courseState: [CourseDetail, React.Dispatch<React.SetStateAction<CourseDetail | null>>];
+  onSave?: (courseData: CourseDetail) => void;
 }) => {
-  if (!courseId && !courseData) {
-    throw new Error("CourseEditModel requires either courseId or courseData");
-  }
-
-  courseId = courseId || courseData.id; // Garantir que temos um courseId para buscar os detalhes, mesmo que courseData seja fornecido
-
-  const { notify } = useNotification();
 
   const [isOpen, setIsOpen] = controller;
+  const { notify } = useNotification();
 
-  const [editedName, setEditedName] = useState("");
-  const [editedAbbreviation, setEditedAbbreviation] = useState("");
-  const [editedNucleoId, setEditedNucleoId] = useState("");
-  const [nucleos, setNucleos] = useState<NucleoListItem[]>([]);
-
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    const fetchNucleos = async () => {
-      try {
-        const data = await nucleosApi.getAll();
-        setNucleos(data);
-      } catch (error) {
-        console.error("Error fetching nucleos:", error);
-      }
-    };
-
-    fetchNucleos();
-  }, [isOpen]);
+  const [courseData, setCourseData] = courseState;
+  const [editedName, setEditedName] = useState(courseData.name);
+  const [editedAbbreviation, setEditedAbbreviation] = useState(courseData.abbreviation);
+  const [editedNucleoId, setEditedNucleoId] = useState(courseData.nucleo.id);
 
   useEffect(() => {
-    if (courseData) {
-      setEditedName(courseData.name);
-      setEditedAbbreviation(courseData.abbreviation);
-      setEditedNucleoId(courseData.nucleo.id);
-      return;
-    }
+    if (!isOpen) return;
 
-    const fetchCourse = async () => {
-      try {
-        const data = await coursesApi.getById(courseId);
-        setEditedName(data.name);
-        setEditedAbbreviation(data.abbreviation);
-        setEditedNucleoId(data.nucleo.id);
-      } catch (error) {
-        console.error("Error fetching course details:", error);
-      }
-    };
-
-    fetchCourse();
-  }, [courseData, courseId]);
+    setEditedName(courseData.name);
+    setEditedAbbreviation(courseData.abbreviation);
+    setEditedNucleoId(courseData.nucleo.id);
+  }, [courseData, isOpen]);
 
   const onClose = () => {
+
     setEditedName(courseData.name);
     setEditedAbbreviation(courseData.abbreviation);
     setEditedNucleoId(courseData.nucleo.id);
     setIsOpen(false);
   }
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!editedName.trim()) {
       notify('Nome é obrigatório', 'error');
       return;
@@ -91,26 +54,22 @@ const CourseEditModel = ({
       return;
     }
 
-    try {
-      const updatedCourse = await coursesApi.update(courseId, {
-        name: editedName,
-        abbreviation: editedAbbreviation,
-        nucleo_id: editedNucleoId,
-      });
-      onSave(updatedCourse);
+    coursesApi.update(courseData.id, {
+      name: editedName,
+      abbreviation: editedAbbreviation,
+      nucleo_id: editedNucleoId,
+    }).then(updatedCourse => {
+      setCourseData(updatedCourse);
+      if (onSave) onSave(updatedCourse);
       setIsOpen(false);
       notify('Curso atualizado com sucesso', 'success');
-    } catch (error) {
+    }).catch(error => {
       console.error("Error updating course:", error);
       notify('Erro ao atualizar curso', 'error');
-    } finally {
-      onClose();
-    }
+    });
   };
 
-  if (!isOpen) {
-    return null;
-  }
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
@@ -160,20 +119,10 @@ const CourseEditModel = ({
               />{" "}
               <span className="text-red-500">*</span>
             </label>
-            <select
-              value={editedNucleoId}
-              onChange={(e) => setEditedNucleoId(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-            >
-              <option value="">Selecionar Núcleo</option>
-              {[...nucleos]
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .map((nucleo) => (
-                  <option key={nucleo.id} value={nucleo.id}>
-                    {nucleo.name}
-                  </option>
-                ))}
-            </select>
+            <ChoseOneInput
+              allElementsLoader={() => nucleosApi.getAll().then(nucleos => nucleos.map(n => ({ id: n.id, title: n.abbreviation, subTitle: n.name })))}
+              onSelect={(elem) => setEditedNucleoId(elem?.id || "")}
+            />
           </div>
         </div>
 
@@ -198,4 +147,4 @@ const CourseEditModel = ({
   );
 };
 
-export default CourseEditModel;
+export default CourseEditModal;

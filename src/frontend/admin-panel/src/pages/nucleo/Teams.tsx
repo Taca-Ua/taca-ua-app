@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { type TeamListItem } from '../../api/teams';
 import TeamsListComponent from '../../components/teams/TeamsListComponent';
-import TeamsCreateModel from '../../components/teams/TeamsCreateModel';
+import TeamsCreateModal from '../../components/teams/TeamsCreateModal';
 import Button from '../../components/utils/Button';
 
 const Equipas = () => {
@@ -26,7 +26,7 @@ const Equipas = () => {
             teamsState={[teams, setTeams]}
           />
         </div>
-        <TeamsCreateModel
+        <TeamsCreateModal
           controller={createTeamController}
           onCreate={(newTeam) => setTeams([...teams, newTeam])}
         />

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import NucleusListComponent from '../../components/nucleos/NucleusListComponent';
-import NucleoCreateModel from '../../components/nucleos/NucleoCreateModel';
+import NucleoCreateModal from '../../components/nucleos/NucleoCreateModal';
 import { type NucleoListItem } from '../../api/nucleos';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../../components/utils/Button';
@@ -34,7 +34,7 @@ const Nucleo = () => {
           </div>
         </div>
 
-        <NucleoCreateModel
+        <NucleoCreateModal
           controller={createModalController}
           onCreate={(newNucleus) => setNucleus([...nucleus, newNucleus])}
         />

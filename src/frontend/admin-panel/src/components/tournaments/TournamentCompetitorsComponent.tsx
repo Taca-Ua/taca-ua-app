@@ -1,5 +1,5 @@
 import type { TournamentDetail } from "../../api/tournaments";
-import ChooseMultipleModal, { type GenericElement } from "../utils/costum_menus/ChoseMultipleModel";
+import ChooseMultipleModal, { type GenericElement } from "../utils/costum_menus/ChoseMultipleModal";
 import { useState } from "react";
 import { teamsApi } from "../../api/teams";
 import { tournamentsApi } from "../../api/tournaments";

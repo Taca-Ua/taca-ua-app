@@ -169,14 +169,12 @@ const TournamentInfoComponent = ({
 
       <TournamentEditModal
         controller={[showEditModal, setShowEditModal]}
-        tournament={tournament}
-        onSave={(updatedTournament) => setTournament(updatedTournament)}
+        tournamentState={[tournament, setTournament]}
       />
 
       <TournamentFinishModal
         controller={[showFinishModal, setShowFinishModal]}
-        tournament={tournament}
-        onSave={(updatedTournament) => setTournament(updatedTournament)}
+        tournamentState={[tournament, setTournament]}
       />
     </div>
   );

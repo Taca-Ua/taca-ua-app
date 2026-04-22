@@ -13,7 +13,7 @@ const TournamentCreateModal = ({
 }: {
   controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
   onCreate: (tournament: TournamentListItem) => void;
-  modalityId?: string;
+  modalityId?: string;  // Optional prop to fix the modality (e.g., when creating from a modality page)
 }) => {
   const { notify } = useNotification();
 

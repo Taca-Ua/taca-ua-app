@@ -5,22 +5,31 @@ import { modalitiesApi, type ModalityListItem } from "../../api/modalities";
 import { modalityTypesApi, type ModalityTypeMinimal } from "../../api/modality-types";
 import Button from "../utils/Button";
 
-const ModalityCreateModel = ({
+const ModalityCreateModal = ({
+  controller,
   onCreate,
-  onClose,
 }: {
+  controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
   onCreate?: (modality: ModalityListItem) => void;
-  onClose?: () => void;
 }) => {
+
+  const [isOpen, setIsOpen] = controller;
+  const { notify } = useNotification();
 
   const [availableModalityTypes, setAvailableModalityTypes] = useState<ModalityTypeMinimal[]>([]);
 
   const [newModalityName, setNewModalityName] = useState("");
   const [modalityType, setModalityType] = useState("");
-  const { notify } = useNotification();
+
+  const onClose = () => {
+    setNewModalityName("");
+    setModalityType("");
+    setIsOpen(false);
+  };
 
   // Fetch modality types on mount if empty
   useEffect(() => {
+    if (!isOpen) return;
     const fetchModalityTypes = async () => {
       try {
         const data = await modalityTypesApi.getAllMinimal();
@@ -33,7 +42,7 @@ const ModalityCreateModel = ({
     if (availableModalityTypes.length === 0) {
       fetchModalityTypes();
     }
-  }, []);
+  }, [isOpen]);
 
   const handleAddModality = async () => {
     if (!newModalityName.trim()) {
@@ -64,6 +73,8 @@ const ModalityCreateModel = ({
       notify("Não foi possível criar a modalidade. Verifique os dados e tente novamente.", 'error');
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
@@ -130,4 +141,4 @@ const ModalityCreateModel = ({
   );
 };
 
-export default ModalityCreateModel;
+export default ModalityCreateModal;

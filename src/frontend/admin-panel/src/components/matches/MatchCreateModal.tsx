@@ -2,7 +2,7 @@ import { useState } from "react";
 import { matchesApi, type MatchListItem } from "../../api/matches"
 import { type TournamentDetail } from "../../api/tournaments";
 import HelpTooltip from "../HelpTooltip";
-import ChooseMultipleModal from "../utils/costum_menus/ChoseMultipleModel";
+import ChooseMultipleModal from "../utils/costum_menus/ChoseMultipleModal";
 import { useNotification } from "../../contexts/NotificationProvider";
 import Button from "../utils/Button";
 

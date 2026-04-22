@@ -121,15 +121,17 @@ function UnassignedColumn({
 
 const TournamentFinishModal = ({
   controller,
-  tournament,
+  tournamentState,
   onSave,
 }: {
   controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
-  tournament: TournamentDetail;
-  onSave: (updatedTournament: TournamentDetail) => void;
+  tournamentState: [TournamentDetail, React.Dispatch<React.SetStateAction<TournamentDetail | null>>];
+  onSave?: (updatedTournament: TournamentDetail) => void;
 }) => {
-  const { notify } = useNotification();
   const [isOpen, setIsOpen] = controller;
+  const [tournament, setTournament] = tournamentState;
+  const { notify } = useNotification();
+
   const numPositions = tournament.scoring_format.points.length;
 
   // State: position assignments and unassigned competitors
@@ -207,21 +209,21 @@ const TournamentFinishModal = ({
       cur_pos += count;
     }
 
-    const finishTournament = async () => {
-      try {
-        const result = await tournamentsApi.finish(tournament.id, {
-          ranking_entries: Object.entries(finalStandings).map(([id, position]) => ({
-            competitor_id: id,
-            position: position,
-          })),
-        });
-        onSave(result);
-        notify("Torneio finalizado com sucesso!", "info");
+    const finishTournament = () => {
+      tournamentsApi.finish(tournament.id, {
+        ranking_entries: Object.entries(finalStandings).map(([id, position]) => ({
+          competitor_id: id,
+          position: position,
+        })),
+      }).then((result) => {
+        setTournament(result);
+        if (onSave) onSave(result);
+        notify("Torneio finalizado com sucesso!", "success");
         setIsOpen(false);
-      } catch (error) {
+      }).catch((error) => {
         console.error("Error finalizing tournament:", error);
         notify("Erro ao finalizar torneio.", "error");
-      }
+      });
     };
 
     finishTournament();

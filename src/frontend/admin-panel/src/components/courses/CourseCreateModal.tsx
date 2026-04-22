@@ -5,7 +5,7 @@ import HelpTooltip from "../HelpTooltip";
 import ChoseOneModal from "../utils/costum_menus/ChoseOneModal";
 import Button from "../utils/Button";
 
-const CourseCreateModel = ({
+const CourseCreateModal = ({
   controller,
   onCreate,
 }: {
@@ -152,4 +152,4 @@ const CourseCreateModel = ({
   );
 }
 
-export default CourseCreateModel
+export default CourseCreateModal

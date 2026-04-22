@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { type ModalityListItem } from "../../api/modalities";
 import ModalitiesListComponent from "../../components/modalities/ModalitiesListComponent";
-import ModalityCreateModel from "../../components/modalities/ModalityCreateModel";
 import { useAuth } from "../../hooks/useAuth";
 import Button from "../../components/utils/Button";
+import ModalityCreateModal from "../../components/modalities/ModalityCreateModal";
 
 
 
@@ -37,15 +37,13 @@ const Modalities = () => {
           </div>
         </div>
 
-        {isModalOpen && (
-          <ModalityCreateModel
-            onCreate={(newModality) => {
-              setModalityTypes((prev) => [...prev, newModality]);
-              setIsModalOpen(false);
-            }}
-            onClose={() => setIsModalOpen(false)}
-          />
-        )}
+        <ModalityCreateModal
+          controller={[isModalOpen, setIsModalOpen]}
+          onCreate={(newModality) => {
+            setModalityTypes((prev) => [...prev, newModality]);
+            setIsModalOpen(false);
+          }}
+        />
       </div>
   );
 };

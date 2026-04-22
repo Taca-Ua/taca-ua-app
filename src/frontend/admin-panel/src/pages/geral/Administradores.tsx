@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { administratorsApi, type AdminListItem } from '../../api/admins';
 import { useNotification } from '../../contexts/NotificationProvider';
-import AdminCreateModel from '../../components/admins/AdminCreateModel';
+import AdminCreateModal from '../../components/admins/AdminCreateModal';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../../components/utils/Button';
 
@@ -123,9 +123,8 @@ function Administradores() {
           </div>
 
         </div>
-        <AdminCreateModel
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+        <AdminCreateModal
+          controller={[isModalOpen, setIsModalOpen]}
           onCreated={admin => setMembers(prev => [...prev, admin])}
         />
       </div>

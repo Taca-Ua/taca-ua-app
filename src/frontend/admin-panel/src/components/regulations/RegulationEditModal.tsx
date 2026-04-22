@@ -12,18 +12,19 @@ const formatFileSize = (bytes: number): string => {
 
 const RegulationEditModal = ( {
     controller,
-    regulation,
-    onUpdate
+    regulationState,
+    onSave
 } : {
     controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>]
-    regulation: RegulationDetail
-    onUpdate?: (regulation: RegulationDetail) => void
+    regulationState: [RegulationDetail, React.Dispatch<React.SetStateAction<RegulationDetail | null>>]
+    onSave?: (regulation: RegulationDetail) => void
 } ) => {
     const [ isOpen, setIsOpen ] = controller;
+    const [ regulation, setRegulation ] = regulationState;
     const { notify } = useNotification();
 
-    const [ title, setTitle ] = useState(regulation.title);
-    const [ description, setDescription ] = useState(regulation.description);
+    const [ title, setTitle ] = useState("");
+    const [ description, setDescription ] = useState("");
     const [ file, setFile ] = useState<File | null>(null);
     const [ isDragOver, setIsDragOver ] = useState(false);
     const [ uploading, setUploading ] = useState(false);
@@ -32,10 +33,21 @@ const RegulationEditModal = ( {
 
     useEffect(() => {
         if (!isOpen) return;
+
         setTitle(regulation.title);
-        setDescription(regulation.description);
+        setDescription(regulation.description || "");
         setFile(null);
     }, [regulation, isOpen]);
+
+    const onClose = () => {
+        if ( uploading ) return;
+
+        setTitle(regulation.title);
+        setDescription(regulation.description || "");
+        setFile(null);
+        setIsDragOver(false);
+        setIsOpen(false);
+    };
 
     const applyFile = (incoming: File | null) => {
         if (!incoming) return;
@@ -50,30 +62,22 @@ const RegulationEditModal = ( {
         setFile(incoming);
     };
 
-    const onClose = () => {
-        if ( uploading ) return;
-        setTitle(regulation.title);
-        setDescription(regulation.description);
-        setFile(null);
-        setIsDragOver(false);
-        setIsOpen(false);
-    };
-
     const handleEdit = () => {
-        setUploading(true);
-        regulationsApi.update(regulation.id, {
-            title:title,
-            description:description,
-            file:file? file : undefined
-        }).then( (data) => {
-            notify('Regulamento editado com sucesso.', 'success');
-            if (onUpdate) onUpdate(data);
-            onClose();
-        } ).catch( () => {
-            notify('Ocorreu um erro ao editar o regulamento.', 'error');
-        } ).finally( () => {
-            setUploading(false);
-        } );
+      setUploading(true);
+      regulationsApi.update(regulation.id, {
+          title:title,
+          description:description,
+          file:file? file : undefined
+      }).then( (data) => {
+        setRegulation(data);
+        if (onSave) onSave(data);
+        onClose();
+        notify('Regulamento editado com sucesso.', 'success');
+      } ).catch( () => {
+        notify('Ocorreu um erro ao editar o regulamento.', 'error');
+      } ).finally( () => {
+        setUploading(false);
+      } );
     }
 
     if ( !isOpen ) return null;

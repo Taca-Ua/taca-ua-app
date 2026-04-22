@@ -1,53 +1,37 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
 import { type NucleoDetail, nucleosApi } from "../../api/nucleos";
 import HelpTooltip from "../HelpTooltip";
 import Button from "../utils/Button";
+import { useNotification } from "../../contexts/NotificationProvider";
 
-const NucleusEditModel = ( {
+const NucleusEditModal = ( {
   controller,
+  nucleusState,
   onSave,
-  nucleusData
 } : {
   controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>],
-  onSave: (nucleus: NucleoDetail) => void,
-  nucleusData?: NucleoDetail
+  nucleusState: [NucleoDetail, React.Dispatch<React.SetStateAction<NucleoDetail | null>>],
+  onSave?: (updatedNucleus: NucleoDetail) => void,
 }) => {
-  // Extract nucleus ID from URL parameters
-  const nucleusId = useParams<{ id: string }>().id;
-  if (!nucleusId) {
-    return null;
-  }
 
   const [isOpen, setIsOpen] = controller;
+  const [nucleus, setNucleus] = nucleusState;
+  const { notify } = useNotification();
 
   const [editedAbbreviation, setEditedAbbreviation] = useState('');
   const [editedName, setEditedName] = useState('');
 
   useEffect(() => {
-    if (nucleusData) {
-      setEditedAbbreviation(nucleusData.abbreviation);
-      setEditedName(nucleusData.name);
-      return;
-    }
+    if (!isOpen) return;
 
-    const fetchNucleus = async () => {
-      try {
-        const data = await nucleosApi.getById(nucleusId);
-        setEditedAbbreviation(data.abbreviation);
-        setEditedName(data.name);
-      } catch (error) {
-        console.error("Error fetching nucleus details:", error);
-      }
-    };
-
-    fetchNucleus();
-  }, [nucleusData]);
+    setEditedAbbreviation(nucleus.abbreviation);
+    setEditedName(nucleus.name);
+  }, [isOpen]);
 
 
   const onClose = () => {
-    setEditedAbbreviation(nucleusData?.abbreviation || '');
-    setEditedName(nucleusData?.name || '');
+    setEditedAbbreviation(nucleus.abbreviation);
+    setEditedName(nucleus.name);
     setIsOpen(false);
   }
 
@@ -61,22 +45,21 @@ const NucleusEditModel = ( {
       return;
     }
 
-    try {
-      const updatedNucleus = await nucleosApi.update(String(nucleusId), {
-        abbreviation: editedAbbreviation,
-        name: editedName,
-      });
-      onSave(updatedNucleus);
+    nucleosApi.update(nucleus.id, {
+      abbreviation: editedAbbreviation,
+      name: editedName,
+    }).then((updatedNucleus) => {
+      setNucleus(updatedNucleus);
+      if (onSave) onSave(updatedNucleus);
       setIsOpen(false);
-    } catch (error) {
+      notify('Núcleo atualizado com sucesso!', 'success');
+    }).catch((error) => {
       console.error("Error updating nucleus:", error);
-      alert('Ocorreu um erro ao atualizar o núcleo. Tente novamente.');
-    };
+      notify('Ocorreu um erro ao atualizar o núcleo. Tente novamente.', 'error');
+    });
   };
 
-  if (!isOpen) {
-      return null;
-  }
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
@@ -139,4 +122,4 @@ const NucleusEditModel = ( {
   );
 };
 
-export default NucleusEditModel;
+export default NucleusEditModal;

@@ -3,7 +3,7 @@ import { nucleosApi } from "../../api/nucleos";
 import HelpTooltip from "../HelpTooltip";
 import Button from "../utils/Button";
 
-const NucleoCreateModel = ({
+const NucleoCreateModal = ({
   controller,
   onCreate,
 }: {
@@ -109,4 +109,4 @@ const NucleoCreateModel = ({
   );
 };
 
-export default NucleoCreateModel;
+export default NucleoCreateModal;

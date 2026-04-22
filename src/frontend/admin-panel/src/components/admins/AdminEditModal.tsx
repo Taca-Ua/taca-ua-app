@@ -4,7 +4,7 @@ import { nucleosApi } from '../../api/nucleos';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { type AdminDetail, administratorsApi } from '../../api/admins';
 import DefinedStatesMenuComponent from '../utils/costum_menus/DefinedStatesMenuComponent';
-import ChooseMultipleModal from '../utils/costum_menus/ChoseMultipleModel';
+import ChooseMultipleModal from '../utils/costum_menus/ChoseMultipleModal';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../utils/Button';
 
@@ -26,7 +26,7 @@ const AdminEditModal = ({
 } ) => {
   const { notify } = useNotification();
   const [isOpen, setIsOpen] = controller;
-  const admin = adminState[0];
+  const [admin, setAdmin] = adminState;
   const { isAdminGeneral } = useAuth();
 
   const [editedFirstName, setEditedFirstName] = useState(admin.first_name);
@@ -75,6 +75,7 @@ const AdminEditModal = ({
         enabled: editedEnabled,
         nucleos: admin.role === 'nucleo_admin' ? selectedNucleos : undefined,
       }).then(updatedAdmin => {
+        setAdmin(updatedAdmin);
         if (onSaved) onSaved(updatedAdmin);
       }).catch(err => {
         console.error('Failed to update administrator:', err);
