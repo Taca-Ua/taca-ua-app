@@ -1,0 +1,133 @@
+import { useEffect, useState } from "react";
+import { type AthleteDetail, athletesApi } from "../../api/athletes"
+import Button from "../utils/Button";
+import HelpTooltip from "../HelpTooltip";
+import DefinedStatesMenuComponent from "../utils/costum_menus/DefinedStatesMenuComponent";
+import { useNotification } from "../../contexts/NotificationProvider";
+
+const AthleteEditModal = ( {
+    controller,
+    athleteState,
+    onSave,
+} : {
+    controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>]
+    athleteState: [AthleteDetail, React.Dispatch<React.SetStateAction<AthleteDetail | null>>]
+    onSave?: (updated: AthleteDetail) => void
+  } ) => {
+    const [isOpen, setIsOpen] = controller;
+    const [athlete, setAthlete] = athleteState;
+    const { notify } = useNotification();
+
+    const [editedName, setEditedName] = useState(athlete.full_name);
+    const [editedIsMember, setEditedIsMember] = useState(athlete.is_member);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        setEditedName(athlete.full_name);
+        setEditedIsMember(athlete.is_member);
+    }, [athlete, isOpen]);
+
+    const onClose = () => {
+        setIsOpen(false);
+    }
+
+    const handleSave = () => {
+      if (!editedName.trim()) {
+          alert("O nome do atleta não pode estar vazio.");
+          return;
+      }
+
+      athletesApi.update(athlete.id, {
+          full_name: editedName,
+          is_member: editedIsMember,
+      }).then((updated) => {
+          notify("Atleta atualizado com sucesso.", "success");
+          setAthlete(updated);
+          if (onSave) onSave(updated);
+          onClose();
+      }).catch((err) => {
+          console.error("Failed to update athlete:", err);
+          notify("Erro ao atualizar atleta. Tente novamente.", "error");
+      });
+    };
+
+    if (!isOpen) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
+        <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
+          <h2 className="text-2xl font-bold mb-6 text-gray-800">
+            Editar Membro
+          </h2>
+
+          <div className="space-y-4">
+            <div>
+              <label
+                htmlFor="editName"
+                className="block text-gray-700 font-medium mb-2"
+              >
+                Nome <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="editName"
+                value={editedName}
+                onChange={(e) => setEditedName(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                placeholder="Digite o nome do membro"
+              />
+            </div>
+
+              <>
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">
+                    Número de Estudante
+                  </label>
+                  <div className="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-600">
+                    {athlete.student_number}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">
+                    Tipo{" "}
+                    <HelpTooltip
+                      text="Membro: paga quota e tem acesso a todos os benefícios do núcleo. Não-Membro: pode participar mas com acesso limitado."
+                      className="ml-1"
+                    />
+                  </label>
+                  <DefinedStatesMenuComponent
+                    states={[
+                      { label: "Sócio", value: "member" },
+                      { label: "Não Sócio", value: "non_member" },
+                    ]}
+                    onSelect={(value) => setEditedIsMember(value === "member")}
+                    initialValue={editedIsMember ? "member" : "non_member"}
+                  />
+                </div>
+              </>
+
+          </div>
+
+          <div className="flex gap-4 mt-6">
+            <Button
+                onClick={onClose}
+                type="secondary"
+                flexible={true}
+            >
+                Cancelar
+            </Button>
+            <Button
+              onClick={handleSave}
+              type="primary"
+              flexible={true}
+            >
+              Guardar
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+}
+
+export default AthleteEditModal;

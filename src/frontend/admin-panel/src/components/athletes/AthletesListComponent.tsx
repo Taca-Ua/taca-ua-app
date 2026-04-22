@@ -1,19 +1,44 @@
-import { type AthleteListItem, athletesApi } from "../../api/athletes";
-import { useState } from "react";
+import { type AthleteListItem, type AthleteDetail, athletesApi } from "../../api/athletes";
+import { useEffect, useState } from "react";
 import { useNotification } from "../../contexts/NotificationProvider";
+import AthleteInfoModal from "./AthleteInfoModal";
 
-const AthletesListBanner = ({ athlete }: { athlete: AthleteListItem }) => {
+const AthletesListBanner = ({
+  athleteData
+}: {
+  athleteData: AthleteListItem
+}) => {
 
     const { notify } = useNotification();
-    const [checked, setChecked] = useState(athlete.is_member);
     const [isloading, setIsLoading] = useState(false);
+    const [athlete, setAthlete] = useState(athleteData);
+    const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+
+    const [detailedAthlete, setDetailedAthlete] = useState<AthleteDetail | null>(null);
+
+    useEffect(() => {
+      if (!isInfoModalOpen) return;
+      if (detailedAthlete && detailedAthlete.id === athlete.id) return; // Already have the right data
+
+      athletesApi.getById(athlete.id)
+          .then((data) => {
+              setDetailedAthlete(data);
+              setAthlete(data); // Update summary data in case it changed
+          })
+          .catch((err) => {
+              console.error("Failed to fetch athlete details:", err);
+              notify("Erro ao carregar detalhes do atleta. Tente novamente.", "error");
+              setIsInfoModalOpen(false);
+          });
+    }, [isInfoModalOpen]);
 
     const onToggle = () => {
         setIsLoading(true);
         athletesApi.update(athlete.id, {
-            is_member: !checked,
+            is_member: !athlete.is_member,
         }).then(updated => {
-            setChecked(updated.is_member);
+            setAthlete(prev => prev ? { ...prev, is_member: updated.is_member } : prev);
+            setDetailedAthlete(prev => prev ? { ...prev, is_member: updated.is_member } : prev);
             notify(`Sócio ${updated.is_member ? "ativado" : "desativado"} para ${updated.full_name}.`);
         }).catch(err => {
             console.error("Failed to update athlete:", err);
@@ -24,89 +49,112 @@ const AthletesListBanner = ({ athlete }: { athlete: AthleteListItem }) => {
     }
 
     return (
-        <li
-            key={athlete.id}
-            className="px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:bg-gray-50"
+      <li
+        key={athlete.id}
+        className="px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:bg-gray-50"
+      >
+        <div
+          className="min-w-0 flex-1"
+          onClick={() => setIsInfoModalOpen(true)}
         >
-            <div className="min-w-0 flex-1">
-                <p className="font-medium text-teal-700">
-                    {athlete.full_name}
-                </p>
+          <p className="font-medium text-teal-700">{athlete.full_name}</p>
 
-                <div className="text-sm text-gray-600 mt-0.5">
-                    NMEC {athlete.student_number}
-                    {athlete.course?.name ? ` · ${athlete.course.name}` : ""}
-                </div>
-            </div>
+          <div className="text-sm text-gray-600 mt-0.5">
+            NMEC {athlete.student_number}
+            {athlete.course?.name ? ` · ${athlete.course.name}` : ""}
+          </div>
+        </div>
 
-            <div className="flex items-center gap-3 shrink-0">
-                <span className="text-sm text-gray-600 w-24 text-right sm:text-left">
-                    {checked ? "Sócio" : "Não sócio"}
-                </span>
-                <button
-                    type="button"
-                    role="switch"
-                    aria-checked={checked}
-                    disabled={isloading}
-                    onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        onToggle();
-                    }}
-                    className={`
-                        relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors
-                        focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2
-                        ${isloading ? "opacity-50 cursor-not-allowed" : ""}
-                        ${checked ? "bg-teal-600" : "bg-gray-200"}
-                    `}
-                >
-                    <span
-                        className={`
-                            pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow ring-0 transition
-                            ${checked ? "translate-x-6" : "translate-x-0.5"}
-                        `}
-                    />
-                </button>
-            </div>
-        </li>
+        <div className="flex items-center gap-3 shrink-0">
+          <span className="text-sm text-gray-600 w-24 text-right sm:text-left">
+            {athlete.is_member ? "Sócio" : "Não sócio"}
+          </span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={athlete.is_member}
+            disabled={isloading}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggle();
+            }}
+            className={`
+                relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors
+                focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2
+                ${isloading ? "opacity-50 cursor-not-allowed" : ""}
+                ${athlete.is_member ? "bg-teal-600" : "bg-gray-200"}
+            `}
+          >
+            <span
+              className={`
+                pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow ring-0 transition
+                ${athlete.is_member ? "translate-x-6" : "translate-x-0.5"}
+              `}
+            />
+          </button>
+        </div>
+        {detailedAthlete && (
+          <AthleteInfoModal
+            controller={[isInfoModalOpen, setIsInfoModalOpen]}
+            athleteState={[detailedAthlete, setDetailedAthlete]}
+            onEditSave={(updated) => setAthlete(updated)}
+          />
+        )}
+      </li>
     );
 };
 
 const AthletesListComponent = ( {
-        athletes,
+    athletes,
 } : {
-        athletes: AthleteListItem[] | null
+    athletes: AthleteListItem[] | null
 } ) => {
 
     if (athletes === null) {
         return (
-            <div className="text-center py-12">
-                <svg className="mx-auto h-12 w-12 animate-spin text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <p className="mt-2 text-sm text-gray-500">Carregando atletas...</p>
-            </div>
+          <div className="text-center py-12">
+            <svg
+              className="mx-auto h-12 w-12 animate-spin text-gray-400"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            <p className="mt-2 text-sm text-gray-500">Carregando atletas...</p>
+          </div>
         );
     }
 
     if (athletes.length === 0) {
         return (
-            <div className="text-center py-12 text-gray-500">
-                Nenhum participante corresponde aos filtros.
-            </div>
+          <div className="text-center py-12 text-gray-500">
+            Nenhum participante corresponde aos filtros.
+          </div>
         );
     }
 
     return (
-        <ul className="divide-y divide-gray-100 max-h-[640px] overflow-y-auto">
-            {athletes.sort((a, b) => a.full_name.localeCompare(b.full_name)).map((athlete) => (
-                <AthletesListBanner
-                    key={athlete.id}
-                    athlete={athlete}
-                />
-            ))}
-        </ul>
+      <ul className="divide-y divide-gray-100 max-h-[640px] overflow-y-auto">
+        {athletes
+          .sort((a, b) => a.full_name.localeCompare(b.full_name))
+          .map((athlete) => (
+            <AthletesListBanner key={athlete.id} athleteData={athlete} />
+          ))}
+      </ul>
     );
 }
 
