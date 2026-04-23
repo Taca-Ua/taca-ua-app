@@ -5,9 +5,11 @@ import AthleteInfoModal from "./AthleteInfoModal";
 import { useModal } from "../../contexts/ModalContext";
 
 const AthletesListBanner = ({
-  athleteData
+  athleteData,
+  onDelete,
 }: {
   athleteData: AthleteListItem
+  onDelete?: () => void
 }) => {
 
     const { notify } = useNotification();
@@ -42,6 +44,9 @@ const AthletesListBanner = ({
             <AthleteInfoModal
               athleteId={athlete.id}
               onEditSave={(updated) => setAthlete(updated)}
+              onDelete={() => {
+                if (onDelete) onDelete();
+              }}
             />
           )}
         >
@@ -87,10 +92,12 @@ const AthletesListBanner = ({
 };
 
 const AthletesListComponent = ( {
-    athletes,
+    athletesState,
 } : {
-    athletes: AthleteListItem[] | null
+    athletesState: [AthleteListItem[] | null, React.Dispatch<React.SetStateAction<AthleteListItem[] | null>>]
 } ) => {
+
+    const [athletes, setAthletes] = athletesState;
 
     if (athletes === null) {
         return (
@@ -133,7 +140,13 @@ const AthletesListComponent = ( {
         {athletes
           .sort((a, b) => a.full_name.localeCompare(b.full_name))
           .map((athlete) => (
-            <AthletesListBanner key={athlete.id} athleteData={athlete} />
+            <AthletesListBanner
+              key={athlete.id}
+              athleteData={athlete}
+              onDelete={() => {
+                setAthletes((prev) => prev ? prev.filter((a) => a.id !== athlete.id) : null);
+              }}
+            />
           ))}
       </ul>
     );

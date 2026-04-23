@@ -1,18 +1,35 @@
+import { useState } from "react";
 import { type StaffListItem } from "../../api/staff"
+import { useModal } from "../../contexts/ModalContext";
+import StaffInfoModal from "./StaffInfoModal";
 
-const StaffListBanner = ({ staff }: { staff: StaffListItem }) => {
+const StaffListBanner = ({ staff, onDelete }: { staff: StaffListItem; onDelete?: () => void }) => {
+    const { pushModal } = useModal();
+
+    const [staffState, setStaffState] = useState(staff);
+
     return (
       <li
-        key={staff.id}
+        key={staffState.id}
         className="px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:bg-gray-50"
       >
-        <div className="min-w-0 flex-1">
-          <p className="font-medium text-teal-700">{staff.full_name}</p>
+        <div className="min-w-0 flex-1" onClick={() => pushModal(
+          <StaffInfoModal
+            staffId={staff.id}
+            onEditSave={(updated) => {
+              setStaffState(updated);
+            }}
+            onDelete={() => {
+              if (onDelete) onDelete();
+            }}
+          />
+        )}>
+          <p className="font-medium text-teal-700">{staffState.full_name}</p>
 
           <div className="text-sm text-gray-600 mt-0.5">
-            {staff.staff_number
-              ? `Número de Staff: ${staff.staff_number}`
-              : `Contato: ${staff.contact || "N/A"}`}
+            {staffState.staff_number
+              ? `Número de Staff: ${staffState.staff_number}`
+              : `Contato: ${staffState.contact || "N/A"}`}
           </div>
         </div>
       </li>
@@ -20,10 +37,12 @@ const StaffListBanner = ({ staff }: { staff: StaffListItem }) => {
 }
 
 const StaffListComponent = ( {
-    staffList
+    staffListState,
 } : {
-    staffList: StaffListItem[] | null
+    staffListState: [StaffListItem[] | null, React.Dispatch<React.SetStateAction<StaffListItem[] | null>>],
 } ) => {
+
+    const [staffList, setStaffList] = staffListState;
 
     if (staffList === null) {
         return (
@@ -66,7 +85,9 @@ const StaffListComponent = ( {
         {staffList
           .sort((a, b) => a.full_name.localeCompare(b.full_name))
           .map((staff) => (
-            <StaffListBanner key={staff.id} staff={staff} />
+            <StaffListBanner key={staff.id} staff={staff} onDelete={() => {
+              setStaffList((prev) => prev ? prev.filter((s) => s.id !== staff.id) : null);
+            }}/>
           ))}
       </ul>
     );

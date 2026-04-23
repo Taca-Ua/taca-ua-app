@@ -25,7 +25,7 @@ const AdminInfoComponent = ( {
     const handleDelete = async () => {
         try {
           await administratorsApi.delete(admin.id);
-          navigate("/admin/geral/administradores");
+          navigate("/geral/administradores");
         } catch (err) {
           console.error('Failed to delete administrator:', err);
           notify("Failed to delete administrator.", "error");

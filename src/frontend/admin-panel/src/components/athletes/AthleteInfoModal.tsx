@@ -8,9 +8,11 @@ import { useEffect, useState } from "react";
 const AthleteInfoModal = ( {
     athleteId,
     onEditSave,
+    onDelete,
 } : {
     athleteId: string,
     onEditSave?: (updated: AthleteDetail) => void
+    onDelete?: () => void
 } ) => {
     const [athlete, setAthlete] = useState<AthleteDetail | null>(null);
     const { notify } = useNotification();
@@ -44,6 +46,7 @@ const AthleteInfoModal = ( {
             .then(() => {
                 notify("Atleta eliminado com sucesso.", "success");
                 setAthlete(null);
+                if (onDelete) onDelete();
                 onClose();
             })
             .catch((err) => {

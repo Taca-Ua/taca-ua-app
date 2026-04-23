@@ -162,10 +162,10 @@ export default function SociosContent() {
           </div>
           <div className="w-full p-4 border-b">
             {activeTab === "athletes" && (
-              <AthletesListComponent athletes={filteredAthletes} />
+              <AthletesListComponent athletesState={[filteredAthletes, setAthletes]} />
             )}
             {activeTab === "staff" && (
-              <StaffListComponent staffList={filteredStaff} />
+              <StaffListComponent staffListState={[filteredStaff, setStaff]} />
             )}
           </div>
         </div>
