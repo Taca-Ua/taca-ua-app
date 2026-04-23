@@ -6,16 +6,17 @@ import { useNotification } from '../../contexts/NotificationProvider';
 import AdminCreateModal from '../../components/admins/AdminCreateModal';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../../components/utils/Button';
+import { useModal } from '../../contexts/ModalContext';
 
 
 function Administradores() {
   const navigate = useNavigate();
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [members, setMembers] = useState<AdminListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const { notify } = useNotification();
   const { isAdminGeneral } = useAuth();
+  const { pushModal } = useModal();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,7 +66,11 @@ function Administradores() {
             <h1 className="text-3xl font-bold text-gray-800">Administradores</h1>
             <div>
               <Button
-                onClick={() => setIsModalOpen(true)}
+                onClick={() => pushModal(
+                  <AdminCreateModal
+                    onCreated={admin => setMembers(prev => [...prev, admin])}
+                  />
+                )}
                 type='primary'
                 active={isAdminGeneral} // Only general admins can add new admins
               >
@@ -121,12 +126,7 @@ function Administradores() {
               ))}
             </div>
           </div>
-
         </div>
-        <AdminCreateModal
-          controller={[isModalOpen, setIsModalOpen]}
-          onCreated={admin => setMembers(prev => [...prev, admin])}
-        />
       </div>
   );
 }

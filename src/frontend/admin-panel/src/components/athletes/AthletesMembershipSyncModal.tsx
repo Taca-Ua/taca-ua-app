@@ -3,6 +3,7 @@ import HelpTooltip from "../HelpTooltip";
 import { athletesApi } from "../../api/athletes";
 import { useNotification } from "../../contexts/NotificationProvider";
 import Button from "../utils/Button";
+import { useModal } from "../../contexts/ModalContext";
 
 export function parseNmecColumnText(text: string): string[] {
   // Strip UTF-8 BOM if present (common in Excel-exported CSVs)
@@ -20,12 +21,10 @@ export function parseNmecColumnText(text: string): string[] {
 }
 
 const AthletesMembershipSyncModal = ( {
-    controller
 } : {
-    controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>]
 }) => {
-    const [isOpen, setIsOpen] = controller;
     const { notify } = useNotification();
+    const { popModal } = useModal();
 
     const [csvFileName, setCsvFileName] = useState<string | null>(null);
     const [parsedPreview, setParsedPreview] = useState<string[]>([]);
@@ -33,7 +32,7 @@ const AthletesMembershipSyncModal = ( {
     const csvFileInputRef = useRef<HTMLInputElement>(null);
 
     const onClose = () => {
-        setIsOpen(false);
+        popModal();
         setCsvFileName(null);
         setParsedPreview([]);
         if (csvFileInputRef.current) csvFileInputRef.current.value = "";
@@ -64,10 +63,7 @@ const AthletesMembershipSyncModal = ( {
           `Sincronização concluída: ${result.set_as_socio} sócio(s), ${result.reset_to_non_socio} removido(s).${unmatchedMsg}`,
           result.unmatched_numbers.length > 0 ? "warning" : "success",
         );
-        setIsOpen(false);
-        setCsvFileName(null);
-        setParsedPreview([]);
-        if (csvFileInputRef.current) csvFileInputRef.current.value = "";
+        onClose();
       } catch (e) {
         console.error(e);
         notify("Não foi possível aplicar a lista de NMECs.", "error");
@@ -76,10 +72,7 @@ const AthletesMembershipSyncModal = ( {
       }
     };
 
-    if (!isOpen) return null;
-
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-lg max-w-lg w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto">
           <h3 className="text-xl font-bold text-gray-800 mb-2">
             Importar NMECs (CSV)
@@ -140,7 +133,6 @@ const AthletesMembershipSyncModal = ( {
             </Button>
           </div>
         </div>
-      </div>
     );
 };
 

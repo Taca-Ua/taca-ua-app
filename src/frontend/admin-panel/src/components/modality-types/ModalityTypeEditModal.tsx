@@ -3,20 +3,19 @@ import { type EscalaoRow, type ModalityTypeDetail, modalityTypesApi } from "../.
 import HelpTooltip from "../HelpTooltip";
 import Button from "../utils/Button";
 import { useNotification } from "../../contexts/NotificationProvider";
+import { useModal } from "../../contexts/ModalContext";
 
 const parsePoints = (raw: string): number[] =>
   raw.split(/[\s,]+/).map(p => parseInt(p.trim())).filter(p => !isNaN(p));
 
 const ModalityTypeEditModal = ( {
-    controller,
     modalityTypeState
 } : {
-    controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
     modalityTypeState: [ModalityTypeDetail, React.Dispatch<React.SetStateAction<ModalityTypeDetail | null>>];
 } ) => {
 
-    const [isOpen, setIsOpen] = controller;
     const { notify } = useNotification();
+    const { popModal } = useModal();
 
     const [modalityType, setModalityType] = modalityTypeState;
     const [formatName, setFormatName] = useState(modalityType.name);
@@ -33,7 +32,7 @@ const ModalityTypeEditModal = ( {
     );
 
     const onClose = () => {
-        setIsOpen(false);
+        popModal();
         setFormatName(modalityType.name);
         setFormatDescription(modalityType.description || "");
         setIsPlayoff(modalityType.is_playoff);
@@ -120,9 +119,7 @@ const ModalityTypeEditModal = ( {
         setEscaloes(newEscaloes);
     };
 
-    if (!isOpen) return null;
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 overflow-y-auto">
         <div className="bg-white p-8 rounded-lg w-full max-w-4xl my-8">
           <h2 className="text-2xl font-bold mb-6">Editar Formato de Prova</h2>
 
@@ -363,7 +360,6 @@ const ModalityTypeEditModal = ( {
             </Button>
           </div>
         </div>
-      </div>
     );
 }
 

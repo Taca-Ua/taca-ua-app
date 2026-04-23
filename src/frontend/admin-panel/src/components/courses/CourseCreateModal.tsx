@@ -4,21 +4,18 @@ import { nucleosApi } from "../../api/nucleos";
 import HelpTooltip from "../HelpTooltip";
 import ChoseOneModal from "../utils/costum_menus/ChoseOneModal";
 import Button from "../utils/Button";
+import { useModal } from "../../contexts/ModalContext";
 
 const CourseCreateModal = ({
-  controller,
   onCreate,
 }: {
-  controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
   onCreate?: (course: CourseListItem) => void;
 }) => {
-  const [isOpen, setIsOpen] = controller;
+  const { popModal, pushModal } = useModal();
 
   const [newCourseName, setNewCourseName] = useState("");
   const [newCourseAbbreviation, setNewCourseAbbreviation] = useState("");
   const [selectedNucleo, setSelectedNucleo] = useState<{id: string, title: string, subTitle?: string} | null>(null);
-
-  const [nucleosSelectModalOpen, setNucleosSelectModalOpen] = useState(false);
 
   const handleAddCourse = async () => {
     if (!newCourseName.trim()) {
@@ -53,15 +50,10 @@ const CourseCreateModal = ({
     setNewCourseName("");
     setNewCourseAbbreviation("");
     setSelectedNucleo(null);
-    setIsOpen(false);
+    popModal();
   };
 
-  if (!isOpen) {
-    return null;
-  }
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
       <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">
           Adicionar Curso
@@ -109,7 +101,17 @@ const CourseCreateModal = ({
               <span className="text-red-500">*</span>
             </label>
             <div
-              onClick={() => setNucleosSelectModalOpen(true)}
+              onClick={() => pushModal(
+                <ChoseOneModal
+                  allElementsLoader={() => nucleosApi.getAll().then(data => data.map((nucleo) => ({
+                    id: nucleo.id,
+                    title: nucleo.abbreviation,
+                    subTitle: nucleo.name,
+                  })))}
+                  onSelect={(nucleo) => setSelectedNucleo(nucleo)}
+                  title="Selecionar Núcleo"
+                />
+              )}
               className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700 cursor-pointer"
             >
               {selectedNucleo
@@ -136,19 +138,6 @@ const CourseCreateModal = ({
           </Button>
         </div>
       </div>
-
-      {/* Nucleo Selection */}
-      <ChoseOneModal
-        controller={[nucleosSelectModalOpen, setNucleosSelectModalOpen]}
-        allElementsLoader={() => nucleosApi.getAll().then(data => data.map((nucleo) => ({
-          id: nucleo.id,
-          title: nucleo.abbreviation,
-          subTitle: nucleo.name,
-        })))}
-        onSelect={(nucleo) => setSelectedNucleo(nucleo)}
-        title="Selecionar Núcleo"
-      />
-    </div>
   );
 }
 

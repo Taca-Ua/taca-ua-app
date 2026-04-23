@@ -4,19 +4,18 @@ import HelpTooltip from "../HelpTooltip";
 import Button from "../utils/Button";
 import DefinedStatesMenuComponent from "../utils/costum_menus/DefinedStatesMenuComponent";
 import { useNotification } from "../../contexts/NotificationProvider";
+import { useModal } from "../../contexts/ModalContext";
 
 const parsePoints = (raw: string): number[] =>
   raw.split(/[\s,]+/).map(p => parseInt(p.trim())).filter(p => !isNaN(p));
 
 const ModalityTypeCreateModal = ( {
-    controller,
     onCreate
 } : {
-    controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
     onCreate?: (format: ModalityTypeListItem) => void;
 } ) => {
-    const [isOpen, setIsOpen] = controller;
     const { notify } = useNotification();
+    const { popModal } = useModal();
 
     const [formatName, setFormatName] = useState('');
     const [formatDescription, setFormatDescription] = useState('');
@@ -27,7 +26,7 @@ const ModalityTypeCreateModal = ( {
     ]);
 
     const onClose = () => {
-        setIsOpen(false);
+        popModal();
         setFormatName('');
         setFormatDescription('');
         setIsPlayoff(false);
@@ -101,10 +100,7 @@ const ModalityTypeCreateModal = ( {
         setEscaloes(newEscaloes);
     };
 
-    if ( !isOpen ) return null;
-
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 overflow-y-auto">
             <div className="bg-white p-8 rounded-lg w-full max-w-4xl my-8">
               <h2 className="text-2xl font-bold mb-6">Criar Formato de Prova</h2>
 
@@ -262,7 +258,6 @@ const ModalityTypeCreateModal = ( {
                 </Button>
               </div>
             </div>
-          </div>
     );
 }
 

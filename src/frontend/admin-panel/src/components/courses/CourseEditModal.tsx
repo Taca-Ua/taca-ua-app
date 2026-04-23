@@ -5,19 +5,18 @@ import { type CourseDetail, coursesApi } from "../../api/courses";
 import { useNotification } from "../../contexts/NotificationProvider";
 import Button from "../utils/Button";
 import ChoseOneInput from "../utils/inputs/ChoseOneInput";
+import { useModal } from "../../contexts/ModalContext";
 
 const CourseEditModal = ({
-  controller,
   courseState,
   onSave,
 }: {
-  controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
   courseState: [CourseDetail, React.Dispatch<React.SetStateAction<CourseDetail | null>>];
   onSave?: (courseData: CourseDetail) => void;
 }) => {
 
-  const [isOpen, setIsOpen] = controller;
   const { notify } = useNotification();
+  const { popModal } = useModal();
 
   const [courseData, setCourseData] = courseState;
   const [editedName, setEditedName] = useState(courseData.name);
@@ -25,19 +24,17 @@ const CourseEditModal = ({
   const [editedNucleoId, setEditedNucleoId] = useState(courseData.nucleo.id);
 
   useEffect(() => {
-    if (!isOpen) return;
-
     setEditedName(courseData.name);
     setEditedAbbreviation(courseData.abbreviation);
     setEditedNucleoId(courseData.nucleo.id);
-  }, [courseData, isOpen]);
+  }, [courseData]);
 
   const onClose = () => {
 
     setEditedName(courseData.name);
     setEditedAbbreviation(courseData.abbreviation);
     setEditedNucleoId(courseData.nucleo.id);
-    setIsOpen(false);
+    popModal();
   }
 
   const handleSave = () => {
@@ -61,7 +58,7 @@ const CourseEditModal = ({
     }).then(updatedCourse => {
       setCourseData(updatedCourse);
       if (onSave) onSave(updatedCourse);
-      setIsOpen(false);
+      popModal();
       notify('Curso atualizado com sucesso', 'success');
     }).catch(error => {
       console.error("Error updating course:", error);
@@ -69,10 +66,7 @@ const CourseEditModal = ({
     });
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
       <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">Editar Curso</h2>
 
@@ -143,7 +137,6 @@ const CourseEditModal = ({
           </Button>
         </div>
       </div>
-    </div>
   );
 };
 

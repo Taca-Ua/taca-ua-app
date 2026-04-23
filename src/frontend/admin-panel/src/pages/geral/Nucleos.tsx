@@ -4,11 +4,12 @@ import NucleoCreateModal from '../../components/nucleos/NucleoCreateModal';
 import { type NucleoListItem } from '../../api/nucleos';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../../components/utils/Button';
+import { useModal } from '../../contexts/ModalContext';
 
 const Nucleo = () => {
 
-  const createModalController = useState(false);
   const { isAdminGeneral } = useAuth();
+  const { pushModal } = useModal();
 
   const [nucleus, setNucleus] = useState<NucleoListItem[]>([]);
 
@@ -18,7 +19,11 @@ const Nucleo = () => {
           <div className="mb-6 flex justify-between items-center">
             <h1 className="text-3xl font-bold text-gray-800">Núcleos</h1>
             <Button
-              onClick={() => createModalController[1](true)}
+              onClick={() => pushModal(
+                <NucleoCreateModal
+                  onCreate={(newNucleus) => setNucleus([...nucleus, newNucleus])}
+                />
+              )}
               type='primary'
               padding='px-6 py-3'
               disabled={!isAdminGeneral}
@@ -33,11 +38,6 @@ const Nucleo = () => {
             />
           </div>
         </div>
-
-        <NucleoCreateModal
-          controller={createModalController}
-          onCreate={(newNucleus) => setNucleus([...nucleus, newNucleus])}
-        />
       </div>
   );
 };

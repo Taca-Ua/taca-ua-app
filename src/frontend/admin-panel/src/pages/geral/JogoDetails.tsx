@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import ConfirmModal from '../../components/ConfirmModal';
 import { useNotification } from '../../contexts/NotificationProvider';
 import {
   matchesApi,
@@ -235,9 +234,6 @@ const CommentsSection = ({ match }: { match: MatchDetail }) => {
   const { notify } = useNotification();
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
-  const [deletingComment, setDeletingComment] = useState(false);
-
   // const comments = match.comments || [];
 
   const handleAddComment = async () => {
@@ -256,26 +252,10 @@ const CommentsSection = ({ match }: { match: MatchDetail }) => {
       setSubmitting(false);
     }
   };
-
-  const handleDeleteComment = (commentId: string) => {
-    setCommentToDelete(commentId);
-  };
-
-  const confirmDeleteComment = async () => {
-    if (!commentToDelete) return;
-
-    try {
-      setDeletingComment(true);
-      console.log('Deleting comment with ID:', commentToDelete);
-      await matchesApi.deleteComment(match.id, commentToDelete);
-      setCommentToDelete(null);
-      setComments(prev => prev.filter(c => c.id !== commentToDelete));
-    } catch (err) {
-      console.error('Error deleting comment:', err);
-      notify(err instanceof Error ? err.message : 'Não foi possível eliminar o comentário. Tente novamente.', 'error');
-    } finally {
-      setDeletingComment(false);
-    }
+  const handleDeleteComment = async (commentId: string) => {
+    matchesApi.deleteComment(match.id, commentId).then(() => {
+      setComments(prev => prev.filter(c => c.id !== commentId));
+    });
   };
 
   const renderCommentListArea = () => {
@@ -301,10 +281,16 @@ const CommentsSection = ({ match }: { match: MatchDetail }) => {
                   </p>
                 </div>
               </div> */}
-              <button
+              <div />
+              <Button
                 onClick={() => handleDeleteComment(comment.id)}
-                className="text-red-600 hover:text-red-700 p-1"
-                title="Eliminar comentário"
+                type="danger"
+                confirmation={{
+                  title: "Eliminar comentário",
+                  message: "Tem a certeza que deseja eliminar este comentário?",
+                  confirmLabel: "Eliminar",
+                }}
+                padding="px-2 py-2"
               >
                 <svg
                   className="w-5 h-5"
@@ -319,7 +305,7 @@ const CommentsSection = ({ match }: { match: MatchDetail }) => {
                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                   />
                 </svg>
-              </button>
+              </Button>
             </div>
             <p className="text-gray-700 whitespace-pre-wrap">
               {comment.message}
@@ -358,21 +344,6 @@ const CommentsSection = ({ match }: { match: MatchDetail }) => {
 
       {/* Comments List */}
       {renderCommentListArea()}
-
-      <ConfirmModal
-        isOpen={commentToDelete !== null}
-        title="Eliminar comentário"
-        message="Tem a certeza que deseja eliminar este comentário?"
-        confirmLabel="Eliminar"
-        variant="danger"
-        loading={deletingComment}
-        onCancel={() => {
-          if (!deletingComment) {
-            setCommentToDelete(null);
-          }
-        }}
-        onConfirm={confirmDeleteComment}
-      />
     </div>
   );
 };
@@ -386,9 +357,6 @@ const JogoDetails = () => {
   const [match, setMatch] = useState<MatchDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const { notify } = useNotification();
-
-  // Delete confirmation
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const fetchMatch = async () => {
     if (!id) return;
@@ -418,7 +386,6 @@ const JogoDetails = () => {
     } catch (err) {
       console.error('Error deleting match:', err);
       notify(err instanceof Error ? err.message : 'Não foi possível eliminar o jogo. Poderá ter resultados ou convocatórias registadas.', 'error');
-      setShowDeleteModal(false);
     }
   };
 
@@ -528,16 +495,6 @@ const JogoDetails = () => {
             <CommentsSection match={match} />
           </div>
         </div>
-
-        <ConfirmModal
-          isOpen={showDeleteModal}
-          title="Eliminar jogo"
-          message="Tem a certeza que deseja eliminar este jogo? Esta ação não pode ser revertida e todos os dados associados serão permanentemente removidos."
-          confirmLabel="Sim, Eliminar"
-          variant="danger"
-          onCancel={() => setShowDeleteModal(false)}
-          onConfirm={handleDelete}
-        />
       </div>
   );
 };

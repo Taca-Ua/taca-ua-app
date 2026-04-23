@@ -5,16 +5,15 @@ import { coursesApi, type CourseListItem } from "../../api/courses";
 import HelpTooltip from "../HelpTooltip";
 import { useNotification } from "../../contexts/NotificationProvider";
 import Button from "../utils/Button";
+import { useModal } from "../../contexts/ModalContext";
 
 const TeamsCreateModal = ({
-  controller,
   onCreate,
 }: {
-  controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
   onCreate?: (newTeam: TeamListItem) => void;
 }) => {
   const { notify } = useNotification();
-  const [isOpen, setIsOpen] = controller;
+  const { popModal } = useModal();
 
   const [newTeamName, setNewTeamName] = useState('');
   const [selectedModality, setSelectedModality] = useState('');
@@ -38,13 +37,11 @@ const TeamsCreateModal = ({
       }
     };
 
-    if (isOpen) {
-      fetchData();
-    }
-  }, [isOpen, notify]);
+    fetchData();
+  }, [notify]);
 
   const onClose = () => {
-    setIsOpen(false);
+    popModal();
     setNewTeamName("");
     setSelectedModality("");
     setSelectedCourse("");
@@ -82,10 +79,7 @@ const TeamsCreateModal = ({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
       <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">
           Adicionar Equipa
@@ -189,7 +183,6 @@ const TeamsCreateModal = ({
           </Button>
         </div>
       </div>
-    </div>
   );
 };
 

@@ -1,20 +1,19 @@
 import { useEffect, useState } from "react";
 import Button from "../Button";
+import { useModal } from "../../../contexts/ModalContext";
 
 const ChoseOneModal = ( {
-    controller,
     allElementsLoader,
     onSelect,
     title = "Escolha uma opção",
     initialSelectedId
 } : {
-    controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>],
     allElementsLoader: () => Promise<{id: string, title: string, subTitle?: string}[]>,
     onSelect: (element: {id: string, title: string, subTitle?: string} | null) => void,
     title?: string
     initialSelectedId?: string
 } ) => {
-    const [isOpen, setIsOpen] = controller;
+    const { popModal } = useModal();
 
     const [allElements, setAllElements] = useState<{id: string, title: string, subTitle?: string}[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
@@ -26,24 +25,22 @@ const ChoseOneModal = ( {
     );
 
     useEffect(() => {
-        if (!isOpen) return;
-
         allElementsLoader().then(elements => {
             setAllElements(elements);
         }).catch(err => {
             console.error("Failed to load elements:", err);
             setAllElements([]);
         });
-    }, [allElementsLoader, isOpen]);
+    }, [allElementsLoader]);
 
     const onClose = () => {
-        setIsOpen(false);
+        popModal();
     }
 
     const handleSelect = (element: {id: string, title: string, subTitle?: string}) => {
         setChosenElement(element.id);
         onSelect(element);
-        setIsOpen(false);
+        onClose();
     };
 
     const renderElement = (element: {id: string, title: string, subTitle?: string}) => {
@@ -67,8 +64,6 @@ const ChoseOneModal = ( {
           </div>
         );
     }
-
-    if ( !isOpen ) return null;
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">

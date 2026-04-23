@@ -1,9 +1,9 @@
-import { useState } from "react";
 import { tournamentsApi, type TournamentDetail } from "../../api/tournaments";
 import { useNavigate } from "react-router-dom";
 import TournamentEditModal from "./TournamentEditModal";
 import TournamentFinishModal from "./TournamentFinishModal";
 import Button from "../utils/Button";
+import { useModal } from "../../contexts/ModalContext";
 
 // Helper functions to get status text and badge color
 const getStatusBadgeColor = (status: string) => {
@@ -32,11 +32,7 @@ const TournamentInfoComponent = ({
 }) => {
 
   const [tournament, setTournament] = tournamentState;
-
-  // Modal state
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showFinishModal, setShowFinishModal] = useState(false);
-
+  const { pushModal } = useModal();
 
   const handleActivate = async () => {
     if (!tournament) return;
@@ -119,7 +115,11 @@ const TournamentInfoComponent = ({
 
       <div className="flex gap-4 pt-4">
         <Button
-          onClick={() => setShowEditModal(true)}
+          onClick={() => pushModal(
+            <TournamentEditModal
+              tournamentState={[tournament, setTournament]}
+            />
+          )}
           type="primary"
           flexible={true}
         >
@@ -158,7 +158,11 @@ const TournamentInfoComponent = ({
 
         {tournament.status === "active" && (
           <Button
-            onClick={() => setShowFinishModal(true)}
+            onClick={() => pushModal(
+              <TournamentFinishModal
+                tournamentState={[tournament, setTournament]}
+              />
+            )}
             type="info"
             flexible={true}
           >
@@ -166,16 +170,6 @@ const TournamentInfoComponent = ({
           </Button>
         )}
       </div>
-
-      <TournamentEditModal
-        controller={[showEditModal, setShowEditModal]}
-        tournamentState={[tournament, setTournament]}
-      />
-
-      <TournamentFinishModal
-        controller={[showFinishModal, setShowFinishModal]}
-        tournamentState={[tournament, setTournament]}
-      />
     </div>
   );
 };

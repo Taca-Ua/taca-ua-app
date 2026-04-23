@@ -3,31 +3,29 @@ import { teamsApi, type TeamDetail } from "../../api/teams";
 import HelpTooltip from "../HelpTooltip";
 import { useNotification } from "../../contexts/NotificationProvider";
 import Button from "../utils/Button";
+import { useModal } from "../../contexts/ModalContext";
 
 const TeamEditModal = ({
-  controller,
   teamState,
   onSave,
 }: {
-  controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
   teamState: [TeamDetail, React.Dispatch<React.SetStateAction<TeamDetail | null>>];
   onSave?: (updatedTeam: TeamDetail) => void;
 }) => {
 
-  const [isOpen, setIsOpen] = controller;
   const [teamData, setTeamData] = teamState;
   const { notify } = useNotification();
+  const { popModal } = useModal();
 
   const [editedName, setEditedName] = useState(teamData.name);
 
   useEffect(() => {
-    if (!isOpen) return;
     setEditedName(teamData.name);
-  }, [isOpen, teamData]);
+  }, [teamData]);
 
   const onClose = () => {
     setEditedName(teamData.name); // Reset to original name on close
-    setIsOpen(false);
+    popModal();
   };
 
   const handleSave = async () => {
@@ -49,10 +47,7 @@ const TeamEditModal = ({
     });
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
       <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">Editar Equipa</h2>
 
@@ -97,7 +92,6 @@ const TeamEditModal = ({
           </Button>
         </div>
       </div>
-    </div>
   );
 };
 

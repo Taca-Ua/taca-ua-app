@@ -4,11 +4,12 @@ import CoursesListComponent from '../../components/courses/CoursesListComponent'
 import CourseCreateModal from '../../components/courses/CourseCreateModal';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../../components/utils/Button';
+import { useModal } from '../../contexts/ModalContext';
 
 
 const Cursos = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const { isAdminGeneral } = useAuth();
+  const { pushModal } = useModal();
 
   const [courses, setCourses] = useState<CourseListItem[]>([]);  // Estado para armazenar os cursos
 
@@ -19,7 +20,7 @@ const Cursos = () => {
             <h1 className="text-3xl font-bold text-gray-800">Cursos</h1>
             <div>
               <Button
-                onClick={() => setIsModalOpen(true)}
+                onClick={() => pushModal(<CourseCreateModal onCreate={(newCourse) => setCourses([...courses, newCourse])} />)}
                 type='primary'
                 active={isAdminGeneral}
               >
@@ -30,10 +31,6 @@ const Cursos = () => {
 
           <CoursesListComponent coursesState={[courses, setCourses]} />
         </div>
-        <CourseCreateModal
-          controller={[isModalOpen, setIsModalOpen]}
-          onCreate={(newCourse) => setCourses([...courses, newCourse])}
-        />
       </div>
   );
 };

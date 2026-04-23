@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { type AdminDetail, administratorsApi } from "../../api/admins"
 import HelpTooltip from "../HelpTooltip";
 import AdminEditModal from "./AdminEditModal";
@@ -7,6 +6,7 @@ import { useAuth } from "../../hooks/useAuth";
 import Button from "../utils/Button";
 import { useNavigate } from "react-router-dom";
 import { useNotification } from "../../contexts/NotificationProvider";
+import { useModal } from "../../contexts/ModalContext";
 
 const AdminInfoComponent = ( {
     adminState,
@@ -16,10 +16,9 @@ const AdminInfoComponent = ( {
 
     const navigate = useNavigate();
     const { notify } = useNotification();
+    const { pushModal } = useModal();
 
     const [admin, setAdmin] = adminState;
-    const [editModalOpen, setEditModalOpen] = useState( false );
-    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState( false );
     const { isAdminGeneral } = useAuth();
 
 
@@ -152,7 +151,11 @@ const AdminInfoComponent = ( {
 
         <div className="flex gap-4 mt-8">
           <Button
-            onClick={() => setEditModalOpen(true)}
+            onClick={() => pushModal(
+              <AdminEditModal
+                adminState={[admin, setAdmin]}
+              />
+            )}
             type="primary"
             active={isAdminGeneral}
             flexible={true}
@@ -160,7 +163,11 @@ const AdminInfoComponent = ( {
             Editar
           </Button>
           <Button
-            onClick={() => setIsPasswordModalOpen(true)}
+            onClick={() => pushModal(
+              <AdminChangePasswordModal
+                adminState={[admin, setAdmin]}
+              />
+            )}
             type="info"
             active={isAdminGeneral}
             flexible={true}
@@ -182,16 +189,6 @@ const AdminInfoComponent = ( {
             Eliminar
           </Button>
         </div>
-
-      <AdminEditModal
-        controller={[editModalOpen, setEditModalOpen]}
-        adminState={[admin, setAdmin]}
-      />
-
-      <AdminChangePasswordModal
-        controller={[isPasswordModalOpen, setIsPasswordModalOpen]}
-        adminState={[admin, setAdmin]}
-      />
       </div>
     );
 }

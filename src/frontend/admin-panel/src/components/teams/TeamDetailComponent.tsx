@@ -7,13 +7,12 @@ import ChooseMultipleModal, {
 } from "../utils/costum_menus/ChoseMultipleModal";
 import { studentsApi, type Student } from "../../api/members";
 import Button from "../utils/Button";
+import { useModal } from "../../contexts/ModalContext";
 
 const TeamDetailComponent = ({ teamId }: { teamId: string }) => {
   const [team, setTeam] = useState<TeamDetail | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const editModelController = useState(false);
-  const playersModelController = useState(false);
+  const { pushModal } = useModal();
 
   const [avaiblePlayers, setAvailablePlayers] = useState<Student[]>([]);
 
@@ -175,7 +174,11 @@ const TeamDetailComponent = ({ teamId }: { teamId: string }) => {
         {/* Ações */}
         <div className="flex gap-4 mt-6">
           <Button
-            onClick={() => editModelController[1](true)}
+            onClick={() => pushModal(
+              <TeamEditModal
+                teamState={[team, setTeam]}
+              />
+            )}
             type="primary"
             flexible={true}
           >
@@ -202,7 +205,18 @@ const TeamDetailComponent = ({ teamId }: { teamId: string }) => {
           <h2 className="text-2xl font-bold text-gray-800">Equipa</h2>
           <div>
             <Button
-              onClick={() => editModelController[1](true)}
+              onClick={() => pushModal(
+                <ChooseMultipleModal
+                  allElementsLoader={() => Promise.resolve(avaiblePlayers.map((player) => ({
+                    id: player.id,
+                    title: player.full_name,
+                    subTitle: `NMEC: ${player.student_number}`,
+                  })))}
+                  initialChosenElementsIds={team.players.map((ele) => ele.id)}
+                  onSave={(chosenElements) => handleUpdatePlayers(chosenElements)}
+                  title="Selecionar Membros da Equipa"
+                />
+              )}
               type="primary"
             >
               +/- Editar Membros
@@ -239,23 +253,6 @@ const TeamDetailComponent = ({ teamId }: { teamId: string }) => {
           )}
         </div>
       </div>
-
-      <TeamEditModal
-        controller={editModelController}
-        teamState={[team, setTeam]}
-      />
-
-      <ChooseMultipleModal
-        controller={playersModelController}
-        allElementsLoader={() => Promise.resolve(avaiblePlayers.map((player) => ({
-          id: player.id,
-          title: player.full_name,
-          subTitle: `NMEC: ${player.student_number}`,
-        })))}
-        initialChosenElementsIds={team.players.map((ele) => ele.id)}
-        onSave={(chosenElements) => handleUpdatePlayers(chosenElements)}
-        title="Selecionar Membros da Equipa"
-      />
     </div>
   );
 };

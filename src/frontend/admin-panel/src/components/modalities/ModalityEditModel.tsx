@@ -4,30 +4,25 @@ import { modalitiesApi, type ModalityDetail } from '../../api/modalities';
 import HelpTooltip from '../HelpTooltip';
 import Button from '../utils/Button';
 import { useNotification } from '../../contexts/NotificationProvider';
+import { useModal } from '../../contexts/ModalContext';
 
 const ModalityEditModal = ( {
-  controller,
   modalityState,
   onSave,
 } : {
-  controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>],
   modalityState: [ModalityDetail, React.Dispatch<React.SetStateAction<ModalityDetail | null>>],
   onSave?: (modality: ModalityDetail) => void,
 }) => {
 
-  const [isOpen, setIsOpen] = controller;
   const [modalityData, setModalityData] = modalityState;
   const { notify } = useNotification();
+  const { popModal } = useModal();
 
   const [editedName, setEditedName] = useState(modalityData.name);
   const [editedType, setEditedType] = useState(modalityData.modality_type.id);
   const [modalityTypes, setModalityTypes] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
-    if (!isOpen) {
-      return;  // Only fetch modality types when the modal is opened
-    }
-
     if (modalityTypes.length > 0) {
       return;  // Modality types are already fetched, no need to fetch again
     }
@@ -42,12 +37,12 @@ const ModalityEditModal = ( {
     };
 
     fetchModalityTypes();
-  }, [isOpen]);
+  }, []);
 
   const onClose = () => {
     setEditedName(modalityData.name);
     setEditedType(modalityData.modality_type.id);
-    setIsOpen(false);
+    popModal();
   }
 
   const handleSave = () => {
@@ -66,10 +61,7 @@ const ModalityEditModal = ( {
     });
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
       <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">
           Editar Modalidade
@@ -125,7 +117,6 @@ const ModalityEditModal = ( {
           </Button>
         </div>
       </div>
-    </div>
   );
 };
 

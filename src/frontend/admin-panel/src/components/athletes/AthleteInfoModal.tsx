@@ -1,29 +1,45 @@
-import { useState } from "react";
 import { type AthleteDetail, athletesApi } from "../../api/athletes"
 import { useNotification } from "../../contexts/NotificationProvider";
 import Button from "../utils/Button";
 import AthleteEditModal from "./AthleteEditModal";
+import { useModal } from "../../contexts/ModalContext";
+import { useEffect, useState } from "react";
 
 const AthleteInfoModal = ( {
-    controller,
-    athleteState,
+    athleteId,
     onEditSave,
 } : {
-    controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>]
-    athleteState: [AthleteDetail, React.Dispatch<React.SetStateAction<AthleteDetail | null>>]
+    athleteId: string,
     onEditSave?: (updated: AthleteDetail) => void
 } ) => {
-    const [isOpen, setIsOpen] = controller;
-    const [athlete, setAthlete] = athleteState;
+    const [athlete, setAthlete] = useState<AthleteDetail | null>(null);
     const { notify } = useNotification();
+    const { popModal, pushModal } = useModal();
 
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        setIsLoading(true);
+        athletesApi.getById(athleteId)
+            .then((data) => {
+                setAthlete(data);
+            })
+            .catch((err) => {
+                console.error("Failed to fetch athlete details:", err);
+                notify("Erro ao carregar detalhes do atleta. Tente novamente.", "error");
+                popModal();
+            })
+            .finally(() => {
+                setIsLoading(false);
+            });
+    }, [athleteId]);
 
     const onClose = () => {
-        setIsOpen(false);
+        popModal();
     };
 
     const handleDelete = () => {
+        if (!athlete) return;
         athletesApi.delete(athlete.id)
             .then(() => {
                 notify("Atleta eliminado com sucesso.", "success");
@@ -36,11 +52,18 @@ const AthleteInfoModal = ( {
             });
     };
 
-    if (!isOpen) return null;
+    if (isLoading) {
+        return (
+            <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+                <p className="text-gray-500 text-center">Carregando detalhes do atleta...</p>
+            </div>
+        );
+    }
+
+    if (!athlete) return null;
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+      <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
           <div className="space-y-6">
             <div className="flex items-center gap-4">
               <span className="inline-block px-4 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-700">
@@ -92,7 +115,15 @@ const AthleteInfoModal = ( {
               Fechar
             </Button>
             <Button
-              onClick={() => setIsEditModalOpen(true)}
+              onClick={() => pushModal(
+                <AthleteEditModal
+                  athleteState={[athlete, setAthlete]}
+                  onSave={(updated) => {
+                    setAthlete(updated);
+                    if (onEditSave) onEditSave(updated);
+                  }}
+                />
+              )}
               type="primary"
               flexible={true}
             >
@@ -112,15 +143,6 @@ const AthleteInfoModal = ( {
             </Button>
           </div>
         </div>
-        <AthleteEditModal
-          controller={[isEditModalOpen, setIsEditModalOpen]}
-          athleteState={[athlete, setAthlete]}
-          onSave={(updated) => {
-            setAthlete(updated);
-            if (onEditSave) onEditSave(updated);
-          }}
-        />
-      </div>
     );
 }
 

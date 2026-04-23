@@ -4,17 +4,16 @@ import { useNotification } from "../../contexts/NotificationProvider";
 import { modalitiesApi, type ModalityListItem } from "../../api/modalities";
 import { modalityTypesApi, type ModalityTypeMinimal } from "../../api/modality-types";
 import Button from "../utils/Button";
+import { useModal } from "../../contexts/ModalContext";
 
 const ModalityCreateModal = ({
-  controller,
   onCreate,
 }: {
-  controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
   onCreate?: (modality: ModalityListItem) => void;
 }) => {
 
-  const [isOpen, setIsOpen] = controller;
   const { notify } = useNotification();
+  const { popModal } = useModal();
 
   const [availableModalityTypes, setAvailableModalityTypes] = useState<ModalityTypeMinimal[]>([]);
 
@@ -24,12 +23,11 @@ const ModalityCreateModal = ({
   const onClose = () => {
     setNewModalityName("");
     setModalityType("");
-    setIsOpen(false);
+    popModal();
   };
 
   // Fetch modality types on mount if empty
   useEffect(() => {
-    if (!isOpen) return;
     const fetchModalityTypes = async () => {
       try {
         const data = await modalityTypesApi.getAllMinimal();
@@ -42,7 +40,7 @@ const ModalityCreateModal = ({
     if (availableModalityTypes.length === 0) {
       fetchModalityTypes();
     }
-  }, [isOpen]);
+  }, []);
 
   const handleAddModality = async () => {
     if (!newModalityName.trim()) {
@@ -74,10 +72,7 @@ const ModalityCreateModal = ({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
       <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">
           Adicionar Modalidade
@@ -137,7 +132,6 @@ const ModalityCreateModal = ({
           </Button>
         </div>
       </div>
-    </div>
   );
 };
 

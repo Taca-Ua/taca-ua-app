@@ -1,10 +1,10 @@
 import type { TournamentDetail } from "../../api/tournaments";
 import ChooseMultipleModal, { type GenericElement } from "../utils/costum_menus/ChoseMultipleModal";
-import { useState } from "react";
 import { teamsApi } from "../../api/teams";
 import { tournamentsApi } from "../../api/tournaments";
 import { athletesApi } from "../../api/athletes";
 import Button from "../utils/Button";
+import { useModal } from "../../contexts/ModalContext";
 
 const TournamentCompetitorsComponent = ({
   tournamentState,
@@ -14,9 +14,9 @@ const TournamentCompetitorsComponent = ({
     React.Dispatch<React.SetStateAction<TournamentDetail | null>>,
   ];
 }) => {
-  const [tournament, setTournament] = tournamentState;
+  const { pushModal } = useModal();
 
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [tournament, setTournament] = tournamentState;
 
   const handleEditCompetitors = async (chosen: GenericElement[]) => {
     const addedCompetitors = chosen.filter(
@@ -93,7 +93,17 @@ const TournamentCompetitorsComponent = ({
           Competidores Inscritos ({tournament.competitors.length})
         </h2>
         <Button
-          onClick={() => setShowAddModal(true)}
+          onClick={() => pushModal(
+            <ChooseMultipleModal
+              allElementsLoader={() => tournament.competitor_type === "team" ? loadTeamsForModal() : loadAthletesForModal()}
+              initialChosenElementsIds={tournament.competitors.map(
+                (c) => c.entity_id,
+              )}
+              onSave={handleEditCompetitors}
+              title="Selecionar Competidores do Torneio"
+              showSummary={true}
+            />
+          )}
           type="primary"
         >
           +/- Editar Competidor
@@ -132,17 +142,6 @@ const TournamentCompetitorsComponent = ({
           </p>
         )}
       </div>
-
-      <ChooseMultipleModal
-        controller={[showAddModal, setShowAddModal]}
-        allElementsLoader={() => tournament.competitor_type === "team" ? loadTeamsForModal() : loadAthletesForModal()}
-        initialChosenElementsIds={tournament.competitors.map(
-          (c) => c.entity_id,
-        )}
-        onSave={handleEditCompetitors}
-        title="Selecionar Competidores do Torneio"
-        showSummary={true}
-      />
     </div>
   );
 };

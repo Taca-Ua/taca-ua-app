@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { type RegulationDetail, regulationsApi } from "../../api/regulations";
 import { useNotification } from "../../contexts/NotificationProvider";
 import { btn } from "../../styles/buttonStyles";
 import Button from "../utils/Button";
 import RegulationEditModal from "./RegulationEditModal";
+import { useModal } from "../../contexts/ModalContext";
 
 const formatDisplayDate = (dateStr: string | undefined) => {
     if (!dateStr) return "Data indisponível";
@@ -25,25 +26,37 @@ const formatDisplayDate = (dateStr: string | undefined) => {
 
 
 const RegulationInfoModal = ( {
-    controller,
-    regulationState
+    regulationId
 } : {
-    controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>]
-    regulationState: [RegulationDetail, React.Dispatch<React.SetStateAction<RegulationDetail | null>>]
+    regulationId: string
 } ) => {
 
-    const [ isOpen, setIsOpen ] = controller;
-    const [ regulation, setRegulation ] = regulationState;
+    const [ regulation, setRegulation ] = useState<RegulationDetail | null>(null);
     const { notify } = useNotification();
+    const { popModal, pushModal } = useModal();
 
-    const [ editModalOpen, setEditModalOpen ] = useState(false);
+    const [ loading, setLoading ] = useState(false);
+
+    useEffect( () => {
+        setLoading(true);
+        regulationsApi.getById( regulationId ).then( data => {
+            setRegulation( data );
+        } ).catch( ( err: unknown ) => {
+            console.error( 'Failed to fetch regulation details:', err );
+            notify( 'Erro ao carregar detalhes do regulamento.', 'error' );
+            popModal();
+        } ).finally( () => {
+            setLoading( false );
+        } );
+    }, [ regulationId ] );
 
     const onClose = () => {
-        setIsOpen(false);
+        popModal();
         setRegulation(null);
     };
 
     const handleDelete = () => {
+        if (!regulation) return;
         regulationsApi.delete(regulation.id).then(() => {
             onClose();
             notify('Regulation deleted successfully.', 'success');
@@ -53,10 +66,17 @@ const RegulationInfoModal = ( {
         });
     }
 
-    if ( !isOpen ) return null;
+    if (loading) {
+        return (
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300 p-8">
+                <p className="text-gray-700 text-center">Carregando detalhes do regulamento...</p>
+            </div>
+        );
+    }
+
+    if (!regulation) return null;
 
     return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
           <div className="p-8">
             <div className="flex justify-between items-start">
@@ -151,7 +171,11 @@ const RegulationInfoModal = ( {
               >
                 Eliminar Documento
               </Button>
-              <Button onClick={() => setEditModalOpen(true)} type="info" flexible={true}>
+              <Button onClick={() => pushModal(
+                <RegulationEditModal
+                  regulationState={[regulation, setRegulation]}
+                />
+              )} type="info" flexible={true}>
                 Editar Documento
               </Button>
               <Button onClick={onClose} type="secondary" flexible={true}>
@@ -160,12 +184,6 @@ const RegulationInfoModal = ( {
             </div>
           </div>
         </div>
-
-        <RegulationEditModal
-          controller={[editModalOpen, setEditModalOpen]}
-          regulationState={[regulation, setRegulation]}
-        />
-      </div>
     );
 }
 

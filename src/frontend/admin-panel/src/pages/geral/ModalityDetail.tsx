@@ -5,11 +5,12 @@ import TournamentList from '../../components/tournaments/TournamentList';
 import TournamentCreateModal from '../../components/tournaments/TournamentCreateModal';
 import ModalityDetailComponent from '../../components/modalities/ModalityDetailComponent';
 import Button from '../../components/utils/Button';
+import { useModal } from '../../contexts/ModalContext';
 
 
 const TournamentsTab = ({ modalityId }: { modalityId: string }) => {
   const [tournaments, setTournaments] = useState<TournamentListItem[]>([]);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const { pushModal } = useModal();
 
   const handleCreateTournament = (newTournament: TournamentListItem) => {
     setTournaments([...tournaments, newTournament]);
@@ -20,7 +21,12 @@ const TournamentsTab = ({ modalityId }: { modalityId: string }) => {
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold text-gray-800">Torneios</h2>
         <Button
-          onClick={() => setIsCreateModalOpen(true)}
+          onClick={() => pushModal(
+            <TournamentCreateModal
+              onCreate={handleCreateTournament}
+              modalityId={modalityId}
+            />
+          )}
           type='primary'
           padding='px-4 py-2'
         >
@@ -36,12 +42,6 @@ const TournamentsTab = ({ modalityId }: { modalityId: string }) => {
         })}
         fromModalityId={modalityId}
         showModalityFilter={false}
-      />
-
-      <TournamentCreateModal
-        controller={[isCreateModalOpen, setIsCreateModalOpen]}
-        onCreate={handleCreateTournament}
-        modalityId={modalityId}
       />
     </div>
   );

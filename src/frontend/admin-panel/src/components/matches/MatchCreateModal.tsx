@@ -5,26 +5,22 @@ import HelpTooltip from "../HelpTooltip";
 import ChooseMultipleModal from "../utils/costum_menus/ChoseMultipleModal";
 import { useNotification } from "../../contexts/NotificationProvider";
 import Button from "../utils/Button";
+import { useModal } from "../../contexts/ModalContext";
 
 const MatchCreateModal = ( {
-  controller,
   tournament,
   onCreated,
 } : {
-  controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>],
   tournament: TournamentDetail,
   onCreated?: (match: MatchListItem) => void
 } ) => {
   const { notify } = useNotification();
-
-  const [isOpen, setIsOpen] = controller;
+  const { popModal, pushModal } = useModal();
 
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
   const [location, setLocation] = useState<string>("");
   const [startTime, setStartTime] = useState<string>("");
   const [loading, setLoading] = useState<boolean>( false );
-
-  const choseParticipantsController = useState<boolean>( false );
 
   const handleCreateMatch = async () => {
     if (selectedParticipants.length < 2 || selectedParticipants.includes("")) {
@@ -51,7 +47,7 @@ const MatchCreateModal = ( {
       notify("Jogo criado com sucesso!", "success");
       // Aqui você pode adicionar lógica para fechar o modal ou atualizar a lista de jogos
       if (onCreated) onCreated(newMatch);
-      setIsOpen(false);
+      popModal();
     } catch ( error ) {
       console.error( "Error creating match:", error );
       notify("Ocorreu um erro ao criar o jogo. Por favor, tente novamente.", "error");
@@ -60,10 +56,7 @@ const MatchCreateModal = ( {
     }
   };
 
-  if ( !isOpen ) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">Criar Jogo</h2>
 
@@ -81,7 +74,19 @@ const MatchCreateModal = ( {
               </label>
               <div>
                 <Button
-                  onClick={() => choseParticipantsController[1]( true )}
+                  onClick={() => pushModal(
+                    <ChooseMultipleModal
+                      allElementsLoader={async () => tournament.competitors.map(competitor => ({
+                        id: competitor.id,
+                        title: competitor.name,
+                        subTitle: competitor.course_name
+                      }))}
+                      initialChosenElementsIds={selectedParticipants}
+                      onSave={(chosenIds) => setSelectedParticipants(chosenIds.map(ele => ele.id))}
+                      showSummary={true}
+                      title="Selecionar Participantes do Jogo"
+                    />
+                  )}
                   type="info"
                   flexible={true}
                   padding="px-4 py-2"
@@ -90,19 +95,6 @@ const MatchCreateModal = ( {
                 </Button>
               </div>
             </div>
-            <ChooseMultipleModal
-              controller={choseParticipantsController}
-              allElementsLoader={async () => tournament.competitors.map(competitor => ({
-                id: competitor.id,
-                title: competitor.name,
-                subTitle: competitor.course_name
-              }))}
-              initialChosenElementsIds={selectedParticipants}
-              onSave={(chosenIds) => setSelectedParticipants(chosenIds.map(ele => ele.id))}
-              showSummary={true}
-              title="Selecionar Participantes do Jogo"
-            />
-
             <div className="space-y-2">
               {selectedParticipants.map((participantId, index) => (
                 <div key={index} className="flex gap-2">
@@ -155,7 +147,7 @@ const MatchCreateModal = ( {
 
         <div className="flex gap-4 mt-6">
           <Button
-            onClick={() => setIsOpen(false)}
+            onClick={() => popModal()}
             type="secondary"
             flexible={true}
           >
@@ -170,7 +162,6 @@ const MatchCreateModal = ( {
           </Button>
         </div>
       </div>
-    </div>
   );
 }
 

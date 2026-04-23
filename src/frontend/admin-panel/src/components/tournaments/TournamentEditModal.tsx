@@ -3,30 +3,28 @@ import { tournamentsApi, type TournamentDetail } from "../../api/tournaments";
 import HelpTooltip from "../HelpTooltip";
 import Button from "../utils/Button";
 import { useNotification } from "../../contexts/NotificationProvider";
+import { useModal } from "../../contexts/ModalContext";
 
 const TournamentEditModal = ({
-  controller,
   tournamentState,
   onSave,
 }: {
-  controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
   tournamentState: [TournamentDetail, React.Dispatch<React.SetStateAction<TournamentDetail | null>>];
   onSave?: (updatedTournament: TournamentDetail) => void;
 }) => {
-  const [isOpen, setIsOpen] = controller;
   const [tournament, setTournament] = tournamentState;
   const { notify } = useNotification();
+  const { popModal } = useModal();
 
   const [name, setName] = useState("");
   const [startDate, setStartDate] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!isOpen) return;
 
     setName(tournament.name);
     setStartDate(tournament.start_date ? tournament.start_date.split('T')[0] : "");
-  }, [isOpen, tournament]);
+  }, [tournament]);
 
   const handleSubmit = () => {
 
@@ -42,7 +40,7 @@ const TournamentEditModal = ({
     }).then((updated) => {
       setTournament(updated);
       if(onSave) onSave(updated);
-      setIsOpen(false);
+      popModal();
       notify("Torneio atualizado com sucesso!", 'success');
     }).catch((error) => {
       console.error("Erro ao atualizar torneio:", error);
@@ -52,9 +50,7 @@ const TournamentEditModal = ({
     });
   };
 
-  if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">
           Editar Torneio
@@ -92,7 +88,7 @@ const TournamentEditModal = ({
 
         <div className="flex gap-4 mt-6">
           <Button
-            onClick={() => setIsOpen(false)}
+            onClick={() => popModal()}
             type="secondary"
             flexible={true}
           >
@@ -107,7 +103,6 @@ const TournamentEditModal = ({
           </Button>
         </div>
       </div>
-    </div>
   );
 };
 

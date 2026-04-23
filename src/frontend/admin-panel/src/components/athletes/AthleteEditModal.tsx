@@ -4,31 +4,29 @@ import Button from "../utils/Button";
 import HelpTooltip from "../HelpTooltip";
 import DefinedStatesMenuComponent from "../utils/costum_menus/DefinedStatesMenuComponent";
 import { useNotification } from "../../contexts/NotificationProvider";
+import { useModal } from "../../contexts/ModalContext";
 
 const AthleteEditModal = ( {
-    controller,
     athleteState,
     onSave,
 } : {
-    controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>]
     athleteState: [AthleteDetail, React.Dispatch<React.SetStateAction<AthleteDetail | null>>]
     onSave?: (updated: AthleteDetail) => void
   } ) => {
-    const [isOpen, setIsOpen] = controller;
     const [athlete, setAthlete] = athleteState;
     const { notify } = useNotification();
+    const { popModal } = useModal();
 
     const [editedName, setEditedName] = useState(athlete.full_name);
     const [editedIsMember, setEditedIsMember] = useState(athlete.is_member);
 
     useEffect(() => {
-        if (!isOpen) return;
         setEditedName(athlete.full_name);
         setEditedIsMember(athlete.is_member);
-    }, [athlete, isOpen]);
+    }, [athlete]);
 
     const onClose = () => {
-        setIsOpen(false);
+        popModal();
     }
 
     const handleSave = () => {
@@ -51,10 +49,7 @@ const AthleteEditModal = ( {
       });
     };
 
-    if (!isOpen) return null;
-
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
         <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
           <h2 className="text-2xl font-bold mb-6 text-gray-800">
             Editar Membro
@@ -126,7 +121,6 @@ const AthleteEditModal = ( {
             </Button>
           </div>
         </div>
-      </div>
     );
 }
 

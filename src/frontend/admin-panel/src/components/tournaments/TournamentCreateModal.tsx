@@ -4,20 +4,19 @@ import { useNotification } from '../../contexts/NotificationProvider';
 import { tournamentsApi, type TournamentListItem, type TournamentCreate } from '../../api/tournaments';
 import { modalitiesApi, type ModalityListItem } from '../../api/modalities';
 import Button from '../utils/Button';
+import { useModal } from '../../contexts/ModalContext';
 
 
 const TournamentCreateModal = ({
-  controller,
   onCreate,
   modalityId,
 }: {
-  controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
   onCreate: (tournament: TournamentListItem) => void;
   modalityId?: string;  // Optional prop to fix the modality (e.g., when creating from a modality page)
 }) => {
   const { notify } = useNotification();
+  const { popModal } = useModal();
 
-  const [isOpen, setIsOpen] = controller;
   const [modalities, setModalities] = useState<ModalityListItem[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -27,7 +26,6 @@ const TournamentCreateModal = ({
 
   // Fetch modalities if needed (only when modality is not fixed)
   useEffect(() => {
-    if (!isOpen) return;  // Only fetch when modal is opened
     if (modalityId) return;  // No need to fetch if modality is fixed
 
     const fetchModalities = async () => {
@@ -42,7 +40,7 @@ const TournamentCreateModal = ({
     if (modalities.length === 0) {
       fetchModalities();
     }
-  }, [isOpen]);
+  }, []);
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -82,13 +80,10 @@ const TournamentCreateModal = ({
     setName('');
     setIsPlayoff(false);
     setChosenModality(null);
-    setIsOpen(false);
+    popModal();
   }
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
       <div className="bg-white p-8 rounded-lg w-full max-w-lg">
         <h2 className="text-2xl font-bold mb-4">Criar Torneio</h2>
 
@@ -170,7 +165,6 @@ const TournamentCreateModal = ({
           </div>
         </div>
       </div>
-    </div>
   );
 };
 

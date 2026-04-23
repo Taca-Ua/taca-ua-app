@@ -1,7 +1,6 @@
 import Button from "./utils/Button";
 
 type ConfirmModalProps = {
-  isOpen: boolean;
   title: string;
   message: string;
   confirmLabel?: string;
@@ -13,7 +12,6 @@ type ConfirmModalProps = {
 };
 
 const ConfirmModal = ({
-  isOpen,
   title,
   message,
   confirmLabel = 'Confirmar',
@@ -23,17 +21,8 @@ const ConfirmModal = ({
   onConfirm,
   onCancel
 }: ConfirmModalProps) => {
-  if (!isOpen) return null;
-
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      onClick={() => {
-        if (!loading) {
-          onCancel();
-        }
-      }}
-    >
+
       <div
         className="bg-white rounded-lg p-8 max-w-md w-full mx-4 shadow-lg"
         onClick={(e: any) => e.stopPropagation()}
@@ -60,7 +49,6 @@ const ConfirmModal = ({
           </Button>
         </div>
       </div>
-    </div>
   );
 };
 

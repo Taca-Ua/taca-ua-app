@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
+import { useModal } from "../contexts/ModalContext";
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const { logout, username } = useAuth();
+  const { clearModals } = useModal();
 
   const navItems = [
     { to: "/geral/administradores", label: "Administradores", short: "Adm" },
@@ -21,6 +23,11 @@ export default function Sidebar() {
     { to: "/nucleo/jogos", label: "Jogos", short: "Jog" },
   ];
 
+  const handlePageChange = () => {
+    clearModals();
+    setIsOpen(false);
+  };
+
   return (
     <>
       <aside
@@ -32,6 +39,7 @@ export default function Sidebar() {
               <Link
                 to="/dashboard"
                 className="flex items-center gap-2 min-w-0 text-lg font-bold text-teal-600 hover:text-teal-700"
+                onClick={handlePageChange}
               >
                 <img
                   src="/logo.png"
@@ -68,7 +76,7 @@ export default function Sidebar() {
             <Link
               key={item.to}
               to={item.to}
-              onClick={() => setIsOpen(false)}
+              onClick={handlePageChange}
               className="flex items-center h-11 px-3 text-gray-700 hover:text-teal-600 hover:bg-teal-50 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-teal-400"
               title={!isOpen ? item.label : undefined}
             >
@@ -86,7 +94,7 @@ export default function Sidebar() {
             <Link
               key={item.to}
               to={item.to}
-              onClick={() => setIsOpen(false)}
+              onClick={handlePageChange}
               className="flex items-center h-11 px-3 text-gray-700 hover:text-teal-600 hover:bg-teal-50 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-teal-400"
               title={!isOpen ? item.label : undefined}
             >

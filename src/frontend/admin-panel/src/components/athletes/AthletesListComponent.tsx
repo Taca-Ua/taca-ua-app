@@ -1,7 +1,8 @@
-import { type AthleteListItem, type AthleteDetail, athletesApi } from "../../api/athletes";
-import { useEffect, useState } from "react";
+import { type AthleteListItem, athletesApi } from "../../api/athletes";
+import { useState } from "react";
 import { useNotification } from "../../contexts/NotificationProvider";
 import AthleteInfoModal from "./AthleteInfoModal";
+import { useModal } from "../../contexts/ModalContext";
 
 const AthletesListBanner = ({
   athleteData
@@ -10,27 +11,10 @@ const AthletesListBanner = ({
 }) => {
 
     const { notify } = useNotification();
+    const { pushModal } = useModal();
+
     const [isloading, setIsLoading] = useState(false);
     const [athlete, setAthlete] = useState(athleteData);
-    const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
-
-    const [detailedAthlete, setDetailedAthlete] = useState<AthleteDetail | null>(null);
-
-    useEffect(() => {
-      if (!isInfoModalOpen) return;
-      if (detailedAthlete && detailedAthlete.id === athlete.id) return; // Already have the right data
-
-      athletesApi.getById(athlete.id)
-          .then((data) => {
-              setDetailedAthlete(data);
-              setAthlete(data); // Update summary data in case it changed
-          })
-          .catch((err) => {
-              console.error("Failed to fetch athlete details:", err);
-              notify("Erro ao carregar detalhes do atleta. Tente novamente.", "error");
-              setIsInfoModalOpen(false);
-          });
-    }, [isInfoModalOpen]);
 
     const onToggle = () => {
         setIsLoading(true);
@@ -38,7 +22,6 @@ const AthletesListBanner = ({
             is_member: !athlete.is_member,
         }).then(updated => {
             setAthlete(prev => prev ? { ...prev, is_member: updated.is_member } : prev);
-            setDetailedAthlete(prev => prev ? { ...prev, is_member: updated.is_member } : prev);
             notify(`Sócio ${updated.is_member ? "ativado" : "desativado"} para ${updated.full_name}.`);
         }).catch(err => {
             console.error("Failed to update athlete:", err);
@@ -55,7 +38,12 @@ const AthletesListBanner = ({
       >
         <div
           className="min-w-0 flex-1"
-          onClick={() => setIsInfoModalOpen(true)}
+          onClick={() => pushModal(
+            <AthleteInfoModal
+              athleteId={athlete.id}
+              onEditSave={(updated) => setAthlete(updated)}
+            />
+          )}
         >
           <p className="font-medium text-teal-700">{athlete.full_name}</p>
 
@@ -94,13 +82,6 @@ const AthletesListBanner = ({
             />
           </button>
         </div>
-        {detailedAthlete && (
-          <AthleteInfoModal
-            controller={[isInfoModalOpen, setIsInfoModalOpen]}
-            athleteState={[detailedAthlete, setDetailedAthlete]}
-            onEditSave={(updated) => setAthlete(updated)}
-          />
-        )}
       </li>
     );
 };

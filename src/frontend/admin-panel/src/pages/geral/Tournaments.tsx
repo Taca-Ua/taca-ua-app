@@ -4,11 +4,12 @@ import TournamentCreateModal from '../../components/tournaments/TournamentCreate
 import TournamentList from '../../components/tournaments/TournamentList';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../../components/utils/Button';
+import { useModal } from '../../contexts/ModalContext';
 
 const Torneios = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const { isAdminGeneral } = useAuth();
   const [tournaments, setTournaments] = useState<TournamentListItem[]>([]);
+  const { pushModal } = useModal();
 
 
   return (
@@ -16,7 +17,11 @@ const Torneios = () => {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Torneios</h1>
           <Button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => pushModal(
+              <TournamentCreateModal
+                onCreate={(newTournament) => setTournaments([...tournaments, newTournament])}
+              />
+            )}
             type='primary'
             padding='px-6 py-3'
             disabled={!isAdminGeneral}
@@ -32,11 +37,6 @@ const Torneios = () => {
             loadTournaments={async () => tournamentsApi.getAll()}
           />
         </div>
-
-        <TournamentCreateModal
-          controller={[isModalOpen, setIsModalOpen]}
-          onCreate={(newTournament) => setTournaments([...tournaments, newTournament])}
-        />
       </div>
   );
 };

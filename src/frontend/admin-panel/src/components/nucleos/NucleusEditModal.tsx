@@ -3,36 +3,33 @@ import { type NucleoDetail, nucleosApi } from "../../api/nucleos";
 import HelpTooltip from "../HelpTooltip";
 import Button from "../utils/Button";
 import { useNotification } from "../../contexts/NotificationProvider";
+import { useModal } from "../../contexts/ModalContext";
 
 const NucleusEditModal = ( {
-  controller,
   nucleusState,
   onSave,
 } : {
-  controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>],
   nucleusState: [NucleoDetail, React.Dispatch<React.SetStateAction<NucleoDetail | null>>],
   onSave?: (updatedNucleus: NucleoDetail) => void,
 }) => {
 
-  const [isOpen, setIsOpen] = controller;
   const [nucleus, setNucleus] = nucleusState;
   const { notify } = useNotification();
+  const { popModal } = useModal();
 
   const [editedAbbreviation, setEditedAbbreviation] = useState('');
   const [editedName, setEditedName] = useState('');
 
   useEffect(() => {
-    if (!isOpen) return;
-
     setEditedAbbreviation(nucleus.abbreviation);
     setEditedName(nucleus.name);
-  }, [isOpen]);
+  }, []);
 
 
   const onClose = () => {
     setEditedAbbreviation(nucleus.abbreviation);
     setEditedName(nucleus.name);
-    setIsOpen(false);
+    popModal();
   }
 
   const handleSave = async () => {
@@ -51,7 +48,7 @@ const NucleusEditModal = ( {
     }).then((updatedNucleus) => {
       setNucleus(updatedNucleus);
       if (onSave) onSave(updatedNucleus);
-      setIsOpen(false);
+      popModal();
       notify('Núcleo atualizado com sucesso!', 'success');
     }).catch((error) => {
       console.error("Error updating nucleus:", error);
@@ -59,10 +56,7 @@ const NucleusEditModal = ( {
     });
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
       <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">Editar Núcleo</h2>
 
@@ -118,7 +112,6 @@ const NucleusEditModal = ( {
           </Button>
         </div>
       </div>
-    </div>
   );
 };
 

@@ -2,15 +2,14 @@ import { useState } from "react";
 import { nucleosApi } from "../../api/nucleos";
 import HelpTooltip from "../HelpTooltip";
 import Button from "../utils/Button";
+import { useModal } from "../../contexts/ModalContext";
 
 const NucleoCreateModal = ({
-  controller,
   onCreate,
 }: {
-  controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
   onCreate?: (nucleus: any) => void;
 }) => {
-  const [isOpen, setIsOpen] = controller;
+  const { popModal } = useModal();
 
   const [newNucleusAbbreviation, setNewNucleusAbbreviation] = useState("");
   const [newNucleusName, setNewNucleusName] = useState("");
@@ -39,17 +38,12 @@ const NucleoCreateModal = ({
   };
 
   const onClose = () => {
-    setIsOpen(false);
+    popModal();
     setNewNucleusAbbreviation("");
     setNewNucleusName("");
   }
 
-  if (!isOpen) {
-    return null;
-  }
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
       <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">
           Adicionar Núcleo
@@ -105,7 +99,6 @@ const NucleoCreateModal = ({
           </Button>
         </div>
       </div>
-    </div>
   );
 };
 

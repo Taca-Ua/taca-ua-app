@@ -8,17 +8,18 @@ import TournamentCompetitorsComponent from '../../components/tournaments/Tournam
 import MatchesListComponent from '../../components/matches/MatchesListComponent';
 import MatchCreateModal from '../../components/matches/MatchCreateModal';
 import Button from '../../components/utils/Button';
+import { useModal } from '../../contexts/ModalContext';
 
 // Main component
 const TorneioDetails = () => {
   const tournamentId = useParams<{ id: string }>().id;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { pushModal } = useModal();
 
   const [tournament, setTournament] = useState<TournamentDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const { notify } = useNotification();
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [matches, setMatches] = useState<MatchListItem[]>([]);
 
   // Determine where to navigate back to
@@ -85,7 +86,14 @@ const TorneioDetails = () => {
 
           <div className="bg-white rounded-lg shadow-md p-6 mt-6 flex flex-col gap-6">
             <Button
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => pushModal(
+                <MatchCreateModal
+                  tournament={tournament}
+                  onCreated={(newMatch) => {
+                    setMatches((prev) => [...prev, newMatch]);
+                  }}
+                />
+              )}
               active={tournament.competitors.length >= 2}
               flexible={true}
             >
@@ -94,14 +102,6 @@ const TorneioDetails = () => {
             <MatchesListComponent tournamentId={tournament.id} matchesState={[matches, setMatches]} />
           </div>
         </div>
-
-      <MatchCreateModal
-        controller={[showCreateModal, setShowCreateModal]}
-        tournament={tournament}
-        onCreated={(newMatch) => {
-          setMatches((prev) => [...prev, newMatch]);
-        }}
-      />
       </div>
   );
 };

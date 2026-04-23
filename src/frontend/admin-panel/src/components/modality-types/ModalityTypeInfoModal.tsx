@@ -2,20 +2,32 @@ import { type ModalityTypeDetail, modalityTypesApi } from "../../api/modality-ty
 import Button from "../utils/Button";
 import { useNotification } from "../../contexts/NotificationProvider";
 import ModalityTypeEditModal from "./ModalityTypeEditModal";
-import { useState } from "react";
+import { useModal } from "../../contexts/ModalContext";
+import { useEffect, useState } from "react";
 
 const ModalityTypeInfoModal = ( {
-    controller,
-    modalityTypeState
+    modalityTypeId
 } : {
-    controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
-    modalityTypeState: [ModalityTypeDetail, React.Dispatch<React.SetStateAction<ModalityTypeDetail | null>>];
+    modalityTypeId: string;
 } ) => {
-    const [isOpen, setIsOpen] = controller;
     const { notify } = useNotification();
+    const { popModal, pushModal } = useModal();
 
-    const modalityType = modalityTypeState[0];
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [modalityType, setModalityType] = useState<ModalityTypeDetail | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+      setIsLoading(true);
+      modalityTypesApi.getById(modalityTypeId).then(format => {
+        setModalityType(format);
+      }).catch(err => {
+        console.error("Failed to load modality type details:", err);
+        notify("Não foi possível carregar os detalhes do formato de prova. Tente novamente.", "error");
+        popModal();
+      }).finally(() => {
+        setIsLoading(false);
+      });
+    }, [modalityTypeId]);
 
     const getParticipantsText = (min: number | null, max: number | null) => {
         if (max === null && min === null) return '—';
@@ -26,25 +38,33 @@ const ModalityTypeInfoModal = ( {
     };
 
     const handleDeleteFormat = () => {
+      if (!modalityType) return;
         modalityTypesApi.delete(modalityType.id).then(() => {
             notify("Formato eliminado com sucesso!", "success");
         }).catch((err) => {
             console.error("Erro ao eliminar formato:", err);
             alert("Ocorreu um erro ao eliminar o formato. Por favor, tente novamente.");
         }).finally(() => {
-            setIsOpen(false);
+            popModal();
         });
     };
 
-    if (!isOpen) return null;
+    if (isLoading) {
+      return (
+        <div className="bg-white p-8 rounded-lg w-full max-w-5xl my-8">
+          <p className="text-gray-500">Carregando detalhes do formato de prova...</p>
+        </div>
+      );
+    }
+
+    if (!modalityType) return null; // Could show a loading state here if desired
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 overflow-y-auto">
         <div className="bg-white p-8 rounded-lg w-full max-w-5xl my-8">
           <div className="flex justify-between items-start mb-6">
             <h2 className="text-2xl font-bold">{modalityType.name}</h2>
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={() => popModal()}
               className="text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 rounded"
             >
               <svg
@@ -185,14 +205,14 @@ const ModalityTypeInfoModal = ( {
                 Eliminar
             </Button>
             <Button
-                onClick={() => setIsEditModalOpen(true)}
+                onClick={() => pushModal(<ModalityTypeEditModal modalityTypeState={[modalityType, setModalityType]} />)}
                 type="info"
                 flexible={true}
             >
                 Editar
             </Button>
             <Button
-                onClick={() => setIsOpen(false)}
+                onClick={() => popModal()}
                 type="secondary"
                 flexible={true}
             >
@@ -200,12 +220,6 @@ const ModalityTypeInfoModal = ( {
             </Button>
           </div>
         </div>
-
-        <ModalityTypeEditModal
-          controller={[isEditModalOpen, setIsEditModalOpen]}
-          modalityTypeState={modalityTypeState}
-        />
-      </div>
     );
 };
 

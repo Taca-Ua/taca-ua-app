@@ -1,6 +1,7 @@
 import { useAuth } from '../hooks/useAuth';
 import Sidebar from '../components/Sidebar';
 import { Navigate, Outlet } from 'react-router-dom';
+import { ModalProvider } from '../contexts/ModalContext';
 
 /**
  * DashboardLayout wraps all authenticated pages with a sidebar and main content area.
@@ -23,10 +24,12 @@ export default function DashboardLayout() {
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar />
-      <main className="flex-1 p-6 bg-gray-50">
-        <Outlet />
-      </main>
+      <ModalProvider>
+        <Sidebar />
+        <main className="flex-1 p-6 bg-gray-50">
+          <Outlet />
+        </main>
+      </ModalProvider>
     </div>
   );
 }

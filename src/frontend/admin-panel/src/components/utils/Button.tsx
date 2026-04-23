@@ -1,5 +1,5 @@
-import { useState } from "react";
 import ConfirmModal from "../ConfirmModal";
+import { useModal } from "../../contexts/ModalContext";
 
 const Button = ( {
     onClick,
@@ -25,8 +25,7 @@ const Button = ( {
     flexible?: boolean;
     children?: React.ReactNode;
 } ) => {
-
-    const [showConfirm, setShowConfirm] = useState(false);
+    const { pushModal, popModal } = useModal();
 
     const baseClasses = `${flexible ? "flex-1" : ""} ${padding} rounded-md font-semibold transition-colors text-center shadow-md`;
     const typeClasses = {
@@ -40,36 +39,38 @@ const Button = ( {
     if ( !active ) return null; // Don't render the button if it's not active
 
     return (
-        <>
+      <>
         <button
-            onClick={() => {
-                if (confirmation) {
-                    setShowConfirm(true);
-                } else {
+          onClick={() => {
+            if (confirmation) {
+              pushModal(
+                <ConfirmModal
+                  title={confirmation.title}
+                  message={confirmation.message}
+                  confirmLabel={confirmation.confirmLabel}
+                  cancelLabel={
+                    confirmation.cancelLabel
+                      ? confirmation.cancelLabel
+                      : "Cancelar"
+                  }
+                  variant={type === "danger" ? "danger" : "success"}
+                  onCancel={() => popModal()}
+                  onConfirm={() => {
+                    popModal();
                     onClick();
-                }
-            }}
-            className={`${baseClasses} ${typeClasses[type]}`}
-            disabled={disabled}
+                  }}
+                />,
+              );
+            } else {
+              onClick();
+            }
+          }}
+          className={`${baseClasses} ${typeClasses[type]}`}
+          disabled={disabled}
         >
-            {children}
+          {children}
         </button>
-        {confirmation && (
-            <ConfirmModal
-                isOpen={showConfirm}
-                title={confirmation.title}
-                message={confirmation.message}
-                confirmLabel={confirmation.confirmLabel}
-                cancelLabel={confirmation.cancelLabel ? confirmation.cancelLabel : "Cancelar"}
-                variant={type === "danger" ? "danger" : "success"}
-                onCancel={() => setShowConfirm(false)}
-                onConfirm={() => {
-                    setShowConfirm(false);
-                    onClick();
-                }}
-            />
-        )}
-        </>
+      </>
     );
 }
 

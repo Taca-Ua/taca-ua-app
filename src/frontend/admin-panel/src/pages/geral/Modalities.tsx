@@ -4,12 +4,13 @@ import ModalitiesListComponent from "../../components/modalities/ModalitiesListC
 import { useAuth } from "../../hooks/useAuth";
 import Button from "../../components/utils/Button";
 import ModalityCreateModal from "../../components/modalities/ModalityCreateModal";
+import { useModal } from "../../contexts/ModalContext";
 
 
 
 const Modalities = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const { isAdminGeneral } = useAuth();
+  const { pushModal } = useModal();
 
   const modalitiesState = useState<ModalityListItem[]>([]);
   const [modalityTypes, setModalityTypes] = modalitiesState;  // Desestruturação para obter o estado e a função de atualização
@@ -21,7 +22,13 @@ const Modalities = () => {
             <h1 className="text-3xl font-bold text-gray-800">Modalidades ({modalityTypes.length})</h1>
             <div>
               <Button
-                onClick={() => setIsModalOpen(true)}
+                onClick={() => pushModal(
+                <ModalityCreateModal
+                    onCreate={(newModality) => {
+                      setModalityTypes((prev) => [...prev, newModality]);
+                    }}
+                  />
+                )}
                 type='primary'
                 active={isAdminGeneral}
               >
@@ -36,14 +43,6 @@ const Modalities = () => {
             />
           </div>
         </div>
-
-        <ModalityCreateModal
-          controller={[isModalOpen, setIsModalOpen]}
-          onCreate={(newModality) => {
-            setModalityTypes((prev) => [...prev, newModality]);
-            setIsModalOpen(false);
-          }}
-        />
       </div>
   );
 };

@@ -3,6 +3,7 @@ import Button from "../utils/Button";
 import HelpTooltip from "../HelpTooltip";
 import { useNotification } from "../../contexts/NotificationProvider";
 import { regulationsApi } from "../../api/regulations";
+import { useModal } from "../../contexts/ModalContext";
 
 const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return `${bytes} B`;
@@ -12,14 +13,12 @@ const formatFileSize = (bytes: number): string => {
 
 
 const RegulationCreateModal = ( {
-    controller,
     onCreate,
 } : {
-    controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>]
     onCreate: (regulation: any) => void;
 } ) => {
-    const [ isOpen, setIsOpen ] = controller;
     const { notify } = useNotification();
+    const { popModal } = useModal();
 
     const [ title, setTitle ] = useState("");
     const [ description, setDescription ] = useState("");
@@ -31,7 +30,7 @@ const RegulationCreateModal = ( {
     const dragCounterRef = useRef(0);
 
     const onClose = () => {
-        setIsOpen(false);
+        popModal();
         setTitle("");
         setDescription("");
         setFile(null);
@@ -81,10 +80,7 @@ const RegulationCreateModal = ( {
         });
     };
 
-    if ( !isOpen ) return null;
-
     return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
           <div className="p-6 border-b border-gray-100 flex justify-between items-center">
             <h2 className="text-xl font-bold text-gray-800">
@@ -284,7 +280,6 @@ const RegulationCreateModal = ( {
             </div>
           </div>
         </div>
-      </div>
     );
 }
 

@@ -8,6 +8,7 @@ import StaffCreateModal from '../../components/staff/StaffCreateModal';
 import { staffApi, type StaffListItem } from '../../api/staff';
 import { athletesApi, type AthleteListItem } from '../../api/athletes';
 import AthletesMembershipSyncModal from '../../components/athletes/AthletesMembershipSyncModal';
+import { useModal } from '../../contexts/ModalContext';
 
 export type SociosVariant = 'geral' | 'nucleo';
 
@@ -29,12 +30,11 @@ export function parseNmecColumnText(text: string): string[] {
 
 export default function SociosContent() {
   const { notify } = useNotification();
+  const { pushModal } = useModal();
+
   const [searchQuery, setSearchQuery] = useState('');
-  const [csvModalOpen, setCsvModalOpen] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'athletes' | 'staff'>('athletes');
-  const [isCreateAthleteModalOpen, setIsCreateAthleteModalOpen] = useState(false);
-  const [isCreateStaffModalOpen, setIsCreateStaffModalOpen] = useState(false);
 
   const [athletes, setAthletes] = useState<AthleteListItem[] | null>(null);
   const [staff, setStaff] = useState<StaffListItem[] | null>(null);
@@ -87,7 +87,7 @@ export default function SociosContent() {
           </div>
           <div className="flex gap-3">
             <Button
-              onClick={() => setCsvModalOpen(true)}
+              onClick={() => pushModal(<AthletesMembershipSyncModal />)}
               type="info"
               active={activeTab === "athletes"}
             >
@@ -97,10 +97,22 @@ export default function SociosContent() {
               onClick={() => {
                 switch (activeTab) {
                   case "athletes":
-                    setIsCreateAthleteModalOpen(true);
+                    pushModal(<AthleteCreateModal
+                      onCreate={(newAthlete) => {
+                        setAthletes((prev) =>
+                          prev ? [newAthlete, ...prev] : [newAthlete],
+                        );
+                      }}
+                    />);
                     break;
                   case "staff":
-                    setIsCreateStaffModalOpen(true);
+                    pushModal(
+                      <StaffCreateModal
+                        onCreate={(newMember) => {
+                          setStaff((prev) => (prev ? [newMember, ...prev] : [newMember]));
+                        }}
+                      />
+                    );
                     break;
                 }
               }}
@@ -157,26 +169,6 @@ export default function SociosContent() {
             )}
           </div>
         </div>
-
-        <AthleteCreateModal
-          controller={[isCreateAthleteModalOpen, setIsCreateAthleteModalOpen]}
-          onCreate={(newAthlete) => {
-            setAthletes((prev) =>
-              prev ? [newAthlete, ...prev] : [newAthlete],
-            );
-          }}
-        />
-
-        <StaffCreateModal
-          controller={[isCreateStaffModalOpen, setIsCreateStaffModalOpen]}
-          onCreate={(newMember) => {
-            setStaff((prev) => (prev ? [newMember, ...prev] : [newMember]));
-          }}
-        />
-
-        <AthletesMembershipSyncModal
-          controller={[csvModalOpen, setCsvModalOpen]}
-        />
       </div>
     </div>
   );

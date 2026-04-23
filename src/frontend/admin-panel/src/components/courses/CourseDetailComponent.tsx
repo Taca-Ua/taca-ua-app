@@ -5,15 +5,15 @@ import CourseEditModal from "./CourseEditModal";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import Button from "../utils/Button";
+import { useModal } from "../../contexts/ModalContext";
 
 const CourseDetailComponent = ( {courseId} : { courseId: string } ) => {
   const navigate = useNavigate();
   const { isAdminGeneral } = useAuth();
+  const { pushModal } = useModal();
 
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const editModalController = useState(false);
 
   const handleDelete = async () => {
     try {
@@ -104,7 +104,7 @@ const CourseDetailComponent = ( {courseId} : { courseId: string } ) => {
 
       <div className="flex gap-4 pt-4">
         <Button
-          onClick={() => editModalController[1](true)}
+          onClick={() => pushModal(<CourseEditModal courseState={[course, setCourse]} />)}
           type="primary"
           active={isAdminGeneral}
           flexible={true}
@@ -126,11 +126,6 @@ const CourseDetailComponent = ( {courseId} : { courseId: string } ) => {
           Eliminar
         </Button>
       </div>
-
-      <CourseEditModal
-        controller={editModalController}
-        courseState={[course, setCourse]}
-      />
     </div>
   );
 };

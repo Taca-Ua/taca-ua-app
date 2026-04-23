@@ -5,6 +5,7 @@ import { btn } from '../../styles/buttonStyles';
 import { useAuth } from "../../hooks/useAuth";
 import RegulationCreateModal from "../../components/regulations/RegulationCreateModal";
 import RegulationInfoModal from "../../components/regulations/RegulationInfoModal";
+import { useModal } from "../../contexts/ModalContext";
 
 const formatDisplayDate = (dateStr: string | undefined) => {
     if (!dateStr) return "Data indisponível";
@@ -29,11 +30,9 @@ const Regulamentos = () => {
   const [loading, setLoading] = useState(true);
   const { notify } = useNotification();
   const { isAdminGeneral } = useAuth();
+  const { pushModal } = useModal();
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [selectedRegulation, setSelectedRegulation] = useState<Regulation | null>(null);
 
   // Remove global drag state and file state, handle drag events only on main area
   const mainRef = useRef<HTMLDivElement>(null);
@@ -49,7 +48,11 @@ const Regulamentos = () => {
       // Only show modal if dragging a file
       const hasFile = Array.from(e.dataTransfer?.items ?? []).some(i => i.kind === 'file');
       if (hasFile && isAdminGeneral) {
-        setIsUploadModalOpen(true);
+        pushModal(
+          <RegulationCreateModal
+            onCreate={(newRegulation) => setRegulations(prev => [newRegulation, ...prev])}
+          />
+        );
       }
     };
     const onDragOver = (e: DragEvent) => {
@@ -101,7 +104,6 @@ const Regulamentos = () => {
   }
 
   return (
-    <>
       <div className="flex-1 p-8" ref={mainRef}>
         <div className="max-w-7xl mx-auto">
 
@@ -112,7 +114,11 @@ const Regulamentos = () => {
             </div>
 
             <button
-              onClick={() => setIsUploadModalOpen(true)}
+              onClick={() => pushModal(
+                <RegulationCreateModal
+                  onCreate={(newRegulation) => setRegulations(prev => [newRegulation, ...prev])}
+                />
+              )}
               className={`px-6 py-3 ${btn.primary} font-semibold rounded-lg shadow-md disabled:opacity-50 disabled:cursor-not-allowed`}
               disabled={!isAdminGeneral}
             >
@@ -143,7 +149,11 @@ const Regulamentos = () => {
                 filteredRegulations.map(reg => (
                   <div
                     key={reg.id}
-                    onClick={() => { setSelectedRegulation(reg); setIsViewModalOpen(true); }}
+                    onClick={() => pushModal(
+                      <RegulationInfoModal
+                        regulationId={reg.id}
+                      />
+                    )}
                     className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-teal-300 transition-all cursor-pointer group"
                   >
                     <div className="flex items-start justify-between">
@@ -173,17 +183,6 @@ const Regulamentos = () => {
           )}
         </div>
       </div>
-
-      <RegulationInfoModal
-        controller={[isViewModalOpen, setIsViewModalOpen]}
-        regulationState={[selectedRegulation, setSelectedRegulation]}
-      />
-
-      <RegulationCreateModal
-        controller={[isUploadModalOpen, setIsUploadModalOpen]}
-        onCreate={(newRegulation) => setRegulations(prev => [newRegulation, ...prev])}
-      />
-    </>
   );
 };
 

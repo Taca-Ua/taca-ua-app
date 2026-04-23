@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Button from "../Button";
+import { useModal } from "../../../contexts/ModalContext";
 
 export interface GenericElement {
     id: string;
@@ -62,21 +63,19 @@ const EditSummary = ({
 );
 
 const ChooseMultipleModal = ({
-    controller,
     allElementsLoader,
     initialChosenElementsIds = [],
     onSave,
     title = "Escolha os elementos",
     showSummary = false,
 }: {
-    controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>]
     allElementsLoader: () => Promise<GenericElement[]>;
     initialChosenElementsIds?: string[];
     onSave: (chosen: GenericElement[]) => void;
     title?: string;
     showSummary?: boolean;
 }) => {
-    const [isOpen, setIsOpen] = controller;
+    const { popModal } = useModal();
 
     const [allElements, setAllElements] = useState<GenericElement[]>([]);
     const [chosenElements, setChosenElements] = useState<string[]>(initialChosenElementsIds);
@@ -86,10 +85,9 @@ const ChooseMultipleModal = ({
 
 
     useEffect(() => {
-        if (!isOpen) return;
         allElementsLoader().then(setAllElements);
         setChosenElements(initialChosenElementsIds);
-    }, [isOpen]);
+    }, []);
 
 
     // Filter type: 'all', 'selected', 'not_selected'
@@ -132,18 +130,16 @@ const ChooseMultipleModal = ({
 
     const onClose = () => {
         setChosenElements(initialChosenElementsIds);
-        setIsOpen(false);
+        popModal();
     };
 
     const handleSave = () => {
         onSave(allElements.filter((element) => chosenElements.includes(element.id)));
-        setIsOpen(false);
+        popModal();
     }
 
-    if (!isOpen) return null;
-
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
+      <>
         <div className="bg-white rounded-lg p-8 max-w-5xl w-full mx-4 animate-slideUp max-h-[90vh] flex flex-col">
           <h2 className="text-2xl font-bold mb-4 text-gray-800">
             {title}
@@ -321,7 +317,7 @@ const ChooseMultipleModal = ({
             </Button>
           </div>
         </div>
-      </div>
+      </>
     );
 }
 

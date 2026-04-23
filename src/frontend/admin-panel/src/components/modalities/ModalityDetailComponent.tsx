@@ -4,15 +4,15 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../utils/Button';
 import ModalityEditModal from './ModalityEditModel';
+import { useModal } from '../../contexts/ModalContext';
 
 
 const ModalityDetailComponent = ( {modalityId} : { modalityId: string }) => {
   const navigate = useNavigate();
   const { isAdminGeneral } = useAuth();
+  const { pushModal } = useModal();
 
   const [modality, setModality] = useState<ModalityDetail | null>(null);
-
-  const editModalController = useState(false);
 
   useEffect(() => {
     const fetchModality = async () => {
@@ -59,7 +59,11 @@ const ModalityDetailComponent = ( {modalityId} : { modalityId: string }) => {
 
       <div className="flex gap-4 mt-8">
         <Button
-          onClick={() => editModalController[1](true)}
+          onClick={() => pushModal(
+            <ModalityEditModal
+              modalityState={[modality, setModality]}
+            />
+          )}
           type="primary"
           active={isAdminGeneral}
           flexible={true}
@@ -80,11 +84,6 @@ const ModalityDetailComponent = ( {modalityId} : { modalityId: string }) => {
           Eliminar
         </Button>
       </div>
-
-      <ModalityEditModal
-        controller={editModalController}
-        modalityState={[modality, setModality]}
-      />
     </div>
   );
 };

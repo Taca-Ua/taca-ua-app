@@ -1,21 +1,17 @@
 import { useEffect, useState } from "react";
-import { modalityTypesApi, type ModalityTypeDetail, type ModalityTypeListItem } from "../../api/modality-types";
+import { modalityTypesApi, type ModalityTypeListItem } from "../../api/modality-types";
 import { useNotification } from '../../contexts/NotificationProvider';
-import { btn } from '../../styles/buttonStyles';
 import ModalityTypeCreateModal from "../../components/modality-types/ModalityTypeCreateModal";
 import ModalityTypeInfoModal from "../../components/modality-types/ModalityTypeInfoModal";
 import Button from "../../components/utils/Button";
+import { useModal } from "../../contexts/ModalContext";
 
 const ModalityTypes = () => {
   const [scoringFormats, setModalityTypes] = useState<ModalityTypeListItem[]>([]);
   const [loading] = useState(false);
   const { notify } = useNotification();
+  const { pushModal } = useModal();
 
-  // Modal states
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [selectedFormat, setSelectedFormat] = useState<ModalityTypeListItem | null>(null);
-  const [loadedFormatDetails, setLoadedFormatDetails] = useState<ModalityTypeDetail | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -37,35 +33,17 @@ const ModalityTypes = () => {
     };
   }, []);
 
-  useEffect(() => {
-    if (!isViewModalOpen || !selectedFormat) {
-      setLoadedFormatDetails(null);
-      return;
-    }
-
-    // Load full details for the selected format
-    modalityTypesApi.getById(selectedFormat.id).then(formatDetails => {
-      setLoadedFormatDetails(formatDetails);
-    }).catch(err => {
-      console.error('Failed to load format details:', err);
-      notify('Não foi possível carregar os detalhes do formato de prova. Tente novamente.', 'error');
-      setIsViewModalOpen(false);
-    });
-
-  }, [isViewModalOpen, selectedFormat]);
-
-  const handleViewFormat = (format: ModalityTypeListItem) => {
-    setSelectedFormat(format);
-    setIsViewModalOpen(true);
-  };
-
   return (
       <div className="flex-1 p-8 max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Formatos de Prova</h1>
 
           <Button
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={() => pushModal(
+              <ModalityTypeCreateModal
+                onCreate={newFormat => setModalityTypes((prev) => [...prev, newFormat])}
+              />
+            )}
             type="primary"
           >
             + Adicionar Formato
@@ -84,7 +62,9 @@ const ModalityTypes = () => {
                 key={format.id}
                 type="button"
                 className="w-full text-left p-4 bg-gray-100 rounded-md hover:bg-gray-200 flex justify-between items-center transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
-                onClick={() => handleViewFormat(format)}
+                onClick={() => pushModal(
+                  <ModalityTypeInfoModal modalityTypeId={format.id}/>
+                )}
               >
                 <div>
                   <div className="flex items-center gap-2">
@@ -116,18 +96,6 @@ const ModalityTypes = () => {
             <p className="text-gray-500 text-center py-8">Nenhum formato de prova encontrado.</p>
           )}
         </div>
-
-        <ModalityTypeCreateModal
-          controller={[isCreateModalOpen, setIsCreateModalOpen]}
-          onCreate={newFormat => setModalityTypes((prev) => [...prev, newFormat])}
-        />
-
-        {loadedFormatDetails && (
-          <ModalityTypeInfoModal
-            controller={[isViewModalOpen, setIsViewModalOpen]}
-            modalityTypeState={[loadedFormatDetails, setLoadedFormatDetails]}
-          />
-        )}
       </div>
   );
 };

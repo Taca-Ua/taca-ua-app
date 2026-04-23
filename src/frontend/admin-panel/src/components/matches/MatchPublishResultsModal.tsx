@@ -3,6 +3,7 @@ import { type MatchDetail, matchesApi } from "../../api/matches";
 import DefinedStatesMenuComponent from "../utils/costum_menus/DefinedStatesMenuComponent";
 import { useNotification } from "../../contexts/NotificationProvider";
 import Button from "../utils/Button";
+import { useModal } from "../../contexts/ModalContext";
 
 const ScoreFormComponent = ({
     participants,
@@ -113,17 +114,15 @@ const PositionFormComponent = ({
 };
 
 const MatchPublishResultsModal = ( {
-    controller,
     match,
     onSave
 } : {
-    controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>],
     match: MatchDetail,
     onSave: (updatedMatch: MatchDetail) => void
 } ) => {
 
-    const [isOpen, setIsOpen] = controller;
     const { notify } = useNotification();
+    const { popModal } = useModal();
 
     const [publishMode, setPublishMode] = useState<'score' | 'position'>('score');
 
@@ -132,7 +131,7 @@ const MatchPublishResultsModal = ( {
     const [positionResults, setPositionResults] = useState<{id: string, position: number}[]>(match.participants.map((p) => ({id: p.id, position: 0})));
 
     const onClose = () => {
-        setIsOpen(false);
+        popModal();
     };
 
     const handleSave = () => {
@@ -182,54 +181,48 @@ const MatchPublishResultsModal = ( {
         }
     };
 
-    if (!isOpen) return null;
-
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-max">
-                <h2 className="text-xl font-bold mb-4">Publicar Resultados</h2>
-                <DefinedStatesMenuComponent
-                    states={[
-                        {value: 'score', label: 'Pontuação'},
-                        {value: 'position', label: 'Posição'}
-                    ]}
-                    onSelect={(value) => setPublishMode(value as 'score' | 'position')}
-                    initialValue={publishMode}
-                />
+      <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-max">
+        <h2 className="text-xl font-bold mb-4">Publicar Resultados</h2>
+        <DefinedStatesMenuComponent
+          states={[
+            { value: "score", label: "Pontuação" },
+            { value: "position", label: "Posição" },
+          ]}
+          onSelect={(value) => setPublishMode(value as "score" | "position")}
+          initialValue={publishMode}
+        />
 
-                <div className="my-4 gap-4">
-                    {publishMode === 'score' &&
-                        <ScoreFormComponent
-                            participants={match.participants.map((p) => ({id: p.id, name: p.name}))}
-                            onResultsChange={(results) => setScoreResults(results)}
-                        />
-                    }
-                    {publishMode === 'position' &&
-                        <PositionFormComponent
-                            participants={match.participants.map((p) => ({id: p.id, name: p.name}))}
-                            onResultsChange={(results) => setPositionResults(results)}
-                        />
-                    }
-                </div>
-
-                <div className="flex gap-4">
-                    <Button
-                        onClick={onClose}
-                        type="secondary"
-                        flexible={true}
-                    >
-                        Cancelar
-                    </Button>
-                    <Button
-                        onClick={handleSave}
-                        type="primary"
-                        flexible={true}
-                    >
-                        Publicar
-                    </Button>
-                </div>
-            </div>
+        <div className="my-4 gap-4">
+          {publishMode === "score" && (
+            <ScoreFormComponent
+              participants={match.participants.map((p) => ({
+                id: p.id,
+                name: p.name,
+              }))}
+              onResultsChange={(results) => setScoreResults(results)}
+            />
+          )}
+          {publishMode === "position" && (
+            <PositionFormComponent
+              participants={match.participants.map((p) => ({
+                id: p.id,
+                name: p.name,
+              }))}
+              onResultsChange={(results) => setPositionResults(results)}
+            />
+          )}
         </div>
+
+        <div className="flex gap-4">
+          <Button onClick={onClose} type="secondary" flexible={true}>
+            Cancelar
+          </Button>
+          <Button onClick={handleSave} type="primary" flexible={true}>
+            Publicar
+          </Button>
+        </div>
+      </div>
     );
 }
 

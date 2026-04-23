@@ -3,6 +3,7 @@ import Button from "../utils/Button";
 import HelpTooltip from "../HelpTooltip";
 import { useNotification } from "../../contexts/NotificationProvider";
 import { regulationsApi, type RegulationDetail } from "../../api/regulations";
+import { useModal } from "../../contexts/ModalContext";
 
 const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return `${bytes} B`;
@@ -11,17 +12,15 @@ const formatFileSize = (bytes: number): string => {
 };
 
 const RegulationEditModal = ( {
-    controller,
     regulationState,
     onSave
 } : {
-    controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>]
     regulationState: [RegulationDetail, React.Dispatch<React.SetStateAction<RegulationDetail | null>>]
     onSave?: (regulation: RegulationDetail) => void
 } ) => {
-    const [ isOpen, setIsOpen ] = controller;
     const [ regulation, setRegulation ] = regulationState;
     const { notify } = useNotification();
+    const { popModal } = useModal();
 
     const [ title, setTitle ] = useState("");
     const [ description, setDescription ] = useState("");
@@ -32,12 +31,10 @@ const RegulationEditModal = ( {
     const dragCounterRef = useRef(0);
 
     useEffect(() => {
-        if (!isOpen) return;
-
         setTitle(regulation.title);
         setDescription(regulation.description || "");
         setFile(null);
-    }, [regulation, isOpen]);
+    }, [regulation]);
 
     const onClose = () => {
         if ( uploading ) return;
@@ -46,7 +43,7 @@ const RegulationEditModal = ( {
         setDescription(regulation.description || "");
         setFile(null);
         setIsDragOver(false);
-        setIsOpen(false);
+        popModal();
     };
 
     const applyFile = (incoming: File | null) => {
@@ -80,10 +77,7 @@ const RegulationEditModal = ( {
       } );
     }
 
-    if ( !isOpen ) return null;
-
     return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
           <div className="p-6 border-b border-gray-100 flex justify-between items-center">
             <h2 className="text-xl font-bold text-gray-800">
@@ -280,7 +274,6 @@ const RegulationEditModal = ( {
               </Button>
             </div>
           </div>
-        </div>
       </div>
     );
 }

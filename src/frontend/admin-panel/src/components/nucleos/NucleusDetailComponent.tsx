@@ -5,14 +5,14 @@ import { type NucleoDetail, nucleosApi } from "../../api/nucleos";
 import HelpTooltip from "../HelpTooltip";
 import NucleusEditModal from "./NucleusEditModal";
 import Button from "../utils/Button";
+import { useModal } from "../../contexts/ModalContext";
 
 const NucleusDetailComponent = ( { nucleusId } : { nucleusId: string }) => {
   const { notify } = useNotification();
   const navigate = useNavigate();
 
-  const editModelController = useState(false);
-
   const [nucleus, setNucleus] = useState<NucleoDetail | null>(null);
+  const { pushModal } = useModal();
 
   useEffect(() => {
     // Fetch nucleus details from API
@@ -106,7 +106,11 @@ const NucleusDetailComponent = ( { nucleusId } : { nucleusId: string }) => {
 
       <div className="flex gap-4 pt-4">
         <Button
-          onClick={() => editModelController[1](true)}
+          onClick={() => pushModal(
+            <NucleusEditModal
+              nucleusState={[nucleus, setNucleus]}
+            />
+          )}
           type="primary"
           flexible={true}
         >
@@ -125,12 +129,6 @@ const NucleusDetailComponent = ( { nucleusId } : { nucleusId: string }) => {
           Eliminar
         </Button>
       </div>
-
-      <NucleusEditModal
-        controller={editModelController}
-        nucleusState={[nucleus, setNucleus]}
-      />
-
     </div>
   );
 };

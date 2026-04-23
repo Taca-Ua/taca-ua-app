@@ -5,23 +5,22 @@ import { coursesApi } from "../../api/courses"
 import ChoseOneInput from "../utils/inputs/ChoseOneInput"
 import Button from "../utils/Button"
 import { useNotification } from "../../contexts/NotificationProvider"
+import { useModal } from "../../contexts/ModalContext"
 
 const AthleteCreateModal = ( {
-    controller,
     onCreate
 } : {
-    controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>],
     onCreate?: (newAthlete: AthleteListItem) => void
 } ) => {
-    const [isOpen, setIsOpen] = controller
     const { notify } = useNotification();
+    const { popModal } = useModal();
 
     const [memberName, setMemberName] = useState("")
     const [studentNumber, setStudentNumber] = useState("")
     const [courseId, setCourseId] = useState("")
 
     const onClose = () => {
-        setIsOpen(false);
+        popModal();
         setMemberName("");
         setCourseId("");
         setStudentNumber("");
@@ -66,10 +65,7 @@ const AthleteCreateModal = ( {
         });
     }
 
-    if ( !isOpen ) return null
-
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
         <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
           <h2 className="text-2xl font-bold mb-6 text-gray-800">
             Adicionar Membro
@@ -163,7 +159,6 @@ const AthleteCreateModal = ( {
             </Button>
           </div>
         </div>
-      </div>
     );
 }
 

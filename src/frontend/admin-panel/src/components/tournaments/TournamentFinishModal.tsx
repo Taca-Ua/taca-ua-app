@@ -3,6 +3,7 @@ import { useNotification } from "../../contexts/NotificationProvider";
 import { useState, useMemo, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 import Button from "../utils/Button";
+import { useModal } from "../../contexts/ModalContext";
 
 interface TournamentCompetitor {
   id: string;
@@ -120,17 +121,16 @@ function UnassignedColumn({
 }
 
 const TournamentFinishModal = ({
-  controller,
+
   tournamentState,
   onSave,
 }: {
-  controller: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
   tournamentState: [TournamentDetail, React.Dispatch<React.SetStateAction<TournamentDetail | null>>];
   onSave?: (updatedTournament: TournamentDetail) => void;
 }) => {
-  const [isOpen, setIsOpen] = controller;
   const [tournament, setTournament] = tournamentState;
   const { notify } = useNotification();
+  const { popModal } = useModal();
 
   const numPositions = tournament.scoring_format.points.length;
 
@@ -219,7 +219,7 @@ const TournamentFinishModal = ({
         setTournament(result);
         if (onSave) onSave(result);
         notify("Torneio finalizado com sucesso!", "success");
-        setIsOpen(false);
+        popModal();
       }).catch((error) => {
         console.error("Error finalizing tournament:", error);
         notify("Erro ao finalizar torneio.", "error");
@@ -232,21 +232,17 @@ const TournamentFinishModal = ({
   const onClose = () => {
     setStandings({});
     setUnassigned(tournament.competitors.map((c) => c.id));
-    setIsOpen(false);
+    popModal();
   }
 
   useEffect(() => {
-    if (!isOpen) return;
-
     // reset state when opening
     setStandings({});
     setUnassigned(tournament.competitors.map((c) => c.id));
-  }, [isOpen, tournament.competitors]);
-
-  if (!isOpen) return null;
+  }, [tournament.competitors]);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+
       <div className="bg-white rounded-lg p-8 w-[900px] h-[80vh] max-w-full mx-4 flex flex-col">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">
           Finalizar Torneio - Classificação Final
@@ -294,7 +290,6 @@ const TournamentFinishModal = ({
           </Button>
         </div>
       </div>
-    </div>
   );
 };
 
