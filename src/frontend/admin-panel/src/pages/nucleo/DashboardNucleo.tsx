@@ -111,17 +111,17 @@ function DashboardNucleo() {
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <button onClick={() => navigate('/nucleo/membros')} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left">
+                <button onClick={() => navigate('/membros')} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left">
                   <h2 className="text-xl font-semibold mb-2 text-teal-600">Membros</h2>
                   <p className="text-3xl font-bold text-gray-800">{stats.members}</p>
                   <p className="text-sm text-gray-500 mt-2">Membros registados</p>
                 </button>
-                <button onClick={() => navigate('/nucleo/equipas')} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left">
+                <button onClick={() => navigate('/equipas')} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left">
                   <h2 className="text-xl font-semibold mb-2 text-teal-600">Equipas</h2>
                   <p className="text-3xl font-bold text-gray-800">{stats.teams}</p>
                   <p className="text-sm text-gray-500 mt-2">Equipas criadas</p>
                 </button>
-                <button onClick={() => navigate('/nucleo/jogos')} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left">
+                <button onClick={() => navigate('/jogos')} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left">
                   <h2 className="text-xl font-semibold mb-2 text-teal-600">Jogos</h2>
                   <p className="text-3xl font-bold text-gray-800">{stats.matches}</p>
                   <p className="text-sm text-gray-500 mt-2">Total de jogos</p>
@@ -151,7 +151,7 @@ function DashboardNucleo() {
                     </button>
                   </div>
                   <button
-                    onClick={() => navigate('/nucleo/jogos')}
+                    onClick={() => navigate('/jogos')}
                     className="text-teal-600 hover:underline text-sm font-medium"
                   >
                     Ver todos →
@@ -255,7 +255,7 @@ function DashboardNucleo() {
                               <button
                                 key={m.id}
                                 type="button"
-                                onClick={() => navigate(`/nucleo/jogos/${m.id}`)}
+                                onClick={() => navigate(`/jogos/${m.id}`)}
                                 className="w-full text-left p-2 bg-gray-50 rounded-md hover:bg-teal-50 transition-colors border border-transparent hover:border-teal-200"
                               >
                                 <div className="flex justify-between items-start">

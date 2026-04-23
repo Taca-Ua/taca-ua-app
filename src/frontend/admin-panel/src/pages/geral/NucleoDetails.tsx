@@ -6,7 +6,7 @@ const NucleoDetails = () => {
   const navigate = useNavigate();
   const nucleusId = useParams<{ id: string }>().id;
   if (!nucleusId) {
-    navigate('/geral/nucleos');
+    navigate('/nucleos');
     return null;
   }
 
@@ -16,7 +16,7 @@ const NucleoDetails = () => {
           <div className="mb-8 flex justify-between items-center">
             <h1 className="text-3xl font-bold text-gray-800">Detalhes do Núcleo</h1>
             <Button
-              onClick={() => navigate('/geral/nucleos')}
+              onClick={() => navigate('/nucleos')}
               type='secondary'
               padding='px-6 py-3'
             >

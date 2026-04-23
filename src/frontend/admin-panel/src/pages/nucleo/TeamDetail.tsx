@@ -13,7 +13,7 @@ const TeamDetailPage = () => {
             <h1 className="text-3xl font-bold text-gray-800">Detalhes da Equipa</h1>
             <div>
               <Button
-                onClick={() => navigate(`/nucleo/equipas/`)}
+                onClick={() => navigate(`/equipas/`)}
                 type='secondary'
                 padding='px-6 py-3'
               >

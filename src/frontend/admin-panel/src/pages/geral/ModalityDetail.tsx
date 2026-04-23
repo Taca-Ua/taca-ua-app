@@ -62,7 +62,7 @@ function ModalidadeDetail() {
         <div className="mb-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-800">Detalhes da Modalidade</h1>
           <Button
-            onClick={() => navigate('/geral/modalidades')}
+            onClick={() => navigate('/modalidades')}
             type='secondary'
             padding='px-6 py-3'
           >

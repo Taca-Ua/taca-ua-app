@@ -187,7 +187,7 @@ function DashboardGeral() {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <button
                   type="button"
-                  onClick={() => navigate('/geral/modalidades')}
+                  onClick={() => navigate('/modalidades')}
                   className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <h2 className="text-xl font-semibold mb-2 text-teal-600">Modalidades</h2>
@@ -197,7 +197,7 @@ function DashboardGeral() {
 
                 <button
                   type="button"
-                  onClick={() => navigate('/geral/torneios')}
+                  onClick={() => navigate('/torneios')}
                   className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <h2 className="text-xl font-semibold mb-2 text-purple-600">Torneios</h2>
@@ -213,7 +213,7 @@ function DashboardGeral() {
 
                 <button
                   type="button"
-                  onClick={() => navigate('/geral/nucleos')}
+                  onClick={() => navigate('/nucleos')}
                   className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <h2 className="text-xl font-semibold mb-2 text-teal-600">Núcleos</h2>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { tournamentsApi, type TournamentDetail } from '../../api/tournaments';
 import { type MatchListItem } from '../../api/matches';
@@ -13,8 +13,6 @@ import { useModal } from '../../contexts/ModalContext';
 // Main component
 const TorneioDetails = () => {
   const tournamentId = useParams<{ id: string }>().id;
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { pushModal } = useModal();
 
   const [tournament, setTournament] = useState<TournamentDetail | null>(null);
@@ -23,13 +21,8 @@ const TorneioDetails = () => {
   const [matches, setMatches] = useState<MatchListItem[]>([]);
 
   // Determine where to navigate back to
-  const fromModalityId = searchParams.get('fromModality');
   const handleBack = () => {
-    if (fromModalityId) {
-      navigate(`/geral/modalidades/${fromModalityId}`);
-    } else {
-      navigate('/geral/torneios');
-    }
+    window.history.back();
   };
 
   useEffect(() => {

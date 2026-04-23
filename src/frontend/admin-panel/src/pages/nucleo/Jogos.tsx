@@ -178,7 +178,7 @@ const Jogos = () => {
                             <button
                               key={match.id}
                               type="button"
-                              onClick={() => navigate(`/nucleo/jogos/${match.id}`)}
+                              onClick={() => navigate(`/jogos/${match.id}`)}
                               className="w-full text-left px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
                             >
                               <div className="flex justify-between items-start mb-2">
@@ -377,7 +377,7 @@ const Jogos = () => {
                                   <button
                                     key={match.id}
                                     type="button"
-                                    onClick={() => navigate(`/nucleo/jogos/${match.id}`)}
+                                    onClick={() => navigate(`/jogos/${match.id}`)}
                                     className="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-teal-50 transition-colors border border-transparent hover:border-teal-200"
                                   >
                                     <div className="flex justify-between items-start mb-1">

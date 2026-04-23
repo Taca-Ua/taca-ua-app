@@ -119,7 +119,7 @@ const TeamsListComponent = ({
               <button
                 key={team.id}
                 type="button"
-                onClick={() => navigate(`/nucleo/equipas/${team.id}`)}
+                onClick={() => navigate(`/equipas/${team.id}`)}
                 className="w-full text-left px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
               >
                 <div className="flex justify-between items-center">

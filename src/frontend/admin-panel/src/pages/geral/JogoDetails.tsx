@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useNotification } from '../../contexts/NotificationProvider';
 import {
   matchesApi,
@@ -352,11 +352,14 @@ const CommentsSection = ({ match }: { match: MatchDetail }) => {
 
 const JogoDetails = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
 
   const [match, setMatch] = useState<MatchDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const { notify } = useNotification();
+
+  const handleBack = () => {
+    window.history.back();
+  };
 
   const fetchMatch = async () => {
     if (!id) return;
@@ -382,7 +385,7 @@ const JogoDetails = () => {
 
     try {
       await matchesApi.delete(match.id);
-      navigate(`/geral/torneios/${match.tournament_id}`);
+      handleBack();
     } catch (err) {
       console.error('Error deleting match:', err);
       notify(err instanceof Error ? err.message : 'Não foi possível eliminar o jogo. Poderá ter resultados ou convocatórias registadas.', 'error');
@@ -420,7 +423,7 @@ const JogoDetails = () => {
             <h2 className="text-2xl font-bold text-gray-800 mb-2">Jogo não encontrado</h2>
             <p className="text-gray-600 mb-6">O jogo que procura não existe ou foi removido.</p>
             <Button
-              onClick={() => navigate(`/dashboard`)}
+              onClick={handleBack}
               type='secondary'
               padding='px-6 py-3'
             >
@@ -437,7 +440,7 @@ const JogoDetails = () => {
           <h1 className="text-3xl font-bold text-gray-800">Detalhes do Jogo</h1>
 
           <Button
-            onClick={() => navigate(`/geral/torneios/${match.tournament_id}`)}
+            onClick={handleBack}
             type='secondary'
             padding='px-6 py-3'
           >

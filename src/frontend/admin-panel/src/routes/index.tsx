@@ -24,13 +24,9 @@ import JogoDetails from '../pages/geral/JogoDetails';
 import SociosGeral from '../pages/geral/Socios';
 
 // Nucleo admin pages
-import Membros from '../pages/nucleo/Membros';
-import MemberDetail from '../pages/nucleo/MemberDetail';
 import Equipas from '../pages/nucleo/Teams';
 import TeamDetailPage from '../pages/nucleo/TeamDetail';
 import Jogos from '../pages/nucleo/Jogos';
-import MatchDetailPage from '../pages/nucleo/MatchDetail';
-import SociosNucleo from '../pages/nucleo/Socios';
 
 // Components
 import ProtectedRoute from '../components/ProtectedRoute';
@@ -76,29 +72,25 @@ export const router = createBrowserRouter([
       { path: '/test',                element: <ProtectedRoute> <TestPage /></ProtectedRoute> },
 
       // Geral Admin Routes
-      { path: '/geral/administradores',     element: <ProtectedRoute> <Administradores /></ProtectedRoute> },
-      { path: '/geral/administradores/:id', element: <ProtectedRoute> <AdminDetailPage /></ProtectedRoute> },
-      { path: '/geral/modalidades',         element: <ProtectedRoute> <Modalities /></ProtectedRoute> },
-      { path: '/geral/modalidades/:id',     element: <ProtectedRoute> <ModalityDetails /></ProtectedRoute> },
-      { path: '/geral/nucleos',             element: <ProtectedRoute> <NucleoListPage /></ProtectedRoute> },
-      { path: '/geral/nucleos/:id',         element: <ProtectedRoute> <NucleoDetails /></ProtectedRoute> },
-      { path: '/geral/cursos',              element: <ProtectedRoute> <Cursos /></ProtectedRoute> },
-      { path: '/geral/cursos/:id',          element: <ProtectedRoute> <CursoDetail /></ProtectedRoute> },
-      { path: '/geral/regulamentos',        element: <ProtectedRoute> <Regulamentos /></ProtectedRoute> },
-      { path: '/geral/formatos-prova',      element: <ProtectedRoute> <ModalityTypes /></ProtectedRoute> },
-      { path: '/geral/torneios',            element: <ProtectedRoute> <Torneios /></ProtectedRoute> },
-      { path: '/geral/torneios/:id',        element: <ProtectedRoute> <TorneioDetails /></ProtectedRoute> },
-      { path: '/geral/jogos/:id',           element: <ProtectedRoute> <JogoDetails /></ProtectedRoute> },
-      { path: '/geral/socios',              element: <ProtectedRoute> <SociosGeral /></ProtectedRoute> },
+      { path: '/administradores',     element: <ProtectedRoute> <Administradores /></ProtectedRoute> },
+      { path: '/administradores/:id', element: <ProtectedRoute> <AdminDetailPage /></ProtectedRoute> },
+      { path: '/modalidades',         element: <ProtectedRoute> <Modalities /></ProtectedRoute> },
+      { path: '/modalidades/:id',     element: <ProtectedRoute> <ModalityDetails /></ProtectedRoute> },
+      { path: '/nucleos',             element: <ProtectedRoute> <NucleoListPage /></ProtectedRoute> },
+      { path: '/nucleos/:id',         element: <ProtectedRoute> <NucleoDetails /></ProtectedRoute> },
+      { path: '/cursos',              element: <ProtectedRoute> <Cursos /></ProtectedRoute> },
+      { path: '/cursos/:id',          element: <ProtectedRoute> <CursoDetail /></ProtectedRoute> },
+      { path: '/regulamentos',        element: <ProtectedRoute> <Regulamentos /></ProtectedRoute> },
+      { path: '/formatos-prova',      element: <ProtectedRoute> <ModalityTypes /></ProtectedRoute> },
+      { path: '/torneios',            element: <ProtectedRoute> <Torneios /></ProtectedRoute> },
+      { path: '/torneios/:id',        element: <ProtectedRoute> <TorneioDetails /></ProtectedRoute> },
+      { path: '/jogos/:id',           element: <ProtectedRoute> <JogoDetails /></ProtectedRoute> },
+      { path: '/socios',              element: <ProtectedRoute> <SociosGeral /></ProtectedRoute> },
 
       // Nucleo Admin Routes
-      { path: '/nucleo/socios',             element: <ProtectedRoute> <SociosNucleo /></ProtectedRoute> },
-      // { path: '/nucleo/membros',            element: <ProtectedRoute> <Membros /></ProtectedRoute> },
-      // { path: '/nucleo/membros/:type/:id',  element: <ProtectedRoute> <MemberDetail /></ProtectedRoute> },
-      { path: '/nucleo/equipas',            element: <ProtectedRoute> <Equipas /></ProtectedRoute> },
-      { path: '/nucleo/equipas/:id',        element: <ProtectedRoute> <TeamDetailPage /></ProtectedRoute> },
-      { path: '/nucleo/jogos',              element: <ProtectedRoute> <Jogos /></ProtectedRoute> },
-      { path: '/nucleo/jogos/:id',          element: <ProtectedRoute> <MatchDetailPage /></ProtectedRoute> },
+      { path: '/equipas',            element: <ProtectedRoute> <Equipas /></ProtectedRoute> },
+      { path: '/equipas/:id',        element: <ProtectedRoute> <TeamDetailPage /></ProtectedRoute> },
+      { path: '/jogos',              element: <ProtectedRoute> <Jogos /></ProtectedRoute> },
     ],
   },
   // Fallback Route (404)

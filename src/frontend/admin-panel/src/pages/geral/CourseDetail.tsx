@@ -7,7 +7,7 @@ const CursoDetail = () => {
   const navigate = useNavigate();
   const courseId = useParams<{ id: string }>().id;
   if (!courseId) {
-    navigate('/geral/cursos');
+    navigate('/cursos');
     return null;
   }
 
@@ -18,7 +18,7 @@ const CursoDetail = () => {
           <h1 className="text-3xl font-bold text-gray-800">Detalhes do Curso</h1>
           <div>
             <Button
-              onClick={() => navigate(`/geral/cursos/`)}
+              onClick={() => navigate(`/cursos/`)}
               type='secondary'
               padding='px-6 py-3'
             >

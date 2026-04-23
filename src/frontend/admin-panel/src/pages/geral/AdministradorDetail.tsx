@@ -24,7 +24,7 @@ function AdminDetailPage() {
       } catch (err) {
         console.error('Failed to fetch administrator:', err);
         notify('Não foi possível carregar os dados do administrador. Tente recarregar a página.', 'error');
-        navigate('/geral/administradores');
+        navigate('/administradores');
       } finally {
         setLoading(false);
       }
@@ -51,7 +51,7 @@ function AdminDetailPage() {
           <h1 className="text-3xl font-bold text-gray-800">Detalhes do Administrador</h1>
           <div>
             <Button
-              onClick={() => navigate(`/geral/administradores/`)}
+              onClick={() => navigate(`/administradores/`)}
               type='secondary'
               padding='px-6 py-3'
             >

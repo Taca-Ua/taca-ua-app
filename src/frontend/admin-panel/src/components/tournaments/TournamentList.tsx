@@ -20,8 +20,8 @@ const TournamentListItemComponent = ({
 
   const handleClick = () => {
     const url = fromModalityId
-      ? `/geral/torneios/${tournament.id}?fromModality=${fromModalityId}`
-      : `/geral/torneios/${tournament.id}`;
+      ? `/torneios/${tournament.id}?fromModality=${fromModalityId}`
+      : `/torneios/${tournament.id}`;
     navigate(url);
   };
 

@@ -30,7 +30,7 @@ const ModalityDetailComponent = ( {modalityId} : { modalityId: string }) => {
   const handleDelete = async () => {
     try {
       await modalitiesApi.delete(modalityId);
-      navigate('/geral/modalidades');
+      navigate('/modalidades');
     } catch (error) {
       console.error('Error deleting modality:', error);
     }

@@ -18,7 +18,7 @@ const CourseDetailComponent = ( {courseId} : { courseId: string } ) => {
   const handleDelete = async () => {
     try {
       await coursesApi.delete(courseId);
-      navigate('/geral/cursos');
+      navigate('/cursos');
     } catch (error) {
       console.error("Erro ao eliminar curso:", error);
     } finally {

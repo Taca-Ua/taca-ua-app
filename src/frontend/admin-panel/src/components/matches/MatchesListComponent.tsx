@@ -60,7 +60,7 @@ const MatchesListItemComponent = ( { match, onDeleted } : { match: MatchListItem
     return (
       <button
         type="button"
-        onClick={() => navigate(`/geral/jogos/${match.id}`)}
+        onClick={() => navigate(`/jogos/${match.id}`)}
         className="w-full text-left p-4 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
       >
         <div className="flex justify-between items-start mb-2">

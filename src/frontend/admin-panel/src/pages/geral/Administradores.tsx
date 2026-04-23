@@ -96,7 +96,7 @@ function Administradores() {
                 <button
                   key={admin.id}
                   type="button"
-                  onClick={() => navigate(`/geral/administradores/${admin.id}`)}
+                  onClick={() => navigate(`/administradores/${admin.id}`)}
                   className="w-full text-left bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <div className="flex justify-between items-center">
@@ -115,7 +115,7 @@ function Administradores() {
                 <button
                   key={admin.id}
                   type="button"
-                  onClick={() => navigate(`/geral/administradores/${admin.id}`)}
+                  onClick={() => navigate(`/administradores/${admin.id}`)}
                   className="w-full text-left bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <div className="flex justify-between items-center">

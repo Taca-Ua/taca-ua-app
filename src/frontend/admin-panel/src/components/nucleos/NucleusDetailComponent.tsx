@@ -31,7 +31,7 @@ const NucleusDetailComponent = ( { nucleusId } : { nucleusId: string }) => {
   const handleDelete = async () => {
     try {
       await nucleosApi.delete(String(nucleusId));
-      navigate('/geral/nucleos');
+      navigate('/nucleos');
     } catch (err) {
       console.error('Failed to delete course:', err);
       notify('Não foi possível eliminar o núcleo. Poderá ter cursos ou membros associados.', 'error');
