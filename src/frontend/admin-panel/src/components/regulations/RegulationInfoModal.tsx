@@ -77,8 +77,7 @@ const RegulationInfoModal = ( {
     if (!regulation) return null;
 
     return (
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
-          <div className="p-8">
+        <div className="bg-white rounded-lg p-8 w-full max-w-md md:min-w-[700px]">
             <div className="flex justify-between items-start">
               <h2 className="text-2xl font-bold text-gray-900">
                 {regulation.title}
@@ -183,7 +182,6 @@ const RegulationInfoModal = ( {
               </Button>
             </div>
           </div>
-        </div>
     );
 }
 

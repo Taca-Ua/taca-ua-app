@@ -107,7 +107,7 @@ const AdminCreateModal = ({
 	if (!isAdminGeneral) return null; // Only general admins can create new admins
 
 	return (
-    <div className="bg-white rounded-lg p-8 max-w-4xl w-full mx-4 animate-slideUp max-h-[90vh] overflow-y-auto">
+    <div className="bg-white rounded-lg p-8 w-full md:min-w-[700px] max-w-max">
       <h2 className="text-2xl font-bold mb-6 text-gray-800">
         Adicionar Administrador
       </h2>

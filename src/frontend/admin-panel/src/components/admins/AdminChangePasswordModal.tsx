@@ -61,7 +61,7 @@ const AdminChangePasswordModal = ( {
     if ( !isAdminGeneral ) return null; // Only general admins can change passwords
 
     return (
-      <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+      <div className="bg-white rounded-lg p-8 w-full md:min-w-[500px] max-w-max">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">
           Alterar Password
         </h2>

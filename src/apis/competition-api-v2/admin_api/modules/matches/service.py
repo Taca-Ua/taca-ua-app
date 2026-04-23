@@ -163,11 +163,9 @@ class MatchesService:
     ) -> List[Match]:
         """List matches, optionally filtered by tournament"""
 
-        print("Check", flush=True)
         matches_data = matches_service_client.list_matches(
             tournament_id=tournament_id, status=status
         )
-        print("Check", flush=True)
 
         return self._build_multiple_matches_from_dtos(matches_data)
 

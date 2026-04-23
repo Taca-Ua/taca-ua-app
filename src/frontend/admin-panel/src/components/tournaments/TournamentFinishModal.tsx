@@ -243,7 +243,7 @@ const TournamentFinishModal = ({
 
   return (
 
-      <div className="bg-white rounded-lg p-8 w-[900px] h-[80vh] max-w-full mx-4 flex flex-col">
+      <div className="bg-white rounded-lg p-8 w-full max-w-md md:min-w-[900px]">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">
           Finalizar Torneio - Classificação Final
         </h2>

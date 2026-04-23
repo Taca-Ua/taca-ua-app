@@ -26,28 +26,32 @@ const ModalStack = () => {
 
   if (modals.length === 0) return null;
 
-  return (
-    <div className="fixed inset-0 pointer-events-none bg-black/50 flex items-center justify-center">
-      {modals.map((modal, index) => {
-        const offset = (modals.length - 1 - index) * 200;
+return (
+  <div className="fixed inset-0 pointer-events-none bg-black/50 flex items-center justify-center">
+    {modals.map((modal, index) => {
+      const offset = (modals.length - 1 - index) * 200;
 
-        return (
-          <div
-            key={index}
-            className="absolute inset-0 flex items-center justify-center transition-all duration-300 animate-slideUp"
-            style={{
-              transform: `translateX(-${offset}px) scale(${modals.length - index === 1 ? 1 : 0.95})`,
-              zIndex: index,
-              pointerEvents: index === modals.length - 1 ? "auto" : "none",
-              filter: `blur(${(modals.length - 1 - index) * 2}px)`,
-            }}
-          >
-            {modal}
-          </div>
-        );
-      })}
-    </div>
-  );
+      return (
+        <div
+          key={index}
+          className="absolute inset-0 flex items-center justify-center transition-all duration-300 animate-slideUp"
+          style={{
+            transform: `translateX(-${offset}px) scale(${modals.length - index === 1 ? 1 : 0.95})`,
+            zIndex: index,
+            pointerEvents: index === modals.length - 1 ? "auto" : "none",
+            filter: `blur(${(modals.length - 1 - index) * 2}px) brightness(${100 - (modals.length - 1 - index) * 10}%)`,
+          }}
+        >
+          <div className="max-h-[calc(100vh-2rem)] overflow-y-auto overflow-x-hidden">
+  <div className="max-w-[90vw] w-fit mx-auto">
+    {modal}
+  </div>
+</div>
+        </div>
+      );
+    })}
+  </div>
+);
 };
 
 export const ModalProvider = ({ children }: { children: React.ReactNode }) => {

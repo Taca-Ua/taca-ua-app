@@ -182,7 +182,7 @@ const MatchPublishResultsModal = ( {
     };
 
     return (
-      <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-max">
+      <div className="bg-white rounded-lg p-8 w-full max-w-md md:min-w-[500px]">
         <h2 className="text-xl font-bold mb-4">Publicar Resultados</h2>
         <DefinedStatesMenuComponent
           states={[

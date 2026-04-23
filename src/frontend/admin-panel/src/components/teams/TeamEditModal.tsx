@@ -48,7 +48,7 @@ const TeamEditModal = ({
   };
 
   return (
-      <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
+      <div className="bg-white rounded-lg p-8 w-full max-w-md md:min-w-[500px]">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">Editar Equipa</h2>
 
         <div className="space-y-4">

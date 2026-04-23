@@ -73,7 +73,6 @@ def list_matches(
         extra={"total": total, "returned": len(matches)},
     )
 
-    print("Check", flush=True)
     return {
         "matches": [m.to_dict(include_details=False) for m in matches],
         "total": total,

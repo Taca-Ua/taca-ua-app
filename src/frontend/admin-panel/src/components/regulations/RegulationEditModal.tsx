@@ -78,21 +78,15 @@ const RegulationEditModal = ( {
     }
 
     return (
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
-          <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+        <div className="bg-white rounded-lg p-8 w-full max-w-md md:min-w-[500px]">
+          <div className="flex justify-between items-center">
             <h2 className="text-xl font-bold text-gray-800">
               Editar Regulamento
             </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              ✕
-            </button>
           </div>
 
-          <div className="p-6 space-y-5">
-            <div>
+          <div className="space-y-5">
+            <div className="pt-4">
               <label className="block text-sm font-semibold text-gray-700 mb-1">
                 Título do Documento{" "}
                 <HelpTooltip

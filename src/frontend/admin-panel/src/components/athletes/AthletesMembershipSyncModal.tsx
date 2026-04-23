@@ -73,7 +73,7 @@ const AthletesMembershipSyncModal = ( {
     };
 
     return (
-        <div className="bg-white rounded-lg max-w-lg w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+        <div className="bg-white rounded-lg p-8 w-full max-w-md md:min-w-[500px]">
           <h3 className="text-xl font-bold text-gray-800 mb-2">
             Importar NMECs (CSV)
             <HelpTooltip

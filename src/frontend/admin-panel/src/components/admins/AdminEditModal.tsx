@@ -98,7 +98,7 @@ const AdminEditModal = ({
   if ( !isAdminGeneral ) return null; // should never happen since only general admins can open this modal, but just in case
 
   return (
-    <div className="bg-white rounded-lg p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="bg-white rounded-lg p-8 w-full md:min-w-[700px] max-w-max">
       <h2 className="text-2xl font-bold mb-6 text-gray-800">
         Editar Administrador{" "}
         {admin.role === "general_admin"

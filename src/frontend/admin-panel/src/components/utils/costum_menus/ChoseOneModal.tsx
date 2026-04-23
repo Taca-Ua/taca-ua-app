@@ -66,8 +66,7 @@ const ChoseOneModal = ( {
     }
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
-        <div className="bg-white rounded-lg p-8 max-w-5xl w-full mx-4 animate-slideUp max-h-[90vh] flex flex-col">
+        <div className="bg-white rounded-lg p-8 max-w-max w-full min-w-[500px] mx-4 max-h-[80vh] flex flex-col">
           <h2 className="text-2xl font-bold mb-4 text-gray-800">
             {title}
           </h2>
@@ -135,7 +134,6 @@ const ChoseOneModal = ( {
             </Button>
           </div>
         </div>
-      </div>
     );
 };
 

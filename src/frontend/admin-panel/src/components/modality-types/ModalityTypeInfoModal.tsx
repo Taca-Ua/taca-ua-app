@@ -60,7 +60,7 @@ const ModalityTypeInfoModal = ( {
     if (!modalityType) return null; // Could show a loading state here if desired
 
     return (
-        <div className="bg-white p-8 rounded-lg w-full max-w-5xl my-8">
+        <div className="bg-white rounded-lg p-8 w-full max-w-max md:min-w-[500px]">
           <div className="flex justify-between items-start mb-6">
             <h2 className="text-2xl font-bold">{modalityType.name}</h2>
             <button

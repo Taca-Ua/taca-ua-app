@@ -139,8 +139,7 @@ const ChooseMultipleModal = ({
     }
 
     return (
-      <>
-        <div className="bg-white rounded-lg p-8 max-w-5xl w-full mx-4 animate-slideUp max-h-[90vh] flex flex-col">
+        <div className="bg-white rounded-lg p-8 max-w-max w-full mx-4 max-h-[90vh] flex flex-col">
           <h2 className="text-2xl font-bold mb-4 text-gray-800">
             {title}
           </h2>
@@ -317,7 +316,6 @@ const ChooseMultipleModal = ({
             </Button>
           </div>
         </div>
-      </>
     );
 }
 

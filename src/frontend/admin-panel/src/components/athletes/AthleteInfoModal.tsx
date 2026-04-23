@@ -66,7 +66,7 @@ const AthleteInfoModal = ( {
     if (!athlete) return null;
 
     return (
-      <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+      <div className="bg-white rounded-lg p-8 w-full max-w-md md:min-w-[500px]">
           <div className="space-y-6">
             <div className="flex items-center gap-4">
               <span className="inline-block px-4 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-700">

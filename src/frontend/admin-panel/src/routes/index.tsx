@@ -93,8 +93,8 @@ export const router = createBrowserRouter([
 
       // Nucleo Admin Routes
       { path: '/nucleo/socios',             element: <ProtectedRoute> <SociosNucleo /></ProtectedRoute> },
-      { path: '/nucleo/membros',            element: <ProtectedRoute> <Membros /></ProtectedRoute> },
-      { path: '/nucleo/membros/:type/:id',  element: <ProtectedRoute> <MemberDetail /></ProtectedRoute> },
+      // { path: '/nucleo/membros',            element: <ProtectedRoute> <Membros /></ProtectedRoute> },
+      // { path: '/nucleo/membros/:type/:id',  element: <ProtectedRoute> <MemberDetail /></ProtectedRoute> },
       { path: '/nucleo/equipas',            element: <ProtectedRoute> <Equipas /></ProtectedRoute> },
       { path: '/nucleo/equipas/:id',        element: <ProtectedRoute> <TeamDetailPage /></ProtectedRoute> },
       { path: '/nucleo/jogos',              element: <ProtectedRoute> <Jogos /></ProtectedRoute> },

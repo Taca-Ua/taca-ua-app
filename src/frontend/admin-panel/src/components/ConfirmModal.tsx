@@ -24,7 +24,7 @@ const ConfirmModal = ({
   return (
 
       <div
-        className="bg-white rounded-lg p-8 max-w-md w-full mx-4 shadow-lg"
+        className="bg-white rounded-lg p-8 w-full max-w-md shadow-lg"
         onClick={(e: any) => e.stopPropagation()}
       >
         <h2 className="text-2xl font-bold mb-4 text-gray-800">{title}</h2>

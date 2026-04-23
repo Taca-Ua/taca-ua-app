@@ -300,7 +300,7 @@ function Membros() {
         </div>
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 animate-slideUp">
+          <div className="bg-white rounded-lg p-8 w-full max-w-md animate-slideUp">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Adicionar Membro</h2>
 
             <div className="space-y-4">
@@ -422,14 +422,14 @@ function Membros() {
           </div>
         </div>
       )}
-        <ChoseOneModal
+        {/* <ChoseOneModal
           controller={[choseCourseModalOpen, setChoseCourseModalOpen]}
           allElementsLoader={() => coursesApi.getAll().then(courses => courses.map(course => ({ id: course.id, title: course.abbreviation, subTitle: course.name })))}
           onSelect={(element) => {
             setCourseId(element? element.id : '');
             setChoseCourseModalOpen(false);
           }}
-        />
+        /> */}
       </div>
   );
 }
