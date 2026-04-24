@@ -5,6 +5,7 @@ import { btn } from "../../styles/buttonStyles";
 import Button from "../utils/Button";
 import RegulationEditModal from "./RegulationEditModal";
 import { useModal } from "../../contexts/ModalContext";
+import { useAuth } from "../../hooks/useAuth";
 
 const formatDisplayDate = (dateStr: string | undefined) => {
     if (!dateStr) return "Data indisponível";
@@ -34,6 +35,7 @@ const RegulationInfoModal = ( {
     const [ regulation, setRegulation ] = useState<RegulationDetail | null>(null);
     const { notify } = useNotification();
     const { popModal, pushModal } = useModal();
+    const { isAdminGeneral } = useAuth();
 
     const [ loading, setLoading ] = useState(false);
 
@@ -167,6 +169,7 @@ const RegulationInfoModal = ( {
                   confirmLabel: "Eliminar",
                 }}
                 flexible={true}
+                active={isAdminGeneral}
               >
                 Eliminar Documento
               </Button>
@@ -174,7 +177,7 @@ const RegulationInfoModal = ( {
                 <RegulationEditModal
                   regulationState={[regulation, setRegulation]}
                 />
-              )} type="info" flexible={true}>
+              )} type="info" flexible={true} active={isAdminGeneral}>
                 Editar Documento
               </Button>
               <Button onClick={onClose} type="secondary" flexible={true}>

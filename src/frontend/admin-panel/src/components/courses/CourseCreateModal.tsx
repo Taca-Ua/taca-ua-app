@@ -5,6 +5,7 @@ import HelpTooltip from "../HelpTooltip";
 import ChoseOneModal from "../utils/costum_menus/ChoseOneModal";
 import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
+import { useAuth } from "../../hooks/useAuth";
 
 const CourseCreateModal = ({
   onCreate,
@@ -12,6 +13,7 @@ const CourseCreateModal = ({
   onCreate?: (course: CourseListItem) => void;
 }) => {
   const { popModal, pushModal } = useModal();
+  const { isAdminGeneral } = useAuth();
 
   const [newCourseName, setNewCourseName] = useState("");
   const [newCourseAbbreviation, setNewCourseAbbreviation] = useState("");
@@ -52,6 +54,8 @@ const CourseCreateModal = ({
     setSelectedNucleo(null);
     popModal();
   };
+
+  if (!isAdminGeneral) return null;  // extra layer of security, button to open this modal is also hidden for non-general admins
 
   return (
       <div className="bg-white rounded-lg p-8 w-full max-w-md md:min-w-[500px]">

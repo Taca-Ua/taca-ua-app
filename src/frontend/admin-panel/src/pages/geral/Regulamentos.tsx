@@ -6,6 +6,7 @@ import { useAuth } from "../../hooks/useAuth";
 import RegulationCreateModal from "../../components/regulations/RegulationCreateModal";
 import RegulationInfoModal from "../../components/regulations/RegulationInfoModal";
 import { useModal } from "../../contexts/ModalContext";
+import Button from "../../components/utils/Button";
 
 const formatDisplayDate = (dateStr: string | undefined) => {
     if (!dateStr) return "Data indisponível";
@@ -113,17 +114,17 @@ const Regulamentos = () => {
               <p className="text-gray-500 mt-1">Consulte e gira os documentos oficiais do sistema.</p>
             </div>
 
-            <button
+            <Button
               onClick={() => pushModal(
                 <RegulationCreateModal
                   onCreate={(newRegulation) => setRegulations(prev => [newRegulation, ...prev])}
                 />
               )}
-              className={`px-6 py-3 ${btn.primary} font-semibold rounded-lg shadow-md disabled:opacity-50 disabled:cursor-not-allowed`}
-              disabled={!isAdminGeneral}
+              type="primary"
+              active={isAdminGeneral}
             >
               + Novo Regulamento
-            </button>
+            </Button>
           </header>
 
           {/* Barra de Ferramentas */}

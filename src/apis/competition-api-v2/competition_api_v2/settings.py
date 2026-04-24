@@ -45,6 +45,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "admin_api.middleware.StructlogMiddleware",  # Structured logging context
+    "admin_api.middleware.KeycloakJWTMiddleware",  # JWT validation & user/role extraction
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -151,6 +153,13 @@ KEYCLOAK_INTERNAL_URL = os.environ.get(
     "KEYCLOAK_INTERNAL_URL", "http://keycloak:8080/keycloak"
 )
 KEYCLOAK_REALM = os.environ.get("KEYCLOAK_REALM", "taca-ua")
+KEYCLOAK_JWKS_URI = (
+    f"{KEYCLOAK_INTERNAL_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/certs"
+)
+KEYCLOAK_ISSUER = os.environ.get(
+    "KEYCLOAK_ISSUER",
+    f"{KEYCLOAK_INTERNAL_URL}/realms/{KEYCLOAK_REALM}",  # fallback for local dev without nginx
+)
 KEYCLOAK_ADMIN_SERVER_URL = (
     os.environ.get("KEYCLOAK_ADMIN_SERVER_URL", KEYCLOAK_INTERNAL_URL).rstrip("/") + "/"
 )
@@ -161,3 +170,15 @@ KEYCLOAK_ADMIN_USER_REALM = os.environ.get("KEYCLOAK_ADMIN_USER_REALM", "master"
 KEYCLOAK_ADMIN_VERIFY_SSL = (
     os.environ.get("KEYCLOAK_ADMIN_VERIFY_SSL", "true").lower() == "true"
 )
+
+
+# ---------------------------------------------------------------------------
+# Development auth bypass (for local development without Keycloak)
+# ---------------------------------------------------------------------------
+DEV_AUTH_BYPASS_ENABLED = (
+    os.environ.get("DEV_AUTH_BYPASS_ENABLED", "false").lower() == "true"
+)
+DEV_AUTH_BYPASS_ROLES = os.environ.get("DEV_AUTH_BYPASS_ROLES", "general_admin").split(
+    ","
+)
+DEV_AUTH_BYPASS_TOKEN = os.environ.get("DEV_AUTH_BYPASS_TOKEN", "")

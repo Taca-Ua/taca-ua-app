@@ -873,16 +873,20 @@ class TeamModalitiesService(BaseService):
         team_data = self.get(f"/teams/{team_id}")
         return TeamDTO(**team_data)
 
-    def get_teams_by_ids(self, team_ids: List[str]) -> Dict[str, TeamDTO]:
+    def get_teams_by_ids(
+        self, team_ids: List[str], admin_id: str = None
+    ) -> Dict[str, TeamDTO]:
         """Get multiple teams by their IDs
 
         Args:
             team_ids (List[str]): List of team IDs
+            admin_id (str, optional): ID of the admin user. Defaults to None.
 
         Returns:
             Dict[str, TeamDTO]: Dictionary mapping team IDs to TeamDTO objects
         """
-        teams_data = self.post("/teams/batch-get", team_ids)
+        params = {"admin_id": admin_id} if admin_id is not None else {}
+        teams_data = self.post("/teams/batch-get", team_ids, params=params)
         return {team_id: TeamDTO(**team) for team_id, team in teams_data.items()}
 
     def update_team(

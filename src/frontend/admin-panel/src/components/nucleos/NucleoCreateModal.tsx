@@ -3,6 +3,7 @@ import { nucleosApi } from "../../api/nucleos";
 import HelpTooltip from "../HelpTooltip";
 import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
+import { useAuth } from "../../hooks/useAuth";
 
 const NucleoCreateModal = ({
   onCreate,
@@ -10,6 +11,7 @@ const NucleoCreateModal = ({
   onCreate?: (nucleus: any) => void;
 }) => {
   const { popModal } = useModal();
+  const { isAdminGeneral } = useAuth();
 
   const [newNucleusAbbreviation, setNewNucleusAbbreviation] = useState("");
   const [newNucleusName, setNewNucleusName] = useState("");
@@ -42,6 +44,8 @@ const NucleoCreateModal = ({
     setNewNucleusAbbreviation("");
     setNewNucleusName("");
   }
+
+  if (!isAdminGeneral) return null;  // extra layer of protection, button should be hidden in the first place
 
   return (
       <div className="bg-white rounded-lg p-8 w-full max-w-md md:min-w-[500px]">

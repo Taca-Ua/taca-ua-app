@@ -4,6 +4,7 @@ import HelpTooltip from "../HelpTooltip";
 import Button from "../utils/Button";
 import { useNotification } from "../../contexts/NotificationProvider";
 import { useModal } from "../../contexts/ModalContext";
+import { useAuth } from "../../hooks/useAuth";
 
 const parsePoints = (raw: string): number[] =>
   raw.split(/[\s,]+/).map(p => parseInt(p.trim())).filter(p => !isNaN(p));
@@ -16,6 +17,8 @@ const ModalityTypeEditModal = ( {
 
     const { notify } = useNotification();
     const { popModal } = useModal();
+    const { isAdminGeneral } = useAuth();
+
 
     const [modalityType, setModalityType] = modalityTypeState;
     const [formatName, setFormatName] = useState(modalityType.name);
@@ -118,6 +121,8 @@ const ModalityTypeEditModal = ( {
         newEscaloes[index] = { ...newEscaloes[index], [field]: value };
         setEscaloes(newEscaloes);
     };
+
+    if (!isAdminGeneral) return null;  // extra layer of protection in case this component is used somewhere else by mistake without the proper checks
 
     return (
         <div className="bg-white rounded-lg p-8 w-full max-w-max md:min-w-[500px]">

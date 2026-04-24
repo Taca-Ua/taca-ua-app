@@ -4,6 +4,7 @@ import { useNotification } from "../../contexts/NotificationProvider";
 import ModalityTypeEditModal from "./ModalityTypeEditModal";
 import { useModal } from "../../contexts/ModalContext";
 import { useEffect, useState } from "react";
+import { useAuth } from "../../hooks/useAuth";
 
 const ModalityTypeInfoModal = ( {
     modalityTypeId
@@ -12,6 +13,7 @@ const ModalityTypeInfoModal = ( {
 } ) => {
     const { notify } = useNotification();
     const { popModal, pushModal } = useModal();
+    const { isAdminGeneral } = useAuth();
 
     const [modalityType, setModalityType] = useState<ModalityTypeDetail | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -201,6 +203,7 @@ const ModalityTypeInfoModal = ( {
                 cancelLabel: "Cancelar"
               }}
               flexible={true}
+              active={isAdminGeneral}
             >
                 Eliminar
             </Button>
@@ -208,6 +211,7 @@ const ModalityTypeInfoModal = ( {
                 onClick={() => pushModal(<ModalityTypeEditModal modalityTypeState={[modalityType, setModalityType]} />)}
                 type="info"
                 flexible={true}
+                active={isAdminGeneral}
             >
                 Editar
             </Button>

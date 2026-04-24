@@ -26,7 +26,7 @@ const Nucleo = () => {
               )}
               type='primary'
               padding='px-6 py-3'
-              disabled={!isAdminGeneral}
+              active={isAdminGeneral}
             >
               + Adicionar Núcleo
             </Button>

@@ -5,12 +5,15 @@ import ModalityTypeCreateModal from "../../components/modality-types/ModalityTyp
 import ModalityTypeInfoModal from "../../components/modality-types/ModalityTypeInfoModal";
 import Button from "../../components/utils/Button";
 import { useModal } from "../../contexts/ModalContext";
+import { useAuth } from "../../hooks/useAuth";
 
 const ModalityTypes = () => {
   const [scoringFormats, setModalityTypes] = useState<ModalityTypeListItem[]>([]);
   const [loading] = useState(false);
   const { notify } = useNotification();
   const { pushModal } = useModal();
+  const { isAdminGeneral } = useAuth();
+
 
 
   useEffect(() => {
@@ -45,6 +48,7 @@ const ModalityTypes = () => {
               />
             )}
             type="primary"
+            active={isAdminGeneral}
           >
             + Adicionar Formato
           </Button>

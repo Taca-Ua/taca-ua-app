@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNotification } from "../../contexts/NotificationProvider";
 import AthleteInfoModal from "./AthleteInfoModal";
 import { useModal } from "../../contexts/ModalContext";
+import { useAuth } from "../../hooks/useAuth";
 
 const AthletesListBanner = ({
   athleteData,
@@ -14,6 +15,7 @@ const AthletesListBanner = ({
 
     const { notify } = useNotification();
     const { pushModal } = useModal();
+    const { isAdminGeneral } = useAuth();
 
     const [isloading, setIsLoading] = useState(false);
     const [athlete, setAthlete] = useState(athleteData);
@@ -62,7 +64,7 @@ const AthletesListBanner = ({
           <span className="text-sm text-gray-600 w-24 text-right sm:text-left">
             {athlete.is_member ? "Sócio" : "Não sócio"}
           </span>
-          <button
+          {isAdminGeneral && (<button
             type="button"
             role="switch"
             aria-checked={athlete.is_member}
@@ -85,7 +87,7 @@ const AthletesListBanner = ({
                 ${athlete.is_member ? "translate-x-6" : "translate-x-0.5"}
               `}
             />
-          </button>
+          </button>)}
         </div>
       </li>
     );

@@ -9,6 +9,7 @@ import { staffApi, type StaffListItem } from '../../api/staff';
 import { athletesApi, type AthleteListItem } from '../../api/athletes';
 import AthletesMembershipSyncModal from '../../components/athletes/AthletesMembershipSyncModal';
 import { useModal } from '../../contexts/ModalContext';
+import { useAuth } from '../../hooks/useAuth';
 
 export type SociosVariant = 'geral' | 'nucleo';
 
@@ -31,6 +32,7 @@ export function parseNmecColumnText(text: string): string[] {
 export default function SociosContent() {
   const { notify } = useNotification();
   const { pushModal } = useModal();
+  const { isAdminGeneral } = useAuth();
 
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -89,7 +91,7 @@ export default function SociosContent() {
             <Button
               onClick={() => pushModal(<AthletesMembershipSyncModal />)}
               type="info"
-              active={activeTab === "athletes"}
+              active={activeTab === "athletes" && isAdminGeneral}
             >
               Importar lista (CSV)
             </Button>

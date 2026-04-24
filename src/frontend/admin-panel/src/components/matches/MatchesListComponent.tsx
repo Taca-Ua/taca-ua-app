@@ -3,11 +3,13 @@ import { matchesApi, type MatchListItem } from "../../api/matches"
 import { useNavigate } from "react-router";
 import { useNotification } from "../../contexts/NotificationProvider";
 import Button from "../utils/Button";
+import { useAuth } from "../../hooks/useAuth";
 
 
 const MatchesListItemComponent = ( { match, onDeleted } : { match: MatchListItem; onDeleted: () => void } ) => {
     const navigate = useNavigate();
     const { notify } = useNotification();
+    const { isAdminGeneral } = useAuth();
 
     const getStatusText = (status: string) => {
         switch (status) {
@@ -104,6 +106,7 @@ const MatchesListItemComponent = ( { match, onDeleted } : { match: MatchListItem
               }}
               flexible={true}
               padding="px-4 py-2"
+              active={isAdminGeneral}
             >
               Eliminar
             </Button>

@@ -4,6 +4,7 @@ import { athletesApi } from "../../api/athletes";
 import { useNotification } from "../../contexts/NotificationProvider";
 import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
+import { useAuth } from "../../hooks/useAuth";
 
 export function parseNmecColumnText(text: string): string[] {
   // Strip UTF-8 BOM if present (common in Excel-exported CSVs)
@@ -25,6 +26,7 @@ const AthletesMembershipSyncModal = ( {
 }) => {
     const { notify } = useNotification();
     const { popModal } = useModal();
+    const { isAdminGeneral } = useAuth();
 
     const [csvFileName, setCsvFileName] = useState<string | null>(null);
     const [parsedPreview, setParsedPreview] = useState<string[]>([]);
@@ -71,6 +73,8 @@ const AthletesMembershipSyncModal = ( {
         setCsvSubmitting(false);
       }
     };
+
+    if (!isAdminGeneral) return null;
 
     return (
         <div className="bg-white rounded-lg p-8 w-full max-w-md md:min-w-[500px]">

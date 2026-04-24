@@ -5,6 +5,7 @@ import Button from "../utils/Button";
 import DefinedStatesMenuComponent from "../utils/costum_menus/DefinedStatesMenuComponent";
 import { useNotification } from "../../contexts/NotificationProvider";
 import { useModal } from "../../contexts/ModalContext";
+import { useAuth } from "../../hooks/useAuth";
 
 const parsePoints = (raw: string): number[] =>
   raw.split(/[\s,]+/).map(p => parseInt(p.trim())).filter(p => !isNaN(p));
@@ -16,6 +17,8 @@ const ModalityTypeCreateModal = ( {
 } ) => {
     const { notify } = useNotification();
     const { popModal } = useModal();
+    const { isAdminGeneral } = useAuth();
+
 
     const [formatName, setFormatName] = useState('');
     const [formatDescription, setFormatDescription] = useState('');
@@ -99,6 +102,8 @@ const ModalityTypeCreateModal = ( {
         newEscaloes[index] = { ...newEscaloes[index], [field]: value };
         setEscaloes(newEscaloes);
     };
+
+    if (!isAdminGeneral) return null; // Only general admins can create new modality types
 
     return (
             <div className="bg-white rounded-lg p-8 w-full max-w-max md:min-w-[500px]">

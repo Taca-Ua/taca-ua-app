@@ -2,6 +2,7 @@
 Team management views
 """
 
+from admin_api.utils.decorators import RoleRequiredMixin
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
@@ -87,7 +88,7 @@ class TeamListCreateView(APIView):
         tags=["Team Management"],
     ),
 )
-class TeamDetailView(APIView):
+class TeamDetailView(RoleRequiredMixin, APIView):
     def get(self, request, team_id):
         team = teams_service.get_team(team_id)
 

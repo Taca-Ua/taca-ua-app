@@ -9,11 +9,13 @@ import MatchesListComponent from '../../components/matches/MatchesListComponent'
 import MatchCreateModal from '../../components/matches/MatchCreateModal';
 import Button from '../../components/utils/Button';
 import { useModal } from '../../contexts/ModalContext';
+import { useAuth } from '../../hooks/useAuth';
 
 // Main component
 const TorneioDetails = () => {
   const tournamentId = useParams<{ id: string }>().id;
   const { pushModal } = useModal();
+  const { isAdminGeneral } = useAuth();
 
   const [tournament, setTournament] = useState<TournamentDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -87,7 +89,7 @@ const TorneioDetails = () => {
                   }}
                 />
               )}
-              active={tournament.competitors.length >= 2}
+              active={isAdminGeneral && tournament.competitors.length >= 2}
               flexible={true}
             >
               + Criar Jogo

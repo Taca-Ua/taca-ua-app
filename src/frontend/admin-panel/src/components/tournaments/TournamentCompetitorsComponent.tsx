@@ -5,6 +5,7 @@ import { tournamentsApi } from "../../api/tournaments";
 import { athletesApi } from "../../api/athletes";
 import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
+import { useAuth } from "../../hooks/useAuth";
 
 const TournamentCompetitorsComponent = ({
   tournamentState,
@@ -15,6 +16,7 @@ const TournamentCompetitorsComponent = ({
   ];
 }) => {
   const { pushModal } = useModal();
+  const { isAdminGeneral } = useAuth();
 
   const [tournament, setTournament] = tournamentState;
 
@@ -105,6 +107,7 @@ const TournamentCompetitorsComponent = ({
             />
           )}
           type="primary"
+          active={isAdminGeneral}
         >
           +/- Editar Competidor
         </Button>

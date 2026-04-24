@@ -5,6 +5,7 @@ Match management views
 from uuid import UUID
 
 import structlog
+from admin_api.utils.decorators import RoleRequiredMixin
 from django.http import HttpResponse
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
@@ -99,13 +100,19 @@ class MatchListCreateView(APIView):
         tags=["Match Management"],
     ),
 )
-class MatchDetailView(APIView):
+class MatchDetailView(RoleRequiredMixin, APIView):
     """Retrieve, update, or delete a match"""
 
     def get(self, request, match_id):
         """Get match details"""
 
-        match = matches_service.get_match(match_id=match_id)
+        print(request.roles, request.user_id, flush=True)
+        match = matches_service.get_match(
+            match_id=match_id,
+            admin_id=(
+                request.user_id if "nucleo_admin" in (request.roles or []) else None
+            ),
+        )
 
         serializer = MatchDetailSerializer(match)
         return Response(serializer.data, status=status.HTTP_200_OK)

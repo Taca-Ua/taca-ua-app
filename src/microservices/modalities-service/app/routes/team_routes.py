@@ -233,7 +233,16 @@ def delete_team(team_id: UUID, db: Session = Depends(get_db_session)):
 
 
 @router.post("/teams/batch-get", response_model=Dict[str, TeamResponse])
-def get_teams_by_ids(team_ids: List[UUID], db: Session = Depends(get_db_session)):
+def get_teams_by_ids(
+    team_ids: List[UUID], admin_id: str = None, db: Session = Depends(get_db_session)
+):
     """Get multiple teams by their IDs"""
-    teams = db.query(Team).filter(Team.id.in_(team_ids)).all()
+    teams = db.query(Team).filter(Team.id.in_(team_ids))
+    if admin_id:
+        teams = (
+            teams.join(Team.course)
+            .join(Course.nucleo)
+            .filter(Nucleo.admins_ids.any(admin_id))
+        )
+    teams = teams.all()
     return {str(team.id): team.to_dict(include_players=True) for team in teams}

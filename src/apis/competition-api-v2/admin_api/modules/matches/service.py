@@ -62,7 +62,10 @@ class MatchesService:
     """Service for managing matches"""
 
     def _build_multiple_matches_from_dtos(
-        self, matches_dto: List[MatchDTO], include_details: bool = False
+        self,
+        matches_dto: List[MatchDTO],
+        include_details: bool = False,
+        admin_id: str = None,
     ) -> List[Match]:
 
         # tournament phase
@@ -93,7 +96,7 @@ class MatchesService:
                     competitor_entity_id,
                 ) in tournament_competitors_info[tournament_id].items()
                 if competitor_type == "team"
-            ]
+            ],
         )
         for team in teams_data:
             tournament_competitor_entities_info[("team", teams_data[team].id)] = (
@@ -116,42 +119,13 @@ class MatchesService:
                 ("athlete", students_data[student].id)
             ] = students_data[student]
 
-        resp_lineups = {}  # (match_id, participant_id) -> lineup details
-        if include_details:
-            # build with lineups player info
-            all_player_ids = set()
-            for match_dto in matches_dto:
-                if not match_dto.lineups:
-                    continue
-                for lineup in match_dto.lineups:
-                    for player in lineup.lineup:
-                        all_player_ids.add(player.player_id)
+            # build matches
 
-            players_data = modalities_service_client.students.get_students_by_ids(
-                list(all_player_ids)
-            )
-
-            for match_dto in matches_dto:
-                if not match_dto.lineups:
-                    continue
-                for lineup in match_dto.lineups:
-                    resp_lineups[(match_dto.id, lineup.participant_id)] = []
-                    for player in lineup.lineup:
-                        player_data = players_data.get(player.player_id)
-                        if player_data:
-                            resp_lineups[(match_dto.id, lineup.participant_id)].append(
-                                LineupPlayer(
-                                    player_id=player.player_id,
-                                    player_name=player_data.full_name,
-                                    player_course=player_data.course.name,
-                                    player_student_number=player_data.student_number,
-                                    is_starter=player.is_starter,
-                                    jersey_number=player.jersey_number,
-                                )
-                            )
-
-        # build matches
-        resp = []
+        # build basic match info
+        resp: List[Match] = []
+        matches_index: Dict[str, Match] = (
+            {}
+        )  # match_id -> match_obj in resp list, to be used later for adding lineups if include_details is True
         for match_dto in matches_dto:
             # participants info
             participants = []
@@ -175,50 +149,98 @@ class MatchesService:
                 )
 
             # build match
-            resp.append(
-                Match(
-                    id=match_dto.id,
-                    tournament_id=match_dto.tournament_id,
-                    location=match_dto.location,
-                    start_time=match_dto.start_time,
-                    status=match_dto.status,
-                    participants=participants,
-                    comments=(
-                        [
-                            Comment(
-                                id=comment.id,
-                                message=comment.message,
-                                created_at=comment.created_at,
-                            )
-                            for comment in match_dto.comments
-                        ]
-                        if include_details and match_dto.comments
-                        else []
-                    ),
-                    lineups=(
-                        [
-                            Lineup(
-                                participant_id=lineup.participant_id,
-                                lineup=resp_lineups.get(
-                                    (match_dto.id, lineup.participant_id), []
-                                ),
-                            )
-                            for lineup in match_dto.lineups
-                        ]
-                        if not students_data
-                        else None
-                    ),  # Only include lineups if we have a team based match
-                )
+            resp_match = Match(
+                id=match_dto.id,
+                tournament_id=match_dto.tournament_id,
+                location=match_dto.location,
+                start_time=match_dto.start_time,
+                status=match_dto.status,
+                participants=participants,
+                comments=(
+                    [
+                        Comment(
+                            id=comment.id,
+                            message=comment.message,
+                            created_at=comment.created_at,
+                        )
+                        for comment in match_dto.comments
+                    ]
+                    if include_details and match_dto.comments
+                    else []
+                ),
+                lineups=None,  # to be filled later if include_details is True
             )
+            resp.append(resp_match)
+            matches_index[match_dto.id] = resp_match
+
+        if include_details:
+            # build with lineups player info
+            all_player_ids = set()
+            for match_dto in matches_dto:
+                if not match_dto.lineups:
+                    continue
+                for lineup in match_dto.lineups:
+                    for player in lineup.lineup:
+                        all_player_ids.add(player.player_id)
+            players_data = modalities_service_client.students.get_students_by_ids(
+                list(all_player_ids)
+            )
+
+            teams_ids_i_am_allowed_to_see = [
+                team.id
+                for team in modalities_service_client.teams.list_teams(
+                    admin_id=admin_id
+                )
+            ]
+
+            for match_dto in matches_dto:
+                matches_index[match_dto.id].lineups = []
+                if not match_dto.lineups:
+                    continue
+                for lineup in match_dto.lineups:
+                    lineup_players = []
+
+                    participant = next(
+                        (
+                            p
+                            for p in matches_index[match_dto.id].participants
+                            if p.id == lineup.participant_id
+                        ),
+                        None,
+                    )
+                    if participant.entity_id not in teams_ids_i_am_allowed_to_see:
+                        matches_index[match_dto.id].lineups.append(
+                            Lineup(participant_id=lineup.participant_id, lineup=None)
+                        )
+                        continue
+
+                    for player in lineup.lineup:
+                        player_data = players_data.get(player.player_id)
+                        if player_data:
+                            lineup_players.append(
+                                LineupPlayer(
+                                    player_id=player.player_id,
+                                    player_name=player_data.full_name,
+                                    player_course=player_data.course.name,
+                                    player_student_number=player_data.student_number,
+                                    is_starter=player.is_starter,
+                                    jersey_number=player.jersey_number,
+                                )
+                            )
+                    matches_index[match_dto.id].lineups.append(
+                        Lineup(
+                            participant_id=lineup.participant_id, lineup=lineup_players
+                        )
+                    )
 
         return resp
 
     def _build_match_from_dto(
-        self, match_dto: MatchDTO, include_details: bool = False
+        self, match_dto: MatchDTO, include_details: bool = False, admin_id: str = None
     ) -> Match:
         """Helper method to convert MatchDTO to Match domain model"""
         matches = self._build_multiple_matches_from_dtos(
-            [match_dto], include_details=include_details
+            [match_dto], include_details=include_details, admin_id=admin_id
         )
         return matches[0] if matches else None
 
@@ -250,10 +272,12 @@ class MatchesService:
         )
         return self._build_match_from_dto(match_dto)
 
-    def get_match(self, match_id: str) -> Match:
+    def get_match(self, match_id: str, admin_id: str = None) -> Match:
         """Get match details by ID"""
         match_dto = matches_service_client.get_match(match_id=match_id)
-        return self._build_match_from_dto(match_dto, include_details=True)
+        return self._build_match_from_dto(
+            match_dto, include_details=True, admin_id=admin_id
+        )
 
     def update_match(
         self,
@@ -261,6 +285,7 @@ class MatchesService:
         location: str = None,
         start_time: str = None,
         status: str = None,
+        admin_id: str = None,
     ) -> Match:
         """Update match metadata"""
         match_dto = matches_service_client.update_match(
@@ -270,7 +295,9 @@ class MatchesService:
             status=status,
             updated_by="00000000-0000-0000-0000-000000000000",  # Placeholder for updated_by
         )
-        return self._build_match_from_dto(match_dto, include_details=True)
+        return self._build_match_from_dto(
+            match_dto, include_details=True, admin_id=admin_id
+        )
 
     def delete_match(self, match_id: str) -> None:
         """Delete a match"""

@@ -5,6 +5,7 @@ import HelpTooltip from "../HelpTooltip";
 import DefinedStatesMenuComponent from "../utils/costum_menus/DefinedStatesMenuComponent";
 import { useNotification } from "../../contexts/NotificationProvider";
 import { useModal } from "../../contexts/ModalContext";
+import { useAuth } from "../../hooks/useAuth";
 
 const AthleteEditModal = ( {
     athleteState,
@@ -16,6 +17,7 @@ const AthleteEditModal = ( {
     const [athlete, setAthlete] = athleteState;
     const { notify } = useNotification();
     const { popModal } = useModal();
+    const { isAdminGeneral } = useAuth();
 
     const [editedName, setEditedName] = useState(athlete.full_name);
     const [editedIsMember, setEditedIsMember] = useState(athlete.is_member);
@@ -83,7 +85,7 @@ const AthleteEditModal = ( {
                   </div>
                 </div>
 
-                <div>
+                {isAdminGeneral && (<div>
                   <label className="block text-gray-700 font-medium mb-2">
                     Tipo{" "}
                     <HelpTooltip
@@ -99,7 +101,7 @@ const AthleteEditModal = ( {
                     onSelect={(value) => setEditedIsMember(value === "member")}
                     initialValue={editedIsMember ? "member" : "non_member"}
                   />
-                </div>
+                </div>)}
               </>
 
           </div>

@@ -6,10 +6,12 @@ import HelpTooltip from "../HelpTooltip";
 import NucleusEditModal from "./NucleusEditModal";
 import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
+import { useAuth } from "../../hooks/useAuth";
 
 const NucleusDetailComponent = ( { nucleusId } : { nucleusId: string }) => {
   const { notify } = useNotification();
   const navigate = useNavigate();
+  const { isAdminGeneral } = useAuth();
 
   const [nucleus, setNucleus] = useState<NucleoDetail | null>(null);
   const { pushModal } = useModal();
@@ -113,6 +115,7 @@ const NucleusDetailComponent = ( { nucleusId } : { nucleusId: string }) => {
           )}
           type="primary"
           flexible={true}
+          active={isAdminGeneral}
         >
           Editar
         </Button>
@@ -125,6 +128,7 @@ const NucleusDetailComponent = ( { nucleusId } : { nucleusId: string }) => {
             confirmLabel: "Eliminar",
           }}
           flexible={true}
+          active={isAdminGeneral}
         >
           Eliminar
         </Button>

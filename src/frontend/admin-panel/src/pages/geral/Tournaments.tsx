@@ -24,7 +24,7 @@ const Torneios = () => {
             )}
             type='primary'
             padding='px-6 py-3'
-            disabled={!isAdminGeneral}
+            active={isAdminGeneral}
           >
             + Criar Torneio
           </Button>

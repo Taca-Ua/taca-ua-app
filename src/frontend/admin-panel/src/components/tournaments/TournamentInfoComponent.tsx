@@ -4,6 +4,7 @@ import TournamentEditModal from "./TournamentEditModal";
 import TournamentFinishModal from "./TournamentFinishModal";
 import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
+import { useAuth } from "../../hooks/useAuth";
 
 // Helper functions to get status text and badge color
 const getStatusBadgeColor = (status: string) => {
@@ -33,6 +34,7 @@ const TournamentInfoComponent = ({
 
   const [tournament, setTournament] = tournamentState;
   const { pushModal } = useModal();
+  const { isAdminGeneral } = useAuth();
 
   const handleActivate = async () => {
     if (!tournament) return;
@@ -122,6 +124,7 @@ const TournamentInfoComponent = ({
           )}
           type="primary"
           flexible={true}
+          active={isAdminGeneral}
         >
           Editar
         </Button>
@@ -134,42 +137,45 @@ const TournamentInfoComponent = ({
             confirmLabel: "Eliminar",
           }}
           flexible={true}
+          active={isAdminGeneral}
         >
           Eliminar
         </Button>
       </div>
 
-      <div className="flex gap-4 pt-4 border-t mt-4">
+      {isAdminGeneral && (
+        <div className="flex gap-4 pt-4 border-t mt-4">
 
-        {tournament.status === "draft" && (
-          <Button
-            onClick={handleActivate}
-            type="success"
-            confirmation={{
-              title: "Ativar torneio",
-              message: tournament ? `Tem certeza que deseja ativar "${tournament.name}"?` : '',
-              confirmLabel: "Ativar",
-            }}
-            flexible={true}
-          >
-            Ativar Torneio
-          </Button>
-        )}
+          {tournament.status === "draft" && (
+            <Button
+              onClick={handleActivate}
+              type="success"
+              confirmation={{
+                title: "Ativar torneio",
+                message: tournament ? `Tem certeza que deseja ativar "${tournament.name}"?` : '',
+                confirmLabel: "Ativar",
+              }}
+              flexible={true}
+            >
+              Ativar Torneio
+            </Button>
+          )}
 
-        {tournament.status === "active" && (
-          <Button
-            onClick={() => pushModal(
-              <TournamentFinishModal
-                tournamentState={[tournament, setTournament]}
-              />
-            )}
-            type="info"
-            flexible={true}
-          >
-            Finalizar Torneio
-          </Button>
-        )}
-      </div>
+          {tournament.status === "active" && (
+            <Button
+              onClick={() => pushModal(
+                <TournamentFinishModal
+                  tournamentState={[tournament, setTournament]}
+                />
+              )}
+              type="info"
+              flexible={true}
+            >
+              Finalizar Torneio
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

@@ -4,6 +4,7 @@ import HelpTooltip from "../HelpTooltip";
 import Button from "../utils/Button";
 import { useNotification } from "../../contexts/NotificationProvider";
 import { useModal } from "../../contexts/ModalContext";
+import { useAuth } from "../../hooks/useAuth";
 
 const NucleusEditModal = ( {
   nucleusState,
@@ -16,6 +17,7 @@ const NucleusEditModal = ( {
   const [nucleus, setNucleus] = nucleusState;
   const { notify } = useNotification();
   const { popModal } = useModal();
+  const { isAdminGeneral } = useAuth();
 
   const [editedAbbreviation, setEditedAbbreviation] = useState('');
   const [editedName, setEditedName] = useState('');
@@ -55,6 +57,8 @@ const NucleusEditModal = ( {
       notify('Ocorreu um erro ao atualizar o núcleo. Tente novamente.', 'error');
     });
   };
+
+  if (!isAdminGeneral) return null;  // extra layer of protection, button should be hidden in the first place
 
   return (
       <div className="bg-white rounded-lg p-8 w-full max-w-md md:min-w-[500px]">

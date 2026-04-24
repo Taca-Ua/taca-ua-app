@@ -2,6 +2,7 @@ import type { MatchDetail } from "../../api/matches";
 import MatchPublishResultsModal from "./MatchPublishResultsModal";
 import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
+import { useAuth } from "../../hooks/useAuth";
 
 
 const MatchResultsComponent = ( {
@@ -12,6 +13,7 @@ const MatchResultsComponent = ( {
 
     const [match, setMatch] = matchState;
     const { pushModal } = useModal();
+    const { isAdminGeneral } = useAuth();
 
     const renderPosition = (position: number | null) => {
         if (position === null) return '-';
@@ -38,6 +40,7 @@ const MatchResultsComponent = ( {
               )
             }
             type="primary"
+            active={isAdminGeneral}
           >
             Publicar Resultados
           </Button>

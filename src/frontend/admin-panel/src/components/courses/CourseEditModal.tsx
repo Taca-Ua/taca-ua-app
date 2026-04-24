@@ -6,6 +6,7 @@ import { useNotification } from "../../contexts/NotificationProvider";
 import Button from "../utils/Button";
 import ChoseOneInput from "../utils/inputs/ChoseOneInput";
 import { useModal } from "../../contexts/ModalContext";
+import { useAuth } from "../../hooks/useAuth";
 
 const CourseEditModal = ({
   courseState,
@@ -17,6 +18,7 @@ const CourseEditModal = ({
 
   const { notify } = useNotification();
   const { popModal } = useModal();
+  const { isAdminGeneral } = useAuth();
 
   const [courseData, setCourseData] = courseState;
   const [editedName, setEditedName] = useState(courseData.name);
@@ -65,6 +67,8 @@ const CourseEditModal = ({
       notify('Erro ao atualizar curso', 'error');
     });
   };
+
+  if (!isAdminGeneral) return null;  // extra layer of security, edit buttons are also hidden for non-general admins
 
   return (
       <div className="bg-white rounded-lg p-8 w-full max-w-md md:min-w-[500px]">

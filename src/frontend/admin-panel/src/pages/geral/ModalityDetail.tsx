@@ -6,11 +6,13 @@ import TournamentCreateModal from '../../components/tournaments/TournamentCreate
 import ModalityDetailComponent from '../../components/modalities/ModalityDetailComponent';
 import Button from '../../components/utils/Button';
 import { useModal } from '../../contexts/ModalContext';
+import { useAuth } from '../../hooks/useAuth';
 
 
 const TournamentsTab = ({ modalityId }: { modalityId: string }) => {
   const [tournaments, setTournaments] = useState<TournamentListItem[]>([]);
   const { pushModal } = useModal();
+  const { isAdminGeneral } = useAuth();
 
   const handleCreateTournament = (newTournament: TournamentListItem) => {
     setTournaments([...tournaments, newTournament]);
@@ -29,6 +31,7 @@ const TournamentsTab = ({ modalityId }: { modalityId: string }) => {
           )}
           type='primary'
           padding='px-4 py-2'
+          active={isAdminGeneral}
         >
           + Criar Torneio
         </Button>
