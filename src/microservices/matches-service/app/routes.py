@@ -171,7 +171,6 @@ def get_match(
         raise HTTPException(status_code=404, detail="Match not found")
 
     logger.info("Match fetched successfully", extra={"match_id": str(match_id)})
-    print(match.to_dict(include_details=True), flush=True)
     return match.to_dict(include_details=True)
 
 
@@ -444,6 +443,126 @@ def get_lineup(
     )
 
     return lineups
+
+
+@router.put("/matches/{match_id}/lineup", response_model=schemas.MatchResponse)
+def update_lineup(
+    match_id: UUID,
+    lineup_data: schemas.LineupBatchUpdate,
+    db: Session = Depends(get_db_session),
+):
+    """Update lineup for a team in a match."""
+    logger.info(
+        "Updating lineup",
+        extra={
+            "match_id": str(match_id),
+            "participant_id": str(lineup_data.participant),
+            "player_count": len(lineup_data.players),
+        },
+    )
+
+    match = db.query(Match).filter(Match.id == match_id).first()
+
+    if not match:
+        logger.warning(
+            "Match not found for lineup update", extra={"match_id": str(match_id)}
+        )
+        raise HTTPException(status_code=404, detail="Match not found")
+
+    if match.status == MatchStatus.FINISHED:
+        logger.warning(
+            "Attempted to update lineup for finished match",
+            extra={"match_id": str(match_id)},
+        )
+        raise HTTPException(
+            status_code=409, detail="Cannot modify lineup for finished match"
+        )
+
+    # Verify team is a participant in the match
+    team_participant = (
+        db.query(MatchParticipant)
+        .filter(
+            MatchParticipant.match_id == match_id,
+        )
+        .first()
+    )
+
+    if not team_participant:
+        logger.warning(
+            "Team is not a participant in match for lineup update",
+            extra={
+                "match_id": str(match_id),
+                "participant_id": str(lineup_data.participant),
+            },
+        )
+        raise HTTPException(status_code=422, detail="Team is not part of this match")
+
+    # Update lineup entries
+    updated_lineups = []
+    for player_update in lineup_data.players:
+        lineup_entry = (
+            db.query(Lineup)
+            .filter(
+                Lineup.match_id == match_id,
+                Lineup.participant == lineup_data.participant,
+                Lineup.player_id == player_update.player_id,
+            )
+            .first()
+        )
+
+        if not lineup_entry:
+            logger.warning(
+                "Lineup entry not found for update",
+                extra={
+                    "match_id": str(match_id),
+                    "participant_id": str(lineup_data.participant),
+                    "player_id": str(player_update.player_id),
+                },
+            )
+            raise HTTPException(
+                status_code=404,
+                detail=f"Lineup entry for player {player_update.player_id} not found",
+            )
+
+        if player_update.is_starter is not None:
+            lineup_entry.is_starter = player_update.is_starter
+        lineup_entry.jersey_number = player_update.jersey_number
+        updated_lineups.append(lineup_entry)
+
+    # Emit event for lineup update
+    event = MatchLineupAssignedV1.create(
+        aggregate_id=match_id,
+        data=MatchLineupAssignedData(
+            match_id=match_id,
+            team_id=lineup_data.participant,
+            lineup=[
+                LineupPlayerData(
+                    player_id=player_update.player_id,
+                )
+                for player_update in lineup_data.players
+            ],
+        ),
+    )
+    outbox_publisher.emit_event(
+        db,
+        event_type=event.event_type(),
+        aggregate_type="match",
+        aggregate_id=match_id,
+        data=event.to_data_dict(),
+    )
+
+    db.commit()
+    db.refresh(match)
+
+    logger.info(
+        "Lineup updated successfully",
+        extra={
+            "match_id": str(match_id),
+            "participant_id": str(lineup_data.participant),
+            "updated_count": len(updated_lineups),
+        },
+    )
+    return match.to_dict(include_details=True)
 
 
 # Comment routes

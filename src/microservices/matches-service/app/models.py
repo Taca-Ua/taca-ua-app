@@ -82,7 +82,10 @@ class Match(Base):
         """Convert Match to dictionary for API responses"""
         lineups_response = []
         if include_details:
-            lineups_per_participant = {}
+            lineups_per_participant = {
+                participant_id: []
+                for participant_id in {str(p.participant) for p in self.participants}
+            }
             for lineup in self.lineups:
                 if str(lineup.participant) not in lineups_per_participant:
                     lineups_per_participant[str(lineup.participant)] = []

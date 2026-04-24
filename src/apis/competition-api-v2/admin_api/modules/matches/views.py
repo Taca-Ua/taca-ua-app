@@ -16,6 +16,7 @@ from rest_framework.views import APIView
 from .serializers import (
     CommentCreateSerializer,
     LineupAssignSerializer,
+    LineupUpdateSerializer,
     MatchCreateSerializer,
     MatchDetailSerializer,
     MatchListFilterSerializer,
@@ -168,26 +169,57 @@ def publish_match_results(request, match_id):
 # ============= Lineup Management Views =============
 
 
-@extend_schema(
-    request=LineupAssignSerializer,
-    responses=MatchDetailSerializer,
-    description="Assign lineup for a team in a match",
-    tags=["Match Management"],
+@extend_schema_view(
+    post=extend_schema(
+        request=LineupAssignSerializer,
+        responses=MatchDetailSerializer,
+        description="Assign lineup for a team in a match",
+        tags=["Match Management"],
+    ),
+    put=extend_schema(
+        request=LineupUpdateSerializer,
+        responses=MatchDetailSerializer,
+        description="Update lineup for a team in a match",
+        tags=["Match Management"],
+    ),
 )
-@api_view(["POST"])
-def assign_lineup(request, match_id):
-    """Assign lineup for a team"""
-    serializer = LineupAssignSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
+class MatchLineupsView(APIView):
+    """View to retrieve lineups for a match"""
 
-    match = matches_service.assign_lineup(
-        match_id=match_id,
-        participant=str(serializer.validated_data["participant"]),
-        players=[str(player) for player in serializer.validated_data["players"]],
-    )
+    def post(self, request, match_id):
+        """Assign lineup for a team"""
+        serializer = LineupAssignSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-    response_serializer = MatchDetailSerializer(match)
-    return Response(response_serializer.data, status=status.HTTP_200_OK)
+        match = matches_service.assign_lineup(
+            match_id=match_id,
+            participant=str(serializer.validated_data["participant"]),
+            players=[str(player) for player in serializer.validated_data["players"]],
+        )
+
+        response_serializer = MatchDetailSerializer(match)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request, match_id):
+        """Update lineup for a team"""
+        serializer = LineupUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        match = matches_service.update_lineup(
+            match_id=match_id,
+            participant=str(serializer.validated_data["participant"]),
+            players=[
+                {
+                    "player_id": str(player["player_id"]),
+                    "is_starter": player["is_starter"],
+                    "jersey_number": player.get("jersey_number"),
+                }
+                for player in serializer.validated_data["players"]
+            ],
+        )
+
+        response_serializer = MatchDetailSerializer(match)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
 
 
 # ============= Comment Management Views =============
@@ -281,7 +313,7 @@ urlpatterns = [
         "<uuid:match_id>/results/", publish_match_results, name="publish-match-results"
     ),
     # Lineup management
-    path("<uuid:match_id>/lineup/", assign_lineup, name="match-lineup"),
+    path("<uuid:match_id>/lineups/", MatchLineupsView.as_view(), name="match-lineups"),
     # Comment management
     path("<uuid:match_id>/comments/", add_comment, name="match-add-comment"),
     path(

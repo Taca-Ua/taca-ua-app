@@ -30,6 +30,8 @@ class LineupDetailSerializer(serializers.Serializer):
         """Serializer for individual player in lineup"""
 
         player_id = serializers.UUIDField()
+        player_name = serializers.CharField()
+        player_course = serializers.CharField(required=False, allow_null=True)
         is_starter = serializers.BooleanField(required=False, default=None)
         jersey_number = serializers.IntegerField(required=False, allow_null=True)
 
@@ -146,3 +148,17 @@ class LineupAssignSerializer(serializers.Serializer):
             raise serializers.ValidationError("Player IDs must be unique.")
 
         return value
+
+
+class LineupUpdateSerializer(serializers.Serializer):
+    """Serializer for updating lineup of a team"""
+
+    class PlayerLineupUpdateSerializer(serializers.Serializer):
+        """Serializer for individual player in lineup update"""
+
+        player_id = serializers.UUIDField()
+        is_starter = serializers.BooleanField(required=False, default=None)
+        jersey_number = serializers.IntegerField(required=False, allow_null=True)
+
+    participant = serializers.UUIDField(required=True)
+    players = PlayerLineupUpdateSerializer(many=True, required=True)

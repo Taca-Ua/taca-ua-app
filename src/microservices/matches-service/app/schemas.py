@@ -86,6 +86,24 @@ class LineupBatchCreate(BaseModel):
     )
 
 
+class LineupBatchUpdatePlayer(BaseModel):
+    """Schema for updating a single player in the lineup."""
+
+    player_id: UUID
+    is_starter: Optional[bool]
+    jersey_number: Optional[int] = None
+
+
+class LineupBatchUpdate(BaseModel):
+    """Schema for updating multiple lineup entries at once."""
+
+    participant: UUID
+    players: List[LineupBatchUpdatePlayer] = Field(
+        ...,
+        description="List of players to update in the lineup with their new details",
+    )
+
+
 # Comment Schemas
 class CommentCreate(BaseModel):
     """Schema for creating a comment."""

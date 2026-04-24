@@ -102,26 +102,13 @@ const MatchHeader = ({ match }: { match: MatchDetail }) => {
 };
 
 // Lineups Section Component
-const LineupsSection = ({ match }: { match: MatchDetail }) => {
-  const { notify } = useNotification();
+const LineupsSection = ({ matchState }: { matchState: [MatchDetail, React.Dispatch<React.SetStateAction<MatchDetail | null>>] }) => {
   const { pushModal } = useModal();
+  const [match, setMatch] = matchState;
 
   const getParticipantName = (participant_id: string) => {
     const participant = match.participants.find(p => p.id === participant_id);
     return participant ? participant.name : 'Participante';
-  };
-
-  const handleDownloadTeamSheet = async (teamId: string) => {
-    try {
-        const blob = await matchesApi.getMatchTeamSheet(match.id, teamId);
-        const url = window.URL.createObjectURL(blob);
-        window.open(url, '_blank');
-        // Optionally revoke after some time
-        setTimeout(() => window.URL.revokeObjectURL(url), 10000);
-    } catch (err) {
-        console.error('Error downloading team sheet:', err);
-        notify(err instanceof Error ? err.message : 'Não foi possível descarregar a ficha de equipa. Tente novamente.', 'error');
-    }
   };
 
   if (match.lineups === null || match.lineups === undefined) {
@@ -148,8 +135,6 @@ const LineupsSection = ({ match }: { match: MatchDetail }) => {
 
       <div className="space-y-6">
           {match.lineups.map((participant) => {
-            const starters = participant.lineup.filter(l => l.is_starter);
-            const bench = participant.lineup.filter(l => !l.is_starter);
 
             return (
               <div key={participant.participant_id} className="border-l-4 border-teal-500 pl-4">
@@ -159,80 +144,17 @@ const LineupsSection = ({ match }: { match: MatchDetail }) => {
                   </h4>
                   <Button
                     onClick={() => {pushModal(
-                      <MatchTeamLineupModal match={match} lineup={participant} />
+                      <MatchTeamLineupModal matchState={[match, setMatch]} lineup={participant} />
                     )}}
+                    type='info'
+                    padding='px-10 py-2'
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
                   </Button>
-                  <button
-                    onClick={() => handleDownloadTeamSheet(participant.participant_id)}
-                    className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-md text-sm font-medium transition-colors flex items-center gap-1"
-                  >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
-                    Ficha de Equipa
-                  </button>
                 </div>
-
-                {starters.length > 0 && (
-                  <div className="mb-3">
-                    <p className="text-sm font-medium text-gray-600 mb-2">
-                      Titulares
-                    </p>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {starters.map((lineup) => (
-                        <div
-                          key={lineup.player_id}
-                          className="flex items-center gap-2 p-2 bg-teal-50 rounded"
-                        >
-                          <span className="flex-shrink-0 w-8 h-8 bg-teal-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
-                            {lineup.jersey_number}
-                          </span>
-                          <span className="text-sm text-gray-800 truncate">
-                            {lineup.name || "Jogador"}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {bench.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 mb-2">
-                      Suplentes
-                    </p>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {bench.map((lineup) => (
-                        <div
-                          key={lineup.player_id}
-                          className="flex items-center gap-2 p-2 bg-gray-50 rounded"
-                        >
-                          <span className="flex-shrink-0 w-8 h-8 bg-gray-400 text-white rounded-full flex items-center justify-center text-sm font-bold">
-                            {lineup.jersey_number}
-                          </span>
-                          <span className="text-sm text-gray-800 truncate">
-                            {lineup.name || "Jogador"}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             );
           })}
@@ -507,7 +429,7 @@ const JogoDetails = () => {
 
           <div className="lg:col-span-2 space-y-6">
             <MatchResultsComponent matchState={[match, setMatch]} />
-            <LineupsSection match={match} />
+            <LineupsSection matchState={[match, setMatch]} />
             <CommentsSection match={match} />
           </div>
         </div>

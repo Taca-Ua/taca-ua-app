@@ -6,7 +6,8 @@ export interface MatchLineup {
   participant_id: string;
   lineup: {
     player_id: string;
-    name: string;
+    player_name: string;
+    player_course: string;
     is_starter: boolean;
     jersey_number?: number;
   }[];
@@ -72,6 +73,15 @@ export interface LineupAssign {
   players: string[];
 }
 
+export interface LineupUpdate {
+  participant: string;
+  players: {
+    player_id: string;
+    is_starter: boolean;
+    jersey_number?: number | null;
+  }[];
+}
+
 export const matchesApi = {
   async getAll(params?: MatchListFilter): Promise<MatchListItem[]> {
     return apiClient.get<MatchListItem[]>('/matches/', params );
@@ -98,7 +108,11 @@ export const matchesApi = {
   },
 
   async assignLineup(matchId: string, data: LineupAssign): Promise<JSON> {
-    return apiClient.post<JSON>(`/matches/${matchId}/lineup/`, data);
+    return apiClient.post<JSON>(`/matches/${matchId}/lineups/`, data);
+  },
+
+  async updateLineup(matchId: string, data: LineupUpdate): Promise<MatchDetail> {
+    return apiClient.put<MatchDetail>(`/matches/${matchId}/lineups/`, data);
   },
 
   async addComment(matchId: string, data: CommentCreate): Promise<MatchDetail> {

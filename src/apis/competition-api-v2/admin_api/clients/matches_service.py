@@ -23,9 +23,26 @@ class MatchParticipantDTO:
 
 
 @dataclass
+class MatchLineupPlayerDTO:
+    player_id: UUID
+    is_starter: Optional[bool] = None
+    jersey_number: Optional[int] = None
+
+
+@dataclass
 class MatchLineupDTO:
     participant_id: UUID
-    lineup: List[Dict[str, Any]] = field(default_factory=list)
+    lineup: List[MatchLineupPlayerDTO] = field(default_factory=list)
+
+    def __post_init__(self):
+        self.lineup = [
+            (
+                MatchLineupPlayerDTO(**player)
+                if not isinstance(player, MatchLineupPlayerDTO)
+                else player
+            )
+            for player in self.lineup
+        ]
 
 
 @dataclass
@@ -174,7 +191,6 @@ class MatchesService(BaseService):
             Match data with participants
         """
         match_data = self.get(f"/matches/{match_id}")
-        print(match_data, flush=True)
         return MatchDTO(**match_data)
 
     def update_match(
@@ -346,6 +362,33 @@ class MatchesService(BaseService):
 
         lineup_data = self.get(f"/matches/{match_id}/lineup", params=params)
         return [LineupDTO(**entry) for entry in lineup_data]
+
+    def update_lineup(
+        self,
+        match_id: UUID,
+        participant: UUID,
+        players: List[Dict[str, Any]],
+    ) -> MatchDTO:
+        """
+        Update lineup for a team in a match.
+
+        Args:
+            match_id: Match UUID
+            participant: Participant ID
+            players: List of players with:
+                - player_id (UUID/str): Player ID
+                - jersey_number (int): Jersey number
+                - is_starter (bool, optional): Whether player is starter (default: True)
+
+        Returns:
+            Updated match data with new lineup
+        """
+        data = {
+            "participant": str(participant),
+            "players": players,
+        }
+        match_data = self.put(f"/matches/{match_id}/lineup", data=data)
+        return MatchDTO(**match_data)
 
     # Comment operations
     def add_comment(

@@ -23,6 +23,28 @@ class Participant:
 
 
 @dataclass
+class Comment:
+    id: str
+    message: str
+    created_at: str
+
+
+@dataclass
+class LineupPlayer:
+    player_id: str
+    player_name: str
+    player_course: str = None
+    is_starter: bool = None
+    jersey_number: int = None
+
+
+@dataclass
+class Lineup:
+    participant_id: str
+    lineup: List[LineupPlayer] = field(default_factory=list)
+
+
+@dataclass
 class Match:
     id: str
     tournament_id: str
@@ -30,8 +52,8 @@ class Match:
     start_time: str
     status: str
     participants: List[Participant] = field(default_factory=list)
-    comments: List[Dict] = field(default_factory=list)
-    lineups: List[Dict] = field(default_factory=list)
+    comments: List[Comment] = field(default_factory=list)
+    lineups: List[Lineup] = field(default_factory=list)
 
 
 class MatchesService:
@@ -92,6 +114,39 @@ class MatchesService:
                 ("athlete", students_data[student].id)
             ] = students_data[student]
 
+        resp_lineups = {}  # (match_id, participant_id) -> lineup details
+        if include_details:
+            # build with lineups player info
+            all_player_ids = set()
+            for match_dto in matches_dto:
+                if not match_dto.lineups:
+                    continue
+                for lineup in match_dto.lineups:
+                    for player in lineup.lineup:
+                        all_player_ids.add(player.player_id)
+
+            players_data = modalities_service_client.students.get_students_by_ids(
+                list(all_player_ids)
+            )
+
+            for match_dto in matches_dto:
+                if not match_dto.lineups:
+                    continue
+                for lineup in match_dto.lineups:
+                    resp_lineups[(match_dto.id, lineup.participant_id)] = []
+                    for player in lineup.lineup:
+                        player_data = players_data.get(player.player_id)
+                        if player_data:
+                            resp_lineups[(match_dto.id, lineup.participant_id)].append(
+                                LineupPlayer(
+                                    player_id=player.player_id,
+                                    player_name=player_data.full_name,
+                                    player_course=player_data.course.name,
+                                    is_starter=player.is_starter,
+                                    jersey_number=player.jersey_number,
+                                )
+                            )
+
         # build matches
         resp = []
         for match_dto in matches_dto:
@@ -126,21 +181,25 @@ class MatchesService:
                     participants=participants,
                     comments=(
                         [
-                            {
-                                "id": comment.id,
-                                "message": comment.message,
-                                "created_at": comment.created_at,
-                            }
+                            Comment(
+                                id=comment.id,
+                                message=comment.message,
+                                created_at=comment.created_at,
+                            )
                             for comment in match_dto.comments
                         ]
                         if include_details and match_dto.comments
                         else []
                     ),
-                    lineups=(
-                        match_dto.lineups
-                        if include_details and match_dto.lineups
-                        else []
-                    ),
+                    lineups=[
+                        Lineup(
+                            participant_id=lineup.participant_id,
+                            lineup=resp_lineups.get(
+                                (match_dto.id, lineup.participant_id), []
+                            ),
+                        )
+                        for lineup in match_dto.lineups
+                    ],
                 )
             )
 
@@ -227,6 +286,17 @@ class MatchesService:
     ) -> Match:
         """Assign lineup to a match"""
         match_dto = matches_service_client.assign_lineup(
+            match_id=match_id,
+            participant=participant,
+            players=players,
+        )
+        return self._build_match_from_dto(match_dto, include_details=True)
+
+    def update_lineup(
+        self, match_id: str, participant: str, players: List[dict]
+    ) -> Match:
+        """Update lineup of a match"""
+        match_dto = matches_service_client.update_lineup(
             match_id=match_id,
             participant=participant,
             players=players,
