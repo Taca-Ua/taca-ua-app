@@ -112,9 +112,7 @@ const MatchTeamLineupModal = ({
           {!isEditMode ? (
             <button
               onClick={enterEditMode}
-              className="shrink-0 flex items-center gap-2 rounded-lg border border-gray-300
-                                             hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600
-                                             text-gray-500 text-sm font-medium px-3 py-2 transition-colors"
+              className="shrink-0 flex items-center gap-2 rounded-lg border border-gray-300 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 text-gray-500 text-sm font-medium px-3 py-2 transition-colors"
             >
               <svg
                 className="w-4 h-4"
@@ -133,8 +131,7 @@ const MatchTeamLineupModal = ({
             </button>
           ) : (
             <span
-              className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-blue-50
-                                                     border border-blue-200 text-blue-600 text-sm font-semibold px-3 py-2"
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-600 text-sm font-semibold px-3 py-2"
             >
               <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
               Modo de edição
@@ -150,7 +147,9 @@ const MatchTeamLineupModal = ({
                 pushModal(
                   <ChooseMultipleModal
                     allElementsLoader={() =>
-                      athletesApi.getAll().then((res) =>
+                      athletesApi.getAll({
+                        team_id: match.participants.find((p) => p.id === lineup.participant_id)?.entity_id,
+                      }).then((res) =>
                         res.map((athlete) => ({
                           id: athlete.id,
                           title: athlete.full_name,

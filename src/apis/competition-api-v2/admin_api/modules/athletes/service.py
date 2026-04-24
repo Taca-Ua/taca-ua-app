@@ -53,8 +53,13 @@ class AthletesService:
             is_member=athlete_data.is_member,
         )
 
-    def list_athletes(self) -> List[Athlete]:
-        athletes_data = modalities_service_client.students.list_students()
+    def list_athletes(
+        self, course_id: Optional[str] = None, team_id: Optional[str] = None
+    ) -> List[Athlete]:
+        athletes_data = modalities_service_client.students.list_students(
+            course_id=course_id,
+            team_id=team_id,
+        )
 
         return [
             self._build_athlete_from_modalities_answer(athlete_data)

@@ -18,6 +18,7 @@ export interface AthleteDetail extends AthleteListItem {};
 
 export interface AthleteListParams {
     course_id?: string;
+    team_id?: string;
 };
 
 export interface AthleteCreate {
@@ -40,7 +41,7 @@ export interface AthleteMembershipSync {
 
 export const athletesApi = {
   async getAll(params?: AthleteListParams): Promise<AthleteListItem[]> {
-    return apiClient.get<AthleteListItem[]>('/athletes/', { params });
+    return apiClient.get<AthleteListItem[]>('/athletes/', params );
   },
 
   async create(data: AthleteCreate): Promise<AthleteListItem> {

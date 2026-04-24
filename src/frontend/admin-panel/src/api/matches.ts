@@ -22,6 +22,7 @@ export interface MatchListItem {
   status: string;
   participants: {
     id: string;
+    entity_id: string;
     name: string;
     score?: number;
     position?: number;

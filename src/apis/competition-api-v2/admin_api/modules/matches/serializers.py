@@ -10,6 +10,7 @@ class ParticipantsListSerializer(serializers.Serializer):
     """Serializer for listing match participants"""
 
     id = serializers.UUIDField()
+    entity_id = serializers.UUIDField()
     name = serializers.CharField()
     score = serializers.IntegerField(required=False, allow_null=True)
     position = serializers.IntegerField(required=False, allow_null=True)

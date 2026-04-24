@@ -38,7 +38,18 @@ class AthleteListCreateView(APIView):
         serializer = AthleteListRequestSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
-        all_students = athletes_service.list_athletes()
+        all_students = athletes_service.list_athletes(
+            course_id=(
+                str(serializer.validated_data.get("course_id"))
+                if serializer.validated_data.get("course_id")
+                else None
+            ),
+            team_id=(
+                str(serializer.validated_data.get("team_id"))
+                if serializer.validated_data.get("team_id")
+                else None
+            ),
+        )
 
         serializer = AthleteListSerializer(all_students, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

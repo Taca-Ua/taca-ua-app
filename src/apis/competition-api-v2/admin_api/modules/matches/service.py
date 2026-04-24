@@ -17,6 +17,7 @@ from admin_api.clients.tournaments_service import tournaments_service_client
 @dataclass
 class Participant:
     id: str
+    entity_id: str
     name: str
     score: int
     position: int
@@ -162,6 +163,7 @@ class MatchesService:
                 participants.append(
                     Participant(
                         id=participant.participant,
+                        entity_id=entity_data.id,
                         name=(
                             entity_data.name
                             if isinstance(entity_data, TeamDTO)

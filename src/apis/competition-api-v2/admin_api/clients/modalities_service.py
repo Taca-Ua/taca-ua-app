@@ -595,7 +595,9 @@ class StudentModalitiesService(BaseService):
         )
         super().__init__(base_url)
 
-    def list_students(self, admin_id: str = None) -> List[StudentDTO]:
+    def list_students(
+        self, admin_id: str = None, course_id: str = None, team_id: str = None
+    ) -> List[StudentDTO]:
         """List all students
 
         Returns:
@@ -604,6 +606,10 @@ class StudentModalitiesService(BaseService):
         params = {}
         if admin_id is not None:
             params["admin_id"] = admin_id
+        if course_id is not None:
+            params["course_id"] = course_id
+        if team_id is not None:
+            params["team_id"] = team_id
         students_data = self.get("/students", params=params)
         return [StudentDTO(**student) for student in students_data]
 
