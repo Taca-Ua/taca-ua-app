@@ -69,12 +69,39 @@ class Match(Base):
         back_populates="match",
         cascade="all, delete-orphan",
     )
+    lineups: Mapped[list["Lineup"]] = relationship(
+        "Lineup",
+        back_populates="match",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self) -> str:
         return f"<Match {self.id} status={self.status.value}>"
 
     def to_dict(self, include_details: bool = False) -> dict:
         """Convert Match to dictionary for API responses"""
+        lineups_response = []
+        if include_details:
+            lineups_per_participant = {}
+            for lineup in self.lineups:
+                if str(lineup.participant) not in lineups_per_participant:
+                    lineups_per_participant[str(lineup.participant)] = []
+                lineups_per_participant[str(lineup.participant)].append(
+                    {
+                        "player_id": str(lineup.player_id),
+                        "jersey_number": lineup.jersey_number,
+                        "is_starter": lineup.is_starter,
+                    }
+                )
+
+            for participant_id, lineup in lineups_per_participant.items():
+                lineups_response.append(
+                    {
+                        "participant_id": participant_id,
+                        "lineup": lineup,
+                    }
+                )
+
         return {
             "id": str(self.id),
             "tournament_id": str(self.tournament_id),
@@ -95,6 +122,7 @@ class Match(Base):
                 if include_details
                 else []
             ),
+            "lineups": lineups_response if include_details else [],
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
@@ -162,7 +190,12 @@ class Lineup(Base):
     )
 
     # Student / Athlete Service reference
-    player_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    player_id = Column(
+        UUID(as_uuid=True),
+        nullable=False,
+        index=True,
+        primary_key=True,
+    )
 
     jersey_number = Column(Integer, nullable=True)
     is_starter = Column(Boolean, nullable=True, default=True)
@@ -172,6 +205,8 @@ class Lineup(Base):
         nullable=False,
         default=lambda: datetime.now(timezone.utc),
     )
+
+    match: Mapped[Match] = relationship("Match", back_populates="lineups")
 
     def __repr__(self) -> str:
         return f"<Lineup match={self.match_id} participant={self.participant} player={self.player_id}>"

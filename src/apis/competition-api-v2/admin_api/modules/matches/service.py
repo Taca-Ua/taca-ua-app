@@ -137,11 +137,8 @@ class MatchesService:
                         else []
                     ),
                     lineups=(
-                        [
-                            {"participant_id": part.participant, "lineup": []}
-                            for part in match_dto.participants
-                        ]
-                        if include_details
+                        match_dto.lineups
+                        if include_details and match_dto.lineups
                         else []
                     ),
                 )
@@ -225,12 +222,14 @@ class MatchesService:
         )
         return self._build_match_from_dto(match_dto, include_details=True)
 
-    def assign_lineup(self, match_id: str, participant_ids: List[str]) -> Match:
+    def assign_lineup(
+        self, match_id: str, participant: str, players: List[str]
+    ) -> Match:
         """Assign lineup to a match"""
         match_dto = matches_service_client.assign_lineup(
             match_id=match_id,
-            participant_ids=participant_ids,
-            assigned_by="00000000-0000-0000-0000-000000000000",  # Placeholder for assigned_by
+            participant=participant,
+            players=players,
         )
         return self._build_match_from_dto(match_dto, include_details=True)
 

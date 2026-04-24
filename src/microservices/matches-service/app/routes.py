@@ -171,6 +171,7 @@ def get_match(
         raise HTTPException(status_code=404, detail="Match not found")
 
     logger.info("Match fetched successfully", extra={"match_id": str(match_id)})
+    print(match.to_dict(include_details=True), flush=True)
     return match.to_dict(include_details=True)
 
 
@@ -305,7 +306,9 @@ def delete_match(
 
 
 # Lineup routes
-@router.post("/matches/{match_id}/lineup", status_code=201)
+@router.post(
+    "/matches/{match_id}/lineup", status_code=201, response_model=schemas.MatchResponse
+)
 def assign_lineup(
     match_id: UUID,
     lineup_data: schemas.LineupBatchCreate,
@@ -316,7 +319,7 @@ def assign_lineup(
         "Assigning lineup",
         extra={
             "match_id": str(match_id),
-            "team_id": str(lineup_data.team_id),
+            "participant_id": str(lineup_data.participant),
             "player_count": len(lineup_data.players),
         },
     )
@@ -348,13 +351,16 @@ def assign_lineup(
     if not team_participant:
         logger.warning(
             "Team is not a participant in match",
-            extra={"match_id": str(match_id), "team_id": str(lineup_data.team_id)},
+            extra={
+                "match_id": str(match_id),
+                "participant_id": str(lineup_data.participant),
+            },
         )
         raise HTTPException(status_code=422, detail="Team is not part of this match")
 
     # Delete existing lineup for this team
     db.query(Lineup).filter(
-        Lineup.match_id == match_id, Lineup.team_id == lineup_data.team_id
+        Lineup.match_id == match_id, Lineup.participant == lineup_data.participant
     ).delete()
 
     # Add new lineup
@@ -362,10 +368,8 @@ def assign_lineup(
     for player_data in lineup_data.players:
         lineup = Lineup(
             match_id=match_id,
-            team_id=lineup_data.team_id,
-            player_id=UUID(player_data["player_id"]),
-            jersey_number=player_data["jersey_number"],
-            is_starter=player_data.get("is_starter", True),
+            participant=lineup_data.participant,
+            player_id=player_data,
         )
         db.add(lineup)
         created_lineups.append(lineup)
@@ -375,12 +379,10 @@ def assign_lineup(
         aggregate_id=match_id,
         data=MatchLineupAssignedData(
             match_id=match_id,
-            team_id=lineup_data.team_id,
+            team_id=lineup_data.participant,
             lineup=[
                 LineupPlayerData(
-                    player_id=player_data["player_id"],
-                    jersey_number=player_data["jersey_number"],
-                    is_starter=player_data.get("is_starter", True),
+                    player_id=player_data,
                 )
                 for player_data in lineup_data.players
             ],
@@ -400,15 +402,12 @@ def assign_lineup(
         "Lineup assigned successfully",
         extra={
             "match_id": str(match_id),
-            "team_id": str(lineup_data.team_id),
+            "participant_id": str(lineup_data.participant),
             "player_count": len(created_lineups),
         },
     )
 
-    return {
-        "message": "Lineup assigned successfully",
-        "player_count": len(created_lineups),
-    }
+    return match.to_dict(include_details=True)
 
 
 @router.get("/matches/{match_id}/lineup", response_model=list[schemas.LineupResponse])

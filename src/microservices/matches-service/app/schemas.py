@@ -59,6 +59,7 @@ class MatchResponse(BaseModel):
     status: str
     participants: List[MatchParticipantResponse] = Field(default_factory=list)
     comments: Optional[List["CommentResponse"]] = None
+    lineups: Optional[List["LineupResponse"]] = None
 
     created_by: UUID
     created_at: datetime
@@ -69,12 +70,11 @@ class MatchResponse(BaseModel):
 
 
 # Lineup Schemas
-class LineupCreate(BaseModel):
-    """Schema for creating a lineup entry."""
+class LineupResponse(BaseModel):
+    """Schema for lineup response."""
 
-    participant: UUID
-    jersey_number: Optional[int] = None
-    is_starter: bool = True
+    participant_id: UUID
+    lineup: List[dict] = Field(default_factory=list)
 
 
 class LineupBatchCreate(BaseModel):
@@ -84,21 +84,6 @@ class LineupBatchCreate(BaseModel):
     players: List[UUID] = Field(
         ..., description="List of players to assign to the lineup"
     )
-
-
-class LineupResponse(BaseModel):
-    """Schema for lineup response."""
-
-    id: UUID
-    match_id: UUID
-    team_id: UUID
-    player_id: UUID
-    jersey_number: int
-    is_starter: bool
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 # Comment Schemas

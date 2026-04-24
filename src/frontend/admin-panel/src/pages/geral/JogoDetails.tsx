@@ -9,6 +9,8 @@ import {
 import MatchInfoComponent from '../../components/matches/MatchInfoComponent';
 import MatchResultsComponent from '../../components/matches/MatchesResultsComponent';
 import Button from '../../components/utils/Button';
+import { useModal } from '../../contexts/ModalContext';
+import MatchTeamLineupModal from '../../components/matches/MatchTeamLineupModal';
 
 // ==================== Private Components ====================
 
@@ -102,6 +104,7 @@ const MatchHeader = ({ match }: { match: MatchDetail }) => {
 // Lineups Section Component
 const LineupsSection = ({ match }: { match: MatchDetail }) => {
   const { notify } = useNotification();
+  const { pushModal } = useModal();
 
   const getParticipantName = (participant_id: string) => {
     const participant = match.participants.find(p => p.id === participant_id);
@@ -154,6 +157,16 @@ const LineupsSection = ({ match }: { match: MatchDetail }) => {
                   <h4 className="font-semibold text-lg text-gray-800">
                     {getParticipantName(participant.participant_id)}
                   </h4>
+                  <Button
+                    onClick={() => {pushModal(
+                      <MatchTeamLineupModal match={match} lineup={participant} />
+                    )}}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  </Button>
                   <button
                     onClick={() => handleDownloadTeamSheet(participant.participant_id)}
                     className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-md text-sm font-medium transition-colors flex items-center gap-1"

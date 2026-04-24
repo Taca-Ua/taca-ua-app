@@ -30,8 +30,7 @@ class LineupDetailSerializer(serializers.Serializer):
         """Serializer for individual player in lineup"""
 
         player_id = serializers.UUIDField()
-        name = serializers.CharField()
-        is_starter = serializers.BooleanField()
+        is_starter = serializers.BooleanField(required=False, default=None)
         jersey_number = serializers.IntegerField(required=False, allow_null=True)
 
     participant_id = serializers.UUIDField()
@@ -133,33 +132,17 @@ class CommentCreateSerializer(serializers.Serializer):
 class LineupAssignSerializer(serializers.Serializer):
     """Serializer for assigning lineup to a team"""
 
-    class PlayerLineupSerializer(serializers.Serializer):
-        """Serializer for individual player in lineup"""
-
-        player = serializers.UUIDField(required=True)
-        jersey_number = serializers.IntegerField(required=False, allow_null=True)
-        is_starter = serializers.BooleanField(required=False, default=True)
-
     participant = serializers.UUIDField(required=True)
-    players = PlayerLineupSerializer(many=True, required=True)
+    players = serializers.ListField(
+        child=serializers.UUIDField(),
+        required=True,
+        allow_empty=True,
+        help_text="List of player IDs to assign to the lineup",
+    )
 
     def validate_players(self, value):
-        if not value:
-            raise serializers.ValidationError(
-                "At least one player is required in the lineup."
-            )
+        # Ensure all player IDs are unique
+        if len(value) != len(set(value)):
+            raise serializers.ValidationError("Player IDs must be unique.")
 
-        # Check for duplicate player IDs
-        player_ids = [p["player"] for p in value]
-        if len(player_ids) != len(set(player_ids)):
-            raise serializers.ValidationError("Duplicate player IDs found in lineup.")
-
-        # Check for duplicate jersey numbers
-        jersey_numbers = [
-            p["jersey_number"] for p in value if p.get("jersey_number") is not None
-        ]
-        if len(jersey_numbers) != len(set(jersey_numbers)):
-            raise serializers.ValidationError(
-                "Duplicate jersey numbers found in lineup."
-            )
         return value

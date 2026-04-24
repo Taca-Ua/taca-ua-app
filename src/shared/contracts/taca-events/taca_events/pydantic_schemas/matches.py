@@ -60,8 +60,8 @@ class LineupPlayerData(BaseModel):
     """Player entry embedded in MatchLineupAssignedData."""
 
     player_id: UUID
-    jersey_number: int
-    is_starter: bool
+    jersey_number: Optional[int] = None
+    is_starter: Optional[bool] = None
 
 
 class MatchLineupAssignedData(BaseModel):

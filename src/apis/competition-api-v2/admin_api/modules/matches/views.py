@@ -170,7 +170,7 @@ def publish_match_results(request, match_id):
 
 @extend_schema(
     request=LineupAssignSerializer,
-    responses={"message": "string"},
+    responses=MatchDetailSerializer,
     description="Assign lineup for a team in a match",
     tags=["Match Management"],
 )
@@ -180,25 +180,14 @@ def assign_lineup(request, match_id):
     serializer = LineupAssignSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
 
-    # Convert serializer data to service format
-    players = [
-        {
-            "player": str(player_data["player"]),
-            "jersey_number": player_data.get("jersey_number"),
-            "is_starter": player_data.get("is_starter", True),
-        }
-        for player_data in serializer.validated_data["players"]
-    ]
-
-    matches_service.assign_lineup(
+    match = matches_service.assign_lineup(
         match_id=match_id,
         participant=str(serializer.validated_data["participant"]),
-        players=players,
+        players=[str(player) for player in serializer.validated_data["players"]],
     )
 
-    return Response(
-        {"message": "Lineup assigned successfully"}, status=status.HTTP_200_OK
-    )
+    response_serializer = MatchDetailSerializer(match)
+    return Response(response_serializer.data, status=status.HTTP_200_OK)
 
 
 # ============= Comment Management Views =============

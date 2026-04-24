@@ -1,6 +1,16 @@
 import keycloak from '../lib/keycloak';
 import { apiClient } from './client2';
 
+// Helper types
+export interface MatchLineup {
+  participant_id: string;
+  lineup: {
+    player_id: string;
+    name: string;
+    is_starter: boolean;
+    jersey_number?: number;
+  }[];
+}
 
 // Response types
 export interface MatchListItem {
@@ -22,15 +32,7 @@ export interface MatchDetail extends MatchListItem {
     id: string;
     message: string;
   }[];
-  lineups: {
-    participant_id: string;
-    lineup: {
-      player_id: string;
-      name: string;
-      is_starter: boolean;
-      jersey_number?: number;
-    }[];
-  }[];
+  lineups: MatchLineup[];
 }
 
 // Request types
@@ -67,11 +69,7 @@ export interface CommentCreate {
 
 export interface LineupAssign {
   participant: string;
-  players: {
-    player: string;
-    is_starter?: boolean;
-    jersey_number?: number;
-  };
+  players: string[];
 }
 
 export const matchesApi = {

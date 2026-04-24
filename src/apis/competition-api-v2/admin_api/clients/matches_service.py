@@ -23,6 +23,12 @@ class MatchParticipantDTO:
 
 
 @dataclass
+class MatchLineupDTO:
+    participant_id: UUID
+    lineup: List[Dict[str, Any]] = field(default_factory=list)
+
+
+@dataclass
 class MatchDTO:
     id: UUID
     tournament_id: Optional[UUID]
@@ -34,6 +40,7 @@ class MatchDTO:
     updated_at: str  # ISO format
     participants: List[MatchParticipantDTO] = field(default_factory=list)
     comments: List["CommentDTO"] = field(default_factory=list)
+    lineups: List["MatchLineupDTO"] = field(default_factory=list)
 
     def __post_init__(self):
         # Convert participants dicts to MatchParticipantDTO if necessary
@@ -45,6 +52,11 @@ class MatchDTO:
         self.comments = [
             CommentDTO(**c) if not isinstance(c, CommentDTO) else c
             for c in self.comments
+        ]
+
+        self.lineups = [
+            MatchLineupDTO(**line) if not isinstance(line, MatchLineupDTO) else line
+            for line in self.lineups
         ]
 
 
@@ -162,6 +174,7 @@ class MatchesService(BaseService):
             Match data with participants
         """
         match_data = self.get(f"/matches/{match_id}")
+        print(match_data, flush=True)
         return MatchDTO(**match_data)
 
     def update_match(
@@ -288,15 +301,15 @@ class MatchesService(BaseService):
     def assign_lineup(
         self,
         match_id: UUID,
-        team_id: UUID,
+        participant: UUID,
         players: List[Dict[str, Any]],
-    ) -> Dict[str, Any]:
+    ) -> MatchDTO:
         """
         Assign lineup for a team in a match.
 
         Args:
             match_id: Match UUID
-            team_id: Team ID
+            participant: Participant ID
             players: List of players with:
                 - player_id (UUID/str): Player ID
                 - jersey_number (int): Jersey number
@@ -306,10 +319,11 @@ class MatchesService(BaseService):
             Success message with player count
         """
         data = {
-            "team_id": str(team_id),
+            "participant": str(participant),
             "players": players,
         }
-        return self.post(f"/matches/{match_id}/lineup", data=data)
+        match_data = self.post(f"/matches/{match_id}/lineup", data=data)
+        return MatchDTO(**match_data)
 
     def get_lineup(
         self,
