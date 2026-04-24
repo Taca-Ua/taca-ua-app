@@ -30,9 +30,9 @@ const MatchTeamLineupModal = ({
 
     const onClose = () => popModal();
 
-    const handleDownloadTeamSheet = async (teamId: string) => {
+    const handleDownloadTeamSheet = async (participantId: string) => {
         try {
-            const blob = await matchesApi.getMatchTeamSheet(match.id, teamId);
+            const blob = await matchesApi.getMatchTeamSheet(match.id, participantId);
             const url = window.URL.createObjectURL(blob);
             window.open(url, "_blank");
             setTimeout(() => window.URL.revokeObjectURL(url), 10000);

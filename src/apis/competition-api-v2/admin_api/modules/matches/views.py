@@ -13,6 +13,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .pdf_generators import document_generation_service
 from .serializers import (
     CommentCreateSerializer,
     LineupAssignSerializer,
@@ -270,7 +271,9 @@ def delete_comment(request, match_id, comment_id):
 def match_sheet(request, match_id):
     """Generate match sheet PDF"""
 
-    pdf_content = matches_service.generate_match_report(match_id=match_id)
+    match = matches_service.get_match(match_id=match_id)
+
+    pdf_content = document_generation_service.generate_match_report(match)
 
     response = HttpResponse(pdf_content, content_type="application/pdf")
     response["Content-Disposition"] = (
@@ -290,8 +293,8 @@ def match_team_sheet(request, match_id, participant):
     Generate match sheet PDF for a specific team in a match.
     """
 
-    pdf_content = matches_service.generate_match_team_report(
-        match_id, participant=str(participant)
+    pdf_content = document_generation_service.generate_match_team_report(
+        match_id, participant_id=str(participant)
     )
 
     response = HttpResponse(pdf_content, content_type="application/pdf")

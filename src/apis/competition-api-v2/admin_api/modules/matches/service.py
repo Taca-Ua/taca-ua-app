@@ -34,6 +34,7 @@ class LineupPlayer:
     player_id: str
     player_name: str
     player_course: str = None
+    player_student_number: str = None
     is_starter: bool = None
     jersey_number: int = None
 
@@ -142,6 +143,7 @@ class MatchesService:
                                     player_id=player.player_id,
                                     player_name=player_data.full_name,
                                     player_course=player_data.course.name,
+                                    player_student_number=player_data.student_number,
                                     is_starter=player.is_starter,
                                     jersey_number=player.jersey_number,
                                 )
@@ -191,15 +193,19 @@ class MatchesService:
                         if include_details and match_dto.comments
                         else []
                     ),
-                    lineups=[
-                        Lineup(
-                            participant_id=lineup.participant_id,
-                            lineup=resp_lineups.get(
-                                (match_dto.id, lineup.participant_id), []
-                            ),
-                        )
-                        for lineup in match_dto.lineups
-                    ],
+                    lineups=(
+                        [
+                            Lineup(
+                                participant_id=lineup.participant_id,
+                                lineup=resp_lineups.get(
+                                    (match_dto.id, lineup.participant_id), []
+                                ),
+                            )
+                            for lineup in match_dto.lineups
+                        ]
+                        if not students_data
+                        else None
+                    ),  # Only include lineups if we have a team based match
                 )
             )
 

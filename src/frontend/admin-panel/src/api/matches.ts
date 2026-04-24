@@ -124,48 +124,10 @@ export const matchesApi = {
   },
 
   async getMatchSheet(matchId: string): Promise<Blob> {
-    let token = keycloak.token ?? null;
-    if (keycloak.authenticated) {
-      try {
-        await keycloak.updateToken(30);
-        token = keycloak.token ?? null;
-      } catch {
-        keycloak.login();
-        throw new Error('Session expired, please log in again');
-      }
-    }
-
-    const response = await fetch(`/api/admin/matches/${matchId}/sheet/`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to download match sheet');
-    }
-
-    return response.blob();
+    return apiClient.getBlob(`/matches/${matchId}/match-sheet/`);
   },
 
-  async getMatchTeamSheet(matchId: string, teamId: string): Promise<Blob> {
-    let token = keycloak.token ?? null;
-    if (keycloak.authenticated) {
-      try {
-        await keycloak.updateToken(30);
-        token = keycloak.token ?? null;
-      } catch {
-        keycloak.login();
-        throw new Error('Session expired, please log in again');
-      }
-    }
-
-    const response = await fetch(`/api/admin/matches/${matchId}/team/${teamId}/sheet/`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to download match team sheet');
-    }
-
-    return response.blob();
+  async getMatchTeamSheet(matchId: string, participantId: string): Promise<Blob> {
+    return apiClient.getBlob(`/matches/${matchId}/team-sheet/${participantId}/`);
   },
 };

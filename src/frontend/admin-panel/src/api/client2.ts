@@ -137,6 +137,25 @@ export class ApiClient {
       throw new Error(error.error || 'API request failed');
     }
   }
+
+  async getBlob(endpoint: string): Promise<Blob> {
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      method: 'GET',
+      headers: {
+        ...(await this.getAuthHeader()),
+      },
+    });
+
+    if (!response.ok) {
+      const error: ApiError = await response.json().catch(() => ({
+        error: 'Network error',
+      }));
+      throw new Error(error.error || 'API request failed');
+    }
+
+    return response.blob();
+  }
+
 }
 
 export const apiClient = new ApiClient();
