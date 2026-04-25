@@ -1,55 +1,125 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { tournamentsApi, type TournamentListItem } from '../../api/tournaments';
+import { modalitiesApi, type ModalityDetail } from '../../api/modalities';
 import TournamentList from '../../components/tournaments/TournamentList';
 import TournamentCreateModal from '../../components/tournaments/TournamentCreateModal';
-import ModalityDetailComponent from '../../components/modalities/ModalityDetailComponent';
 import Button from '../../components/utils/Button';
 import { useModal } from '../../contexts/ModalContext';
 import { useAuth } from '../../hooks/useAuth';
+import TeamsListComponent from '../../components/teams/TeamsListComponent';
+import TabSystem from '../../components/TabSystem';
+import ModalityInfoComponent from '../../components/modalities/ModalityInfoComponent';
+import { useNotification } from '../../contexts/NotificationProvider';
+import { teamsApi, type TeamListItem } from '../../api/teams';
 
 
-const TournamentsTab = ({ modalityId }: { modalityId: string }) => {
-  const [tournaments, setTournaments] = useState<TournamentListItem[]>([]);
+const TournamentsTab = ({
+  modality,
+  tournamentsState
+}: {
+  modality: ModalityDetail;
+  tournamentsState?: [TournamentListItem[] | null, React.Dispatch<React.SetStateAction<TournamentListItem[] | null>>]
+}) => {
   const { pushModal } = useModal();
   const { isAdminGeneral } = useAuth();
+  const { notify } = useNotification();
+
+  const [tournaments, setTournaments] = tournamentsState || useState<TournamentListItem[] | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleCreateTournament = (newTournament: TournamentListItem) => {
-    setTournaments([...tournaments, newTournament]);
+    setTournaments([...(tournaments || []), newTournament]);
   };
+
+  useEffect(() => {
+    if (tournaments) return; // Evita recarregar se já temos os torneios carregados
+    setIsLoading(true);
+    tournamentsApi.getAll({ modality_id: modality.id })
+      .then((data) => setTournaments(data))
+      .catch((error) => {
+        console.error('Erro ao carregar torneios:', error);
+        setTournaments(null);
+        notify('Falha ao carregar torneios para esta modalidade.', 'error');
+      })
+      .finally(() => setIsLoading(false));
+  }, [modality.id]);
+
+  const renderTournamentList = () => {
+    if (isLoading) {
+      return <div className="text-gray-500">Carregando torneios...</div>;
+    }
+
+    if (!tournaments) {
+      return <div className="text-red-500">Erro ao carregar torneios.</div>;
+    }
+
+    return <TournamentList
+      tournaments={tournaments}
+      displayModality={false}
+      showModalityFilter={false}
+    />;
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-800">Torneios</h2>
+        {/* <h2 className="text-xl font-semibold text-gray-800">{tournaments.length} Torneios</h2> */}
         <Button
           onClick={() => pushModal(
             <TournamentCreateModal
               onCreate={handleCreateTournament}
-              modalityId={modalityId}
+              modalityId={modality.id}
+              starterName={`Torneio ${modality.name}`}  // Pre-fill with a default name
             />
           )}
           type='primary'
-          padding='px-4 py-2'
           active={isAdminGeneral}
+          flexible={true}
         >
           + Criar Torneio
         </Button>
       </div>
 
-      <TournamentList
-        tournamentsState={[tournaments, setTournaments]}
-        showModality={false}
-        loadTournaments={async () => tournamentsApi.getAll({
-          modality_id: modalityId
-        })}
-        fromModalityId={modalityId}
-        showModalityFilter={false}
-      />
+      { renderTournamentList() }
     </div>
   );
 };
 
+const TeamsTab = ({
+  modality,
+  teamsState
+}: {
+  modality: ModalityDetail;
+  teamsState?: [TeamListItem[] | null, React.Dispatch<React.SetStateAction<TeamListItem[] | null>>]
+}) => {
+  const [teams, setTeams] = teamsState || useState<TeamListItem[] | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (teams) return; // Evita recarregar se já temos as equipas carregadas
+    setIsLoading(true);
+    teamsApi.getAll({ modality_id: modality.id })
+      .then((data) => setTeams(data))
+      .catch((error) => {
+        console.error('Erro ao carregar equipas:', error);
+        setTeams(null);
+      })
+      .finally(() => setIsLoading(false));
+  }, [modality.id]);
+
+  if (isLoading) {
+    return <div className="text-gray-500">Carregando equipas...</div>;
+  }
+
+  if (!teams) {
+    return <div className="text-red-500">Erro ao carregar equipas.</div>;
+  }
+
+  return (
+    <TeamsListComponent teams={teams}/>
+  );
+}
 
 function ModalidadeDetail() {
   const modalityId = useParams<{ id: string }>().id;
@@ -57,10 +127,37 @@ function ModalidadeDetail() {
     return <div className="text-red-500">ID de modalidade não fornecido.</div>;
   }
 
+  const { notify } = useNotification();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'tournaments'>('tournaments');
+
+  const [modality, setModality] = useState<ModalityDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const [tournaments, setTournaments] = useState<TournamentListItem[] | null>(null); // Estado para armazenar os torneios, passado para o TabSystem
+  const [teams, setTeams] = useState<TeamListItem[] | null>(null); // Estado para armazenar as equipas, passado para o TabSystem
+
+  useEffect(() => {
+    setLoading(true);
+    modalitiesApi.getById(modalityId)
+      .then((data) => setModality(data))
+      .catch((error) => {
+        console.error('Erro ao carregar modalidade:', error);
+        setModality(null);
+        notify('Falha ao carregar detalhes da modalidade.', 'error');
+      })
+      .finally(() => setLoading(false));
+  }, [modalityId]);
+
+  if (loading) {
+    return <div className="text-gray-500">Carregando detalhes da modalidade...</div>;
+  }
+
+  if (!modality) {
+    return <div className="text-red-500">Modalidade não encontrada.</div>;
+  }
 
   return (
+    <>
       <div className="flex-1 p-8 max-w-5xl mx-auto">
         <div className="mb-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-800">Detalhes da Modalidade</h1>
@@ -74,35 +171,18 @@ function ModalidadeDetail() {
         </div>
 
         {/* Modality Information - Always visible at top */}
-        <ModalityDetailComponent modalityId={modalityId} />
+        <ModalityInfoComponent modalityState={[modality, setModality]} />
 
-        {/* Tab System */}
-        <div className="bg-white rounded-lg shadow-md">
-          {/* Tab Headers */}
-          <div className="border-b border-gray-200">
-            <div className="flex">
-              <button
-                onClick={() => setActiveTab('tournaments')}
-                className={`px-6 py-4 font-medium transition-colors border-b-2 ${
-                  activeTab === 'tournaments'
-                    ? 'border-teal-500 text-teal-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Torneios
-              </button>
-              {/* Future tabs can be added here */}
-            </div>
-          </div>
-
-          {/* Tab Content */}
-          <div className="p-6">
-            {activeTab === 'tournaments' && (
-              <TournamentsTab modalityId={modalityId} />
-            )}
-          </div>
-        </div>
       </div>
+      <div className="flex-1 max-w-7xl mx-auto">
+        <TabSystem
+          elements={[
+            { id: 'tournaments', label: 'Torneios', content: <TournamentsTab modality={modality} tournamentsState={[tournaments, setTournaments]} /> },
+            { id: 'teams', label: 'Equipas', content: <TeamsTab modality={modality} teamsState={[teams, setTeams]} /> },
+          ]}
+        />
+      </div>
+    </>
   );
 }
 

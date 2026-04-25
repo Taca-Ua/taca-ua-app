@@ -1,10 +1,9 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import TeamDetailComponent from '../../components/teams/TeamDetailComponent';
 import Button from '../../components/utils/Button';
 
 const TeamDetailPage = () => {
   const teamId = useParams<{ id: string }>().id || "";
-  const navigate = useNavigate();
 
   return (
       <div className="flex-1 p-8">
@@ -13,7 +12,7 @@ const TeamDetailPage = () => {
             <h1 className="text-3xl font-bold text-gray-800">Detalhes da Equipa</h1>
             <div>
               <Button
-                onClick={() => navigate(`/equipas/`)}
+                onClick={() => window.history.back()}
                 type='secondary'
                 padding='px-6 py-3'
               >

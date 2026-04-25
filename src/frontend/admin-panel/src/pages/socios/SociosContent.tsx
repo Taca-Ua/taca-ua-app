@@ -10,6 +10,7 @@ import { athletesApi, type AthleteListItem } from '../../api/athletes';
 import AthletesMembershipSyncModal from '../../components/athletes/AthletesMembershipSyncModal';
 import { useModal } from '../../contexts/ModalContext';
 import { useAuth } from '../../hooks/useAuth';
+import TabSystem from '../../components/TabSystem';
 
 export type SociosVariant = 'geral' | 'nucleo';
 
@@ -29,8 +30,58 @@ export function parseNmecColumnText(text: string): string[] {
   return out;
 }
 
-export default function SociosContent() {
+const AthletesTab = ( {
+  athletesState
+} : {
+  athletesState: [AthleteListItem[] | null, React.Dispatch<React.SetStateAction<AthleteListItem[] | null>>]
+} ) => {
+
+  const [athletes, setAthletes] = athletesState;
   const { notify } = useNotification();
+
+  useEffect(() => {
+    if (athletes) return; // Don't fetch if we already have data
+    athletesApi
+      .getAll()
+      .then((data) => {
+        setAthletes(data);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch athletes:", err);
+        notify("Erro ao carregar atletas. Tente novamente.", "error");
+        setAthletes([]);
+      });
+  }, [athletesState]);
+
+  return <AthletesListComponent athletesState={athletesState} />;
+};
+
+const StaffTab = ( {
+  staffListState
+} : {
+  staffListState: [StaffListItem[] | null, React.Dispatch<React.SetStateAction<StaffListItem[] | null>>]
+} ) => {
+  const [staff, setStaff] = staffListState;
+  const { notify } = useNotification();
+
+  useEffect(() => {
+    if (staff) return; // Don't fetch if we already have data
+    staffApi
+      .getAll()
+      .then((data) => {
+        setStaff(data);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch staff:", err);
+        notify("Erro ao carregar staff. Tente novamente.", "error");
+        setStaff([]);
+      });
+  }, [staffListState]);
+
+  return <StaffListComponent staffListState={[staff, setStaff]} />;
+};
+
+export default function SociosContent() {
   const { pushModal } = useModal();
   const { isAdminGeneral } = useAuth();
 
@@ -41,27 +92,6 @@ export default function SociosContent() {
   const [athletes, setAthletes] = useState<AthleteListItem[] | null>(null);
   const [staff, setStaff] = useState<StaffListItem[] | null>(null);
 
-  useEffect(() => {
-      if (activeTab !== 'athletes') return;
-      if (athletes !== null) return; // Don't refetch if we already have data
-      athletesApi.getAll().then((data) => {
-          setAthletes(data);
-      }).catch((err) => {
-          console.error("Failed to fetch athletes:", err);
-          notify("Erro ao carregar atletas. Tente novamente.", "error");
-      });
-  }, [activeTab]);
-
-  useEffect(() => {
-      if (activeTab !== 'staff') return;
-      if (staff !== null) return; // Don't refetch if we already have data
-      staffApi.getAll().then((data) => {
-          setStaff(data);
-      }).catch((err) => {
-          console.error("Failed to fetch staff:", err);
-          notify("Erro ao carregar staff. Tente novamente.", "error");
-      });
-  }, [activeTab]);
 
   const filteredAthletes = athletes ? athletes.filter((athlete) => {
     const query = searchQuery.toLowerCase();
@@ -137,40 +167,15 @@ export default function SociosContent() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="border-b border-gray-200">
-            <div className="flex">
-              <button
-                onClick={() => setActiveTab("athletes")}
-                className={`px-6 py-4 font-bold text-2xl transition-colors border-b-2 ${
-                  activeTab === "athletes"
-                    ? "border-teal-500 text-teal-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
-              >
-                Atletas
-              </button>
-              <button
-                onClick={() => setActiveTab("staff")}
-                className={`px-6 py-4 font-bold text-2xl transition-colors border-b-2 ${
-                  activeTab === "staff"
-                    ? "border-teal-500 text-teal-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
-              >
-                Staff
-              </button>
-            </div>
-          </div>
-          <div className="w-full p-4 border-b">
-            {activeTab === "athletes" && (
-              <AthletesListComponent athletesState={[filteredAthletes, setAthletes]} />
-            )}
-            {activeTab === "staff" && (
-              <StaffListComponent staffListState={[filteredStaff, setStaff]} />
-            )}
-          </div>
-        </div>
+        <TabSystem
+          elements={[
+            {id: "athletes", label: "Atletas", content: <AthletesTab athletesState={[filteredAthletes, setAthletes]} />},
+            {id: "staff", label: "Staff", content: <StaffTab staffListState={[filteredStaff, setStaff]} />}
+          ]}
+          onTabChange={(tabId) => {
+            setActiveTab(tabId as 'athletes' | 'staff');
+          }}
+        />
       </div>
     </div>
   );

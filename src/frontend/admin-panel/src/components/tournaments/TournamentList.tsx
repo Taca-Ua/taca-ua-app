@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { type TournamentListItem, tournamentsApi } from "../../api/tournaments";
+import { useState } from "react";
+import { type TournamentListItem } from "../../api/tournaments";
 import {
   TOURNAMENT_STATUS_COLORS,
   TOURNAMENT_STATUS_LABELS,
@@ -9,26 +9,17 @@ import { useNavigate } from "react-router-dom";
 
 const TournamentListItemComponent = ({
   tournament,
-  showModality = true,
-  fromModalityId,
+  displayModality = true,
 }: {
   tournament: TournamentListItem;
-  showModality?: boolean;
-  fromModalityId?: string;
+  displayModality?: boolean;
 }) => {
   const navigate = useNavigate();
-
-  const handleClick = () => {
-    const url = fromModalityId
-      ? `/torneios/${tournament.id}?fromModality=${fromModalityId}`
-      : `/torneios/${tournament.id}`;
-    navigate(url);
-  };
 
   return (
     <button
       type="button"
-      onClick={handleClick}
+      onClick={() => navigate(`/torneios/${tournament.id}`)}
       className="w-full text-left px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-teal-500"
     >
       <div className="flex flex-col">
@@ -40,7 +31,7 @@ const TournamentListItemComponent = ({
         </span>
       </div>
       <div className="flex items-center gap-3 text-sm">
-        {showModality && (
+        {displayModality && (
           <>
             <span className="text-teal-600 font-medium">
               {tournament.modality.name}
@@ -62,54 +53,20 @@ const TournamentListItemComponent = ({
 };
 
 const TournamentList = ({
-  tournamentsState,
-  showModality = true,
-  fromModalityId,
-  loadTournaments,
+  tournaments,
+  displayModality = true,
   showModalityFilter = true,
   showStatusFilter = true,
 }: {
-  tournamentsState?: [TournamentListItem[], React.Dispatch<React.SetStateAction<TournamentListItem[]>>];
-  showModality?: boolean;
-  fromModalityId?: string;
-  loadTournaments?: () => Promise<TournamentListItem[]>;
+  tournaments: TournamentListItem[];
+  displayModality?: boolean;
   showModalityFilter?: boolean;
   showStatusFilter?: boolean;
 }) => {
-  const [tournaments, setTournaments] = tournamentsState
-    ? tournamentsState
-    : useState<TournamentListItem[]>([]);
-  const [loading, setLoading] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [modalityFilter, setModalityFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-
-  useEffect(() => {
-    const fetchTournaments = async () => {
-      setLoading(true);
-      try {
-        const data = await (loadTournaments || tournamentsApi.getAll)();
-        setTournaments(data);
-      } catch (error) {
-        console.error("Erro ao carregar torneios:", error);
-        setTournaments([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTournaments();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="text-center py-8">
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-teal-500 border-r-transparent"></div>
-        <p className="mt-2 text-gray-600">A carregar...</p>
-      </div>
-    );
-  }
 
   if (tournaments.length === 0) {
     return <p className="text-gray-500 text-center py-8">Nenhum torneio encontrado. Crie um novo torneio para começar!</p>;
@@ -136,7 +93,7 @@ const TournamentList = ({
       (TOURNAMENT_STATUS_ORDER[b.status] ?? 999);
     if (statusComparison !== 0) return statusComparison;
 
-    if (showModality) {
+    if (displayModality) {
       const modalityComparison = a.modality.name.localeCompare(b.modality.name);
       if (modalityComparison !== 0) return modalityComparison;
     }
@@ -191,8 +148,7 @@ const TournamentList = ({
           <TournamentListItemComponent
             key={tournament.id}
             tournament={tournament}
-            showModality={showModality}
-            fromModalityId={fromModalityId}
+            displayModality={displayModality}
           />
         )) : (
           <p className="text-gray-500 text-center py-8">

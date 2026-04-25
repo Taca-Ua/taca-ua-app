@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { tournamentsApi, type TournamentListItem } from '../../api/tournaments';
 import TournamentCreateModal from '../../components/tournaments/TournamentCreateModal';
 import TournamentList from '../../components/tournaments/TournamentList';
@@ -11,6 +11,14 @@ const Torneios = () => {
   const [tournaments, setTournaments] = useState<TournamentListItem[]>([]);
   const { pushModal } = useModal();
 
+  useEffect(() => {
+    tournamentsApi.getAll()
+      .then((data) => setTournaments(data))
+      .catch((error) => {
+        console.error('Erro ao carregar torneios:', error);
+        setTournaments([]);
+      });
+  }, []);
 
   return (
       <div className="flex-1 p-8 max-w-7xl mx-auto">
@@ -32,9 +40,7 @@ const Torneios = () => {
 
         <div className="bg-white shadow-md rounded-lg p-6 mt-6">
           <TournamentList
-            tournamentsState={[tournaments, setTournaments]}
-            showModality={true}
-            loadTournaments={async () => tournamentsApi.getAll()}
+            tournaments={tournaments}
           />
         </div>
       </div>

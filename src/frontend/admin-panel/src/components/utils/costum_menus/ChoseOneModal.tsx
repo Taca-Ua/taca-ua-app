@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Button from "../Button";
 import { useModal } from "../../../contexts/ModalContext";
 
@@ -14,6 +14,7 @@ const ChoseOneModal = ( {
     initialSelectedId?: string
 } ) => {
     const { popModal } = useModal();
+    const searchInputRef = useRef<HTMLInputElement>(null);
 
     const [allElements, setAllElements] = useState<{id: string, title: string, subTitle?: string}[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
@@ -33,6 +34,13 @@ const ChoseOneModal = ( {
             setAllElements([]);
         });
     }, [allElementsLoader]);
+
+    // Focus the search input on mount
+    useEffect(() => {
+      if (searchInputRef.current) {
+        searchInputRef.current.focus();
+      }
+    }, []);
 
     const onClose = () => {
         popModal();
@@ -79,6 +87,7 @@ const ChoseOneModal = ( {
             <div className="min-h-0 flex flex-col">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
                 <input
+                  ref={searchInputRef}
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}

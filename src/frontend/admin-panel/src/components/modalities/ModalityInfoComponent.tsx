@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { modalitiesApi, type ModalityDetail } from '../../api/modalities';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -7,38 +6,25 @@ import ModalityEditModal from './ModalityEditModel';
 import { useModal } from '../../contexts/ModalContext';
 
 
-const ModalityDetailComponent = ( {modalityId} : { modalityId: string }) => {
+const ModalityInfoComponent = ( {
+  modalityState
+} : {
+  modalityState: [ModalityDetail, React.Dispatch<React.SetStateAction<ModalityDetail | null>>]
+}) => {
   const navigate = useNavigate();
   const { isAdminGeneral } = useAuth();
   const { pushModal } = useModal();
 
-  const [modality, setModality] = useState<ModalityDetail | null>(null);
-
-  useEffect(() => {
-    const fetchModality = async () => {
-      try {
-        const data = await modalitiesApi.getById(modalityId);
-        setModality(data);
-      } catch (error) {
-        console.error('Error fetching modality detail:', error);
-      }
-    };
-
-    fetchModality();
-  }, []);
+  const [modality, setModality] = modalityState;
 
   const handleDelete = async () => {
     try {
-      await modalitiesApi.delete(modalityId);
+      await modalitiesApi.delete(modality.id);
       navigate('/modalidades');
     } catch (error) {
       console.error('Error deleting modality:', error);
     }
   };
-
-  if (!modality) {
-    return <div className="text-gray-500">Carregando detalhes da modalidade...</div>;
-  }
 
   return (
     <div className="bg-white rounded-lg shadow-md p-8 mb-6">
@@ -88,4 +74,4 @@ const ModalityDetailComponent = ( {modalityId} : { modalityId: string }) => {
   );
 };
 
-export default ModalityDetailComponent;
+export default ModalityInfoComponent;

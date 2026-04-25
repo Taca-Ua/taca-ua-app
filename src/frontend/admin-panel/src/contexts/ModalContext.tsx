@@ -43,10 +43,8 @@ return (
           }}
         >
           <div className="max-h-[calc(100vh-2rem)] overflow-y-auto overflow-x-hidden">
-  <div className="max-w-[90vw] w-fit mx-auto">
-    {modal}
-  </div>
-</div>
+            <div className="max-w-[90vw] w-fit mx-auto">{modal}</div>
+          </div>
         </div>
       );
     })}

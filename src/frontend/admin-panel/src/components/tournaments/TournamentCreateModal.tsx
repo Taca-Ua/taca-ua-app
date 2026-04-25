@@ -11,9 +11,11 @@ import ChoseOneInput from '../utils/inputs/ChoseOneInput';
 const TournamentCreateModal = ({
   onCreate,
   modalityId,
+  starterName,
 }: {
   onCreate: (tournament: TournamentListItem) => void;
   modalityId?: string;  // Optional prop to fix the modality (e.g., when creating from a modality page)
+  starterName?: string;  // Optional prop to pre-fill the tournament name
 }) => {
   const { notify } = useNotification();
   const { popModal } = useModal();
@@ -21,7 +23,7 @@ const TournamentCreateModal = ({
   const [modalities, setModalities] = useState<ModalityListItem[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const [name, setName] = useState('');
+  const [name, setName] = useState(starterName || '');
   const [chosenModalityId, setChosenModalityId] = useState<string | null>(null);
   const [isPlayoff, setIsPlayoff] = useState(false);
 

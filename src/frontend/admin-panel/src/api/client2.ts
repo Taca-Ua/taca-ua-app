@@ -37,9 +37,20 @@ export class ApiClient {
     let fullUrl = `${this.baseUrl}${endpoint}`;
 
     // If params exist, append them as query string
-    if (params) {
-      const searchParams = new URLSearchParams(params as Record<string, string>);
-      fullUrl += `?${searchParams.toString()}`;
+    if (params && typeof params === 'object') {
+      const filteredParams = Object.entries(params as Record<string, unknown>)
+      .filter(([, value]) => value !== undefined)
+      .reduce<Record<string, string>>((acc, [key, value]) => {
+        acc[key] = String(value);
+        return acc;
+      }, {});
+
+      const searchParams = new URLSearchParams(filteredParams);
+      const query = searchParams.toString();
+
+      if (query) {
+      fullUrl += `?${query}`;
+      }
     }
 
     const response = await fetch(fullUrl, {
