@@ -102,10 +102,14 @@ class TournamentDetailView(RoleRequiredMixin, APIView):
         serializer = TournamentUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        updated_date = serializer.validated_data.get("start_date", None)
+        if updated_date is not None:
+            updated_date = updated_date.isoformat()
+
         tournament = tournaments_service.update_tournament(
             tournament_id=tournament_id,
             name=serializer.validated_data.get("name", None),
-            start_date=serializer.validated_data.get("start_date", None),
+            start_date=updated_date,
             status=serializer.validated_data.get("status", None),
             is_playoff=serializer.validated_data.get("is_playoff", None),
         )
