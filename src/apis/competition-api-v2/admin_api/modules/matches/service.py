@@ -306,7 +306,7 @@ class MatchesService:
         )
 
     def publish_match_results(
-        self, match_id: str, participant_results: List[dict]
+        self, match_id: str, participant_results: List[dict], admin_id: str = None
     ) -> Match:
         """Publish match results"""
         match_dto = matches_service_client.update_match_results(
@@ -314,10 +314,12 @@ class MatchesService:
             participant_results=participant_results,
             status="finished",  # Assuming publishing results also sets status to finished
         )
-        return self._build_match_from_dto(match_dto, include_details=True)
+        return self._build_match_from_dto(
+            match_dto, include_details=True, admin_id=admin_id
+        )
 
     def assign_lineup(
-        self, match_id: str, participant: str, players: List[str]
+        self, match_id: str, participant: str, players: List[str], admin_id: str = None
     ) -> Match:
         """Assign lineup to a match"""
         match_dto = matches_service_client.assign_lineup(
@@ -325,10 +327,12 @@ class MatchesService:
             participant=participant,
             players=players,
         )
-        return self._build_match_from_dto(match_dto, include_details=True)
+        return self._build_match_from_dto(
+            match_dto, include_details=True, admin_id=admin_id
+        )
 
     def update_lineup(
-        self, match_id: str, participant: str, players: List[dict]
+        self, match_id: str, participant: str, players: List[dict], admin_id: str = None
     ) -> Match:
         """Update lineup of a match"""
         match_dto = matches_service_client.update_lineup(
@@ -336,16 +340,22 @@ class MatchesService:
             participant=participant,
             players=players,
         )
-        return self._build_match_from_dto(match_dto, include_details=True)
+        return self._build_match_from_dto(
+            match_dto, include_details=True, admin_id=admin_id
+        )
 
-    def add_comment(self, match_id: str, comment_text: str) -> Match:
+    def add_comment(
+        self, match_id: str, comment_text: str, admin_id: str = None
+    ) -> Match:
         """Add a comment to a match"""
         match_dto = matches_service_client.add_comment(
             match_id=match_id,
             message=comment_text,
             created_by="00000000-0000-0000-0000-000000000000",  # Placeholder for commented_by
         )
-        return self._build_match_from_dto(match_dto, include_details=True)
+        return self._build_match_from_dto(
+            match_dto, include_details=True, admin_id=admin_id
+        )
 
     def delete_comment(self, match_id: str, comment_id: str) -> Match:
         """Delete a comment from a match"""
@@ -355,14 +365,6 @@ class MatchesService:
             # deleted_by="00000000-0000-0000-0000-000000000000",  # Placeholder for deleted_by
         )
         return
-
-    def generate_match_report(self, match_id: str) -> bytes:
-        """Generate a PDF report for a match"""
-        raise NotImplementedError("Report generation is not implemented yet")
-
-    def generate_match_team_report(self, match_id: str, team_id: str) -> bytes:
-        """Generate a PDF report for a specific team in a match"""
-        raise NotImplementedError("Team report generation is not implemented yet")
 
 
 matches_service = MatchesService()

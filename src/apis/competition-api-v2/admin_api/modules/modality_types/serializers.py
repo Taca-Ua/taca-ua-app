@@ -50,7 +50,7 @@ class ModalityTypeCreateSerializer(serializers.Serializer):
     escaloes = _EscalaoSerializer(many=True)
     is_playoff = serializers.BooleanField(default=False)
     tournament_competitor_type = serializers.ChoiceField(
-        choices=["individual", "team"], required=True
+        choices=["individual", "team"], required=False
     )
 
 

@@ -180,6 +180,7 @@ def publish_match_results(request, match_id):
     match = matches_service.publish_match_results(
         match_id=match_id,
         participant_results=participant_results,
+        admin_id=request.user_id if "nucleo_admin" in (request.roles or []) else None,
     )
 
     response_serializer = MatchDetailSerializer(match)
@@ -215,6 +216,9 @@ class MatchLineupsView(RoleRequiredMixin, APIView):
             match_id=match_id,
             participant=str(serializer.validated_data["participant"]),
             players=[str(player) for player in serializer.validated_data["players"]],
+            admin_id=(
+                request.user_id if "nucleo_admin" in (request.roles or []) else None
+            ),
         )
 
         response_serializer = MatchDetailSerializer(match)
@@ -237,6 +241,9 @@ class MatchLineupsView(RoleRequiredMixin, APIView):
                 }
                 for player in serializer.validated_data["players"]
             ],
+            admin_id=(
+                request.user_id if "nucleo_admin" in (request.roles or []) else None
+            ),
         )
 
         response_serializer = MatchDetailSerializer(match)
@@ -262,6 +269,7 @@ def add_comment(request, match_id):
     match = matches_service.add_comment(
         match_id=match_id,
         comment_text=serializer.validated_data["message"],
+        admin_id=request.user_id if "nucleo_admin" in (request.roles or []) else None,
     )
 
     response_serializer = MatchDetailSerializer(match)
