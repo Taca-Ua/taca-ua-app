@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { studentsApi } from '../../api/members';
 import { teamsApi } from '../../api/teams';
-import { matchesApi, type Match } from '../../api/matches';
+import { matchesApi, type MatchListItem } from '../../api/matches';
 import { useAuth } from '../../hooks/useAuth';
 
 function DashboardNucleo() {
@@ -16,7 +16,7 @@ function DashboardNucleo() {
     upcomingMatches: 0,
   });
 
-  const [allMatches, setAllMatches] = useState<Match[]>([]);
+  const [allMatches, setAllMatches] = useState<MatchListItem[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState<Date>(() => {
@@ -274,7 +274,7 @@ function DashboardNucleo() {
                                   </span>
                                 </div>
                                 <p className="text-xs text-gray-600 mt-0.5 truncate">
-                                  {m.participants.map(p => p.team?.name || p.athlete?.full_name || 'TBD').join(' vs ')}
+                                  {m.participants.map(p => p.name || 'TBD').join(' vs ')}
                                 </p>
                               </button>
                             ))}
