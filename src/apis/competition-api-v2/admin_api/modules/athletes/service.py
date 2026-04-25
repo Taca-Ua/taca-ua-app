@@ -6,6 +6,7 @@ from admin_api.clients.modalities_service import StudentDTO, modalities_service_
 
 @dataclass
 class _CourseSummary:
+    id: str
     name: str
     abbreviation: str
 
@@ -46,6 +47,7 @@ class AthletesService:
             id=athlete_data.id,
             full_name=athlete_data.full_name,
             course=_CourseSummary(
+                id=athlete_data.course.id,
                 name=athlete_data.course.name,
                 abbreviation=athlete_data.course.abbreviation,
             ),

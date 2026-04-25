@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { modalityTypesApi } from '../../api/modality-types';
 import { modalitiesApi, type ModalityDetail } from '../../api/modalities';
 import HelpTooltip from '../HelpTooltip';
 import Button from '../utils/Button';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { useModal } from '../../contexts/ModalContext';
+import ChoseOneInput from '../utils/inputs/ChoseOneInput';
 
 const ModalityEditModal = ( {
   modalityState,
@@ -20,24 +21,6 @@ const ModalityEditModal = ( {
 
   const [editedName, setEditedName] = useState(modalityData.name);
   const [editedType, setEditedType] = useState(modalityData.modality_type.id);
-  const [modalityTypes, setModalityTypes] = useState<{ id: string; name: string }[]>([]);
-
-  useEffect(() => {
-    if (modalityTypes.length > 0) {
-      return;  // Modality types are already fetched, no need to fetch again
-    }
-
-    const fetchModalityTypes = async () => {
-      try {
-        const data = await modalityTypesApi.getAll();
-        setModalityTypes(data);
-      } catch (error) {
-        console.error('Error fetching modality types:', error);
-      }
-    };
-
-    fetchModalityTypes();
-  }, []);
 
   const onClose = () => {
     setEditedName(modalityData.name);
@@ -90,21 +73,11 @@ const ModalityEditModal = ( {
               />{" "}
               <span className="text-red-500">*</span>
             </label>
-            <select
-              value={editedType}
-              onChange={(e) => setEditedType(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
-            >
-              <option value="">Selecionar Tipo</option>
-              {[...modalityTypes]
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .map((type) => (
-                  <option key={type.id} value={type.id}>
-                    {type.name}
-                  </option>
-                ))}
-            </select>
+            <ChoseOneInput
+              allElementsLoader={() => modalityTypesApi.getAll().then(types => types.map(type => ({ id: type.id, title: type.name })))}
+              onSelect={(ele) => setEditedType(ele?.id || "")}
+              initialElement={{ id: modalityData.modality_type.id, title: modalityData.modality_type.name }}
+            />
           </div>
         </div>
 

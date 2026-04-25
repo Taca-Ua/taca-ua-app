@@ -5,6 +5,7 @@ import { tournamentsApi, type TournamentListItem, type TournamentCreate } from '
 import { modalitiesApi, type ModalityListItem } from '../../api/modalities';
 import Button from '../utils/Button';
 import { useModal } from '../../contexts/ModalContext';
+import ChoseOneInput from '../utils/inputs/ChoseOneInput';
 
 
 const TournamentCreateModal = ({
@@ -21,7 +22,7 @@ const TournamentCreateModal = ({
   const [loading, setLoading] = useState(false);
 
   const [name, setName] = useState('');
-  const [chosenModality, setChosenModality] = useState<ModalityListItem | null>(null);
+  const [chosenModalityId, setChosenModalityId] = useState<string | null>(null);
   const [isPlayoff, setIsPlayoff] = useState(false);
 
   // Fetch modalities if needed (only when modality is not fixed)
@@ -50,7 +51,7 @@ const TournamentCreateModal = ({
       return;
     }
 
-    let modalityIdToUse = chosenModality ? chosenModality.id : modalityId;
+    let modalityIdToUse = chosenModalityId ? chosenModalityId : modalityId;
 
     if (!modalityIdToUse) {
       notify('Por favor, selecione uma modalidade.', 'error');
@@ -79,7 +80,7 @@ const TournamentCreateModal = ({
   const onClose = () => {
     setName('');
     setIsPlayoff(false);
-    setChosenModality(null);
+    setChosenModalityId(modalityId || chosenModalityId);
     popModal();
   }
 
@@ -117,21 +118,10 @@ const TournamentCreateModal = ({
               />
               <span className="text-red-500">*</span>
             </label>
-            <select
-              value={chosenModality?.id || ''}
-              onChange={(e) => setChosenModality(modalities.find((m) => m.id === e.target.value) || null)}
-              className="w-full border border-gray-300 rounded-md p-2"
-              required
-            >
-              <option value="" disabled>
-                Selecione uma modalidade
-              </option>
-              {[...modalities].sort((a, b) => a.name.localeCompare(b.name)).map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
+            <ChoseOneInput
+              allElementsLoader={() => modalitiesApi.getAll().then(res => res.map(c => ({ id: c.id, title: c.name })))}
+              onSelect={(ele) => setChosenModalityId(ele ? ele.id : null)}
+            />
           </div>)}
 
           <div className="flex items-center gap-3">

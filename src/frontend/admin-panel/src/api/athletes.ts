@@ -5,6 +5,7 @@ export interface AthleteListItem {
     full_name: string;
 
     course: {
+        id: string;
         name: string;
         abbreviation: string;
     },

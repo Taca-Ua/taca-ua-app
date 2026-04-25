@@ -4,14 +4,16 @@ import { useModal } from "../../../contexts/ModalContext";
 
 const ChoseOneInput = ( {
     allElementsLoader,
-    onSelect
+    onSelect,
+    initialElement,
 } : {
     allElementsLoader: () => Promise<{ id: string, title: string, subTitle?: string }[]>
     onSelect: (element: { id: string, title: string, subTitle?: string } | null) => void
+    initialElement?: { id: string, title: string } | null
 } ) => {
     const { pushModal } = useModal();
 
-    const [element, setElement] = useState<{ id: string, title: string, subTitle?: string } | null>(null)
+    const [element, setElement] = useState<{ id: string, title: string, subTitle?: string } | null>(initialElement || null);
 
     return (
       <div>
@@ -24,6 +26,7 @@ const ChoseOneInput = ( {
                   onSelect(element);
                   setElement(element);
                 }}
+                initialSelectedId={element ? element.id : initialElement?.id || undefined}
               />,
             )
           }

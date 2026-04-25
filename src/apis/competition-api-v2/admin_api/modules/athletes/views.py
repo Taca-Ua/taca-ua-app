@@ -104,7 +104,11 @@ class AthleteDetailView(RoleRequiredMixin, APIView):
         student = athletes_service.update_student(
             student_id,
             full_name=serializer.validated_data.get("full_name"),
-            course_id=serializer.validated_data.get("course_id"),
+            course_id=(
+                str(serializer.validated_data.get("course_id"))
+                if serializer.validated_data.get("course_id")
+                else None
+            ),
             student_number=serializer.validated_data.get("student_number"),
             is_member=serializer.validated_data.get("is_member"),
         )

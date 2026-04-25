@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { teamsApi, type TeamListItem } from "../../api/teams";
-import { modalitiesApi, type ModalityListItem } from "../../api/modalities";
-import { coursesApi, type CourseListItem } from "../../api/courses";
+import { modalitiesApi } from "../../api/modalities";
+import { coursesApi } from "../../api/courses";
 import HelpTooltip from "../HelpTooltip";
 import { useNotification } from "../../contexts/NotificationProvider";
 import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
+import ChoseOneInput from "../utils/inputs/ChoseOneInput";
 
 const TeamsCreateModal = ({
   onCreate,
@@ -18,27 +19,6 @@ const TeamsCreateModal = ({
   const [newTeamName, setNewTeamName] = useState('');
   const [selectedModality, setSelectedModality] = useState('');
   const [selectedCourse, setSelectedCourse] = useState('');
-
-  const [allModalities, setAllModalities] = useState<ModalityListItem[]>([]);
-  const [allCourses, setAllCourses] = useState<CourseListItem[]>([]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [modalities, courses] = await Promise.all([
-          modalitiesApi.getAll(),
-          coursesApi.getAll(),
-        ]);
-        setAllModalities(modalities);
-        setAllCourses(courses);
-      } catch (err) {
-        console.error('Failed to fetch modalities or courses:', err);
-        notify('Não foi possível carregar as modalidades ou cursos. Tente recarregar a página.', 'error');
-      }
-    };
-
-    fetchData();
-  }, [notify]);
 
   const onClose = () => {
     popModal();
@@ -98,21 +78,10 @@ const TeamsCreateModal = ({
               />{" "}
               <span className="text-red-500">*</span>
             </label>
-            <select
-              id="course"
-              value={selectedCourse}
-              onChange={(e) => setSelectedCourse(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-            >
-              <option value="">Selecionar Curso</option>
-              {[...allCourses]
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .map((course) => (
-                  <option key={course.id} value={course.id}>
-                    {course.name}
-                  </option>
-                ))}
-            </select>
+            <ChoseOneInput
+              allElementsLoader={() => coursesApi.getAll().then(courses => courses.map(course => ({ id: course.id, title: course.name })))}
+              onSelect={(ele) => setSelectedCourse(ele?.id || "")}
+            />
           </div>
           <div>
             <label
@@ -148,21 +117,10 @@ const TeamsCreateModal = ({
               />{" "}
               <span className="text-red-500">*</span>
             </label>
-            <select
-              id="modality"
-              value={selectedModality}
-              onChange={(e) => setSelectedModality(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-            >
-              <option value="">Selecionar Modalidade</option>
-              {[...allModalities]
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .map((modality) => (
-                  <option key={modality.id} value={modality.id}>
-                    {modality.name}
-                  </option>
-                ))}
-            </select>
+            <ChoseOneInput
+              allElementsLoader={() => modalitiesApi.getAll().then(modalities => modalities.map(modality => ({ id: modality.id, title: modality.name })))}
+              onSelect={(ele) => setSelectedModality(ele?.id || "")}
+            />
           </div>
         </div>
 

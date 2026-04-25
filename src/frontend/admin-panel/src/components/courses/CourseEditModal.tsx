@@ -120,6 +120,7 @@ const CourseEditModal = ({
             <ChoseOneInput
               allElementsLoader={() => nucleosApi.getAll().then(nucleos => nucleos.map(n => ({ id: n.id, title: n.abbreviation, subTitle: n.name })))}
               onSelect={(elem) => setEditedNucleoId(elem?.id || "")}
+              initialElement={{ id: courseData.nucleo.id, title: courseData.nucleo.abbreviation }}
             />
           </div>
         </div>

@@ -1,16 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { matchesApi } from '../../api/matches';
-import type { Match } from '../../api/matches';
-import { tournamentsApi } from '../../api/tournaments';
-import type { Tournament } from '../../api/tournaments';
+import { matchesApi, type MatchListItem } from '../../api/matches';
+import { tournamentsApi, type TournamentListItem } from '../../api/tournaments';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { btn } from '../../styles/buttonStyles';
 
 const Jogos = () => {
   const navigate = useNavigate();
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [tournamentMap, setTournamentMap] = useState<Record<string, Tournament>>({});
+  const [matches, setMatches] = useState<MatchListItem[]>([]);
+  const [tournamentMap, setTournamentMap] = useState<Record<string, TournamentListItem>>({});
   const [loading, setLoading] = useState(true);
   const { notify } = useNotification();
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
@@ -33,7 +31,7 @@ const Jogos = () => {
           tournamentsApi.getAll(),
         ]);
         setMatches(fetchedMatches);
-        const map: Record<string, Tournament> = {};
+        const map: Record<string, TournamentListItem> = {};
         fetchedTournaments.forEach(t => { map[t.id] = t; });
         setTournamentMap(map);
       } catch (err) {
@@ -183,11 +181,7 @@ const Jogos = () => {
                             >
                               <div className="flex justify-between items-start mb-2">
                                 <span className="text-gray-800 font-bold text-lg">
-                                  {match.participants.map(p => {
-                                    if (p.team) return p.team.name;
-                                    if (p.athlete) return p.athlete.full_name;
-                                    return 'TBD';
-                                  }).join(' vs ')}
+                                  {match.participants.map(p => p.name || 'TBD').join(' vs ')}
                                 </span>
                                 <span className={`text-xs font-medium px-2 py-1 rounded-full ${
                                   match.status === 'scheduled' ? 'bg-blue-100 text-blue-700' :
@@ -392,7 +386,7 @@ const Jogos = () => {
                                       </span>
                                     </div>
                                     <p className="text-sm text-gray-700">
-                                      {match.participants.map(p => p.team?.name || p.athlete?.full_name || 'TBD').join(' vs ')}
+                                      {match.participants.map(p => p.name || 'TBD').join(' vs ')}
                                     </p>
                                     {tournament && (
                                       <p className="text-xs text-teal-600 mt-0.5">{tournament.name}</p>

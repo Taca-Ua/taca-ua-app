@@ -27,6 +27,7 @@ const ChoseOneModal = ( {
     useEffect(() => {
         allElementsLoader().then(elements => {
             setAllElements(elements);
+            setChosenElement(initialSelectedId || "");
         }).catch(err => {
             console.error("Failed to load elements:", err);
             setAllElements([]);

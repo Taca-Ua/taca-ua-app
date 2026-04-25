@@ -6,6 +6,8 @@ import DefinedStatesMenuComponent from "../utils/costum_menus/DefinedStatesMenuC
 import { useNotification } from "../../contexts/NotificationProvider";
 import { useModal } from "../../contexts/ModalContext";
 import { useAuth } from "../../hooks/useAuth";
+import ChoseOneInput from "../utils/inputs/ChoseOneInput";
+import { coursesApi } from "../../api/courses";
 
 const AthleteEditModal = ( {
     athleteState,
@@ -21,10 +23,12 @@ const AthleteEditModal = ( {
 
     const [editedName, setEditedName] = useState(athlete.full_name);
     const [editedIsMember, setEditedIsMember] = useState(athlete.is_member);
+    const [editedCourseId, setEditedCourseId] = useState<string | null>(athlete.course.id);
 
     useEffect(() => {
         setEditedName(athlete.full_name);
         setEditedIsMember(athlete.is_member);
+        setEditedCourseId(athlete.course.id);
     }, [athlete]);
 
     const onClose = () => {
@@ -40,6 +44,7 @@ const AthleteEditModal = ( {
       athletesApi.update(athlete.id, {
           full_name: editedName,
           is_member: editedIsMember,
+          course_id: editedCourseId || undefined,
       }).then((updated) => {
           notify("Atleta atualizado com sucesso.", "success");
           setAthlete(updated);
@@ -102,6 +107,17 @@ const AthleteEditModal = ( {
                     initialValue={editedIsMember ? "member" : "non_member"}
                   />
                 </div>)}
+
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">
+                    Curso
+                  </label>
+                  <ChoseOneInput
+                    allElementsLoader={() => coursesApi.getAll().then(res => res.map(c => ({ id: c.id, title: c.name })))}
+                    onSelect={(ele) => setEditedCourseId(ele? ele.id : null)}
+                    initialElement={{ id: athlete.course.id, title: athlete.course.name }}
+                  />
+                </div>
               </>
 
           </div>

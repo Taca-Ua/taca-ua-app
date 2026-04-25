@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import HelpTooltip from '../../components/HelpTooltip';
 import { useNotification } from "../../contexts/NotificationProvider";
 import { modalitiesApi, type ModalityListItem } from "../../api/modalities";
-import { modalityTypesApi, type ModalityTypeMinimal } from "../../api/modality-types";
+import { modalityTypesApi } from "../../api/modality-types";
 import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
+import ChoseOneInput from "../utils/inputs/ChoseOneInput";
 
 const ModalityCreateModal = ({
   onCreate,
@@ -15,8 +16,6 @@ const ModalityCreateModal = ({
   const { notify } = useNotification();
   const { popModal } = useModal();
 
-  const [availableModalityTypes, setAvailableModalityTypes] = useState<ModalityTypeMinimal[]>([]);
-
   const [newModalityName, setNewModalityName] = useState("");
   const [modalityType, setModalityType] = useState("");
 
@@ -25,22 +24,6 @@ const ModalityCreateModal = ({
     setModalityType("");
     popModal();
   };
-
-  // Fetch modality types on mount if empty
-  useEffect(() => {
-    const fetchModalityTypes = async () => {
-      try {
-        const data = await modalityTypesApi.getAllMinimal();
-        setAvailableModalityTypes(data);
-      } catch (err) {
-        console.error("Failed to fetch modality types:", err);
-      }
-    };
-
-    if (availableModalityTypes.length === 0) {
-      fetchModalityTypes();
-    }
-  }, []);
 
   const handleAddModality = async () => {
     if (!newModalityName.trim()) {
@@ -96,18 +79,10 @@ const ModalityCreateModal = ({
             <label className="block text-gray-700 font-medium mb-2">
               Tipo <HelpTooltip text="Classifica a modalidade como individual (atletas competem individualmente, ex: atletismo) ou coletiva (equipas competem entre si, ex: futebol)." className="ml-1" /> <span className="text-red-500">*</span>
             </label>
-            <select
-              value={modalityType}
-              onChange={(e) => setModalityType(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-            >
-              <option value="">Selecionar Tipo</option>
-              {availableModalityTypes.sort((a, b) => a.name.localeCompare(b.name)).map((type) => (
-                <option key={type.id} value={type.id}>
-                  {type.name}
-                </option>
-              ))}
-            </select>
+            <ChoseOneInput
+              allElementsLoader={() => modalityTypesApi.getAllMinimal().then(types => types.map(type => ({ id: type.id, title: type.name })))}
+              onSelect={(ele) => setModalityType(ele?.id || "")}
+            />
           </div>
         </div>
 
