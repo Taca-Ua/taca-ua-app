@@ -2,6 +2,7 @@
 Course management views
 """
 
+from admin_api.utils.decorators import RoleRequiredMixin, require_roles_class_method
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
@@ -31,7 +32,7 @@ from .service import course_service
         tags=["Course Management"],
     ),
 )
-class CourseListCreateView(APIView):
+class CourseListCreateView(RoleRequiredMixin, APIView):
     def get(self, request: Request):
 
         # TODO: This is a temporary solution to handle the case where the request does not have roles (e.g., when using API clients that do not set roles). In the future, we should ensure that all requests have roles properly set.
@@ -43,6 +44,7 @@ class CourseListCreateView(APIView):
         serializer = CourseListSerializer(courses, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @require_roles_class_method("general_admin")
     def post(self, request: Request):
         serializer = CourseCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -75,12 +77,14 @@ class CourseListCreateView(APIView):
         tags=["Course Management"],
     ),
 )
-class CourseDetailView(APIView):
+class CourseDetailView(RoleRequiredMixin, APIView):
+
     def get(self, request, course_id):
         course = course_service.get_course(course_id)
         serializer = CourseDetailSerializer(course)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @require_roles_class_method("general_admin")
     def put(self, request, course_id):
         serializer = CourseUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -99,6 +103,7 @@ class CourseDetailView(APIView):
         serializer = CourseDetailSerializer(course)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @require_roles_class_method("general_admin")
     def delete(self, request, course_id):
         course_service.delete_course(course_id)
         return Response(status=status.HTTP_204_NO_CONTENT)

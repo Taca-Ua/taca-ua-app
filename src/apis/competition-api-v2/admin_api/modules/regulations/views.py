@@ -1,3 +1,4 @@
+from admin_api.utils.decorators import RoleRequiredMixin, require_roles_class_method
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
@@ -26,13 +27,14 @@ from .service import regulations_service
         tags=["Regulation Management"],
     ),
 )
-class RegulationListCreateView(APIView):
+class RegulationListCreateView(RoleRequiredMixin, APIView):
     def get(self, request):
         regulations = regulations_service.list_regulations()
 
         serializer = RegulationListSerializer(regulations, many=True)
         return Response(serializer.data)
 
+    @require_roles_class_method("general_admin")
     def post(self, request):
         serializer = RegulationCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -65,13 +67,14 @@ class RegulationListCreateView(APIView):
         tags=["Regulation Management"],
     ),
 )
-class RegulationDetailView(APIView):
+class RegulationDetailView(RoleRequiredMixin, APIView):
     def get(self, request, regulation_id):
         regulation = regulations_service.get_regulation(regulation_id)
 
         serializer = RegulationDetailSerializer(regulation)
         return Response(serializer.data)
 
+    @require_roles_class_method("general_admin")
     def put(self, request, regulation_id):
         serializer = RegulationUpdateSerializer(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -86,6 +89,7 @@ class RegulationDetailView(APIView):
         serializer = RegulationDetailSerializer(regulation)
         return Response(serializer.data)
 
+    @require_roles_class_method("general_admin")
     def delete(self, request, regulation_id):
         regulations_service.delete_regulation(regulation_id)
         return Response(status=status.HTTP_204_NO_CONTENT)

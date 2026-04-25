@@ -2,6 +2,7 @@
 Athlete management views
 """
 
+from admin_api.utils.decorators import RoleRequiredMixin
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
@@ -33,7 +34,8 @@ from .service import athletes_service
         tags=["Athlete Management"],
     ),
 )
-class AthleteListCreateView(APIView):
+class AthleteListCreateView(RoleRequiredMixin, APIView):
+
     def get(self, request):
         serializer = AthleteListRequestSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
@@ -87,7 +89,8 @@ class AthleteListCreateView(APIView):
         tags=["Athlete Management"],
     ),
 )
-class AthleteDetailView(APIView):
+class AthleteDetailView(RoleRequiredMixin, APIView):
+
     def get(self, request, student_id):
         student = athletes_service.get_student(student_id)
 
@@ -128,7 +131,8 @@ class AthleteDetailView(APIView):
         tags=["Athlete Management"],
     ),
 )
-class AthleteMembershipSyncView(APIView):
+class AthleteMembershipSyncView(RoleRequiredMixin, APIView):
+
     def post(self, request):
         serializer = AthleteMembershipSyncSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

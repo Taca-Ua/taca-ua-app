@@ -18,6 +18,12 @@ WHITE = colors.white
 BLACK = colors.black
 
 
+class DocumentGenerationLackPermissitonError(Exception):
+    """Custom exception for document generation errors"""
+
+    pass
+
+
 class DocumentGenerationService:
     def __init__(self):
         pass
@@ -329,9 +335,15 @@ class DocumentGenerationService:
 
         return pdf_bytes
 
-    def generate_match_team_report(self, match_id: str, participant_id: str) -> bytes:
-        """Generate a PDF report for a match and a specific participant (team or athlete)"""
-        match: Match = matches_service.get_match(match_id)
+    def generate_match_team_report(
+        self, match_id: str, participant_id: str, admin_id: str = None
+    ) -> bytes:
+        """Generate a PDF report for a match and a specific participant (team or athlete)
+
+        Raises:
+            ValueError: If participant is not found in match or if no lineups are found for the participant
+        """
+        match: Match = matches_service.get_match(match_id, admin_id=admin_id)
         # Find the participant
         participant = next(
             (p for p in match.participants if p.id == participant_id), None
@@ -344,6 +356,11 @@ class DocumentGenerationService:
             for lineup in match.lineups
             if lineup.participant_id == participant_id
         ]
+
+        if all(pl.lineup is None for pl in participant_lineups):
+            raise DocumentGenerationLackPermissitonError(
+                "No lineups found for participant; cannot generate report"
+            )
 
         buffer = BytesIO()
         PAGE_W = A4[0]

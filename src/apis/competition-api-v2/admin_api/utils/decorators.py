@@ -37,9 +37,13 @@ Class-based views (mixin)::
 
 """
 
+import logging
 from functools import wraps
 
 from django.http import JsonResponse
+
+logger = logging.getLogger(__name__)
+
 
 # ---------------------------------------------------------------------------
 # Function-based view decorators
@@ -75,7 +79,7 @@ def require_roles(*required_roles: str):
     Example::
 
         @api_view(["POST"])
-        @require_roles("general_admin")
+        @require_roles_class_method("general_admin")
         def create_tournament(request): ...
 
         @api_view(["DELETE"])
@@ -150,3 +154,41 @@ class RoleRequiredMixin:
             )
 
         return super().dispatch(request, *args, **kwargs)
+
+
+def require_roles_class_method(*required_roles: str):
+    """
+    Decorator for class-based view methods that require specific roles.
+
+    Usage::
+
+        class MyView(APIView):
+            @require_roles_class_method("general_admin")
+            def post(self, request):
+                ...
+    """
+
+    def decorator(method):
+        @wraps(method)
+        def wrapper(self, request, *args, **kwargs):
+            if not getattr(request, "user_id", None):
+                return JsonResponse({"error": "Authentication required"}, status=401)
+
+            user_roles: set[str] = set(getattr(request, "roles", []))
+            missing: set[str] = set(required_roles) - user_roles
+
+            if missing:
+                return JsonResponse(
+                    {
+                        "error": "Insufficient permissions",
+                        "required_roles": sorted(required_roles),
+                        "missing_roles": sorted(missing),
+                    },
+                    status=403,
+                )
+
+            return method(self, request, *args, **kwargs)
+
+        return wrapper
+
+    return decorator

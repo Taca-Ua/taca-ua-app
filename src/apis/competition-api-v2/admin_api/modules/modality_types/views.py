@@ -2,6 +2,11 @@
 Modality management views
 """
 
+from admin_api.utils.decorators import (
+    RoleRequiredMixin,
+    require_auth,
+    require_roles_class_method,
+)
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
@@ -33,7 +38,7 @@ from .service import modality_types_service
         tags=["Modality Ttype Management"],
     ),
 )
-class ModalityTypeListCreateView(APIView):
+class ModalityTypeListCreateView(RoleRequiredMixin, APIView):
 
     def get(self, request: Request):
         modality_types = modality_types_service.list_modality_types(
@@ -43,6 +48,7 @@ class ModalityTypeListCreateView(APIView):
         serializer = ModalityTypeListSerializer(modality_types, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @require_roles_class_method("general_admin")
     def post(self, request: Request):
         serializer = ModalityTypeCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -78,13 +84,14 @@ class ModalityTypeListCreateView(APIView):
         tags=["Modality Ttype Management"],
     ),
 )
-class ModalityTypeDetailView(APIView):
+class ModalityTypeDetailView(RoleRequiredMixin, APIView):
     def get(self, request, modality_type_id):
         modality_type = modality_types_service.get_modality_type(modality_type_id)
 
         serializer = ModalityTypeDetailSerializer(modality_type)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @require_roles_class_method("general_admin")
     def put(self, request, modality_type_id):
         serializer = ModalityTypeUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -103,6 +110,7 @@ class ModalityTypeDetailView(APIView):
         serializer = ModalityTypeDetailSerializer(modality_type)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @require_roles_class_method("general_admin")
     def delete(self, request, modality_type_id):
         modality_types_service.delete_modality_type(modality_type_id)
         return Response(
@@ -117,6 +125,7 @@ class ModalityTypeDetailView(APIView):
     tags=["Modality Ttype Management"],
 )
 @api_view(["GET"])
+@require_auth
 def list_modality_types(request: Request):
     modality_types = modality_types_service.list_modality_types(include_playoff=False)
     serializer = ModalityTypeMinimalSerializer(modality_types, many=True)

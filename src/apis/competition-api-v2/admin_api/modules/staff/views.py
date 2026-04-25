@@ -1,3 +1,4 @@
+from admin_api.utils.decorators import RoleRequiredMixin
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
@@ -26,7 +27,7 @@ from .service import staff_service
         tags=["Staff Management"],
     ),
 )
-class StaffListCreateView(APIView):
+class StaffListCreateView(RoleRequiredMixin, APIView):
     def get(self, request):
         all_staff = staff_service.list_staff()
 
@@ -65,7 +66,7 @@ class StaffListCreateView(APIView):
         tags=["Staff Management"],
     ),
 )
-class StaffDetailView(APIView):
+class StaffDetailView(RoleRequiredMixin, APIView):
     def get(self, request, staff_id):
         staff_member = staff_service.get_staff(staff_id)
 

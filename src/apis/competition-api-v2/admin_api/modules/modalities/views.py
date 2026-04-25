@@ -2,6 +2,7 @@
 Modality management views
 """
 
+from admin_api.utils.decorators import RoleRequiredMixin, require_roles_class_method
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
@@ -31,13 +32,14 @@ from .service import modalities_service
         tags=["Modality Management"],
     ),
 )
-class ModalityListCreateView(APIView):
+class ModalityListCreateView(RoleRequiredMixin, APIView):
     def get(self, request: Request):
         modalities = modalities_service.list_modalities()
 
         serializer = ModalitySerializer(modalities, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @require_roles_class_method("general_admin")
     def post(self, request: Request):
         # Serialize input data
         serializer = ModalityCreateSerializer(data=request.data)
@@ -69,13 +71,14 @@ class ModalityListCreateView(APIView):
         tags=["Modality Management"],
     ),
 )
-class ModalityDetailView(APIView):
+class ModalityDetailView(RoleRequiredMixin, APIView):
     def get(self, request, modality_id):
         modality = modalities_service.get_modality(modality_id)
 
         serializer = ModalitySerializer(modality)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @require_roles_class_method("general_admin")
     def put(self, request, modality_id):
         # Serialize input data
         serializer = ModalityUpdateSerializer(data=request.data)
@@ -94,6 +97,7 @@ class ModalityDetailView(APIView):
         response_serializer = ModalitySerializer(modality)
         return Response(response_serializer.data, status=status.HTTP_200_OK)
 
+    @require_roles_class_method("general_admin")
     def delete(self, request, modality_id):
         modalities_service.delete_modality(modality_id)
         return Response(status=status.HTTP_204_NO_CONTENT)

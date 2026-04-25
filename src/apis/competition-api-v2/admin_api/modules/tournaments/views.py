@@ -2,6 +2,11 @@
 Tournament management views - Updated to use tournaments-service microservice
 """
 
+from admin_api.utils.decorators import (
+    RoleRequiredMixin,
+    require_roles,
+    require_roles_class_method,
+)
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
@@ -36,7 +41,7 @@ from .service import tournaments_service
         tags=["Tournament Management"],
     ),
 )
-class TournamentListCreateView(APIView):
+class TournamentListCreateView(RoleRequiredMixin, APIView):
     def get(self, request):
         """List all tournaments"""
         serializer = TournamentListQuerySerializer(data=request.query_params)
@@ -50,6 +55,7 @@ class TournamentListCreateView(APIView):
         serializer = TournamentListSerializer(tournaments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @require_roles_class_method("general_admin")
     def post(self, request):
         """Create a new tournament"""
         serializer = TournamentCreateSerializer(data=request.data)
@@ -82,7 +88,7 @@ class TournamentListCreateView(APIView):
         tags=["Tournament Management"],
     ),
 )
-class TournamentDetailView(APIView):
+class TournamentDetailView(RoleRequiredMixin, APIView):
     def get(self, request, tournament_id):
         """Get tournament details by ID"""
         tournament = tournaments_service.get_tournament(tournament_id)
@@ -90,6 +96,7 @@ class TournamentDetailView(APIView):
         serializer = TournamentDetailSerializer(tournament)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @require_roles_class_method("general_admin")
     def put(self, request, tournament_id):
         """Update a tournament"""
         serializer = TournamentUpdateSerializer(data=request.data)
@@ -106,6 +113,7 @@ class TournamentDetailView(APIView):
         serializer = TournamentDetailSerializer(tournament)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @require_roles_class_method("general_admin")
     def delete(self, request, tournament_id):
         """Delete a tournament"""
         try:
@@ -125,6 +133,7 @@ class TournamentDetailView(APIView):
     tags=["Tournament Management"],
 )
 @api_view(["POST"])
+@require_roles("general_admin")
 def tournament_finish(request, tournament_id):
     """Mark a tournament as finished"""
     serializer = TournamentFinishSerializer(data=request.data)
@@ -156,6 +165,7 @@ def tournament_finish(request, tournament_id):
     tags=["Tournament Management"],
 )
 @api_view(["PUT"])
+@require_roles("general_admin")
 def tournament_add_competitors(request, tournament_id):
     """Add competitors to a tournament"""
     serializer = TournamentCompetitorsAddEntrySerializer(data=request.data, many=True)
@@ -186,6 +196,7 @@ def tournament_add_competitors(request, tournament_id):
     tags=["Tournament Management"],
 )
 @api_view(["PUT"])
+@require_roles("general_admin")
 def tournament_remove_competitors(request, tournament_id):
     """Remove competitors from a tournament"""
     serializer = TournamentCompetitorsDeleteSerializer(data=request.data)

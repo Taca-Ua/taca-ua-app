@@ -34,7 +34,7 @@ from .service import teams_service
         tags=["Team Management"],
     ),
 )
-class TeamListCreateView(APIView):
+class TeamListCreateView(RoleRequiredMixin, APIView):
     def get(self, request: Request):
         # Serialize input data
         serializer = TeamListRequestSerializer(data=request.query_params)

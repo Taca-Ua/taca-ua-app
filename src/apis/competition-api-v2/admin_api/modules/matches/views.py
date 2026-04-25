@@ -5,7 +5,12 @@ Match management views
 from uuid import UUID
 
 import structlog
-from admin_api.utils.decorators import RoleRequiredMixin
+from admin_api.utils.decorators import (
+    RoleRequiredMixin,
+    require_auth,
+    require_roles,
+    require_roles_class_method,
+)
 from django.http import HttpResponse
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
@@ -14,7 +19,10 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .pdf_generators import document_generation_service
+from .pdf_generators import (
+    DocumentGenerationLackPermissitonError,
+    document_generation_service,
+)
 from .serializers import (
     CommentCreateSerializer,
     LineupAssignSerializer,
@@ -45,7 +53,7 @@ logger = structlog.get_logger(__name__)
         tags=["Match Management"],
     ),
 )
-class MatchListCreateView(APIView):
+class MatchListCreateView(RoleRequiredMixin, APIView):
     """List and create matches"""
 
     def get(self, request):
@@ -62,6 +70,7 @@ class MatchListCreateView(APIView):
         serializer = MatchListSerializer(matches, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @require_roles_class_method("general_admin")
     def post(self, request):
         """Create a new match"""
         serializer = MatchCreateSerializer(data=request.data)
@@ -117,6 +126,7 @@ class MatchDetailView(RoleRequiredMixin, APIView):
         serializer = MatchDetailSerializer(match)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @require_roles_class_method("general_admin")
     def put(self, request, match_id):
         """Update match metadata"""
         serializer = MatchUpdateSerializer(data=request.data)
@@ -136,6 +146,7 @@ class MatchDetailView(RoleRequiredMixin, APIView):
         response_serializer = MatchDetailSerializer(match)
         return Response(response_serializer.data, status=status.HTTP_200_OK)
 
+    @require_roles_class_method("general_admin")
     def delete(self, request, match_id):
         """Delete a match"""
 
@@ -150,6 +161,7 @@ class MatchDetailView(RoleRequiredMixin, APIView):
     tags=["Match Management"],
 )
 @api_view(["POST"])
+@require_roles("general_admin")
 def publish_match_results(request, match_id):
     """Publish match results"""
     serializer = MatchPublishResultsSerializer(data=request.data)
@@ -191,7 +203,7 @@ def publish_match_results(request, match_id):
         tags=["Match Management"],
     ),
 )
-class MatchLineupsView(APIView):
+class MatchLineupsView(RoleRequiredMixin, APIView):
     """View to retrieve lineups for a match"""
 
     def post(self, request, match_id):
@@ -208,6 +220,7 @@ class MatchLineupsView(APIView):
         response_serializer = MatchDetailSerializer(match)
         return Response(response_serializer.data, status=status.HTTP_200_OK)
 
+    @require_roles_class_method("general_admin")
     def put(self, request, match_id):
         """Update lineup for a team"""
         serializer = LineupUpdateSerializer(data=request.data)
@@ -240,6 +253,7 @@ class MatchLineupsView(APIView):
     tags=["Match Management"],
 )
 @api_view(["POST"])
+@require_auth
 def add_comment(request, match_id):
     """Add comment to match"""
     serializer = CommentCreateSerializer(data=request.data)
@@ -260,6 +274,7 @@ def add_comment(request, match_id):
     tags=["Match Management"],
 )
 @api_view(["DELETE"])
+@require_auth
 def delete_comment(request, match_id, comment_id):
     """Delete a comment"""
     matches_service.delete_comment(match_id=match_id, comment_id=comment_id)
@@ -275,6 +290,7 @@ def delete_comment(request, match_id, comment_id):
     tags=["Match Management"],
 )
 @api_view(["GET"])
+@require_roles("general_admin")
 def match_sheet(request, match_id):
     """Generate match sheet PDF"""
 
@@ -295,14 +311,22 @@ def match_sheet(request, match_id):
     tags=["Match Management"],
 )
 @api_view(["GET"])
+@require_auth
 def match_team_sheet(request, match_id, participant):
     """
     Generate match sheet PDF for a specific team in a match.
     """
 
-    pdf_content = document_generation_service.generate_match_team_report(
-        match_id, participant_id=str(participant)
-    )
+    try:
+        pdf_content = document_generation_service.generate_match_team_report(
+            match_id,
+            participant_id=str(participant),
+            admin_id=(
+                request.user_id if "nucleo_admin" in (request.roles or []) else None
+            ),
+        )
+    except DocumentGenerationLackPermissitonError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
 
     response = HttpResponse(pdf_content, content_type="application/pdf")
     response["Content-Disposition"] = (

@@ -2,6 +2,7 @@
 Nucleo management views
 """
 
+from admin_api.utils.decorators import RoleRequiredMixin, require_roles_class_method
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
@@ -31,7 +32,7 @@ from .service import nucleos_service
         tags=["Nucleo Management"],
     ),
 )
-class NucleoListCreateView(APIView):
+class NucleoListCreateView(RoleRequiredMixin, APIView):
     def get(self, request: Request):
         nucleos = nucleos_service.list_nucleos()
 
@@ -39,6 +40,7 @@ class NucleoListCreateView(APIView):
         serializer = NucleosListSerializer(nucleos, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @require_roles_class_method("general_admin")
     def post(self, request: Request):
         # Serialize input data
         serializer = NucleosCreateSerializer(data=request.data)
@@ -72,7 +74,7 @@ class NucleoListCreateView(APIView):
         tags=["Nucleo Management"],
     ),
 )
-class NucleoDetailView(APIView):
+class NucleoDetailView(RoleRequiredMixin, APIView):
     def get(self, request, nucleo_id):
         nucleo = nucleos_service.get_nucleo(nucleo_id)
 
@@ -80,6 +82,7 @@ class NucleoDetailView(APIView):
         serializer = NucleosDetailSerializer(nucleo)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @require_roles_class_method("general_admin")
     def put(self, request, nucleo_id):
         # Serialize input data
         serializer = NucleosUpdateSerializer(data=request.data)
@@ -95,6 +98,7 @@ class NucleoDetailView(APIView):
         serializer = NucleosDetailSerializer(nucleo)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @require_roles_class_method("general_admin")
     def delete(self, request, nucleo_id):
         nucleos_service.delete_nucleo(nucleo_id)
         return Response(status=status.HTTP_204_NO_CONTENT)

@@ -1,3 +1,4 @@
+from admin_api.utils.decorators import RoleRequiredMixin, require_roles_class_method
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from keycloak.exceptions import KeycloakError
@@ -28,7 +29,7 @@ from .service import admin_service
         tags=["Admin Management"],
     ),
 )
-class AdminListCreateView(APIView):
+class AdminListCreateView(RoleRequiredMixin, APIView):
     """
     View for listing and creating admin users.
     Requires 'general_admin' role.
@@ -46,6 +47,7 @@ class AdminListCreateView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
+    @require_roles_class_method("general_admin")
     def post(self, request):
         """Create a new admin user."""
         serializer = AdminCreateSerializer(data=request.data)
@@ -95,7 +97,7 @@ class AdminListCreateView(APIView):
         tags=["Admin Management"],
     ),
 )
-class AdminDetailView(APIView):
+class AdminDetailView(RoleRequiredMixin, APIView):
     """
     View for retrieving, updating, and deleting individual admin users.
     Requires 'general_admin' role.
@@ -113,6 +115,7 @@ class AdminDetailView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
+    @require_roles_class_method("general_admin")
     def put(self, request, user_id):
         """Update an admin user."""
         serializer = AdminUpdateSerializer(data=request.data)
@@ -136,6 +139,7 @@ class AdminDetailView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
+    @require_roles_class_method("general_admin")
     def delete(self, request, user_id):
         """Delete an admin user."""
         try:
@@ -154,12 +158,13 @@ class AdminDetailView(APIView):
     description="Change an admin user's password",
     tags=["Admin Management"],
 )
-class AdminPasswordChangeView(APIView):
+class AdminPasswordChangeView(RoleRequiredMixin, APIView):
     """
     View for changing an admin user's password.
     Requires 'general_admin' role.
     """
 
+    @require_roles_class_method("general_admin")
     def post(self, request, user_id):
         """Change an admin user's password."""
         serializer = AdminPasswordChangeSerializer(data=request.data)
