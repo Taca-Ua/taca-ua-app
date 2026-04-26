@@ -6,6 +6,7 @@ Schema: ranking
 from sqlalchemy import ARRAY, UUID, Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from taca_outbox.models import create_outbox_model
+from taca_snapshots import ranking as ranking_snapshots
 
 Base = declarative_base()
 
@@ -83,6 +84,12 @@ class GeneralRanking(Base):
     course_id = Column(UUID(as_uuid=True), primary_key=True)
     points = Column(Integer, nullable=False)
 
+    def to_snapshot(self) -> ranking_snapshots.GeneralRankingSnapshotItem:
+        return ranking_snapshots.GeneralRankingSnapshotItem(
+            course_id=str(self.course_id),
+            points=self.points,
+        )
+
 
 class ModalityRanking(Base):
     __tablename__ = "modality_rankings"
@@ -92,6 +99,13 @@ class ModalityRanking(Base):
     course_id = Column(UUID(as_uuid=True), primary_key=True)
     points = Column(Integer, nullable=False)
 
+    def to_snapshot(self) -> ranking_snapshots.ModalityRankingSnapshotItem:
+        return ranking_snapshots.ModalityRankingSnapshotItem(
+            modality_id=str(self.modality_id),
+            course_id=str(self.course_id),
+            points=self.points,
+        )
+
 
 class CourseRanking(Base):
     __tablename__ = "course_rankings"
@@ -100,3 +114,10 @@ class CourseRanking(Base):
     course_id = Column(UUID(as_uuid=True), primary_key=True)
     points = Column(Integer, nullable=False)
     modality_breakdown = Column(ARRAY(Integer), nullable=False)  # Points per modality
+
+    def to_snapshot(self) -> ranking_snapshots.CourseRankingSnapshotItem:
+        return ranking_snapshots.CourseRankingSnapshotItem(
+            course_id=str(self.course_id),
+            points=self.points,
+            modality_breakdown=self.modality_breakdown,
+        )

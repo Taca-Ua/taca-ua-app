@@ -6,7 +6,7 @@ from taca_logging import StructlogMiddleware
 
 from .events import rabbitmq_service
 from .logger import logger
-from .rebuild_controller import router as rebuild_router
+from .rebuild_controller_sse import router as rebuild_router
 
 
 @asynccontextmanager
@@ -30,7 +30,7 @@ app = FastAPI(
 # Add structured logging middleware
 app.add_middleware(StructlogMiddleware)
 
-# Include rebuild router for internal rebuild operations
+# Include SSE-based rebuild router for internal rebuild operations
 app.include_router(rebuild_router)
 
 Instrumentator().instrument(app).expose(app)  # Prometheus metrics endpoint

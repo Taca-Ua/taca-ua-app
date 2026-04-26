@@ -33,7 +33,11 @@ async def lifespan(app: FastAPI):
     logger.info("service_stopped", action="shutdown")
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    title="Modalities Service",
+    description="Microservice for managing modalities",
+    lifespan=lifespan,
+)
 
 # Add structured logging middleware
 app.add_middleware(StructlogMiddleware)

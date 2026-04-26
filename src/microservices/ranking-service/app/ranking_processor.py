@@ -77,7 +77,7 @@ def _points_for_position(escalao: ModalityTypeEscalao, position: int) -> int:
 # ---------------------------------------------------------------------------
 
 
-def compute_all_rankings(db: Session) -> None:
+def compute_all_rankings(db: Session) -> int:
     """
     Recompute all derived ranking tables from the current core-table state.
 
@@ -91,6 +91,7 @@ def compute_all_rankings(db: Session) -> None:
     The caller is responsible for committing or rolling back the session.
     """
     logger.info("ranking_computation_started")
+    count = 0
 
     # --- 1. Clear derived tables -------------------------------------------
     db.query(GeneralRanking).delete()
@@ -210,6 +211,7 @@ def compute_all_rankings(db: Session) -> None:
                     points=pts,
                 )
             )
+            count += 1
     db.flush()
 
     # --- 5. Aggregate → CourseRanking + GeneralRanking ----------------------
@@ -231,6 +233,11 @@ def compute_all_rankings(db: Session) -> None:
             )
         )
         db.add(GeneralRanking(course_id=course_id, points=total))
+        count += 2  # one CourseRanking + one GeneralRanking per course
+        print(
+            f"Course {course_id} has total {total} points with breakdown {breakdown}",
+            flush=True,
+        )
 
     db.flush()
 
@@ -239,6 +246,8 @@ def compute_all_rankings(db: Session) -> None:
         modalities=len(modality_course_points),
         courses=len(all_course_ids),
     )
+
+    return count
 
 
 def emit_ranking_computed_event(db: Session, publisher) -> None:

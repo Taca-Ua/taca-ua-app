@@ -17,6 +17,11 @@ def _find_escalao(
 ) -> Optional[ModalityTypeEscalao]:
     """Return the escalao whose participant range covers *participant_count*."""
     for escalao in escaloes:
+        print(
+            f"Checking escalao {escalao.name} with participant range "
+            f"{escalao.min_participants} - {escalao.max_participants} against count {participant_count}",
+            flush=True,
+        )
         if (
             escalao.min_participants is not None
             and participant_count < escalao.min_participants
@@ -87,6 +92,10 @@ def calculate_tournament_tier(
     )
 
     escalao = _find_escalao(escaloes, calc_data.participant_count)
+    print(
+        f"Calculating tier for modality type {calc_data.modality_type_id} with {calc_data.participant_count} participants: found escalao {escalao.name if escalao else 'None'}",
+        flush=True,
+    )
     if not escalao:
         logger.warning(
             f"No matching escalao found for modality type {calc_data.modality_type_id} with {calc_data.participant_count} participants"

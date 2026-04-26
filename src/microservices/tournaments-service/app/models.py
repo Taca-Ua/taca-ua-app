@@ -13,6 +13,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from taca_outbox.models import create_outbox_model
+from taca_snapshots import tournaments as snapshot_models
 
 Base = declarative_base()
 
@@ -72,6 +73,19 @@ class TournamentCompetitor(Base):
             resp["competitor"] = {"athlete_id": str(self.athlete_id)}
 
         return resp
+
+    def to_snapshot(self) -> snapshot_models.TournamentCompetitorSnapshotItem:
+        return snapshot_models.TournamentCompetitorSnapshotItem(
+            id=str(self.id),
+            tournament_id=str(self.tournament_id),
+            competitor_type=self.competitor_type.value,
+            team_id=str(self.team_id) if self.team_id else None,
+            athlete_id=str(self.athlete_id) if self.athlete_id else None,
+            created_at=self.created_at,
+            competitor_course_id=(
+                str(self.competitor_course_id) if self.competitor_course_id else None
+            ),
+        )
 
 
 class Tournament(Base):
@@ -142,6 +156,24 @@ class Tournament(Base):
 
         return result
 
+    def to_snapshot(self) -> snapshot_models.TournamentSnapshotItem:
+        return snapshot_models.TournamentSnapshotItem(
+            id=str(self.id),
+            modality_id=str(self.modality_id),
+            name=self.name,
+            status=self.status,
+            scoring_format_id=(
+                str(self.scoring_format_id) if self.scoring_format_id else None
+            ),
+            competitor_type=self.competitor_type.value,
+            start_date=self.start_date,
+            created_by=str(self.created_by),
+            created_at=self.created_at,
+            updated_at=self.updated_at,
+            finished_at=self.finished_at,
+            finished_by=str(self.finished_by) if self.finished_by else None,
+        )
+
 
 class TournamentRankingPosition(Base):
     """Represents the ranking position of a competitor in a tournament"""
@@ -178,6 +210,15 @@ class TournamentRankingPosition(Base):
             "position": self.position,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
+
+    def to_snapshot(self) -> snapshot_models.TournamentRankingPositionSnapshotItem:
+        return snapshot_models.TournamentRankingPositionSnapshotItem(
+            id=str(self.id),
+            tournament_id=str(self.tournament_id),
+            competitor_id=str(self.competitor_id),
+            position=self.position,
+            created_at=self.created_at,
+        )
 
 
 # OutboxEvent model — schema-bound via shared factory

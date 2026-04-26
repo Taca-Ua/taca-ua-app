@@ -12,6 +12,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Mapped, relationship
 from taca_outbox.models import create_outbox_model
+from taca_snapshots import matches
 
 Base = declarative_base()
 
@@ -130,6 +131,19 @@ class Match(Base):
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+
+    def to_snapshot(self) -> matches.MatchSnapshotItem:
+        """Convert Match to snapshot item for internal API"""
+        return matches.MatchSnapshotItem(
+            match_id=str(self.id),
+            tournament_id=str(self.tournament_id) if self.tournament_id else None,
+            location=self.location,
+            status=self.status.value if self.status else None,
+            start_time=self.start_time,
+            created_at=self.created_at,
+            updated_at=self.updated_at,
+            deleted_at=None,  # Domain model doesn't track deletions
+        )
 
 
 class MatchParticipant(Base):

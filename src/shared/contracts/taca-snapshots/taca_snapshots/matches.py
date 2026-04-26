@@ -30,6 +30,19 @@ class MatchSnapshotItem(SnapshotBase):
     updated_at: Optional[datetime] = None
     deleted_at: Optional[datetime] = None
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert MatchSnapshotItem to dict for JSON serialization."""
+        return {
+            "match_id": self.match_id,
+            "tournament_id": self.tournament_id,
+            "location": self.location,
+            "status": self.status,
+            "start_time": self.start_time.isoformat() if self.start_time else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "deleted_at": self.deleted_at.isoformat() if self.deleted_at else None,
+        }
+
 
 class MatchParticipantSnapshotItem(SnapshotBase):
     """A single match-participant record as serialised by the snapshot endpoint."""
