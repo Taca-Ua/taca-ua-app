@@ -186,127 +186,151 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
         count = 0
 
         if category == "nucleos":
-            for item in map(
-                lambda x: modality_snapshots.NucleoSnapshotItem(**x), items
-            ):
-                self.db.add(
-                    Nucleo(
-                        nucleo_id=item.id,
-                        name=item.name,
-                        abbreviation=item.abbreviation,
-                        created_at=item.created_at,
-                        updated_at=item.updated_at,
+            self.db.bulk_insert_mappings(
+                Nucleo,
+                [
+                    {
+                        "nucleo_id": item.id,
+                        "name": item.name,
+                        "abbreviation": item.abbreviation,
+                        "created_at": item.created_at,
+                        "updated_at": item.updated_at,
+                    }
+                    for item in map(
+                        lambda x: modality_snapshots.NucleoSnapshotItem(**x), items
                     )
-                )
-                count += 1
+                ],
+            )
+            count += len(items)
 
         elif category == "courses":
-            for item in map(
-                lambda x: modality_snapshots.CourseSnapshotItem(**x), items
-            ):
-                self.db.add(
-                    Course(
-                        course_id=item.id,
-                        nucleo_id=item.nucleo_id,
-                        name=item.name,
-                        abbreviation=item.abbreviation,
-                        created_at=item.created_at,
-                        updated_at=item.updated_at,
+            self.db.bulk_insert_mappings(
+                Course,
+                [
+                    {
+                        "course_id": item.id,
+                        "nucleo_id": item.nucleo_id,
+                        "name": item.name,
+                        "abbreviation": item.abbreviation,
+                        "created_at": item.created_at,
+                        "updated_at": item.updated_at,
+                    }
+                    for item in map(
+                        lambda x: modality_snapshots.CourseSnapshotItem(**x), items
                     )
-                )
-                count += 1
+                ],
+            )
+            count += len(items)
 
         elif category == "modality_types":
-            for item in map(
-                lambda x: modality_snapshots.ModalityTypeSnapshotItem(**x), items
-            ):
-                self.db.add(
-                    ModalityType(
-                        modality_type_id=item.id,
-                        name=item.name,
-                        description=item.description,
-                        escaloes=(
+            self.db.bulk_insert_mappings(
+                ModalityType,
+                [
+                    {
+                        "modality_type_id": item.id,
+                        "name": item.name,
+                        "description": item.description,
+                        "escaloes": (
                             [e.to_dict() for e in item.escaloes]
                             if item.escaloes
                             else None
                         ),
-                        created_at=item.created_at,
-                        updated_at=item.updated_at,
+                        "created_at": item.created_at,
+                        "updated_at": item.updated_at,
+                    }
+                    for item in map(
+                        lambda x: modality_snapshots.ModalityTypeSnapshotItem(**x),
+                        items,
                     )
-                )
-                count += 1
+                ],
+            )
+            count += len(items)
 
         elif category == "modalities":
-            for item in map(
-                lambda x: modality_snapshots.ModalitySnapshotItem(**x), items
-            ):
-                self.db.add(
-                    Modality(
-                        modality_id=item.id,
-                        modality_type_id=item.modality_type_id,
-                        name=item.name,
-                        created_at=item.created_at,
-                        updated_at=item.updated_at,
+            self.db.bulk_insert_mappings(
+                Modality,
+                [
+                    {
+                        "modality_id": item.id,
+                        "modality_type_id": item.modality_type_id,
+                        "name": item.name,
+                        "created_at": item.created_at,
+                        "updated_at": item.updated_at,
+                    }
+                    for item in map(
+                        lambda x: modality_snapshots.ModalitySnapshotItem(**x), items
                     )
-                )
-                count += 1
+                ],
+            )
+            count += len(items)
 
         elif category == "students":
-            for item in map(
-                lambda x: modality_snapshots.StudentSnapshotItem(**x), items
-            ):
-                self.db.add(
-                    Student(
-                        student_id=item.id,
-                        course_id=item.course_id,
-                        student_number=item.student_number,
-                        full_name=item.full_name,
-                        is_member=item.is_member,
-                        created_at=item.created_at,
-                        updated_at=item.updated_at,
+            self.db.bulk_insert_mappings(
+                Student,
+                [
+                    {
+                        "student_id": item.id,
+                        "course_id": item.course_id,
+                        "student_number": item.student_number,
+                        "full_name": item.full_name,
+                        "is_member": item.is_member,
+                        "created_at": item.created_at,
+                        "updated_at": item.updated_at,
+                    }
+                    for item in map(
+                        lambda x: modality_snapshots.StudentSnapshotItem(**x), items
                     )
-                )
-                count += 1
-
-        elif category == "staff":
-            pass  # Staff data is not needed in the read model, so we can skip it
+                ],
+            )
+            count += len(items)
 
         elif category == "teams":
-            for item in map(lambda x: modality_snapshots.TeamSnapshotItem(**x), items):
-                self.db.add(
-                    Team(
-                        team_id=item.id,
-                        modality_id=item.modality_id,
-                        course_id=item.course_id,
-                        name=item.name,
-                        created_at=item.created_at,
-                        updated_at=item.updated_at,
-                    )
-                )
-                count += 1
+            converted_items = [modality_snapshots.TeamSnapshotItem(**x) for x in items]
+            self.db.bulk_insert_mappings(
+                Team,
+                [
+                    {
+                        "team_id": item.id,
+                        "modality_id": item.modality_id,
+                        "course_id": item.course_id,
+                        "name": item.name,
+                        "created_at": item.created_at,
+                        "updated_at": item.updated_at,
+                    }
+                    for item in converted_items
+                ],
+            )
+            count += len(items)
 
-                for player in item.players:
-                    self.db.add(
-                        TeamPlayer(
-                            team_id=item.id,
-                            student_id=player,
-                        )
-                    )
-                    count += 1
+            self.db.bulk_insert_mappings(
+                TeamPlayer,
+                [
+                    {
+                        "team_id": item.id,
+                        "student_id": player,
+                    }
+                    for item in converted_items
+                    for player in item.players
+                ],
+            )
+            count += sum(len(item.players) for item in converted_items)
 
         elif category == "regulations":
-            for item in map(
-                lambda x: modality_snapshots.RegulationSnapshotItem(**x), items
-            ):
-                self.db.add(
-                    Regulation(
-                        id=item.id,
-                        title=item.title,
-                        description=item.description,
-                        file_url=item.file_url,
+            self.db.bulk_insert_mappings(
+                Regulation,
+                [
+                    {
+                        "id": item.id,
+                        "title": item.title,
+                        "description": item.description,
+                        "file_url": item.file_url,
+                    }
+                    for item in map(
+                        lambda x: modality_snapshots.RegulationSnapshotItem(**x), items
                     )
-                )
-                count += 1
+                ],
+            )
+            count += len(items)
 
         return count
 
@@ -315,52 +339,67 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
         count = 0
 
         if category == "tournaments":
-            for item in map(
-                lambda x: tournament_snapshots.TournamentSnapshotItem(**x), items
-            ):
-                self.db.add(
-                    Tournament(
-                        tournament_id=item.id,
-                        modality_id=item.modality_id,
-                        name=item.name,
-                        start_date=item.start_date,
-                        status=item.status,
-                        created_at=item.created_at,
-                        updated_at=item.updated_at,
-                        finished_at=item.finished_at,
+            self.db.bulk_insert_mappings(
+                Tournament,
+                [
+                    {
+                        "tournament_id": item.id,
+                        "modality_id": item.modality_id,
+                        "name": item.name,
+                        "start_date": item.start_date,
+                        "status": item.status,
+                        "created_at": item.created_at,
+                        "updated_at": item.updated_at,
+                        "finished_at": item.finished_at,
+                    }
+                    for item in map(
+                        lambda x: tournament_snapshots.TournamentSnapshotItem(**x),
+                        items,
                     )
-                )
-                count += 1
+                ],
+            )
+            count += len(items)
 
         elif category == "tournament_competitors":
-            for item in map(
-                lambda x: tournament_snapshots.TournamentCompetitorSnapshotItem(**x),
-                items,
-            ):
-                self.db.add(
-                    TournamentCompetitor(
-                        competitor_id=item.id,
-                        tournament_id=item.tournament_id,
-                        competitor_type=item.competitor_type,
-                        competitor_entity_id=item.competitor_entity_id,
-                        added_at=item.added_at,
+            self.db.bulk_insert_mappings(
+                TournamentCompetitor,
+                [
+                    {
+                        "competitor_id": item.id,
+                        "tournament_id": item.tournament_id,
+                        "competitor_type": item.competitor_type,
+                        "competitor_entity_id": item.competitor_entity_id,
+                        "added_at": item.added_at,
+                    }
+                    for item in map(
+                        lambda x: tournament_snapshots.TournamentCompetitorSnapshotItem(
+                            **x
+                        ),
+                        items,
                     )
-                )
-                count += 1
+                ],
+            )
+            count += len(items)
 
         elif category == "tournament_rankings":
-            for item in map(
-                lambda x: tournament_snapshots.TournamentRankingSnapshotItem(**x), items
-            ):
-                self.db.add(
-                    TournamentRanking(
-                        tournament_id=item.tournament_id,
-                        competitor_id=item.competitor_id,
-                        position=item.position,
-                        created_at=item.created_at,
+            self.db.bulk_insert_mappings(
+                TournamentRanking,
+                [
+                    {
+                        "tournament_id": item.tournament_id,
+                        "competitor_id": item.competitor_id,
+                        "position": item.position,
+                        "created_at": item.created_at,
+                    }
+                    for item in map(
+                        lambda x: tournament_snapshots.TournamentRankingPositionSnapshotItem(
+                            **x
+                        ),
+                        items,
                     )
-                )
-                count += 1
+                ],
+            )
+            count += len(items)
 
         return count
 
@@ -369,83 +408,101 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
         count = 0
 
         if category == "matches":
-            for item in map(lambda x: match_snapshots.MatchSnapshotItem(**x), items):
-                self.db.add(
-                    Match(
-                        match_id=item.match_id,
-                        tournament_id=item.tournament_id,
-                        location=item.location,
-                        status=item.status,
-                        start_time=item.start_time,
-                        created_at=item.created_at,
-                        updated_at=item.updated_at,
-                        deleted_at=item.deleted_at,
+            self.db.bulk_insert_mappings(
+                Match,
+                [
+                    {
+                        "match_id": item.match_id,
+                        "tournament_id": item.tournament_id,
+                        "location": item.location,
+                        "status": item.status,
+                        "start_time": item.start_time,
+                        "created_at": item.created_at,
+                        "updated_at": item.updated_at,
+                        "deleted_at": item.deleted_at,
+                    }
+                    for item in map(
+                        lambda x: match_snapshots.MatchSnapshotItem(**x), items
                     )
-                )
-                count += 1
+                ],
+            )
+            count += len(items)
 
         elif category == "match_participants":
-            for item in map(
-                lambda x: match_snapshots.MatchParticipantSnapshotItem(**x), items
-            ):
-                self.db.add(
-                    MatchParticipant(
-                        match_id=item.match_id,
-                        participant_id=item.participant_id,
-                        participant_type=item.participant_type,
-                        participant_entity_id=item.participant_entity_id,
-                        added_at=item.added_at,
-                        removed_at=item.removed_at,
+            self.db.bulk_insert_mappings(
+                MatchParticipant,
+                [
+                    {
+                        "match_id": item.match_id,
+                        "participant_id": item.participant_id,
+                        "participant_type": item.participant_type,
+                        "participant_entity_id": item.participant_entity_id,
+                        "added_at": item.added_at,
+                        "removed_at": item.removed_at,
+                    }
+                    for item in map(
+                        lambda x: match_snapshots.MatchParticipantSnapshotItem(**x),
+                        items,
                     )
-                )
-                count += 1
+                ],
+            )
+            count += len(items)
 
         elif category == "match_results":
-            for item in map(
-                lambda x: match_snapshots.MatchResultSnapshotItem(**x), items
-            ):
-                self.db.add(
-                    MatchResult(
-                        match_id=item.match_id,
-                        participant_id=item.participant_id,
-                        score=item.score,
-                        position=item.position,
-                        results_metadata=item.results_metadata,
-                        updated_at=item.updated_at,
+            self.db.bulk_insert_mappings(
+                MatchResult,
+                [
+                    {
+                        "match_id": item.match_id,
+                        "participant_id": item.participant_id,
+                        "score": item.score,
+                        "position": item.position,
+                        "results_metadata": item.results_metadata,
+                        "updated_at": item.updated_at,
+                    }
+                    for item in map(
+                        lambda x: match_snapshots.MatchResultSnapshotItem(**x), items
                     )
-                )
-                count += 1
+                ],
+            )
+            count += len(items)
 
         elif category == "match_lineups":
-            for item in map(
-                lambda x: match_snapshots.MatchLineupSnapshotItem(**x), items
-            ):
-                self.db.add(
-                    MatchLineup(
-                        match_id=item.match_id,
-                        team_id=item.team_id,
-                        player_id=item.player_id,
-                        jersey_number=item.jersey_number,
-                        is_starter=item.is_starter,
-                        assigned_at=item.assigned_at,
+            self.db.bulk_insert_mappings(
+                MatchLineup,
+                [
+                    {
+                        "match_id": item.match_id,
+                        "team_id": item.team_id,
+                        "player_id": item.player_id,
+                        "jersey_number": item.jersey_number,
+                        "is_starter": item.is_starter,
+                        "assigned_at": item.assigned_at,
+                    }
+                    for item in map(
+                        lambda x: match_snapshots.MatchLineupSnapshotItem(**x), items
                     )
-                )
-                count += 1
+                ],
+            )
+            count += len(items)
 
         elif category == "match_comments":
-            for item in map(
-                lambda x: match_snapshots.MatchCommentSnapshotItem(**x), items
-            ):
-                self.db.add(
-                    MatchComment(
-                        comment_id=item.comment_id,
-                        match_id=item.match_id,
-                        message=item.message,
-                        created_at=item.created_at,
-                        deleted_at=item.deleted_at,
+            self.db.bulk_insert_mappings(
+                MatchComment,
+                [
+                    {
+                        "comment_id": item.comment_id,
+                        "match_id": item.match_id,
+                        "message": item.message,
+                        "created_at": item.created_at,
+                        "deleted_at": item.deleted_at,
+                    }
+                    for item in map(
+                        lambda x: match_snapshots.MatchCommentSnapshotItem(**x), items
                     )
-                )
-                count += 1
+                ],
+            )
+            count += len(items)
 
         return count
 
@@ -454,30 +511,38 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
         count = 0
 
         if category == "general_rankings":
-            for item in map(
-                lambda x: ranking_snapshots.GeneralRankingSnapshotItem(**x), items
-            ):
-                self.db.add(
-                    GeneralRankings(
-                        course_id=item.course_id,
-                        points=item.points,
-                        tournaments_participated=item.tournaments_participated,
+            self.db.bulk_insert_mappings(
+                GeneralRankings,
+                [
+                    {
+                        "course_id": item.course_id,
+                        "points": item.points,
+                        "tournaments_participated": item.tournaments_participated,
+                    }
+                    for item in map(
+                        lambda x: ranking_snapshots.GeneralRankingSnapshotItem(**x),
+                        items,
                     )
-                )
-                count += 1
+                ],
+            )
+            count += len(items)
 
         elif category == "modality_rankings":
-            for item in map(
-                lambda x: ranking_snapshots.ModalityRankingSnapshotItem(**x), items
-            ):
-                self.db.add(
-                    ModalityRankings(
-                        modality_id=item.modality_id,
-                        course_id=item.course_id,
-                        points=item.points,
+            self.db.bulk_insert_mappings(
+                ModalityRankings,
+                [
+                    {
+                        "modality_id": item.modality_id,
+                        "course_id": item.course_id,
+                        "points": item.points,
+                    }
+                    for item in map(
+                        lambda x: ranking_snapshots.ModalityRankingSnapshotItem(**x),
+                        items,
                     )
-                )
-                count += 1
+                ],
+            )
+            count += len(items)
 
         return count
 

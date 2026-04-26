@@ -7,7 +7,6 @@ from .events import rabbitmq_service
 from .internal_controller import router as internal_router
 from .logger import logger
 from .outbox_publisher import outbox_publisher
-from .rebuild_controller import router as rebuild_router
 from .rebuild_controller_sse import router as sse_rebuild_router
 from .routes import router as api_router
 
@@ -39,10 +38,7 @@ Instrumentator().instrument(app).expose(app)  # Prometheus metrics endpoint
 # Include routers
 app.include_router(api_router)
 app.include_router(internal_router)
-app.include_router(rebuild_router)
-app.include_router(
-    sse_rebuild_router, prefix="/sse-rebuild"
-)  # Optional separate prefix for SSE rebuild endpoints
+app.include_router(sse_rebuild_router)
 
 
 @app.get("/")

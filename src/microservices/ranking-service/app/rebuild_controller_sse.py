@@ -26,7 +26,6 @@ from .models import (
     Course,
     Modality,
     ModalityType,
-    ModalityTypeEscalao,
     Tournament,
     TournamentCompetitor,
     TournamentResult,
@@ -128,50 +127,43 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
         count = 0
 
         if category == "courses":
-            for item in map(
-                lambda x: modality_snapshots.CourseSnapshotItem(**x), items
-            ):
-                self.db.add(
-                    Course(
-                        course_id=item.id,
+            self.db.bulk_save_objects(
+                [
+                    Course(course_id=item.id)
+                    for item in map(
+                        lambda x: modality_snapshots.CourseSnapshotItem(**x), items
                     )
-                )
-                count += 1
+                ]
+            )
+            count += len(items)
 
         elif category == "modality_types":
-            for item in map(
-                lambda x: modality_snapshots.ModalityTypeSnapshotItem(**x), items
-            ):
-                self.db.add(
+            self.db.bulk_save_objects(
+                [
                     ModalityType(
                         modality_type_id=item.id,
                     )
-                )
-                count += 1
-
-                for escalao in item.escaloes or []:
-                    self.db.add(
-                        ModalityTypeEscalao(
-                            modality_type_id=item.id,
-                            min_participants=escalao.min_participants,
-                            max_participants=escalao.max_participants,
-                            points=escalao.points,
-                            name=escalao.name,
-                        )
+                    for item in map(
+                        lambda x: modality_snapshots.ModalityTypeSnapshotItem(**x),
+                        items,
                     )
-                    count += 1
+                ]
+            )
+            count += len(items)
 
         elif category == "modalities":
-            for item in map(
-                lambda x: modality_snapshots.ModalitySnapshotItem(**x), items
-            ):
-                self.db.add(
+            self.db.bulk_save_objects(
+                [
                     Modality(
                         modality_id=item.id,
                         modality_type_id=item.modality_type_id,
                     )
-                )
-                count += 1
+                    for item in map(
+                        lambda x: modality_snapshots.ModalitySnapshotItem(**x), items
+                    )
+                ]
+            )
+            count += len(items)
 
         return count
 
@@ -180,47 +172,56 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
         count = 0
 
         if category == "tournaments":
-            for item in map(
-                lambda x: tournament_snapshots.TournamentSnapshotItem(**x), items
-            ):
-                self.db.add(
+            self.db.bulk_save_objects(
+                [
                     Tournament(
                         tournament_id=item.id,
                         modality_id=item.modality_id,
                         scoring_format_id=item.scoring_format_id,
                     )
-                )
-                count += 1
+                    for item in map(
+                        lambda x: tournament_snapshots.TournamentSnapshotItem(**x),
+                        items,
+                    )
+                ]
+            )
+            count += len(items)
 
         elif category == "competitors":
-            for item in map(
-                lambda x: tournament_snapshots.TournamentCompetitorSnapshotItem(**x),
-                items,
-            ):
-                self.db.add(
+            self.db.bulk_save_objects(
+                [
                     TournamentCompetitor(
                         tournament_id=item.tournament_id,
                         competitor_id=item.id,
                         competitor_course_id=item.competitor_course_id,
                     )
-                )
-                count += 1
+                    for item in map(
+                        lambda x: tournament_snapshots.TournamentCompetitorSnapshotItem(
+                            **x
+                        ),
+                        items,
+                    )
+                ]
+            )
+            count += len(items)
 
         elif category == "ranking_positions":
-            for item in map(
-                lambda x: tournament_snapshots.TournamentRankingPositionSnapshotItem(
-                    **x
-                ),
-                items,
-            ):
-                self.db.add(
+            self.db.bulk_save_objects(
+                [
                     TournamentResult(
                         tournament_id=item.tournament_id,
                         competitor_id=item.id,
                         position=item.position,
                     )
-                )
-                count += 1
+                    for item in map(
+                        lambda x: tournament_snapshots.TournamentRankingPositionSnapshotItem(
+                            **x
+                        ),
+                        items,
+                    )
+                ]
+            )
+            count += len(items)
 
         return count
 
@@ -245,7 +246,6 @@ async def post_rebuild_tasks(db: Session) -> int:
     count = 0
     try:
         count += compute_all_rankings(db)
-        print(f"Computed rankings for {count} competitors", flush=True)
         emit_ranking_computed_event(db, outbox_publisher)
         return count  # Return the count of processed records
     except Exception as exc:
