@@ -2,11 +2,13 @@
 API routes for Matches Service.
 """
 
+import json
 from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from taca_events.pydantic_schemas.matches import (
     LineupPlayerData,
@@ -66,7 +68,7 @@ def list_matches(
             raise HTTPException(status_code=400, detail=f"Invalid status: {status}")
 
     total = query.count()
-    matches = query.all()
+    matches = query.yield_per(100).all()  # Use yield_per for large datasets
 
     logger.info(
         "Matches listed successfully",
@@ -77,6 +79,49 @@ def list_matches(
         "matches": [m.to_dict(include_details=False) for m in matches],
         "total": total,
     }
+
+
+@router.get("/matches/stream")
+def stream_matches(
+    tournament_id: Optional[UUID] = Query(None),
+    status: Optional[str] = Query(None),
+    db: Session = Depends(get_db_session),
+):
+    """Stream matches with optional filters."""
+    logger.info(
+        "Streaming matches",
+        extra={
+            "tournament_id": str(tournament_id) if tournament_id else None,
+            "status": status,
+        },
+    )
+
+    query = db.query(Match)
+
+    if tournament_id:
+        query = query.filter(Match.tournament_id == tournament_id)
+
+    if status:
+        try:
+            status_enum = MatchStatus(status)
+            query = query.filter(Match.status == status_enum)
+        except ValueError:
+            logger.warning("Invalid status", extra={"status": status})
+            raise HTTPException(status_code=400, detail=f"Invalid status: {status}")
+
+    def match_generator():
+        for match in query.yield_per(100):
+            try:
+                json_data = json.dumps(match.to_dict(include_details=False))
+            except Exception as e:
+                logger.error(
+                    "Error serializing match",
+                    extra={"match_id": str(match.id), "error": str(e)},
+                )
+                break
+            yield f"data: {json_data}\n\n"
+
+    return StreamingResponse(match_generator(), media_type="application/json")
 
 
 @router.post("/matches", response_model=schemas.MatchResponse, status_code=201)

@@ -29,7 +29,7 @@ const TeamsListElement = ({ team, showModality=false }: { team: TeamListItem, sh
 
 const TeamsListComponent = ({
   teams,
-  showModality = false,
+  showModality = true,
 }: {
   teams:TeamListItem[],
   showModality?: boolean;

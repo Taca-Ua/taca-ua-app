@@ -3,6 +3,7 @@ Nucleos management service
 """
 
 from dataclasses import dataclass, field
+from typing import Optional
 
 from admin_api.clients.modalities_service import NucleoDTO, modalities_service_client
 
@@ -38,8 +39,8 @@ class NucleosService:
             ],
         )
 
-    def list_nucleos(self) -> list[Nucleo]:
-        answer_data = modalities_service_client.nucleos.list_nucleos()
+    def list_nucleos(self, admin_id: Optional[str] = None) -> list[Nucleo]:
+        answer_data = modalities_service_client.nucleos.list_nucleos(admin_id=admin_id)
         return [
             self._build_nucleo_from_modalities_answer(nucleo) for nucleo in answer_data
         ]

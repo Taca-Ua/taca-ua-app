@@ -111,7 +111,7 @@ class Match(Base):
             "location": self.location,
             "start_time": self.start_time.isoformat(),
             "status": self.status.value,
-            "participants": [p for p in self.participants],
+            "participants": [p.to_dict() for p in self.participants],
             "comments": (
                 [
                     {
@@ -166,6 +166,14 @@ class MatchParticipant(Base):
         return (
             f"<MatchParticipant match={self.match_id} participant={self.participant}>"
         )
+
+    def to_dict(self) -> dict:
+        return {
+            "match_id": str(self.match_id),
+            "participant": str(self.participant),
+            "score": self.score,
+            "position": self.position,
+        }
 
 
 class Lineup(Base):

@@ -157,13 +157,17 @@ class NucleoModalitiesService(BaseService):
         )
         super().__init__(base_url)
 
-    def list_nucleos(self) -> List[NucleoDTO]:
+    def list_nucleos(self, admin_id: Optional[str] = None) -> List[NucleoDTO]:
         """List all nucleos
 
         Returns:
             List[NucleoDTO]: List of NucleoDTO objects
         """
-        nucleos_data = self.get("/nucleos")
+        params = {}
+        if admin_id is not None:
+            params["admin_id"] = admin_id
+
+        nucleos_data = self.get("/nucleos", params=params)
         return [NucleoDTO(**nucleo) for nucleo in nucleos_data]
 
     def create_nucleo(self, name: str, abbreviation: str) -> NucleoDTO:

@@ -36,7 +36,6 @@ class CourseListCreateView(RoleRequiredMixin, APIView):
     def get(self, request: Request):
 
         # TODO: This is a temporary solution to handle the case where the request does not have roles (e.g., when using API clients that do not set roles). In the future, we should ensure that all requests have roles properly set.
-        request.roles = [] if hasattr(request, "roles") is False else request.roles
         courses = course_service.list_courses(
             admin_id=str(request.user_id) if "nucleo_admin" in request.roles else None
         )

@@ -2,6 +2,7 @@
 Base service class for HTTP communication with microservices
 """
 
+import json
 import logging
 from typing import Any, Dict, Optional
 
@@ -121,3 +122,62 @@ class BaseService:
     ) -> Dict[str, Any]:
         """Make DELETE request"""
         return self._make_request("DELETE", endpoint, params=params)
+
+    def stream_sse(
+        self,
+        endpoint: str,
+        params: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, Any]] = None,
+    ):
+        """
+        Stream Server-Sent Events (SSE) from a microservice endpoint.
+
+        Args:
+            endpoint: API endpoint (without base URL)
+            params: Query parameters
+            headers: Additional headers
+
+        Yields:
+            Each SSE event as a decoded string
+
+        Raises:
+            ValidationError: If the microservice returns an error
+        """
+        url = f"{self.base_url}{endpoint}"
+        if headers is None:
+            headers = {}
+        headers.setdefault("Accept", "text/event-stream")
+        try:
+            logger.info(f"Streaming SSE from {url}")
+            with requests.get(
+                url,
+                params=params,
+                headers=headers,
+                timeout=self.timeout,
+                stream=True,
+            ) as response:
+                if response.status_code >= 400:
+                    error_data = {}
+                    try:
+                        error_data = response.json()
+                    except Exception:
+                        error_data = {"detail": response.text}
+                    logger.error(
+                        f"Microservice SSE error: {response.status_code} - {error_data} - {self.base_url}{endpoint}"
+                    )
+                    raise ValidationError(error_data)
+                for line in response.iter_lines(decode_unicode=True):
+                    if line:
+                        if line.startswith("data:"):
+                            line = line[5:].strip()
+                            yield json.loads(line)
+
+        except requests.exceptions.Timeout:
+            logger.error(f"Timeout calling {url}")
+            raise ValidationError({"detail": "Microservice SSE request timed out"})
+        except requests.exceptions.ConnectionError:
+            logger.error(f"Connection error calling {url}")
+            raise ValidationError({"detail": "Cannot connect to microservice (SSE)"})
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Request error calling {url}: {str(e)}")
+            raise ValidationError({"detail": f"Request error: {str(e)}"})

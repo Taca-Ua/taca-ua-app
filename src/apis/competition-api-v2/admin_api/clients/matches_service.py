@@ -4,7 +4,7 @@ Service for communicating with matches-service microservice
 
 import os
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Generator, List, Optional
 from uuid import UUID
 
 from ..utils.base_service import BaseService
@@ -141,6 +141,62 @@ class MatchesService(BaseService):
 
         matches_data = self.get("/matches", params=params)
         matches = [MatchDTO(**match) for match in matches_data.get("matches", [])]
+        return matches
+
+    def list_matches_stream(
+        self,
+        tournament_id: Optional[UUID] = None,
+        team_id: Optional[UUID] = None,
+        athlete_id: Optional[UUID] = None,
+        date: Optional[str] = None,
+        date_from: Optional[str] = None,
+        date_to: Optional[str] = None,
+        status: Optional[str] = None,
+    ) -> Generator[MatchDTO, None, None]:
+        """
+        Stream matches with optional filters.
+
+        Args:
+            tournament_id: Filter by tournament
+            team_id: Filter by team participant
+            athlete_id: Filter by athlete participant
+            date: Filter by specific date (ISO format)
+            date_from: Filter by start date (ISO format)
+            date_to: Filter by end date (ISO format)
+            status: Filter by status (scheduled, in_progress, finished, cancelled)
+
+        Yields:
+            MatchDTO objects one by one as they are received from the stream
+        """
+        params = {}
+        if tournament_id is not None:
+            params["tournament_id"] = str(tournament_id)
+
+        for match_data in self.stream_sse("/matches/stream", params=params):
+            yield MatchDTO(**match_data)
+
+    def list_matches_lazy(
+        self,
+        tournament_id: Optional[UUID] = None,
+        team_id: Optional[UUID] = None,
+        athlete_id: Optional[UUID] = None,
+        date: Optional[str] = None,
+        date_from: Optional[str] = None,
+        date_to: Optional[str] = None,
+        status: Optional[str] = None,
+    ) -> List[MatchDTO]:
+        matches = []
+        for match in self.list_matches_stream(
+            tournament_id=tournament_id,
+            team_id=team_id,
+            athlete_id=athlete_id,
+            date=date,
+            date_from=date_from,
+            date_to=date_to,
+            status=status,
+        ):
+            matches.append(match)
+
         return matches
 
     def create_match(

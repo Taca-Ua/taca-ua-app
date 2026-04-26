@@ -34,7 +34,10 @@ from .service import nucleos_service
 )
 class NucleoListCreateView(RoleRequiredMixin, APIView):
     def get(self, request: Request):
-        nucleos = nucleos_service.list_nucleos()
+        print(request.user_id, flush=True)
+        nucleos = nucleos_service.list_nucleos(
+            admin_id=request.user_id if request.user else None
+        )
 
         # Serialize output data
         serializer = NucleosListSerializer(nucleos, many=True)

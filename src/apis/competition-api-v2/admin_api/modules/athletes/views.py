@@ -51,6 +51,7 @@ class AthleteListCreateView(RoleRequiredMixin, APIView):
                 if serializer.validated_data.get("team_id")
                 else None
             ),
+            admin_id=str(request.user_id) if "nucleo_admin" in request.roles else None,
         )
 
         serializer = AthleteListSerializer(all_students, many=True)

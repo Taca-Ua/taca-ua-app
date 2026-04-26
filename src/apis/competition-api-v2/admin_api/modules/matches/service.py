@@ -249,7 +249,7 @@ class MatchesService:
     ) -> List[Match]:
         """List matches, optionally filtered by tournament"""
 
-        matches_data = matches_service_client.list_matches(
+        matches_data = matches_service_client.list_matches_lazy(
             tournament_id=tournament_id, status=status
         )
 

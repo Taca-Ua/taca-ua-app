@@ -117,7 +117,7 @@ const TeamsTab = ({
   }
 
   return (
-    <TeamsListComponent teams={teams}/>
+    <TeamsListComponent teams={teams} showModality={false} />
   );
 }
 

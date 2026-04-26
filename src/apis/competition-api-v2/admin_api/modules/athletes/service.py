@@ -56,11 +56,15 @@ class AthletesService:
         )
 
     def list_athletes(
-        self, course_id: Optional[str] = None, team_id: Optional[str] = None
+        self,
+        course_id: Optional[str] = None,
+        team_id: Optional[str] = None,
+        admin_id: Optional[str] = None,
     ) -> List[Athlete]:
         athletes_data = modalities_service_client.students.list_students(
             course_id=course_id,
             team_id=team_id,
+            admin_id=admin_id,
         )
 
         return [
