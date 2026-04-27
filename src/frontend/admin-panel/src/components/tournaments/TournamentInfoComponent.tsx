@@ -1,5 +1,4 @@
 import { tournamentsApi, type TournamentDetail } from "../../api/tournaments";
-import { useNavigate } from "react-router-dom";
 import TournamentEditModal from "./TournamentEditModal";
 import TournamentFinishModal from "./TournamentFinishModal";
 import Button from "../utils/Button";
@@ -27,9 +26,11 @@ const getStatusText = (status: string) => {
 
 
 const TournamentInfoComponent = ({
-  tournamentState
+  tournamentState,
+  onDelete,
 }: {
   tournamentState: [TournamentDetail, React.Dispatch<React.SetStateAction<TournamentDetail | null>>]
+  onDelete?: () => void;
 }) => {
 
   const [tournament, setTournament] = tournamentState;
@@ -50,7 +51,7 @@ const TournamentInfoComponent = ({
     if (!tournament) return;
     try {
       await tournamentsApi.delete(tournament.id);
-      useNavigate()('/tournaments');
+      if (onDelete) onDelete();
     } catch (error) {
       console.error("Failed to delete tournament:", error);
     }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { tournamentsApi, type TournamentDetail } from '../../api/tournaments';
 import { type MatchListItem } from '../../api/matches';
@@ -10,10 +10,12 @@ import MatchCreateModal from '../../components/matches/MatchCreateModal';
 import Button from '../../components/utils/Button';
 import { useModal } from '../../contexts/ModalContext';
 import { useAuth } from '../../hooks/useAuth';
+import { navigateBack } from '../../utils';
 
 // Main component
 const TorneioDetails = () => {
   const tournamentId = useParams<{ id: string }>().id;
+  const navigate = useNavigate();
   const { pushModal } = useModal();
   const { isAdminGeneral } = useAuth();
 
@@ -24,7 +26,7 @@ const TorneioDetails = () => {
 
   // Determine where to navigate back to
   const handleBack = () => {
-    window.history.back();
+    navigateBack(navigate, '/torneios');
   };
 
   useEffect(() => {
@@ -72,7 +74,7 @@ const TorneioDetails = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <TournamentInfoComponent tournamentState={[tournament, setTournament]} />
+            <TournamentInfoComponent tournamentState={[tournament, setTournament]} onDelete={handleBack} />
 
             <div>
               <TournamentCompetitorsComponent tournamentState={[tournament, setTournament]}/>

@@ -2,27 +2,23 @@ import { useEffect, useState } from "react";
 import HelpTooltip from "../HelpTooltip";
 import { type CourseDetail, coursesApi } from "../../api/courses";
 import CourseEditModal from "./CourseEditModal";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
 
-const CourseDetailComponent = ( {courseId} : { courseId: string } ) => {
-  const navigate = useNavigate();
+const CourseDetailComponent = ( {courseId, onDelete} : { courseId: string, onDelete?: () => void } ) => {
   const { isAdminGeneral } = useAuth();
   const { pushModal } = useModal();
 
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const handleDelete = async () => {
-    try {
-      await coursesApi.delete(courseId);
-      navigate('/cursos');
-    } catch (error) {
+  const handleDelete = () => {
+    coursesApi.delete(courseId).then(() => {
+      if (onDelete) onDelete();
+    }).catch((error) => {
       console.error("Erro ao eliminar curso:", error);
-    } finally {
-    }
+    });
   };
 
   useEffect(() => {

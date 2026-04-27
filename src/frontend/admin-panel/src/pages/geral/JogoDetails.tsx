@@ -12,6 +12,7 @@ import Button from '../../components/utils/Button';
 import { useModal } from '../../contexts/ModalContext';
 import MatchTeamLineupModal from '../../components/matches/MatchTeamLineupModal';
 import { useAuth } from '../../hooks/useAuth';
+import { navigateBack } from '../../utils';
 
 // ==================== Private Components ====================
 
@@ -297,7 +298,7 @@ const JogoDetails = () => {
   const navigate  = useNavigate();
 
   const handleBack = () => {
-    window.history.back();
+    navigateBack(navigate, `/torneios/${match?.tournament_id || ''}`);
   };
 
   const fetchMatch = async () => {
