@@ -4,7 +4,7 @@ Keycloak Admin API service for managing admin users.
 
 import logging
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Dict, List, Optional, Set
 
 from django.conf import settings
 from keycloak import KeycloakAdmin, KeycloakError
@@ -101,6 +101,30 @@ class KeycloakService:
             ],
             enabled=admin_data["enabled"],
         )
+
+    def get_multiple_admins(
+        self, user_ids: Set[str]
+    ) -> Dict[str, KeycloakAdminUserDTO]:
+        """Retrieve multiple admin users from Keycloak by their IDs."""
+        admins = {}
+        for user in self.keycloak_admin.get_users():
+            if user["id"] in user_ids:
+                admins[user["id"]] = KeycloakAdminUserDTO(
+                    id=user["id"],
+                    username=user["username"],
+                    email=user["email"],
+                    first_name=user["firstName"],
+                    last_name=user["lastName"],
+                    roles=[
+                        role.get("name")
+                        for role in self.keycloak_admin.get_realm_roles_of_user(
+                            user["id"]
+                        )
+                    ],
+                    enabled=user["enabled"],
+                )
+
+        return admins
 
     def create_admin(
         self,

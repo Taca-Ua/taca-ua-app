@@ -268,7 +268,7 @@ def add_comment(request, match_id):
     match = matches_service.add_comment(
         match_id=match_id,
         comment_text=serializer.validated_data["message"],
-        admin_id=request.user_id if "nucleo_admin" in (request.roles or []) else None,
+        admin_id=request.user_id,
     )
 
     response_serializer = MatchDetailSerializer(match)

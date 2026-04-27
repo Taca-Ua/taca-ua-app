@@ -5,6 +5,7 @@ Matches management service
 from dataclasses import dataclass, field
 from typing import Dict, List
 
+from admin_api.clients.keycloak_service import keycloak_service_client
 from admin_api.clients.matches_service import MatchDTO, matches_service_client
 from admin_api.clients.modalities_service import (
     StudentDTO,
@@ -27,6 +28,7 @@ class Participant:
 class Comment:
     id: str
     message: str
+    author_name: str
     created_at: str
 
 
@@ -60,6 +62,96 @@ class Match:
 
 class MatchesService:
     """Service for managing matches"""
+
+    def _fill_lineup_players_info(
+        self,
+        matches_dto: List[MatchDTO],
+        matches_index: Dict[str, Match],
+        admin_id: str,
+    ) -> None:
+        """Helper method to fill lineup players info in matches in place"""
+        # build with lineups player info
+        all_player_ids = set()
+        for match_dto in matches_dto:
+            if not match_dto.lineups:
+                continue
+            for lineup in match_dto.lineups:
+                for player in lineup.lineup:
+                    all_player_ids.add(player.player_id)
+        players_data = modalities_service_client.students.get_students_by_ids(
+            list(all_player_ids)
+        )
+
+        teams_ids_i_am_allowed_to_see = [
+            team.id
+            for team in modalities_service_client.teams.list_teams(admin_id=admin_id)
+        ]
+
+        for match_dto in matches_dto:
+            matches_index[match_dto.id].lineups = []
+            if not match_dto.lineups:
+                continue
+            for lineup in match_dto.lineups:
+                lineup_players = []
+
+                participant = next(
+                    (
+                        p
+                        for p in matches_index[match_dto.id].participants
+                        if p.id == lineup.participant_id
+                    ),
+                    None,
+                )
+                if participant.entity_id not in teams_ids_i_am_allowed_to_see:
+                    matches_index[match_dto.id].lineups.append(
+                        Lineup(participant_id=lineup.participant_id, lineup=None)
+                    )
+                    continue
+
+                for player in lineup.lineup:
+                    player_data = players_data.get(player.player_id)
+                    if player_data:
+                        lineup_players.append(
+                            LineupPlayer(
+                                player_id=player.player_id,
+                                player_name=player_data.full_name,
+                                player_course=player_data.course.name,
+                                player_student_number=player_data.student_number,
+                                is_starter=player.is_starter,
+                                jersey_number=player.jersey_number,
+                            )
+                        )
+                matches_index[match_dto.id].lineups.append(
+                    Lineup(participant_id=lineup.participant_id, lineup=lineup_players)
+                )
+
+    def _fill_comments_info(
+        self, matches_dto: List[MatchDTO], matches_index: Dict[str, Match]
+    ) -> Dict[str, List[Comment]]:
+        """Helper method to fill comments info in matches in place"""
+        comments_ids = set()
+        for match_dto in matches_dto:
+            if match_dto.comments:
+                for comment in match_dto.comments:
+                    comments_ids.add(comment.created_by)
+        users_to_names = {
+            user_id: user.first_name + " " + user.last_name
+            for user_id, user in keycloak_service_client.get_multiple_admins(
+                comments_ids
+            ).items()
+        }
+        for match_dto in matches_dto:
+            if not match_dto.comments:
+                continue
+            matches_index[match_dto.id].comments = [
+                Comment(
+                    id=comment.id,
+                    message=comment.message,
+                    author_name=users_to_names.get(comment.created_by, "Unknown"),
+                    created_at=comment.created_at,
+                )
+                for comment in match_dto.comments
+            ]
 
     def _build_multiple_matches_from_dtos(
         self,
@@ -156,83 +248,15 @@ class MatchesService:
                 start_time=match_dto.start_time,
                 status=match_dto.status,
                 participants=participants,
-                comments=(
-                    [
-                        Comment(
-                            id=comment.id,
-                            message=comment.message,
-                            created_at=comment.created_at,
-                        )
-                        for comment in match_dto.comments
-                    ]
-                    if include_details and match_dto.comments
-                    else []
-                ),
+                comments=None,  # to be filled later if include_details is True
                 lineups=None,  # to be filled later if include_details is True
             )
             resp.append(resp_match)
             matches_index[match_dto.id] = resp_match
 
         if include_details:
-            # build with lineups player info
-            all_player_ids = set()
-            for match_dto in matches_dto:
-                if not match_dto.lineups:
-                    continue
-                for lineup in match_dto.lineups:
-                    for player in lineup.lineup:
-                        all_player_ids.add(player.player_id)
-            players_data = modalities_service_client.students.get_students_by_ids(
-                list(all_player_ids)
-            )
-
-            teams_ids_i_am_allowed_to_see = [
-                team.id
-                for team in modalities_service_client.teams.list_teams(
-                    admin_id=admin_id
-                )
-            ]
-
-            for match_dto in matches_dto:
-                matches_index[match_dto.id].lineups = []
-                if not match_dto.lineups:
-                    continue
-                for lineup in match_dto.lineups:
-                    lineup_players = []
-
-                    participant = next(
-                        (
-                            p
-                            for p in matches_index[match_dto.id].participants
-                            if p.id == lineup.participant_id
-                        ),
-                        None,
-                    )
-                    if participant.entity_id not in teams_ids_i_am_allowed_to_see:
-                        matches_index[match_dto.id].lineups.append(
-                            Lineup(participant_id=lineup.participant_id, lineup=None)
-                        )
-                        continue
-
-                    for player in lineup.lineup:
-                        player_data = players_data.get(player.player_id)
-                        if player_data:
-                            lineup_players.append(
-                                LineupPlayer(
-                                    player_id=player.player_id,
-                                    player_name=player_data.full_name,
-                                    player_course=player_data.course.name,
-                                    player_student_number=player_data.student_number,
-                                    is_starter=player.is_starter,
-                                    jersey_number=player.jersey_number,
-                                )
-                            )
-                    matches_index[match_dto.id].lineups.append(
-                        Lineup(
-                            participant_id=lineup.participant_id, lineup=lineup_players
-                        )
-                    )
-
+            self._fill_lineup_players_info(matches_dto, matches_index, admin_id)
+            self._fill_comments_info(matches_dto, matches_index)
         return resp
 
     def _build_match_from_dto(
@@ -350,7 +374,8 @@ class MatchesService:
         match_dto = matches_service_client.add_comment(
             match_id=match_id,
             message=comment_text,
-            created_by="00000000-0000-0000-0000-000000000000",  # Placeholder for commented_by
+            created_by=admin_id
+            or "00000000-0000-0000-0000-000000000000",  # Placeholder for created_by if admin_id is not provided
         )
         return self._build_match_from_dto(
             match_dto, include_details=True, admin_id=admin_id

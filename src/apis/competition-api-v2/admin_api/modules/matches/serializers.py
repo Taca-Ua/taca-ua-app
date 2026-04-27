@@ -21,6 +21,7 @@ class CommentListSerializer(serializers.Serializer):
 
     id = serializers.UUIDField()
     message = serializers.CharField()
+    author_name = serializers.CharField()
     created_at = serializers.DateTimeField()
 
 

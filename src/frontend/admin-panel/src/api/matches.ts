@@ -1,4 +1,3 @@
-import keycloak from '../lib/keycloak';
 import { apiClient } from './client';
 
 // Helper types
@@ -33,6 +32,7 @@ export interface MatchDetail extends MatchListItem {
   comments: {
     id: string;
     message: string;
+    author_name: string;
   }[];
   lineups: MatchLineup[];
 }

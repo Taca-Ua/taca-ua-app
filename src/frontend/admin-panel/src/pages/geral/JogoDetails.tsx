@@ -206,19 +206,19 @@ const CommentsSection = ({ match }: { match: MatchDetail }) => {
         {comments.map((comment) => (
           <div key={comment.id} className="p-4 bg-gray-50 rounded-lg">
             <div className="flex justify-between items-start mb-2">
-              {/* <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-teal-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
-                  {comment.created_by.charAt(0).toUpperCase()}
+                  {comment.author_name.charAt(0).toUpperCase()}
                 </div>
                 <div>
                   <p className="font-semibold text-sm text-gray-800">
-                    {comment.created_by}
+                    {comment.author_name}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  {/* <p className="text-xs text-gray-500">
                     {formatCommentDate(comment.created_at)}
-                  </p>
+                  </p> */}
                 </div>
-              </div> */}
+              </div>
               <div />
               <Button
                 onClick={() => handleDeleteComment(comment.id)}
