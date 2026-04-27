@@ -185,7 +185,7 @@ const CommentsSection = ({ match }: { match: MatchDetail }) => {
       setComments([ ...updatedMatch.comments ]);
     } catch (err) {
       console.error('Error adding comment:', err);
-      notify(err instanceof Error ? err.message : 'Não foi possível adicionar o comentário. Tente novamente.', 'error');
+      notify('Não foi possível adicionar o comentário. Tente novamente.', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -193,6 +193,9 @@ const CommentsSection = ({ match }: { match: MatchDetail }) => {
   const handleDeleteComment = async (commentId: string) => {
     matchesApi.deleteComment(match.id, commentId).then(() => {
       setComments(prev => prev.filter(c => c.id !== commentId));
+    }).catch(err => {
+      console.error('Error deleting comment:', err);
+      notify('Não foi possível eliminar o comentário. Tente novamente.', 'error');
     });
   };
 
@@ -223,6 +226,7 @@ const CommentsSection = ({ match }: { match: MatchDetail }) => {
               <Button
                 onClick={() => handleDeleteComment(comment.id)}
                 type="danger"
+                active={comment.can_edit}
                 confirmation={{
                   title: "Eliminar comentário",
                   message: "Tem a certeza que deseja eliminar este comentário?",

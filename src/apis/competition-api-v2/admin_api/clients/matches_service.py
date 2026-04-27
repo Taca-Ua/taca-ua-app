@@ -485,18 +485,24 @@ class MatchesService(BaseService):
         comments_data = self.get(f"/matches/{match_id}/comments")
         return [CommentDTO(**entry) for entry in comments_data]
 
-    def delete_comment(self, match_id: UUID, comment_id: UUID) -> Dict[str, Any]:
+    def delete_comment(
+        self, match_id: UUID, comment_id: UUID, admin_id_check: UUID = None
+    ) -> Dict[str, Any]:
         """
         Delete a comment.
 
         Args:
             match_id: Match UUID
             comment_id: Comment UUID
+            admin_id_check: Admin ID to check if they have permission to delete the comment (optional)
 
         Returns:
             Empty dict on success
         """
-        return self.delete(f"/matches/{match_id}/comments/{comment_id}")
+        params = {}
+        if admin_id_check is not None:
+            params["admin_id_check"] = str(admin_id_check)
+        return self.delete(f"/matches/{match_id}/comments/{comment_id}", params=params)
 
     # Batch result update
     def update_match_results(

@@ -284,7 +284,11 @@ def add_comment(request, match_id):
 @require_auth
 def delete_comment(request, match_id, comment_id):
     """Delete a comment"""
-    matches_service.delete_comment(match_id=match_id, comment_id=comment_id)
+    matches_service.delete_comment(
+        match_id=match_id,
+        comment_id=comment_id,
+        admin_id=request.user_id if "nucleo_admin" in (request.roles or []) else None,
+    )
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 

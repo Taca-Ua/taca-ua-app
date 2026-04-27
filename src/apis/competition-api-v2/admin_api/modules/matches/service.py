@@ -29,6 +29,7 @@ class Comment:
     id: str
     message: str
     author_name: str
+    can_edit: bool
     created_at: str
 
 
@@ -126,7 +127,10 @@ class MatchesService:
                 )
 
     def _fill_comments_info(
-        self, matches_dto: List[MatchDTO], matches_index: Dict[str, Match]
+        self,
+        matches_dto: List[MatchDTO],
+        matches_index: Dict[str, Match],
+        admin_id: str,
     ) -> Dict[str, List[Comment]]:
         """Helper method to fill comments info in matches in place"""
         comments_ids = set()
@@ -134,11 +138,11 @@ class MatchesService:
             if match_dto.comments:
                 for comment in match_dto.comments:
                     comments_ids.add(comment.created_by)
+
+        all_users = keycloak_service_client.get_multiple_admins(comments_ids)
         users_to_names = {
             user_id: user.first_name + " " + user.last_name
-            for user_id, user in keycloak_service_client.get_multiple_admins(
-                comments_ids
-            ).items()
+            for user_id, user in all_users.items()
         }
         for match_dto in matches_dto:
             if not match_dto.comments:
@@ -149,6 +153,11 @@ class MatchesService:
                     message=comment.message,
                     author_name=users_to_names.get(comment.created_by, "Unknown"),
                     created_at=comment.created_at,
+                    can_edit=(
+                        admin_id is None
+                        or comment.created_by == admin_id
+                        or "general_admin" in all_users.get(admin_id, {}).roles
+                    ),  # If admin_id is None, we can assume it's a superadmin who can edit all comments
                 )
                 for comment in match_dto.comments
             ]
@@ -256,7 +265,7 @@ class MatchesService:
 
         if include_details:
             self._fill_lineup_players_info(matches_dto, matches_index, admin_id)
-            self._fill_comments_info(matches_dto, matches_index)
+            self._fill_comments_info(matches_dto, matches_index, admin_id)
         return resp
 
     def _build_match_from_dto(
@@ -381,11 +390,14 @@ class MatchesService:
             match_dto, include_details=True, admin_id=admin_id
         )
 
-    def delete_comment(self, match_id: str, comment_id: str) -> Match:
+    def delete_comment(
+        self, match_id: str, comment_id: str, admin_id: str = None
+    ) -> None:
         """Delete a comment from a match"""
         matches_service_client.delete_comment(
             match_id=match_id,
             comment_id=comment_id,
+            admin_id_check=admin_id,
             # deleted_by="00000000-0000-0000-0000-000000000000",  # Placeholder for deleted_by
         )
         return

@@ -679,6 +679,9 @@ def add_comment(
 def delete_comment(
     match_id: UUID,
     comment_id: UUID,
+    admin_id_check: Optional[UUID] = Query(
+        None, description="Admin ID for permission check"
+    ),
     db: Session = Depends(get_db_session),
 ):
     """Delete a comment."""
@@ -702,6 +705,20 @@ def delete_comment(
 
     # Access the match before deletion for event data
     match = comment.match
+
+    if admin_id_check and comment.created_by != admin_id_check:
+        logger.warning(
+            "Unauthorized attempt to delete comment",
+            extra={
+                "match_id": str(match_id),
+                "comment_id": str(comment_id),
+                "attempted_by": str(admin_id_check),
+                "comment_author": str(comment.created_by),
+            },
+        )
+        raise HTTPException(
+            status_code=403, detail="Not authorized to delete this comment"
+        )
 
     # Emit event before deletion
     event = MatchCommentDeletedV1.create(
