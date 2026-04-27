@@ -54,6 +54,17 @@ class MatchParticipantSnapshotItem(SnapshotBase):
     added_at: Optional[datetime] = None
     removed_at: Optional[datetime] = None
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert MatchParticipantSnapshotItem to dict for JSON serialization."""
+        return {
+            "participant_id": self.participant_id,
+            "match_id": self.match_id,
+            "participant_type": self.participant_type,
+            "participant_entity_id": self.participant_entity_id,
+            "added_at": self.added_at.isoformat() if self.added_at else None,
+            "removed_at": self.removed_at.isoformat() if self.removed_at else None,
+        }
+
 
 class MatchResultSnapshotItem(SnapshotBase):
     """A single match-result record as serialised by the snapshot endpoint."""
@@ -64,6 +75,17 @@ class MatchResultSnapshotItem(SnapshotBase):
     position: Optional[int] = None
     results_metadata: Optional[Dict[str, Any]] = None
     updated_at: Optional[datetime] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert MatchResultSnapshotItem to dict for JSON serialization."""
+        return {
+            "match_id": self.match_id,
+            "participant_id": self.participant_id,
+            "score": self.score,
+            "position": self.position,
+            "results_metadata": self.results_metadata,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
 
 
 class MatchLineupSnapshotItem(SnapshotBase):
@@ -76,6 +98,17 @@ class MatchLineupSnapshotItem(SnapshotBase):
     is_starter: bool = False
     assigned_at: Optional[datetime] = None
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert MatchLineupSnapshotItem to dict for JSON serialization."""
+        return {
+            "match_id": self.match_id,
+            "team_id": self.team_id,
+            "player_id": self.player_id,
+            "jersey_number": self.jersey_number,
+            "is_starter": self.is_starter,
+            "assigned_at": self.assigned_at.isoformat() if self.assigned_at else None,
+        }
+
 
 class MatchCommentSnapshotItem(SnapshotBase):
     """A single match comment as serialised by the snapshot endpoint."""
@@ -85,6 +118,16 @@ class MatchCommentSnapshotItem(SnapshotBase):
     message: str
     created_at: Optional[datetime] = None
     deleted_at: Optional[datetime] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert MatchCommentSnapshotItem to dict for JSON serialization."""
+        return {
+            "comment_id": self.comment_id,
+            "match_id": self.match_id,
+            "message": self.message,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "deleted_at": self.deleted_at.isoformat() if self.deleted_at else None,
+        }
 
 
 # ---------------------------------------------------------------------------

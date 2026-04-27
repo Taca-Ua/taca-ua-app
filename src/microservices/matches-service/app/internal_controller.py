@@ -222,6 +222,69 @@ def stream_snapshot(
                 records_emitted += len(batch)
                 batch.clear()
 
+            # Stream participants in batches
+            batch = []
+            for participant in db.query(MatchParticipant).yield_per(batch_size):
+                batch.append(participant.to_snapshot().to_dict())
+                if len(batch) >= batch_size:
+                    yield f"data: {json.dumps({'type': 'batch', 'items': batch, 'category': 'participants'})}\n\n"
+                    records_emitted += len(batch)
+                    batch.clear()
+
+            if batch:
+                yield f"data: {json.dumps({'type': 'batch', 'items': batch, 'category': 'participants'})}\n\n"
+                records_emitted += len(batch)
+                batch.clear()
+
+            # Stream lineups in batches
+            batch = []
+            for lineup in db.query(Lineup).yield_per(batch_size):
+                batch.append(lineup.to_snapshot().to_dict())
+                if len(batch) >= batch_size:
+                    yield f"data: {json.dumps({'type': 'batch', 'items': batch, 'category': 'lineups'})}\n\n"
+                    records_emitted += len(batch)
+                    batch.clear()
+
+            if batch:
+                yield f"data: {json.dumps({'type': 'batch', 'items': batch, 'category': 'lineups'})}\n\n"
+                records_emitted += len(batch)
+                batch.clear()
+
+            # Stream comments in batches
+            batch = []
+            for comment in db.query(Comment).yield_per(batch_size):
+                batch.append(comment.to_snapshot().to_dict())
+                if len(batch) >= batch_size:
+                    yield f"data: {json.dumps({'type': 'batch', 'items': batch, 'category': 'comments'})}\n\n"
+                    records_emitted += len(batch)
+                    batch.clear()
+
+            if batch:
+                yield f"data: {json.dumps({'type': 'batch', 'items': batch, 'category': 'comments'})}\n\n"
+                records_emitted += len(batch)
+                batch.clear()
+
+            # Stream results in batches
+            batch = []
+            for participant in (
+                db.query(MatchParticipant)
+                .filter(
+                    (MatchParticipant.score != None)  # noqa: E711
+                    | (MatchParticipant.position != None)  # noqa: E711
+                )
+                .yield_per(batch_size)
+            ):
+                batch.append(participant.to_result_snapshot().to_dict())
+                if len(batch) >= batch_size:
+                    yield f"data: {json.dumps({'type': 'batch', 'items': batch, 'category': 'results'})}\n\n"
+                    records_emitted += len(batch)
+                    batch.clear()
+
+            if batch:
+                yield f"data: {json.dumps({'type': 'batch', 'items': batch, 'category': 'results'})}\n\n"
+                records_emitted += len(batch)
+                batch.clear()
+
             yield f"data: {json.dumps({'type': 'complete', 'records': records_emitted})}\n\n"
             logger.info(
                 "snapshot_stream_completed",

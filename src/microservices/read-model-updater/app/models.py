@@ -379,23 +379,23 @@ class Match(Base):
 
 
 class MatchParticipant(Base):
-    """Participant in a match - populated from match.participant events."""
+    """Participant in a match - populated from match.participant events.
+
+    participant_id is now the competitor_id from TournamentCompetitor.
+    """
 
     __tablename__ = "match_participants"
     __table_args__ = (
         Index("ix_match_participants_match_id", "match_id"),
-        Index("ix_match_participants_entity_id", "participant_entity_id"),
         UniqueConstraint("match_id", "participant_id", name="uq_match_participant"),
         {"schema": "public_read"},
     )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     match_id = Column(UUID(as_uuid=True), nullable=False)
-    participant_id = Column(UUID(as_uuid=True), nullable=False, unique=True)
-    participant_type = Column(SQLEnum(ParticipantType), nullable=False)
-    participant_entity_id = Column(
+    participant_id = Column(
         UUID(as_uuid=True), nullable=False
-    )  # team_id or student_id
+    )  # competitor_id from TournamentCompetitor
     removed_at = Column(DateTime, nullable=True)
 
     # Relationships

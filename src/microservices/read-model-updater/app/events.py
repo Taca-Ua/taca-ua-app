@@ -843,7 +843,8 @@ def handle_tournament_competitor_deleted(event: TournamentCompetitorDeletedV1):
 def handle_match_created(event: MatchCreatedV1):
     """Handle match created event.
 
-    Creates the Match record and any participants included in the event.
+    Creates the Match record and any participants (competitors) included in the event.
+    participant_id is now the competitor_id from the tournament.
     """
     match_id = event.data.match_id
     logger.info("event_received", event_type="match.created", match_id=str(match_id))
@@ -863,8 +864,6 @@ def handle_match_created(event: MatchCreatedV1):
             participant = MatchParticipant(
                 match_id=match_id,
                 participant_id=participant_data.participant_id,
-                participant_type=ParticipantType(participant_data.participant_type),
-                participant_entity_id=participant_data.participant_entity_id,
             )
             db.add(participant)
 
@@ -932,7 +931,10 @@ def handle_match_deleted(event: MatchDeletedV1):
 
 @rabbitmq_service.event_handler(MatchParticipantAddedV1)
 def handle_match_participant_added(event: MatchParticipantAddedV1):
-    """Handle match participant added event."""
+    """Handle match participant added event.
+
+    participant_id is the competitor_id from the tournament.
+    """
     match_id = event.data.match_id
     participant_id = event.data.participant_id
     logger.info(
@@ -946,8 +948,6 @@ def handle_match_participant_added(event: MatchParticipantAddedV1):
         participant = MatchParticipant(
             match_id=match_id,
             participant_id=participant_id,
-            participant_type=ParticipantType(event.data.participant_type),
-            participant_entity_id=event.data.participant_entity_id,
         )
         db.add(participant)
         db.flush()

@@ -269,28 +269,35 @@ def rebuild_match_projection(session: Session, match_id: UUID) -> None:
         return
 
     # Get participants with their details
+    # participant_id is now the competitor_id from TournamentCompetitor
     participants_data = (
-        session.query(MatchParticipant)
+        session.query(MatchParticipant, TournamentCompetitor)
+        .join(
+            TournamentCompetitor,
+            MatchParticipant.participant_id == TournamentCompetitor.competitor_id,
+        )
         .filter(
             MatchParticipant.match_id == match_id,
             MatchParticipant.removed_at.is_(None),
+            TournamentCompetitor.deleted_at.is_(None),
         )
         .all()
     )
 
     participants = []
-    for p in participants_data:
-        if p.participant_type == "team":
+    for p, competitor in participants_data:
+        # Get the entity name based on competitor type
+        if competitor.competitor_type.value == "team":
             entity = (
                 session.query(Team)
-                .filter(Team.team_id == p.participant_entity_id)
+                .filter(Team.team_id == competitor.competitor_entity_id)
                 .first()
             )
             participant_name = entity.name if entity else "Unknown Team"
         else:  # athlete/student
             entity = (
                 session.query(Student)
-                .filter(Student.student_id == p.participant_entity_id)
+                .filter(Student.student_id == competitor.competitor_entity_id)
                 .first()
             )
             participant_name = entity.full_name if entity else "Unknown Athlete"
@@ -298,8 +305,9 @@ def rebuild_match_projection(session: Session, match_id: UUID) -> None:
         participants.append(
             {
                 "participant_id": str(p.participant_id),
-                "participant_type": p.participant_type.value,
-                "participant_entity_id": str(p.participant_entity_id),
+                "competitor_id": str(competitor.competitor_id),
+                "participant_type": competitor.competitor_type.value,
+                "competitor_entity_id": str(competitor.competitor_entity_id),
                 "participant_name": participant_name,
             }
         )
@@ -423,7 +431,10 @@ def rebuild_tournament_standings(session: Session, tournament_id: UUID) -> None:
             competitor_name = entity.full_name if entity else "Unknown Athlete"
 
         # Calculate statistics
-        stats = _calculate_competitor_stats(session, competitor_entity_id, match_ids)
+        # Pass competitor_id which is now the participant_id in match participants
+        stats = _calculate_competitor_stats(
+            session, competitor.competitor_id, match_ids
+        )
 
         # Build projection row
         projection = TournamentStandingsView(
@@ -449,10 +460,13 @@ def rebuild_tournament_standings(session: Session, tournament_id: UUID) -> None:
 
 
 def _calculate_competitor_stats(
-    session: Session, competitor_entity_id: UUID, match_ids: List[UUID]
+    session: Session, competitor_id: UUID, match_ids: List[UUID]
 ) -> dict:
     """
     Calculate statistics for a competitor based on completed matches.
+
+    competitor_id is the competitor_id from TournamentCompetitor which
+    is also the participant_id in MatchParticipant.
     """
     if not match_ids:
         return {
@@ -465,6 +479,7 @@ def _calculate_competitor_stats(
         }
 
     # Get all match participations
+    # participant_id is now the competitor_id
     participations = (
         session.query(MatchParticipant, MatchResult)
         .join(
@@ -472,7 +487,7 @@ def _calculate_competitor_stats(
             MatchParticipant.participant_id == MatchResult.participant_id,
         )
         .filter(
-            MatchParticipant.participant_entity_id == competitor_entity_id,
+            MatchParticipant.participant_id == competitor_id,
             MatchParticipant.match_id.in_(match_ids),
             MatchParticipant.removed_at.is_(None),
         )

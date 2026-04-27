@@ -354,7 +354,7 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
             )
             count += len(items)
 
-        elif category == "tournament_competitors":
+        elif category == "competitors":
             self.db.bulk_insert_mappings(
                 TournamentCompetitor,
                 [
@@ -362,8 +362,8 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
                         "competitor_id": item.id,
                         "tournament_id": item.tournament_id,
                         "competitor_type": item.competitor_type,
-                        "competitor_entity_id": item.competitor_entity_id,
-                        "added_at": item.added_at,
+                        "competitor_entity_id": item.team_id or item.athlete_id,
+                        # "added_at": item.created_at,
                     }
                     for item in map(
                         lambda x: tournament_snapshots.TournamentCompetitorSnapshotItem(
@@ -402,15 +402,13 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
             )
             count += len(items)
 
-        elif category == "match_participants":
+        elif category == "participants":
             self.db.bulk_insert_mappings(
                 MatchParticipant,
                 [
                     {
                         "match_id": item.match_id,
                         "participant_id": item.participant_id,
-                        "participant_type": item.participant_type,
-                        "participant_entity_id": item.participant_entity_id,
                         "added_at": item.added_at,
                         "removed_at": item.removed_at,
                     }
@@ -422,7 +420,7 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
             )
             count += len(items)
 
-        elif category == "match_results":
+        elif category == "results":
             self.db.bulk_insert_mappings(
                 MatchResult,
                 [
@@ -441,7 +439,7 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
             )
             count += len(items)
 
-        elif category == "match_comments":
+        elif category == "comments":
             self.db.bulk_insert_mappings(
                 MatchComment,
                 [

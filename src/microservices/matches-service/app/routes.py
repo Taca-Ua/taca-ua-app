@@ -175,8 +175,8 @@ def create_match(
             participants=[
                 MatchParticipantData(
                     participant_id=p.participant,
-                    participant_type=None,  # Not needed since we have the competitor ID
-                    participant_entity_id=None,  # Not needed since we have the competitor ID
+                    # participant_type=None,  # Not needed since we have the competitor ID
+                    # participant_entity_id=None,  # Not needed since we have the competitor ID
                 )
                 for p in match.participants
             ],

@@ -189,6 +189,26 @@ class MatchParticipant(Base):
             "position": self.position,
         }
 
+    def to_snapshot(self) -> matches.MatchParticipantSnapshotItem:
+        """Convert MatchParticipant to snapshot item for internal API"""
+        return matches.MatchParticipantSnapshotItem(
+            participant_id=str(self.participant),
+            match_id=str(self.match_id),
+            participant_type=None,  # No longer tracked in domain model
+            participant_entity_id=None,  # No longer tracked in domain model
+            added_at=None,  # Domain model doesn't track this
+            removed_at=None,
+        )
+
+    def to_result_snapshot(self) -> matches.MatchResultSnapshotItem:
+        """Convert MatchParticipant to MatchResult snapshot item for internal API"""
+        return matches.MatchResultSnapshotItem(
+            participant_id=str(self.participant),
+            match_id=str(self.match_id),
+            score=self.score,
+            position=self.position,
+        )
+
 
 class Lineup(Base):
     """
@@ -236,6 +256,17 @@ class Lineup(Base):
     def __repr__(self) -> str:
         return f"<Lineup match={self.match_id} participant={self.participant} player={self.player_id}>"
 
+    def to_snapshot(self) -> matches.MatchLineupSnapshotItem:
+        """Convert Lineup to snapshot item for internal API"""
+        return matches.MatchLineupSnapshotItem(
+            match_id=str(self.match_id),
+            participant_id=str(self.participant),
+            player_id=str(self.player_id),
+            jersey_number=self.jersey_number,
+            is_starter=self.is_starter,
+            created_at=self.created_at,
+        )
+
 
 class Comment(Base):
     """
@@ -264,6 +295,19 @@ class Comment(Base):
         nullable=False,
         default=lambda: datetime.now(timezone.utc),
     )
+
+    def __repr__(self) -> str:
+        return f"<Comment {self.id} on match={self.match_id}>"
+
+    def to_snapshot(self) -> matches.MatchCommentSnapshotItem:
+        """Convert Comment to snapshot item for internal API"""
+        return matches.MatchCommentSnapshotItem(
+            comment_id=str(self.id),
+            match_id=str(self.match_id),
+            message=self.message,
+            created_by=str(self.created_by),
+            created_at=self.created_at,
+        )
 
 
 # OutboxEvent model — schema-bound via shared factory

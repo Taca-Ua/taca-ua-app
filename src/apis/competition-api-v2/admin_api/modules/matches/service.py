@@ -293,7 +293,6 @@ class MatchesService:
             location=location,
             start_time=start_time,
             status=status,
-            updated_by="00000000-0000-0000-0000-000000000000",  # Placeholder for updated_by
         )
         return self._build_match_from_dto(
             match_dto, include_details=True, admin_id=admin_id
