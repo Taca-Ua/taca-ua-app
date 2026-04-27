@@ -166,12 +166,14 @@ const MatchTeamLineupModal = ({
                           participant: lineup.participant_id,
                           players: selectedIds.map((player_id) => player_id.id),
                         })
-                        .then(() =>
+                        .then((updatedMatch) =>{
+                          setMatch(updatedMatch);
+                          lineup.lineup = updatedMatch.lineups.find(l => l.participant_id === lineup.participant_id)?.lineup || [];
                           notify(
                             "Convocatória actualizada com sucesso",
                             "success",
-                          ),
-                        )
+                          )
+                        })
                         .catch((error) => {
                           notify(
                             "Não foi possível actualizar a convocatória. Tente novamente.",

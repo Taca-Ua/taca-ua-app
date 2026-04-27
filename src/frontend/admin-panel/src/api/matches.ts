@@ -108,8 +108,8 @@ export const matchesApi = {
     return apiClient.post<MatchDetail>(`/matches/${matchId}/results/`, data);
   },
 
-  async assignLineup(matchId: string, data: LineupAssign): Promise<JSON> {
-    return apiClient.post<JSON>(`/matches/${matchId}/lineups/`, data);
+  async assignLineup(matchId: string, data: LineupAssign): Promise<MatchDetail> {
+    return apiClient.post<MatchDetail>(`/matches/${matchId}/lineups/`, data);
   },
 
   async updateLineup(matchId: string, data: LineupUpdate): Promise<MatchDetail> {
