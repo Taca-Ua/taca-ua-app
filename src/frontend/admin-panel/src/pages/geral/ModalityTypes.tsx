@@ -67,7 +67,7 @@ const ModalityTypes = () => {
                 type="button"
                 className="w-full text-left p-4 bg-gray-100 rounded-md hover:bg-gray-200 flex justify-between items-center transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
                 onClick={() => pushModal(
-                  <ModalityTypeInfoModal modalityTypeId={format.id}/>
+                  <ModalityTypeInfoModal modalityTypeId={format.id} onDelete={() => setModalityTypes((prev) => prev.filter((f) => f.id !== format.id))}/>
                 )}
               >
                 <div>

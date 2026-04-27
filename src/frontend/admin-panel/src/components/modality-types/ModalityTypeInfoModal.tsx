@@ -7,9 +7,11 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
 
 const ModalityTypeInfoModal = ( {
-    modalityTypeId
+    modalityTypeId,
+    onDelete
 } : {
     modalityTypeId: string;
+    onDelete?: () => void;
 } ) => {
     const { notify } = useNotification();
     const { popModal, pushModal } = useModal();
@@ -43,9 +45,10 @@ const ModalityTypeInfoModal = ( {
       if (!modalityType) return;
         modalityTypesApi.delete(modalityType.id).then(() => {
             notify("Formato eliminado com sucesso!", "success");
+            if (onDelete) onDelete();
         }).catch((err) => {
             console.error("Erro ao eliminar formato:", err);
-            alert("Ocorreu um erro ao eliminar o formato. Por favor, tente novamente.");
+            notify("Não foi possível eliminar o formato. Tente novamente.", "error");
         }).finally(() => {
             popModal();
         });
