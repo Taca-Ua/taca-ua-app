@@ -1,5 +1,5 @@
 import keycloak from '../lib/keycloak';
-import { apiClient } from './client2';
+import { apiClient } from './client';
 
 // Helper types
 export interface MatchLineup {

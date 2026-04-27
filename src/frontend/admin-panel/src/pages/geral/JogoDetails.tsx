@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useNotification } from '../../contexts/NotificationProvider';
 import {
   matchesApi,
@@ -294,6 +294,7 @@ const JogoDetails = () => {
   const [loading, setLoading] = useState(true);
   const { notify } = useNotification();
   const { isAdminGeneral } = useAuth();
+  const navigate  = useNavigate();
 
   const handleBack = () => {
     window.history.back();
@@ -377,6 +378,14 @@ const JogoDetails = () => {
         <div className="mb-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-800">Detalhes do Jogo</h1>
 
+          <div className='flex gap-4'>
+          <Button
+            onClick={() => navigate(`/torneios/${match.tournament_id}`)}
+            type='secondary'
+            padding='px-6 py-3'
+          >
+            Voltar para Torneio
+          </Button>
           <Button
             onClick={handleBack}
             type='secondary'
@@ -384,6 +393,7 @@ const JogoDetails = () => {
           >
             Voltar
           </Button>
+          </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">

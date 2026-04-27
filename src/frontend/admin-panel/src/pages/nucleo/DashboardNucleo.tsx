@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { studentsApi } from '../../api/members';
+import { athletesApi } from '../../api/athletes';
 import { teamsApi } from '../../api/teams';
 import { matchesApi, type MatchListItem } from '../../api/matches';
 import { useAuth } from '../../hooks/useAuth';
@@ -30,8 +30,8 @@ function DashboardNucleo() {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const [students, teams, matches] = await Promise.all([
-          studentsApi.getAll(),
+        const [athletes, teams, matches] = await Promise.all([
+          athletesApi.getAll(),
           teamsApi.getAll(),
           matchesApi.getAll(),
         ]);
@@ -40,7 +40,7 @@ function DashboardNucleo() {
         const upcomingMatches = matches.filter(m => m.status === 'scheduled').length;
 
         setStats({
-          members: students.length,
+          members: athletes.length,
           teams: teams.length,
           matches: matches.length,
           upcomingMatches,

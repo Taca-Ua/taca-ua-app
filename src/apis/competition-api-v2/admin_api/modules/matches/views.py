@@ -115,7 +115,6 @@ class MatchDetailView(RoleRequiredMixin, APIView):
     def get(self, request, match_id):
         """Get match details"""
 
-        print(request.roles, request.user_id, flush=True)
         match = matches_service.get_match(
             match_id=match_id,
             admin_id=(

@@ -2,6 +2,7 @@
 Season management views
 """
 
+from admin_api.utils.decorators import RoleRequiredMixin, require_auth
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
@@ -9,8 +10,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ..decorators import RoleRequiredMixin, require_auth
-from ..serializers.seasons import SeasonCreateSerializer, SeasonListSerializer
+from .serializers import SeasonCreateSerializer, SeasonListSerializer
 
 
 @extend_schema_view(

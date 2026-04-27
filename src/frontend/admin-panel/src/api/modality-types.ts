@@ -1,4 +1,4 @@
-import { apiClient } from './client2';
+import { apiClient } from './client';
 
 // Types
 export interface EscalaoRow {

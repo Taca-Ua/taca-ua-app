@@ -34,7 +34,6 @@ from .service import nucleos_service
 )
 class NucleoListCreateView(RoleRequiredMixin, APIView):
     def get(self, request: Request):
-        print(request.user_id, flush=True)
         nucleos = nucleos_service.list_nucleos(
             admin_id=request.user_id if "nucleo_admin" in request.roles else None
         )

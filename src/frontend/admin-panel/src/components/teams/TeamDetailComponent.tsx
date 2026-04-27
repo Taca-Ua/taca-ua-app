@@ -5,7 +5,7 @@ import TeamEditModal from "./TeamEditModal";
 import ChooseMultipleModal, {
   type GenericElement,
 } from "../utils/costum_menus/ChoseMultipleModal";
-import { studentsApi, type Student } from "../../api/members";
+import { athletesApi, type AthleteListItem } from "../../api/athletes";
 import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
 
@@ -14,7 +14,7 @@ const TeamDetailComponent = ({ teamId }: { teamId: string }) => {
   const [loading, setLoading] = useState(true);
   const { pushModal } = useModal();
 
-  const [avaiblePlayers, setAvailablePlayers] = useState<Student[]>([]);
+  const [avaiblePlayers, setAvailablePlayers] = useState<AthleteListItem[]>([]);
 
   useEffect(() => {
     setLoading(true);
@@ -35,7 +35,7 @@ const TeamDetailComponent = ({ teamId }: { teamId: string }) => {
   useEffect(() => {
     const fetchAvailablePlayers = async () => {
       try {
-        const data = await studentsApi.getAll();
+        const data = await athletesApi.getAll();
         setAvailablePlayers(data);
       } catch (error) {
         console.error("Error fetching available players:", error);
