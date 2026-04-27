@@ -8,7 +8,6 @@ All models are now imported from the shared taca_models package.
 """
 
 import enum
-from datetime import datetime
 
 from sqlalchemy import JSON, Boolean, Column, Date, DateTime
 from sqlalchemy import Enum as SQLEnum
@@ -72,11 +71,6 @@ class Nucleo(Base):
     nucleo_id = Column(UUID(as_uuid=True), primary_key=True)
     name = Column(String, nullable=False)
     abbreviation = Column(String, nullable=False)
-
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
     deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
@@ -97,11 +91,6 @@ class Course(Base):
     nucleo_id = Column(UUID(as_uuid=True), nullable=False)
     name = Column(String, nullable=False)
     abbreviation = Column(String, nullable=False)
-
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
     deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
@@ -135,11 +124,6 @@ class ModalityType(Base):
     name = Column(String, nullable=False)
     description = Column(Text, nullable=False)
     escaloes = Column(JSON, nullable=False)  # Array of escalao definitions
-
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
     deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
@@ -160,11 +144,6 @@ class Modality(Base):
     modality_id = Column(UUID(as_uuid=True), primary_key=True)
     modality_type_id = Column(UUID(as_uuid=True), nullable=False)
     name = Column(String, nullable=True)
-
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
     deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
@@ -202,11 +181,6 @@ class Student(Base):
     student_number = Column(String, nullable=False, unique=True)
     full_name = Column(String, nullable=False)
     is_member = Column(Boolean, nullable=False, default=False)
-
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
     deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
@@ -224,27 +198,6 @@ class Student(Base):
     )
 
 
-class Staff(Base):
-    """Staff member information - populated from modalities service events."""
-
-    __tablename__ = "staff"
-    __table_args__ = (
-        UniqueConstraint("staff_number", name="uq_staff_number"),
-        {"schema": "public_read"},
-    )
-
-    staff_id = Column(UUID(as_uuid=True), primary_key=True)
-    full_name = Column(String, nullable=False)
-    staff_number = Column(String, nullable=False, unique=True)
-    contact = Column(String, nullable=False)
-
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
-    deleted_at = Column(DateTime, nullable=True)
-
-
 class Team(Base):
     """Team information - populated from modalities service events."""
 
@@ -255,11 +208,6 @@ class Team(Base):
     modality_id = Column(UUID(as_uuid=True), nullable=False)
     course_id = Column(UUID(as_uuid=True), nullable=False)
     name = Column(String, nullable=False)
-
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
     deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
@@ -303,8 +251,6 @@ class TeamPlayer(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     team_id = Column(UUID(as_uuid=True), nullable=False)
     student_id = Column(UUID(as_uuid=True), nullable=False)
-
-    added_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     removed_at = Column(DateTime, nullable=True)
 
     # Relationships
@@ -333,11 +279,6 @@ class Tournament(Base):
     name = Column(String, nullable=False)
     start_date = Column(Date, nullable=False)
     status = Column(String, nullable=False)
-
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
     deleted_at = Column(DateTime, nullable=True)
     finished_at = Column(DateTime, nullable=True)
 
@@ -381,8 +322,6 @@ class TournamentCompetitor(Base):
     competitor_entity_id = Column(
         UUID(as_uuid=True), nullable=False
     )  # team_id or student_id
-
-    added_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
@@ -391,34 +330,6 @@ class TournamentCompetitor(Base):
         primaryjoin="TournamentCompetitor.tournament_id == Tournament.tournament_id",
         foreign_keys=[tournament_id],
         back_populates="competitors",
-    )
-
-
-class TournamentRanking(Base):
-    """Final ranking entries for a finished tournament - populated from tournament.finished event."""
-
-    __tablename__ = "tournament_rankings"
-    __table_args__ = (
-        Index("ix_tournament_rankings_tournament_id", "tournament_id"),
-        Index("ix_tournament_rankings_position", "tournament_id", "position"),
-        UniqueConstraint(
-            "tournament_id", "competitor_id", name="uq_tournament_ranking"
-        ),
-        {"schema": "public_read"},
-    )
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    tournament_id = Column(UUID(as_uuid=True), nullable=False)
-    competitor_id = Column(UUID(as_uuid=True), nullable=False)
-    position = Column(Integer, nullable=False)
-
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-
-    # Relationships
-    tournament = relationship(
-        "Tournament",
-        primaryjoin="TournamentRanking.tournament_id == Tournament.tournament_id",
-        foreign_keys=[tournament_id],
     )
 
 
@@ -438,11 +349,6 @@ class Match(Base):
     location = Column(String, nullable=False)
     status = Column(SQLEnum(MatchStatus), nullable=False)
     start_time = Column(DateTime, nullable=False)
-
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
     deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
@@ -462,12 +368,6 @@ class Match(Base):
         "MatchResult",
         primaryjoin="Match.match_id == MatchResult.match_id",
         foreign_keys="[MatchResult.match_id]",
-        back_populates="match",
-    )
-    lineups = relationship(
-        "MatchLineup",
-        primaryjoin="Match.match_id == MatchLineup.match_id",
-        foreign_keys="[MatchLineup.match_id]",
         back_populates="match",
     )
     comments = relationship(
@@ -496,8 +396,6 @@ class MatchParticipant(Base):
     participant_entity_id = Column(
         UUID(as_uuid=True), nullable=False
     )  # team_id or student_id
-
-    added_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     removed_at = Column(DateTime, nullable=True)
 
     # Relationships
@@ -534,10 +432,6 @@ class MatchResult(Base):
     position = Column(Integer, nullable=True)
     results_metadata = Column(JSON, nullable=True)
 
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
-
     # Relationships
     match = relationship(
         "Match",
@@ -553,35 +447,6 @@ class MatchResult(Base):
     )
 
 
-class MatchLineup(Base):
-    """Lineup for a team in a match - populated from match.lineup.assigned events."""
-
-    __tablename__ = "match_lineups"
-    __table_args__ = (
-        Index("ix_match_lineups_match_id", "match_id"),
-        Index("ix_match_lineups_team_id", "team_id"),
-        UniqueConstraint("match_id", "team_id", "player_id", name="uq_match_lineup"),
-        {"schema": "public_read"},
-    )
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    match_id = Column(UUID(as_uuid=True), nullable=False)
-    team_id = Column(UUID(as_uuid=True), nullable=False)
-    player_id = Column(UUID(as_uuid=True), nullable=False)
-    jersey_number = Column(Integer, nullable=False)
-    is_starter = Column(Boolean, nullable=False, default=True)
-
-    assigned_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-
-    # Relationships
-    match = relationship(
-        "Match",
-        primaryjoin="MatchLineup.match_id == Match.match_id",
-        foreign_keys=[match_id],
-        back_populates="lineups",
-    )
-
-
 class MatchComment(Base):
     """Comment on a match - populated from match.comment events."""
 
@@ -594,8 +459,6 @@ class MatchComment(Base):
     comment_id = Column(UUID(as_uuid=True), primary_key=True)
     match_id = Column(UUID(as_uuid=True), nullable=False)
     message = Column(Text, nullable=False)
-
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
@@ -653,16 +516,13 @@ __all__ = [
     "ModalityType",
     "Modality",
     "Student",
-    "Staff",
     "Team",
     "TeamPlayer",
     "Tournament",
     "TournamentCompetitor",
-    "TournamentRanking",
     "Match",
     "MatchParticipant",
     "MatchResult",
-    "MatchLineup",
     "MatchComment",
     "Regulation",
     # Materialized Views

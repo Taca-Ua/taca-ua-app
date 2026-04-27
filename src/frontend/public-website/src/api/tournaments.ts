@@ -11,7 +11,6 @@ export interface TournamentDetail {
   modality_type_name: string;
   competitor_count: number;
   match_count: number;
-  updated_at: string;
 }
 
 export interface TournamentDetailList {
@@ -42,7 +41,6 @@ export interface TournamentStanding {
   total_score: number;
   rank: number | null;
   statistics_metadata: Record<string, any> | null;
-  updated_at: string;
 }
 
 export interface TournamentStandingsList {

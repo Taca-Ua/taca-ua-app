@@ -41,8 +41,6 @@ class TeamDetail(BaseModel):
     # Statistics
     player_count: int = Field(..., ge=0, description="Number of players in the team")
 
-    updated_at: datetime = Field(..., description="Last update timestamp")
-
 
 class TeamDetailList(BaseModel):
     """Schema for paginated list of team details."""
@@ -78,8 +76,6 @@ class StudentDetail(BaseModel):
 
     # Statistics
     team_count: int = Field(..., ge=0, description="Number of teams the student is in")
-
-    updated_at: datetime = Field(..., description="Last update timestamp")
 
 
 class StudentDetailList(BaseModel):
@@ -117,8 +113,6 @@ class TournamentDetail(BaseModel):
     match_count: int = Field(
         ..., ge=0, description="Number of matches in the tournament"
     )
-
-    updated_at: datetime = Field(..., description="Last update timestamp")
 
 
 class TournamentDetailList(BaseModel):
@@ -165,8 +159,6 @@ class MatchDetail(BaseModel):
     )
     comment_count: int = Field(..., ge=0, description="Number of comments on the match")
 
-    updated_at: datetime = Field(..., description="Last update timestamp")
-
 
 class MatchDetailList(BaseModel):
     """Schema for paginated list of match details."""
@@ -204,8 +196,6 @@ class TournamentStanding(BaseModel):
     statistics_metadata: Optional[dict[str, Any]] = Field(
         None, description="Additional statistics metadata"
     )
-
-    updated_at: datetime = Field(..., description="Last update timestamp")
 
 
 class TournamentStandingsList(BaseModel):
@@ -264,8 +254,6 @@ class GeneralRanking(BaseModel):
         ..., ge=0, description="Number of tournaments participated"
     )
 
-    updated_at: datetime = Field(..., description="Last update timestamp")
-
 
 class GeneralRankingList(BaseModel):
     """Schema for list of general rankings."""
@@ -286,7 +274,6 @@ class RegulationPublic(BaseModel):
     title: str = Field(..., description="Regulation title")
     description: Optional[str] = Field(None, description="Optional description")
     file_url: str = Field(..., description="URL to the PDF file")
-    created_at: datetime = Field(..., description="Creation timestamp")
 
 
 # ==================== ModalityRankingView Schemas ====================
@@ -320,8 +307,6 @@ class ModalityRanking(BaseModel):
     rank: Optional[int] = Field(
         None, ge=1, description="Position in the ranking within the modality"
     )
-
-    updated_at: datetime = Field(..., description="Last update timestamp")
 
 
 class ModalityRankingList(BaseModel):

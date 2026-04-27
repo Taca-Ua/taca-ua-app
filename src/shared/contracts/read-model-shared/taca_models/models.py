@@ -64,10 +64,6 @@ class TeamDetailView(Base):
     # Player count
     player_count = Column(Integer, nullable=False, default=0)
 
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
-
 
 class StudentDetailView(Base):
     """
@@ -100,10 +96,6 @@ class StudentDetailView(Base):
     # Team count
     team_count = Column(Integer, nullable=False, default=0)
 
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
-
 
 class TournamentDetailView(Base):
     """
@@ -133,10 +125,6 @@ class TournamentDetailView(Base):
     # Statistics
     competitor_count = Column(Integer, nullable=False, default=0)
     match_count = Column(Integer, nullable=False, default=0)
-
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
 
 
 class MatchDetailView(Base):
@@ -176,10 +164,6 @@ class MatchDetailView(Base):
     participant_count = Column(Integer, nullable=False, default=0)
     comment_count = Column(Integer, nullable=False, default=0)
 
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
-
 
 class TournamentStandingsView(Base):
     """
@@ -214,10 +198,6 @@ class TournamentStandingsView(Base):
 
     # Additional metadata
     statistics_metadata = Column(JSON, nullable=True)
-
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
 
 
 class GeneralRankingView(Base):
@@ -256,10 +236,6 @@ class GeneralRankingView(Base):
     # Metadata
     tournaments_participated = Column(Integer, nullable=False, default=0)
 
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
-
 
 class ModalityRankingView(Base):
     """
@@ -295,10 +271,6 @@ class ModalityRankingView(Base):
     # Rankings
     points = Column(Integer, nullable=False, default=0)
     rank = Column(Integer, nullable=True)
-
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
 
 
 # ==================== Shared Operational Tables ====================

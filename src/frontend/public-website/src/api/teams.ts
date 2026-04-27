@@ -14,7 +14,6 @@ export interface TeamDetail {
   modality_type_id: string;
   modality_type_name: string;
   player_count: number;
-  updated_at: string;
 }
 
 export interface TeamDetailList {

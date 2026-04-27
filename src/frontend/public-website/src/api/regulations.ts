@@ -5,7 +5,6 @@ export interface Regulation {
   title: string;
   description?: string;
   file_url: string;
-  created_at: string;
 }
 
 export async function getRegulations(search?: string): Promise<Regulation[]> {

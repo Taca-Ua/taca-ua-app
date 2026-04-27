@@ -33,7 +33,6 @@ from .models import (
     Match,
     MatchComment,
     MatchDetailView,
-    MatchLineup,
     MatchParticipant,
     MatchResult,
     Modality,
@@ -41,7 +40,6 @@ from .models import (
     ModalityType,
     Nucleo,
     Regulation,
-    Staff,
     Student,
     StudentDetailView,
     Team,
@@ -50,7 +48,6 @@ from .models import (
     Tournament,
     TournamentCompetitor,
     TournamentDetailView,
-    TournamentRanking,
     TournamentStandingsView,
 )
 from .utils import (
@@ -98,17 +95,14 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
         self.db.query(StudentDetailView).delete()
         self.db.query(TeamDetailView).delete()
         self.db.query(MatchComment).delete()
-        self.db.query(MatchLineup).delete()
         self.db.query(MatchResult).delete()
         self.db.query(MatchParticipant).delete()
         self.db.query(Match).delete()
         self.db.query(TournamentCompetitor).delete()
-        self.db.query(TournamentRanking).delete()
         self.db.query(Tournament).delete()
         self.db.query(TeamPlayer).delete()
         self.db.query(Team).delete()
         self.db.query(Student).delete()
-        self.db.query(Staff).delete()
         self.db.query(Modality).delete()
         self.db.query(ModalityType).delete()
         self.db.query(Course).delete()
@@ -381,26 +375,6 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
             )
             count += len(items)
 
-        elif category == "tournament_rankings":
-            self.db.bulk_insert_mappings(
-                TournamentRanking,
-                [
-                    {
-                        "tournament_id": item.tournament_id,
-                        "competitor_id": item.competitor_id,
-                        "position": item.position,
-                        "created_at": item.created_at,
-                    }
-                    for item in map(
-                        lambda x: tournament_snapshots.TournamentRankingPositionSnapshotItem(
-                            **x
-                        ),
-                        items,
-                    )
-                ],
-            )
-            count += len(items)
-
         return count
 
     def _process_matches_batch(self, category: str, items: List[dict]) -> int:
@@ -462,25 +436,6 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
                     }
                     for item in map(
                         lambda x: match_snapshots.MatchResultSnapshotItem(**x), items
-                    )
-                ],
-            )
-            count += len(items)
-
-        elif category == "match_lineups":
-            self.db.bulk_insert_mappings(
-                MatchLineup,
-                [
-                    {
-                        "match_id": item.match_id,
-                        "team_id": item.team_id,
-                        "player_id": item.player_id,
-                        "jersey_number": item.jersey_number,
-                        "is_starter": item.is_starter,
-                        "assigned_at": item.assigned_at,
-                    }
-                    for item in map(
-                        lambda x: match_snapshots.MatchLineupSnapshotItem(**x), items
                     )
                 ],
             )
@@ -634,7 +589,6 @@ async def run_post_rebuild_tasks(db_session: Session) -> int:
         ("public_read.team_players", "id"),
         ("public_read.match_participants", "id"),
         ("public_read.match_results", "id"),
-        ("public_read.match_lineups", "id"),
         ("public_read.mv_tournament_standings", "id"),
         ("public_read.mv_general_ranking", "id"),
         ("public_read.general_rankings", "id"),

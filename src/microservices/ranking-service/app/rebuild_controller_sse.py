@@ -26,6 +26,7 @@ from .models import (
     Course,
     Modality,
     ModalityType,
+    ModalityTypeEscalao,
     Tournament,
     TournamentCompetitor,
     TournamentResult,
@@ -138,15 +139,30 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
             count += len(items)
 
         elif category == "modality_types":
+            transformed_items = [
+                modality_snapshots.ModalityTypeSnapshotItem(**x) for x in items
+            ]
             self.db.bulk_save_objects(
                 [
                     ModalityType(
                         modality_type_id=item.id,
                     )
-                    for item in map(
-                        lambda x: modality_snapshots.ModalityTypeSnapshotItem(**x),
-                        items,
+                    for item in transformed_items
+                ]
+            )
+            count += len(items)
+
+            self.db.bulk_save_objects(
+                [
+                    ModalityTypeEscalao(
+                        modality_type_id=item.id,
+                        name=escalao.name,
+                        min_participants=escalao.min_participants,
+                        max_participants=escalao.max_participants,
+                        points=escalao.points,
                     )
+                    for item in transformed_items
+                    for escalao in item.escaloes
                 ]
             )
             count += len(items)
@@ -210,7 +226,7 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
                 [
                     TournamentResult(
                         tournament_id=item.tournament_id,
-                        competitor_id=item.id,
+                        competitor_id=item.competitor_id,
                         position=item.position,
                     )
                     for item in map(
@@ -244,9 +260,11 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
 async def post_rebuild_tasks(db: Session) -> int:
     """Example post-rebuild task: compute rankings after rebuild."""
     count = 0
+    print("Starting post-rebuild tasks: computing rankings...", flush=True)
     try:
         count += compute_all_rankings(db)
         emit_ranking_computed_event(db, outbox_publisher)
+        db.commit()
         return count  # Return the count of processed records
     except Exception as exc:
         logger.error("post_rebuild_tasks_failed", error=str(exc))

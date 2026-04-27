@@ -5,7 +5,6 @@ These functions query core tables and update materialized views.
 They should be called after core table updates (from events or snapshot rebuilds).
 """
 
-from datetime import datetime
 from typing import Dict, List
 from uuid import UUID
 
@@ -95,7 +94,6 @@ def rebuild_team_projection(session: Session, team_id: UUID) -> None:
         modality_type_id=modality_type.modality_type_id if modality_type else None,
         modality_type_name=modality_type.name if modality_type else "",
         player_count=player_count,
-        updated_at=datetime.utcnow(),
     )
 
     # UPSERT (merge = deterministic projection rebuild)
@@ -159,7 +157,6 @@ def rebuild_student_projection(session: Session, student_id: UUID) -> None:
         nucleo_name=nucleo.name if nucleo else "",
         nucleo_abbreviation=nucleo.abbreviation if nucleo else "",
         team_count=team_count,
-        updated_at=datetime.utcnow(),
     )
 
     # UPSERT (merge = deterministic projection rebuild)
@@ -233,7 +230,6 @@ def rebuild_tournament_projection(session: Session, tournament_id: UUID) -> None
         modality_type_name=modality_type.name if modality_type else "",
         competitor_count=competitor_count,
         match_count=match_count,
-        updated_at=datetime.utcnow(),
     )
 
     # UPSERT (merge = deterministic projection rebuild)
@@ -358,7 +354,6 @@ def rebuild_match_projection(session: Session, match_id: UUID) -> None:
         results=results if results else None,
         participant_count=len(participants),
         comment_count=comment_count,
-        updated_at=datetime.utcnow(),
     )
 
     # UPSERT (merge = deterministic projection rebuild)
@@ -444,7 +439,6 @@ def rebuild_tournament_standings(session: Session, tournament_id: UUID) -> None:
             total_score=stats["total_score"],
             rank=None,  # Will be calculated after all competitors are inserted
             statistics_metadata=stats.get("metadata"),
-            updated_at=datetime.utcnow(),
         )
 
         # UPSERT (merge = deterministic projection rebuild)
@@ -536,7 +530,6 @@ def _update_tournament_ranks(session: Session, tournament_id: UUID) -> None:
     # Assign ranks
     for rank, standing in enumerate(standings, start=1):
         standing.rank = rank
-        standing.updated_at = datetime.utcnow()
 
 
 # ==================== Ranking Views ====================

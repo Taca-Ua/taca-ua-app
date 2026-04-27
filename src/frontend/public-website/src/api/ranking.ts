@@ -11,7 +11,6 @@ export interface GeneralRanking {
   points: number;
   rank: number | null;
   tournaments_participated: number;
-  updated_at: string;
 }
 
 export interface GeneralRankingList {
@@ -51,7 +50,6 @@ export interface ModalityRanking {
   nucleo_abbreviation: string;
   points: number;
   rank: number | null;
-  updated_at: string;
 }
 
 export interface ModalityRankingList {

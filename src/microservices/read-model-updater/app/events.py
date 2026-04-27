@@ -9,7 +9,7 @@ import uuid
 from datetime import date, datetime, timezone
 from typing import Any
 
-from taca_events.pydantic_schemas import (  # Nucleo; Course; Modality Type; Modality; Student; Staff; Team; Tournament; Match; Ranking
+from taca_events.pydantic_schemas import (  # Nucleo; Course; Modality Type; Modality; Student; Team; Tournament; Match; Ranking
     CourseCreatedV1,
     CourseDeletedV1,
     CourseUpdatedV1,
@@ -17,7 +17,6 @@ from taca_events.pydantic_schemas import (  # Nucleo; Course; Modality Type; Mod
     MatchCommentDeletedV1,
     MatchCreatedV1,
     MatchDeletedV1,
-    MatchLineupAssignedV1,
     MatchParticipantAddedV1,
     MatchParticipantRemovedV1,
     MatchResultUpdatedV1,
@@ -32,9 +31,6 @@ from taca_events.pydantic_schemas import (  # Nucleo; Course; Modality Type; Mod
     NucleoDeletedV1,
     NucleoUpdatedV1,
     RankingComputedV1,
-    StaffCreatedV1,
-    StaffDeletedV1,
-    StaffUpdatedV1,
     StudentCreatedV1,
     StudentDeletedV1,
     StudentUpdatedV1,
@@ -64,7 +60,6 @@ from .models import (
     GeneralRankings,
     Match,
     MatchComment,
-    MatchLineup,
     MatchParticipant,
     MatchResult,
     MatchStatus,
@@ -73,13 +68,11 @@ from .models import (
     ModalityType,
     Nucleo,
     ParticipantType,
-    Staff,
     Student,
     Team,
     TeamPlayer,
     Tournament,
     TournamentCompetitor,
-    TournamentRanking,
 )
 from .utils import (
     rebuild_all_students_for_course,
@@ -232,7 +225,6 @@ def handle_nucleo_updated(event: NucleoUpdatedV1):
             nucleo.name = event.data.name
         if event.data.abbreviation is not None:
             nucleo.abbreviation = event.data.abbreviation
-        nucleo.updated_at = datetime.utcnow()
 
         # Rebuild affected projections
         db.flush()
@@ -292,7 +284,6 @@ def handle_course_updated(event: CourseUpdatedV1):
             course.abbreviation = event.data.abbreviation
         if event.data.nucleo_id is not None:
             course.nucleo_id = event.data.nucleo_id
-        course.updated_at = datetime.utcnow()
 
         # Rebuild affected projections
         db.flush()
@@ -380,8 +371,6 @@ def handle_modality_type_updated(event: ModalityTypeUpdatedV1):
                 for e in event.data.escaloes
             ]
 
-        modality_type.updated_at = datetime.utcnow()
-
 
 @rabbitmq_service.event_handler(ModalityTypeDeletedV1)
 def handle_modality_type_deleted(event: ModalityTypeDeletedV1):
@@ -446,7 +435,6 @@ def handle_modality_updated(event: ModalityUpdatedV1):
             modality.name = event.data.name
         if event.data.modality_type_id is not None:
             modality.modality_type_id = event.data.modality_type_id
-        modality.updated_at = datetime.utcnow()
         db.flush()
         # Rebuild affected projections
         rebuild_all_teams_for_modality(db, modality_id)
@@ -516,7 +504,6 @@ def handle_student_updated(event: StudentUpdatedV1):
             student.student_number = event.data.student_number
         if event.data.is_member is not None:
             student.is_member = event.data.is_member
-        student.updated_at = datetime.utcnow()
         db.flush()
         rebuild_student_projection(db, student_id)
 
@@ -538,59 +525,6 @@ def handle_student_deleted(event: StudentDeletedV1):
 
         db.flush()
         rebuild_student_projection(db, student_id)
-
-
-# ==================== Staff Events ====================
-
-
-@rabbitmq_service.event_handler(StaffCreatedV1)
-def handle_staff_created(event: StaffCreatedV1):
-    """Handle staff created event."""
-    staff_id = event.data.staff_id
-    logger.info("event_received", event_type="staff.created", staff_id=str(staff_id))
-
-    with get_db() as db:
-        staff = Staff(
-            staff_id=staff_id,
-            full_name=event.data.full_name,
-            staff_number=event.data.staff_number,
-            contact=event.data.contact,
-        )
-        db.add(staff)
-
-
-@rabbitmq_service.event_handler(StaffUpdatedV1)
-def handle_staff_updated(event: StaffUpdatedV1):
-    """Handle staff updated event."""
-    staff_id = event.data.staff_id
-    logger.info("event_received", event_type="staff.updated", staff_id=str(staff_id))
-
-    with get_db() as db:
-        staff = db.query(Staff).filter(Staff.staff_id == staff_id).first()
-        if not staff:
-            logger.warning("staff_not_found", staff_id=str(staff_id))
-            return
-        if event.data.full_name is not None:
-            staff.full_name = event.data.full_name
-        if event.data.staff_number is not None:
-            staff.staff_number = event.data.staff_number
-        if event.data.contact is not None:
-            staff.contact = event.data.contact
-        staff.updated_at = datetime.utcnow()
-
-
-@rabbitmq_service.event_handler(StaffDeletedV1)
-def handle_staff_deleted(event: StaffDeletedV1):
-    """Handle staff deleted event."""
-    staff_id = event.data.staff_id
-    logger.info("event_received", event_type="staff.deleted", staff_id=str(staff_id))
-
-    with get_db() as db:
-        staff = db.query(Staff).filter(Staff.staff_id == staff_id).first()
-        if not staff:
-            logger.warning("staff_not_found", staff_id=str(staff_id))
-            return
-        staff.deleted_at = datetime.utcnow()
 
 
 # ==================== Team Events ====================
@@ -631,7 +565,6 @@ def handle_team_updated(event: TeamUpdatedV1):
             team.modality_id = event.data.modality_id
         if event.data.course_id is not None:
             team.course_id = event.data.course_id
-        team.updated_at = datetime.utcnow()
         db.flush()
         rebuild_team_projection(db, team_id)
 
@@ -766,7 +699,6 @@ def handle_tournament_updated(event: TournamentUpdatedV1):
             tournament.start_date = _parse_date(event.data.start_date)
         if event.data.status is not None:
             tournament.status = event.data.status
-        tournament.updated_at = datetime.utcnow()
         db.flush()
         rebuild_tournament_projection(db, tournament_id)
 
@@ -832,29 +764,12 @@ def handle_tournament_finished(event: TournamentFinishedV1):
         now = datetime.utcnow()
         tournament.status = "finished"
         tournament.finished_at = now
-        tournament.updated_at = now
         db.flush()
 
-        # Delete existing ranking entries for this tournament (if any)
-        db.query(TournamentRanking).filter(
-            TournamentRanking.tournament_id == tournament_id
-        ).delete()
-
-        # Create new ranking entries
-        for entry in ranking_entries:
-            ranking = TournamentRanking(
-                tournament_id=tournament_id,
-                competitor_id=entry.competitor_id,
-                position=entry.position,
-                created_at=now,
-            )
-            db.add(ranking)
-
-        db.flush()
         rebuild_tournament_projection(db, tournament_id)
 
         logger.info(
-            "tournament_rankings_stored",
+            "tournament_finished",
             tournament_id=str(tournament_id),
             ranking_entries_count=len(ranking_entries),
         )
@@ -984,7 +899,6 @@ def handle_match_updated(event: MatchUpdatedV1):
             ]:
                 db.flush()
                 rebuild_tournament_standings(db, match.tournament_id)
-        match.updated_at = datetime.utcnow()
         db.flush()
         rebuild_match_projection(db, match_id)
 
@@ -1104,7 +1018,6 @@ def handle_match_result_updated(event: MatchResultUpdatedV1):
                 existing.score = result_entry.score
                 existing.position = result_entry.position
                 existing.results_metadata = result_entry.results_metadata
-                existing.updated_at = datetime.utcnow()
             else:
                 result = MatchResult(
                     match_id=match_id,
@@ -1121,47 +1034,6 @@ def handle_match_result_updated(event: MatchResultUpdatedV1):
         if match:
             rebuild_match_projection(db, match_id)
             rebuild_tournament_standings(db, match.tournament_id)
-
-
-@rabbitmq_service.event_handler(MatchLineupAssignedV1)
-def handle_match_lineup_assigned(event: MatchLineupAssignedV1):
-    """Handle match lineup assigned event.
-
-    Upserts MatchLineup rows for each player in the lineup.
-    """
-    match_id = event.data.match_id
-    team_id = event.data.team_id
-    logger.info(
-        "event_received",
-        event_type="match.lineup.assigned",
-        match_id=str(match_id),
-        team_id=str(team_id),
-    )
-
-    with get_db() as db:
-        for player_entry in event.data.lineup:
-            player_id = player_entry.player_id
-            existing = (
-                db.query(MatchLineup)
-                .filter(
-                    MatchLineup.match_id == match_id,
-                    MatchLineup.team_id == team_id,
-                    MatchLineup.player_id == player_id,
-                )
-                .first()
-            )
-            if existing:
-                existing.jersey_number = player_entry.jersey_number
-                existing.is_starter = player_entry.is_starter
-            else:
-                lineup_entry = MatchLineup(
-                    match_id=match_id,
-                    team_id=team_id,
-                    player_id=player_id,
-                    jersey_number=player_entry.jersey_number,
-                    is_starter=player_entry.is_starter,
-                )
-                db.add(lineup_entry)
 
 
 @rabbitmq_service.event_handler(MatchCommentAddedV1)

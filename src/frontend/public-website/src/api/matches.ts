@@ -13,7 +13,6 @@ export interface MatchDetail {
   results: Array<Record<string, any>> | null;
   participant_count: number;
   comment_count: number;
-  updated_at: string;
 }
 
 export interface MatchDetailList {
