@@ -72,7 +72,6 @@ def get_snapshot(
                 id=str(t.id),
                 modality_id=str(t.modality_id),
                 name=t.name,
-                season_id=str(t.season_id) if t.season_id else None,
                 scoring_format_id=(
                     str(t.scoring_format_id) if t.scoring_format_id else None
                 ),

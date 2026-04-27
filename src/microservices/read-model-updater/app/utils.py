@@ -224,7 +224,6 @@ def rebuild_tournament_projection(session: Session, tournament_id: UUID) -> None
         tournament_name=tournament.name,
         start_date=tournament.start_date,
         status=tournament.status,
-        season_id=tournament.season_id,
         modality_id=modality.modality_id if modality else None,
         modality_name=modality.name if modality else None,
         modality_type_id=modality_type.modality_type_id if modality_type else None,
@@ -551,27 +550,20 @@ def _update_tournament_ranks(session: Session, tournament_id: UUID) -> None:
 # ==================== Ranking Views ====================
 
 
-def rebuild_general_ranking_projection(session: Session, season_id=None) -> None:
+def rebuild_general_ranking_projection(session: Session) -> None:
     """
     Rebuild the general rankings materialized view from core ranking data.
 
-    This function clears the existing ``GeneralRankingView`` entries for the given
-    season, reads all rows from the ``GeneralRankings`` core table for that season,
-    orders them by points in descending order, assigns ranks, and enriches each entry
-    with course and nucleo information before persisting the projection.
+    This function clears the existing ``GeneralRankingView`` entries, reads all rows from the
+    ``GeneralRankings`` core table, orders them by points in descending order, assigns ranks,
+    and enriches each entry with course and nucleo information before persisting the projection.
     """
     from .models import GeneralRankings, GeneralRankingView
 
-    # Clear existing general ranking view for this season
-    session.query(GeneralRankingView).filter(
-        GeneralRankingView.season_id == season_id
-    ).delete()
+    # Clear existing general ranking view
+    session.query(GeneralRankingView).delete()
 
-    general_rankings_core_data = (
-        session.query(GeneralRankings)
-        .filter(GeneralRankings.season_id == season_id)
-        .all()
-    )
+    general_rankings_core_data = session.query(GeneralRankings).all()
 
     for rank, entry in enumerate(
         sorted(general_rankings_core_data, key=lambda x: x.points, reverse=True),
@@ -584,7 +576,6 @@ def rebuild_general_ranking_projection(session: Session, season_id=None) -> None
 
         projection = GeneralRankingView(
             course_id=course.course_id,
-            season_id=season_id,
             course_name=course.name,
             course_abbreviation=course.abbreviation,
             nucleo_id=nucleo.nucleo_id,
@@ -597,22 +588,19 @@ def rebuild_general_ranking_projection(session: Session, season_id=None) -> None
         session.merge(projection)
 
 
-def rebuild_modality_ranking_projection(session: Session, season_id=None) -> None:
+def rebuild_modality_ranking_projection(session: Session) -> None:
     """
-    Rebuild modality rankings view for the given season.
+    Rebuild modality rankings view.
+
+    This is a placeholder function. The actual implementation would depend on the ranking logic,
+    which may involve aggregating points from modalities, tournaments, or other entities.
     """
     from .models import ModalityRankings, ModalityRankingView
 
-    # Clear existing modality ranking view for this season
-    session.query(ModalityRankingView).filter(
-        ModalityRankingView.season_id == season_id
-    ).delete()
+    # Clear existing modality ranking view
+    session.query(ModalityRankingView).delete()
 
-    modality_rankings_core_data = (
-        session.query(ModalityRankings)
-        .filter(ModalityRankings.season_id == season_id)
-        .all()
-    )
+    modality_rankings_core_data = session.query(ModalityRankings).all()
 
     # grup by modality_id
     modality_groups: Dict[UUID, List[ModalityRankings]] = {}
@@ -638,7 +626,6 @@ def rebuild_modality_ranking_projection(session: Session, season_id=None) -> Non
 
             projection = ModalityRankingView(
                 modality_id=modality_id,
-                season_id=season_id,
                 modality_name=modality_name,
                 course_id=course.course_id,
                 course_name=course.name,

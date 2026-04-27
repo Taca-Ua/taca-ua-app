@@ -46,7 +46,6 @@ class TournamentDTO:
     updated_at: Optional[str] = None  # ISO formatted datetime string
     finished_at: Optional[str] = None  # ISO formatted datetime string
     finished_by: Optional[UUID] = None
-    season_id: Optional[str] = None
 
     def __post_init__(self):
         self.competitors = [
@@ -113,7 +112,6 @@ class TournamentsService(BaseService):
         scoring_format_id: UUID,
         competitor_type: str,
         start_date: Optional[str] = None,
-        season_id: Optional[UUID] = None,
     ) -> TournamentDTO:
         """
         Create a new tournament
@@ -135,8 +133,6 @@ class TournamentsService(BaseService):
         }
         if start_date:
             data["start_date"] = start_date
-        if season_id:
-            data["season_id"] = str(season_id)
 
         tournament_data = self.post("/tournaments", data=data)
         return TournamentDTO(**tournament_data)

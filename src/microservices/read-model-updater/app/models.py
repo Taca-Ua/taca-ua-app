@@ -18,22 +18,14 @@ from sqlalchemy.orm import relationship
 
 # Re-export all models from shared package
 from taca_models import (  # Materialized Views
-    HEAD,
     GeneralRankingView,
     MatchDetailView,
     ModalityRankingView,
     Regulation,
-    Season,
-    Staff,
-    Student,
     StudentDetailView,
     TeamDetailView,
     TournamentDetailView,
     TournamentStandingsView,
-    02edffb2045a79c2f37d752e668240a5161cf0dd,
-    <<<<<<<,
-    =======,
-    >>>>>>>,
 )
 
 Base = declarative_base()
@@ -519,7 +511,6 @@ __all__ = [
     "MatchStatus",
     "TournamentStatus",
     # Core Read Models
-    "Season",
     "Nucleo",
     "Course",
     "ModalityType",

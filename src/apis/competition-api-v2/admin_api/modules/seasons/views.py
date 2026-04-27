@@ -10,15 +10,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-<<<<<<< HEAD:src/apis/competition-api-v2/admin_api/modules/seasons/views.py
 from .serializers import SeasonCreateSerializer, SeasonListSerializer
-
-=======
-from ..decorators import RoleRequiredMixin, require_auth
-from ..serializers.seasons import SeasonCreateSerializer, SeasonListSerializer
-from ..services.seasons_service import seasons_service_client
-
->>>>>>> 02edffb2045a79c2f37d752e668240a5161cf0dd:src/apis/competiotion-api/admin_api/views/seasons.py
 
 
 @extend_schema_view(
@@ -36,19 +28,18 @@ from ..services.seasons_service import seasons_service_client
 )
 class SeasonListCreateView(RoleRequiredMixin, APIView):
     def get(self, request):
-        seasons = seasons_service_client.list_seasons()
-        serializer = SeasonListSerializer(
-            [vars(s) for s in seasons], many=True
-        )
-        return Response(serializer.data)
+        dummy_data = [
+            {"id": 1, "year": 2024, "status": "finished"},
+            {"id": 2, "year": 2025, "status": "active"},
+            {"id": 3, "year": 2026, "status": "draft"},
+        ]
+        return Response(dummy_data)
 
     def post(self, request):
         serializer = SeasonCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        season = seasons_service_client.create_season(
-            year=serializer.validated_data["year"]
-        )
-        return Response(vars(season), status=status.HTTP_201_CREATED)
+        dummy_response = {"id": 4, "status": "draft", **serializer.validated_data}
+        return Response(dummy_response, status=status.HTTP_201_CREATED)
 
 
 @extend_schema(
@@ -60,21 +51,21 @@ class SeasonListCreateView(RoleRequiredMixin, APIView):
 @api_view(["POST"])
 @require_auth
 def season_start(request, season_id):
-    season = seasons_service_client.start_season(season_id)
-    return Response(vars(season))
+    dummy_response = {"id": season_id, "year": 2025, "status": "active"}
+    return Response(dummy_response)
 
 
 @extend_schema(
     request=None,
     responses={200: SeasonListSerializer},
-    description="Finish a season. Fails if any tournament in the season is still open.",
+    description="Finish a season",
     tags=["Season Management"],
 )
 @api_view(["POST"])
 @require_auth
 def season_finish(request, season_id):
-    season = seasons_service_client.finish_season(season_id)
-    return Response(vars(season))
+    dummy_response = {"id": season_id, "year": 2025, "status": "finished"}
+    return Response(dummy_response)
 
 
 urlpatterns = [

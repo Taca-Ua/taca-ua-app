@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { teamsApi, type TeamDetail } from '../api';
@@ -75,10 +74,9 @@ function Teams() {
                   </div>
                 ) : (
                   teams.map((team) => (
-                    <Link
+                    <div
                       key={team.team_id}
-                      to={`/equipas/${team.team_id}`}
-                      className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-6 flex flex-col text-inherit"
+                      className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-6"
                     >
                       <div className="mb-4">
                         <h3 className="text-xl font-semibold text-gray-800 mb-2">
@@ -111,7 +109,7 @@ function Teams() {
                           </p>
                         </div>
                       </div>
-                    </Link>
+                    </div>
                   ))
                 )}
               </div>

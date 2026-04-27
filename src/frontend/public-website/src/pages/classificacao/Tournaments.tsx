@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
-import { tournamentsApi, type TournamentDetail, seasonsApi, type Season } from '../../api';
+import { tournamentsApi, type TournamentDetail } from '../../api';
 
 function Tournaments() {
   const [tournaments, setTournaments] = useState<TournamentDetail[]>([]);
@@ -11,20 +11,8 @@ function Tournaments() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [seasons, setSeasons] = useState<Season[]>([]);
-  const [seasonId, setSeasonId] = useState<string | null>(null);
 
   useEffect(() => {
-    seasonsApi.getAll().then((data) => {
-      setSeasons(data);
-      const statusPriority = (s: Season) => s.status === 'finished' ? 0 : s.status === 'active' ? 1 : 2;
-      const mostRecent = [...data].sort((a, b) => statusPriority(a) - statusPriority(b) || b.year - a.year)[0];
-      setSeasonId(mostRecent ? mostRecent.season_id : '');
-    }).catch(() => { setSeasonId(''); });
-  }, []);
-
-  useEffect(() => {
-    if (seasonId === null) return; // wait for seasons to load
     const fetchTournaments = async () => {
       try {
         setLoading(true);
@@ -34,7 +22,6 @@ function Tournaments() {
           page,
           page_size: 20,
           ...(statusFilter !== 'all' && { status: statusFilter }),
-          ...(seasonId && { season_id: seasonId }),
         };
 
         const data = await tournamentsApi.getAll(params);
@@ -49,7 +36,7 @@ function Tournaments() {
     };
 
     fetchTournaments();
-  }, [page, statusFilter, seasonId]);
+  }, [page, statusFilter]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -103,21 +90,6 @@ function Tournaments() {
 
           {/* Filters */}
           <div className="mb-6 flex gap-4 flex-wrap">
-            <select
-              value={seasonId ?? ''}
-              onChange={(e) => {
-                setSeasonId(e.target.value);
-                setPage(1);
-              }}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-            >
-              <option value="">Todas as Épocas</option>
-              {[...seasons].sort((a, b) => b.year - a.year).map((season) => (
-                <option key={season.season_id} value={season.season_id}>
-                  {season.year}{season.status === 'active' ? ' (Ativa)' : season.status === 'draft' ? ' (Rascunho)' : ''}
-                </option>
-              ))}
-            </select>
             <select
               value={statusFilter}
               onChange={(e) => {

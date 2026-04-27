@@ -48,7 +48,6 @@ class Nucleo(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(Text, nullable=False)
     abbreviation = Column(Text, unique=True, nullable=False)
-    logo_url = Column(Text, nullable=True)
     created_by = Column(UUID(as_uuid=True), nullable=False)
     created_at = Column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
@@ -66,7 +65,6 @@ class Nucleo(Base):
             "id": str(self.id),
             "name": self.name,
             "abbreviation": self.abbreviation,
-            "logo_url": self.logo_url,
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,

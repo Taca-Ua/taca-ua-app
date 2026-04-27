@@ -21,14 +21,12 @@ class NucleoCreatedData(BaseModel):
     nucleo_id: UUID
     name: str
     abbreviation: str
-    logo_url: Optional[str] = None
 
 
 class NucleoUpdatedData(BaseModel):
     nucleo_id: UUID
     name: Optional[str] = None
     abbreviation: Optional[str] = None
-    logo_url: Optional[str] = None
 
 
 class NucleoDeletedData(BaseModel):

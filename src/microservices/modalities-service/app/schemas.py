@@ -12,20 +12,17 @@ from pydantic import BaseModel, Field
 class NucleoCreate(BaseModel):
     name: str
     abbreviation: str
-    logo_url: Optional[str] = None
 
 
 class NucleoUpdate(BaseModel):
     name: Optional[str] = None
     abbreviation: Optional[str] = None
-    logo_url: Optional[str] = None
 
 
 class NucleoResponse(BaseModel):
     id: str
     name: str
     abbreviation: str
-    logo_url: Optional[str] = None
     admins_ids: List[str] = Field(default_factory=list)
     courses: List["CourseResponse"] = Field(default_factory=list)
     created_by: Optional[str] = None

@@ -3,13 +3,7 @@ SQLAlchemy models for Ranking Service.
 Schema: ranking
 """
 
-<<<<<<< HEAD
 from sqlalchemy import ARRAY, UUID, Column, Integer, String
-
-=======
-from sqlalchemy import ARRAY, UUID, Column, Integer, UniqueConstraint
-
->>>>>>> 02edffb2045a79c2f37d752e668240a5161cf0dd
 from sqlalchemy.ext.declarative import declarative_base
 from taca_outbox.models import create_outbox_model
 from taca_snapshots import ranking as ranking_snapshots
@@ -55,7 +49,6 @@ class Tournament(Base):
     tournament_id = Column(UUID(as_uuid=True), primary_key=True)
     modality_id = Column(UUID(as_uuid=True), nullable=False)
     scoring_format_id = Column(UUID(as_uuid=True), nullable=True)
-    season_id = Column(UUID(as_uuid=True), nullable=True)
 
 
 class TournamentCompetitor(Base):
@@ -86,14 +79,9 @@ class Course(Base):
 # Derived tables
 class GeneralRanking(Base):
     __tablename__ = "general_rankings"
-    __table_args__ = (
-        UniqueConstraint("course_id", "season_id", name="uq_general_rankings_course_season"),
-        {"schema": "ranking"},
-    )
+    __table_args__ = {"schema": "ranking"}
 
-    _id = Column(Integer, primary_key=True, autoincrement=True)
-    course_id = Column(UUID(as_uuid=True), nullable=False)
-    season_id = Column(UUID(as_uuid=True), nullable=True)
+    course_id = Column(UUID(as_uuid=True), primary_key=True)
     points = Column(Integer, nullable=False)
 
     def to_snapshot(self) -> ranking_snapshots.GeneralRankingSnapshotItem:
@@ -105,15 +93,10 @@ class GeneralRanking(Base):
 
 class ModalityRanking(Base):
     __tablename__ = "modality_rankings"
-    __table_args__ = (
-        UniqueConstraint("modality_id", "course_id", "season_id", name="uq_modality_rankings_modality_course_season"),
-        {"schema": "ranking"},
-    )
+    __table_args__ = {"schema": "ranking"}
 
-    _id = Column(Integer, primary_key=True, autoincrement=True)
-    modality_id = Column(UUID(as_uuid=True), nullable=False)
-    course_id = Column(UUID(as_uuid=True), nullable=False)
-    season_id = Column(UUID(as_uuid=True), nullable=True)
+    modality_id = Column(UUID(as_uuid=True), primary_key=True)
+    course_id = Column(UUID(as_uuid=True), primary_key=True)
     points = Column(Integer, nullable=False)
 
     def to_snapshot(self) -> ranking_snapshots.ModalityRankingSnapshotItem:
@@ -126,14 +109,9 @@ class ModalityRanking(Base):
 
 class CourseRanking(Base):
     __tablename__ = "course_rankings"
-    __table_args__ = (
-        UniqueConstraint("course_id", "season_id", name="uq_course_rankings_course_season"),
-        {"schema": "ranking"},
-    )
+    __table_args__ = {"schema": "ranking"}
 
-    _id = Column(Integer, primary_key=True, autoincrement=True)
-    course_id = Column(UUID(as_uuid=True), nullable=False)
-    season_id = Column(UUID(as_uuid=True), nullable=True)
+    course_id = Column(UUID(as_uuid=True), primary_key=True)
     points = Column(Integer, nullable=False)
     modality_breakdown = Column(ARRAY(Integer), nullable=False)  # Points per modality
 

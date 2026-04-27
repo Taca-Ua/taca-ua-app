@@ -10,7 +10,6 @@ from datetime import date, datetime, timezone
 from typing import Any
 
 from taca_events.pydantic_schemas import (  # Nucleo; Course; Modality Type; Modality; Student; Team; Tournament; Match; Ranking
-    HEAD,
     CourseCreatedV1,
     CourseDeletedV1,
     CourseUpdatedV1,
@@ -32,12 +31,6 @@ from taca_events.pydantic_schemas import (  # Nucleo; Course; Modality Type; Mod
     NucleoDeletedV1,
     NucleoUpdatedV1,
     RankingComputedV1,
-    SeasonCreatedV1,
-    SeasonFinishedV1,
-    SeasonStartedV1,
-    StaffCreatedV1,
-    StaffDeletedV1,
-    StaffUpdatedV1,
     StudentCreatedV1,
     StudentDeletedV1,
     StudentUpdatedV1,
@@ -52,10 +45,6 @@ from taca_events.pydantic_schemas import (  # Nucleo; Course; Modality Type; Mod
     TournamentDeletedV1,
     TournamentFinishedV1,
     TournamentUpdatedV1,
-    02edffb2045a79c2f37d752e668240a5161cf0dd,
-    <<<<<<<,
-    =======,
-    >>>>>>>,
 )
 from taca_events.pydantic_schemas.modalities import (
     RegulationCreatedV1,
@@ -67,7 +56,6 @@ from taca_models.models import Regulation
 from .database import get_db
 from .logger import logger
 from .models import (
-    HEAD,
     Course,
     GeneralRankings,
     Match,
@@ -80,17 +68,11 @@ from .models import (
     ModalityType,
     Nucleo,
     ParticipantType,
-    Season,
-    Staff,
     Student,
     Team,
     TeamPlayer,
     Tournament,
     TournamentCompetitor,
-    02edffb2045a79c2f37d752e668240a5161cf0dd,
-    <<<<<<<,
-    =======,
-    >>>>>>>,
 )
 from .utils import (
     rebuild_all_students_for_course,
@@ -224,7 +206,6 @@ def handle_nucleo_created(event: NucleoCreatedV1):
             nucleo_id=nucleo_id,
             name=event.data.name,
             abbreviation=event.data.abbreviation,
-            logo_url=event.data.logo_url,
         )
         db.add(nucleo)
 
@@ -244,12 +225,6 @@ def handle_nucleo_updated(event: NucleoUpdatedV1):
             nucleo.name = event.data.name
         if event.data.abbreviation is not None:
             nucleo.abbreviation = event.data.abbreviation
-<<<<<<< HEAD
-=======
-        if event.data.logo_url is not None:
-            nucleo.logo_url = event.data.logo_url
-        nucleo.updated_at = datetime.utcnow()
->>>>>>> 02edffb2045a79c2f37d752e668240a5161cf0dd
 
         # Rebuild affected projections
         db.flush()
@@ -693,7 +668,6 @@ def handle_tournament_created(event: TournamentCreatedV1):
             name=event.data.name,
             start_date=_parse_date(event.data.start_date),
             status=event.data.status,
-            season_id=event.data.season_id,
         )
         db.add(tournament)
         db.flush()
@@ -1135,20 +1109,15 @@ def handle_ranking_computed(event: RankingComputedV1):
     )
 
     with get_db() as db:
-        # Clear existing general ranking view for this season
-        db.query(GeneralRankings).filter(
-            GeneralRankings.season_id == event.data.season_id
-        ).delete()
-        db.query(ModalityRankings).filter(
-            ModalityRankings.season_id == event.data.season_id
-        ).delete()
+        # Clear existing general ranking view
+        db.query(GeneralRankings).delete()
+        db.query(ModalityRankings).delete()
 
         # Insert new general ranking entries
         for entry in general_entries:
             db.add(
                 GeneralRankings(
                     course_id=entry.course_id,
-                    season_id=event.data.season_id,
                     points=entry.points,
                     tournaments_participated=entry.tournaments_participated,
                 )
@@ -1160,7 +1129,6 @@ def handle_ranking_computed(event: RankingComputedV1):
                 ModalityRankings(
                     modality_id=entry.modality_id,
                     course_id=entry.course_id,
-                    season_id=event.data.season_id,
                     points=entry.points,
                 )
             )
@@ -1168,8 +1136,8 @@ def handle_ranking_computed(event: RankingComputedV1):
         db.flush()
 
         # Rebuild the GeneralRankingView and ModalityRankingView projections
-        rebuild_general_ranking_projection(db, event.data.season_id)
-        rebuild_modality_ranking_projection(db, event.data.season_id)
+        rebuild_general_ranking_projection(db)
+        rebuild_modality_ranking_projection(db)
 
         logger.info(
             "rankings_updated",
@@ -1215,67 +1183,4 @@ def handle_regulation_deleted(event: RegulationDeletedV1):
             logger.warning("regulation_not_found", regulation_id=str(regulation_id))
             return
         db.delete(regulation)
-        db.flush()
-
-
-# ==================== Season Events ====================
-
-
-@rabbitmq_service.event_handler(SeasonCreatedV1)
-def handle_season_created(event: SeasonCreatedV1):
-    """Handle season created event."""
-    season_id = event.data.season_id
-    logger.info(
-        "event_received",
-        event_type="season.created",
-        season_id=str(season_id),
-    )
-
-    with get_db() as db:
-        season = Season(
-            season_id=season_id,
-            year=event.data.year,
-            status="draft",
-        )
-        db.add(season)
-        db.flush()
-
-
-@rabbitmq_service.event_handler(SeasonStartedV1)
-def handle_season_started(event: SeasonStartedV1):
-    """Handle season started event."""
-    season_id = event.data.season_id
-    logger.info(
-        "event_received",
-        event_type="season.started",
-        season_id=str(season_id),
-    )
-
-    with get_db() as db:
-        season = db.query(Season).filter(Season.season_id == season_id).first()
-        if not season:
-            logger.warning("season_not_found", season_id=str(season_id))
-            return
-        season.status = "active"
-        season.started_at = datetime.utcnow()
-        db.flush()
-
-
-@rabbitmq_service.event_handler(SeasonFinishedV1)
-def handle_season_finished(event: SeasonFinishedV1):
-    """Handle season finished event."""
-    season_id = event.data.season_id
-    logger.info(
-        "event_received",
-        event_type="season.finished",
-        season_id=str(season_id),
-    )
-
-    with get_db() as db:
-        season = db.query(Season).filter(Season.season_id == season_id).first()
-        if not season:
-            logger.warning("season_not_found", season_id=str(season_id))
-            return
-        season.status = "finished"
-        season.finished_at = datetime.utcnow()
         db.flush()

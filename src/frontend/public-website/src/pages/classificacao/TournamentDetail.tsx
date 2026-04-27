@@ -267,10 +267,9 @@ function TournamentDetailPage() {
                     </div>
                   ) : (
                     matches.map((match) => (
-                      <Link
+                      <div
                         key={match.match_id}
-                        to={`/jogos/${match.match_id}`}
-                        className="block bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow text-inherit"
+                        className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow"
                       >
                         <div className="flex justify-between items-start mb-4">
                           <div>
@@ -322,7 +321,7 @@ function TournamentDetailPage() {
                             </div>
                           </div>
                         )}
-                        </Link>
+                      </div>
                     ))
                   )}
                 </div>

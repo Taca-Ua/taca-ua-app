@@ -30,12 +30,17 @@ function Home() {
           </h2>
           <div className="text-xl md:text-2xl text-gray-700 leading-relaxed space-y-8">
             <p>
-              A Taça UA - Glicínias Plaza é hoje um dos símbolos mais fortes do espírito académico aveirense.
-              Ano após ano, mobiliza milhares de estudantes em torno da competição, da rivalidade saudável entre cursos e da paixão pelo desporto universitário.
-              Com mais de duas décadas de história, esta iniciativa afirma-se continuamente como um espaço de crescimento, convívio e identidade, onde cada modalidade reforça o sentimento de pertença e união da comunidade.
+              Somos uma plataforma dedicada a fornecer informações completas e atualizadas sobre o mundo dos desportos. 
+              Nossa missão é conectar fãs, atletas e organizadores através de dados precisos e de fácil acesso.
             </p>
             <p>
-              Para além disso, a Taça UA destaca-se pela sua diversidade desportiva, englobando até 8 modalidades coletivas recorrentes, bem como até 16 modalidades pontuais, que incluem formatos coletivos, de pares e individuais, permitindo a participação alargada de estudantes, durante o ano inteiro, com diferentes interesses e aptidões.
+              A Taça UA é o principal evento desportivo da Universidade de Aveiro, reunindo estudantes de diferentes 
+              cursos numa celebração do espírito competitivo e da camaradagem universitária.
+            </p>
+            <p>
+              Acompanhe as classificações em tempo real, consulte calendários de jogos, conheça as modalidades 
+              disponíveis e fique por dentro de todos os regulamentos. Aqui encontrará tudo o que precisa para 
+              acompanhar a emoção do desporto universitário.
             </p>
           </div>
         </div>

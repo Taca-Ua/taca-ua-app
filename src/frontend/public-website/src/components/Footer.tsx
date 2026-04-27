@@ -36,11 +36,6 @@ function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to="/nucleos" className="text-gray-300 hover:text-teal-400 transition-colors">
-                  Núcleos
-                </Link>
-              </li>
-              <li>
                 <Link to="/estudantes" className="text-gray-300 hover:text-teal-400 transition-colors">
                   Estudantes
                 </Link>

@@ -25,11 +25,8 @@ function DashboardGeral() {
   const [loading, setLoading] = useState(true);
   const [currentSeason, setCurrentSeason] = useState<Season | null>(null);
   const [draftSeason, setDraftSeason] = useState<Season | null>(null);
-  const [allSeasons, setAllSeasons] = useState<Season[]>([]);
   const [showStartModal, setShowStartModal] = useState(false);
   const [showFinishModal, setShowFinishModal] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newSeasonYear, setNewSeasonYear] = useState<number>(new Date().getFullYear());
   const [seasonLoading, setSeasonLoading] = useState(false);
 
   useEffect(() => {
@@ -55,7 +52,6 @@ function DashboardGeral() {
 
         setCurrentSeason(active);
         setDraftSeason(draft);
-        setAllSeasons(seasons);
 
         setStats({
           modalities: modalities.length,
@@ -124,29 +120,6 @@ function DashboardGeral() {
     }
   };
 
-  const handleCreateSeason = async () => {
-    try {
-      setSeasonLoading(true);
-      await seasonsApi.create(newSeasonYear);
-
-      // Refresh seasons
-      const seasons = await seasonsApi.getAll();
-      const active = seasons.find(s => s.status === 'active') || null;
-      const draft = seasons.find(s => s.status === 'draft') || null;
-
-      setCurrentSeason(active);
-      setDraftSeason(draft);
-      setShowCreateModal(false);
-
-      notify(`Época ${newSeasonYear} criada com sucesso!`, 'success');
-    } catch (err) {
-      console.error('Failed to create season:', err);
-      notify('Não foi possível criar a época. Verifique se já existe uma época com este ano.', 'error');
-    } finally {
-      setSeasonLoading(false);
-    }
-  };
-
   return (
       <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
@@ -167,18 +140,13 @@ function DashboardGeral() {
                     <h2 className="text-2xl font-bold mb-2 text-gray-800">Gestão de Época</h2>
                     {currentSeason ? (
                       <div>
-                        <p className="text-lg mb-1">
+                        <p className="text-lg mb-4">
                           <span className="font-semibold">Época Atual:</span>{' '}
                           <span className="text-green-700 font-bold">{currentSeason.year}</span>{' '}
                           <span className="inline-block px-3 py-1 bg-green-500 text-white rounded-full text-sm ml-2">
                             ATIVA
                           </span>
                         </p>
-                        {currentSeason.started_at && (
-                          <p className="text-sm text-gray-500 mb-3">
-                            Iniciada em: {new Date(currentSeason.started_at).toLocaleDateString('pt-PT')}
-                          </p>
-                        )}
                         <button
                           onClick={() => setShowFinishModal(true)}
                           className={`px-6 py-3 ${btn.danger} rounded-md font-bold transition-colors`}
@@ -191,15 +159,10 @@ function DashboardGeral() {
                       </div>
                     ) : draftSeason ? (
                       <div>
-                        <p className="text-lg mb-1">
+                        <p className="text-lg mb-4">
                           <span className="font-semibold">Nenhuma época ativa.</span><br />
                           <span className="text-orange-700">Época {draftSeason.year} está em rascunho.</span>
                         </p>
-                        {draftSeason.created_at && (
-                          <p className="text-sm text-gray-500 mb-3">
-                            Criada em: {new Date(draftSeason.created_at).toLocaleDateString('pt-PT')}
-                          </p>
-                        )}
                         <button
                           onClick={() => setShowStartModal(true)}
                           className={`px-6 py-3 ${btn.success} rounded-md font-bold transition-colors`}
@@ -215,53 +178,11 @@ function DashboardGeral() {
                         <p className="text-lg mb-4 text-red-700 font-semibold">
                           Nenhuma época disponível! Crie uma nova época primeiro.
                         </p>
-                        <button
-                          onClick={() => {
-                            setNewSeasonYear(new Date().getFullYear());
-                            setShowCreateModal(true);
-                          }}
-                          className={`px-6 py-3 ${btn.primary} rounded-md font-bold transition-colors`}
-                        >
-                          Criar Nova Época
-                        </button>
                       </div>
                     )}
                   </div>
                 </div>
               </div>
-
-              {allSeasons.length > 0 && (
-                <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-                  <h2 className="text-xl font-bold text-gray-800 mb-4">Histórico de Épocas</h2>
-                  <div className="space-y-2">
-                    {[...allSeasons].sort((a, b) => b.year - a.year).map(season => (
-                      <div key={season.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                        <div className="flex items-center gap-3">
-                          <span className="font-semibold text-gray-800">Época {season.year}</span>
-                          <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${
-                            season.status === 'active' ? 'bg-green-100 text-green-800' :
-                            season.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-gray-100 text-gray-600'
-                          }`}>
-                            {season.status === 'active' ? 'Ativa' : season.status === 'draft' ? 'Rascunho' : 'Finalizada'}
-                          </span>
-                        </div>
-                        <div className="text-sm text-gray-500 flex gap-4">
-                          {!season.started_at && season.created_at && (
-                            <span>Criada: {new Date(season.created_at).toLocaleDateString('pt-PT')}</span>
-                          )}
-                          {season.started_at && (
-                            <span>Iniciada: {new Date(season.started_at).toLocaleDateString('pt-PT')}</span>
-                          )}
-                          {season.finished_at && (
-                            <span>Finalizada: {new Date(season.finished_at).toLocaleDateString('pt-PT')}</span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <button
@@ -415,163 +336,6 @@ function DashboardGeral() {
           </div>
         )}
       </div>
-<<<<<<< HEAD
-=======
-
-      {showStartModal && draftSeason && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-8 rounded-lg max-w-md w-full">
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">Confirmar Início de Época</h2>
-            <div className="mb-6 space-y-3">
-              <p className="text-gray-700">
-                Tem certeza que deseja <span className="font-bold">iniciar a época {draftSeason.year}</span>?
-              </p>
-              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-                <p className="text-sm text-yellow-800 font-semibold mb-2">ATENÇÃO:</p>
-                <ul className="text-sm text-yellow-700 space-y-1 list-disc list-inside">
-                  <li>Esta ação irá marcar a época como <strong>ATIVA</strong></li>
-                  <li>Apenas uma época pode estar ativa de cada vez</li>
-                  <li>Se houver uma época ativa, ela será automaticamente finalizada</li>
-                  <li>Certifique-se de que todas as configurações estão corretas</li>
-                </ul>
-              </div>
-              <p className="text-sm text-gray-600 italic mt-4 flex items-center gap-1">
-                Digite "INICIAR" para confirmar:
-                <HelpTooltip text="Esta confirmação previne ativações acidentais. Se existir uma época ativa, ela será automaticamente finalizada antes de ativar a nova." position="right" />
-              </p>
-              <input
-                type="text"
-                className="border border-gray-300 rounded-md px-4 py-2 w-full"
-                placeholder="Digite INICIAR"
-                id="confirm-start-input"
-              />
-            </div>
-            <div className="flex gap-4">
-              <button
-                onClick={() => setShowStartModal(false)}
-                disabled={seasonLoading}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded-md font-medium disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => {
-                  const input = document.getElementById('confirm-start-input') as HTMLInputElement;
-                  if (input?.value === 'INICIAR') {
-                    handleStartSeason();
-                  } else {
-                    notify('Por favor, digite "INICIAR" para confirmar', 'error');
-                  }
-                }}
-                disabled={seasonLoading}
-                className={`flex-1 px-4 py-2 ${btn.success} rounded-md font-bold disabled:opacity-50`}
-              >
-                {seasonLoading ? 'A iniciar...' : 'Iniciar Época'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showFinishModal && currentSeason && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-8 rounded-lg max-w-md w-full">
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">Confirmar Finalização de Época</h2>
-            <div className="mb-6 space-y-3">
-              <p className="text-gray-700">
-                Tem certeza que deseja <span className="font-bold text-red-600">finalizar a época {currentSeason.year}</span>?
-              </p>
-              <div className="bg-red-50 border-l-4 border-red-500 p-4">
-                <p className="text-sm text-red-800 font-semibold mb-2">ATENÇÃO - AÇÃO IRREVERSÍVEL:</p>
-                <ul className="text-sm text-red-700 space-y-1 list-disc list-inside">
-                  <li><strong>Esta ação NÃO pode ser revertida!</strong></li>
-                  <li>A época será marcada como <strong>FINALIZADA</strong></li>
-                  <li>Não será possível modificar jogos ou torneios desta época</li>
-                  <li>Os resultados serão permanentemente arquivados</li>
-                  <li>Verifique que todos os jogos foram concluídos</li>
-                </ul>
-              </div>
-              <p className="text-sm text-gray-600 italic mt-4 flex items-center gap-1">
-                Digite "FINALIZAR" para confirmar:
-                <HelpTooltip text="Esta confirmação é obrigatória pois a ação é irreversível. Todos os resultados e dados da época serão arquivados permanentemente e não poderão ser modificados." position="right" />
-              </p>
-              <input
-                type="text"
-                className="border border-gray-300 rounded-md px-4 py-2 w-full"
-                placeholder="Digite FINALIZAR"
-                id="confirm-finish-input"
-              />
-            </div>
-            <div className="flex gap-4">
-              <button
-                onClick={() => setShowFinishModal(false)}
-                disabled={seasonLoading}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded-md font-medium disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => {
-                  const input = document.getElementById('confirm-finish-input') as HTMLInputElement;
-                  if (input?.value === 'FINALIZAR') {
-                    handleFinishSeason();
-                  } else {
-                    notify('Por favor, digite "FINALIZAR" para confirmar', 'error');
-                  }
-                }}
-                disabled={seasonLoading}
-                className={`flex-1 px-4 py-2 ${btn.danger} rounded-md font-bold disabled:opacity-50`}
-              >
-                {seasonLoading ? 'A finalizar...' : 'Finalizar Época'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-8 rounded-lg max-w-md w-full">
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">Criar Nova Época</h2>
-            <div className="mb-6 space-y-4">
-              <p className="text-gray-700">
-                Introduza o ano académico para a nova época.
-              </p>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ano
-                </label>
-                <input
-                  type="number"
-                  min={2000}
-                  max={2100}
-                  value={newSeasonYear}
-                  onChange={e => setNewSeasonYear(Number(e.target.value))}
-                  className="border border-gray-300 rounded-md px-4 py-2 w-full"
-                />
-              </div>
-            </div>
-            <div className="flex gap-4">
-              <button
-                onClick={() => setShowCreateModal(false)}
-                disabled={seasonLoading}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded-md font-medium disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleCreateSeason}
-                disabled={seasonLoading}
-                className={`flex-1 px-4 py-2 ${btn.primary} rounded-md font-bold disabled:opacity-50`}
-              >
-                {seasonLoading ? 'A criar...' : 'Criar Época'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
->>>>>>> 02edffb2045a79c2f37d752e668240a5161cf0dd
   );
 }
 
