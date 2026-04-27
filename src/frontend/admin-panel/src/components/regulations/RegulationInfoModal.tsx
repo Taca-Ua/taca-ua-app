@@ -27,9 +27,13 @@ const formatDisplayDate = (dateStr: string | undefined) => {
 
 
 const RegulationInfoModal = ( {
-    regulationId
+    regulationId,
+    onEditSuccess,
+    onDelete
 } : {
     regulationId: string
+    onEditSuccess?: (updatedRegulation: RegulationDetail) => void
+    onDelete?: () => void
 } ) => {
 
     const [ regulation, setRegulation ] = useState<RegulationDetail | null>(null);
@@ -61,6 +65,7 @@ const RegulationInfoModal = ( {
         if (!regulation) return;
         regulationsApi.delete(regulation.id).then(() => {
             onClose();
+            if (onDelete) onDelete();
             notify('Regulation deleted successfully.', 'success');
         }).catch((err: unknown) => {
             console.error('Failed to delete regulation:', err);
@@ -176,6 +181,9 @@ const RegulationInfoModal = ( {
               <Button onClick={() => pushModal(
                 <RegulationEditModal
                   regulationState={[regulation, setRegulation]}
+                  onSave={(updatedRegulation) => {
+                    if (onEditSuccess) onEditSuccess(updatedRegulation);
+                  }}
                 />
               )} type="info" flexible={true} active={isAdminGeneral}>
                 Editar Documento

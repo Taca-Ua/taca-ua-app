@@ -48,6 +48,7 @@ from taca_events.pydantic_schemas import (  # Nucleo; Course; Modality Type; Mod
 from taca_events.pydantic_schemas.modalities import (
     RegulationCreatedV1,
     RegulationDeletedV1,
+    RegulationUpdatedV1,
 )
 from taca_messaging.rabbitmq_service import RabbitMQService
 from taca_models.models import Regulation
@@ -1177,6 +1178,30 @@ def handle_regulation_created(event: RegulationCreatedV1):
             file_url=event.data.file_url,
         )
         db.add(regulation)
+
+
+@rabbitmq_service.event_handler(RegulationUpdatedV1)
+def handle_regulation_updated(event: RegulationUpdatedV1):
+    """Handle regulation updated event."""
+    regulation_id = event.data.regulation_id
+    logger.info(
+        "event_received",
+        event_type="regulation.updated",
+        regulation_id=str(regulation_id),
+    )
+
+    with get_db() as db:
+        regulation = db.query(Regulation).filter(Regulation.id == regulation_id).first()
+        if not regulation:
+            logger.warning("regulation_not_found", regulation_id=str(regulation_id))
+            return
+        if event.data.title is not None:
+            regulation.title = event.data.title
+        if event.data.description is not None:
+            regulation.description = event.data.description
+        if event.data.file_url is not None:
+            regulation.file_url = event.data.file_url
+        db.flush()
 
 
 @rabbitmq_service.event_handler(RegulationDeletedV1)

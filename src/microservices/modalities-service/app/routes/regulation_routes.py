@@ -9,6 +9,8 @@ from taca_events.pydantic_schemas.modalities import (
     RegulationCreatedV1,
     RegulationDeletedData,
     RegulationDeletedV1,
+    RegulationUpdatedData,
+    RegulationUpdatedV1,
 )
 
 from ..database import get_db_session
@@ -98,7 +100,26 @@ def update_regulation(
             regulation.title = payload.title
         if payload.description is not None:
             regulation.description = payload.description
+        db.flush()
+
+        event = RegulationUpdatedV1.create(
+            aggregate_id=regulation.id,
+            data=RegulationUpdatedData(
+                regulation_id=regulation.id,
+                title=regulation.title,
+                description=regulation.description,
+                file_url=regulation.file_url,
+            ),
+        )
+        outbox_publisher.emit_event(
+            db=db,
+            event_type=event.event_type(),
+            aggregate_type=event.aggregate_type(),
+            aggregate_id=regulation.id,
+            data=event.to_data_dict(),
+        )
         db.commit()
+
         db.refresh(regulation)
         return regulation.to_dict()
     except Exception as e:

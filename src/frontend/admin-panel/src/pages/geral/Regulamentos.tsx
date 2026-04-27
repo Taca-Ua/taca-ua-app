@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { regulationsApi, type RegulationListItem as Regulation } from '../../api/regulations';
 import { useNotification } from '../../contexts/NotificationProvider';
-import { btn } from '../../styles/buttonStyles';
 import { useAuth } from "../../hooks/useAuth";
 import RegulationCreateModal from "../../components/regulations/RegulationCreateModal";
 import RegulationInfoModal from "../../components/regulations/RegulationInfoModal";
@@ -153,6 +152,12 @@ const Regulamentos = () => {
                     onClick={() => pushModal(
                       <RegulationInfoModal
                         regulationId={reg.id}
+                        onEditSuccess={(updatedRegulation) => {
+                          setRegulations(prev => prev.map(r => r.id === updatedRegulation.id ? updatedRegulation : r));
+                        }}
+                        onDelete={() => {
+                          setRegulations(prev => prev.filter(r => r.id !== reg.id));
+                        }}
                       />
                     )}
                     className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-teal-300 transition-all cursor-pointer group"
