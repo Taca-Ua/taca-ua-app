@@ -23,6 +23,40 @@ class CompetitorType(enum.Enum):
     ATHLETE = "athlete"
 
 
+class Season(Base):
+    """Represents a competition season."""
+
+    __tablename__ = "season"
+    __table_args__ = {"schema": "tournaments"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    year = Column(Integer, nullable=False, unique=True)
+    status = Column(
+        String(20), nullable=False, default="draft"
+    )  # draft, active, finished
+
+    created_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    started_at = Column(DateTime(timezone=True), nullable=True)
+    finished_at = Column(DateTime(timezone=True), nullable=True)
+
+    tournaments = relationship(
+        "Tournament",
+        back_populates="season",
+    )
+
+    def to_dict(self):
+        return {
+            "id": str(self.id),
+            "year": self.year,
+            "status": self.status,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "started_at": self.started_at.isoformat() if self.started_at else None,
+            "finished_at": self.finished_at.isoformat() if self.finished_at else None,
+        }
+
+
 class TournamentCompetitor(Base):
     """
     A competitor subscribed to a tournament.
@@ -106,6 +140,12 @@ class Tournament(Base):
         Enum(CompetitorType, name="competitor_type"),
         nullable=False,
     )
+    season_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("tournaments.season.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     # bulshit fields
     created_by = Column(UUID(as_uuid=True), nullable=False)
@@ -119,6 +159,7 @@ class Tournament(Base):
     finished_by = Column(UUID(as_uuid=True), nullable=True)
 
     # Relationships
+    season = relationship("Season", back_populates="tournaments")
     ranking_positions = relationship(
         "TournamentRankingPosition",
         back_populates="tournament",
@@ -141,6 +182,7 @@ class Tournament(Base):
             ),
             "competitor_type": self.competitor_type.value,
             "start_date": self.start_date.isoformat() if self.start_date else None,
+            "season_id": str(self.season_id) if self.season_id else None,
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,

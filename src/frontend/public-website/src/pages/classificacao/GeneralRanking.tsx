@@ -1,27 +1,35 @@
 import { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
-import { rankingApi, type GeneralRanking } from '../../api';
+import { rankingApi, type GeneralRanking, seasonsApi, type Season } from '../../api';
 
 function GeneralRankingPage() {
   const [rankings, setRankings] = useState<GeneralRanking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [nucleoFilter, setNucleoFilter] = useState<string>('all');
+  const [seasons, setSeasons] = useState<Season[]>([]);
+  const [seasonId, setSeasonId] = useState<string | null>(null);
 
-  // Extract unique nucleos from rankings
-  const uniqueNucleos = Array.from(
-    new Set(rankings.map((r) => JSON.stringify({ id: r.nucleo_id, name: r.nucleo_name })))
-  ).map((str) => JSON.parse(str));
+  // Fetch seasons once on mount and pre-select the active one
+  useEffect(() => {
+    seasonsApi.getAll().then((data) => {
+      setSeasons(data);
+      const statusPriority = (s: Season) => s.status === 'finished' ? 0 : s.status === 'active' ? 1 : 2;
+      const mostRecent = [...data].sort((a, b) => statusPriority(a) - statusPriority(b) || b.year - a.year)[0];
+      setSeasonId(mostRecent ? mostRecent.season_id : '');
+    }).catch(() => { setSeasonId(''); });
+  }, []);
 
   useEffect(() => {
+    if (seasonId === null) return; // wait for seasons to load
     const fetchRankings = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const params = nucleoFilter !== 'all' ? { nucleo_id: nucleoFilter } : undefined;
-        const data = await rankingApi.getGeneralRanking(params);
+        const params: Record<string, string> = {};
+        if (seasonId) params.season_id = seasonId;
+        const data = await rankingApi.getGeneralRanking(Object.keys(params).length ? params : undefined);
         setRankings(data.items);
       } catch (err) {
         console.error('Error fetching rankings:', err);
@@ -32,7 +40,7 @@ function GeneralRankingPage() {
     };
 
     fetchRankings();
-  }, [nucleoFilter]);
+  }, [seasonId]);
 
   const getMedalIcon = (rank: number | null) => {
     if (rank === null) return null;
@@ -71,26 +79,29 @@ function GeneralRankingPage() {
           </div>
 
           {/* Filters */}
-          {uniqueNucleos.length > 0 && (
-            <div className="mb-6">
-              <label htmlFor="nucleo-filter" className="block text-sm font-medium text-gray-700 mb-2">
-                Filtrar por Núcleo
-              </label>
-              <select
-                id="nucleo-filter"
-                value={nucleoFilter}
-                onChange={(e) => setNucleoFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-              >
-                <option value="all">Todos os Núcleos</option>
-                {uniqueNucleos.map((nucleo: any) => (
-                  <option key={nucleo.id} value={nucleo.id}>
-                    {nucleo.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+          <div className="mb-6 flex flex-wrap gap-4">
+            {seasons.length > 0 && (
+              <div>
+                <label htmlFor="season-filter" className="block text-sm font-medium text-gray-700 mb-2">
+                  Época
+                </label>
+                <select
+                  id="season-filter"
+                  value={seasonId ?? ''}
+                  onChange={(e) => setSeasonId(e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                >
+                  <option value="">Todas as Épocas</option>
+                  {[...seasons].sort((a, b) => b.year - a.year).map((s) => (
+                    <option key={s.season_id} value={s.season_id}>
+                      {s.year}{s.status === 'active' ? ' (ativa)' : s.status === 'draft' ? ' (rascunho)' : ' (finalizada)'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+          </div>
 
           {/* Error Message */}
           {error && (

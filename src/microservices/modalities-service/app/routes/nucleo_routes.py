@@ -49,6 +49,7 @@ def create_nucleo(nucleo_data: NucleoCreate, db: Session = Depends(get_db_sessio
         nucleo = Nucleo(
             name=nucleo_data.name,
             abbreviation=nucleo_data.abbreviation,
+            logo_url=nucleo_data.logo_url,
             created_by=DEFAULT_USER_ID,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
@@ -63,6 +64,7 @@ def create_nucleo(nucleo_data: NucleoCreate, db: Session = Depends(get_db_sessio
                 nucleo_id=nucleo.id,
                 name=nucleo.name,
                 abbreviation=nucleo.abbreviation,
+                logo_url=nucleo.logo_url,
             ),
         )
         outbox_publisher.emit_event(
@@ -123,6 +125,8 @@ def update_nucleo(
     if nucleo_data.abbreviation is not None:
         nucleo.abbreviation = nucleo_data.abbreviation
         changes_made["abbreviation"] = nucleo_data.abbreviation
+    if nucleo_data.logo_url is not None:
+        nucleo.logo_url = nucleo_data.logo_url
     nucleo.updated_at = datetime.now(timezone.utc)
 
     try:
@@ -133,6 +137,7 @@ def update_nucleo(
                 nucleo_id=nucleo.id,
                 name=changes_made.get("name"),
                 abbreviation=changes_made.get("abbreviation"),
+                logo_url=nucleo_data.logo_url,
             ),
         )
         outbox_publisher.emit_event(

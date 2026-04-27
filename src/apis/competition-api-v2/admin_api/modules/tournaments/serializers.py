@@ -52,6 +52,7 @@ class TournamentListSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=STATUS_CHOICES)
     modality = ModalitySummarySerializer()
     start_date = serializers.DateTimeField(required=False, allow_null=True)
+    season_id = serializers.UUIDField(required=False, allow_null=True)
 
 
 class TournamentDetailSerializer(TournamentListSerializer):
@@ -77,6 +78,7 @@ class TournamentCreateSerializer(serializers.Serializer):
     modality_id = serializers.UUIDField(required=True)
     start_date = serializers.DateTimeField(required=False, allow_null=True)
     is_playoff = serializers.BooleanField(required=False, default=False)
+    season_id = serializers.UUIDField(required=False, allow_null=True)
 
 
 class TournamentUpdateSerializer(serializers.Serializer):

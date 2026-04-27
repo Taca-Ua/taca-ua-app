@@ -31,6 +31,20 @@ export interface TeamListParams {
   modality_id?: string;
 }
 
+export interface TeamMember {
+  student_id: string;
+  student_number: string;
+  full_name: string;
+  course_name: string;
+  course_abbreviation: string;
+  added_at: string;
+}
+
+export interface TeamMemberList {
+  items: TeamMember[];
+  total: number;
+}
+
 export const teamsApi = {
   async getAll(params?: TeamListParams): Promise<TeamDetailList> {
     const queryParams: Record<string, string | undefined> = {
@@ -46,5 +60,9 @@ export const teamsApi = {
 
   async getById(teamId: string): Promise<TeamDetail> {
     return apiCall<TeamDetail>(`/teams/${teamId}`);
+  },
+
+  async getMembers(teamId: string): Promise<TeamMemberList> {
+    return apiCall<TeamMemberList>(`/teams/${teamId}/members`);
   },
 };

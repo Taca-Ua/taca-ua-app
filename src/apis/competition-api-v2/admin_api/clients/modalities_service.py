@@ -16,6 +16,7 @@ class NucleoDTO:
     id: UUID
     name: str
     abbreviation: str
+    logo_url: Optional[str] = None
     admins_ids: List[str] = field(default_factory=list)
     courses: List["CourseDTO"] = field(default_factory=list)
     created_by: Optional[str] = None
@@ -170,7 +171,9 @@ class NucleoModalitiesService(BaseService):
         nucleos_data = self.get("/nucleos", params=params)
         return [NucleoDTO(**nucleo) for nucleo in nucleos_data]
 
-    def create_nucleo(self, name: str, abbreviation: str) -> NucleoDTO:
+    def create_nucleo(
+        self, name: str, abbreviation: str, logo_url: str = None
+    ) -> NucleoDTO:
         """Create a new nucleo
 
         Args:
@@ -180,10 +183,7 @@ class NucleoModalitiesService(BaseService):
         Returns:
             NucleoDTO: Created NucleoDTO object
         """
-        data = {
-            "name": name,
-            "abbreviation": abbreviation,
-        }
+        data = {"name": name, "abbreviation": abbreviation, "logo_url": logo_url}
         nucleo_data = self.post("/nucleos", data)
         return NucleoDTO(**nucleo_data)
 
@@ -200,7 +200,11 @@ class NucleoModalitiesService(BaseService):
         return NucleoDTO(**nucleo_data)
 
     def update_nucleo(
-        self, nucleo_id: str, name: str = None, abbreviation: str = None
+        self,
+        nucleo_id: str,
+        name: str = None,
+        abbreviation: str = None,
+        logo_url: str = None,
     ) -> NucleoDTO:
         """Update a nucleo
 
@@ -218,6 +222,8 @@ class NucleoModalitiesService(BaseService):
             data["name"] = name
         if abbreviation is not None:
             data["abbreviation"] = abbreviation
+        if logo_url is not None:
+            data["logo_url"] = logo_url
 
         nucleo_data = self.put(f"/nucleos/{nucleo_id}", data)
         return NucleoDTO(**nucleo_data)

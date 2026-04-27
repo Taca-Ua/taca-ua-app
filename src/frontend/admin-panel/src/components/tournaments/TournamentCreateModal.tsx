@@ -1,15 +1,23 @@
 import { useState, useEffect } from 'react';
 import HelpTooltip from '../HelpTooltip';
 import { useNotification } from '../../contexts/NotificationProvider';
+<<<<<<< HEAD
 import { tournamentsApi, type TournamentListItem, type TournamentCreate } from '../../api/tournaments';
 import { modalitiesApi, type ModalityListItem } from '../../api/modalities';
 import Button from '../utils/Button';
 import { useModal } from '../../contexts/ModalContext';
 import ChoseOneInput from '../utils/inputs/ChoseOneInput';
+=======
+import { tournamentsApi, type Tournament, type TournamentCreate } from '../../api/tournaments';
+import { modalitiesApi, type Modality } from '../../api/modalities';
+import { seasonsApi, type Season } from '../../api/seasons';
+import { btn } from '../../styles/buttonStyles';
+>>>>>>> 02edffb2045a79c2f37d752e668240a5161cf0dd
 
 
 const TournamentCreateModal = ({
   onCreate,
+<<<<<<< HEAD
   modalityId,
   starterName,
 }: {
@@ -17,6 +25,19 @@ const TournamentCreateModal = ({
   modalityId?: string;  // Optional prop to fix the modality (e.g., when creating from a modality page)
   starterName?: string;  // Optional prop to pre-fill the tournament name
 }) => {
+=======
+  fixedModalityId,
+  fixedModalityName,
+}: TournamentCreateModalProps) => {
+  const [name, setName] = useState(fixedModalityName || '');
+  const [nameManuallyEdited, setNameManuallyEdited] = useState(!!fixedModalityName);
+  const [modalityId, setModalityId] = useState(fixedModalityId || '');
+  const [isPlayoff, setIsPlayoff] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [modalities, setModalities] = useState<Modality[]>([]);
+  const [seasons, setSeasons] = useState<Season[]>([]);
+  const [seasonId, setSeasonId] = useState('');
+>>>>>>> 02edffb2045a79c2f37d752e668240a5161cf0dd
   const { notify } = useNotification();
   const { popModal } = useModal();
 
@@ -45,7 +66,37 @@ const TournamentCreateModal = ({
     }
   }, []);
 
+<<<<<<< HEAD
   const handleSubmit = async () => {
+=======
+  // Fetch seasons when modal opens
+  useEffect(() => {
+    if (!isOpen) return;
+    const fetchSeasons = async () => {
+      try {
+        const data = await seasonsApi.getAll();
+        setSeasons(data);
+        // Pre-select the active season if one exists
+        const active = data.find((s) => s.status === 'active');
+        if (active) setSeasonId(active.id);
+      } catch (err) {
+        console.error('Failed to fetch seasons:', err);
+      }
+    };
+    fetchSeasons();
+  }, [isOpen]);
+
+  // Auto-fill name when modality changes (only if not manually edited)
+  useEffect(() => {
+    if (!nameManuallyEdited && modalityId && !isFixedModality) {
+      const selected = modalities.find((m) => m.id === modalityId);
+      if (selected) setName(selected.name);
+    }
+  }, [modalityId, modalities, nameManuallyEdited, isFixedModality]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+>>>>>>> 02edffb2045a79c2f37d752e668240a5161cf0dd
     setLoading(true);
     if (name.trim() === '') {
       notify('O nome do torneio é obrigatório.', 'error');
@@ -66,6 +117,11 @@ const TournamentCreateModal = ({
         name,
         modality_id: modalityIdToUse,
         is_playoff: isPlayoff,
+<<<<<<< HEAD
+=======
+        competitors: [],
+        ...(seasonId ? { season_id: seasonId } : {}),
+>>>>>>> 02edffb2045a79c2f37d752e668240a5161cf0dd
       };
       console.log('Creating tournament with data:', newTournament);
       const createdTournament = await tournamentsApi.create(newTournament);
@@ -82,9 +138,16 @@ const TournamentCreateModal = ({
   const onClose = () => {
     setName('');
     setIsPlayoff(false);
+<<<<<<< HEAD
     setChosenModalityId(modalityId || chosenModalityId);
     popModal();
   }
+=======
+    setSeasonId('');
+  };
+
+  if (!isOpen) return null;
+>>>>>>> 02edffb2045a79c2f37d752e668240a5161cf0dd
 
   return (
       <div className="bg-white rounded-lg p-8 w-full max-w-md md:min-w-[500px]">
@@ -125,6 +188,27 @@ const TournamentCreateModal = ({
               onSelect={(ele) => setChosenModalityId(ele ? ele.id : null)}
             />
           </div>)}
+
+          {seasons.length > 0 && (
+            <div>
+              <label className="font-medium">
+                Época{' '}
+                <HelpTooltip text="Época desportiva a que este torneio pertence. Pré-selecionada com a época ativa, se existir." className="ml-1" />
+              </label>
+              <select
+                value={seasonId}
+                onChange={(e) => setSeasonId(e.target.value)}
+                className="w-full border border-gray-300 rounded-md p-2"
+              >
+                <option value="">Sem época</option>
+                {seasons.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.year}{s.status === 'active' ? ' (ativa)' : s.status === 'draft' ? ' (rascunho)' : ' (finalizada)'}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="flex items-center gap-3">
             <input

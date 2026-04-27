@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useState } from "react";
 import { type TournamentListItem } from "../../api/tournaments";
 import {
@@ -67,6 +68,40 @@ const TournamentList = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [modalityFilter, setModalityFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+=======
+import { type Tournament } from '../../api/tournaments';
+import { type Season } from '../../api/seasons';
+import { TOURNAMENT_STATUS_ORDER } from '../../constants/tournaments';
+import TournamentListItem from './TournamentListItem';
+
+interface TournamentListProps {
+  tournaments: Tournament[];
+  loading?: boolean;
+  searchQuery?: string;
+  showModality?: boolean; // Whether to show modality in list items
+  emptyMessage?: string;
+  fromModalityId?: string; // If provided, adds return context to navigation
+  seasons?: Season[];
+}
+
+const TournamentList = ({
+  tournaments,
+  loading = false,
+  searchQuery = '',
+  showModality = true,
+  emptyMessage = 'Nenhum torneio encontrado.',
+  fromModalityId,
+  seasons = [],
+}: TournamentListProps) => {
+  if (loading) {
+    return (
+      <div className="text-center py-8">
+        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-teal-500 border-r-transparent"></div>
+        <p className="mt-2 text-gray-600">A carregar...</p>
+      </div>
+    );
+  }
+>>>>>>> 02edffb2045a79c2f37d752e668240a5161cf0dd
 
   if (tournaments.length === 0) {
     return <p className="text-gray-500 text-center py-8">Nenhum torneio encontrado. Crie um novo torneio para começar!</p>;
@@ -103,6 +138,7 @@ const TournamentList = ({
 
   return (
     <div className="space-y-3">
+<<<<<<< HEAD
       {/* Search and Filters */}
       <div className="flex gap-3">
         <input
@@ -111,6 +147,15 @@ const TournamentList = ({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+=======
+      {sortedTournaments.map((tournament) => (
+        <TournamentListItem
+          key={tournament.id}
+          tournament={tournament}
+          showModality={showModality}
+          fromModalityId={fromModalityId}
+          seasonYear={seasons.find(s => s.id === tournament.season_id)?.year ?? null}
+>>>>>>> 02edffb2045a79c2f37d752e668240a5161cf0dd
         />
 
         {showModalityFilter && (

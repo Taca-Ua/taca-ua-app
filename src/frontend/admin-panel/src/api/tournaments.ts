@@ -14,6 +14,7 @@ export interface TournamentListItem {
     name: string;
   };
   start_date?: string;
+  season_id?: string;
 }
 
 export interface TournamentDetail extends TournamentListItem {
@@ -41,8 +42,13 @@ export interface TournamentCreate {
   name: string;
   modality_id: string;
   start_date?: string;
+<<<<<<< HEAD
   is_playoff?: boolean;
 };
+=======
+  season_id?: string;
+}
+>>>>>>> 02edffb2045a79c2f37d752e668240a5161cf0dd
 
 export interface TournamentUpdate {
   name?: string;

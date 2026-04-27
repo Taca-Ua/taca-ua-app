@@ -7,7 +7,16 @@ from typing import List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
+from taca_events.pydantic_schemas.seasons import (
+    SeasonCreatedData,
+    SeasonCreatedV1,
+    SeasonFinishedData,
+    SeasonFinishedV1,
+    SeasonStartedData,
+    SeasonStartedV1,
+)
 from taca_events.pydantic_schemas.tournaments import (
     RankingEntryData,
     TournamentCompetitorAddedData,
@@ -28,6 +37,7 @@ from .database import get_db_session
 from .logger import logger
 from .models import (
     CompetitorType,
+    Season,
     Tournament,
     TournamentCompetitor,
     TournamentRankingPosition,
@@ -35,6 +45,8 @@ from .models import (
 from .outbox_publisher import outbox_publisher
 from .schemas import (
     CompetitorInput,
+    SeasonCreate,
+    SeasonResponse,
     TournamentCreate,
     TournamentFinish,
     TournamentResponse,
@@ -42,6 +54,171 @@ from .schemas import (
 )
 
 router = APIRouter()
+
+
+# ==================== Season Endpoints ====================
+
+
+@router.get("/seasons", response_model=list[SeasonResponse])
+async def list_seasons(db: Session = Depends(get_db_session)):
+    """List all seasons ordered by year descending"""
+    seasons = db.query(Season).order_by(Season.year.desc()).all()
+    return [SeasonResponse(**s.to_dict()) for s in seasons]
+
+
+@router.post(
+    "/seasons", response_model=SeasonResponse, status_code=status.HTTP_201_CREATED
+)
+async def create_season(data: SeasonCreate, db: Session = Depends(get_db_session)):
+    """Create a new draft season"""
+    if db.query(Season).filter(Season.year == data.year).first():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"A season for year {data.year} already exists",
+        )
+    if db.query(Season).filter(Season.status == "draft").first():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A draft season already exists",
+        )
+    try:
+        season = Season(year=data.year, status="draft")
+        db.add(season)
+        db.flush()
+
+        event = SeasonCreatedV1.create(
+            aggregate_id=season.id,
+            data=SeasonCreatedData(season_id=season.id, year=season.year),
+        )
+        outbox_publisher.emit_event(
+            db=db,
+            event_type=event.event_type(),
+            aggregate_type="season",
+            aggregate_id=str(season.id),
+            data=event.to_data_dict(),
+        )
+
+        db.commit()
+        db.refresh(season)
+        logger.info(f"Created season {season.id}: {season.year}")
+        return SeasonResponse(**season.to_dict())
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error creating season: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error creating season: {str(e)}",
+        )
+
+
+@router.post("/seasons/{season_id}/start", response_model=SeasonResponse)
+async def start_season(season_id: UUID, db: Session = Depends(get_db_session)):
+    """Activate a draft season. Fails if another season is already active."""
+    season = db.query(Season).filter(Season.id == season_id).first()
+    if not season:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Season not found"
+        )
+    if season.status != "draft":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only draft seasons can be started",
+        )
+    if db.query(Season).filter(Season.status == "active").first():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Another season is already active",
+        )
+    try:
+        season.status = "active"
+        season.started_at = datetime.now(timezone.utc)
+
+        event = SeasonStartedV1.create(
+            aggregate_id=season.id,
+            data=SeasonStartedData(season_id=season.id, year=season.year),
+        )
+        outbox_publisher.emit_event(
+            db=db,
+            event_type=event.event_type(),
+            aggregate_type="season",
+            aggregate_id=str(season.id),
+            data=event.to_data_dict(),
+        )
+
+        db.commit()
+        db.refresh(season)
+        logger.info(f"Started season {season.id}: {season.year}")
+        return SeasonResponse(**season.to_dict())
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error starting season: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error starting season: {str(e)}",
+        )
+
+
+@router.post("/seasons/{season_id}/finish", response_model=SeasonResponse)
+async def finish_season(season_id: UUID, db: Session = Depends(get_db_session)):
+    """Finish an active season. Fails if any tournament in this season is not finished."""
+    season = db.query(Season).filter(Season.id == season_id).first()
+    if not season:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Season not found"
+        )
+    if season.status != "active":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only active seasons can be finished",
+        )
+
+    open_count = (
+        db.query(func.count(Tournament.id))
+        .filter(
+            Tournament.season_id == season_id,
+            Tournament.status.in_(["draft", "active"]),
+        )
+        .scalar()
+    )
+    if open_count > 0:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Cannot finish season: {open_count} unfinished tournament(s) remain",
+        )
+
+    try:
+        season.status = "finished"
+        season.finished_at = datetime.now(timezone.utc)
+
+        event = SeasonFinishedV1.create(
+            aggregate_id=season.id,
+            data=SeasonFinishedData(season_id=season.id, year=season.year),
+        )
+        outbox_publisher.emit_event(
+            db=db,
+            event_type=event.event_type(),
+            aggregate_type="season",
+            aggregate_id=str(season.id),
+            data=event.to_data_dict(),
+        )
+
+        db.commit()
+        db.refresh(season)
+        logger.info(f"Finished season {season.id}: {season.year}")
+        return SeasonResponse(**season.to_dict())
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error finishing season: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error finishing season: {str(e)}",
+        )
 
 
 # ==================== Helpers ====================
@@ -128,6 +305,7 @@ def add_competitor(db: Session, tournament_id: UUID, competitor_input: Competito
 async def list_tournaments(
     status_filter: str = None,
     modality_id: UUID = None,
+    season_id: UUID = None,
     db: Session = Depends(get_db_session),
 ):
     """List all tournaments with optional filters"""
@@ -137,6 +315,8 @@ async def list_tournaments(
         query = query.filter(Tournament.status == status_filter)
     if modality_id:
         query = query.filter(Tournament.modality_id == modality_id)
+    if season_id:
+        query = query.filter(Tournament.season_id == season_id)
 
     tournaments = query.all()
     return [TournamentResponse(**t.to_dict(include_ranking=False)) for t in tournaments]
@@ -184,6 +364,7 @@ async def create_tournament(
             status="draft",
             scoring_format_id=data.scoring_format_id,
             competitor_type=competitor_type,
+            season_id=data.season_id,
             created_by="00000000-0000-0000-0000-000000000000",  # Placeholder, should be replaced with actual user ID from auth context
         )
         db.add(tournament)
@@ -199,6 +380,7 @@ async def create_tournament(
                 start_date=tournament.start_date.isoformat(),
                 status=tournament.status,
                 scoring_format_id=tournament.scoring_format_id,
+                season_id=tournament.season_id,
             ),
         )
         outbox_publisher.emit_event(

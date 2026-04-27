@@ -5,6 +5,7 @@ export interface TournamentDetail {
   tournament_name: string;
   start_date: string;
   status: string;
+  season_id: string | null;
   modality_id: string;
   modality_name: string | null;
   modality_type_id: string;
@@ -25,6 +26,7 @@ export interface TournamentListParams {
   page_size?: number;
   modality_id?: string;
   status?: string;
+  season_id?: string;
 }
 
 export interface TournamentStanding {
@@ -62,6 +64,7 @@ export const tournamentsApi = {
       page_size: params?.page_size?.toString(),
       modality_id: params?.modality_id,
       status: params?.status,
+      season_id: params?.season_id,
     };
     const queryString = buildQueryString(queryParams);
     return apiCall<TournamentDetailList>(`/tournaments${queryString}`);

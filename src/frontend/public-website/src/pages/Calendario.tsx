@@ -9,7 +9,6 @@ function Calendario() {
   const [matches, setMatches] = useState<MatchDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('calendar');
@@ -47,7 +46,6 @@ function Calendario() {
           const data = await matchesApi.getAll({
             page,
             page_size: 20,
-            ...(statusFilter !== 'all' && { status: statusFilter }),
           });
           setMatches(data.items);
           setTotalPages(Math.ceil(data.total / data.page_size));
@@ -61,7 +59,7 @@ function Calendario() {
     };
 
     fetchMatches();
-  }, [page, statusFilter, viewMode]);
+  }, [page, viewMode]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -162,7 +160,7 @@ function Calendario() {
 
     // Build "A vs B vs C" format
     const participantNames = match.participants.map(
-      (p) => p.name || 'Participante'
+      (p) => p.participant_name || 'Participante'
     );
     return participantNames.join(' vs ');
   };
@@ -209,23 +207,7 @@ function Calendario() {
               </button>
             </div>
 
-            {/* Status Filter - List view only */}
-            {viewMode === 'list' && (
-              <select
-                value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
-                  setPage(1);
-                }}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-              >
-                <option value="all">Todos os Estados</option>
-                <option value="scheduled">Agendado</option>
-                <option value="in_progress">Em Curso</option>
-                <option value="finished">Finalizado</option>
-                <option value="cancelled">Cancelado</option>
-              </select>
-            )}
+
           </div>
 
           {/* Error Message */}
@@ -260,9 +242,12 @@ function Calendario() {
                         >
                           <div className="flex justify-between items-start mb-4">
                             <div className="flex-1">
-                              <h3 className="text-xl font-semibold text-gray-800 mb-1">
+                              <Link
+                                to={`/jogos/${match.match_id}`}
+                                className="block text-xl font-semibold text-gray-800 hover:text-teal-600 mb-1"
+                              >
                                 {getMatchTitle(match)}
-                              </h3>
+                              </Link>
                               <Link
                                 to={`/torneios/${match.tournament_id}`}
                                 className="text-sm text-teal-600 hover:text-teal-700"
@@ -470,7 +455,7 @@ function Calendario() {
                               {paginated.map((match) => (
                                 <Link
                                   key={match.match_id}
-                                  to={`/torneios/${match.tournament_id}`}
+                                  to={`/jogos/${match.match_id}`}
                                   className="block p-3 bg-gray-50 rounded-lg hover:bg-teal-50 transition-colors border border-transparent hover:border-teal-200"
                                 >
                                   <div className="flex justify-between items-start mb-1">

@@ -90,6 +90,42 @@ def get_team(
     return team
 
 
+@router.get(
+    "/teams/{team_id}/members",
+    response_model=schemas.TeamMemberList,
+    summary="Get team members",
+    description="Get the active members (students) belonging to a team",
+)
+def get_team_members(
+    team_id: UUID,
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve the active members of a specific team.
+
+    - **team_id**: Unique identifier of the team
+    """
+    team = crud.get_team_by_id(db=db, team_id=team_id)
+    if not team:
+        raise HTTPException(status_code=404, detail="Team not found")
+
+    rows = crud.get_team_members(db=db, team_id=team_id)
+    members = [
+        schemas.TeamMember(
+            student_id=student.student_id,
+            student_number=student.student_number,
+            full_name=student.full_name,
+            course_name=student.course_name,
+            course_abbreviation=student.course_abbreviation,
+            added_at=tp.added_at,
+        )
+        for tp, student in rows
+    ]
+
+    logger.info("team_members_retrieved", team_id=str(team_id), count=len(members))
+    return schemas.TeamMemberList(items=members, total=len(members))
+
+
 # ==================== Student Endpoints ====================
 
 
@@ -212,6 +248,7 @@ def list_tournaments(
     page_size: int = Query(50, ge=1, le=100, description="Items per page"),
     modality_id: Optional[UUID] = Query(None, description="Filter by modality ID"),
     status: Optional[str] = Query(None, description="Filter by tournament status"),
+    season_id: Optional[UUID] = Query(None, description="Filter by season ID"),
     db: Session = Depends(get_db),
 ):
     """
@@ -221,6 +258,7 @@ def list_tournaments(
     - **page_size**: Number of items per page (max 100)
     - **modality_id**: Optional filter by modality
     - **status**: Optional filter by status (draft, active, finished, cancelled)
+    - **season_id**: Optional filter by season
     """
     skip = (page - 1) * page_size
     tournaments, total = crud.get_tournaments(
@@ -229,6 +267,7 @@ def list_tournaments(
         limit=page_size,
         modality_id=modality_id,
         status=status,
+        season_id=season_id,
     )
 
     logger.info(
@@ -239,6 +278,7 @@ def list_tournaments(
         filters={
             "modality_id": str(modality_id) if modality_id else None,
             "status": status,
+            "season_id": str(season_id) if season_id else None,
         },
     )
 
@@ -449,6 +489,7 @@ def get_competitor_standings(
 )
 def get_general_ranking(
     nucleo_id: Optional[UUID] = Query(None, description="Optional filter by nucleo ID"),
+    season_id: Optional[UUID] = Query(None, description="Optional filter by season ID"),
     db: Session = Depends(get_db),
 ):
     """
@@ -459,13 +500,14 @@ def get_general_ranking(
     the modality type's escaloes configuration.
 
     - **nucleo_id**: Optional filter to show ranking only for a specific nucleo
+    - **season_id**: Optional filter to show ranking for a specific season
     """
-    rankings, total = crud.get_general_ranking(db=db, nucleo_id=nucleo_id)
+    rankings, total = crud.get_general_ranking(db=db, nucleo_id=nucleo_id, season_id=season_id)
 
     logger.info(
         "general_ranking_retrieved",
         total=total,
-        filters={"nucleo_id": str(nucleo_id) if nucleo_id else None},
+        filters={"nucleo_id": str(nucleo_id) if nucleo_id else None, "season_id": str(season_id) if season_id else None},
     )
 
     return schemas.GeneralRankingList(
@@ -496,6 +538,43 @@ def get_course_ranking(
 
     logger.info("course_ranking_retrieved", course_id=str(course_id))
     return ranking
+
+
+# ==================== Regulation Endpoints ====================
+
+
+@router.get(
+    "/nucleos",
+    response_model=schemas.NucleoList,
+    summary="List all nucleos",
+    description="Get a paginated list of all active nucleos",
+)
+def list_nucleos(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(50, ge=1, le=100, description="Items per page"),
+    db: Session = Depends(get_db),
+):
+    skip = (page - 1) * page_size
+    nucleos, total = crud.get_nucleos(db=db, skip=skip, limit=page_size)
+    logger.info("nucleos_listed", total=total, page=page)
+    return schemas.NucleoList(items=nucleos, total=total, page=page, page_size=page_size)
+
+
+@router.get(
+    "/nucleos/{nucleo_id}",
+    response_model=schemas.NucleoPublic,
+    summary="Get nucleo by ID",
+    description="Get a specific nucleo",
+)
+def get_nucleo(
+    nucleo_id: UUID,
+    db: Session = Depends(get_db),
+):
+    nucleo = crud.get_nucleo_by_id(db=db, nucleo_id=nucleo_id)
+    if not nucleo:
+        raise HTTPException(status_code=404, detail="Nucleo not found")
+    logger.info("nucleo_retrieved", nucleo_id=str(nucleo_id))
+    return nucleo
 
 
 # ==================== Regulation Endpoints ====================
@@ -538,6 +617,7 @@ def get_modality_ranking(
         None, description="Optional filter by modality ID"
     ),
     nucleo_id: Optional[UUID] = Query(None, description="Optional filter by nucleo ID"),
+    season_id: Optional[UUID] = Query(None, description="Optional filter by season ID"),
     db: Session = Depends(get_db),
 ):
     """Retrieve rankings of courses within modalities.
@@ -547,11 +627,13 @@ def get_modality_ranking(
 
     - **modality_id**: Optional filter to show ranking only for a specific modality
     - **nucleo_id**: Optional filter to show ranking only for a specific nucleo
+    - **season_id**: Optional filter to show ranking for a specific season
     """
     rankings, total = crud.get_modality_ranking(
         db=db,
         modality_id=modality_id,
         nucleo_id=nucleo_id,
+        season_id=season_id,
     )
 
     logger.info(
@@ -560,6 +642,7 @@ def get_modality_ranking(
         filters={
             "modality_id": str(modality_id) if modality_id else None,
             "nucleo_id": str(nucleo_id) if nucleo_id else None,
+            "season_id": str(season_id) if season_id else None,
         },
     )
 
@@ -594,3 +677,21 @@ def get_course_modality_rankings(
     )
 
     return rankings
+
+
+# ==================== Season Endpoints ====================
+
+
+@router.get(
+    "/seasons",
+    response_model=list[schemas.SeasonPublic],
+    summary="List all seasons",
+    description="Get all seasons ordered by year descending",
+)
+def list_seasons(
+    db: Session = Depends(get_db),
+):
+    """Retrieve all seasons."""
+    seasons = crud.get_seasons(db=db)
+    logger.info("seasons_listed", total=len(seasons))
+    return seasons

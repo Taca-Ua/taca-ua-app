@@ -4,6 +4,7 @@ export interface NucleoListItem {
   id: string;
   name: string;
   abbreviation: string;
+  logo_url?: string;
 }
 
 export interface NucleoDetail extends NucleoListItem {

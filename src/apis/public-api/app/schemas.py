@@ -51,6 +51,26 @@ class TeamDetailList(BaseModel):
     page_size: int = Field(..., ge=1, description="Number of items per page")
 
 
+class TeamMember(BaseModel):
+    """Schema for a team member (student) in a team."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    student_id: UUID = Field(..., description="Student identifier")
+    student_number: str = Field(..., description="Student number")
+    full_name: str = Field(..., description="Full name of the student")
+    course_name: str = Field(..., description="Course name")
+    course_abbreviation: str = Field(..., description="Course abbreviation")
+    added_at: datetime = Field(..., description="When the student joined the team")
+
+
+class TeamMemberList(BaseModel):
+    """Schema for list of team members."""
+
+    items: list[TeamMember] = Field(..., description="List of team members")
+    total: int = Field(..., ge=0, description="Total number of active members")
+
+
 # ==================== StudentDetailView Schemas ====================
 
 
@@ -99,6 +119,7 @@ class TournamentDetail(BaseModel):
     tournament_name: str = Field(..., description="Name of the tournament")
     start_date: date = Field(..., description="Tournament start date")
     status: str = Field(..., description="Tournament status")
+    season_id: Optional[UUID] = Field(None, description="Season identifier")
 
     # Modality info
     modality_id: UUID = Field(..., description="Modality identifier")
@@ -253,6 +274,7 @@ class GeneralRanking(BaseModel):
     tournaments_participated: int = Field(
         ..., ge=0, description="Number of tournaments participated"
     )
+    season_id: Optional[UUID] = Field(None, description="Season identifier, if scoped")
 
 
 class GeneralRankingList(BaseModel):
@@ -307,6 +329,7 @@ class ModalityRanking(BaseModel):
     rank: Optional[int] = Field(
         None, ge=1, description="Position in the ranking within the modality"
     )
+    season_id: Optional[UUID] = Field(None, description="Season identifier, if scoped")
 
 
 class ModalityRankingList(BaseModel):
@@ -315,4 +338,47 @@ class ModalityRankingList(BaseModel):
     items: list[ModalityRanking] = Field(..., description="List of course rankings")
     total: int = Field(
         ..., ge=0, description="Total number of course rankings in the result"
+    )
+
+
+# ==================== Nucleo Schemas ====================
+
+
+class NucleoPublic(BaseModel):
+    """Schema for a nucleo (organisational unit)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    nucleo_id: UUID = Field(..., description="Unique identifier for the nucleo")
+    name: str = Field(..., description="Full name of the nucleo")
+    abbreviation: str = Field(..., description="Short abbreviation")
+    logo_url: Optional[str] = Field(None, description="Logo image URL")
+
+
+class NucleoList(BaseModel):
+    """Schema for paginated list of nucleos."""
+
+    items: list[NucleoPublic] = Field(..., description="List of nucleos")
+    total: int = Field(..., ge=0, description="Total number of nucleos")
+    page: int = Field(..., ge=1, description="Current page number")
+    page_size: int = Field(..., ge=1, description="Number of items per page")
+
+
+# ==================== Season Schemas ====================
+
+
+class SeasonPublic(BaseModel):
+    """Schema for a public season."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    season_id: UUID = Field(..., description="Unique identifier for the season")
+    year: int = Field(..., description="Academic year of the season")
+    status: str = Field(..., description="Season status: draft, active, or finished")
+    created_at: datetime = Field(..., description="Creation timestamp")
+    started_at: Optional[datetime] = Field(
+        None, description="When the season was started"
+    )
+    finished_at: Optional[datetime] = Field(
+        None, description="When the season was finished"
     )

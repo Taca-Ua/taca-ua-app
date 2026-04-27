@@ -1,21 +1,28 @@
 import { apiClient } from './client';
 
 export interface Season {
-  id: number;
+  id: string;
   year: number;
   status: 'draft' | 'active' | 'finished';
+  created_at?: string;
+  started_at?: string | null;
+  finished_at?: string | null;
 }
 
 export const seasonsApi = {
   async getAll(): Promise<Season[]> {
-    return apiClient.get<Season[]>('/seasons');
+    return apiClient.get<Season[]>('/seasons/');
   },
 
-  async start(seasonId: number): Promise<Season> {
-    return apiClient.post<Season>(`/seasons/${seasonId}/start`, {});
+  async create(year: number): Promise<Season> {
+    return apiClient.post<Season>('/seasons/', { year });
   },
 
-  async finish(seasonId: number): Promise<Season> {
-    return apiClient.post<Season>(`/seasons/${seasonId}/finish`, {});
+  async start(seasonId: string): Promise<Season> {
+    return apiClient.post<Season>(`/seasons/${seasonId}/start/`, {});
+  },
+
+  async finish(seasonId: string): Promise<Season> {
+    return apiClient.post<Season>(`/seasons/${seasonId}/finish/`, {});
   },
 };
