@@ -14,21 +14,32 @@ const NucleusDetailComponent = ( { nucleusId } : { nucleusId: string }) => {
   const { isAdminGeneral } = useAuth();
 
   const [nucleus, setNucleus] = useState<NucleoDetail | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const { pushModal } = useModal();
 
   useEffect(() => {
-    // Fetch nucleus details from API
-    const fetchNucleus = async () => {
-      try {
-        const nucleusData = await nucleosApi.getById(nucleusId);
+    nucleosApi.getById(nucleusId)
+      .then(nucleusData => {
         setNucleus(nucleusData);
-      } catch (error) {
-        console.error("Error fetching nucleus details:", error);
-      }
-    };
 
-    fetchNucleus();
+        if (nucleusData.logo_url) { // Add cache-busting query parameter to logo URL to force refresh
+          setLogoUrl(`${nucleusData.logo_url}?t=${Date.now()}`);
+        }
+      })
+      .catch(error => {
+        console.error("Error fetching nucleus details:", error);
+        notify("Não foi possível carregar os detalhes do núcleo.", "error");
+      });
   }, [nucleusId]);
+
+  // Update logoUrl when nucleus.logo_url changes (e.g., after editing)
+  useEffect(() => {
+    if (nucleus?.logo_url) {
+      setLogoUrl(`${nucleus.logo_url}?t=${Date.now()}`);
+    } else {
+      setLogoUrl(null);
+    }
+  }, [nucleus?.logo_url]);
 
   const handleDelete = async () => {
     try {
@@ -52,13 +63,19 @@ const NucleusDetailComponent = ( { nucleusId } : { nucleusId: string }) => {
     <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
       <div>
         <label className="block text-teal-500 font-medium mb-2">Logo</label>
-        <div className="flex items-center gap-4">
-          <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-teal-500">
-            <span className="text-teal-600 font-bold text-2xl">
-              {nucleus.abbreviation}
-            </span>
+        { logoUrl ? (
+          <div className="w-24 h-24 rounded-full flex items-center justify-center overflow-hidden border-2 border-teal-500">
+            <img src={logoUrl} alt={`${nucleus?.name} logo`} className="w-full h-full object-cover" />
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center gap-4">
+            <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-teal-500">
+              <span className="text-teal-600 font-bold text-2xl">
+                {nucleus?.abbreviation}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       <div>
@@ -108,11 +125,9 @@ const NucleusDetailComponent = ( { nucleusId } : { nucleusId: string }) => {
 
       <div className="flex gap-4 pt-4">
         <Button
-          onClick={() => pushModal(
-            <NucleusEditModal
-              nucleusState={[nucleus, setNucleus]}
-            />
-          )}
+          onClick={() =>
+            pushModal(<NucleusEditModal nucleusState={[nucleus, setNucleus]} />)
+          }
           type="primary"
           flexible={true}
           active={isAdminGeneral}

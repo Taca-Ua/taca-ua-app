@@ -44,9 +44,16 @@ const ListNucleosComponent = ({
                     className="w-full text-left px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-teal-500 flex-shrink-0">
-                        <span className="text-teal-600 font-bold text-sm">{n.abbreviation}</span>
-                    </div>
+
+                    {n.logo_url ? (
+                        <div className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden border-2 border-teal-500 flex-shrink-0">
+                            <img src={n.logo_url} alt={n.abbreviation} className="w-full h-full object-cover" />
+                        </div>
+                    ) : (
+                        <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-teal-500 flex-shrink-0">
+                            <span className="text-teal-600 font-bold text-sm">{n.abbreviation}</span>
+                        </div>
+                    )}
                     <div className="flex items-center gap-3">
                         <span className="text-teal-600 font-bold text-lg">{n.abbreviation}</span>
                         <span className="text-gray-400">|</span>

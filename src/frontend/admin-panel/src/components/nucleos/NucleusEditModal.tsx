@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { type NucleoDetail, nucleosApi } from "../../api/nucleos";
 import HelpTooltip from "../HelpTooltip";
 import Button from "../utils/Button";
@@ -18,21 +18,52 @@ const NucleusEditModal = ( {
   const { notify } = useNotification();
   const { popModal } = useModal();
   const { isAdminGeneral } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [editedAbbreviation, setEditedAbbreviation] = useState('');
   const [editedName, setEditedName] = useState('');
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   useEffect(() => {
     setEditedAbbreviation(nucleus.abbreviation);
     setEditedName(nucleus.name);
-  }, []);
+    if (nucleus.logo_url) {
+      setLogoPreview(nucleus.logo_url);
+    }
+  }, [nucleus]);
 
 
   const onClose = () => {
     setEditedAbbreviation(nucleus.abbreviation);
     setEditedName(nucleus.name);
+    setLogoFile(null);
+    setLogoPreview(nucleus.logo_url || null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
     popModal();
   }
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setLogoFile(file);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setLogoPreview(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setLogoFile(null);
+    setLogoPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const handleSave = async () => {
     if (!editedAbbreviation.trim()) {
@@ -47,7 +78,12 @@ const NucleusEditModal = ( {
     nucleosApi.update(nucleus.id, {
       abbreviation: editedAbbreviation,
       name: editedName,
+      image: logoFile || undefined,
     }).then((updatedNucleus) => {
+      // Add cache-busting query parameter to logo URL to force refresh
+      if (updatedNucleus.logo_url) {
+        updatedNucleus.logo_url = `${updatedNucleus.logo_url}?t=${Date.now()}`;
+      }
       setNucleus(updatedNucleus);
       if (onSave) onSave(updatedNucleus);
       popModal();
@@ -96,6 +132,47 @@ const NucleusEditModal = ( {
               required
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
+          </div>
+
+          <div>
+            <label className="block text-gray-700 font-medium mb-2">
+              Logo <span className="text-gray-400 text-sm">(opcional)</span>
+            </label>
+            <div className="flex items-center gap-4">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleLogoChange}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="px-4 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 cursor-pointer font-medium text-gray-700"
+              >
+                Escolher Logo
+              </button>
+              {logoFile && (
+                <span className="text-sm text-gray-600">{logoFile.name}</span>
+              )}
+            </div>
+            {logoPreview && (
+              <div className="mt-3 relative">
+                <img
+                  src={logoPreview}
+                  alt="Logo preview"
+                  className="h-20 w-20 object-cover rounded-md border border-gray-200"
+                />
+                <button
+                  type="button"
+                  onClick={handleRemoveLogo}
+                  className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

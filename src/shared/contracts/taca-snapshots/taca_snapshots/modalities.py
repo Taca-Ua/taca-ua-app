@@ -25,6 +25,7 @@ class NucleoSnapshotItem(SnapshotBase):
     id: str
     name: str
     abbreviation: str
+    logo_url: Optional[str] = None
     created_by: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -35,6 +36,7 @@ class NucleoSnapshotItem(SnapshotBase):
             "id": self.id,
             "name": self.name,
             "abbreviation": self.abbreviation,
+            "logo_url": self.logo_url,
             "created_by": self.created_by,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,

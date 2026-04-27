@@ -51,6 +51,7 @@ class NucleoListCreateView(RoleRequiredMixin, APIView):
         nucleo = nucleos_service.create_nucleo(
             name=serializer.validated_data["name"],
             abbreviation=serializer.validated_data["abbreviation"],
+            image=serializer.validated_data.get("image"),
         )
 
         # Serialize output data
@@ -94,6 +95,7 @@ class NucleoDetailView(RoleRequiredMixin, APIView):
             nucleo_id,
             name=serializer.validated_data.get("name"),
             abbreviation=serializer.validated_data.get("abbreviation"),
+            image=serializer.validated_data.get("image"),
         )
 
         # Serialize output data
