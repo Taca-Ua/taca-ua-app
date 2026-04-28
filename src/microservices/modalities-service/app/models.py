@@ -9,10 +9,15 @@ from datetime import datetime, timezone
 from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, String, Table, Text
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 from taca_outbox.models import create_outbox_model
+from taca_snapshots import modalities as snapshot_models
 
 Base = declarative_base()
+
+# OutboxEvent model — schema-bound via shared factory
+OutboxEvent = create_outbox_model(Base, schema="modalities")
+
 
 # Association table for Team-Student many-to-many relationship
 team_players = Table(
@@ -66,7 +71,22 @@ class Nucleo(Base):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "admins_ids": self.admins_ids,
+            "courses": [
+                course.to_dict(include_nucleo=False) for course in self.courses
+            ],
         }
+
+    def to_snapshot(self) -> snapshot_models.NucleoSnapshotItem:
+        return snapshot_models.NucleoSnapshotItem(
+            id=str(self.id),
+            name=self.name,
+            abbreviation=self.abbreviation,
+            logo_url=self.logo_url,
+            created_by=str(self.created_by),
+            created_at=self.created_at.isoformat() if self.created_at else None,
+            updated_at=self.updated_at.isoformat() if self.updated_at else None,
+            admins_ids=self.admins_ids,
+        )
 
 
 class Course(Base):
@@ -94,16 +114,27 @@ class Course(Base):
     students = relationship("Student", back_populates="course")
     teams = relationship("Team", back_populates="course")
 
-    def to_dict(self):
+    def to_dict(self, *, include_nucleo=True):
         return {
             "id": str(self.id),
             "name": self.name,
             "abbreviation": self.abbreviation,
-            "nucleo": self.nucleo.to_dict() if self.nucleo else None,
+            "nucleo": self.nucleo.to_dict() if self.nucleo and include_nucleo else None,
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+
+    def to_snapshot(self) -> snapshot_models.CourseSnapshotItem:
+        return snapshot_models.CourseSnapshotItem(
+            id=str(self.id),
+            name=self.name,
+            abbreviation=self.abbreviation,
+            nucleo_id=str(self.nucleo_id),
+            created_by=str(self.created_by),
+            created_at=self.created_at.isoformat() if self.created_at else None,
+            updated_at=self.updated_at.isoformat() if self.updated_at else None,
+        )
 
 
 class ModalityType(Base):
@@ -148,6 +179,28 @@ class ModalityType(Base):
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 
+    def to_snapshot(self) -> snapshot_models.ModalityTypeSnapshotItem:
+        escaloes_list = []
+        if self.escaloes:
+            for escalo in self.escaloes:
+                escaloes_list.append(
+                    snapshot_models.ModalityTypeSnapshotItem.EscaloType(
+                        name=escalo.get("escalao"),
+                        min_participants=escalo.get("minParticipants"),
+                        max_participants=escalo.get("maxParticipants"),
+                        points=escalo.get("points"),
+                    )
+                )
+        return snapshot_models.ModalityTypeSnapshotItem(
+            id=str(self.id),
+            name=self.name,
+            description=self.description,
+            escaloes=escaloes_list if escaloes_list else None,
+            created_by=str(self.created_by),
+            created_at=self.created_at.isoformat() if self.created_at else None,
+            updated_at=self.updated_at.isoformat() if self.updated_at else None,
+        )
+
 
 class Modality(Base):
     """Represents a sport modality"""
@@ -183,6 +236,16 @@ class Modality(Base):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+
+    def to_snapshot(self) -> snapshot_models.ModalitySnapshotItem:
+        return snapshot_models.ModalitySnapshotItem(
+            id=str(self.id),
+            name=self.name,
+            modality_type_id=str(self.modality_type_id),
+            created_by=str(self.created_by),
+            created_at=self.created_at.isoformat() if self.created_at else None,
+            updated_at=self.updated_at.isoformat() if self.updated_at else None,
+        )
 
 
 class Member(Base):
@@ -252,6 +315,18 @@ class Student(Member):
         )
         return base_dict
 
+    def to_snapshot(self) -> snapshot_models.StudentSnapshotItem:
+        return snapshot_models.StudentSnapshotItem(
+            id=str(self.id),
+            full_name=self.full_name,
+            course_id=str(self.course_id),
+            student_number=self.student_number,
+            is_member=self.is_member,
+            created_by=str(self.created_by),
+            created_at=self.created_at.isoformat() if self.created_at else None,
+            updated_at=self.updated_at.isoformat() if self.updated_at else None,
+        )
+
 
 class Staff(Member):
     """Represents a staff member"""
@@ -280,6 +355,17 @@ class Staff(Member):
         )
         return base_dict
 
+    def to_snapshot(self) -> snapshot_models.StaffSnapshotItem:
+        return snapshot_models.StaffSnapshotItem(
+            id=str(self.id),
+            full_name=self.full_name,
+            staff_number=self.staff_number,
+            contact=self.contact,
+            created_by=str(self.created_by),
+            created_at=self.created_at.isoformat() if self.created_at else None,
+            updated_at=self.updated_at.isoformat() if self.updated_at else None,
+        )
+
 
 class Team(Base):
     """Represents a team for a modality and course"""
@@ -306,7 +392,9 @@ class Team(Base):
     # Relationships
     modality = relationship("Modality", back_populates="teams")
     course = relationship("Course", back_populates="teams")
-    players = relationship("Student", secondary=team_players, back_populates="teams")
+    players: Mapped[list["Student"]] = relationship(
+        "Student", secondary=team_players, back_populates="teams"
+    )
 
     def to_dict(self, include_players=False):
         result = {
@@ -322,9 +410,17 @@ class Team(Base):
             result["players"] = [player.to_dict() for player in self.players]
         return result
 
-
-# OutboxEvent model — schema-bound via shared factory
-OutboxEvent = create_outbox_model(Base, schema="modalities")
+    def to_snapshot(self) -> snapshot_models.TeamSnapshotItem:
+        return snapshot_models.TeamSnapshotItem(
+            id=str(self.id),
+            modality_id=str(self.modality_id),
+            course_id=str(self.course_id),
+            name=self.name,
+            players=[str(player.id) for player in self.players],
+            created_by=str(self.created_by),
+            created_at=self.created_at.isoformat() if self.created_at else None,
+            updated_at=self.updated_at.isoformat() if self.updated_at else None,
+        )
 
 
 class Regulation(Base):
@@ -353,3 +449,12 @@ class Regulation(Base):
             "file_url": self.file_url,
             "created_at": self.created_at.isoformat(),
         }
+
+    def to_snapshot(self) -> snapshot_models.RegulationSnapshotItem:
+        return snapshot_models.RegulationSnapshotItem(
+            id=str(self.id),
+            title=self.title,
+            description=self.description,
+            file_url=self.file_url,
+            created_at=self.created_at.isoformat() if self.created_at else None,
+        )

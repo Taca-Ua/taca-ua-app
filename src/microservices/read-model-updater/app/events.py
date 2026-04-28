@@ -5,11 +5,10 @@ Publishes and consumes events via RabbitMQ.
 Supports pause/resume for rebuild operations.
 """
 
-import uuid
 from datetime import date, datetime, timezone
 from typing import Any
 
-from taca_events.pydantic_schemas import (  # Nucleo; Course; Modality Type; Modality; Student; Staff; Team; Tournament; Match; Ranking
+from taca_events.pydantic_schemas import (  # Nucleo; Course; Modality Type; Modality; Student; Team; Tournament; Match; Ranking
     CourseCreatedV1,
     CourseDeletedV1,
     CourseUpdatedV1,
@@ -17,7 +16,6 @@ from taca_events.pydantic_schemas import (  # Nucleo; Course; Modality Type; Mod
     MatchCommentDeletedV1,
     MatchCreatedV1,
     MatchDeletedV1,
-    MatchLineupAssignedV1,
     MatchParticipantAddedV1,
     MatchParticipantRemovedV1,
     MatchResultUpdatedV1,
@@ -32,12 +30,6 @@ from taca_events.pydantic_schemas import (  # Nucleo; Course; Modality Type; Mod
     NucleoDeletedV1,
     NucleoUpdatedV1,
     RankingComputedV1,
-    SeasonCreatedV1,
-    SeasonFinishedV1,
-    SeasonStartedV1,
-    StaffCreatedV1,
-    StaffDeletedV1,
-    StaffUpdatedV1,
     StudentCreatedV1,
     StudentDeletedV1,
     StudentUpdatedV1,
@@ -56,6 +48,7 @@ from taca_events.pydantic_schemas import (  # Nucleo; Course; Modality Type; Mod
 from taca_events.pydantic_schemas.modalities import (
     RegulationCreatedV1,
     RegulationDeletedV1,
+    RegulationUpdatedV1,
 )
 from taca_messaging.rabbitmq_service import RabbitMQService
 from taca_models.models import Regulation
@@ -67,7 +60,6 @@ from .models import (
     GeneralRankings,
     Match,
     MatchComment,
-    MatchLineup,
     MatchParticipant,
     MatchResult,
     MatchStatus,
@@ -76,14 +68,11 @@ from .models import (
     ModalityType,
     Nucleo,
     ParticipantType,
-    Season,
-    Staff,
     Student,
     Team,
     TeamPlayer,
     Tournament,
     TournamentCompetitor,
-    TournamentRanking,
 )
 from .utils import (
     rebuild_all_students_for_course,
@@ -93,6 +82,7 @@ from .utils import (
     rebuild_general_ranking_projection,
     rebuild_match_projection,
     rebuild_modality_ranking_projection,
+    rebuild_nucleo_projection,
     rebuild_student_projection,
     rebuild_team_projection,
     rebuild_tournament_projection,
@@ -220,6 +210,8 @@ def handle_nucleo_created(event: NucleoCreatedV1):
             logo_url=event.data.logo_url,
         )
         db.add(nucleo)
+        db.flush()
+        rebuild_nucleo_projection(db, nucleo_id)
 
 
 @rabbitmq_service.event_handler(NucleoUpdatedV1)
@@ -239,11 +231,11 @@ def handle_nucleo_updated(event: NucleoUpdatedV1):
             nucleo.abbreviation = event.data.abbreviation
         if event.data.logo_url is not None:
             nucleo.logo_url = event.data.logo_url
-        nucleo.updated_at = datetime.utcnow()
 
         # Rebuild affected projections
         db.flush()
         courses = db.query(Course.course_id).filter(Course.nucleo_id == nucleo_id).all()
+        rebuild_nucleo_projection(db, nucleo_id)
         for (course_id,) in courses:
             rebuild_all_teams_for_course(db, course_id)
             rebuild_all_students_for_course(db, course_id)
@@ -261,6 +253,8 @@ def handle_nucleo_deleted(event: NucleoDeletedV1):
             logger.warning("nucleo_not_found", nucleo_id=str(nucleo_id))
             return
         nucleo.deleted_at = datetime.utcnow()
+        db.flush()
+        rebuild_nucleo_projection(db, nucleo_id)
 
 
 # ==================== Course Events ====================
@@ -299,7 +293,6 @@ def handle_course_updated(event: CourseUpdatedV1):
             course.abbreviation = event.data.abbreviation
         if event.data.nucleo_id is not None:
             course.nucleo_id = event.data.nucleo_id
-        course.updated_at = datetime.utcnow()
 
         # Rebuild affected projections
         db.flush()
@@ -387,8 +380,6 @@ def handle_modality_type_updated(event: ModalityTypeUpdatedV1):
                 for e in event.data.escaloes
             ]
 
-        modality_type.updated_at = datetime.utcnow()
-
 
 @rabbitmq_service.event_handler(ModalityTypeDeletedV1)
 def handle_modality_type_deleted(event: ModalityTypeDeletedV1):
@@ -453,7 +444,6 @@ def handle_modality_updated(event: ModalityUpdatedV1):
             modality.name = event.data.name
         if event.data.modality_type_id is not None:
             modality.modality_type_id = event.data.modality_type_id
-        modality.updated_at = datetime.utcnow()
         db.flush()
         # Rebuild affected projections
         rebuild_all_teams_for_modality(db, modality_id)
@@ -523,7 +513,6 @@ def handle_student_updated(event: StudentUpdatedV1):
             student.student_number = event.data.student_number
         if event.data.is_member is not None:
             student.is_member = event.data.is_member
-        student.updated_at = datetime.utcnow()
         db.flush()
         rebuild_student_projection(db, student_id)
 
@@ -545,59 +534,6 @@ def handle_student_deleted(event: StudentDeletedV1):
 
         db.flush()
         rebuild_student_projection(db, student_id)
-
-
-# ==================== Staff Events ====================
-
-
-@rabbitmq_service.event_handler(StaffCreatedV1)
-def handle_staff_created(event: StaffCreatedV1):
-    """Handle staff created event."""
-    staff_id = event.data.staff_id
-    logger.info("event_received", event_type="staff.created", staff_id=str(staff_id))
-
-    with get_db() as db:
-        staff = Staff(
-            staff_id=staff_id,
-            full_name=event.data.full_name,
-            staff_number=event.data.staff_number,
-            contact=event.data.contact,
-        )
-        db.add(staff)
-
-
-@rabbitmq_service.event_handler(StaffUpdatedV1)
-def handle_staff_updated(event: StaffUpdatedV1):
-    """Handle staff updated event."""
-    staff_id = event.data.staff_id
-    logger.info("event_received", event_type="staff.updated", staff_id=str(staff_id))
-
-    with get_db() as db:
-        staff = db.query(Staff).filter(Staff.staff_id == staff_id).first()
-        if not staff:
-            logger.warning("staff_not_found", staff_id=str(staff_id))
-            return
-        if event.data.full_name is not None:
-            staff.full_name = event.data.full_name
-        if event.data.staff_number is not None:
-            staff.staff_number = event.data.staff_number
-        if event.data.contact is not None:
-            staff.contact = event.data.contact
-        staff.updated_at = datetime.utcnow()
-
-
-@rabbitmq_service.event_handler(StaffDeletedV1)
-def handle_staff_deleted(event: StaffDeletedV1):
-    """Handle staff deleted event."""
-    staff_id = event.data.staff_id
-    logger.info("event_received", event_type="staff.deleted", staff_id=str(staff_id))
-
-    with get_db() as db:
-        staff = db.query(Staff).filter(Staff.staff_id == staff_id).first()
-        if not staff:
-            logger.warning("staff_not_found", staff_id=str(staff_id))
-            return
-        staff.deleted_at = datetime.utcnow()
 
 
 # ==================== Team Events ====================
@@ -638,7 +574,6 @@ def handle_team_updated(event: TeamUpdatedV1):
             team.modality_id = event.data.modality_id
         if event.data.course_id is not None:
             team.course_id = event.data.course_id
-        team.updated_at = datetime.utcnow()
         db.flush()
         rebuild_team_projection(db, team_id)
 
@@ -742,7 +677,6 @@ def handle_tournament_created(event: TournamentCreatedV1):
             name=event.data.name,
             start_date=_parse_date(event.data.start_date),
             status=event.data.status,
-            season_id=event.data.season_id,
         )
         db.add(tournament)
         db.flush()
@@ -774,7 +708,6 @@ def handle_tournament_updated(event: TournamentUpdatedV1):
             tournament.start_date = _parse_date(event.data.start_date)
         if event.data.status is not None:
             tournament.status = event.data.status
-        tournament.updated_at = datetime.utcnow()
         db.flush()
         rebuild_tournament_projection(db, tournament_id)
 
@@ -840,29 +773,12 @@ def handle_tournament_finished(event: TournamentFinishedV1):
         now = datetime.utcnow()
         tournament.status = "finished"
         tournament.finished_at = now
-        tournament.updated_at = now
         db.flush()
 
-        # Delete existing ranking entries for this tournament (if any)
-        db.query(TournamentRanking).filter(
-            TournamentRanking.tournament_id == tournament_id
-        ).delete()
-
-        # Create new ranking entries
-        for entry in ranking_entries:
-            ranking = TournamentRanking(
-                tournament_id=tournament_id,
-                competitor_id=entry.competitor_id,
-                position=entry.position,
-                created_at=now,
-            )
-            db.add(ranking)
-
-        db.flush()
         rebuild_tournament_projection(db, tournament_id)
 
         logger.info(
-            "tournament_rankings_stored",
+            "tournament_finished",
             tournament_id=str(tournament_id),
             ranking_entries_count=len(ranking_entries),
         )
@@ -880,7 +796,7 @@ def handle_tournament_competitor_added(event: TournamentCompetitorAddedV1):
 
     with get_db() as db:
         competitor = TournamentCompetitor(
-            competitor_id=uuid.uuid4(),
+            competitor_id=event.data.competitor_id,
             tournament_id=tournament_id,
             competitor_type=ParticipantType(event.data.competitor_type),
             competitor_entity_id=event.data.competitor_entity_id,
@@ -936,7 +852,8 @@ def handle_tournament_competitor_deleted(event: TournamentCompetitorDeletedV1):
 def handle_match_created(event: MatchCreatedV1):
     """Handle match created event.
 
-    Creates the Match record and any participants included in the event.
+    Creates the Match record and any participants (competitors) included in the event.
+    participant_id is now the competitor_id from the tournament.
     """
     match_id = event.data.match_id
     logger.info("event_received", event_type="match.created", match_id=str(match_id))
@@ -953,11 +870,13 @@ def handle_match_created(event: MatchCreatedV1):
         db.flush()
 
         for participant_data in event.data.participants:
+            print(
+                f"Adding participant {participant_data.participant_id} to match {match_id}",
+                flush=True,
+            )
             participant = MatchParticipant(
                 match_id=match_id,
                 participant_id=participant_data.participant_id,
-                participant_type=ParticipantType(participant_data.participant_type),
-                participant_entity_id=participant_data.participant_entity_id,
             )
             db.add(participant)
 
@@ -992,7 +911,6 @@ def handle_match_updated(event: MatchUpdatedV1):
             ]:
                 db.flush()
                 rebuild_tournament_standings(db, match.tournament_id)
-        match.updated_at = datetime.utcnow()
         db.flush()
         rebuild_match_projection(db, match_id)
 
@@ -1026,7 +944,10 @@ def handle_match_deleted(event: MatchDeletedV1):
 
 @rabbitmq_service.event_handler(MatchParticipantAddedV1)
 def handle_match_participant_added(event: MatchParticipantAddedV1):
-    """Handle match participant added event."""
+    """Handle match participant added event.
+
+    participant_id is the competitor_id from the tournament.
+    """
     match_id = event.data.match_id
     participant_id = event.data.participant_id
     logger.info(
@@ -1040,8 +961,6 @@ def handle_match_participant_added(event: MatchParticipantAddedV1):
         participant = MatchParticipant(
             match_id=match_id,
             participant_id=participant_id,
-            participant_type=ParticipantType(event.data.participant_type),
-            participant_entity_id=event.data.participant_entity_id,
         )
         db.add(participant)
         db.flush()
@@ -1112,7 +1031,6 @@ def handle_match_result_updated(event: MatchResultUpdatedV1):
                 existing.score = result_entry.score
                 existing.position = result_entry.position
                 existing.results_metadata = result_entry.results_metadata
-                existing.updated_at = datetime.utcnow()
             else:
                 result = MatchResult(
                     match_id=match_id,
@@ -1129,47 +1047,6 @@ def handle_match_result_updated(event: MatchResultUpdatedV1):
         if match:
             rebuild_match_projection(db, match_id)
             rebuild_tournament_standings(db, match.tournament_id)
-
-
-@rabbitmq_service.event_handler(MatchLineupAssignedV1)
-def handle_match_lineup_assigned(event: MatchLineupAssignedV1):
-    """Handle match lineup assigned event.
-
-    Upserts MatchLineup rows for each player in the lineup.
-    """
-    match_id = event.data.match_id
-    team_id = event.data.team_id
-    logger.info(
-        "event_received",
-        event_type="match.lineup.assigned",
-        match_id=str(match_id),
-        team_id=str(team_id),
-    )
-
-    with get_db() as db:
-        for player_entry in event.data.lineup:
-            player_id = player_entry.player_id
-            existing = (
-                db.query(MatchLineup)
-                .filter(
-                    MatchLineup.match_id == match_id,
-                    MatchLineup.team_id == team_id,
-                    MatchLineup.player_id == player_id,
-                )
-                .first()
-            )
-            if existing:
-                existing.jersey_number = player_entry.jersey_number
-                existing.is_starter = player_entry.is_starter
-            else:
-                lineup_entry = MatchLineup(
-                    match_id=match_id,
-                    team_id=team_id,
-                    player_id=player_id,
-                    jersey_number=player_entry.jersey_number,
-                    is_starter=player_entry.is_starter,
-                )
-                db.add(lineup_entry)
 
 
 @rabbitmq_service.event_handler(MatchCommentAddedV1)
@@ -1245,20 +1122,15 @@ def handle_ranking_computed(event: RankingComputedV1):
     )
 
     with get_db() as db:
-        # Clear existing general ranking view for this season
-        db.query(GeneralRankings).filter(
-            GeneralRankings.season_id == event.data.season_id
-        ).delete()
-        db.query(ModalityRankings).filter(
-            ModalityRankings.season_id == event.data.season_id
-        ).delete()
+        # Clear existing general ranking view
+        db.query(GeneralRankings).delete()
+        db.query(ModalityRankings).delete()
 
         # Insert new general ranking entries
         for entry in general_entries:
             db.add(
                 GeneralRankings(
                     course_id=entry.course_id,
-                    season_id=event.data.season_id,
                     points=entry.points,
                     tournaments_participated=entry.tournaments_participated,
                 )
@@ -1270,7 +1142,6 @@ def handle_ranking_computed(event: RankingComputedV1):
                 ModalityRankings(
                     modality_id=entry.modality_id,
                     course_id=entry.course_id,
-                    season_id=event.data.season_id,
                     points=entry.points,
                 )
             )
@@ -1278,8 +1149,8 @@ def handle_ranking_computed(event: RankingComputedV1):
         db.flush()
 
         # Rebuild the GeneralRankingView and ModalityRankingView projections
-        rebuild_general_ranking_projection(db, event.data.season_id)
-        rebuild_modality_ranking_projection(db, event.data.season_id)
+        rebuild_general_ranking_projection(db)
+        rebuild_modality_ranking_projection(db)
 
         logger.info(
             "rankings_updated",
@@ -1309,6 +1180,30 @@ def handle_regulation_created(event: RegulationCreatedV1):
         db.add(regulation)
 
 
+@rabbitmq_service.event_handler(RegulationUpdatedV1)
+def handle_regulation_updated(event: RegulationUpdatedV1):
+    """Handle regulation updated event."""
+    regulation_id = event.data.regulation_id
+    logger.info(
+        "event_received",
+        event_type="regulation.updated",
+        regulation_id=str(regulation_id),
+    )
+
+    with get_db() as db:
+        regulation = db.query(Regulation).filter(Regulation.id == regulation_id).first()
+        if not regulation:
+            logger.warning("regulation_not_found", regulation_id=str(regulation_id))
+            return
+        if event.data.title is not None:
+            regulation.title = event.data.title
+        if event.data.description is not None:
+            regulation.description = event.data.description
+        if event.data.file_url is not None:
+            regulation.file_url = event.data.file_url
+        db.flush()
+
+
 @rabbitmq_service.event_handler(RegulationDeletedV1)
 def handle_regulation_deleted(event: RegulationDeletedV1):
     """Handle regulation deleted event."""
@@ -1325,67 +1220,4 @@ def handle_regulation_deleted(event: RegulationDeletedV1):
             logger.warning("regulation_not_found", regulation_id=str(regulation_id))
             return
         db.delete(regulation)
-        db.flush()
-
-
-# ==================== Season Events ====================
-
-
-@rabbitmq_service.event_handler(SeasonCreatedV1)
-def handle_season_created(event: SeasonCreatedV1):
-    """Handle season created event."""
-    season_id = event.data.season_id
-    logger.info(
-        "event_received",
-        event_type="season.created",
-        season_id=str(season_id),
-    )
-
-    with get_db() as db:
-        season = Season(
-            season_id=season_id,
-            year=event.data.year,
-            status="draft",
-        )
-        db.add(season)
-        db.flush()
-
-
-@rabbitmq_service.event_handler(SeasonStartedV1)
-def handle_season_started(event: SeasonStartedV1):
-    """Handle season started event."""
-    season_id = event.data.season_id
-    logger.info(
-        "event_received",
-        event_type="season.started",
-        season_id=str(season_id),
-    )
-
-    with get_db() as db:
-        season = db.query(Season).filter(Season.season_id == season_id).first()
-        if not season:
-            logger.warning("season_not_found", season_id=str(season_id))
-            return
-        season.status = "active"
-        season.started_at = datetime.utcnow()
-        db.flush()
-
-
-@rabbitmq_service.event_handler(SeasonFinishedV1)
-def handle_season_finished(event: SeasonFinishedV1):
-    """Handle season finished event."""
-    season_id = event.data.season_id
-    logger.info(
-        "event_received",
-        event_type="season.finished",
-        season_id=str(season_id),
-    )
-
-    with get_db() as db:
-        season = db.query(Season).filter(Season.season_id == season_id).first()
-        if not season:
-            logger.warning("season_not_found", season_id=str(season_id))
-            return
-        season.status = "finished"
-        season.finished_at = datetime.utcnow()
         db.flush()

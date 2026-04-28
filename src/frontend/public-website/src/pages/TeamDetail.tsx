@@ -2,12 +2,12 @@ import { useParams, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { teamsApi, type TeamDetail, type TeamMember } from '../api';
+import { teamsApi, type TeamDetail } from '../api';
 
 function TeamDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [team, setTeam] = useState<TeamDetail | null>(null);
-  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [members, setMembers] = useState<TeamDetail['players'] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,12 +17,11 @@ function TeamDetailPage() {
       try {
         setLoading(true);
         setError(null);
-        const [teamData, membersData] = await Promise.all([
+        const [teamData] = await Promise.all([
           teamsApi.getById(id),
-          teamsApi.getMembers(id),
         ]);
         setTeam(teamData);
-        setMembers(membersData.items);
+        setMembers(teamData.players);
       } catch (err) {
         console.error('Failed to load team:', err);
         setError('Erro ao carregar equipa.');
@@ -92,11 +91,11 @@ function TeamDetailPage() {
               <div className="bg-white rounded-lg shadow overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-100">
                   <h2 className="text-lg font-semibold text-gray-800">
-                    Jogadores ({members.length})
+                    Jogadores ({members?.length || 0})
                   </h2>
                 </div>
 
-                {members.length === 0 ? (
+                {(!members || members.length === 0) ? (
                   <div className="p-8 text-center">
                     <p className="text-gray-500">Nenhum jogador registado nesta equipa.</p>
                   </div>
@@ -110,7 +109,7 @@ function TeamDetailPage() {
                         <div>
                           <p className="font-medium text-gray-800">{member.full_name}</p>
                           <p className="text-sm text-gray-500">
-                            {member.student_number} · {member.course_abbreviation}
+                            {member.student_number}
                           </p>
                         </div>
                       </div>

@@ -2,7 +2,7 @@ from typing import List
 
 import requests
 
-API_URL = "http://localhost/api/admin"
+API_URL = "http://localhost/api2/admin"
 
 HEADERS = {
     "X-Dev-Auth-Token": "super-secret-dev-token",
@@ -618,8 +618,7 @@ def populate_tournaments():
 
         payload = {
             "competitor_type": "team",
-            "team_id": team_id,
-            "athlete_id": None,
+            "entity_id": team_id,
         }
         response = requests.put(
             f"{API_URL}/tournaments/{tournament_id}/competitors/add/",
@@ -651,7 +650,7 @@ def populate_tournaments():
         )
         if tournament_teams_response.status_code == 200:
             tournament_teams = {
-                competitor["team"]["name"]: competitor["team"]["id"]
+                competitor["name"]: competitor["id"]
                 for competitor in tournament_teams_response.json()["competitors"]
             }
         else:
@@ -662,17 +661,23 @@ def populate_tournaments():
 
         # get existing matches for the tournament to avoid duplicates
         existing_matches_response = requests.get(
-            f"{API_URL}/tournaments/{tournament_id}/", headers=HEADERS
+            f"{API_URL}/matches/?tournament_id={tournament_id}", headers=HEADERS
         )
         if existing_matches_response.status_code == 200:
             existing_matches = {
-                (
-                    match["participants"][0]["team"]["name"],
-                    match["participants"][1]["team"]["name"],
-                    match["start_time"],
-                    match["location"],
+                tuple(
+                    [
+                        *sorted(
+                            [
+                                match["participants"][0]["name"],
+                                match["participants"][1]["name"],
+                            ]
+                        ),
+                        match["start_time"],
+                        match["location"],
+                    ]
                 ): match["id"]
-                for match in existing_matches_response.json().get("matches", [])
+                for match in existing_matches_response.json()
             }
         else:
             print(
@@ -685,13 +690,9 @@ def populate_tournaments():
             # create match
             print("\t\t", flush=True, end="")  # Add indentation for match creation logs
             if match.day == "":
-                iso_time = (
-                    "2026-01-01T00:00:00Z"  # Default to midnight if no day is provided
-                )
+                iso_time = "2026-01-01T00:00:00+00:00"  # Default to midnight if no day is provided
             else:
-                iso_time = (
-                    f"{match.day.split()[0]}T{match.hour.lower().replace('h', ':')}:00Z"
-                )
+                iso_time = f"{match.day.split()[0]}T{match.hour.lower().replace('h', ':')}:00+00:00"
             local = match.local if match.local else "TBD"
 
             if (match.team1 not in tournament_teams) or (
@@ -703,7 +704,10 @@ def populate_tournaments():
                 STATS["matches"]["skipped"] = STATS["matches"]["skipped"] + 1
                 continue
 
-            if (match.team1, match.team2, iso_time, local) in existing_matches:
+            if (
+                tuple([*sorted([match.team1, match.team2]), iso_time, local])
+                in existing_matches
+            ):
                 print("Match already exists. Skipping match creation.")
                 atleast_one_match = True
                 STATS["matches"]["skipped"] = STATS["matches"]["skipped"] + 1
@@ -714,16 +718,8 @@ def populate_tournaments():
                 "location": local,
                 "start_time": iso_time,
                 "participants": [
-                    {
-                        "participant_type": "team",
-                        "team_id": tournament_teams.get(match.team1),
-                        "athlete_id": None,
-                    },
-                    {
-                        "participant_type": "team",
-                        "team_id": tournament_teams.get(match.team2),
-                        "athlete_id": None,
-                    },
+                    tournament_teams.get(match.team1),
+                    tournament_teams.get(match.team2),
                 ],
             }
             response = requests.post(
@@ -733,7 +729,7 @@ def populate_tournaments():
             if response.status_code == 201:
                 response_data = response.json()
                 print(
-                    f"Created match between {response_data['participants'][0]['team']['name']} and team {response_data['participants'][1]['team']['name']}"
+                    f"Created match between {response_data['participants'][0]['name']} and team {response_data['participants'][1]['name']}"
                 )
                 atleast_one_match = True
                 STATS["matches"]["created"] = STATS["matches"]["created"] + 1
@@ -747,17 +743,23 @@ def populate_tournaments():
     def _insert_matches_results(tournament_id: str, matches: List[Match]) -> None:
         # get matches for the tournament to map match IDs and validate match existence before inserting results
         matches_response = requests.get(
-            f"{API_URL}/tournaments/{tournament_id}/", headers=HEADERS
+            f"{API_URL}/matches/?tournament_id={tournament_id}", headers=HEADERS
         )
         if matches_response.status_code == 200:
             tournament_matches = {
-                (
-                    match["participants"][0]["team"]["name"],
-                    match["participants"][1]["team"]["name"],
-                    match["start_time"],
-                    match["location"],
+                tuple(
+                    [
+                        *sorted(
+                            [
+                                match["participants"][0]["name"],
+                                match["participants"][1]["name"],
+                            ]
+                        ),
+                        match["start_time"],
+                        match["location"],
+                    ]
                 ): match
-                for match in matches_response.json().get("matches", [])
+                for match in matches_response.json()
             }
         else:
             print(
@@ -779,14 +781,17 @@ def populate_tournaments():
                 continue
 
             if match.day == "":
-                iso_time = (
-                    "2026-01-01T00:00:00Z"  # Default to midnight if no day is provided
-                )
+                iso_time = "2026-01-01T00:00:00+00:00"  # Default to midnight if no day is provided
             else:
-                iso_time = f"{match.day.split()[0]}T{match.hour.replace('h', ':')}:00Z"
+                iso_time = (
+                    f"{match.day.split()[0]}T{match.hour.replace('h', ':')}:00+00:00"
+                )
             local = match.local if match.local else "TBD"
 
-            if (match.team1, match.team2, iso_time, local) not in tournament_matches:
+            if (
+                tuple([*sorted([match.team1, match.team2]), iso_time, local])
+                not in tournament_matches
+            ):
                 print(
                     f"Match between {match.team1} and {match.team2} not found in tournament ID {tournament_id}. Skipping result insertion."
                 )
@@ -796,7 +801,7 @@ def populate_tournaments():
                 continue
 
             tournament_match = tournament_matches.get(
-                (match.team1, match.team2, iso_time, local)
+                tuple([*sorted([match.team1, match.team2]), iso_time, local])
             )
 
             if tournament_match.get("status") == "finished":
@@ -809,10 +814,10 @@ def populate_tournaments():
                 continue
 
             participants_mapper = {
-                tournament_match["participants"][0]["team"]["name"]: tournament_match[
+                tournament_match["participants"][0]["name"]: tournament_match[
                     "participants"
                 ][0]["id"],
-                tournament_match["participants"][1]["team"]["name"]: tournament_match[
+                tournament_match["participants"][1]["name"]: tournament_match[
                     "participants"
                 ][1]["id"],
             }
@@ -829,7 +834,7 @@ def populate_tournaments():
                 ],
                 "status": "finished",
             }
-            response = requests.put(
+            response = requests.post(
                 f"{API_URL}/matches/{tournament_match['id']}/results/",
                 json=payload,
                 headers=HEADERS,
@@ -884,7 +889,7 @@ def populate_tournaments():
             )
             if tournament_teams_response.status_code == 200:
                 tournament_teams = {
-                    competitor["team"]["name"]: competitor["team"]["id"]
+                    competitor["name"]: competitor["id"]
                     for competitor in tournament_teams_response.json()["competitors"]
                 }
             else:

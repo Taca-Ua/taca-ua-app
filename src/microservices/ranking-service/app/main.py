@@ -7,7 +7,8 @@ from .events import rabbitmq_service
 from .internal_controller import router as internal_router
 from .logger import logger
 from .outbox_publisher import outbox_publisher
-from .rebuild_controller import router as rebuild_router
+from .rebuild_controller_sse import router as sse_rebuild_router
+from .routes import router as api_router
 
 
 @asynccontextmanager
@@ -23,7 +24,11 @@ async def lifespan(app: FastAPI):
     logger.info("service_stopped", action="shutdown")
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    title="Ranking Service",
+    description="Maintains and calculates rankings",
+    lifespan=lifespan,
+)
 
 # Add structured logging middleware
 # app.add_middleware(StructlogMiddleware)
@@ -31,8 +36,9 @@ app = FastAPI(lifespan=lifespan)
 Instrumentator().instrument(app).expose(app)  # Prometheus metrics endpoint
 
 # Include routers
+app.include_router(api_router)
 app.include_router(internal_router)
-app.include_router(rebuild_router)
+app.include_router(sse_rebuild_router)
 
 
 @app.get("/")

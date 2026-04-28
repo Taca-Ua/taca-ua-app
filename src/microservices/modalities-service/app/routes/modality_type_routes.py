@@ -85,6 +85,7 @@ def create_modality_type(
                         min_participants=e.minParticipants,
                         max_participants=e.maxParticipants,
                         points=e.points,
+                        name=e.escalao,
                     )
                     for e in modality_type_data.escaloes
                 ],
@@ -188,6 +189,7 @@ def update_modality_type(
                     min_participants=e.minParticipants,
                     max_participants=e.maxParticipants,
                     points=e.points,
+                    name=e.escalao,
                 )
                 for e in modality_type_data.escaloes
             ],

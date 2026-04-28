@@ -3,11 +3,6 @@ Event handling for Ranking Service.
 """
 
 from taca_events import modalities, tournaments
-from taca_events.pydantic_schemas.seasons import (
-    SeasonCreatedV1,
-    SeasonFinishedV1,
-    SeasonStartedV1,
-)
 from taca_messaging import PausableRabbitMQService
 
 from .database import get_db
@@ -53,6 +48,7 @@ def handle_modality_type_created(event: modalities.ModalityTypeCreatedV1):
                 min_participants=escalao_data.min_participants,
                 max_participants=escalao_data.max_participants,
                 points=escalao_data.points,
+                name=escalao_data.name if escalao_data.name else "Unnamed Tier",
             )
             db.add(escalao)
         db.flush()
@@ -102,10 +98,10 @@ def handle_modality_type_updated(event: modalities.ModalityTypeUpdatedV1):
                     min_participants=escalao_data.min_participants,
                     max_participants=escalao_data.max_participants,
                     points=escalao_data.points,
+                    name=escalao_data.name if escalao_data.name else "Unnamed Tier",
                 )
                 db.add(escalao)
         db.flush()
-        # Recompute all seasons when scoring formats change
         compute_all_rankings(db)
         emit_ranking_computed_event(db, outbox_publisher)
 
@@ -221,7 +217,6 @@ def handle_tournament_created(event: tournaments.TournamentCreatedV1):
             tournament_id=tournament_id,
             modality_id=event.data.modality_id,
             scoring_format_id=scoring_format_id,
-            season_id=event.data.season_id,
         )
         db.add(tournament)
         db.flush()
@@ -253,8 +248,8 @@ def handle_tournament_updated(event: tournaments.TournamentUpdatedV1):
             tournament.scoring_format_id = scoring_format_id
 
         db.flush()
-        compute_all_rankings(db, tournament.season_id)
-        emit_ranking_computed_event(db, outbox_publisher, tournament.season_id)
+        compute_all_rankings(db)
+        emit_ranking_computed_event(db, outbox_publisher)
 
 
 @rabbitmq_service.event_handler(tournaments.TournamentDeletedV1)
@@ -279,11 +274,10 @@ def handle_tournament_deleted(event: tournaments.TournamentDeletedV1):
         if not tournament:
             logger.warning("tournament_not_found", tournament_id=str(tournament_id))
             return
-        season_id = tournament.season_id
         db.delete(tournament)
         db.flush()
-        compute_all_rankings(db, season_id)
-        emit_ranking_computed_event(db, outbox_publisher, season_id)
+        compute_all_rankings(db)
+        emit_ranking_computed_event(db, outbox_publisher)
 
 
 @rabbitmq_service.event_handler(tournaments.TournamentFinishedV1)
@@ -325,8 +319,8 @@ def handle_tournament_finished(event: tournaments.TournamentFinishedV1):
             tournament_id=str(tournament_id),
             ranking_entries_count=len(ranking_entries),
         )
-        compute_all_rankings(db, tournament.season_id)
-        emit_ranking_computed_event(db, outbox_publisher, tournament.season_id)
+        compute_all_rankings(db)
+        emit_ranking_computed_event(db, outbox_publisher)
 
 
 @rabbitmq_service.event_handler(tournaments.TournamentCompetitorAddedV1)
@@ -405,41 +399,3 @@ def handle_course_deleted(event: modalities.CourseDeletedV1):
         if not course:
             logger.warning("course_not_found", course_id=str(course_id))
             return
-
-
-# ==================== Season Events ====================
-
-
-@rabbitmq_service.event_handler(SeasonCreatedV1)
-def handle_season_created(event: SeasonCreatedV1):
-    """Handle season created event — no ranking action needed."""
-    logger.info(
-        "event_received",
-        event_type="season.created",
-        season_id=str(event.data.season_id),
-    )
-
-
-@rabbitmq_service.event_handler(SeasonStartedV1)
-def handle_season_started(event: SeasonStartedV1):
-    """Handle season started event — no ranking action needed."""
-    logger.info(
-        "event_received",
-        event_type="season.started",
-        season_id=str(event.data.season_id),
-    )
-
-
-@rabbitmq_service.event_handler(SeasonFinishedV1)
-def handle_season_finished(event: SeasonFinishedV1):
-    """Handle season finished — emit final ranking snapshot for the season."""
-    season_id = event.data.season_id
-    logger.info(
-        "event_received",
-        event_type="season.finished",
-        season_id=str(season_id),
-    )
-
-    with get_db() as db:
-        compute_all_rankings(db, season_id)
-        emit_ranking_computed_event(db, outbox_publisher, season_id)

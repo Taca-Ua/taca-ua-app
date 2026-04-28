@@ -12,7 +12,6 @@ export interface StudentDetail {
   nucleo_name: string;
   nucleo_abbreviation: string;
   team_count: number;
-  updated_at: string;
 }
 
 export interface StudentDetailList {

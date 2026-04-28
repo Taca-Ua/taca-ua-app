@@ -134,6 +134,7 @@ class CourseDeletedV1(EventSchema):
 # ModalityType
 # ================================================================== #
 class _EscalaoData(BaseModel):
+    name: str
     min_participants: Optional[int] = None
     max_participants: Optional[int] = None
     points: list[int]
@@ -476,6 +477,13 @@ class RegulationCreatedData(BaseModel):
     file_url: Optional[str] = None
 
 
+class RegulationUpdatedData(BaseModel):
+    regulation_id: UUID
+    title: Optional[str] = None
+    description: Optional[str] = None
+    file_url: Optional[str] = None
+
+
 class RegulationDeletedData(BaseModel):
     regulation_id: UUID
 
@@ -486,6 +494,18 @@ class RegulationCreatedV1(EventSchema):
     @classmethod
     def event_type(cls) -> str:
         return "regulation.created.v1"
+
+    @classmethod
+    def aggregate_type(cls) -> str:
+        return "regulation"
+
+
+class RegulationUpdatedV1(EventSchema):
+    data: RegulationUpdatedData
+
+    @classmethod
+    def event_type(cls) -> str:
+        return "regulation.updated.v1"
 
     @classmethod
     def aggregate_type(cls) -> str:

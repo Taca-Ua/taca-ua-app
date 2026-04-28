@@ -1,15 +1,15 @@
 import { apiClient } from './client';
-import { type ModalityType, type ModalityTypeDetail } from './modality-types';
 
-export interface Modality {
+export interface ModalityListItem {
   id: string;
   name: string;
-  modality_type: ModalityType;
-}
+  modality_type: {
+    id: string;
+    name: string;
+  };
+};
 
-export interface ModalityDetail extends Modality {
-  modality_type: ModalityTypeDetail;
-}
+export interface ModalityDetail extends ModalityListItem {};
 
 export interface ModalityCreate {
   name: string;
@@ -22,12 +22,12 @@ export interface ModalityUpdate {
 }
 
 export const modalitiesApi = {
-  async getAll(): Promise<Modality[]> {
-    return apiClient.get<Modality[]>('/modalities/');
+  async getAll(): Promise<ModalityListItem[]> {
+    return apiClient.get<ModalityListItem[]>('/modalities/');
   },
 
-  async create(data: ModalityCreate): Promise<Modality> {
-    return apiClient.post<Modality>('/modalities/', data);
+  async create(data: ModalityCreate): Promise<ModalityListItem> {
+    return apiClient.post<ModalityListItem>('/modalities/', data);
   },
 
   async getById(modalityId: string): Promise<ModalityDetail> {

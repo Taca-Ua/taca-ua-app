@@ -9,7 +9,11 @@ This module provides internal-only endpoints for:
 These endpoints should NOT be exposed via API Gateway.
 """
 
+import json
+from typing import AsyncGenerator
+
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from taca_snapshots.tournaments import (
     TournamentCompetitorSnapshotItem,
@@ -68,7 +72,6 @@ def get_snapshot(
                 id=str(t.id),
                 modality_id=str(t.modality_id),
                 name=t.name,
-                season_id=str(t.season_id) if t.season_id else None,
                 scoring_format_id=(
                     str(t.scoring_format_id) if t.scoring_format_id else None
                 ),
@@ -128,6 +131,116 @@ def get_snapshot(
     except Exception as e:
         logger.error("snapshot_generation_failed", service="tournaments", error=str(e))
         raise
+
+
+@router.get("/snapshot/stream")
+def stream_snapshot(
+    db: Session = Depends(get_db_session),
+    batch_size: int = Query(
+        default=100,
+        ge=1,
+        le=500,
+        description="Number of records to emit per event",
+    ),
+):
+    """
+    Stream complete snapshot of all tournaments data as Server-Sent Events.
+
+    Event Types:
+    - metadata: {"type": "metadata", "count": <total_items>}
+    - batch: {"type": "batch", "items": [...]}
+    - complete: {"type": "complete", "records": <total_count>}
+
+    **IMPORTANT**: This endpoint should be internal-only and NOT exposed
+    via API Gateway. Only accessible within Docker network.
+
+    Query Parameters:
+        batch_size: Number of records per batch event (default 100).
+
+    Returns:
+        text/event-stream with snapshot data in JSON batches.
+    """
+
+    async def event_stream() -> AsyncGenerator[str, None]:
+        logger.info(
+            "snapshot_stream_requested", service="tournaments", batch_size=batch_size
+        )
+
+        try:
+            # Count totals for metadata event
+            tournament_count = db.query(Tournament).count()
+            competitor_count = db.query(TournamentCompetitor).count()
+            ranking_position_count = db.query(TournamentRankingPosition).count()
+
+            total_count = tournament_count + competitor_count + ranking_position_count
+
+            # Emit metadata
+            yield f"data: {json.dumps({'type': 'metadata', 'count': total_count})}\n\n"
+
+            records_emitted = 0
+
+            # Stream tournaments in batches
+            batch = []
+            for tournament in db.query(Tournament).yield_per(batch_size):
+                batch.append(tournament.to_snapshot().to_dict())
+                if len(batch) >= batch_size:
+                    yield f"data: {json.dumps({'type': 'batch', 'items': batch, 'category': 'tournaments'})}\n\n"
+                    records_emitted += len(batch)
+                    batch.clear()
+
+            if batch:
+                yield f"data: {json.dumps({'type': 'batch', 'items': batch, 'category': 'tournaments'})}\n\n"
+                records_emitted += len(batch)
+                batch.clear()
+
+            # Stream competitors in batches
+            batch = []
+            for competitor in db.query(TournamentCompetitor).yield_per(batch_size):
+                batch.append(competitor.to_snapshot().to_dict())
+                if len(batch) >= batch_size:
+                    yield f"data: {json.dumps({'type': 'batch', 'items': batch, 'category': 'competitors'})}\n\n"
+                    records_emitted += len(batch)
+                    batch.clear()
+
+            if batch:
+                yield f"data: {json.dumps({'type': 'batch', 'items': batch, 'category': 'competitors'})}\n\n"
+                records_emitted += len(batch)
+                batch.clear()
+
+            # Stream ranking positions in batches
+            batch = []
+            for ranking_position in db.query(TournamentRankingPosition).yield_per(
+                batch_size
+            ):
+                batch.append(ranking_position.to_snapshot().to_dict())
+                if len(batch) >= batch_size:
+                    yield f"data: {json.dumps({'type': 'batch', 'items': batch, 'category': 'ranking_positions'})}\n\n"
+                    records_emitted += len(batch)
+                    batch.clear()
+
+            if batch:
+                yield f"data: {json.dumps({'type': 'batch', 'items': batch, 'category': 'ranking_positions'})}\n\n"
+                records_emitted += len(batch)
+                batch.clear()
+
+            yield f"data: {json.dumps({'type': 'complete', 'records': records_emitted})}\n\n"
+            logger.info(
+                "snapshot_stream_completed",
+                service="tournaments",
+                records_emitted=records_emitted,
+            )
+        except Exception as e:
+            logger.error("snapshot_stream_failed", service="tournaments", error=str(e))
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.get("/health")

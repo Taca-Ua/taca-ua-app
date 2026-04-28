@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Dict, List
+from typing import Dict, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -28,9 +28,15 @@ DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000"
 
 
 @router.get("/nucleos", response_model=List[NucleoResponse])
-def list_nucleos(db: Session = Depends(get_db_session)):
+def list_nucleos(admin_id: Optional[str] = None, db: Session = Depends(get_db_session)):
     """List all nucleos"""
-    nucleos = db.query(Nucleo).all()
+    nucleos = db.query(Nucleo)
+
+    if admin_id:
+        str_admin_id = str(admin_id)
+        nucleos = nucleos.filter(Nucleo.admins_ids.contains([str_admin_id]))
+
+    nucleos = nucleos.all()
     return [nucleo.to_dict() for nucleo in nucleos]
 
 
@@ -121,6 +127,7 @@ def update_nucleo(
         changes_made["abbreviation"] = nucleo_data.abbreviation
     if nucleo_data.logo_url is not None:
         nucleo.logo_url = nucleo_data.logo_url
+        changes_made["logo_url"] = nucleo_data.logo_url
     nucleo.updated_at = datetime.now(timezone.utc)
 
     try:
@@ -131,7 +138,7 @@ def update_nucleo(
                 nucleo_id=nucleo.id,
                 name=changes_made.get("name"),
                 abbreviation=changes_made.get("abbreviation"),
-                logo_url=nucleo_data.logo_url,
+                logo_url=changes_made.get("logo_url"),
             ),
         )
         outbox_publisher.emit_event(

@@ -1,20 +1,18 @@
 import { useEffect, useState } from 'react';
-import HelpTooltip from '../../components/HelpTooltip';
-import { useParams, useNavigate } from 'react-router-dom';
-import ConfirmModal from '../../components/ConfirmModal';
-import Sidebar from '../../components/geral_navbar';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useNotification } from '../../contexts/NotificationProvider';
-import { btn } from '../../styles/buttonStyles';
 import {
   matchesApi,
   type MatchDetail,
-  type MatchUpdate,
-  type MatchResultsUpdate,
-  type ParticipantResult,
-  type LineupDetail,
-  type CommentDetail,
   type CommentCreate
 } from '../../api/matches';
+import MatchInfoComponent from '../../components/matches/MatchInfoComponent';
+import MatchResultsComponent from '../../components/matches/MatchesResultsComponent';
+import Button from '../../components/utils/Button';
+import { useModal } from '../../contexts/ModalContext';
+import MatchTeamLineupModal from '../../components/matches/MatchTeamLineupModal';
+import { useAuth } from '../../hooks/useAuth';
+import { navigateBack } from '../../utils';
 
 // ==================== Private Components ====================
 
@@ -41,11 +39,11 @@ const MatchHeader = ({ match }: { match: MatchDetail }) => {
 
   const getName = (participant: typeof participants[0]) => {
     if (!participant) return 'TBD';
-    return participant.team?.name || participant.athlete?.full_name || 'TBD';
+    return participant.name || 'TBD';
   };
 
   const getScore = (participant: typeof participants[0]) => {
-    return participant?.score ?? null;
+    return participant.score ?? null;
   };
 
   const hasScores = match.status === 'finished' && participants.some(p => p.score !== null && p.score !== undefined);
@@ -88,7 +86,7 @@ const MatchHeader = ({ match }: { match: MatchDetail }) => {
         <h2 className="text-2xl font-bold text-center mb-4">Participantes</h2>
         <div className={`grid gap-4 ${participants.length === 3 ? 'grid-cols-3' : participants.length === 4 ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}`}>
           {participants.map((participant, index) => (
-            <div key={participant.id} className="text-center p-4 bg-white bg-opacity-10 rounded-lg">
+            <div key={index} className="text-center p-4 bg-white bg-opacity-10 rounded-lg">
               <div className="text-lg font-bold mb-2">{getName(participant)}</div>
               {hasScores && (
                 <div className="text-3xl font-bold">{getScore(participant) ?? '-'}</div>
@@ -105,529 +103,76 @@ const MatchHeader = ({ match }: { match: MatchDetail }) => {
   );
 };
 
-// Match Info Component
-const MatchInfo = ({
-  match,
-  isEditing,
-  formData,
-  setFormData,
-  onSave,
-  onCancel,
-  saving
-}: {
-  match: MatchDetail;
-  isEditing: boolean;
-  formData: { location: string; startTime: string; status: string };
-  setFormData: (data: any) => void;
-  onSave: () => void;
-  onCancel: () => void;
-  saving: boolean;
-}) => {
-  const formatDateTime = (dateString: string) => {
-    try {
-      return new Date(dateString).toLocaleString('pt-PT', {
-        dateStyle: 'long',
-        timeStyle: 'short',
-      });
-    } catch {
-      return dateString;
-    }
+// Lineups Section Component
+const LineupsSection = ({ matchState }: { matchState: [MatchDetail, React.Dispatch<React.SetStateAction<MatchDetail | null>>] }) => {
+  const { pushModal } = useModal();
+  const [match, setMatch] = matchState;
+
+  const getParticipantName = (participant_id: string) => {
+    const participant = match.participants.find(p => p.id === participant_id);
+    return participant ? participant.name : 'Participante';
   };
 
-  if (!isEditing) {
+  if (match.lineups === null || match.lineups === undefined) {
     return (
-      <div className="space-y-4">
-        <div className="border-b pb-3">
-          <label className="block text-sm font-medium text-gray-500 mb-1">Local</label>
-          <p className="text-lg text-gray-800">{match.location}</p>
-        </div>
-
-        <div className="border-b pb-3">
-          <label className="block text-sm font-medium text-gray-500 mb-1">Data e Hora</label>
-          <p className="text-lg text-gray-800">{formatDateTime(match.start_time)}</p>
-        </div>
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">Convocatórias</h3>
+        <p className="text-gray-600">Dados de convocatória não disponíveis.</p>
       </div>
-    );geral/torneios/36754121-cc82-4e76-b667-d6232466b046
+    );
   }
 
-  return (
-    <form onSubmit={(e) => { e.preventDefault(); onSave(); }} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Estado <HelpTooltip text="Agendado: jogo ainda não começou. Em Curso: jogo a decorrer. Terminado: jogo concluído com resultados registados. Cancelado: jogo cancelado sem resultados." className="ml-1" /> <span className="text-red-500">*</span>
-        </label>
-        <select
-          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-          value={formData.status}
-          onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-        >
-          <option value="scheduled">Agendado</option>
-          <option value="in_progress">Em Curso</option>
-          <option value="finished">Terminado</option>
-          <option value="cancelled">Cancelado</option>
-        </select>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Local <HelpTooltip text="Local físico onde o jogo vai decorrer/decorreu, ex: Campo Municipal, Pav. Principal. Visível aos participantes." className="ml-1" /> <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-          value={formData.location}
-          onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-          placeholder="Ex: Campo Municipal"
-          required
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Data e Hora <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="datetime-local"
-          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-          value={formData.startTime}
-          onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-          required
-        />
-      </div>
-
-      <div className="flex gap-3 pt-4 border-t">
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={saving}
-          className={`flex-1 px-4 py-2 ${btn.secondaryAlt} rounded-md font-medium transition-colors disabled:opacity-50`}
-        >
-          Cancelar
-        </button>
-        <button
-          type="submit"
-          disabled={saving}
-          className={`flex-1 px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors disabled:opacity-50 flex items-center justify-center`}
-        >
-          {saving ? (
-            <>
-              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              A Guardar...
-            </>
-          ) : (
-            'Guardar'
-          )}
-        </button>
-      </div>
-    </form>
-  );
-};
-
-// Results Section Component
-const ResultsSection = ({
-  match,
-  onUpdate
-}: {
-  match: MatchDetail;
-  onUpdate: () => void;
-}) => {
-  const [isEditingResults, setIsEditingResults] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [finalizing, setFinalizing] = useState(false);
-  const [showFinalizeModal, setShowFinalizeModal] = useState(false);
-  const { notify } = useNotification();
-  const [results, setResults] = useState<{ [key: string]: { score: string; position: string } }>({});
-
-  useEffect(() => {
-    const initialResults: { [key: string]: { score: string; position: string } } = {};
-    match.participants.forEach(p => {
-      initialResults[p.id] = {
-        score: p.score?.toString() || '',
-        position: p.position?.toString() || '',
-      };
-    });
-    setResults(initialResults);
-  }, [match.participants]);
-
-  const handleSaveResults = async () => {
-    try {
-      setSaving(true);
-
-      const participant_results: ParticipantResult[] = match.participants.map(p => ({
-        participant_id: p.id,
-        score: results[p.id]?.score ? Number(results[p.id].score) : undefined,
-        position: results[p.id]?.position ? Number(results[p.id].position) : undefined,
-      }));
-
-      const updateData: MatchResultsUpdate = {
-        participant_results,
-        // Do NOT auto-finish: status is not changed here
-      };
-
-      await matchesApi.updateMatchResults(match.id, updateData);
-      setIsEditingResults(false);
-      onUpdate();
-    } catch (err) {
-      console.error('Error updating results:', err);
-      notify(err instanceof Error ? err.message : 'Não foi possível guardar os resultados. Verifique os dados e tente novamente.', 'error');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleFinalizeMatch = () => {
-    setShowFinalizeModal(true);
-  };
-
-  const confirmFinalizeMatch = async () => {
-    try {
-      setFinalizing(true);
-      await matchesApi.update(match.id, { status: 'finished' });
-      setShowFinalizeModal(false);
-      onUpdate();
-    } catch (err) {
-      console.error('Error finalizing match:', err);
-      notify(err instanceof Error ? err.message : 'Não foi possível finalizar o jogo. Tente novamente.', 'error');
-    } finally {
-      setFinalizing(false);
-    }
-  };
-
-  const getName = (participant: typeof match.participants[0]) => {
-    return participant.team?.name || participant.athlete?.full_name || 'Participante';
-  };
-
-  const hasAnyResults = match.participants.some(p => p.score !== null && p.score !== undefined);
-
-  if (match.status !== 'finished' && !isEditingResults) {
+  if (match.lineups?.length === 0) {
     return (
-      <>
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold text-gray-800">Resultados</h3>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setIsEditingResults(true)}
-                className={`px-4 py-2 ${btn.primary} rounded-md text-sm font-medium transition-colors`}
-              >
-                {hasAnyResults ? 'Editar Resultados' : 'Publicar Resultados'}
-              </button>
-              {hasAnyResults && (
-                <button
-                  onClick={handleFinalizeMatch}
-                  disabled={finalizing}
-                  className={`px-4 py-2 ${btn.success} rounded-md text-sm font-medium transition-colors disabled:opacity-50`}
-                >
-                  {finalizing ? 'A finalizar...' : 'Finalizar Jogo'}
-                </button>
-              )}
-            </div>
-          </div>
-          {hasAnyResults ? (
-            <div className="space-y-4">
-              {match.participants.map((participant) => (
-                <div key={participant.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                  <span className="font-semibold text-gray-800">{getName(participant)}</span>
-                  <div className="flex gap-6">
-                    {participant.score !== null && participant.score !== undefined && (
-                      <div className="text-right">
-                        <div className="text-sm text-gray-500">Pontuação</div>
-                        <div className="text-2xl font-bold text-teal-600">{participant.score}</div>
-                      </div>
-                    )}
-                    {participant.position !== null && participant.position !== undefined && (
-                      <div className="text-right">
-                        <div className="text-sm text-gray-500">Posição</div>
-                        <div className="text-2xl font-bold text-teal-600">{participant.position}º</div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-600">Os resultados ainda não foram publicados.</p>
-          )}
-        </div>
-
-        <ConfirmModal
-          isOpen={showFinalizeModal}
-          title="Finalizar jogo"
-          message='Tem a certeza que deseja finalizar este jogo? O estado será alterado para "Terminado".'
-          confirmLabel="Finalizar"
-          variant="success"
-          loading={finalizing}
-          onCancel={() => {
-            if (!finalizing) {
-              setShowFinalizeModal(false);
-            }
-          }}
-          onConfirm={confirmFinalizeMatch}
-        />
-      </>
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">Convocatórias</h3>
+        <p className="text-gray-600">Nenhuma convocatória definida.</p>
+      </div>
     );
   }
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-bold text-gray-800">Resultados</h3>
-        {!isEditingResults && match.status === 'finished' && (
-          <button
-            onClick={() => setIsEditingResults(true)}
-            className={`px-4 py-2 ${btn.primary} rounded-md text-sm font-medium transition-colors`}
-          >
-            Editar Resultados
-          </button>
-        )}
-      </div>
-
-      {!isEditingResults ? (
-        <div className="space-y-4">
-          {match.participants.map((participant) => (
-            <div key={participant.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-              <span className="font-semibold text-gray-800">{getName(participant)}</span>
-              <div className="flex gap-6">
-                {participant.score !== null && participant.score !== undefined && (
-                  <div className="text-right">
-                    <div className="text-sm text-gray-500">Pontuação</div>
-                    <div className="text-2xl font-bold text-teal-600">{participant.score}</div>
-                  </div>
-                )}
-                {participant.position !== null && participant.position !== undefined && (
-                  <div className="text-right">
-                    <div className="text-sm text-gray-500">Posição</div>
-                    <div className="text-2xl font-bold text-teal-600">{participant.position}º</div>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {match.participants.map((participant) => (
-            <div key={participant.id} className="p-4 bg-gray-50 rounded-lg">
-              <div className="font-semibold text-gray-800 mb-3">{getName(participant)}</div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Pontuação <HelpTooltip text="Pontuação total marcada por este competidor no jogo (ex: golos, pontos marcados)." className="ml-1" /></label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
-                    value={results[participant.id]?.score || ''}
-                    onChange={(e) => setResults({
-                      ...results,
-                      [participant.id]: { ...results[participant.id], score: e.target.value }
-                    })}
-                    placeholder="0"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Posição <HelpTooltip text="Classificação final do competidor neste jogo (1º = 1º lugar). Utilizado para calcular a pontuação acumulada no torneio." className="ml-1" /></label>
-                  <input
-                    type="number"
-                    min="1"
-                    step="1"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
-                    value={results[participant.id]?.position || ''}
-                    onChange={(e) => setResults({
-                      ...results,
-                      [participant.id]: { ...results[participant.id], position: e.target.value }
-                    })}
-                    placeholder="1"
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
-
-          <div className="flex gap-3 pt-4 border-t">
-            <button
-              type="button"
-              onClick={() => {
-                setIsEditingResults(false);
-              }}
-              disabled={saving}
-              className={`flex-1 px-4 py-2 ${btn.secondaryAlt} rounded-md font-medium transition-colors disabled:opacity-50`}
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleSaveResults}
-              disabled={saving}
-              className={`flex-1 px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors disabled:opacity-50`}
-            >
-              {saving ? 'A Guardar...' : 'Guardar Resultados'}
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// Lineups Section Component
-const LineupsSection = ({ match }: { match: MatchDetail }) => {
-  const [lineups, setLineups] = useState<LineupDetail[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { notify } = useNotification();
-
-  useEffect(() => {
-    fetchLineups();
-  }, [match.id]);
-
-  const fetchLineups = async () => {
-    try {
-      setLoading(true);
-      const data = await matchesApi.getLineups(match.id);
-      setLineups(data);
-    } catch (err) {
-      console.error('Error loading lineups:', err);
-      notify(err instanceof Error ? err.message : 'Não foi possível carregar as convocatórias. Tente recarregar a página.', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDownloadTeamSheet = async (teamId: string) => {
-    try {
-      const blob = await matchesApi.getMatchTeamSheet(match.id, teamId);
-      const url = window.URL.createObjectURL(blob);
-      window.open(url, '_blank');
-      setTimeout(() => window.URL.revokeObjectURL(url), 10000);
-    } catch (err) {
-      console.error('Error downloading team sheet:', err);
-      notify(err instanceof Error ? err.message : 'Não foi possível descarregar a ficha de equipa. Tente novamente.', 'error');
-    }
-  };
-
-  // Create a map of team_id to team object from match participants
-  const teamMap = match.participants.reduce((acc, participant) => {
-    if (participant.team) {
-      acc[participant.team.id] = participant.team;
-    }
-    return acc;
-  }, {} as { [key: string]: typeof match.participants[0]['team'] });
-
-  // Group lineups by team
-  const lineupsByTeam = lineups.reduce((acc, lineup) => {
-    if (!acc[lineup.team_id]) {
-      acc[lineup.team_id] = [];
-    }
-    acc[lineup.team_id].push(lineup);
-    return acc;
-  }, {} as { [key: string]: LineupDetail[] });
-
-  return (
-    <div className="bg-white rounded-lg shadow-md p-6">
       <h3 className="text-xl font-bold text-gray-800 mb-4">Convocatórias</h3>
 
-      {loading ? (
-        <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
-        </div>
-      ) : lineups.length === 0 ? (
-        <p className="text-gray-600">Nenhuma convocatória definida.</p>
-      ) : (
-        <div className="space-y-6">
-          {Object.entries(lineupsByTeam).map(([teamId, teamLineups]) => {
-            const starters = teamLineups.filter(l => l.is_starter);
-            const bench = teamLineups.filter(l => !l.is_starter);
-            const team = teamMap[teamId];
+      <div className="space-y-6">
+          {match.lineups.map((participant) => {
 
             return (
-              <div key={teamId} className="border-l-4 border-teal-500 pl-4">
+              <div key={participant.participant_id} className="border-l-4 border-teal-500 pl-4">
                 <div className="flex justify-between items-center mb-3">
                   <h4 className="font-semibold text-lg text-gray-800">
-                    {team?.name || `Equipa ${teamId.substring(0, 8)}`}
+                    {getParticipantName(participant.participant_id)}
                   </h4>
-                  <button
-                    onClick={() => handleDownloadTeamSheet(teamId)}
-                    className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-md text-sm font-medium transition-colors flex items-center gap-1"
+                  <Button
+                    onClick={() => {pushModal(
+                      <MatchTeamLineupModal matchState={[match, setMatch]} lineup={participant} />
+                    )}}
+                    type='info'
+                    padding='px-10 py-2'
+                    active={participant.lineup != null}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
-                    Ficha de Equipa
-                  </button>
+                  </Button>
                 </div>
-
-                {starters.length > 0 && (
-                  <div className="mb-3">
-                    <p className="text-sm font-medium text-gray-600 mb-2">Titulares</p>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {starters.map(lineup => (
-                        <div key={lineup.id} className="flex items-center gap-2 p-2 bg-teal-50 rounded">
-                          <span className="flex-shrink-0 w-8 h-8 bg-teal-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
-                            {lineup.jersey_number}
-                          </span>
-                          <span className="text-sm text-gray-800 truncate">
-                            {lineup.player?.full_name || 'Jogador'}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {bench.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 mb-2">Suplentes</p>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {bench.map(lineup => (
-                        <div key={lineup.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
-                          <span className="flex-shrink-0 w-8 h-8 bg-gray-400 text-white rounded-full flex items-center justify-center text-sm font-bold">
-                            {lineup.jersey_number}
-                          </span>
-                          <span className="text-sm text-gray-800 truncate">
-                            {lineup.player?.full_name || 'Jogador'}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             );
           })}
         </div>
-      )}
     </div>
   );
 };
 
 // Comments Section Component
-const CommentsSection = ({ matchId }: { matchId: string }) => {
-  const [comments, setComments] = useState<CommentDetail[]>([]);
-  const [loading, setLoading] = useState(true);
+const CommentsSection = ({ match }: { match: MatchDetail }) => {
+  const [comments, setComments] = useState<typeof match.comments[0][]>([... (match.comments || [])]);
   const { notify } = useNotification();
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
-  const [deletingComment, setDeletingComment] = useState(false);
-
-  useEffect(() => {
-    fetchComments();
-  }, [matchId]);
-
-  const fetchComments = async () => {
-    try {
-      setLoading(true);
-      const data = await matchesApi.getComments(matchId);
-      setComments(data);
-    } catch (err) {
-      console.error('Error loading comments:', err);
-      notify(err instanceof Error ? err.message : 'Não foi possível carregar os comentários. Tente recarregar a página.', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const comments = match.comments || [];
 
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
@@ -635,52 +180,100 @@ const CommentsSection = ({ matchId }: { matchId: string }) => {
     try {
       setSubmitting(true);
       const commentData: CommentCreate = { message: newComment.trim() };
-      const addedComment = await matchesApi.addComment(matchId, commentData);
-      setComments([...comments, addedComment]);
+      let updatedMatch = await matchesApi.addComment(match.id, commentData);
       setNewComment('');
+      setComments([ ...updatedMatch.comments ]);
     } catch (err) {
       console.error('Error adding comment:', err);
-      notify(err instanceof Error ? err.message : 'Não foi possível adicionar o comentário. Tente novamente.', 'error');
+      notify('Não foi possível adicionar o comentário. Tente novamente.', 'error');
     } finally {
       setSubmitting(false);
     }
   };
-
-  const handleDeleteComment = (commentId: string) => {
-    setCommentToDelete(commentId);
-  };
-
-  const confirmDeleteComment = async () => {
-    if (!commentToDelete) return;
-
-    try {
-      setDeletingComment(true);
-      await matchesApi.deleteComment(matchId, commentToDelete);
-      setComments(comments.filter(c => c.id !== commentToDelete));
-      setCommentToDelete(null);
-    } catch (err) {
+  const handleDeleteComment = async (commentId: string) => {
+    matchesApi.deleteComment(match.id, commentId).then(() => {
+      setComments(prev => prev.filter(c => c.id !== commentId));
+    }).catch(err => {
       console.error('Error deleting comment:', err);
-      notify(err instanceof Error ? err.message : 'Não foi possível eliminar o comentário. Tente novamente.', 'error');
-    } finally {
-      setDeletingComment(false);
-    }
+      notify('Não foi possível eliminar o comentário. Tente novamente.', 'error');
+    });
   };
 
-  const formatCommentDate = (dateString: string) => {
-    try {
-      return new Date(dateString).toLocaleString('pt-PT', {
-        dateStyle: 'short',
-        timeStyle: 'short',
-      });
-    } catch {
-      return dateString;
+  const renderCommentListArea = () => {
+    if (comments.length === 0) {
+      return <p className="text-gray-600 text-center py-4">Nenhum comentário ainda.</p>;
     }
+
+    return (
+      <div className="space-y-4">
+        {comments.map((comment) => (
+          <div key={comment.id} className="p-4 bg-gray-50 rounded-lg">
+            <div className="flex justify-between items-start mb-2">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-teal-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                  {comment.author_name.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-gray-800">
+                    {comment.author_name}
+                  </p>
+                  {/* <p className="text-xs text-gray-500">
+                    {formatCommentDate(comment.created_at)}
+                  </p> */}
+                </div>
+              </div>
+              <div />
+              <Button
+                onClick={() => handleDeleteComment(comment.id)}
+                type="danger"
+                active={comment.can_edit}
+                confirmation={{
+                  title: "Eliminar comentário",
+                  message: "Tem a certeza que deseja eliminar este comentário?",
+                  confirmLabel: "Eliminar",
+                }}
+                padding="px-2 py-2"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+              </Button>
+            </div>
+            <p className="text-gray-700 whitespace-pre-wrap">
+              {comment.message}
+            </p>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
-      <h3 className="text-xl font-bold text-gray-800 mb-4">Comentários</h3>
+      <div className="flex justify-between items-center">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">Comentários</h3>
+        <div className='flex gap-4 mb-4'>
+          <Button
+            onClick={handleAddComment}
+            type='primary'
+            disabled={submitting || !newComment.trim()}
+          >
+            {submitting ? 'A Adicionar...' : 'Adicionar Comentário'}
+          </Button>
+        </div>
+      </div>
 
+      {/* Comment Input */}
       <div className="mb-6">
         <textarea
           className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
@@ -689,112 +282,10 @@ const CommentsSection = ({ matchId }: { matchId: string }) => {
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
         ></textarea>
-        <button
-          onClick={handleAddComment}
-          disabled={submitting || !newComment.trim()}
-          className={`mt-2 px-4 py-2 ${btn.primary} rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
-        >
-          {submitting ? 'A Adicionar...' : 'Adicionar Comentário'}
-        </button>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
-        </div>
-      ) : comments.length === 0 ? (
-        <p className="text-gray-600 text-center py-4">Nenhum comentário ainda.</p>
-      ) : (
-        <div className="space-y-4">
-          {comments.map((comment) => (
-            <div key={comment.id} className="p-4 bg-gray-50 rounded-lg">
-              <div className="flex justify-between items-start mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-teal-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
-                    {comment.created_by.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-sm text-gray-800">{comment.created_by}</p>
-                    <p className="text-xs text-gray-500">{formatCommentDate(comment.created_at)}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleDeleteComment(comment.id)}
-                  className="text-red-600 hover:text-red-700 p-1"
-                  title="Eliminar comentário"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              </div>
-              <p className="text-gray-700 whitespace-pre-wrap">{comment.message}</p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <ConfirmModal
-        isOpen={commentToDelete !== null}
-        title="Eliminar comentário"
-        message="Tem a certeza que deseja eliminar este comentário?"
-        confirmLabel="Eliminar"
-        variant="danger"
-        loading={deletingComment}
-        onCancel={() => {
-          if (!deletingComment) {
-            setCommentToDelete(null);
-          }
-        }}
-        onConfirm={confirmDeleteComment}
-      />
-    </div>
-  );
-};
-
-// Delete Modal Component
-const DeleteModal = ({
-  show,
-  onClose,
-  onConfirm
-}: {
-  show: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-}) => {
-  if (!show) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 animate-fade-in">
-        <div className="flex items-center mb-4">
-          <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mr-4">
-            <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-          </div>
-          <h3 className="text-xl font-bold text-gray-900">Confirmar Eliminação</h3>
-        </div>
-
-        <p className="text-gray-600 mb-6">
-          Tem a certeza que deseja eliminar este jogo? Esta ação não pode ser revertida e todos os dados associados serão permanentemente removidos.
-        </p>
-
-        <div className="flex gap-3">
-          <button
-            onClick={onClose}
-            className={`flex-1 px-4 py-2 ${btn.secondaryAlt} rounded-md font-medium transition-colors`}
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={onConfirm}
-            className={`flex-1 px-4 py-2 ${btn.danger} rounded-md font-medium transition-colors`}
-          >
-            Sim, Eliminar
-          </button>
-        </div>
-      </div>
+      {/* Comments List */}
+      {renderCommentListArea()}
     </div>
   );
 };
@@ -803,23 +294,16 @@ const DeleteModal = ({
 
 const JogoDetails = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
 
   const [match, setMatch] = useState<MatchDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const { notify } = useNotification();
-  const [saving, setSaving] = useState(false);
+  const { isAdminGeneral } = useAuth();
+  const navigate  = useNavigate();
 
-  // Edit mode state
-  const [isEditingInfo, setIsEditingInfo] = useState(false);
-  const [formData, setFormData] = useState({
-    location: '',
-    startTime: '',
-    status: 'scheduled' as 'scheduled' | 'in_progress' | 'finished' | 'cancelled',
-  });
-
-  // Delete confirmation
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const handleBack = () => {
+    navigateBack(navigate, `/torneios/${match?.tournament_id || ''}`);
+  };
 
   const fetchMatch = async () => {
     if (!id) return;
@@ -828,13 +312,6 @@ const JogoDetails = () => {
       setLoading(true);
       const matchData = await matchesApi.getById(id);
       setMatch(matchData);
-
-      // Initialize form data
-      setFormData({
-        location: matchData.location,
-        startTime: toInputDateTime(matchData.start_time),
-        status: matchData.status,
-      });
     } catch (err) {
       console.error('Error loading match:', err);
       notify(err instanceof Error ? err.message : 'Não foi possível carregar os dados do jogo. Tente recarregar a página.', 'error');
@@ -847,80 +324,15 @@ const JogoDetails = () => {
     fetchMatch();
   }, [id]);
 
-  const toInputDateTime = (dateString: string | undefined | null) => {
-    if (!dateString) return '';
-    const d = new Date(dateString);
-    if (Number.isNaN(d.getTime())) return '';
-    const pad = (n: number) => n.toString().padStart(2, '0');
-    const year = d.getFullYear();
-    const month = pad(d.getMonth() + 1);
-    const day = pad(d.getDate());
-    const hours = pad(d.getHours());
-    const minutes = pad(d.getMinutes());
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  };
-
-  const handleSaveInfo = async () => {
-    if (!match) return;
-
-    if (!formData.location.trim()) {
-      notify('O local é obrigatório', 'error');
-      return;
-    }
-
-    if (!formData.startTime.trim()) {
-      notify('A data e hora são obrigatórias', 'error');
-      return;
-    }
-
-    try {
-      setSaving(true);
-
-      const updateData: MatchUpdate = {
-        location: formData.location.trim(),
-        start_time: new Date(formData.startTime).toISOString(),
-        status: formData.status,
-      };
-
-      const updatedMatch = await matchesApi.update(match.id, updateData);
-      setMatch(updatedMatch);
-      setIsEditingInfo(false);
-
-      // Update form data with the response
-      setFormData({
-        location: updatedMatch.location,
-        startTime: toInputDateTime(updatedMatch.start_time),
-        status: updatedMatch.status,
-      });
-    } catch (err) {
-      console.error('Error updating match:', err);
-      notify(err instanceof Error ? err.message : 'Não foi possível guardar as alterações ao jogo. Tente novamente.', 'error');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleCancelEdit = () => {
-    if (!match) return;
-
-    setFormData({
-      location: match.location,
-      startTime: toInputDateTime(match.start_time),
-      status: match.status,
-    });
-    setIsEditingInfo(false);
-  };
-
   const handleDelete = async () => {
     if (!match) return;
 
     try {
       await matchesApi.delete(match.id);
-      navigate(`/geral/torneios/${match.tournament_id}`);
+      handleBack();
     } catch (err) {
       console.error('Error deleting match:', err);
       notify(err instanceof Error ? err.message : 'Não foi possível eliminar o jogo. Poderá ter resultados ou convocatórias registadas.', 'error');
-      setShowDeleteModal(false);
     }
   };
 
@@ -941,49 +353,52 @@ const JogoDetails = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <Sidebar />
-        <div className="flex-1 flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
-        </div>
+      <div className="flex-1 flex justify-center items-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
       </div>
     );
   }
 
   if (!match) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <Sidebar />
         <div className="flex-1 p-8 max-w-4xl mx-auto">
           <div className="bg-white rounded-lg shadow-md p-8 text-center">
             <div className="text-6xl mb-4">⚽</div>
             <h2 className="text-2xl font-bold text-gray-800 mb-2">Jogo não encontrado</h2>
             <p className="text-gray-600 mb-6">O jogo que procura não existe ou foi removido.</p>
-            <button
-              onClick={() => navigate('/geral/dashboard')}
-              className={`px-6 py-3 ${btn.primary} rounded-md font-medium transition-colors`}
+            <Button
+              onClick={handleBack}
+              type='secondary'
+              padding='px-6 py-3'
             >
-              Voltar ao Dashboard
-            </button>
+              Voltar
+            </Button>
           </div>
         </div>
-      </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-
       <div className="flex-1 p-8 max-w-6xl mx-auto">
         <div className="mb-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-800">Detalhes do Jogo</h1>
-          <button
-            onClick={() => navigate(`/geral/torneios/${match.tournament_id}`)}
-            className={`px-6 py-3 ${btn.secondary} rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400`}
+
+          <div className='flex gap-4'>
+          <Button
+            onClick={() => navigate(`/torneios/${match.tournament_id}`)}
+            type='secondary'
+            padding='px-6 py-3'
+          >
+            Voltar para Torneio
+          </Button>
+          <Button
+            onClick={handleBack}
+            type='secondary'
+            padding='px-6 py-3'
           >
             Voltar
-          </button>
+          </Button>
+          </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
@@ -992,73 +407,55 @@ const JogoDetails = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-bold text-gray-800">Informações</h3>
-                {!isEditingInfo && (
-                  <button
-                    onClick={() => setIsEditingInfo(true)}
-                    className="text-teal-600 hover:text-teal-700 p-1"
-                    title="Editar"
+            <MatchInfoComponent
+              match={match}
+              onMatchUpdated={(updatedMatch) => setMatch(updatedMatch)}
+            />
+
+            {isAdminGeneral && (
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-xl font-bold text-gray-800 mb-4">Ações</h3>
+                <div className="space-y-3">
+                  <Button
+                    onClick={handleDownloadSheet}
+                    type='info'
+                    padding='w-full px-4 py-3 flex items-center justify-center'
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                  </button>
-                )}
+                    Baixar Ficha de Jogo
+                  </Button>
+
+                  <Button
+                    onClick={handleDelete}
+                    type='danger'
+                    padding='w-full px-4 py-3 flex items-center justify-center'
+                    confirmation={{
+                      title: 'Eliminar jogo',
+                      message: 'Tem a certeza que deseja eliminar este jogo? Esta ação não pode ser revertida e todos os dados associados serão permanentemente removidos.',
+                      confirmLabel: 'Sim, Eliminar',
+                    }}
+                    active={isAdminGeneral}
+                  >
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Eliminar Jogo
+                  </Button>
+                </div>
               </div>
+            )}
 
-              <MatchInfo
-                match={match}
-                isEditing={isEditingInfo}
-                formData={formData}
-                setFormData={setFormData}
-                onSave={handleSaveInfo}
-                onCancel={handleCancelEdit}
-                saving={saving}
-              />
-            </div>
-
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">Ações</h3>
-              <div className="space-y-3">
-                <button
-                  onClick={handleDownloadSheet}
-                  className={`w-full px-4 py-3 ${btn.info} rounded-md font-medium transition-colors flex items-center justify-center`}
-                >
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  Baixar Ficha de Jogo
-                </button>
-
-                <button
-                  onClick={() => setShowDeleteModal(true)}
-                  className={`w-full px-4 py-3 ${btn.danger} rounded-md font-medium transition-colors flex items-center justify-center`}
-                >
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                  Eliminar Jogo
-                </button>
-              </div>
-            </div>
           </div>
 
           <div className="lg:col-span-2 space-y-6">
-            <ResultsSection match={match} onUpdate={fetchMatch} />
-            <LineupsSection match={match} />
-            <CommentsSection matchId={match.id} />
+            <MatchResultsComponent matchState={[match, setMatch]} />
+            <LineupsSection matchState={[match, setMatch]} />
+            <CommentsSection match={match} />
           </div>
         </div>
       </div>
-
-      <DeleteModal
-        show={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        onConfirm={handleDelete}
-      />
-    </div>
   );
 };
 

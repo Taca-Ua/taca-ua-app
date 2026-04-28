@@ -13,6 +13,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from taca_outbox.models import create_outbox_model
+from taca_snapshots import tournaments as snapshot_models
 
 Base = declarative_base()
 
@@ -20,40 +21,6 @@ Base = declarative_base()
 class CompetitorType(enum.Enum):
     TEAM = "team"
     ATHLETE = "athlete"
-
-
-class Season(Base):
-    """Represents a competition season."""
-
-    __tablename__ = "season"
-    __table_args__ = {"schema": "tournaments"}
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    year = Column(Integer, nullable=False, unique=True)
-    status = Column(
-        String(20), nullable=False, default="draft"
-    )  # draft, active, finished
-
-    created_at = Column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
-    )
-    started_at = Column(DateTime(timezone=True), nullable=True)
-    finished_at = Column(DateTime(timezone=True), nullable=True)
-
-    tournaments = relationship(
-        "Tournament",
-        back_populates="season",
-    )
-
-    def to_dict(self):
-        return {
-            "id": str(self.id),
-            "year": self.year,
-            "status": self.status,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "started_at": self.started_at.isoformat() if self.started_at else None,
-            "finished_at": self.finished_at.isoformat() if self.finished_at else None,
-        }
 
 
 class TournamentCompetitor(Base):
@@ -95,6 +62,9 @@ class TournamentCompetitor(Base):
             "tournament_id": str(self.tournament_id),
             "competitor_type": self.competitor_type.value,
             "created_at": self.created_at.isoformat() if self.created_at else None,
+            "competitor_entity_id": (
+                str(self.team_id) if self.team_id else str(self.athlete_id)
+            ),
         }
 
         if self.competitor_type == CompetitorType.TEAM:
@@ -103,6 +73,19 @@ class TournamentCompetitor(Base):
             resp["competitor"] = {"athlete_id": str(self.athlete_id)}
 
         return resp
+
+    def to_snapshot(self) -> snapshot_models.TournamentCompetitorSnapshotItem:
+        return snapshot_models.TournamentCompetitorSnapshotItem(
+            id=str(self.id),
+            tournament_id=str(self.tournament_id),
+            competitor_type=self.competitor_type.value,
+            team_id=str(self.team_id) if self.team_id else None,
+            athlete_id=str(self.athlete_id) if self.athlete_id else None,
+            created_at=self.created_at,
+            competitor_course_id=(
+                str(self.competitor_course_id) if self.competitor_course_id else None
+            ),
+        )
 
 
 class Tournament(Base):
@@ -123,12 +106,6 @@ class Tournament(Base):
         Enum(CompetitorType, name="competitor_type"),
         nullable=False,
     )
-    season_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("tournaments.season.id", ondelete="SET NULL"),
-        nullable=True,
-        index=True,
-    )
 
     # bulshit fields
     created_by = Column(UUID(as_uuid=True), nullable=False)
@@ -142,7 +119,6 @@ class Tournament(Base):
     finished_by = Column(UUID(as_uuid=True), nullable=True)
 
     # Relationships
-    season = relationship("Season", back_populates="tournaments")
     ranking_positions = relationship(
         "TournamentRankingPosition",
         back_populates="tournament",
@@ -165,7 +141,6 @@ class Tournament(Base):
             ),
             "competitor_type": self.competitor_type.value,
             "start_date": self.start_date.isoformat() if self.start_date else None,
-            "season_id": str(self.season_id) if self.season_id else None,
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
@@ -180,6 +155,24 @@ class Tournament(Base):
             ]
 
         return result
+
+    def to_snapshot(self) -> snapshot_models.TournamentSnapshotItem:
+        return snapshot_models.TournamentSnapshotItem(
+            id=str(self.id),
+            modality_id=str(self.modality_id),
+            name=self.name,
+            status=self.status,
+            scoring_format_id=(
+                str(self.scoring_format_id) if self.scoring_format_id else None
+            ),
+            competitor_type=self.competitor_type.value,
+            start_date=self.start_date,
+            created_by=str(self.created_by),
+            created_at=self.created_at,
+            updated_at=self.updated_at,
+            finished_at=self.finished_at,
+            finished_by=str(self.finished_by) if self.finished_by else None,
+        )
 
 
 class TournamentRankingPosition(Base):
@@ -217,6 +210,15 @@ class TournamentRankingPosition(Base):
             "position": self.position,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
+
+    def to_snapshot(self) -> snapshot_models.TournamentRankingPositionSnapshotItem:
+        return snapshot_models.TournamentRankingPositionSnapshotItem(
+            id=str(self.id),
+            tournament_id=str(self.tournament_id),
+            competitor_id=str(self.competitor_id),
+            position=self.position,
+            created_at=self.created_at,
+        )
 
 
 # OutboxEvent model — schema-bound via shared factory

@@ -27,6 +27,7 @@ class NucleoResponse(BaseModel):
     abbreviation: str
     logo_url: Optional[str] = None
     admins_ids: List[str] = Field(default_factory=list)
+    courses: List["CourseResponse"] = Field(default_factory=list)
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -52,7 +53,7 @@ class CourseResponse(BaseModel):
     id: str
     name: str
     abbreviation: str
-    nucleo: NucleoResponse
+    nucleo: Optional[NucleoResponse] = None
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -256,6 +257,11 @@ class RegulationInternalCreate(BaseModel):
     title: str
     description: Optional[str] = None
     file_url: str
+
+
+class RegulationInternalUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
 
 
 class RegulationResponse(BaseModel):

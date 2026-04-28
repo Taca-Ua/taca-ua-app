@@ -7,7 +7,7 @@ services:
     volumes:
       - ./src/configs/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
-      - competition-api
+      - competition-api-v2
       - public-api
       - admin-panel
       - public-website
@@ -111,54 +111,23 @@ services:
       - loki
 
 # APIs
-  competition-api:
+  competition-api-v2:
     build:
       context: .
-      dockerfile: src/apis/competiotion-api/Dockerfile.dev
+      dockerfile: src/apis/competition-api-v2/Dockerfile.dev
     volumes:
       - ./src/shared:/tmp
-      - ./src/apis/competiotion-api:/app
+      - ./src/apis/competition-api-v2:/app
     environment:
-      - DJANGO_AUTORELOAD_EXTRA_DIRS=/tmp/taca-messaging
-      - RABBITMQ_HOST=rabbitmq
-      - RABBITMQ_PORT=5672
-      - RABBITMQ_USER=${RABBITMQ_USER:-guest}
-      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
-      - POSTGRES_DB=taca_ua
-      - POSTGRES_USER=${POSTGRES_USER:-user}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-      - DATABASE_URL=${DATABASE_URL}
-      - PYTHONUNBUFFERED=1
-      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
-      - MINIO_ENDPOINT=minio:9000
-      - MINIO_PUBLIC_ENDPOINT=http://localhost/files
-      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
-      - MINIO_USE_SSL=false
-      # Keycloak — internal Docker network (JWKS fetch, no nginx hop)
       - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/keycloak
       - KEYCLOAK_REALM=${KEYCLOAK_REALM:-taca-ua}
-      # Issuer must match the ``iss`` claim in tokens, which Keycloak stamps
-      # using the public URL seen by the browser (through nginx).
       - KEYCLOAK_ISSUER=http://localhost/keycloak/realms/${KEYCLOAK_REALM:-taca-ua}
-      # CORINGA PARA PASSAR A MINHA PAGINA:
-      # - KEYCLOAK_ISSUER=http://localhost/keycloak/realms/taca-ua
-      # - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/keycloak
-      # - KEYCLOAK_REALM=taca-ua
-      # Optional: uncomment to enforce audience (``aud``) verification.
-      # - KEYCLOAK_AUDIENCE=competition-api-gateway
-      # Dev auth bypass — set to "true" to skip Keycloak JWT validation.
-      # Send header  X-Dev-Auth-Token: <DEV_AUTH_BYPASS_TOKEN>  to authenticate.
       - DEV_AUTH_BYPASS_ENABLED=${DEV_AUTH_BYPASS_ENABLED:-false}
-      - DEV_AUTH_BYPASS_TOKEN=${DEV_AUTH_BYPASS_TOKEN:-}
       - DEV_AUTH_BYPASS_ROLES=${DEV_AUTH_BYPASS_ROLES:-general_admin}
+      - DEV_AUTH_BYPASS_TOKEN=${DEV_AUTH_BYPASS_TOKEN:-}
     depends_on:
       loki:
         condition: service_started
-      postgres:
-        condition: service_healthy
       minio:
         condition: service_started
       keycloak:

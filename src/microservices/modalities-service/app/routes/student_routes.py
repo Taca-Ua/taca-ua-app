@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import List
+from typing import Dict, List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -16,7 +16,7 @@ from taca_events.pydantic_schemas.modalities import (
 
 from ..database import get_db_session
 from ..logger import logger
-from ..models import Course, Nucleo, Student
+from ..models import Course, Nucleo, Student, Team
 from ..outbox_publisher import outbox_publisher
 from ..schemas import (
     StudentCreate,
@@ -47,7 +47,9 @@ def _students_scope_query(db: Session, admin_id: str = None):
     return q
 
 
-def _emit_student_is_member_update(db: Session, student: Student, is_member: bool) -> None:
+def _emit_student_is_member_update(
+    db: Session, student: Student, is_member: bool
+) -> None:
     event = StudentUpdatedV1.create(
         aggregate_id=student.id,
         data=StudentUpdatedData(
@@ -65,7 +67,12 @@ def _emit_student_is_member_update(db: Session, student: Student, is_member: boo
 
 
 @router.get("/students", response_model=List[StudentResponse])
-def list_students(admin_id: str = None, db: Session = Depends(get_db_session)):
+def list_students(
+    admin_id: str = None,
+    course_id: str = None,
+    team_id: str = None,
+    db: Session = Depends(get_db_session),
+):
     """List all students"""
     students = db.query(Student)
     if admin_id is not None:
@@ -74,6 +81,10 @@ def list_students(admin_id: str = None, db: Session = Depends(get_db_session)):
             .join(Course.nucleo)
             .filter(Nucleo.admins_ids.any(admin_id))
         )
+    if course_id is not None:
+        students = students.filter(Student.course_id == course_id)
+    if team_id is not None:
+        students = students.filter(Student.teams.any(Team.id == team_id))
     students = students.all()
     return [student.to_dict() for student in students]
 
@@ -286,8 +297,8 @@ def delete_student(student_id: UUID, db: Session = Depends(get_db_session)):
     logger.info(f"Deleted student: {student_id}")
 
 
-@router.post("/students/batch-get", response_model=List[StudentResponse])
+@router.post("/students/batch-get", response_model=Dict[str, StudentResponse])
 def get_students_by_ids(student_ids: List[UUID], db: Session = Depends(get_db_session)):
     """Get multiple students by their IDs"""
     students = db.query(Student).filter(Student.id.in_(student_ids)).all()
-    return [student.to_dict() for student in students]
+    return {str(student.id): student.to_dict() for student in students}

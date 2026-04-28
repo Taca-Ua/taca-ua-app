@@ -1,17 +1,30 @@
 import { apiClient } from './client';
-import { type Modality } from "./modalities";
-import { type Course } from './courses';
-import { type Student } from "./members";
 
-export interface Team {
+export interface TeamListItem {
   id: string;
   name: string;
-  modality: Modality;
-  course: Course;
-  players: Student[];
+  modality: {
+    id: string;
+    name: string;
+  };
+  course: {
+    id: string;
+    name: string;
+    abbreviation: string;
+  };
 }
 
-export interface TeamDetail extends Team {
+export interface TeamDetail extends TeamListItem {
+  players: {
+    id: string;
+    full_name: string;
+    student_number: string;
+  }[];
+}
+
+export interface TeamListParams {
+  modality_id?: string;
+  course_id?: string;
 }
 
 export interface TeamCreate {
@@ -35,12 +48,12 @@ export interface TeamListParams {
 }
 
 export const teamsApi = {
-  async getAll(params?: TeamListParams): Promise<Team[]> {
-    return apiClient.get<Team[]>('/teams/', params);
+  async getAll(params?: TeamListParams): Promise<TeamListItem[]> {
+    return apiClient.get<TeamListItem[]>('/teams/', params);
   },
 
-  async create(data: TeamCreate): Promise<Team> {
-    return apiClient.post<Team>('/teams/', data);
+  async create(data: TeamCreate): Promise<TeamListItem> {
+    return apiClient.post<TeamListItem>('/teams/', data);
   },
 
   async get(teamId: string): Promise<TeamDetail> {

@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import NucleoSidebar from "../../components/nucleo_navbar";
-import { studentsApi } from '../../api/members';
+import { athletesApi } from '../../api/athletes';
 import { teamsApi } from '../../api/teams';
-import { matchesApi, type Match } from '../../api/matches';
+import { matchesApi, type MatchListItem } from '../../api/matches';
 import { useAuth } from '../../hooks/useAuth';
 
 function DashboardNucleo() {
@@ -17,7 +16,7 @@ function DashboardNucleo() {
     upcomingMatches: 0,
   });
 
-  const [allMatches, setAllMatches] = useState<Match[]>([]);
+  const [allMatches, setAllMatches] = useState<MatchListItem[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState<Date>(() => {
@@ -31,8 +30,8 @@ function DashboardNucleo() {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const [students, teams, matches] = await Promise.all([
-          studentsApi.getAll(),
+        const [athletes, teams, matches] = await Promise.all([
+          athletesApi.getAll(),
           teamsApi.getAll(),
           matchesApi.getAll(),
         ]);
@@ -41,7 +40,7 @@ function DashboardNucleo() {
         const upcomingMatches = matches.filter(m => m.status === 'scheduled').length;
 
         setStats({
-          members: students.length,
+          members: athletes.length,
           teams: teams.length,
           matches: matches.length,
           upcomingMatches,
@@ -53,6 +52,7 @@ function DashboardNucleo() {
       }
     };
 
+    console.log('Mounting DashboardNucleo, fetching stats...');
     fetchStats();
   }, []);
 
@@ -97,8 +97,6 @@ function DashboardNucleo() {
   const monthName = currentMonth.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' });
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <NucleoSidebar />
       <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-4xl font-bold mb-4 text-gray-800">Dashboard - Administrador</h1>
@@ -113,17 +111,17 @@ function DashboardNucleo() {
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <button onClick={() => navigate('/nucleo/membros')} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left">
+                <button onClick={() => navigate('/membros')} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left">
                   <h2 className="text-xl font-semibold mb-2 text-teal-600">Membros</h2>
                   <p className="text-3xl font-bold text-gray-800">{stats.members}</p>
                   <p className="text-sm text-gray-500 mt-2">Membros registados</p>
                 </button>
-                <button onClick={() => navigate('/nucleo/equipas')} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left">
+                <button onClick={() => navigate('/equipas')} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left">
                   <h2 className="text-xl font-semibold mb-2 text-teal-600">Equipas</h2>
                   <p className="text-3xl font-bold text-gray-800">{stats.teams}</p>
                   <p className="text-sm text-gray-500 mt-2">Equipas criadas</p>
                 </button>
-                <button onClick={() => navigate('/nucleo/jogos')} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left">
+                <button onClick={() => navigate('/jogos')} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left">
                   <h2 className="text-xl font-semibold mb-2 text-teal-600">Jogos</h2>
                   <p className="text-3xl font-bold text-gray-800">{stats.matches}</p>
                   <p className="text-sm text-gray-500 mt-2">Total de jogos</p>
@@ -153,7 +151,7 @@ function DashboardNucleo() {
                     </button>
                   </div>
                   <button
-                    onClick={() => navigate('/nucleo/jogos')}
+                    onClick={() => navigate('/jogos')}
                     className="text-teal-600 hover:underline text-sm font-medium"
                   >
                     Ver todos →
@@ -238,8 +236,8 @@ function DashboardNucleo() {
                       const dayMatches = allMatches.filter(m => {
                         const d = new Date(m.start_time);
                         return d.getDate() === selectedDay.getDate() &&
-                               d.getMonth() === selectedDay.getMonth() &&
-                               d.getFullYear() === selectedDay.getFullYear();
+                                d.getMonth() === selectedDay.getMonth() &&
+                                d.getFullYear() === selectedDay.getFullYear();
                       });
                       const GAMES_PER_PAGE = 10;
                       const totalDayPages = Math.ceil(dayMatches.length / GAMES_PER_PAGE);
@@ -257,7 +255,7 @@ function DashboardNucleo() {
                               <button
                                 key={m.id}
                                 type="button"
-                                onClick={() => navigate(`/nucleo/jogos/${m.id}`)}
+                                onClick={() => navigate(`/jogos/${m.id}`)}
                                 className="w-full text-left p-2 bg-gray-50 rounded-md hover:bg-teal-50 transition-colors border border-transparent hover:border-teal-200"
                               >
                                 <div className="flex justify-between items-start">
@@ -271,12 +269,12 @@ function DashboardNucleo() {
                                     'bg-red-100 text-red-700'
                                   }`}>
                                     {m.status === 'scheduled' ? 'Agendado' :
-                                     m.status === 'in_progress' ? 'Em curso' :
-                                     m.status === 'finished' ? 'Terminado' : 'Cancelado'}
+                                      m.status === 'in_progress' ? 'Em curso' :
+                                      m.status === 'finished' ? 'Terminado' : 'Cancelado'}
                                   </span>
                                 </div>
                                 <p className="text-xs text-gray-600 mt-0.5 truncate">
-                                  {m.participants.map(p => p.team?.name || p.athlete?.full_name || 'TBD').join(' vs ')}
+                                  {m.participants.map(p => p.name || 'TBD').join(' vs ')}
                                 </p>
                               </button>
                             ))}
@@ -310,7 +308,6 @@ function DashboardNucleo() {
           )}
         </div>
       </div>
-    </div>
   );
 }
 

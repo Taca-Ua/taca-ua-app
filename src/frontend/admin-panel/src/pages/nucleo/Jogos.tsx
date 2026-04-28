@@ -1,17 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import NucleoSidebar from '../../components/nucleo_navbar';
-import { matchesApi } from '../../api/matches';
-import type { Match } from '../../api/matches';
-import { tournamentsApi } from '../../api/tournaments';
-import type { Tournament } from '../../api/tournaments';
+import { matchesApi, type MatchListItem } from '../../api/matches';
+import { tournamentsApi, type TournamentListItem } from '../../api/tournaments';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { btn } from '../../styles/buttonStyles';
 
 const Jogos = () => {
   const navigate = useNavigate();
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [tournamentMap, setTournamentMap] = useState<Record<string, Tournament>>({});
+  const [matches, setMatches] = useState<MatchListItem[]>([]);
+  const [tournamentMap, setTournamentMap] = useState<Record<string, TournamentListItem>>({});
   const [loading, setLoading] = useState(true);
   const { notify } = useNotification();
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
@@ -34,7 +31,7 @@ const Jogos = () => {
           tournamentsApi.getAll(),
         ]);
         setMatches(fetchedMatches);
-        const map: Record<string, Tournament> = {};
+        const map: Record<string, TournamentListItem> = {};
         fetchedTournaments.forEach(t => { map[t.id] = t; });
         setTournamentMap(map);
       } catch (err) {
@@ -113,9 +110,6 @@ const Jogos = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <NucleoSidebar />
-
       <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -182,16 +176,12 @@ const Jogos = () => {
                             <button
                               key={match.id}
                               type="button"
-                              onClick={() => navigate(`/nucleo/jogos/${match.id}`)}
+                              onClick={() => navigate(`/jogos/${match.id}`)}
                               className="w-full text-left px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
                             >
                               <div className="flex justify-between items-start mb-2">
                                 <span className="text-gray-800 font-bold text-lg">
-                                  {match.participants.map(p => {
-                                    if (p.team) return p.team.name;
-                                    if (p.athlete) return p.athlete.full_name;
-                                    return 'TBD';
-                                  }).join(' vs ')}
+                                  {match.participants.map(p => p.name || 'TBD').join(' vs ')}
                                 </span>
                                 <span className={`text-xs font-medium px-2 py-1 rounded-full ${
                                   match.status === 'scheduled' ? 'bg-blue-100 text-blue-700' :
@@ -381,7 +371,7 @@ const Jogos = () => {
                                   <button
                                     key={match.id}
                                     type="button"
-                                    onClick={() => navigate(`/nucleo/jogos/${match.id}`)}
+                                    onClick={() => navigate(`/jogos/${match.id}`)}
                                     className="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-teal-50 transition-colors border border-transparent hover:border-teal-200"
                                   >
                                     <div className="flex justify-between items-start mb-1">
@@ -396,7 +386,7 @@ const Jogos = () => {
                                       </span>
                                     </div>
                                     <p className="text-sm text-gray-700">
-                                      {match.participants.map(p => p.team?.name || p.athlete?.full_name || 'TBD').join(' vs ')}
+                                      {match.participants.map(p => p.name || 'TBD').join(' vs ')}
                                     </p>
                                     {tournament && (
                                       <p className="text-xs text-teal-600 mt-0.5">{tournament.name}</p>
@@ -436,7 +426,6 @@ const Jogos = () => {
           )}
         </div>
       </div>
-    </div>
   );
 };
 

@@ -13,25 +13,24 @@ export interface ModalityTypeMinimal {
   name: string;
 }
 
-export interface ModalityType {
+export interface ModalityTypeListItem {
   id: string;
   name: string;
   description?: string;
-  escaloes: EscalaoRow[];
   is_playoff: boolean;
   tournament_competitor_type: 'individual' | 'team';
-  created_at: string;
+  num_escaloes: number;
 }
 
-export interface ModalityTypeDetail extends ModalityType {
-  // Additional fields can be added here if needed
+export interface ModalityTypeDetail extends ModalityTypeListItem {
+  escaloes: EscalaoRow[];
 }
 
 export interface ModalityTypeCreate {
   name: string;
   description?: string;
   escaloes: EscalaoRow[];
-  is_playoff: boolean;
+  is_playoff?: boolean;
   tournament_competitor_type: 'individual' | 'team';
 }
 
@@ -45,12 +44,16 @@ export interface ModalityTypeUpdate {
 
 // API methods
 export const modalityTypesApi = {
-  async getAll(): Promise<ModalityType[]> {
-    return apiClient.get<ModalityType[]>('/modality-types/');
+  async getAll(): Promise<ModalityTypeListItem[]> {
+    return apiClient.get<ModalityTypeListItem[]>('/modality-types/');
   },
 
-  async create(data: ModalityTypeCreate): Promise<ModalityType> {
-    return apiClient.post<ModalityType>('/modality-types/', data);
+  async create(data: ModalityTypeCreate): Promise<ModalityTypeListItem> {
+    return apiClient.post<ModalityTypeListItem>('/modality-types/', data);
+  },
+
+  async getAllMinimal(): Promise<ModalityTypeMinimal[]> {
+    return apiClient.get<ModalityTypeMinimal[]>('/modality-types/minimal/');
   },
 
   async getById(id: string): Promise<ModalityTypeDetail> {
@@ -64,8 +67,4 @@ export const modalityTypesApi = {
   async delete(id: string): Promise<void> {
     await apiClient.delete(`/modality-types/${id}/`);
   },
-
-  async getAllMinimal(): Promise<ModalityTypeMinimal[]> {
-    return apiClient.get<ModalityTypeMinimal[]>('/modality-types/minimal/');
-  }
 };

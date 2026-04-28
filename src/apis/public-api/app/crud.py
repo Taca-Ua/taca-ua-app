@@ -14,12 +14,10 @@ from taca_models import (
     GeneralRankingView,
     MatchDetailView,
     ModalityRankingView,
-    Nucleo,
+    NucleoDetailView,
     Regulation,
-    Season,
     StudentDetailView,
     TeamDetailView,
-    TeamPlayer,
     TournamentDetailView,
     TournamentStandingsView,
 )
@@ -31,19 +29,19 @@ def get_nucleos(
     db: Session,
     skip: int = 0,
     limit: int = 100,
-) -> tuple[list[Nucleo], int]:
+) -> tuple[list[NucleoDetailView], int]:
     """
     Get list of nucleos (active only) with pagination.
 
     Returns:
         Tuple of (list of nucleos, total count)
     """
-    query = db.query(Nucleo).filter(Nucleo.deleted_at.is_(None)).order_by(Nucleo.name)
+    query = db.query(NucleoDetailView).order_by(NucleoDetailView.name)
     total = query.count()
     return query.offset(skip).limit(limit).all(), total
 
 
-def get_nucleo_by_id(db: Session, nucleo_id: UUID) -> Optional[Nucleo]:
+def get_nucleo_by_id(db: Session, nucleo_id: UUID) -> Optional[NucleoDetailView]:
     """
     Get a specific nucleo by ID.
 
@@ -51,8 +49,8 @@ def get_nucleo_by_id(db: Session, nucleo_id: UUID) -> Optional[Nucleo]:
         Nucleo or None if not found
     """
     return (
-        db.query(Nucleo)
-        .filter(Nucleo.nucleo_id == nucleo_id, Nucleo.deleted_at.is_(None))
+        db.query(NucleoDetailView)
+        .filter(NucleoDetailView.nucleo_id == nucleo_id)
         .first()
     )
 
@@ -113,28 +111,6 @@ def get_team_by_id(db: Session, team_id: UUID) -> Optional[TeamDetailView]:
         Team detail or None if not found
     """
     return db.query(TeamDetailView).filter(TeamDetailView.team_id == team_id).first()
-
-
-def get_team_members(
-    db: Session, team_id: UUID
-) -> list[tuple[TeamPlayer, StudentDetailView]]:
-    """
-    Get active members of a team (removed_at IS NULL).
-
-    Args:
-        db: Database session
-        team_id: Team identifier
-
-    Returns:
-        List of (TeamPlayer, StudentDetailView) tuples
-    """
-    return (
-        db.query(TeamPlayer, StudentDetailView)
-        .join(StudentDetailView, TeamPlayer.student_id == StudentDetailView.student_id)
-        .filter(TeamPlayer.team_id == team_id, TeamPlayer.removed_at.is_(None))
-        .order_by(StudentDetailView.full_name)
-        .all()
-    )
 
 
 # ==================== Student Detail View Operations ====================
@@ -238,7 +214,6 @@ def get_tournaments(
     limit: int = 100,
     modality_id: Optional[UUID] = None,
     status: Optional[str] = None,
-    season_id: Optional[UUID] = None,
 ) -> tuple[list[TournamentDetailView], int]:
     """
     Get list of tournaments with pagination and optional filters.
@@ -249,7 +224,6 @@ def get_tournaments(
         limit: Maximum number of records to return
         modality_id: Filter by modality ID
         status: Filter by tournament status
-        season_id: Filter by season ID
 
     Returns:
         Tuple of (list of tournaments, total count)
@@ -261,8 +235,6 @@ def get_tournaments(
         query = query.filter(TournamentDetailView.modality_id == modality_id)
     if status:
         query = query.filter(TournamentDetailView.status == status)
-    if season_id:
-        query = query.filter(TournamentDetailView.season_id == season_id)
 
     # Get total count
     total = query.count()
@@ -418,21 +390,12 @@ def get_standings_by_competitor(
     )
 
 
-# ==================== Season Operations ====================
-
-
-def get_seasons(db: Session) -> list[Season]:
-    """Get all seasons ordered by year descending."""
-    return db.query(Season).order_by(Season.year.desc()).all()
-
-
 # ==================== General Ranking View Operations ====================
 
 
 def get_general_ranking(
     db: Session,
     nucleo_id: Optional[UUID] = None,
-    season_id: Optional[UUID] = None,
 ) -> tuple[list[GeneralRankingView], int]:
     """
     Get general ranking of all courses, ordered by points and rank.
@@ -440,7 +403,6 @@ def get_general_ranking(
     Args:
         db: Database session
         nucleo_id: Optional filter by nucleo ID
-        season_id: Optional filter by season ID
 
     Returns:
         Tuple of (list of rankings, total count)
@@ -450,8 +412,6 @@ def get_general_ranking(
     # Apply filters
     if nucleo_id:
         query = query.filter(GeneralRankingView.nucleo_id == nucleo_id)
-    if season_id is not None or True:  # always filter to avoid cross-season collisions
-        query = query.filter(GeneralRankingView.season_id == season_id)
 
     # Order by rank (nulls last) and points descending
     query = query.order_by(
@@ -524,7 +484,6 @@ def get_modality_ranking(
     db: Session,
     modality_id: Optional[UUID] = None,
     nucleo_id: Optional[UUID] = None,
-    season_id: Optional[UUID] = None,
 ) -> tuple[list[ModalityRankingView], int]:
     """Get rankings of courses within modalities.
 
@@ -534,7 +493,6 @@ def get_modality_ranking(
         db: Database session
         modality_id: Optional filter by modality ID
         nucleo_id: Optional filter by nucleo ID
-        season_id: Optional filter by season ID
 
     Returns:
         Tuple of (list of rankings, total count)
@@ -546,7 +504,6 @@ def get_modality_ranking(
         query = query.filter(ModalityRankingView.modality_id == modality_id)
     if nucleo_id:
         query = query.filter(ModalityRankingView.nucleo_id == nucleo_id)
-    query = query.filter(ModalityRankingView.season_id == season_id)
 
     # Order by modality, then rank (nulls last) and points
     query = query.order_by(

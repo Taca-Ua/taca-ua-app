@@ -1,6 +1,6 @@
 import keycloak from '../lib/keycloak';
 
-const API_BASE_URL = '/api/admin';
+const API_BASE_URL = '/api2/admin';
 
 interface ApiError {
   error: string;
@@ -37,9 +37,20 @@ export class ApiClient {
     let fullUrl = `${this.baseUrl}${endpoint}`;
 
     // If params exist, append them as query string
-    if (params) {
-      const searchParams = new URLSearchParams(params as Record<string, string>);
-      fullUrl += `?${searchParams.toString()}`;
+    if (params && typeof params === 'object') {
+      const filteredParams = Object.entries(params as Record<string, unknown>)
+      .filter(([, value]) => value !== undefined)
+      .reduce<Record<string, string>>((acc, [key, value]) => {
+        acc[key] = String(value);
+        return acc;
+      }, {});
+
+      const searchParams = new URLSearchParams(filteredParams);
+      const query = searchParams.toString();
+
+      if (query) {
+      fullUrl += `?${query}`;
+      }
     }
 
     const response = await fetch(fullUrl, {
@@ -62,9 +73,15 @@ export class ApiClient {
 
   async post<T>(endpoint: string, data: unknown): Promise<T> {
     const isFormData = data instanceof FormData;
-    const authHeader = await this.getAuthHeader();
-    const headers: Record<string, string> = { ...authHeader };
 
+    // Precisamos do await aqui para obter os headers de autenticação
+    const authHeader = await this.getAuthHeader();
+
+    const headers: Record<string, string> = {
+      ...authHeader,
+    };
+
+    // Se for FormData (ficheiro), o fetch define o Content-Type automaticamente com o boundary correto
     if (!isFormData) {
       headers['Content-Type'] = 'application/json';
     }
@@ -76,16 +93,24 @@ export class ApiClient {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'API request failed' }));
-      throw new Error(error.error || 'Network error');
+      const error: ApiError = await response.json().catch(() => ({
+        error: 'Network error',
+      }));
+      const new_error = new Error(error.error || 'API request failed');
+      throw new_error;
     }
+
     return response.json();
   }
 
   async put<T>(endpoint: string, data: unknown): Promise<T> {
     const isFormData = data instanceof FormData;
+
+    // Precisamos do await aqui para obter os headers de autenticação
     const authHeader = await this.getAuthHeader();
-    const headers: Record<string, string> = { ...authHeader };
+    const headers: Record<string, string> = {
+      ...authHeader,
+    };
 
     if (!isFormData) {
       headers['Content-Type'] = 'application/json';
@@ -98,9 +123,12 @@ export class ApiClient {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'API request failed' }));
-      throw new Error(error.error || 'Network error');
+      const error: ApiError = await response.json().catch(() => ({
+        error: 'Network error',
+      }));
+      throw new Error(error.error || 'API request failed');
     }
+
     return response.json();
   }
 
@@ -120,6 +148,25 @@ export class ApiClient {
       throw new Error(error.error || 'API request failed');
     }
   }
+
+  async getBlob(endpoint: string): Promise<Blob> {
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      method: 'GET',
+      headers: {
+        ...(await this.getAuthHeader()),
+      },
+    });
+
+    if (!response.ok) {
+      const error: ApiError = await response.json().catch(() => ({
+        error: 'Network error',
+      }));
+      throw new Error(error.error || 'API request failed');
+    }
+
+    return response.blob();
+  }
+
 }
 
 export const apiClient = new ApiClient();

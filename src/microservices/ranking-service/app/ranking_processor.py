@@ -77,13 +77,12 @@ def _points_for_position(escalao: ModalityTypeEscalao, position: int) -> int:
 # ---------------------------------------------------------------------------
 
 
-def compute_all_rankings(db: Session, season_id=None) -> None:
+def compute_all_rankings(db: Session) -> int:
     """
-    Recompute derived ranking tables for a given season (or all unscoped
-    data when season_id is None).
+    Recompute all derived ranking tables from the current core-table state.
 
     Steps:
-    1. Clear GeneralRanking, CourseRanking, ModalityRanking rows for this season.
+    1. Clear GeneralRanking, CourseRanking, ModalityRanking.
     2. Iterate over every modality; for each tournament in that modality that
        has results, compute per-course points using the matching escalao.
     3. Persist ModalityRanking rows.
@@ -91,12 +90,13 @@ def compute_all_rankings(db: Session, season_id=None) -> None:
 
     The caller is responsible for committing or rolling back the session.
     """
-    logger.info("ranking_computation_started", season_id=str(season_id) if season_id else None)
+    logger.info("ranking_computation_started")
+    count = 0
 
-    # --- 1. Clear derived tables for this season --------------------------
-    db.query(GeneralRanking).filter(GeneralRanking.season_id == season_id).delete()
-    db.query(CourseRanking).filter(CourseRanking.season_id == season_id).delete()
-    db.query(ModalityRanking).filter(ModalityRanking.season_id == season_id).delete()
+    # --- 1. Clear derived tables -------------------------------------------
+    db.query(GeneralRanking).delete()
+    db.query(CourseRanking).delete()
+    db.query(ModalityRanking).delete()
     db.flush()
 
     # --- 2. Load modalities and their escaloes in bulk ----------------------
@@ -125,10 +125,7 @@ def compute_all_rankings(db: Session, season_id=None) -> None:
     for modality in modalities:
         tournaments: List[Tournament] = (
             db.query(Tournament)
-            .filter(
-                Tournament.modality_id == modality.modality_id,
-                Tournament.season_id == season_id,
-            )
+            .filter(Tournament.modality_id == modality.modality_id)
             .all()
         )
 
@@ -211,10 +208,10 @@ def compute_all_rankings(db: Session, season_id=None) -> None:
                 ModalityRanking(
                     modality_id=modality_id,
                     course_id=course_id,
-                    season_id=season_id,
                     points=pts,
                 )
             )
+            count += 1
     db.flush()
 
     # --- 5. Aggregate → CourseRanking + GeneralRanking ----------------------
@@ -232,10 +229,15 @@ def compute_all_rankings(db: Session, season_id=None) -> None:
 
         db.add(
             CourseRanking(
-                course_id=course_id, season_id=season_id, points=total, modality_breakdown=breakdown
+                course_id=course_id, points=total, modality_breakdown=breakdown
             )
         )
-        db.add(GeneralRanking(course_id=course_id, season_id=season_id, points=total))
+        db.add(GeneralRanking(course_id=course_id, points=total))
+        count += 2  # one CourseRanking + one GeneralRanking per course
+        print(
+            f"Course {course_id} has total {total} points with breakdown {breakdown}",
+            flush=True,
+        )
 
     db.flush()
 
@@ -245,11 +247,13 @@ def compute_all_rankings(db: Session, season_id=None) -> None:
         courses=len(all_course_ids),
     )
 
+    return count
 
-def emit_ranking_computed_event(db: Session, publisher, season_id=None) -> None:
+
+def emit_ranking_computed_event(db: Session, publisher) -> None:
     """
     Build and persist a RankingComputedV1 outbox event from the current
-    state of the derived ranking tables for the given season.
+    state of the derived ranking tables.
 
     Must be called **after** :func:`compute_all_rankings` and **before**
     the session is committed so that the outbox row is written in the same
@@ -263,8 +267,6 @@ def emit_ranking_computed_event(db: Session, publisher, season_id=None) -> None:
     publisher:
         An :class:`~taca_outbox.OutboxPublisher` instance used to persist
         the event to the outbox table.
-    season_id:
-        The season UUID to scope this event to (or None for unscoped).
     """
     from taca_events.pydantic_schemas.ranking import (
         GeneralRankingEntryData,
@@ -273,12 +275,8 @@ def emit_ranking_computed_event(db: Session, publisher, season_id=None) -> None:
         RankingComputedV1,
     )
 
-    general_rows: List[GeneralRanking] = (
-        db.query(GeneralRanking).filter(GeneralRanking.season_id == season_id).all()
-    )
-    modality_rows: List[ModalityRanking] = (
-        db.query(ModalityRanking).filter(ModalityRanking.season_id == season_id).all()
-    )
+    general_rows: List[GeneralRanking] = db.query(GeneralRanking).all()
+    modality_rows: List[ModalityRanking] = db.query(ModalityRanking).all()
 
     # Count distinct tournaments each course has at least one result in
     from .models import TournamentCompetitor as TC
@@ -324,7 +322,6 @@ def emit_ranking_computed_event(db: Session, publisher, season_id=None) -> None:
         data=RankingComputedData(
             general_ranking=general_data,
             modality_rankings=modality_data,
-            season_id=season_id,
         ),
     )
     publisher.emit_event(

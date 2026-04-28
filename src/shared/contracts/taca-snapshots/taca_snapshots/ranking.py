@@ -24,6 +24,13 @@ class GeneralRankingSnapshotItem(SnapshotBase):
     points: int
     tournaments_participated: int = 0
 
+    def to_dict(self) -> dict:
+        return {
+            "course_id": self.course_id,
+            "points": self.points,
+            "tournaments_participated": self.tournaments_participated,
+        }
+
 
 class ModalityRankingSnapshotItem(SnapshotBase):
     """Points earned by a course within a specific modality."""
@@ -32,6 +39,13 @@ class ModalityRankingSnapshotItem(SnapshotBase):
     course_id: str
     points: int
 
+    def to_dict(self) -> dict:
+        return {
+            "modality_id": self.modality_id,
+            "course_id": self.course_id,
+            "points": self.points,
+        }
+
 
 class CourseRankingSnapshotItem(SnapshotBase):
     """Aggregated course ranking with per-modality breakdown."""
@@ -39,6 +53,13 @@ class CourseRankingSnapshotItem(SnapshotBase):
     course_id: str
     points: int
     modality_breakdown: List[int] = []
+
+    def to_dict(self) -> dict:
+        return {
+            "course_id": self.course_id,
+            "points": self.points,
+            "modality_breakdown": self.modality_breakdown,
+        }
 
 
 # ---------------------------------------------------------------------------

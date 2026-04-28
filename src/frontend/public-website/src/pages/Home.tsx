@@ -5,16 +5,16 @@ function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      
-      <div 
+
+      <div
         className="relative flex items-center justify-center bg-cover bg-center"
-        style={{ 
+        style={{
           minHeight: 'calc(100vh - 4rem)',
           backgroundImage: 'url(/images/ab204667-c021-499c-b1f9-db300bfd877c.webp)',
         }}
       >
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-        
+
         <div className="relative z-10 text-center text-white px-4">
           <h1 className="text-5xl md:text-6xl font-bold mb-4">TAÇA UA</h1>
           <h2 className="text-2xl md:text-3xl font-semibold mb-6">Glicínias Plaza</h2>
@@ -80,21 +80,21 @@ function Home() {
                 <img src="/181_glicinias_plaza_1.png" alt="Glicínias Plaza" className="max-h-full max-w-full object-contain" />
               </div>
             </a>
-            
+
             {/* Câmara Municipal de Aveiro */}
             <a href="https://www.cm-aveiro.pt/" target="_blank" rel="noopener noreferrer" className="w-full">
               <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
                 <img src="/cmaveiro.png" alt="Câmara Municipal de Aveiro" className="max-h-full max-w-full object-contain" />
               </div>
             </a>
-            
+
             {/* Universidade de Aveiro */}
             <a href="https://www.ua.pt/" target="_blank" rel="noopener noreferrer" className="w-full">
               <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
                 <img src="/ua.png" alt="Universidade de Aveiro" className="max-h-full max-w-full object-contain" />
               </div>
             </a>
-            
+
             {/* IPDJ */}
             <a href="https://ipdj.gov.pt/" target="_blank" rel="noopener noreferrer" className="w-full">
               <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">

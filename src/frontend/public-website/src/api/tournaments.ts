@@ -5,14 +5,12 @@ export interface TournamentDetail {
   tournament_name: string;
   start_date: string;
   status: string;
-  season_id: string | null;
   modality_id: string;
   modality_name: string | null;
   modality_type_id: string;
   modality_type_name: string;
   competitor_count: number;
   match_count: number;
-  updated_at: string;
 }
 
 export interface TournamentDetailList {
@@ -27,7 +25,6 @@ export interface TournamentListParams {
   page_size?: number;
   modality_id?: string;
   status?: string;
-  season_id?: string;
 }
 
 export interface TournamentStanding {
@@ -44,7 +41,6 @@ export interface TournamentStanding {
   total_score: number;
   rank: number | null;
   statistics_metadata: Record<string, any> | null;
-  updated_at: string;
 }
 
 export interface TournamentStandingsList {
@@ -66,7 +62,6 @@ export const tournamentsApi = {
       page_size: params?.page_size?.toString(),
       modality_id: params?.modality_id,
       status: params?.status,
-      season_id: params?.season_id,
     };
     const queryString = buildQueryString(queryParams);
     return apiCall<TournamentDetailList>(`/tournaments${queryString}`);

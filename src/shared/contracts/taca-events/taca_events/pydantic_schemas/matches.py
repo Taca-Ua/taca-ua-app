@@ -20,8 +20,8 @@ class MatchParticipantData(BaseModel):
     """Participant entry embedded in MatchCreatedData."""
 
     participant_id: UUID
-    participant_type: str  # "team" | "athlete"
-    participant_entity_id: UUID
+    # participant_type: Optional[str]  # "team" | "athlete"
+    # participant_entity_id: Optional[UUID]
 
 
 class MatchCreatedData(BaseModel):
@@ -60,8 +60,8 @@ class LineupPlayerData(BaseModel):
     """Player entry embedded in MatchLineupAssignedData."""
 
     player_id: UUID
-    jersey_number: int
-    is_starter: bool
+    jersey_number: Optional[int] = None
+    is_starter: Optional[bool] = None
 
 
 class MatchLineupAssignedData(BaseModel):

@@ -8,30 +8,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, field_validator
 
-
-# ==================== Season Schemas ====================
-
-
-class SeasonCreate(BaseModel):
-    """Schema for creating a season"""
-
-    year: int
-
-
-class SeasonResponse(BaseModel):
-    """Schema for season response"""
-
-    id: UUID
-    year: int
-    status: str
-    created_at: Optional[datetime] = None
-    started_at: Optional[datetime] = None
-    finished_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
-
-
 # ==================== Tournament Schemas ====================
 
 
@@ -39,29 +15,14 @@ class CompetitorInput(BaseModel):
     """Schema for competitor input (team or athlete)"""
 
     competitor_type: str  # "team" or "athlete"
-    team_id: Optional[UUID] = None
-    athlete_id: Optional[UUID] = None
-    competitor_course_id: Optional[UUID] = None
+    competitor_entity_id: UUID  # team_id or athlete_id depending on competitor_type
+    competitor_course_id: UUID = None
 
     @field_validator("competitor_type")
     @classmethod
     def validate_competitor_type(cls, v):
         if v not in ["team", "athlete"]:
             raise ValueError('competitor_type must be "team" or "athlete"')
-        return v
-
-    @field_validator("team_id")
-    @classmethod
-    def validate_team_id(cls, v, info):
-        if info.data.get("competitor_type") == "team" and v is None:
-            raise ValueError('team_id is required when competitor_type is "team"')
-        return v
-
-    @field_validator("athlete_id")
-    @classmethod
-    def validate_athlete_id(cls, v, info):
-        if info.data.get("competitor_type") == "athlete" and v is None:
-            raise ValueError('athlete_id is required when competitor_type is "athlete"')
         return v
 
 
@@ -72,6 +33,7 @@ class CompetitorResponse(BaseModel):
     tournament_id: UUID
     competitor_type: str
     competitor: dict  # Contains either {"team_id": UUID} or {"athlete_id": UUID}
+    competitor_entity_id: UUID  # team_id or athlete_id depending on competitor_type
     created_at: datetime
 
     class Config:
@@ -86,7 +48,6 @@ class TournamentCreate(BaseModel):
     scoring_format_id: UUID
     start_date: Optional[datetime]
     competitor_type: str  # "team" or "athlete"
-    season_id: Optional[UUID] = None
 
 
 class TournamentUpdate(BaseModel):
@@ -122,7 +83,6 @@ class TournamentResponse(BaseModel):
     modality_id: UUID
     start_date: Optional[datetime]
     scoring_format_id: UUID
-    season_id: Optional[UUID] = None
     competitors: List[CompetitorResponse]
     competitor_type: str
 

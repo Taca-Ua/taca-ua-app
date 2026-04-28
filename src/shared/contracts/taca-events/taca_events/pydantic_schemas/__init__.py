@@ -90,14 +90,6 @@ from .ranking import (
     RankingComputedData,
     RankingComputedV1,
 )
-from .seasons import (
-    SeasonCreatedData,
-    SeasonCreatedV1,
-    SeasonFinishedData,
-    SeasonFinishedV1,
-    SeasonStartedData,
-    SeasonStartedV1,
-)
 from .registry import EventRegistry
 from .tournaments import (
     RankingEntryData,
@@ -216,12 +208,4 @@ __all__ = [
     "RankingComputedData",
     # Ranking schemas
     "RankingComputedV1",
-    # Season data
-    "SeasonCreatedData",
-    "SeasonStartedData",
-    "SeasonFinishedData",
-    # Season schemas
-    "SeasonCreatedV1",
-    "SeasonStartedV1",
-    "SeasonFinishedV1",
 ]

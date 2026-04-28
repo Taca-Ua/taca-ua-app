@@ -8,6 +8,7 @@ Field names mirror the JSON keys currently returned by
 ``GET /internal/snapshot`` in the modalities-service.
 """
 
+from dataclasses import field
 from datetime import datetime
 from typing import List, Optional
 
@@ -24,9 +25,22 @@ class NucleoSnapshotItem(SnapshotBase):
     id: str
     name: str
     abbreviation: str
+    logo_url: Optional[str] = None
     created_by: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
+    def to_dict(self) -> dict:
+        """Convert to a plain dict for JSON serialisation."""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "abbreviation": self.abbreviation,
+            "logo_url": self.logo_url,
+            "created_by": self.created_by,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
 
 
 class CourseSnapshotItem(SnapshotBase):
@@ -40,14 +54,35 @@ class CourseSnapshotItem(SnapshotBase):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
+    def to_dict(self) -> dict:
+        """Convert to a plain dict for JSON serialisation."""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "abbreviation": self.abbreviation,
+            "nucleo_id": self.nucleo_id,
+            "created_by": self.created_by,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
 
 class ModalityTypeSnapshotItem(SnapshotBase):
     """A single modality-type record."""
 
     class EscaloType(SnapshotBase):
+        name: str
         min_participants: Optional[int] = None
         max_participants: Optional[int] = None
         points: Optional[List[int]] = None
+
+        def to_dict(self) -> dict:
+            return {
+                "name": self.name,
+                "min_participants": self.min_participants,
+                "max_participants": self.max_participants,
+                "points": self.points,
+            }
 
     id: str
     name: str
@@ -56,6 +91,18 @@ class ModalityTypeSnapshotItem(SnapshotBase):
     created_by: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
+    def to_dict(self) -> dict:
+        """Convert to a plain dict for JSON serialisation."""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "escaloes": [e.to_dict() for e in self.escaloes] if self.escaloes else None,
+            "created_by": self.created_by,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
 
 
 class ModalitySnapshotItem(SnapshotBase):
@@ -67,6 +114,17 @@ class ModalitySnapshotItem(SnapshotBase):
     created_by: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
+    def to_dict(self) -> dict:
+        """Convert to a plain dict for JSON serialisation."""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "modality_type_id": self.modality_type_id,
+            "created_by": self.created_by,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
 
 
 class StudentSnapshotItem(SnapshotBase):
@@ -81,6 +139,19 @@ class StudentSnapshotItem(SnapshotBase):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
+    def to_dict(self) -> dict:
+        """Convert to a plain dict for JSON serialisation."""
+        return {
+            "id": self.id,
+            "full_name": self.full_name,
+            "course_id": self.course_id,
+            "student_number": self.student_number,
+            "is_member": self.is_member,
+            "created_by": self.created_by,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
 
 class StaffSnapshotItem(SnapshotBase):
     """A single staff-member record."""
@@ -93,6 +164,18 @@ class StaffSnapshotItem(SnapshotBase):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
+    def to_dict(self) -> dict:
+        """Convert to a plain dict for JSON serialisation."""
+        return {
+            "id": self.id,
+            "full_name": self.full_name,
+            "staff_number": self.staff_number,
+            "contact": self.contact,
+            "created_by": self.created_by,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
 
 class TeamSnapshotItem(SnapshotBase):
     """A single team record."""
@@ -101,9 +184,23 @@ class TeamSnapshotItem(SnapshotBase):
     modality_id: str
     course_id: str
     name: str
+    players: List[str] = field(default_factory=list)  # List of student IDs
     created_by: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
+    def to_dict(self) -> dict:
+        """Convert to a plain dict for JSON serialisation."""
+        return {
+            "id": self.id,
+            "modality_id": self.modality_id,
+            "course_id": self.course_id,
+            "name": self.name,
+            "players": self.players,
+            "created_by": self.created_by,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
 
 
 class TeamPlayerSnapshotItem(SnapshotBase):
@@ -120,6 +217,15 @@ class RegulationSnapshotItem(SnapshotBase):
     title: str
     description: Optional[str] = None
     file_url: Optional[str] = None
+
+    def to_dict(self) -> dict:
+        """Convert to a plain dict for JSON serialisation."""
+        return {
+            "id": self.id,
+            "title": self.title,
+            "description": self.description,
+            "file_url": self.file_url,
+        }
 
 
 # ---------------------------------------------------------------------------

@@ -5,7 +5,6 @@ These functions query core tables and update materialized views.
 They should be called after core table updates (from events or snapshot rebuilds).
 """
 
-from datetime import datetime
 from typing import Dict, List
 from uuid import UUID
 
@@ -20,6 +19,7 @@ from .models import (
     MatchParticipant,
     MatchResult,
     Modality,
+    Nucleo,
     Student,
     StudentDetailView,
     Team,
@@ -65,14 +65,15 @@ def rebuild_team_projection(session: Session, team_id: UUID) -> None:
         return
 
     # Compute player count
-    player_count = (
-        session.query(func.count(TeamPlayer.id))
+    players_data = (
+        session.query(TeamPlayer, Student)
+        .join(Student, TeamPlayer.student_id == Student.student_id)
         .filter(
             TeamPlayer.team_id == team_id,
             TeamPlayer.removed_at.is_(None),
+            Student.deleted_at.is_(None),
         )
-        .scalar()
-        or 0
+        .all()
     )
 
     course = team.course
@@ -94,8 +95,16 @@ def rebuild_team_projection(session: Session, team_id: UUID) -> None:
         modality_name=modality.name if modality else None,
         modality_type_id=modality_type.modality_type_id if modality_type else None,
         modality_type_name=modality_type.name if modality_type else "",
-        player_count=player_count,
-        updated_at=datetime.utcnow(),
+        player_count=len(players_data),
+        players=[
+            {
+                "student_id": str(s.student_id),
+                "student_number": s.student_number,
+                "full_name": s.full_name,
+                "is_member": s.is_member,
+            }
+            for _, s in players_data
+        ],
     )
 
     # UPSERT (merge = deterministic projection rebuild)
@@ -159,7 +168,6 @@ def rebuild_student_projection(session: Session, student_id: UUID) -> None:
         nucleo_name=nucleo.name if nucleo else "",
         nucleo_abbreviation=nucleo.abbreviation if nucleo else "",
         team_count=team_count,
-        updated_at=datetime.utcnow(),
     )
 
     # UPSERT (merge = deterministic projection rebuild)
@@ -227,14 +235,12 @@ def rebuild_tournament_projection(session: Session, tournament_id: UUID) -> None
         tournament_name=tournament.name,
         start_date=tournament.start_date,
         status=tournament.status,
-        season_id=tournament.season_id,
         modality_id=modality.modality_id if modality else None,
         modality_name=modality.name if modality else None,
         modality_type_id=modality_type.modality_type_id if modality_type else None,
         modality_type_name=modality_type.name if modality_type else "",
         competitor_count=competitor_count,
         match_count=match_count,
-        updated_at=datetime.utcnow(),
     )
 
     # UPSERT (merge = deterministic projection rebuild)
@@ -274,28 +280,35 @@ def rebuild_match_projection(session: Session, match_id: UUID) -> None:
         return
 
     # Get participants with their details
+    # participant_id is now the competitor_id from TournamentCompetitor
     participants_data = (
-        session.query(MatchParticipant)
+        session.query(MatchParticipant, TournamentCompetitor)
+        .join(
+            TournamentCompetitor,
+            MatchParticipant.participant_id == TournamentCompetitor.competitor_id,
+        )
         .filter(
             MatchParticipant.match_id == match_id,
             MatchParticipant.removed_at.is_(None),
+            TournamentCompetitor.deleted_at.is_(None),
         )
         .all()
     )
 
     participants = []
-    for p in participants_data:
-        if p.participant_type == "team":
+    for p, competitor in participants_data:
+        # Get the entity name based on competitor type
+        if competitor.competitor_type.value == "team":
             entity = (
                 session.query(Team)
-                .filter(Team.team_id == p.participant_entity_id)
+                .filter(Team.team_id == competitor.competitor_entity_id)
                 .first()
             )
             participant_name = entity.name if entity else "Unknown Team"
         else:  # athlete/student
             entity = (
                 session.query(Student)
-                .filter(Student.student_id == p.participant_entity_id)
+                .filter(Student.student_id == competitor.competitor_entity_id)
                 .first()
             )
             participant_name = entity.full_name if entity else "Unknown Athlete"
@@ -303,8 +316,9 @@ def rebuild_match_projection(session: Session, match_id: UUID) -> None:
         participants.append(
             {
                 "participant_id": str(p.participant_id),
-                "participant_type": p.participant_type.value,
-                "participant_entity_id": str(p.participant_entity_id),
+                "competitor_id": str(competitor.competitor_id),
+                "participant_type": competitor.competitor_type.value,
+                "competitor_entity_id": str(competitor.competitor_entity_id),
                 "participant_name": participant_name,
             }
         )
@@ -359,7 +373,6 @@ def rebuild_match_projection(session: Session, match_id: UUID) -> None:
         results=results if results else None,
         participant_count=len(participants),
         comment_count=comment_count,
-        updated_at=datetime.utcnow(),
     )
 
     # UPSERT (merge = deterministic projection rebuild)
@@ -429,7 +442,10 @@ def rebuild_tournament_standings(session: Session, tournament_id: UUID) -> None:
             competitor_name = entity.full_name if entity else "Unknown Athlete"
 
         # Calculate statistics
-        stats = _calculate_competitor_stats(session, competitor_entity_id, match_ids)
+        # Pass competitor_id which is now the participant_id in match participants
+        stats = _calculate_competitor_stats(
+            session, competitor.competitor_id, match_ids
+        )
 
         # Build projection row
         projection = TournamentStandingsView(
@@ -445,7 +461,6 @@ def rebuild_tournament_standings(session: Session, tournament_id: UUID) -> None:
             total_score=stats["total_score"],
             rank=None,  # Will be calculated after all competitors are inserted
             statistics_metadata=stats.get("metadata"),
-            updated_at=datetime.utcnow(),
         )
 
         # UPSERT (merge = deterministic projection rebuild)
@@ -456,10 +471,13 @@ def rebuild_tournament_standings(session: Session, tournament_id: UUID) -> None:
 
 
 def _calculate_competitor_stats(
-    session: Session, competitor_entity_id: UUID, match_ids: List[UUID]
+    session: Session, competitor_id: UUID, match_ids: List[UUID]
 ) -> dict:
     """
     Calculate statistics for a competitor based on completed matches.
+
+    competitor_id is the competitor_id from TournamentCompetitor which
+    is also the participant_id in MatchParticipant.
     """
     if not match_ids:
         return {
@@ -472,6 +490,7 @@ def _calculate_competitor_stats(
         }
 
     # Get all match participations
+    # participant_id is now the competitor_id
     participations = (
         session.query(MatchParticipant, MatchResult)
         .join(
@@ -479,7 +498,7 @@ def _calculate_competitor_stats(
             MatchParticipant.participant_id == MatchResult.participant_id,
         )
         .filter(
-            MatchParticipant.participant_entity_id == competitor_entity_id,
+            MatchParticipant.participant_id == competitor_id,
             MatchParticipant.match_id.in_(match_ids),
             MatchParticipant.removed_at.is_(None),
         )
@@ -537,33 +556,25 @@ def _update_tournament_ranks(session: Session, tournament_id: UUID) -> None:
     # Assign ranks
     for rank, standing in enumerate(standings, start=1):
         standing.rank = rank
-        standing.updated_at = datetime.utcnow()
 
 
 # ==================== Ranking Views ====================
 
 
-def rebuild_general_ranking_projection(session: Session, season_id=None) -> None:
+def rebuild_general_ranking_projection(session: Session) -> None:
     """
     Rebuild the general rankings materialized view from core ranking data.
 
-    This function clears the existing ``GeneralRankingView`` entries for the given
-    season, reads all rows from the ``GeneralRankings`` core table for that season,
-    orders them by points in descending order, assigns ranks, and enriches each entry
-    with course and nucleo information before persisting the projection.
+    This function clears the existing ``GeneralRankingView`` entries, reads all rows from the
+    ``GeneralRankings`` core table, orders them by points in descending order, assigns ranks,
+    and enriches each entry with course and nucleo information before persisting the projection.
     """
     from .models import GeneralRankings, GeneralRankingView
 
-    # Clear existing general ranking view for this season
-    session.query(GeneralRankingView).filter(
-        GeneralRankingView.season_id == season_id
-    ).delete()
+    # Clear existing general ranking view
+    session.query(GeneralRankingView).delete()
 
-    general_rankings_core_data = (
-        session.query(GeneralRankings)
-        .filter(GeneralRankings.season_id == season_id)
-        .all()
-    )
+    general_rankings_core_data = session.query(GeneralRankings).all()
 
     for rank, entry in enumerate(
         sorted(general_rankings_core_data, key=lambda x: x.points, reverse=True),
@@ -576,7 +587,6 @@ def rebuild_general_ranking_projection(session: Session, season_id=None) -> None
 
         projection = GeneralRankingView(
             course_id=course.course_id,
-            season_id=season_id,
             course_name=course.name,
             course_abbreviation=course.abbreviation,
             nucleo_id=nucleo.nucleo_id,
@@ -589,22 +599,19 @@ def rebuild_general_ranking_projection(session: Session, season_id=None) -> None
         session.merge(projection)
 
 
-def rebuild_modality_ranking_projection(session: Session, season_id=None) -> None:
+def rebuild_modality_ranking_projection(session: Session) -> None:
     """
-    Rebuild modality rankings view for the given season.
+    Rebuild modality rankings view.
+
+    This is a placeholder function. The actual implementation would depend on the ranking logic,
+    which may involve aggregating points from modalities, tournaments, or other entities.
     """
     from .models import ModalityRankings, ModalityRankingView
 
-    # Clear existing modality ranking view for this season
-    session.query(ModalityRankingView).filter(
-        ModalityRankingView.season_id == season_id
-    ).delete()
+    # Clear existing modality ranking view
+    session.query(ModalityRankingView).delete()
 
-    modality_rankings_core_data = (
-        session.query(ModalityRankings)
-        .filter(ModalityRankings.season_id == season_id)
-        .all()
-    )
+    modality_rankings_core_data = session.query(ModalityRankings).all()
 
     # grup by modality_id
     modality_groups: Dict[UUID, List[ModalityRankings]] = {}
@@ -630,7 +637,6 @@ def rebuild_modality_ranking_projection(session: Session, season_id=None) -> Non
 
             projection = ModalityRankingView(
                 modality_id=modality_id,
-                season_id=season_id,
                 modality_name=modality_name,
                 course_id=course.course_id,
                 course_name=course.name,
@@ -642,6 +648,38 @@ def rebuild_modality_ranking_projection(session: Session, season_id=None) -> Non
                 rank=rank,
             )
             session.merge(projection)
+
+
+# ==================== Nucleo Views ====================
+
+
+def rebuild_nucleo_projection(session: Session, nucleo_id: UUID) -> None:
+    """Rebuild the projection for a specific nucleo.
+
+    Dependencies: Nucleo
+
+    Call when:
+        - Nucleo created/updated/deleted
+    """
+    from .models import Nucleo, NucleoDetailView
+
+    nucleo = session.query(Nucleo).filter(Nucleo.nucleo_id == nucleo_id).first()
+
+    if not nucleo or nucleo.deleted_at:
+        # Delete projection if nucleo no longer exists or is deleted
+        session.query(NucleoDetailView).filter(
+            NucleoDetailView.nucleo_id == nucleo_id
+        ).delete()
+        return
+
+    projection = NucleoDetailView(
+        nucleo_id=nucleo.nucleo_id,
+        name=nucleo.name,
+        abbreviation=nucleo.abbreviation,
+        logo_url=nucleo.logo_url,
+    )
+
+    session.merge(projection)
 
 
 # ==================== Bulk Rebuild Utilities ====================
@@ -688,3 +726,10 @@ def rebuild_all_matches_for_tournament(session: Session, tournament_id: UUID) ->
     )
     for (match_id,) in matches:
         rebuild_match_projection(session, match_id)
+
+
+def rebuild_all_nucleos(session: Session) -> None:
+    """Rebuild projections for all nucleos."""
+    nucleos = session.query(Nucleo.nucleo_id).all()
+    for (nucleo_id,) in nucleos:
+        rebuild_nucleo_projection(session, nucleo_id)

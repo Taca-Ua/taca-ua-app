@@ -11,7 +11,6 @@ export interface GeneralRanking {
   points: number;
   rank: number | null;
   tournaments_participated: number;
-  updated_at: string;
 }
 
 export interface GeneralRankingList {
@@ -21,14 +20,12 @@ export interface GeneralRankingList {
 
 export interface RankingListParams {
   nucleo_id?: string;
-  season_id?: string;
 }
 
 export const rankingApi = {
   async getGeneralRanking(params?: RankingListParams): Promise<GeneralRankingList> {
     const queryParams: Record<string, string | undefined> = {
       nucleo_id: params?.nucleo_id,
-      season_id: params?.season_id,
     };
     const queryString = buildQueryString(queryParams);
     return apiCall<GeneralRankingList>(`/ranking/general${queryString}`);
@@ -53,7 +50,6 @@ export interface ModalityRanking {
   nucleo_abbreviation: string;
   points: number;
   rank: number | null;
-  updated_at: string;
 }
 
 export interface ModalityRankingList {
@@ -64,7 +60,6 @@ export interface ModalityRankingList {
 export interface ModalityRankingListParams {
   modality_id?: string;
   nucleo_id?: string;
-  season_id?: string;
 }
 
 export const modalityRankingApi = {
@@ -74,7 +69,6 @@ export const modalityRankingApi = {
     const queryParams: Record<string, string | undefined> = {
       modality_id: params?.modality_id,
       nucleo_id: params?.nucleo_id,
-      season_id: params?.season_id,
     };
     const queryString = buildQueryString(queryParams);
     return apiCall<ModalityRankingList>(`/ranking/modality${queryString}`);

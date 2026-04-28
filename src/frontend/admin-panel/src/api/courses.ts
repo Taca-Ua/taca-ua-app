@@ -1,16 +1,17 @@
 import { apiClient } from './client';
-import { type Nucleo } from './nucleos';
 
-export interface Course {
+export interface CourseListItem {
   id: string;
   name: string;
   abbreviation: string;
-  nucleo: Nucleo;
+  nucleo: {
+    id: string;
+    name: string;
+    abbreviation: string;
+  };
 }
 
-export interface CourseDetail extends Course {
-  created_at: string;
-}
+export interface CourseDetail extends CourseListItem {};
 
 export interface CourseCreate {
   name: string;
@@ -25,16 +26,16 @@ export interface CourseUpdate {
 }
 
 export const coursesApi = {
-  async getAll(): Promise<Course[]> {
-    return apiClient.get<Course[]>('/courses/');
+  async getAll(): Promise<CourseListItem[]> {
+    return apiClient.get<CourseListItem[]>('/courses/');
+  },
+
+  async create(data: CourseCreate): Promise<CourseListItem> {
+    return apiClient.post<CourseListItem>('/courses/', data);
   },
 
   async getById(courseId: string): Promise<CourseDetail> {
     return apiClient.get<CourseDetail>(`/courses/${courseId}/`);
-  },
-
-  async create(data: CourseCreate): Promise<Course> {
-    return apiClient.post<Course>('/courses/', data);
   },
 
   async update(courseId: string, data: CourseUpdate): Promise<CourseDetail> {

@@ -175,3 +175,15 @@ def delete_course(course_id: UUID, db: Session = Depends(get_db_session)):
     db.delete(course)
     db.commit()
     logger.info(f"Deleted course: {course_id}")
+
+
+@router.get("/courses/admin/{admin_id}", response_model=List[CourseResponse])
+def list_courses_by_admin(admin_id: str, db: Session = Depends(get_db_session)):
+    """List courses by admin ID"""
+    courses = (
+        db.query(Course)
+        .join(Course.nucleo)
+        .filter(Nucleo.admins_ids.any(admin_id))
+        .all()
+    )
+    return [course.to_dict() for course in courses]
