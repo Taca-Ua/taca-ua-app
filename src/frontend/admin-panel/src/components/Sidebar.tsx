@@ -21,7 +21,7 @@ export default function Sidebar() {
     [{ to: "/nucleos", label: "Núcleos", short: "Núc" },
     { to: "/cursos", label: "Cursos", short: "Cur" },
     { to: "/equipas", label: "Equipas", short: "Equ" },
-    { to: "/socios", label: "Sócios", short: "Sóc" },],
+          { to: "/membros", label: "Membros", short: "Mem" },],
 
     // tournaments management
     [{ to: "/torneios", label: "Torneios", short: "Tor" },
@@ -38,8 +38,8 @@ export default function Sidebar() {
       <aside
         className={`fixed top-0 left-0 h-screen bg-white shadow-xl border-r border-gray-200 z-50 transition-all duration-300 flex flex-col ${isOpen ? "w-64" : "w-16"}`}
       >
-        <div className="flex flex-col h-full justify-between">
-          <div>
+        <div className="flex flex-col h-full">
+          <div className="flex flex-col flex-1 min-h-0">
             <div className="flex items-center justify-between border-b border-gray-200 h-16 flex-shrink-0 px-3">
               {isOpen ? (
                 <>
@@ -88,6 +88,7 @@ export default function Sidebar() {
               )}
             </div>
 
+            <div className="overflow-y-auto flex-1 min-h-0">
             {
               // Render nav items in groups with separators
               navItems.map((group, index) => (
@@ -119,6 +120,7 @@ export default function Sidebar() {
                 </div>
               ))
             }
+            </div>
           </div>
           <div className="border-t border-gray-200 py-2 flex-shrink-0">
             <div className="flex" />
