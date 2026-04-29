@@ -6,7 +6,17 @@ Schema: modalities
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, String, Table, Text
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Table,
+    Text,
+)
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Mapped, relationship
@@ -19,7 +29,7 @@ Base = declarative_base()
 OutboxEvent = create_outbox_model(Base, schema="modalities")
 
 
-# Association table for Team-Student many-to-many relationship
+# Association tables for many-to-many relationships
 team_players = Table(
     "team_players",
     Base.metadata,
@@ -37,6 +47,50 @@ team_players = Table(
     ),
     schema="modalities",
 )
+
+season_courses = Table(
+    "season_course",
+    Base.metadata,
+    Column(
+        "season_id",
+        Integer,
+        ForeignKey("modalities.season.id"),
+        primary_key=True,
+    ),
+    Column(
+        "course_id",
+        UUID(as_uuid=True),
+        ForeignKey("modalities.course.id"),
+        primary_key=True,
+    ),
+    schema="modalities",
+)
+
+
+class SeasonModality(Base):  # need to be a full model to link modality_type
+    """Association table linking Season, Modality, and ModalityType"""
+
+    __tablename__ = "season_modality"
+    __table_args__ = {"schema": "modalities"}
+
+    season_id = Column(Integer, ForeignKey("modalities.season.id"), primary_key=True)
+    modality_id = Column(
+        UUID(as_uuid=True), ForeignKey("modalities.modality.id"), primary_key=True
+    )
+    modality_type_id = Column(
+        UUID(as_uuid=True), ForeignKey("modalities.modality_type.id"), nullable=False
+    )
+
+    # Relationships
+    season: Mapped["Season"] = relationship(
+        "Season", back_populates="season_modalities"
+    )
+    modality: Mapped["Modality"] = relationship(
+        "Modality", back_populates="season_modalities"
+    )
+    modality_type: Mapped["ModalityType"] = relationship(
+        "ModalityType", back_populates="season_modalities"
+    )
 
 
 class Nucleo(Base):
@@ -137,6 +191,42 @@ class Course(Base):
         )
 
 
+class Season(Base):
+    """Represents a sports season"""
+
+    __tablename__ = "season"
+    __table_args__ = {"schema": "modalities"}
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(Text, nullable=False)
+    created_by = Column(UUID(as_uuid=True), nullable=False)
+    finished_by = Column(UUID(as_uuid=True), nullable=True)
+
+    created_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    finished_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Relationships
+    modality_types: Mapped[list["ModalityType"]] = relationship(
+        "ModalityType", back_populates="season"
+    )
+    season_modalities: Mapped[list["SeasonModality"]] = relationship(
+        "SeasonModality", back_populates="season"
+    )
+    teams: Mapped[list["Team"]] = relationship("Team", back_populates="season")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "created_by": str(self.created_by),
+            "finished_by": str(self.finished_by) if self.finished_by else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "finished_at": self.finished_at.isoformat() if self.finished_at else None,
+        }
+
+
 class ModalityType(Base):
     """Enumeration for modality types"""
 
@@ -153,6 +243,7 @@ class ModalityType(Base):
     tournament_competitor_type = Column(
         Text, nullable=True
     )  # e.g. "individual", "team"
+    season_id = Column(Integer, ForeignKey("modalities.season.id"), nullable=True)
 
     # bulshit fields
     created_by = Column(UUID(as_uuid=True), nullable=False)
@@ -164,7 +255,10 @@ class ModalityType(Base):
     )
 
     # Relationships
-    modalities = relationship("Modality", back_populates="modality_type")
+    season_modalities: Mapped[list["SeasonModality"]] = relationship(
+        "SeasonModality", back_populates="modality_type"
+    )
+    season: Mapped["Season"] = relationship("Season", back_populates="modality_types")
 
     def to_dict(self):
         return {
@@ -210,9 +304,6 @@ class Modality(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(Text, unique=True, nullable=False)
-    modality_type_id = Column(
-        UUID(as_uuid=True), ForeignKey("modalities.modality_type.id"), nullable=False
-    )
     created_by = Column(UUID(as_uuid=True), nullable=False)
     created_at = Column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
@@ -222,26 +313,40 @@ class Modality(Base):
     )
 
     # Relationships
-    modality_type = relationship("ModalityType", back_populates="modalities")
     teams = relationship("Team", back_populates="modality")
+    season_modalities: Mapped[list["SeasonModality"]] = relationship(
+        "SeasonModality", back_populates="modality"
+    )
 
     def to_dict(self):
+        # Get modality_type from the first available season_modality
+        modality_type_data = None
+        if self.season_modalities:
+            modality_type_data = (
+                self.season_modalities[0].modality_type.to_dict()
+                if self.season_modalities[0].modality_type
+                else None
+            )
+
         return {
             "id": str(self.id),
             "name": self.name,
-            "modality_type": (
-                self.modality_type.to_dict() if self.modality_type else None
-            ),
+            "modality_type": modality_type_data,
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 
     def to_snapshot(self) -> snapshot_models.ModalitySnapshotItem:
+        # Get modality_type_id from the first available season_modality
+        modality_type_id = None
+        if self.season_modalities and self.season_modalities[0].modality_type_id:
+            modality_type_id = str(self.season_modalities[0].modality_type_id)
+
         return snapshot_models.ModalitySnapshotItem(
             id=str(self.id),
             name=self.name,
-            modality_type_id=str(self.modality_type_id),
+            modality_type_id=modality_type_id,
             created_by=str(self.created_by),
             created_at=self.created_at.isoformat() if self.created_at else None,
             updated_at=self.updated_at.isoformat() if self.updated_at else None,
@@ -381,6 +486,8 @@ class Team(Base):
         UUID(as_uuid=True), ForeignKey("modalities.course.id"), nullable=False
     )
     name = Column(Text, nullable=False)
+    season_id = Column(Integer, ForeignKey("modalities.season.id"), nullable=True)
+
     created_by = Column(UUID(as_uuid=True), nullable=False)
     created_at = Column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
@@ -390,8 +497,9 @@ class Team(Base):
     )
 
     # Relationships
-    modality = relationship("Modality", back_populates="teams")
-    course = relationship("Course", back_populates="teams")
+    modality: Mapped["Modality"] = relationship("Modality", back_populates="teams")
+    course: Mapped["Course"] = relationship("Course", back_populates="teams")
+    season: Mapped["Season"] = relationship("Season", back_populates="teams")
     players: Mapped[list["Student"]] = relationship(
         "Student", secondary=team_players, back_populates="teams"
     )
@@ -402,6 +510,7 @@ class Team(Base):
             "name": self.name,
             "modality": self.modality.to_dict() if self.modality else None,
             "course": self.course.to_dict() if self.course else None,
+            "season": self.season.to_dict() if self.season else None,
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
