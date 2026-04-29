@@ -21,7 +21,7 @@ export default function Sidebar() {
     [{ to: "/nucleos", label: "Núcleos", short: "Núc" },
     { to: "/cursos", label: "Cursos", short: "Cur" },
     { to: "/equipas", label: "Equipas", short: "Equ" },
-    { to: "/socios", label: "Sócios", short: "Sóc" },],
+    { to: "/membros", label: "Membros", short: "Mem" },],
 
     // tournaments management
     [{ to: "/torneios", label: "Torneios", short: "Tor" },

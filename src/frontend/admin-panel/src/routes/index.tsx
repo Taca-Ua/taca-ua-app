@@ -85,7 +85,7 @@ export const router = createBrowserRouter([
       { path: '/torneios',            element: <ProtectedRoute> <Torneios /></ProtectedRoute> },
       { path: '/torneios/:id',        element: <ProtectedRoute> <TorneioDetails /></ProtectedRoute> },
       { path: '/jogos/:id',           element: <ProtectedRoute> <JogoDetails /></ProtectedRoute> },
-      { path: '/socios',              element: <ProtectedRoute> <SociosGeral /></ProtectedRoute> },
+      { path: '/membros',             element: <ProtectedRoute> <SociosGeral /></ProtectedRoute> },
 
       // Nucleo Admin Routes
       { path: '/equipas',            element: <ProtectedRoute> <Equipas /></ProtectedRoute> },
