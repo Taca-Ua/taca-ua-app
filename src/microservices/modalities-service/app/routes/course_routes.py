@@ -16,9 +16,10 @@ from taca_events.pydantic_schemas.modalities import (
 
 from ..database import get_db_session
 from ..logger import logger
-from ..models import Course, Nucleo
+from ..models import Course, Nucleo, Season, season_courses
 from ..outbox_publisher import outbox_publisher
 from ..schemas import CourseCreate, CourseResponse, CourseUpdate
+from ..utils import get_active_season
 
 router = APIRouter()
 
@@ -27,9 +28,17 @@ DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000"
 
 
 @router.get("/courses", response_model=List[CourseResponse])
-def list_courses(admin_id: str = None, db: Session = Depends(get_db_session)):
+def list_courses(
+    admin_id: str = None, season_id: int = None, db: Session = Depends(get_db_session)
+):
     """List all courses"""
-    query = db.query(Course)
+    query = db.query(Course).join(season_courses).join(Season)
+    if season_id is not None:
+        query = query.filter(Season.id == season_id)
+    else:
+        active_season = get_active_season(db)
+        query = query.filter(Season.id == active_season.id)
+
     if admin_id is not None:
         query = query.join(Course.nucleo).filter(Nucleo.admins_ids.any(admin_id))
     courses = query.all()
@@ -46,6 +55,8 @@ def create_course(course_data: CourseCreate, db: Session = Depends(get_db_sessio
     if not nucleo:
         raise HTTPException(status_code=404, detail="Nucleo not found")
 
+    season = get_active_season(db)
+
     try:
         course = Course(
             name=course_data.name,
@@ -57,6 +68,9 @@ def create_course(course_data: CourseCreate, db: Session = Depends(get_db_sessio
         )
         db.add(course)
         db.flush()
+
+        # Associate course with active season
+        season.season_courses.append(course)
 
         # Emit event via outbox
         event = CourseCreatedV1.create(
@@ -157,6 +171,11 @@ def delete_course(course_id: UUID, db: Session = Depends(get_db_session)):
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
 
+    # Disassociate course from seasons before deletion
+    active_season = get_active_season(db)
+    if course in active_season.season_courses:
+        active_season.season_courses.remove(course)
+
     # Emit event via outbox before deleting
     event = CourseDeletedV1.create(
         aggregate_id=course.id,
@@ -180,8 +199,13 @@ def delete_course(course_id: UUID, db: Session = Depends(get_db_session)):
 @router.get("/courses/admin/{admin_id}", response_model=List[CourseResponse])
 def list_courses_by_admin(admin_id: str, db: Session = Depends(get_db_session)):
     """List courses by admin ID"""
+    active_season = get_active_season(db)
+
     courses = (
         db.query(Course)
+        .join(season_courses)
+        .join(Season)
+        .filter(Season.id == active_season.id)
         .join(Course.nucleo)
         .filter(Nucleo.admins_ids.any(admin_id))
         .all()

@@ -164,7 +164,7 @@ class Course(Base):
     )
 
     # Relationships
-    nucleo = relationship("Nucleo", back_populates="courses")
+    nucleo: Mapped["Nucleo"] = relationship("Nucleo", back_populates="courses")
     students = relationship("Student", back_populates="course")
     teams = relationship("Team", back_populates="course")
 
@@ -208,13 +208,16 @@ class Season(Base):
     finished_at = Column(DateTime(timezone=True), nullable=True)
 
     # Relationships
-    modality_types: Mapped[list["ModalityType"]] = relationship(
+    season_modality_types: Mapped[list["ModalityType"]] = relationship(
         "ModalityType", back_populates="season"
     )
     season_modalities: Mapped[list["SeasonModality"]] = relationship(
         "SeasonModality", back_populates="season"
     )
-    teams: Mapped[list["Team"]] = relationship("Team", back_populates="season")
+    season_courses: Mapped[list["Course"]] = relationship(
+        "Course", secondary=season_courses
+    )
+    season_teams: Mapped[list["Team"]] = relationship("Team", back_populates="season")
 
     def to_dict(self):
         return {
@@ -258,7 +261,9 @@ class ModalityType(Base):
     season_modalities: Mapped[list["SeasonModality"]] = relationship(
         "SeasonModality", back_populates="modality_type"
     )
-    season: Mapped["Season"] = relationship("Season", back_populates="modality_types")
+    season: Mapped["Season"] = relationship(
+        "Season", back_populates="season_modality_types"
+    )
 
     def to_dict(self):
         return {
@@ -499,7 +504,7 @@ class Team(Base):
     # Relationships
     modality: Mapped["Modality"] = relationship("Modality", back_populates="teams")
     course: Mapped["Course"] = relationship("Course", back_populates="teams")
-    season: Mapped["Season"] = relationship("Season", back_populates="teams")
+    season: Mapped["Season"] = relationship("Season", back_populates="season_teams")
     players: Mapped[list["Student"]] = relationship(
         "Student", secondary=team_players, back_populates="teams"
     )
