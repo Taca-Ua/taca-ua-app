@@ -277,6 +277,11 @@ class RegulationResponse(BaseModel):
 # ==================== SEASON SCHEMAS ====================
 
 
+class SeasonCreate(BaseModel):
+    name: str
+    admin_id: str = None
+
+
 class SeasonResponse(BaseModel):
     id: int
     name: str

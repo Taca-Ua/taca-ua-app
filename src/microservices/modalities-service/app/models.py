@@ -237,7 +237,7 @@ class ModalityType(Base):
     __table_args__ = {"schema": "modalities"}
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(Text, unique=True, nullable=False)
+    name = Column(Text, nullable=False)
     description = Column(Text, nullable=True)
     escaloes = Column(JSON, nullable=True)  # Array of escaloes stored as JSON
     is_playoff = Column(
@@ -492,6 +492,9 @@ class Team(Base):
     )
     name = Column(Text, nullable=False)
     season_id = Column(Integer, ForeignKey("modalities.season.id"), nullable=True)
+    derived_from_team_id = Column(
+        UUID(as_uuid=True), ForeignKey("modalities.team.id"), nullable=True
+    )  # For tracking team lineage across seasons
 
     created_by = Column(UUID(as_uuid=True), nullable=False)
     created_at = Column(
