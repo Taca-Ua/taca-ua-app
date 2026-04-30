@@ -272,3 +272,22 @@ class RegulationResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ==================== SEASON SCHEMAS ====================
+
+
+class SeasonCreate(BaseModel):
+    name: str
+    admin_id: str = None
+
+
+class SeasonResponse(BaseModel):
+    id: int
+    name: str
+    created_by: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True

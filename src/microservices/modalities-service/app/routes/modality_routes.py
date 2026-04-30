@@ -16,9 +16,10 @@ from taca_events.pydantic_schemas.modalities import (
 
 from ..database import get_db_session
 from ..logger import logger
-from ..models import Modality, ModalityType
+from ..models import Modality, ModalityType, Season, SeasonModality
 from ..outbox_publisher import outbox_publisher
 from ..schemas import ModalityCreate, ModalityResponse, ModalityUpdate
+from ..utils import get_active_season
 
 router = APIRouter()
 
@@ -27,9 +28,16 @@ DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000"
 
 
 @router.get("/modalities", response_model=List[ModalityResponse])
-def list_modalities(db: Session = Depends(get_db_session)):
+def list_modalities(season_id: int = None, db: Session = Depends(get_db_session)):
     """List all modalities"""
-    modalities = db.query(Modality).all()
+    modalities = db.query(Modality).join(SeasonModality).join(Season)
+    if season_id is not None:
+        modalities = modalities.filter(Season.id == season_id)
+    else:
+        active_season = get_active_season(db)
+        modalities = modalities.filter(Season.id == active_season.id)
+
+    modalities = modalities.all()
     return [modality.to_dict() for modality in modalities]
 
 
@@ -40,19 +48,29 @@ def create_modality(
     modality_data: ModalityCreate, db: Session = Depends(get_db_session)
 ):
     """Create a new modality"""
+    active_season = get_active_season(db)
+
     # Validate modality type exists
+    if modality_data.modality_type_id not in [
+        mt.id for mt in active_season.season_modality_types
+    ]:
+        raise HTTPException(
+            status_code=404, detail="Modality type not found for active season"
+        )
     modality_type = (
         db.query(ModalityType)
         .filter(ModalityType.id == modality_data.modality_type_id)
+        .filter(ModalityType.season_id == active_season.id)
         .first()
     )
     if not modality_type:
-        raise HTTPException(status_code=404, detail="Modality type not found")
+        raise HTTPException(
+            status_code=404, detail="Modality type not found for active season"
+        )
 
     try:
         modality = Modality(
             name=modality_data.name,
-            modality_type_id=modality_data.modality_type_id,
             created_by=DEFAULT_USER_ID,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
@@ -60,12 +78,21 @@ def create_modality(
         db.add(modality)
         db.flush()  # To get modality.id before commit
 
+        # Associate modality with active season
+        season_modality = SeasonModality(
+            season_id=active_season.id,
+            modality_id=modality.id,
+            modality_type_id=modality_type.id,
+        )
+        db.add(season_modality)
+        db.flush()
+
         # Emit event via outbox
         event = ModalityCreatedV1.create(
             aggregate_id=modality.id,
             data=ModalityCreatedData(
                 modality_id=modality.id,
-                modality_type_id=modality.modality_type_id,
+                modality_type_id=modality_type.id,
                 name=modality.name,
             ),
         )
@@ -113,15 +140,22 @@ def update_modality(
         modality.name = modality_data.name
         changes_made["name"] = modality_data.name
     if modality_data.modality_type_id is not None:
+        active_season = get_active_season(db)
         modality_type = (
             db.query(ModalityType)
             .filter(ModalityType.id == modality_data.modality_type_id)
+            .filter(ModalityType.season_id == active_season.id)
             .first()
         )
         if not modality_type:
-            raise HTTPException(status_code=404, detail="Modality type not found")
-        modality.modality_type_id = modality_data.modality_type_id
-        changes_made["modality_type_id"] = str(modality_data.modality_type_id)
+            raise HTTPException(
+                status_code=404, detail="Modality type not found for active season"
+            )
+
+        db.query(SeasonModality).filter(
+            SeasonModality.modality_id == modality_id,
+        ).update({"modality_type_id": modality_type.id})
+        changes_made["modality_type_id"] = str(modality_type.id)
     modality.updated_at = datetime.now(timezone.utc)
 
     # Emit event via outbox
@@ -174,6 +208,12 @@ def delete_modality(modality_id: UUID, db: Session = Depends(get_db_session)):
         aggregate_id=modality.id,
         data=event.to_data_dict(),
     )
+
+    active_season = get_active_season(db)
+    db.query(SeasonModality).filter(
+        SeasonModality.modality_id == modality_id,
+        SeasonModality.season_id == active_season.id,
+    ).delete()
 
     db.delete(modality)
     db.commit()
