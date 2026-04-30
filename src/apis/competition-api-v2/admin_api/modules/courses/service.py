@@ -36,8 +36,10 @@ class CourseService:
             ),
         )
 
-    def list_courses(self, admin_id: str = None) -> list[Course]:
-        answer_data = modalities_service_client.courses.list_courses(admin_id=admin_id)
+    def list_courses(self, admin_id: str = None, season_id: int = None) -> list[Course]:
+        answer_data = modalities_service_client.courses.list_courses(
+            admin_id=admin_id, season_id=season_id
+        )
 
         return [
             self._build_course_from_modalities_answer(course) for course in answer_data
