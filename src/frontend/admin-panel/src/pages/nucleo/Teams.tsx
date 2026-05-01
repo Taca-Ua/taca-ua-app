@@ -4,23 +4,27 @@ import TeamsListComponent from '../../components/teams/TeamsListComponent';
 import TeamsCreateModal from '../../components/teams/TeamsCreateModal';
 import Button from '../../components/utils/Button';
 import { useModal } from '../../contexts/ModalContext';
+import { useSeason } from '../../contexts/SeasonContext';
 
 const Equipas = () => {
   const { pushModal } = useModal();
+  const { currentSeason } = useSeason();
 
   const [teams, setTeams] = useState<TeamListItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
-    teamsApi.getAll()
+    teamsApi.getAll({
+      season_id: currentSeason?.id,
+    })
       .then((data) => setTeams(data))
       .catch((error) => {
         console.error('Erro ao carregar equipas:', error);
         setTeams([]);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [currentSeason?.id]);
 
   if (loading) {
     return <div className="text-gray-500">Carregando equipas...</div>;

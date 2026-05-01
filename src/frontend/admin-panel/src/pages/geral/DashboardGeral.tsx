@@ -35,11 +35,11 @@ function DashboardGeral() {
         setLoading(true);
 
         // Fetch all data in parallel
-        const [modalities, tournaments, teams, seasons, nucleos] = await Promise.all([
+        const [modalities, tournaments, teams, nucleos] = await Promise.all([
           modalitiesApi.getAll(),
           tournamentsApi.getAll(),
           teamsApi.getAll(), // Get teams from all courses
-          seasonsApi.getAll(),
+          // seasonsApi.getAll(),
           nucleosApi.getAll(),
         ]);
 
@@ -47,11 +47,11 @@ function DashboardGeral() {
         const activeTournaments = tournaments.filter(t => t.status === 'active').length;
 
         // Find current active season and draft season
-        const active = seasons.find(s => s.status === 'active') || null;
-        const draft = seasons.find(s => s.status === 'draft') || null;
+        // const active = seasons.find(s => s.status === 'active') || null;
+        // const draft = seasons.find(s => s.status === 'draft') || null;
 
-        setCurrentSeason(active);
-        setDraftSeason(draft);
+        // setCurrentSeason(active);
+        // setDraftSeason(draft);
 
         setStats({
           modalities: modalities.length,

@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import HelpTooltip from '../HelpTooltip';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { tournamentsApi, type TournamentListItem, type TournamentCreate } from '../../api/tournaments';
-import { modalitiesApi, type ModalityListItem } from '../../api/modalities';
+import { modalitiesApi } from '../../api/modalities';
 import Button from '../utils/Button';
 import { useModal } from '../../contexts/ModalContext';
 import ChoseOneInput from '../utils/inputs/ChoseOneInput';
@@ -20,30 +20,11 @@ const TournamentCreateModal = ({
   const { notify } = useNotification();
   const { popModal } = useModal();
 
-  const [modalities, setModalities] = useState<ModalityListItem[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [name, setName] = useState(starterName || '');
   const [chosenModalityId, setChosenModalityId] = useState<string | null>(null);
   const [isPlayoff, setIsPlayoff] = useState(false);
-
-  // Fetch modalities if needed (only when modality is not fixed)
-  useEffect(() => {
-    if (modalityId) return;  // No need to fetch if modality is fixed
-
-    const fetchModalities = async () => {
-      try {
-        const modalitiesData = await modalitiesApi.getAll();
-        setModalities(modalitiesData);
-      } catch (err) {
-        console.error('Failed to fetch modalities:', err);
-      }
-    };
-
-    if (modalities.length === 0) {
-      fetchModalities();
-    }
-  }, []);
 
   const handleSubmit = async () => {
     setLoading(true);

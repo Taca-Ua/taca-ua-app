@@ -1,35 +1,21 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { type ModalityListItem, modalitiesApi } from "../../api/modalities";
+import { type ModalityListItem } from "../../api/modalities";
 
 
 const ModalitiesListComponent = ({
-  modalitiesState,
+  modalities,
 } : {
-  modalitiesState?: [ModalityListItem[], React.Dispatch<React.SetStateAction<ModalityListItem[]>>];
+  modalities: ModalityListItem[];
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
-
-  const [modalities, setModalities] = modalitiesState? modalitiesState : useState<ModalityListItem[]>([]);
 
   const filteredModalities = modalities.filter(mod => {
     const matchesSearch = mod.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = typeFilter ? mod.modality_type.id === typeFilter : true;
     return matchesSearch && matchesType;
   });
-  useEffect(() => {
-    const fetchModalities = async () => {
-      try {
-        const data = await modalitiesApi.getAll();
-        setModalities(data);
-      } catch (err) {
-        console.error("Failed to fetch modalities:", err);
-      }
-    };
-
-    fetchModalities();
-  }, []);
 
   if (modalities.length === 0) {
     return (

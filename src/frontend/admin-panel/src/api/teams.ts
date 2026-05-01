@@ -22,11 +22,6 @@ export interface TeamDetail extends TeamListItem {
   }[];
 }
 
-export interface TeamListParams {
-  modality_id?: string;
-  course_id?: string;
-}
-
 export interface TeamCreate {
   name: string;
   modality_id: string;
@@ -43,6 +38,7 @@ export interface TeamUpdate {
 
 // Params interfaces
 export interface TeamListParams {
+  season_id?: number;
   modality_id?: string;
   course_id?: string;
 }

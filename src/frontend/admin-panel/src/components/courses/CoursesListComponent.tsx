@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { type CourseListItem, coursesApi } from "../../api/courses"
 import { useNavigate } from "react-router"
+import { useSeason } from "../../contexts/SeasonContext";
 
 const CourseEntry = (course: CourseListItem) => {
   const navigate = useNavigate();
@@ -28,21 +29,12 @@ const CourseEntry = (course: CourseListItem) => {
 const CoursesListComponent = ( {
   coursesState,
 } : {
-  coursesState?: [CourseListItem[], React.Dispatch<React.SetStateAction<CourseListItem[]>>]
+  coursesState: [CourseListItem[], React.Dispatch<React.SetStateAction<CourseListItem[] | null>>]
 } ) => {
-  const [ courses, setCourses ] = coursesState? coursesState : useState<CourseListItem[] | null>(null)
+  const [ courses, ] = coursesState
 
   const [ searchQuery, setSearchQuery ] = useState('')
   const [ nucleoFilter, setNucleoFilter ] = useState('')
-
-  useEffect(() => {
-    coursesApi.getAll().then(data => {
-      setCourses(data)
-    }).catch(err => {
-      console.error("Failed to fetch courses:", err);
-      setCourses([]);
-    })
-  }, [])
 
   const filteredCourses = courses?.filter(c =>
     (c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.abbreviation.toLowerCase().includes(searchQuery.toLowerCase())) &&

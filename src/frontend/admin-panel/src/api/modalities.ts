@@ -21,9 +21,13 @@ export interface ModalityUpdate {
   modality_type_id?: string;
 }
 
+export interface ModalityTypeListParameters {
+  season_id?: number;
+}
+
 export const modalitiesApi = {
-  async getAll(): Promise<ModalityListItem[]> {
-    return apiClient.get<ModalityListItem[]>('/modalities/');
+  async getAll(params?: ModalityTypeListParameters): Promise<ModalityListItem[]> {
+    return apiClient.get<ModalityListItem[]>('/modalities/', params );
   },
 
   async create(data: ModalityCreate): Promise<ModalityListItem> {
