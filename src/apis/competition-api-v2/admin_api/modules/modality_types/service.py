@@ -49,14 +49,17 @@ class ModalityTypesService:
             tournament_competitor_type=modality.tournament_competitor_type,
         )
 
-    def list_modality_types(self, include_playoff=False) -> List[ModalityType]:
+    def list_modality_types(
+        self, include_playoff=False, season_id=None
+    ) -> List[ModalityType]:
         """List all modality types, optionally including playoff type
 
         Args:
             include_playoff (bool, optional): _description_. Defaults to False.
+            season_id (str, optional): ID of the season for which to list modality types. Defaults to None.
         """
         answer = modalities_service_client.modality_types.list_modality_types(
-            include_playoff=include_playoff
+            include_playoff=include_playoff, season_id=season_id
         )
         return [
             self._build_admin_from_modalities_answer(modality) for modality in answer

@@ -408,7 +408,7 @@ class ModalityTypesModalitiesService(BaseService):
         super().__init__(base_url)
 
     def list_modality_types(
-        self, include_playoff: bool = True
+        self, include_playoff: bool = True, season_id: str = None
     ) -> List[ModalityTypeDTO]:
         """List all modality types
 
@@ -418,6 +418,8 @@ class ModalityTypesModalitiesService(BaseService):
         params = {}
         if not include_playoff:
             params["exclude_playoff"] = True
+        if season_id is not None:
+            params["season_id"] = season_id
         modality_types_data = self.get("/modality-types", params=params)
         return [
             ModalityTypeDTO(**modality_type) for modality_type in modality_types_data
@@ -855,14 +857,14 @@ class TeamModalitiesService(BaseService):
         super().__init__(base_url)
 
     def list_teams(
-        self, admin_id: str = None, modality_id: str = None, season_id: str = None
+        self, admin_id: str = None, modality_id: str = None, season_id: int = None
     ) -> List[TeamDTO]:
         """List teams, optionally filtered by admin user ID and/or modality ID
 
         Args:
             admin_id (str, optional): ID of the admin user to filter teams by. Defaults to None.
             modality_id (str, optional): ID of the modality to filter teams by. Defaults to None.
-            season_id (str, optional): ID of the season to filter teams by. Defaults to None.
+            season_id (int, optional): ID of the season to filter teams by. Defaults to None.
         Returns:
             List[TeamDTO]: List of TeamDTO objects representing the teams
         """
@@ -872,6 +874,8 @@ class TeamModalitiesService(BaseService):
             params["admin_id"] = admin_id
         if modality_id is not None:
             params["modality_id"] = modality_id
+        if season_id is not None:
+            params["season_id"] = season_id
 
         teams_data = self.get("/teams", params=params)
         return [TeamDTO(**team) for team in teams_data]

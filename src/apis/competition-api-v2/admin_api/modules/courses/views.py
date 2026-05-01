@@ -13,6 +13,7 @@ from rest_framework.views import APIView
 from .serializers import (
     CourseCreateSerializer,
     CourseDetailSerializer,
+    CourseListQuerySerializer,
     CourseListSerializer,
     CourseUpdateSerializer,
 )
@@ -21,6 +22,7 @@ from .service import course_service
 
 @extend_schema_view(
     get=extend_schema(
+        parameters=[CourseListQuerySerializer],
         responses=CourseListSerializer(many=True),
         description="List all courses with optional search",
         tags=["Course Management"],

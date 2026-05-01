@@ -66,9 +66,9 @@ class TeamsService:
 
         return obj
 
-    def list_teams(self, admin_id=None, modality_id=None):
+    def list_teams(self, admin_id=None, modality_id=None, season_id: int = None):
         teams_answer = modalities_service_client.teams.list_teams(
-            admin_id=admin_id, modality_id=modality_id
+            admin_id=admin_id, modality_id=modality_id, season_id=season_id
         )
         return [
             self._build_team_from_modalities_response(team) for team in teams_answer

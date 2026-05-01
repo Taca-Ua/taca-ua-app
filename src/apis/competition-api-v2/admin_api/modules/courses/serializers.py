@@ -29,6 +29,12 @@ class CourseDetailSerializer(CourseListSerializer):
 
 
 # Request serializers
+class CourseListQuerySerializer(serializers.Serializer):
+    """Serializer for course list query parameters"""
+
+    season_id = serializers.IntegerField(required=False)
+
+
 class CourseCreateSerializer(serializers.Serializer):
     """Serializer for creating a course"""
 

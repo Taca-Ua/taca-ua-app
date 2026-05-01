@@ -37,8 +37,10 @@ class ModalitiesService:
             modality_type=modality_type,
         )
 
-    def list_modalities(self):
-        answer = modalities_service_client.modalities.list_modalities()
+    def list_modalities(self, season_id: str = None):
+        answer = modalities_service_client.modalities.list_modalities(
+            season_id=season_id
+        )
         return [self._build_modality_from_dto(dto) for dto in answer]
 
     def create_modality(self, name: str, modality_type_id: str = None):

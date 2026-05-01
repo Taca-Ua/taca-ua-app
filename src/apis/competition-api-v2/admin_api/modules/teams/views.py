@@ -48,6 +48,7 @@ class TeamListCreateView(RoleRequiredMixin, APIView):
                 if "modality_id" in serializer.validated_data
                 else None
             ),
+            season_id=serializer.validated_data.get("season_id"),
         )
 
         # Serialize output data
