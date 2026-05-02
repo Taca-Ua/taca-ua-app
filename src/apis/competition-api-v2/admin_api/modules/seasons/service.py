@@ -29,5 +29,11 @@ class SeasonService:
         )
         return self._build_season_from_dto(new_season_dto)
 
+    def get_current_season(self) -> Season | None:
+        current_season_dto = modalities_service_client.seasons.get_current_season()
+        if not current_season_dto:
+            return None
+        return self._build_season_from_dto(current_season_dto)
+
 
 seasons_service = SeasonService()
