@@ -111,3 +111,23 @@ def create_season(season_payload: SeasonCreate, db: Session = Depends(get_db_ses
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred",
         )
+
+
+@router.get("/seasons/current", response_model=SeasonResponse)
+def get_current_season_route(db: Session = Depends(get_db_session)):
+    """
+    Retrieve the current active season with its associated modalities and modality types.
+    """
+    try:
+        current_season = get_active_season(db)
+        if not current_season:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="No active season found"
+            )
+        return current_season.to_dict()
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred",
+        )

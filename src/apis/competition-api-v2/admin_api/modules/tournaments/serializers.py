@@ -68,6 +68,7 @@ class TournamentListQuerySerializer(serializers.Serializer):
 
     status = serializers.ChoiceField(choices=STATUS_CHOICES, required=False)
     modality_id = serializers.UUIDField(required=False)
+    season_id = serializers.IntegerField(required=False)
 
 
 class TournamentCreateSerializer(serializers.Serializer):
