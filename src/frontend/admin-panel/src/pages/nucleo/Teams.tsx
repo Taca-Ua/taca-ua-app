@@ -8,7 +8,7 @@ import { useSeason } from '../../contexts/SeasonContext';
 
 const Equipas = () => {
   const { pushModal } = useModal();
-  const { currentSeason } = useSeason();
+  const { loadedSeason } = useSeason();
 
   const [teams, setTeams] = useState<TeamListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -16,7 +16,7 @@ const Equipas = () => {
   useEffect(() => {
     setLoading(true);
     teamsApi.getAll({
-      season_id: currentSeason?.id,
+      season_id: loadedSeason?.id,
     })
       .then((data) => setTeams(data))
       .catch((error) => {
@@ -24,7 +24,7 @@ const Equipas = () => {
         setTeams([]);
       })
       .finally(() => setLoading(false));
-  }, [currentSeason?.id]);
+  }, [loadedSeason?.id]);
 
   if (loading) {
     return <div className="text-gray-500">Carregando equipas...</div>;

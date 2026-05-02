@@ -11,18 +11,18 @@ const Torneios = () => {
   const { isAdminGeneral } = useAuth();
   const [tournaments, setTournaments] = useState<TournamentListItem[]>([]);
   const { pushModal } = useModal();
-  const { currentSeason } = useSeason();
+  const { loadedSeason } = useSeason();
 
   useEffect(() => {
     tournamentsApi.getAll({
-      season_id: currentSeason?.id
+      season_id: loadedSeason?.id
     })
       .then((data) => setTournaments(data))
       .catch((error) => {
         console.error('Erro ao carregar torneios:', error);
         setTournaments([]);
       });
-  }, [currentSeason?.id]);
+  }, [loadedSeason?.id]);
 
   return (
       <div className="flex-1 p-8 max-w-7xl mx-auto">

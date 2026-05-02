@@ -13,7 +13,7 @@ const Modalities = () => {
   const { isAdminGeneral } = useAuth();
   const { pushModal } = useModal();
   const { notify } = useNotification();
-  const { currentSeason } = useSeason();
+  const { loadedSeason } = useSeason();
 
   const [modalities, setModalities] = useState<ModalityListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,7 +21,7 @@ const Modalities = () => {
   useEffect(() => {
     setLoading(true);
     modalitiesApi.getAll({
-      season_id: currentSeason?.id
+      season_id: loadedSeason?.id
     })
       .then(data => setModalities(data))
       .catch(err => {
@@ -29,7 +29,7 @@ const Modalities = () => {
         notify("Erro ao carregar modalidades.", "error");
       })
       .finally(() => setLoading(false));
-  }, [currentSeason?.id]);
+  }, [loadedSeason?.id]);
 
   return (
       <div className="flex-1 p-8">

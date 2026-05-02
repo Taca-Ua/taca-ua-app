@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react"
-import { type CourseListItem, coursesApi } from "../../api/courses"
+import { useState } from "react"
+import { type CourseListItem } from "../../api/courses"
 import { useNavigate } from "react-router"
-import { useSeason } from "../../contexts/SeasonContext";
 
 const CourseEntry = (course: CourseListItem) => {
   const navigate = useNavigate();

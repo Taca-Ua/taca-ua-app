@@ -9,7 +9,7 @@ export default function Sidebar() {
   const [isChangingSeason, setIsChangingSeason] = useState(false);
   const { logout, username } = useAuth();
   const { clearModals } = useModal();
-  const { availableSeasons, currentSeason, setCurrentSeason } = useSeason();
+  const { availableSeasons, loadedSeason, selectSeason } = useSeason();
 
   const navItems = [
     // system management
@@ -41,7 +41,7 @@ export default function Sidebar() {
       setIsChangingSeason(true);
       const selectedSeason = availableSeasons.find(s => s.id === seasonId);
       if (!selectedSeason) throw new Error("Selected season not found");
-      setCurrentSeason(selectedSeason);
+      selectSeason(selectedSeason);
     } catch (error) {
       console.error("Failed to change season:", error);
       setIsChangingSeason(false);
@@ -112,11 +112,11 @@ export default function Sidebar() {
                   Época
                 </label>
                 <select
-                  value={currentSeason?.id || ""}
+                  value={loadedSeason?.id || ""}
                   onChange={(e) => handleSeasonChange(Number(e.target.value))}
                   disabled={isChangingSeason}
                   className="w-full px-2 py-2 text-sm border border-gray-300 rounded text-gray-700 hover:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={!isOpen ? `${currentSeason?.name}` : undefined}
+                  title={!isOpen ? `${loadedSeason?.name}` : undefined}
                 >
                   {availableSeasons.sort((a, b) => b.id - a.id).map((season) => (
                     <option key={season.id} value={season.id}>

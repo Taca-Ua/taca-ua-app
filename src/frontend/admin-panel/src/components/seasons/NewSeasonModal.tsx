@@ -8,7 +8,7 @@ import Button from "../utils/Button";
 
 const NewSeasonModal = () => {
     const { popModal } = useModal();
-    const { currentSeason } = useSeason();
+    const { activeSeason } = useSeason();
     const { notify } = useNotification();
 
     const [confirmationText, setConfirmationText] = useState("");
@@ -32,7 +32,7 @@ const NewSeasonModal = () => {
         seasonsApi.createSeason({
             name: newSeasonName,
         }).then(() => {
-            notify(`Época ${currentSeason?.name} finalizada com sucesso!`, "success");
+            notify(`Época ${activeSeason?.name} finalizada com sucesso!`, "success");
             onClose();
         }).catch((error) => {
             console.error("Erro ao finalizar época:", error);
@@ -42,7 +42,7 @@ const NewSeasonModal = () => {
         });
     };
 
-    if (!currentSeason) return null;
+    if (!activeSeason) return null;
 
     return (
       <div className="bg-white p-8 rounded-lg max-w-md w-full">
@@ -53,7 +53,7 @@ const NewSeasonModal = () => {
           <p className="text-gray-700">
             Tem certeza que deseja{" "}
             <span className="font-bold text-red-600">
-              finalizar a época {currentSeason.name}
+              finalizar a época {activeSeason.name}
             </span>
             ?
           </p>

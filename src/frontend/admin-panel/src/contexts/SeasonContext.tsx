@@ -3,9 +3,10 @@ import { seasonsApi, type SeasonListItem } from "../api/seasons";
 import { useAuth } from "../hooks/useAuth";
 
 type SeasonContextType = {
-  currentSeason: SeasonListItem | null;
+  loadedSeason: SeasonListItem | null;
+  activeSeason: SeasonListItem | null;
+  selectSeason: (season: SeasonListItem) => void;
   availableSeasons: SeasonListItem[];
-  setCurrentSeason: (season: SeasonListItem) => void;
 };
 
 const SeasonContext = createContext<SeasonContextType | null>(null);
@@ -14,19 +15,21 @@ export const useSeason = () => useContext(SeasonContext)!;
 
 export const SeasonProvider = ({ children }: { children: React.ReactNode }) => {
   const [seasons, setSeasons] = useState<SeasonListItem[]>([]);
-  const [currentSeason, setCurrentSeason] = useState<SeasonListItem | null>(null);
+  const [activeSeason, setActiveSeason] = useState<SeasonListItem | null>(null);
+  const [loadedSeason, setLoadedSeason] = useState<SeasonListItem | null>(null);
   const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     if (!isAuthenticated) return; // Don't fetch seasons if not authenticated
     const fetchSeasons = async () => {
       try {
-        const allSeasons = await seasonsApi.getAll();
-        // const activeSeason = await seasonsApi.getCurrent();
-        console.log("Fetched seasons:", allSeasons);
+        const [allSeasons, activeSeason] = await Promise.all([
+          seasonsApi.getAll(),
+          seasonsApi.getCurrent(),
+        ]);
         setSeasons(allSeasons);
-        setCurrentSeason(allSeasons[allSeasons.length - 1] || null); // Set the last season as current by default
-        // setCurrentSeason(activeSeason);
+        setLoadedSeason(activeSeason);
+        setActiveSeason(activeSeason);
       } catch (error) {
         console.error("Failed to fetch seasons:", error);
       }
@@ -35,7 +38,7 @@ export const SeasonProvider = ({ children }: { children: React.ReactNode }) => {
   }, [isAuthenticated]); // Refetch seasons when authentication status changes
 
   return (
-    <SeasonContext.Provider value={{ currentSeason, availableSeasons: seasons, setCurrentSeason }}>
+    <SeasonContext.Provider value={{ loadedSeason, activeSeason, availableSeasons: seasons, selectSeason: setLoadedSeason }}>
       {children}
     </SeasonContext.Provider>
   );

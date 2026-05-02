@@ -14,7 +14,7 @@ function DashboardGeral() {
   const navigate = useNavigate();
   // username is used in the welcome greeting below
   const { username } = useAuth();
-  const { currentSeason } = useSeason();
+  const { loadedSeason } = useSeason();
   const { pushModal } = useModal();
 
   const [stats, setStats] = useState({
@@ -34,10 +34,10 @@ function DashboardGeral() {
         // Fetch all data in parallel
         const [modalities, tournaments, teams, nucleos] = await Promise.all([
           modalitiesApi.getAll({
-            season_id: currentSeason?.id,
+            season_id: loadedSeason?.id,
           }),
           tournamentsApi.getAll({
-            season_id: currentSeason?.id,
+            season_id: loadedSeason?.id,
           }),
           teamsApi.getAll(), // Get teams from all courses
           // seasonsApi.getAll(),
@@ -69,7 +69,7 @@ function DashboardGeral() {
     };
 
     fetchStats();
-  }, [currentSeason?.id]);
+  }, [loadedSeason?.id]);
 
 
   return (
