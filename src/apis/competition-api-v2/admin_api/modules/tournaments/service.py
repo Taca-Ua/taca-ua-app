@@ -184,12 +184,16 @@ class TournamentsService:
         return tournament
 
     def list_tournaments(
-        self, status: str = None, modality_id: str = None
+        self, status: str = None, modality_id: str = None, season_id: int = None
     ) -> list[Tournament]:
         """List all tournaments"""
 
+        # If season_id is not provided, get the current season id from the modalities service
+        if season_id is None:
+            season_id = modalities_service_client.seasons.get_current_season().id
+
         tournaments_raw_data = tournaments_service_client.list_tournaments(
-            status_filter=status, modality_id=modality_id
+            status_filter=status, modality_id=modality_id, season_id=season_id
         )
 
         # Fetch all relevant modalities in a single call to avoid N+1 problem
@@ -227,6 +231,9 @@ class TournamentsService:
         else:
             scoring_format_id = modality.modality_type.id
 
+        # get current season id
+        season_id = modalities_service_client.seasons.get_current_season().id
+
         tournament_dto = tournaments_service_client.create_tournament(
             modality_id=modality_id,
             name=name,
@@ -235,6 +242,7 @@ class TournamentsService:
                 "individual", "athlete"
             ),  # the tournaments service expects "athlete" instead of "individual"
             start_date=datetime.now().isoformat(),
+            season_id=season_id,
         )
 
         return self._build_tournament_from_dto(

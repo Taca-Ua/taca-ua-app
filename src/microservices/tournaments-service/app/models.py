@@ -106,6 +106,7 @@ class Tournament(Base):
         Enum(CompetitorType, name="competitor_type"),
         nullable=False,
     )
+    season_id = Column(sa.Integer(), nullable=False, index=True)
 
     # bulshit fields
     created_by = Column(UUID(as_uuid=True), nullable=False)

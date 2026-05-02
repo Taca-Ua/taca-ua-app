@@ -128,6 +128,7 @@ def add_competitor(db: Session, tournament_id: UUID, competitor_input: Competito
 async def list_tournaments(
     status_filter: str = None,
     modality_id: UUID = None,
+    season_id: int = None,
     db: Session = Depends(get_db_session),
 ):
     """List all tournaments with optional filters"""
@@ -137,6 +138,8 @@ async def list_tournaments(
         query = query.filter(Tournament.status == status_filter)
     if modality_id:
         query = query.filter(Tournament.modality_id == modality_id)
+    if season_id:
+        query = query.filter(Tournament.season_id == season_id)
 
     tournaments = query.all()
     return [TournamentResponse(**t.to_dict(include_ranking=False)) for t in tournaments]
@@ -185,6 +188,7 @@ async def create_tournament(
             scoring_format_id=data.scoring_format_id,
             competitor_type=competitor_type,
             created_by="00000000-0000-0000-0000-000000000000",  # Placeholder, should be replaced with actual user ID from auth context
+            season_id=data.season_id,
         )
         db.add(tournament)
         db.flush()  # Get the ID before committing

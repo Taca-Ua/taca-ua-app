@@ -71,7 +71,10 @@ class TournamentsService(BaseService):
         super().__init__(base_url)
 
     def list_tournaments(
-        self, status_filter: Optional[str] = None, modality_id: Optional[UUID] = None
+        self,
+        status_filter: Optional[str] = None,
+        modality_id: Optional[UUID] = None,
+        season_id: Optional[int] = None,
     ) -> List[TournamentDTO]:
         """
         List all tournaments with optional filters
@@ -79,6 +82,7 @@ class TournamentsService(BaseService):
         Args:
             status_filter: Filter by status (draft, active, finished)
             modality_id: Filter by modality ID
+            season_id: Filter by season ID
 
         Returns:
             List of tournament dictionaries
@@ -88,6 +92,8 @@ class TournamentsService(BaseService):
             params["status_filter"] = status_filter
         if modality_id:
             params["modality_id"] = str(modality_id)
+        if season_id:
+            params["season_id"] = season_id
 
         tournaments_data = self.get("/tournaments", params=params)
         return [TournamentDTO(**tournament) for tournament in tournaments_data]
@@ -111,6 +117,7 @@ class TournamentsService(BaseService):
         name: str,
         scoring_format_id: UUID,
         competitor_type: str,
+        season_id: int = None,
         start_date: Optional[str] = None,
     ) -> TournamentDTO:
         """
@@ -120,6 +127,8 @@ class TournamentsService(BaseService):
             modality_id: ID of the modality
             name: Tournament name
             scoring_format_id: ID of the scoring format (regular vs playoff)
+            competitor_type: "team" or "athlete"
+            season_id: Season ID
             start_date: Optional start date (ISO format)
 
         Returns:
@@ -130,6 +139,7 @@ class TournamentsService(BaseService):
             "name": name,
             "scoring_format_id": str(scoring_format_id),
             "competitor_type": competitor_type,
+            "season_id": season_id,
         }
         if start_date:
             data["start_date"] = start_date

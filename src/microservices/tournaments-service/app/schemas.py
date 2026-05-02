@@ -48,6 +48,7 @@ class TournamentCreate(BaseModel):
     scoring_format_id: UUID
     start_date: Optional[datetime]
     competitor_type: str  # "team" or "athlete"
+    season_id: int
 
 
 class TournamentUpdate(BaseModel):

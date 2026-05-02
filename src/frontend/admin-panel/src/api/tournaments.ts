@@ -35,6 +35,7 @@ export interface TournamentDetail extends TournamentListItem {
 export interface TournamentListParams {
   status?: tournamentStatusChoices;
   modality_id?: string;
+  season_id?: number;
 };
 
 export interface TournamentCreate {

@@ -1083,6 +1083,15 @@ class SeasonModalitiesService(BaseService):
         season_data = self.post("/seasons", data)
         return SeasonDTO(**season_data)
 
+    def get_current_season(self) -> SeasonDTO:
+        """Get the current season
+
+        Returns:
+            SeasonDTO: SeasonDTO object representing the current season
+        """
+        season_data = self.get("/seasons/current")
+        return SeasonDTO(**season_data)
+
 
 class ModalitiesService(BaseService):
     """Service for managing courses, modalities, teams, and students via modalities-service"""
