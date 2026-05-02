@@ -12,6 +12,7 @@ import TabSystem from '../../components/TabSystem';
 import ModalityInfoComponent from '../../components/modalities/ModalityInfoComponent';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { teamsApi, type TeamListItem } from '../../api/teams';
+import { useSeason } from '../../contexts/SeasonContext';
 
 
 const TournamentsTab = ({
@@ -24,6 +25,7 @@ const TournamentsTab = ({
   const { pushModal } = useModal();
   const { isAdminGeneral } = useAuth();
   const { notify } = useNotification();
+  const { currentSeason } = useSeason();
 
   const [tournaments, setTournaments] = tournamentsState || useState<TournamentListItem[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,7 +37,7 @@ const TournamentsTab = ({
   useEffect(() => {
     if (tournaments) return; // Evita recarregar se já temos os torneios carregados
     setIsLoading(true);
-    tournamentsApi.getAll({ modality_id: modality.id })
+    tournamentsApi.getAll({ modality_id: modality.id, season_id: currentSeason?.id })
       .then((data) => setTournaments(data))
       .catch((error) => {
         console.error('Erro ao carregar torneios:', error);
@@ -43,7 +45,7 @@ const TournamentsTab = ({
         notify('Falha ao carregar torneios para esta modalidade.', 'error');
       })
       .finally(() => setIsLoading(false));
-  }, [modality.id]);
+  }, [modality.id, currentSeason?.id]);
 
   const renderTournamentList = () => {
     if (isLoading) {
@@ -95,18 +97,19 @@ const TeamsTab = ({
 }) => {
   const [teams, setTeams] = teamsState || useState<TeamListItem[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { currentSeason } = useSeason();
 
   useEffect(() => {
     if (teams) return; // Evita recarregar se já temos as equipas carregadas
     setIsLoading(true);
-    teamsApi.getAll({ modality_id: modality.id })
+    teamsApi.getAll({ modality_id: modality.id, season_id: currentSeason?.id })
       .then((data) => setTeams(data))
       .catch((error) => {
         console.error('Erro ao carregar equipas:', error);
         setTeams(null);
       })
       .finally(() => setIsLoading(false));
-  }, [modality.id]);
+  }, [modality.id, currentSeason?.id]);
 
   if (isLoading) {
     return <div className="text-gray-500">Carregando equipas...</div>;

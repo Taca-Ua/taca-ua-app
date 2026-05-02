@@ -9,12 +9,15 @@ import { nucleosApi } from '../../api/nucleos';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { btn } from '../../styles/buttonStyles';
+import { useSeason } from '../../contexts/SeasonContext';
 
 function DashboardGeral() {
   const navigate = useNavigate();
   // username is used in the welcome greeting below
   const { username } = useAuth();
   const { notify } = useNotification();
+  const { currentSeason } = useSeason();
+
   const [stats, setStats] = useState({
     modalities: 0,
     courses: 0,
@@ -23,7 +26,6 @@ function DashboardGeral() {
     teams: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [currentSeason, setCurrentSeason] = useState<Season | null>(null);
   const [draftSeason, setDraftSeason] = useState<Season | null>(null);
   const [showStartModal, setShowStartModal] = useState(false);
   const [showFinishModal, setShowFinishModal] = useState(false);
@@ -37,7 +39,9 @@ function DashboardGeral() {
         // Fetch all data in parallel
         const [modalities, tournaments, teams, nucleos] = await Promise.all([
           modalitiesApi.getAll(),
-          tournamentsApi.getAll(),
+          tournamentsApi.getAll({
+            season_id: currentSeason?.id,
+          }),
           teamsApi.getAll(), // Get teams from all courses
           // seasonsApi.getAll(),
           nucleosApi.getAll(),
@@ -68,7 +72,7 @@ function DashboardGeral() {
     };
 
     fetchStats();
-  }, []);
+  }, [currentSeason?.id]);
 
   const handleStartSeason = async () => {
     if (!draftSeason) return;
