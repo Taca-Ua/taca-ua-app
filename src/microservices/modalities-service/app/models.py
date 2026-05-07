@@ -327,13 +327,9 @@ class Modality(Base):
         # Get modality_type from the first available season_modality
         modality_type_data = None
         season_modality = None
-        if self.season_modalities:
+        if self.season_modalities and season_id is not None:
             season_modality = next(
-                (
-                    sm
-                    for sm in self.season_modalities
-                    if season_id is None or sm.season_id == season_id
-                ),
+                (sm for sm in self.season_modalities if sm.season_id == season_id),
                 None,
             )
             if season_modality and season_modality.modality_type:

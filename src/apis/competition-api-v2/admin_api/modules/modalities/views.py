@@ -12,6 +12,7 @@ from rest_framework.views import APIView
 
 from .serializers import (
     ModalityCreateSerializer,
+    ModalityDetailQuerySerializer,
     ModalityListQuerySerializer,
     ModalityListSerializer,
     ModalitySerializer,
@@ -64,6 +65,7 @@ class ModalityListCreateView(RoleRequiredMixin, APIView):
 
 @extend_schema_view(
     get=extend_schema(
+        parameters=[ModalityDetailQuerySerializer],
         responses=ModalitySerializer,
         description="Get a modality by ID",
         tags=["Modality Management"],
@@ -82,7 +84,13 @@ class ModalityListCreateView(RoleRequiredMixin, APIView):
 )
 class ModalityDetailView(RoleRequiredMixin, APIView):
     def get(self, request, modality_id):
-        modality = modalities_service.get_modality(modality_id)
+        # Serialize query parameters
+        serializer = ModalityDetailQuerySerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+
+        modality = modalities_service.get_modality(
+            modality_id, season_id=serializer.validated_data.get("season_id")
+        )
 
         serializer = ModalitySerializer(modality)
         return Response(serializer.data, status=status.HTTP_200_OK)

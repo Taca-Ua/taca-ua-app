@@ -132,28 +132,22 @@ function ModalidadeDetail() {
 
   const { notify } = useNotification();
   const navigate = useNavigate();
+  const { loadedSeason } = useSeason();
 
   const [modality, setModality] = useState<ModalityDetail | null>(null);
-  const [loading, setLoading] = useState(true);
 
   const [tournaments, setTournaments] = useState<TournamentListItem[] | null>(null); // Estado para armazenar os torneios, passado para o TabSystem
   const [teams, setTeams] = useState<TeamListItem[] | null>(null); // Estado para armazenar as equipas, passado para o TabSystem
 
   useEffect(() => {
-    setLoading(true);
-    modalitiesApi.getById(modalityId)
+    modalitiesApi.getById(modalityId, loadedSeason?.id)
       .then((data) => setModality(data))
       .catch((error) => {
         console.error('Erro ao carregar modalidade:', error);
         setModality(null);
         notify('Falha ao carregar detalhes da modalidade.', 'error');
-      })
-      .finally(() => setLoading(false));
-  }, [modalityId]);
-
-  if (loading) {
-    return <div className="text-gray-500">Carregando detalhes da modalidade...</div>;
-  }
+      });
+  }, [modalityId, loadedSeason?.id]);
 
   if (!modality) {
     return <div className="text-red-500">Modalidade não encontrada.</div>;

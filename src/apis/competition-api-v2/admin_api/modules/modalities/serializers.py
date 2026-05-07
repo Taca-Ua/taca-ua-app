@@ -30,6 +30,12 @@ class ModalityListQuerySerializer(serializers.Serializer):
     season_id = serializers.IntegerField(required=False)
 
 
+class ModalityDetailQuerySerializer(serializers.Serializer):
+    """Serializer for modality detail query parameters"""
+
+    season_id = serializers.IntegerField(required=False)
+
+
 class ModalityCreateSerializer(serializers.Serializer):
     """Serializer for creating a modality"""
 

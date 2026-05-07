@@ -38,7 +38,7 @@ const ModalityInfoComponent = ( {
         <div>
           <label className="block text-teal-500 font-medium mb-2">Tipo</label>
           <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800 capitalize">
-            {modality.modality_type.name}
+            {modality.modality_type?.name || 'N/A'}
           </div>
         </div>
       </div>

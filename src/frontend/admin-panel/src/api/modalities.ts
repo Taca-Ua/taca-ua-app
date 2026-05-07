@@ -35,8 +35,8 @@ export const modalitiesApi = {
     return apiClient.post<ModalityListItem>('/modalities/', data);
   },
 
-  async getById(modalityId: string): Promise<ModalityDetail> {
-    return apiClient.get<ModalityDetail>(`/modalities/${modalityId}/`);
+  async getById(modalityId: string, season_id?: number): Promise<ModalityDetail> {
+    return apiClient.get<ModalityDetail>(`/modalities/${modalityId}/`, { season_id });
   },
 
   async update(modalityId: string, data: ModalityUpdate): Promise<ModalityDetail> {

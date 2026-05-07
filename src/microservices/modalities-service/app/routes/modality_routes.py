@@ -120,12 +120,23 @@ def create_modality(
 
 
 @router.get("/modalities/{modality_id}", response_model=ModalityResponse)
-def get_modality(modality_id: UUID, db: Session = Depends(get_db_session)):
+def get_modality(
+    modality_id: UUID, season_id: int = None, db: Session = Depends(get_db_session)
+):
     """Get a modality by ID"""
     modality = db.query(Modality).filter(Modality.id == modality_id).first()
     if not modality:
         raise HTTPException(status_code=404, detail="Modality not found")
-    return modality.to_dict()
+
+    relevant_season = None
+    if season_id is not None:
+        relevant_season = db.query(Season).filter(Season.id == season_id).first()
+        if not relevant_season:
+            raise HTTPException(status_code=404, detail="Season not found")
+    else:
+        relevant_season = get_active_season(db)
+
+    return modality.to_dict(relevant_season.id)
 
 
 @router.put("/modalities/{modality_id}", response_model=ModalityResponse)

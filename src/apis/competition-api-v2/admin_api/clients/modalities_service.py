@@ -564,16 +564,20 @@ class ModalityModalitiesService(BaseService):
         modality_data = self.post("/modalities", data)
         return ModalityDTO(**modality_data)
 
-    def get_modality(self, modality_id: str) -> ModalityDTO:
+    def get_modality(self, modality_id: str, season_id: str = None) -> ModalityDTO:
         """Get a modality by ID
 
         Args:
             modality_id (str): ID of the modality
+            season_id (str, optional): ID of the season. Defaults to None.
 
         Returns:
             ModalityDTO: ModalityDTO object representing the modality
         """
-        modality_data = self.get(f"/modalities/{modality_id}")
+        params = {}
+        if season_id is not None:
+            params["season_id"] = season_id
+        modality_data = self.get(f"/modalities/{modality_id}", params=params)
         return ModalityDTO(**modality_data)
 
     def update_modality(
