@@ -36,6 +36,7 @@ class CourseDTO:
     name: str
     abbreviation: str
     nucleo: Optional[NucleoDTO] = None
+    belongs_to_season: Optional[bool] = False
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -317,6 +318,8 @@ class CourseModalitiesService(BaseService):
         params = {}
         if admin_id is not None:
             params["admin_id"] = admin_id
+        if season_id is not None:
+            params["season_id"] = season_id
         courses_data = self.get("/courses", params=params)
         return [CourseDTO(**course) for course in courses_data]
 
@@ -339,16 +342,20 @@ class CourseModalitiesService(BaseService):
         course_data = self.post("/courses", data)
         return CourseDTO(**course_data)
 
-    def get_course(self, course_id: str) -> CourseDTO:
+    def get_course(self, course_id: str, season_id: str = None) -> CourseDTO:
         """Get a course by ID
 
         Args:
             course_id (str): ID of the course
+            season_id (str, optional): ID of the season to filter by. Defaults to None.
 
         Returns:
             CourseDTO: CourseDTO object representing the course
         """
-        course_data = self.get(f"/courses/{course_id}")
+        params = {}
+        if season_id is not None:
+            params["season_id"] = season_id
+        course_data = self.get(f"/courses/{course_id}", params=params)
         return CourseDTO(**course_data)
 
     def update_course(
@@ -378,6 +385,36 @@ class CourseModalitiesService(BaseService):
             data["nucleo_id"] = nucleo_id
 
         course_data = self.put(f"/courses/{course_id}", data)
+        return CourseDTO(**course_data)
+
+    def add_course_to_season(self, course_id: str, season_id: int) -> CourseDTO:
+        """Add a course to a season
+
+        Args:
+            course_id (str): ID of the course
+            season_id (int): ID of the season
+
+        Returns:
+            CourseDTO: Updated CourseDTO object with belongs_to_season set to True
+        """
+        course_data = self.post(
+            f"/courses/{course_id}/add_to_season", {"season_id": season_id}
+        )
+        return CourseDTO(**course_data)
+
+    def remove_course_from_season(self, course_id: str, season_id: int) -> CourseDTO:
+        """Remove a course from a season
+
+        Args:
+            course_id (str): ID of the course
+            season_id (int): ID of the season
+
+        Returns:
+            CourseDTO: Updated CourseDTO object with belongs_to_season set to False
+        """
+        course_data = self.post(
+            f"/courses/{course_id}/remove_from_season", {"season_id": season_id}
+        )
         return CourseDTO(**course_data)
 
     def delete_course(self, course_id: str) -> None:

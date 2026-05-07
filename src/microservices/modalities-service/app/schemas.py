@@ -49,11 +49,20 @@ class CourseUpdate(BaseModel):
     nucleo_id: Optional[UUID] = None
 
 
+class CourseAddToSeason(BaseModel):
+    season_id: int
+
+
+class CourseRemoveFromSeason(BaseModel):
+    season_id: int
+
+
 class CourseResponse(BaseModel):
     id: str
     name: str
     abbreviation: str
     nucleo: Optional[NucleoResponse] = None
+    belongs_to_season: Optional[bool] = False
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None

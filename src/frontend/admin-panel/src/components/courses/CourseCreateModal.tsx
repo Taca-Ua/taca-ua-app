@@ -6,6 +6,7 @@ import ChoseOneModal from "../utils/costum_menus/ChoseOneModal";
 import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
 import { useAuth } from "../../hooks/useAuth";
+import { useSeason } from "../../contexts/SeasonContext";
 
 const CourseCreateModal = ({
   onCreate,
@@ -14,6 +15,7 @@ const CourseCreateModal = ({
 }) => {
   const { popModal, pushModal } = useModal();
   const { isAdminGeneral } = useAuth();
+  const { loadedSeasonIsTheCurrentSeason, activeSeason } = useSeason();
 
   const [newCourseName, setNewCourseName] = useState("");
   const [newCourseAbbreviation, setNewCourseAbbreviation] = useState("");
@@ -62,6 +64,13 @@ const CourseCreateModal = ({
         <h2 className="text-2xl font-bold mb-6 text-gray-800">
           Adicionar Curso
         </h2>
+
+        {!loadedSeasonIsTheCurrentSeason && (
+          <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6" role="alert">
+            <p className="font-medium">Atenção:</p>
+            <p>Este curso será adicionado à temporada ativa: <strong>{activeSeason?.name}</strong></p>
+          </div>
+        )}
 
         <div className="space-y-4">
           <div>
