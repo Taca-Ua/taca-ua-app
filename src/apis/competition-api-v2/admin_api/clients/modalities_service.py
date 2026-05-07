@@ -402,6 +402,21 @@ class CourseModalitiesService(BaseService):
         )
         return CourseDTO(**course_data)
 
+    def remove_course_from_season(self, course_id: str, season_id: int) -> CourseDTO:
+        """Remove a course from a season
+
+        Args:
+            course_id (str): ID of the course
+            season_id (int): ID of the season
+
+        Returns:
+            CourseDTO: Updated CourseDTO object with belongs_to_season set to False
+        """
+        course_data = self.post(
+            f"/courses/{course_id}/remove_from_season", {"season_id": season_id}
+        )
+        return CourseDTO(**course_data)
+
     def delete_course(self, course_id: str) -> None:
         """Delete a course
 

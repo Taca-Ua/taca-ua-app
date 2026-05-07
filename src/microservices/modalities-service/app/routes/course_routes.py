@@ -18,7 +18,13 @@ from ..database import get_db_session
 from ..logger import logger
 from ..models import Course, Nucleo, Season, season_courses
 from ..outbox_publisher import outbox_publisher
-from ..schemas import CourseAddToSeason, CourseCreate, CourseResponse, CourseUpdate
+from ..schemas import (
+    CourseAddToSeason,
+    CourseCreate,
+    CourseRemoveFromSeason,
+    CourseResponse,
+    CourseUpdate,
+)
 from ..utils import get_active_season
 
 router = APIRouter()
@@ -200,6 +206,36 @@ def add_course_to_season(
     db.commit()
     db.refresh(course)
     logger.info(f"Added course {course_id} to season {data.season_id}")
+    return course.to_dict(season_id=data.season_id)
+
+
+@router.post("/courses/{course_id}/remove_from_season", response_model=CourseResponse)
+def remove_course_from_season(
+    course_id: UUID, data: CourseRemoveFromSeason, db: Session = Depends(get_db_session)
+):
+    """Remove a course from a season"""
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    season = db.query(Season).filter(Season.id == data.season_id).first()
+    if not season:
+        raise HTTPException(status_code=404, detail="Season not found")
+
+    if course not in season.season_courses:
+        raise HTTPException(status_code=400, detail="Course not in season")
+
+    # Check if the course has teams registered in the season before removing
+    if course.teams:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot remove course from season with registered teams",
+        )
+
+    season.season_courses.remove(course)
+    db.commit()
+    db.refresh(course)
+    logger.info(f"Removed course {course_id} from season {data.season_id}")
     return course.to_dict(season_id=data.season_id)
 
 

@@ -22,6 +22,7 @@ from .serializers import (
     CourseDetailSerializer,
     CourseListQuerySerializer,
     CourseListSerializer,
+    CourseRemoveFromSeasonSerializer,
     CourseUpdateSerializer,
 )
 from .service import course_service
@@ -146,6 +147,26 @@ def add_course_to_season(request: Request, course_id):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    request=CourseRemoveFromSeasonSerializer,
+    responses=CourseDetailSerializer,
+    description="Remove a course from a season",
+    tags=["Course Management"],
+)
+@api_view(["POST"])
+@require_roles("general_admin")
+def remove_course_from_season(request: Request, course_id):
+    serializer = CourseRemoveFromSeasonSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    course = course_service.remove_from_season(
+        course_id, season_id=serializer.validated_data["season_id"]
+    )
+
+    serializer = CourseDetailSerializer(course)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 urlpatterns = [
     path("", CourseListCreateView.as_view(), name="course-list"),
     path("<uuid:course_id>/", CourseDetailView.as_view(), name="course-detail"),
@@ -153,5 +174,10 @@ urlpatterns = [
         "<uuid:course_id>/add_to_season/",
         add_course_to_season,
         name="course-add-to-season",
+    ),
+    path(
+        "<uuid:course_id>/remove_from_season/",
+        remove_course_from_season,
+        name="course-remove-from-season",
     ),
 ]

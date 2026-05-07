@@ -77,6 +77,12 @@ class CourseService:
         )
         return self._build_course_from_modalities_answer(answer_data)
 
+    def remove_from_season(self, course_id: str, season_id: int) -> Course:
+        answer_data = modalities_service_client.courses.remove_course_from_season(
+            course_id, season_id
+        )
+        return self._build_course_from_modalities_answer(answer_data)
+
     def delete_course(self, course_id: str):
         modalities_service_client.courses.delete_course(course_id)
 

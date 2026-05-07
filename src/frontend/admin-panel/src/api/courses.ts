@@ -47,6 +47,10 @@ export const coursesApi = {
     return apiClient.post<CourseDetail>(`/courses/${courseId}/add_to_season/`, { season_id: seasonId });
   },
 
+  async removeFromSeason(courseId: string, seasonId: number): Promise<CourseDetail> {
+    return apiClient.post<CourseDetail>(`/courses/${courseId}/remove_from_season/`, { season_id: seasonId });
+  },
+
   async delete(courseId: string): Promise<void> {
     return apiClient.delete(`/courses/${courseId}/`);
   },

@@ -21,13 +21,13 @@ const CourseInfoComponent = ( {
 
   const handleRemoveFromSeason = () => {
     if (!course || !loadedSeason) return;
-    // coursesApi.update(course.id, {
-    //   season_id: null,
-    // }).then((updatedCourse) => {
-    //   setCourse(updatedCourse);
-    // }).catch((error) => {
-    //   console.error("Erro ao remover curso da temporada:", error);
-    // });
+    coursesApi.removeFromSeason(course.id, loadedSeason.id)
+      .then((updatedCourse) => {
+        setCourse(updatedCourse);
+      }).catch((error) => {
+        notify("Erro ao remover curso da temporada.", "error");
+        console.error("Erro ao remover curso da temporada:", error);
+      });
   };
 
   const handleAddToSeason = () => {
@@ -130,7 +130,7 @@ const CourseInfoComponent = ( {
           }}
           flexible={true}
         >
-          Eliminar
+          Remover da temporada
         </Button>
       </div>
     </div>

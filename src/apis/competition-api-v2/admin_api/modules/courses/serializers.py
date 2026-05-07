@@ -62,3 +62,9 @@ class CourseAddToSeasonSerializer(serializers.Serializer):
     """Serializer for adding a course to a season"""
 
     season_id = serializers.IntegerField(required=True)
+
+
+class CourseRemoveFromSeasonSerializer(serializers.Serializer):
+    """Serializer for removing a course from a season"""
+
+    season_id = serializers.IntegerField(required=True)
