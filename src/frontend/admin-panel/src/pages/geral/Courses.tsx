@@ -14,13 +14,13 @@ const Cursos = () => {
   const { pushModal } = useModal();
   const { notify } = useNotification();
   const [ isLoading, setIsLoading ] = useState(true);
-  const { currentSeason } = useSeason();
+  const { loadedSeason } = useSeason();
 
   const [courses, setCourses] = useState<CourseListItem[] | null>(null);  // Estado para armazenar os cursos
 
   useEffect(() => {
     setIsLoading(true);
-    coursesApi.getAll(currentSeason?.id).then(data => {
+    coursesApi.getAll(loadedSeason?.id).then(data => {
       setCourses(data);
     }).catch(err => {
       console.error("Failed to fetch courses:", err);
@@ -29,7 +29,7 @@ const Cursos = () => {
     }).finally(() => {
       setIsLoading(false);
     });
-  }, [currentSeason?.id]);  // Carrega os cursos ao montar o componente
+  }, [loadedSeason?.id]);  // Carrega os cursos ao montar o componente
 
   if (isLoading) {
     return (

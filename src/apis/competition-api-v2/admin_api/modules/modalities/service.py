@@ -17,6 +17,7 @@ class _ModalityType:
 class Modality:
     id: str
     name: str
+    belongs_to_season: bool
     modality_type: _ModalityType
 
 
@@ -34,6 +35,7 @@ class ModalitiesService:
         return Modality(
             id=dto.id,
             name=dto.name,
+            belongs_to_season=dto.belongs_to_season,
             modality_type=modality_type,
         )
 
@@ -49,15 +51,27 @@ class ModalitiesService:
         )
         return self._build_modality_from_dto(answer)
 
-    def get_modality(self, modality_id: str):
-        answer = modalities_service_client.modalities.get_modality(modality_id)
+    def get_modality(self, modality_id: str, season_id: str = None):
+        answer = modalities_service_client.modalities.get_modality(
+            modality_id, season_id=season_id
+        )
         return self._build_modality_from_dto(answer)
 
     def update_modality(
-        self, modality_id: str, name: str = None, modality_type_id: str = None
+        self,
+        modality_id: str,
+        name: str = None,
+        modality_type_id: str = None,
+        season_id: int = None,
     ):
         answer = modalities_service_client.modalities.update_modality(
-            modality_id, name, modality_type_id
+            modality_id, name, modality_type_id, season_id=season_id
+        )
+        return self._build_modality_from_dto(answer)
+
+    def remove_modality_from_season(self, modality_id: str, season_id: int):
+        answer = modalities_service_client.modalities.remove_from_season(
+            modality_id, season_id
         )
         return self._build_modality_from_dto(answer)
 

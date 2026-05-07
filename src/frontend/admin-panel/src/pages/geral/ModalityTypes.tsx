@@ -12,7 +12,7 @@ const ModalityTypes = () => {
   const { notify } = useNotification();
   const { pushModal } = useModal();
   const { isAdminGeneral } = useAuth();
-  const { currentSeason } = useSeason();
+  const { loadedSeason } = useSeason();
 
   const [modalityTypes, setModalityTypes] = useState<ModalityTypeListItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -20,7 +20,7 @@ const ModalityTypes = () => {
   useEffect(() => {
     setLoading(true);
     modalityTypesApi.getAll({
-      season_id: currentSeason?.id
+      season_id: loadedSeason?.id
     })
       .then((formats) => setModalityTypes(formats))
       .catch((err) => {
@@ -31,7 +31,7 @@ const ModalityTypes = () => {
       .finally(() => {
         setLoading(false);
       });
-  }, [currentSeason?.id]);
+  }, [loadedSeason?.id]);
 
   const sortedModalityTypes = modalityTypes.sort((a, b) => a.name.localeCompare(b.name));
 

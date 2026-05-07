@@ -3,7 +3,8 @@ import { apiClient } from './client';
 export interface ModalityListItem {
   id: string;
   name: string;
-  modality_type: {
+  belongs_to_season: boolean;
+  modality_type?: {
     id: string;
     name: string;
   };
@@ -19,6 +20,7 @@ export interface ModalityCreate {
 export interface ModalityUpdate {
   name?: string;
   modality_type_id?: string;
+  season_id?: number | null;
 }
 
 export interface ModalityTypeListParameters {
@@ -34,12 +36,16 @@ export const modalitiesApi = {
     return apiClient.post<ModalityListItem>('/modalities/', data);
   },
 
-  async getById(modalityId: string): Promise<ModalityDetail> {
-    return apiClient.get<ModalityDetail>(`/modalities/${modalityId}/`);
+  async getById(modalityId: string, season_id?: number): Promise<ModalityDetail> {
+    return apiClient.get<ModalityDetail>(`/modalities/${modalityId}/`, { season_id });
   },
 
   async update(modalityId: string, data: ModalityUpdate): Promise<ModalityDetail> {
     return apiClient.put<ModalityDetail>(`/modalities/${modalityId}/`, data);
+  },
+
+  async removeFromSeason(modalityId: string, seasonId: number): Promise<ModalityDetail> {
+    return apiClient.put<ModalityDetail>(`/modalities/${modalityId}/remove-from-season/`, { season_id: seasonId });
   },
 
   async delete(modalityId: string): Promise<void> {

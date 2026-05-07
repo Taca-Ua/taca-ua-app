@@ -4,9 +4,9 @@ WORKDIR /app
 
 COPY src/shared /tmp
 
-COPY src/apis/competiotion-api/requirements.txt .
+COPY src/apis/competition-api-v2/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY src/apis/competiotion-api .
+COPY src/apis/competition-api-v2 .
 
 CMD ["sh", "-c", "python manage.py runserver 0.0.0.0:8000"]

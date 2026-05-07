@@ -2,17 +2,25 @@
 Modality management views
 """
 
-from admin_api.utils.decorators import RoleRequiredMixin, require_roles_class_method
+from admin_api.utils.decorators import (
+    RoleRequiredMixin,
+    require_roles,
+    require_roles_class_method,
+)
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
+from rest_framework.decorators import api_view
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .serializers import (
     ModalityCreateSerializer,
+    ModalityDetailQuerySerializer,
     ModalityListQuerySerializer,
+    ModalityListSerializer,
+    ModalityRemoveFromSeasonSerializer,
     ModalitySerializer,
     ModalityUpdateSerializer,
 )
@@ -23,13 +31,13 @@ from .service import modalities_service
 @extend_schema_view(
     get=extend_schema(
         parameters=[ModalityListQuerySerializer],
-        responses=ModalitySerializer(many=True),
+        responses=ModalityListSerializer(many=True),
         description="List all modalities",
         tags=["Modality Management"],
     ),
     post=extend_schema(
         request=ModalityCreateSerializer,
-        responses=ModalitySerializer,
+        responses=ModalityListSerializer,
         description="Create a new modality",
         tags=["Modality Management"],
     ),
@@ -44,7 +52,7 @@ class ModalityListCreateView(RoleRequiredMixin, APIView):
             season_id=serializer.validated_data.get("season_id")
         )
 
-        serializer = ModalitySerializer(modalities, many=True)
+        serializer = ModalityListSerializer(modalities, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @require_roles_class_method("general_admin")
@@ -57,12 +65,13 @@ class ModalityListCreateView(RoleRequiredMixin, APIView):
             name=serializer.validated_data["name"],
             modality_type_id=str(serializer.validated_data.get("modality_type_id")),
         )
-        response_serializer = ModalitySerializer(modality)
+        response_serializer = ModalityListSerializer(modality)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
     get=extend_schema(
+        parameters=[ModalityDetailQuerySerializer],
         responses=ModalitySerializer,
         description="Get a modality by ID",
         tags=["Modality Management"],
@@ -81,7 +90,13 @@ class ModalityListCreateView(RoleRequiredMixin, APIView):
 )
 class ModalityDetailView(RoleRequiredMixin, APIView):
     def get(self, request, modality_id):
-        modality = modalities_service.get_modality(modality_id)
+        # Serialize query parameters
+        serializer = ModalityDetailQuerySerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+
+        modality = modalities_service.get_modality(
+            modality_id, season_id=serializer.validated_data.get("season_id")
+        )
 
         serializer = ModalitySerializer(modality)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -100,6 +115,7 @@ class ModalityDetailView(RoleRequiredMixin, APIView):
                 if serializer.validated_data.get("modality_type_id")
                 else None
             ),
+            season_id=serializer.validated_data.get("season_id"),
         )
 
         response_serializer = ModalitySerializer(modality)
@@ -111,8 +127,34 @@ class ModalityDetailView(RoleRequiredMixin, APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@extend_schema(
+    request=ModalityRemoveFromSeasonSerializer,
+    responses=ModalitySerializer,
+    description="Remove a modality from a season",
+    tags=["Modality Management"],
+)
+@api_view(["PUT"])
+@require_roles("general_admin")
+def remove_modality_from_season(request, modality_id):
+    # Serialize input data
+    serializer = ModalityRemoveFromSeasonSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    modality = modalities_service.remove_modality_from_season(
+        modality_id=modality_id, season_id=serializer.validated_data["season_id"]
+    )
+
+    response_serializer = ModalitySerializer(modality)
+    return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+
 # URL patterns
 urlpatterns = [
     path("", ModalityListCreateView.as_view(), name="modality-list-create"),
     path("<uuid:modality_id>/", ModalityDetailView.as_view(), name="modality-detail"),
+    path(
+        "<uuid:modality_id>/remove-from-season/",
+        remove_modality_from_season,
+        name="modality-remove-from-season",
+    ),
 ]

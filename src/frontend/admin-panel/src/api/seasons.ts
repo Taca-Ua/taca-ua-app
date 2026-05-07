@@ -5,6 +5,10 @@ export interface SeasonListItem {
   name: string;
 }
 
+export interface SeasonDetail extends SeasonListItem {
+
+}
+
 export interface SeasonCreateRequest {
   name: string;
 }
@@ -16,5 +20,9 @@ export const seasonsApi = {
 
   async createSeason(seasonData: SeasonCreateRequest): Promise<SeasonListItem> {
     return apiClient.post<SeasonListItem>('/seasons/', seasonData);
-  }
+  },
+
+  async getCurrent(): Promise<SeasonDetail> {
+    return apiClient.get<SeasonDetail>('/seasons/current/');
+  },
 };

@@ -79,13 +79,16 @@ class ModalityTypeDTO:
 class ModalityDTO:
     id: UUID
     name: str
-    modality_type: ModalityTypeDTO
+    belongs_to_season: bool
+    modality_type: Optional[ModalityTypeDTO] = None
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
 
     def __post_init__(self):
-        if not isinstance(self.modality_type, ModalityTypeDTO):
+        if self.modality_type is not None and not isinstance(
+            self.modality_type, ModalityTypeDTO
+        ):
             self.modality_type = ModalityTypeDTO(**self.modality_type)
 
 
@@ -561,16 +564,20 @@ class ModalityModalitiesService(BaseService):
         modality_data = self.post("/modalities", data)
         return ModalityDTO(**modality_data)
 
-    def get_modality(self, modality_id: str) -> ModalityDTO:
+    def get_modality(self, modality_id: str, season_id: str = None) -> ModalityDTO:
         """Get a modality by ID
 
         Args:
             modality_id (str): ID of the modality
+            season_id (str, optional): ID of the season. Defaults to None.
 
         Returns:
             ModalityDTO: ModalityDTO object representing the modality
         """
-        modality_data = self.get(f"/modalities/{modality_id}")
+        params = {}
+        if season_id is not None:
+            params["season_id"] = season_id
+        modality_data = self.get(f"/modalities/{modality_id}", params=params)
         return ModalityDTO(**modality_data)
 
     def update_modality(
@@ -578,6 +585,7 @@ class ModalityModalitiesService(BaseService):
         modality_id: str,
         name: Optional[str] = None,
         modality_type_id: Optional[str] = None,
+        season_id: Optional[int] = None,
     ) -> ModalityDTO:
         """Update a modality
 
@@ -585,7 +593,7 @@ class ModalityModalitiesService(BaseService):
             modality_id (str): ID of the modality
             name (Optional[str], optional): New name of the modality. Defaults to None.
             modality_type_id (Optional[str], optional): New modality type ID. Defaults to None.
-
+            season_id (Optional[int], optional): New season ID. Defaults to None.
         Returns:
             ModalityDTO: Updated ModalityDTO object
         """
@@ -595,8 +603,23 @@ class ModalityModalitiesService(BaseService):
             data["name"] = name
         if modality_type_id is not None:
             data["modality_type_id"] = modality_type_id
+        if season_id is not None:
+            data["season_id"] = season_id
 
         modality_data = self.put(f"/modalities/{modality_id}", data)
+        return ModalityDTO(**modality_data)
+
+    def remove_from_season(self, modality_id: str, season_id: int) -> ModalityDTO:
+        """Remove a modality from a season
+
+        Args:
+            modality_id (str): ID of the modality
+            season_id (int): ID of the season to remove the modality from
+        Returns:
+            ModalityDTO: Updated ModalityDTO object
+        """
+        data = {"season_id": season_id}
+        modality_data = self.put(f"/modalities/{modality_id}/remove-from-season", data)
         return ModalityDTO(**modality_data)
 
     def delete_modality(self, modality_id: str) -> None:
