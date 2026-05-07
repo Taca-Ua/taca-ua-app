@@ -58,6 +58,7 @@ def create_season(season_payload: SeasonCreate, db: Session = Depends(get_db_ses
         db.flush()  # Flush to get the new season ID
 
         # Copy current ModalityTypes and Teams from the most recent season if it exists
+        modality_types_to_map = {}
         for modality_type in current_season.season_modality_types:
             new_modality_type = ModalityType(
                 name=modality_type.name,
@@ -69,6 +70,8 @@ def create_season(season_payload: SeasonCreate, db: Session = Depends(get_db_ses
                 created_by=season_payload.admin_id,
             )
             db.add(new_modality_type)
+            db.flush()  # Flush to get the new modality type ID
+            modality_types_to_map[modality_type.id] = new_modality_type.id
         db.flush()  # Flush to save the new modality types
         for team in current_season.season_teams:
             new_team = Team(
@@ -87,7 +90,9 @@ def create_season(season_payload: SeasonCreate, db: Session = Depends(get_db_ses
             new_season_modality = SeasonModality(
                 season_id=new_season.id,
                 modality_id=modality.modality_id,
-                modality_type_id=modality.modality_type_id,
+                modality_type_id=modality_types_to_map.get(
+                    modality.modality_type_id
+                ),  # Map old modality type ID to new one
             )
             db.add(new_season_modality)
         db.flush()  # Flush to save the new season modalities

@@ -143,7 +143,8 @@ class ModalityUpdate(BaseModel):
 class ModalityResponse(BaseModel):
     id: str
     name: str
-    modality_type: ModalityTypeResponse
+    belongs_to_season: bool = False
+    modality_type: Optional[ModalityTypeResponse]
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None

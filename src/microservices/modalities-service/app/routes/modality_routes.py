@@ -3,6 +3,7 @@ from typing import List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from taca_events.pydantic_schemas.modalities import (
@@ -30,15 +31,18 @@ DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000"
 @router.get("/modalities", response_model=List[ModalityResponse])
 def list_modalities(season_id: int = None, db: Session = Depends(get_db_session)):
     """List all modalities"""
-    modalities = db.query(Modality).join(SeasonModality).join(Season)
-    if season_id is not None:
-        modalities = modalities.filter(Season.id == season_id)
-    else:
-        active_season = get_active_season(db)
-        modalities = modalities.filter(Season.id == active_season.id)
+    stmt = select(Modality)
 
-    modalities = modalities.all()
-    return [modality.to_dict() for modality in modalities]
+    relevant_season = None
+    if season_id is not None:
+        relevant_season = db.query(Season).filter(Season.id == season_id).first()
+        if not relevant_season:
+            raise HTTPException(status_code=404, detail="Season not found")
+    else:
+        relevant_season = get_active_season(db)
+
+    modalities = db.execute(stmt).scalars().unique().all()
+    return [modality.to_dict(relevant_season.id) for modality in modalities]
 
 
 @router.post(

@@ -323,20 +323,29 @@ class Modality(Base):
         "SeasonModality", back_populates="modality"
     )
 
-    def to_dict(self):
+    def to_dict(self, season_id: int = None):
         # Get modality_type from the first available season_modality
         modality_type_data = None
+        season_modality = None
         if self.season_modalities:
-            modality_type_data = (
-                self.season_modalities[0].modality_type.to_dict()
-                if self.season_modalities[0].modality_type
-                else None
+            season_modality = next(
+                (
+                    sm
+                    for sm in self.season_modalities
+                    if season_id is None or sm.season_id == season_id
+                ),
+                None,
             )
+            if season_modality and season_modality.modality_type:
+                modality_type_data = season_modality.modality_type.to_dict()
 
         return {
             "id": str(self.id),
             "name": self.name,
             "modality_type": modality_type_data,
+            "belongs_to_season": (
+                season_modality.season_id is not None if season_modality else False
+            ),
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
