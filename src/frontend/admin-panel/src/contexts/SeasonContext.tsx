@@ -7,6 +7,7 @@ type SeasonContextType = {
   activeSeason: SeasonListItem | null;
   selectSeason: (season: SeasonListItem) => void;
   availableSeasons: SeasonListItem[];
+  loadedSeasonIsTheCurrentSeason: boolean;
 };
 
 const SeasonContext = createContext<SeasonContextType | null>(null);
@@ -38,7 +39,7 @@ export const SeasonProvider = ({ children }: { children: React.ReactNode }) => {
   }, [isAuthenticated]); // Refetch seasons when authentication status changes
 
   return (
-    <SeasonContext.Provider value={{ loadedSeason, activeSeason, availableSeasons: seasons, selectSeason: setLoadedSeason }}>
+    <SeasonContext.Provider value={{ loadedSeason, activeSeason, availableSeasons: seasons, selectSeason: setLoadedSeason, loadedSeasonIsTheCurrentSeason: loadedSeason?.id === activeSeason?.id }}>
       {children}
     </SeasonContext.Provider>
   );

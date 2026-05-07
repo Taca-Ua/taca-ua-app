@@ -6,6 +6,7 @@ import { modalityTypesApi } from "../../api/modality-types";
 import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
 import ChoseOneInput from "../utils/inputs/ChoseOneInput";
+import { useSeason } from "../../contexts/SeasonContext";
 
 const ModalityCreateModal = ({
   onCreate,
@@ -15,6 +16,7 @@ const ModalityCreateModal = ({
 
   const { notify } = useNotification();
   const { popModal } = useModal();
+  const { loadedSeasonIsTheCurrentSeason, activeSeason } = useSeason();
 
   const [newModalityName, setNewModalityName] = useState("");
   const [modalityType, setModalityType] = useState("");
@@ -60,6 +62,12 @@ const ModalityCreateModal = ({
         <h2 className="text-2xl font-bold mb-6 text-gray-800">
           Adicionar Modalidade
         </h2>
+
+        { !loadedSeasonIsTheCurrentSeason && (
+          <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6" role="alert">
+            <p>Esta modalidade será adicionada à temporada ativa: <strong>{activeSeason?.name}</strong></p>
+          </div>
+        )}
 
         <div className="space-y-4">
           <div>

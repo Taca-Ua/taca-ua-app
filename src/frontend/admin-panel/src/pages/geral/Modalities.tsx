@@ -7,6 +7,7 @@ import ModalityCreateModal from "../../components/modalities/ModalityCreateModal
 import { useModal } from "../../contexts/ModalContext";
 import { useNotification } from "../../contexts/NotificationProvider";
 import { useSeason } from "../../contexts/SeasonContext";
+import { useNavigate } from "react-router-dom";
 
 
 const Modalities = () => {
@@ -14,6 +15,7 @@ const Modalities = () => {
   const { pushModal } = useModal();
   const { notify } = useNotification();
   const { loadedSeason } = useSeason();
+  const navigate = useNavigate();
 
   const [modalities, setModalities] = useState<ModalityListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,7 +43,7 @@ const Modalities = () => {
                 onClick={() => pushModal(
                 <ModalityCreateModal
                     onCreate={(newModality) => {
-                      setModalities((prev) => [...prev, newModality]);
+                      navigate(`/modalidades/${newModality.id}`);
                     }}
                   />
                 )}
