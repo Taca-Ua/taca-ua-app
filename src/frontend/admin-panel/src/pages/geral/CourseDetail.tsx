@@ -1,11 +1,27 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import CourseDetailComponent from '../../components/courses/CourseDetailComponent';
+import CourseInfoComponent from '../../components/courses/CourseInfoComponent';
 import Button from '../../components/utils/Button';
 import { navigateBack } from '../../utils';
+import { coursesApi, type CourseDetail } from '../../api/courses';
+import { useEffect, useState } from 'react';
+import { useSeason } from '../../contexts/SeasonContext';
 
 const CursoDetail = () => {
   const courseId = useParams<{ id: string }>().id;
   const navigate = useNavigate();
+  const { loadedSeason } = useSeason();
+
+  const [course, setCourse] = useState<CourseDetail | null>(null);
+
+  useEffect(() => {
+    if (!courseId) return;
+    coursesApi.getById(courseId, loadedSeason?.id)
+      .then(setCourse)
+      .catch((error) => {
+        console.error("Erro ao carregar detalhes do curso:", error);
+      });
+
+  }, [courseId, loadedSeason?.id]);
 
   const handleBack = () => {
     navigateBack(navigate, '/cursos');
@@ -32,7 +48,7 @@ const CursoDetail = () => {
           </div>
         </div>
 
-        <CourseDetailComponent courseId={courseId} onDelete={handleBack} />
+        <CourseInfoComponent courseState={[course, setCourse]} />
       </div>
     </div>
   );

@@ -49,6 +49,10 @@ class CourseUpdate(BaseModel):
     nucleo_id: Optional[UUID] = None
 
 
+class CourseAddToSeason(BaseModel):
+    season_id: int
+
+
 class CourseResponse(BaseModel):
     id: str
     name: str

@@ -53,8 +53,10 @@ class CourseService:
         )
         return self._build_course_from_modalities_answer(answer_data)
 
-    def get_course(self, course_id: str) -> Course:
-        answer_data = modalities_service_client.courses.get_course(course_id)
+    def get_course(self, course_id: str, season_id: str = None) -> Course:
+        answer_data = modalities_service_client.courses.get_course(
+            course_id, season_id=season_id
+        )
         return self._build_course_from_modalities_answer(answer_data)
 
     def update_course(
@@ -66,6 +68,12 @@ class CourseService:
     ) -> Course:
         answer_data = modalities_service_client.courses.update_course(
             course_id, name=name, abbreviation=abbreviation, nucleo_id=nucleo_id
+        )
+        return self._build_course_from_modalities_answer(answer_data)
+
+    def add_to_season(self, course_id: str, season_id: int) -> Course:
+        answer_data = modalities_service_client.courses.add_course_to_season(
+            course_id, season_id
         )
         return self._build_course_from_modalities_answer(answer_data)
 

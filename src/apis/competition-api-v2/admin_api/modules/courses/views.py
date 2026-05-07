@@ -2,16 +2,23 @@
 Course management views
 """
 
-from admin_api.utils.decorators import RoleRequiredMixin, require_roles_class_method
+from admin_api.utils.decorators import (
+    RoleRequiredMixin,
+    require_roles,
+    require_roles_class_method,
+)
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
+from rest_framework.decorators import api_view
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .serializers import (
+    CourseAddToSeasonSerializer,
     CourseCreateSerializer,
+    CourseDetailQuerySerializer,
     CourseDetailSerializer,
     CourseListQuerySerializer,
     CourseListSerializer,
@@ -64,6 +71,7 @@ class CourseListCreateView(RoleRequiredMixin, APIView):
 
 @extend_schema_view(
     get=extend_schema(
+        parameters=[CourseDetailQuerySerializer],
         responses=CourseDetailSerializer,
         description="Get a course by ID",
         tags=["Course Management"],
@@ -83,7 +91,13 @@ class CourseListCreateView(RoleRequiredMixin, APIView):
 class CourseDetailView(RoleRequiredMixin, APIView):
 
     def get(self, request, course_id):
-        course = course_service.get_course(course_id)
+        serializer = CourseDetailQuerySerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+
+        course = course_service.get_course(
+            course_id, season_id=serializer.validated_data.get("season_id")
+        )
+
         serializer = CourseDetailSerializer(course)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -112,7 +126,32 @@ class CourseDetailView(RoleRequiredMixin, APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@extend_schema(
+    request=CourseAddToSeasonSerializer,
+    responses=CourseDetailSerializer,
+    description="Add a course to a season",
+    tags=["Course Management"],
+)
+@api_view(["POST"])
+@require_roles("general_admin")
+def add_course_to_season(request: Request, course_id):
+    serializer = CourseAddToSeasonSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    course = course_service.add_to_season(
+        course_id, season_id=serializer.validated_data["season_id"]
+    )
+
+    serializer = CourseDetailSerializer(course)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 urlpatterns = [
     path("", CourseListCreateView.as_view(), name="course-list"),
     path("<uuid:course_id>/", CourseDetailView.as_view(), name="course-detail"),
+    path(
+        "<uuid:course_id>/add_to_season/",
+        add_course_to_season,
+        name="course-add-to-season",
+    ),
 ]

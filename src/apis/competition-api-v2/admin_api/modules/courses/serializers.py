@@ -36,6 +36,12 @@ class CourseListQuerySerializer(serializers.Serializer):
     season_id = serializers.IntegerField(required=False)
 
 
+class CourseDetailQuerySerializer(serializers.Serializer):
+    """Serializer for course get query parameters"""
+
+    season_id = serializers.IntegerField(required=False)
+
+
 class CourseCreateSerializer(serializers.Serializer):
     """Serializer for creating a course"""
 
@@ -50,3 +56,9 @@ class CourseUpdateSerializer(serializers.Serializer):
     name = serializers.CharField(required=False)
     abbreviation = serializers.CharField(required=False)
     nucleo_id = serializers.UUIDField(required=False)
+
+
+class CourseAddToSeasonSerializer(serializers.Serializer):
+    """Serializer for adding a course to a season"""
+
+    season_id = serializers.IntegerField(required=True)
