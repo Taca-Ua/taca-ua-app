@@ -54,6 +54,7 @@ class CourseResponse(BaseModel):
     name: str
     abbreviation: str
     nucleo: Optional[NucleoResponse] = None
+    belongs_to_season: Optional[bool] = False
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None

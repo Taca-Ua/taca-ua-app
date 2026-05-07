@@ -1,5 +1,4 @@
 import { useNavigate, useParams } from 'react-router-dom';
-
 import CourseDetailComponent from '../../components/courses/CourseDetailComponent';
 import Button from '../../components/utils/Button';
 import { navigateBack } from '../../utils';

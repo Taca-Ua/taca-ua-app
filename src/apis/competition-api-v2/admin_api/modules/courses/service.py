@@ -20,6 +20,7 @@ class Course:
     name: str
     abbreviation: str
     nucleo: _NucleoSummary
+    belongs_to_season: bool
 
 
 class CourseService:
@@ -34,6 +35,7 @@ class CourseService:
                 name=data.nucleo.name,
                 abbreviation=data.nucleo.abbreviation,
             ),
+            belongs_to_season=data.belongs_to_season,
         )
 
     def list_courses(self, admin_id: str = None, season_id: int = None) -> list[Course]:

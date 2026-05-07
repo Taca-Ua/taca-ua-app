@@ -20,6 +20,7 @@ class CourseListSerializer(serializers.Serializer):
     name = serializers.CharField()
     abbreviation = serializers.CharField()
     nucleo = _NucleoSummarySerializer()
+    belongs_to_season = serializers.BooleanField()
 
 
 class CourseDetailSerializer(CourseListSerializer):

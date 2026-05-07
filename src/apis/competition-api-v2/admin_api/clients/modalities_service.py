@@ -36,6 +36,7 @@ class CourseDTO:
     name: str
     abbreviation: str
     nucleo: Optional[NucleoDTO] = None
+    belongs_to_season: Optional[bool] = False
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -317,6 +318,8 @@ class CourseModalitiesService(BaseService):
         params = {}
         if admin_id is not None:
             params["admin_id"] = admin_id
+        if season_id is not None:
+            params["season_id"] = season_id
         courses_data = self.get("/courses", params=params)
         return [CourseDTO(**course) for course in courses_data]
 

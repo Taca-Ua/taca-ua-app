@@ -113,7 +113,7 @@ class Nucleo(Base):
     admins_ids = Column(ARRAY(Text), nullable=False, server_default="{}")
 
     # Relationships
-    courses = relationship("Course", back_populates="nucleo")
+    courses: Mapped[list["Course"]] = relationship("Course", back_populates="nucleo")
 
     def to_dict(self):
         return {
@@ -167,13 +167,21 @@ class Course(Base):
     nucleo: Mapped["Nucleo"] = relationship("Nucleo", back_populates="courses")
     students = relationship("Student", back_populates="course")
     teams = relationship("Team", back_populates="course")
+    seasons: Mapped[list["Season"]] = relationship(
+        "Season", secondary=season_courses, back_populates="season_courses"
+    )
 
-    def to_dict(self, *, include_nucleo=True):
+    def to_dict(self, season_id: int = None, *, include_nucleo=True):
         return {
             "id": str(self.id),
             "name": self.name,
             "abbreviation": self.abbreviation,
             "nucleo": self.nucleo.to_dict() if self.nucleo and include_nucleo else None,
+            "belongs_to_season": (
+                any(season.id == season_id for season in self.seasons)
+                if season_id is not None
+                else False
+            ),
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,

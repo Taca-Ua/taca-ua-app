@@ -36,8 +36,9 @@ from .service import course_service
 )
 class CourseListCreateView(RoleRequiredMixin, APIView):
     def get(self, request: Request):
+        serializer = CourseListQuerySerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
 
-        # TODO: This is a temporary solution to handle the case where the request does not have roles (e.g., when using API clients that do not set roles). In the future, we should ensure that all requests have roles properly set.
         courses = course_service.list_courses(
             admin_id=str(request.user_id) if "nucleo_admin" in request.roles else None,
             season_id=request.query_params.get("season_id"),

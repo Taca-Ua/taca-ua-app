@@ -32,17 +32,26 @@ def list_courses(
     admin_id: str = None, season_id: int = None, db: Session = Depends(get_db_session)
 ):
     """List all courses"""
-    query = db.query(Course).join(season_courses).join(Season)
+    query = db.query(Course)
+
+    print(
+        f"Filtering courses with admin_id={admin_id} and season_id={season_id}",
+        flush=True,
+    )
+
+    relevant_season = None
     if season_id is not None:
-        query = query.filter(Season.id == season_id)
+        relevant_season = db.query(Season).filter(Season.id == season_id).first()
+        if not relevant_season:
+            raise HTTPException(status_code=404, detail="Season not found")
     else:
-        active_season = get_active_season(db)
-        query = query.filter(Season.id == active_season.id)
+        relevant_season = get_active_season(db)
 
     if admin_id is not None:
         query = query.join(Course.nucleo).filter(Nucleo.admins_ids.any(admin_id))
+
     courses = query.all()
-    return [course.to_dict() for course in courses]
+    return [course.to_dict(season_id=relevant_season.id) for course in courses]
 
 
 @router.post(

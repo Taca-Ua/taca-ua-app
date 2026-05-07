@@ -9,6 +9,7 @@ export interface CourseListItem {
     name: string;
     abbreviation: string;
   };
+  belongs_to_season: boolean;
 }
 
 export interface CourseDetail extends CourseListItem {};
