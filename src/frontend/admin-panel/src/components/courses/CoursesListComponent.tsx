@@ -39,7 +39,7 @@ const CoursesListComponent = ( {
     (c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.abbreviation.toLowerCase().includes(searchQuery.toLowerCase())) &&
     (nucleoFilter === '' || c.nucleo.id === nucleoFilter)
   ) || []
-  const sortedCourses = filteredCourses.sort((a, b) => a.name.localeCompare(b.name)).sort((a, b) => Number(b.belongs_to_season) - Number(a.belongs_to_season))
+  const sortedCourses = filteredCourses.sort((a, b) => a.name.localeCompare(b.name)).sort((a) => a.belongs_to_season? -1 : 1)
 
   if (courses === null) {
     return (
@@ -75,7 +75,6 @@ const CoursesListComponent = ( {
       <div className="space-y-3">
         {sortedCourses.length > 0 ? (
           sortedCourses
-            .sort((a, b) => a.name.localeCompare(b.name))
             .map((course) => (
               <CourseEntry key={course.id} {...course} />
             ))
