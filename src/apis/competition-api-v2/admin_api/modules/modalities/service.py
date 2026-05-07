@@ -69,6 +69,12 @@ class ModalitiesService:
         )
         return self._build_modality_from_dto(answer)
 
+    def remove_modality_from_season(self, modality_id: str, season_id: int):
+        answer = modalities_service_client.modalities.remove_from_season(
+            modality_id, season_id
+        )
+        return self._build_modality_from_dto(answer)
+
     def delete_modality(self, modality_id: str):
         modalities_service_client.modalities.delete_modality(modality_id)
 

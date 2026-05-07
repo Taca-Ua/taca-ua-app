@@ -2,10 +2,15 @@
 Modality management views
 """
 
-from admin_api.utils.decorators import RoleRequiredMixin, require_roles_class_method
+from admin_api.utils.decorators import (
+    RoleRequiredMixin,
+    require_roles,
+    require_roles_class_method,
+)
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
+from rest_framework.decorators import api_view
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -15,6 +20,7 @@ from .serializers import (
     ModalityDetailQuerySerializer,
     ModalityListQuerySerializer,
     ModalityListSerializer,
+    ModalityRemoveFromSeasonSerializer,
     ModalitySerializer,
     ModalityUpdateSerializer,
 )
@@ -121,8 +127,34 @@ class ModalityDetailView(RoleRequiredMixin, APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@extend_schema(
+    request=ModalityRemoveFromSeasonSerializer,
+    responses=ModalitySerializer,
+    description="Remove a modality from a season",
+    tags=["Modality Management"],
+)
+@api_view(["PUT"])
+@require_roles("general_admin")
+def remove_modality_from_season(request, modality_id):
+    # Serialize input data
+    serializer = ModalityRemoveFromSeasonSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    modality = modalities_service.remove_modality_from_season(
+        modality_id=modality_id, season_id=serializer.validated_data["season_id"]
+    )
+
+    response_serializer = ModalitySerializer(modality)
+    return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+
 # URL patterns
 urlpatterns = [
     path("", ModalityListCreateView.as_view(), name="modality-list-create"),
     path("<uuid:modality_id>/", ModalityDetailView.as_view(), name="modality-detail"),
+    path(
+        "<uuid:modality_id>/remove-from-season/",
+        remove_modality_from_season,
+        name="modality-remove-from-season",
+    ),
 ]

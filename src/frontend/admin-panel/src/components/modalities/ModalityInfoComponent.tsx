@@ -32,6 +32,18 @@ const ModalityInfoComponent = ( {
     }
   };
 
+  const handleRemoveFromSeason = () => {
+    if (!loadedSeason) return;
+    modalitiesApi.removeFromSeason(modality.id, loadedSeason.id)
+      .then((updatedModality) => {
+        setModality(updatedModality);
+        notify('Modalidade removida da temporada com sucesso.', 'success');
+      }).catch((error) => {
+        notify('Falha ao remover modalidade da temporada.', 'error');
+        console.error('Error removing modality from season:', error);
+      });
+  };
+
   const handleAddToSeason = (modalityTypeId: string | undefined) => {
     if (!modalityTypeId) return; // Should not happen, but just in case
 
@@ -100,7 +112,7 @@ const ModalityInfoComponent = ( {
           Adicionar à Temporada
         </Button>
         <Button
-          onClick={handleDelete}
+          onClick={handleRemoveFromSeason}
           type="danger"
           active={isAdminGeneral && modality.belongs_to_season}
           confirmation={{

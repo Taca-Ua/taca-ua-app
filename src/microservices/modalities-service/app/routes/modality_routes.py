@@ -19,7 +19,12 @@ from ..database import get_db_session
 from ..logger import logger
 from ..models import Modality, ModalityType, Season, SeasonModality
 from ..outbox_publisher import outbox_publisher
-from ..schemas import ModalityCreate, ModalityResponse, ModalityUpdate
+from ..schemas import (
+    ModalityCreate,
+    ModalityRemoveFromSeason,
+    ModalityResponse,
+    ModalityUpdate,
+)
 from ..utils import get_active_season
 
 router = APIRouter()
@@ -231,6 +236,56 @@ def update_modality(
         raise HTTPException(
             status_code=400, detail="Modality with this name already exists"
         )
+
+
+@router.put(
+    "/modalities/{modality_id}/remove-from-season", response_model=ModalityResponse
+)
+def remove_modality_from_season(
+    modality_id: UUID,
+    modality_data: ModalityRemoveFromSeason,
+    db: Session = Depends(get_db_session),
+):
+    """Remove a modality from a season"""
+    modality = db.query(Modality).filter(Modality.id == modality_id).first()
+    if not modality:
+        raise HTTPException(status_code=404, detail="Modality not found")
+
+    season_modality = (
+        db.query(SeasonModality)
+        .filter(
+            SeasonModality.modality_id == modality_id,
+            SeasonModality.season_id == modality_data.season_id,
+        )
+        .first()
+    )
+    if not season_modality:
+        raise HTTPException(
+            status_code=404,
+            detail="Modality is not associated with the specified season",
+        )
+
+    db.delete(season_modality)
+
+    # Emit event via outbox
+    event = ModalityUpdatedV1.create(
+        aggregate_id=modality.id,
+        data=ModalityUpdatedData(
+            modality_id=modality.id,
+            modality_type_id=None,  # Indicate removal of modality type association
+        ),
+    )
+    outbox_publisher.emit_event(
+        db=db,
+        event_type=event.event_type(),
+        aggregate_type="modality",
+        aggregate_id=modality.id,
+        data=event.to_data_dict(),
+    )
+
+    db.commit()
+    logger.info(f"Removed modality {modality_id} from season {modality_data.season_id}")
+    return modality.to_dict(season_id=modality_data.season_id)
 
 
 @router.delete("/modalities/{modality_id}", status_code=status.HTTP_204_NO_CONTENT)

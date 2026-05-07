@@ -141,6 +141,10 @@ class ModalityUpdate(BaseModel):
     season_id: Optional[int] = None
 
 
+class ModalityRemoveFromSeason(BaseModel):
+    season_id: int
+
+
 class ModalityResponse(BaseModel):
     id: str
     name: str

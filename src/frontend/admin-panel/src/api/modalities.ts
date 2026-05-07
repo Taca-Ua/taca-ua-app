@@ -44,6 +44,10 @@ export const modalitiesApi = {
     return apiClient.put<ModalityDetail>(`/modalities/${modalityId}/`, data);
   },
 
+  async removeFromSeason(modalityId: string, seasonId: number): Promise<ModalityDetail> {
+    return apiClient.put<ModalityDetail>(`/modalities/${modalityId}/remove-from-season/`, { season_id: seasonId });
+  },
+
   async delete(modalityId: string): Promise<void> {
     return apiClient.delete(`/modalities/${modalityId}/`);
   },

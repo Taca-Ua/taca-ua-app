@@ -609,6 +609,19 @@ class ModalityModalitiesService(BaseService):
         modality_data = self.put(f"/modalities/{modality_id}", data)
         return ModalityDTO(**modality_data)
 
+    def remove_from_season(self, modality_id: str, season_id: int) -> ModalityDTO:
+        """Remove a modality from a season
+
+        Args:
+            modality_id (str): ID of the modality
+            season_id (int): ID of the season to remove the modality from
+        Returns:
+            ModalityDTO: Updated ModalityDTO object
+        """
+        data = {"season_id": season_id}
+        modality_data = self.put(f"/modalities/{modality_id}/remove-from-season", data)
+        return ModalityDTO(**modality_data)
+
     def delete_modality(self, modality_id: str) -> None:
         """Delete a modality
 
