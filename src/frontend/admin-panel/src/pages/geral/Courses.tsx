@@ -7,6 +7,7 @@ import Button from '../../components/utils/Button';
 import { useModal } from '../../contexts/ModalContext';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { useSeason } from '../../contexts/SeasonContext';
+import { useNavigate } from 'react-router-dom';
 
 
 const Cursos = () => {
@@ -15,6 +16,7 @@ const Cursos = () => {
   const { notify } = useNotification();
   const [ isLoading, setIsLoading ] = useState(true);
   const { loadedSeason } = useSeason();
+  const navigate = useNavigate();
 
   const [courses, setCourses] = useState<CourseListItem[] | null>(null);  // Estado para armazenar os cursos
 
@@ -68,7 +70,11 @@ const Cursos = () => {
             <h1 className="text-3xl font-bold text-gray-800">Cursos</h1>
             <div>
               <Button
-                onClick={() => pushModal(<CourseCreateModal onCreate={(newCourse) => setCourses([...courses, newCourse])} />)}
+                onClick={() => pushModal(
+                  <CourseCreateModal
+                    onCreate={(newCourse) => navigate(`/cursos/${newCourse.id}`)}
+                  />
+                )}
                 type='primary'
                 active={isAdminGeneral}
               >

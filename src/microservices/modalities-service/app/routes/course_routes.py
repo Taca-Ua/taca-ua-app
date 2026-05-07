@@ -34,11 +34,6 @@ def list_courses(
     """List all courses"""
     query = db.query(Course)
 
-    print(
-        f"Filtering courses with admin_id={admin_id} and season_id={season_id}",
-        flush=True,
-    )
-
     relevant_season = None
     if season_id is not None:
         relevant_season = db.query(Season).filter(Season.id == season_id).first()
@@ -79,7 +74,8 @@ def create_course(course_data: CourseCreate, db: Session = Depends(get_db_sessio
         db.flush()
 
         # Associate course with active season
-        season.season_courses.append(course)
+        if season:
+            season.season_courses.append(course)
 
         # Emit event via outbox
         event = CourseCreatedV1.create(
