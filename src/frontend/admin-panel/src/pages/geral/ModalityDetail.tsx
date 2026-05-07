@@ -35,7 +35,7 @@ const TournamentsTab = ({
   };
 
   useEffect(() => {
-    if (tournaments) return; // Evita recarregar se já temos os torneios carregados
+    if (!modality.belongs_to_season) return;
     setIsLoading(true);
     tournamentsApi.getAll({ modality_id: modality.id, season_id: loadedSeason?.id })
       .then((data) => setTournaments(data))
@@ -45,7 +45,7 @@ const TournamentsTab = ({
         notify('Falha ao carregar torneios para esta modalidade.', 'error');
       })
       .finally(() => setIsLoading(false));
-  }, [modality.id, loadedSeason?.id]);
+  }, [modality.id, modality.belongs_to_season]);
 
   const renderTournamentList = () => {
     if (isLoading) {
@@ -100,7 +100,6 @@ const TeamsTab = ({
   const { loadedSeason } = useSeason();
 
   useEffect(() => {
-    if (teams) return; // Evita recarregar se já temos as equipas carregadas
     setIsLoading(true);
     teamsApi.getAll({ modality_id: modality.id, season_id: loadedSeason?.id })
       .then((data) => setTeams(data))
@@ -171,14 +170,16 @@ function ModalidadeDetail() {
         <ModalityInfoComponent modalityState={[modality, setModality]} />
 
       </div>
-      <div className="flex-1 max-w-7xl mx-auto">
-        <TabSystem
-          elements={[
-            { id: 'tournaments', label: 'Torneios', content: <TournamentsTab modality={modality} tournamentsState={[tournaments, setTournaments]} /> },
-            { id: 'teams', label: 'Equipas', content: <TeamsTab modality={modality} teamsState={[teams, setTeams]} /> },
-          ]}
-        />
-      </div>
+      { modality.belongs_to_season && (
+        <div className="flex-1 max-w-7xl mx-auto">
+          <TabSystem
+            elements={[
+              { id: 'tournaments', label: 'Torneios', content: <TournamentsTab modality={modality} tournamentsState={[tournaments, setTournaments]} /> },
+              { id: 'teams', label: 'Equipas', content: <TeamsTab modality={modality} teamsState={[teams, setTeams]} /> },
+            ]}
+          />
+        </div>
+      )}
     </>
   );
 }

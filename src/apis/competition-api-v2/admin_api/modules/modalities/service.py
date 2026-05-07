@@ -58,10 +58,14 @@ class ModalitiesService:
         return self._build_modality_from_dto(answer)
 
     def update_modality(
-        self, modality_id: str, name: str = None, modality_type_id: str = None
+        self,
+        modality_id: str,
+        name: str = None,
+        modality_type_id: str = None,
+        season_id: int = None,
     ):
         answer = modalities_service_client.modalities.update_modality(
-            modality_id, name, modality_type_id
+            modality_id, name, modality_type_id, season_id=season_id
         )
         return self._build_modality_from_dto(answer)
 

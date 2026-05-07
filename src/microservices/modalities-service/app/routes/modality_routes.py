@@ -155,11 +155,26 @@ def update_modality(
         modality.name = modality_data.name
         changes_made["name"] = modality_data.name
     if modality_data.modality_type_id is not None:
-        active_season = get_active_season(db)
+        if modality_data.season_id is None:
+            raise HTTPException(
+                status_code=400,
+                detail="season_id is required when updating modality_type_id",
+            )
+
+        relevant_season = None
+        if modality_data.season_id is not None:
+            relevant_season = (
+                db.query(Season).filter(Season.id == modality_data.season_id).first()
+            )
+            if not relevant_season:
+                raise HTTPException(status_code=404, detail="Season not found")
+        else:
+            relevant_season = get_active_season(db)
+
         modality_type = (
             db.query(ModalityType)
             .filter(ModalityType.id == modality_data.modality_type_id)
-            .filter(ModalityType.season_id == active_season.id)
+            .filter(ModalityType.season_id == relevant_season.id)
             .first()
         )
         if not modality_type:
@@ -167,9 +182,25 @@ def update_modality(
                 status_code=404, detail="Modality type not found for active season"
             )
 
-        db.query(SeasonModality).filter(
-            SeasonModality.modality_id == modality_id,
-        ).update({"modality_type_id": modality_type.id})
+        sm_relationship = (
+            db.query(SeasonModality)
+            .filter(
+                SeasonModality.modality_id == modality_id,
+                SeasonModality.season_id == relevant_season.id,
+            )
+            .first()
+        )
+
+        if not sm_relationship:
+            sm_relationship = SeasonModality(
+                season_id=relevant_season.id,
+                modality_id=modality_id,
+                modality_type_id=modality_type.id,
+            )
+            db.add(sm_relationship)
+        else:
+            sm_relationship.modality_type_id = modality_type.id
+        db.flush()
         changes_made["modality_type_id"] = str(modality_type.id)
     modality.updated_at = datetime.now(timezone.utc)
 
@@ -194,7 +225,7 @@ def update_modality(
         db.commit()
         db.refresh(modality)
         logger.info(f"Updated modality: {modality.id}")
-        return modality.to_dict()
+        return modality.to_dict(season_id=modality_data.season_id)
     except IntegrityError:
         db.rollback()
         raise HTTPException(

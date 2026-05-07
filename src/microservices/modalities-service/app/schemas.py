@@ -138,6 +138,7 @@ class ModalityCreate(BaseModel):
 class ModalityUpdate(BaseModel):
     name: Optional[str] = None
     modality_type_id: Optional[UUID] = None
+    season_id: Optional[int] = None
 
 
 class ModalityResponse(BaseModel):

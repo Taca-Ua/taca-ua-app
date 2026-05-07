@@ -6,6 +6,7 @@ import Button from '../utils/Button';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { useModal } from '../../contexts/ModalContext';
 import ChoseOneInput from '../utils/inputs/ChoseOneInput';
+import { useSeason } from '../../contexts/SeasonContext';
 
 const ModalityEditModal = ( {
   modalityState,
@@ -18,13 +19,14 @@ const ModalityEditModal = ( {
   const [modalityData, setModalityData] = modalityState;
   const { notify } = useNotification();
   const { popModal } = useModal();
+  const { loadedSeason } = useSeason();
 
   const [editedName, setEditedName] = useState(modalityData.name);
-  const [editedType, setEditedType] = useState(modalityData.modality_type.id);
+  const [editedType, setEditedType] = useState(modalityData.modality_type?.id);
 
   const onClose = () => {
     setEditedName(modalityData.name);
-    setEditedType(modalityData.modality_type.id);
+    setEditedType(modalityData.modality_type?.id);
     popModal();
   }
 
@@ -32,7 +34,7 @@ const ModalityEditModal = ( {
     modalitiesApi.update(modalityData.id, {
       name: editedName,
       modality_type_id: editedType,
-
+      season_id: modalityData.belongs_to_season ? loadedSeason?.id : undefined,
     }).then((updatedModality) => {
       setModalityData(updatedModality);
       onClose();
@@ -74,9 +76,11 @@ const ModalityEditModal = ( {
               <span className="text-red-500">*</span>
             </label>
             <ChoseOneInput
-              allElementsLoader={() => modalityTypesApi.getAll().then(types => types.map(type => ({ id: type.id, title: type.name })))}
+              allElementsLoader={() => modalityTypesApi.getAll({
+                season_id: modalityData.belongs_to_season ? loadedSeason?.id : undefined,
+              }).then(types => types.map(type => ({ id: type.id, title: type.name })))}
               onSelect={(ele) => setEditedType(ele?.id || "")}
-              initialElement={{ id: modalityData.modality_type.id, title: modalityData.modality_type.name }}
+              initialElement={modalityData.modality_type ? { id: modalityData.modality_type.id, title: modalityData.modality_type.name } : undefined}
             />
           </div>
         </div>

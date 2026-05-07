@@ -4,6 +4,10 @@ import { useAuth } from '../../hooks/useAuth';
 import Button from '../utils/Button';
 import ModalityEditModal from './ModalityEditModel';
 import { useModal } from '../../contexts/ModalContext';
+import { useSeason } from '../../contexts/SeasonContext';
+import ChoseOneModal from '../utils/costum_menus/ChoseOneModal';
+import { modalityTypesApi } from '../../api/modality-types';
+import { useNotification } from '../../contexts/NotificationProvider';
 
 
 const ModalityInfoComponent = ( {
@@ -14,6 +18,8 @@ const ModalityInfoComponent = ( {
   const navigate = useNavigate();
   const { isAdminGeneral } = useAuth();
   const { pushModal } = useModal();
+  const { loadedSeason } = useSeason();
+  const { notify } = useNotification();
 
   const [modality, setModality] = modalityState;
 
@@ -24,6 +30,21 @@ const ModalityInfoComponent = ( {
     } catch (error) {
       console.error('Error deleting modality:', error);
     }
+  };
+
+  const handleAddToSeason = (modalityTypeId: string | undefined) => {
+    if (!modalityTypeId) return; // Should not happen, but just in case
+
+    modalitiesApi.update(modality.id, {
+      season_id: loadedSeason?.id,
+      modality_type_id: modalityTypeId,
+    }).then((updatedModality) => {
+      setModality(updatedModality);
+      notify('Modalidade adicionada à temporada com sucesso.', 'success');
+    }).catch((error) => {
+      notify('Falha ao adicionar modalidade à temporada.', 'error');
+      console.error('Error adding modality to season:', error);
+    });
   };
 
   return (
@@ -38,18 +59,18 @@ const ModalityInfoComponent = ( {
         <div>
           <label className="block text-teal-500 font-medium mb-2">Tipo</label>
           <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800 capitalize">
-            {modality.modality_type?.name || 'N/A'}
+            {modality.modality_type?.name || "N/A"}
           </div>
         </div>
       </div>
 
       <div className="flex gap-4 mt-8">
         <Button
-          onClick={() => pushModal(
-            <ModalityEditModal
-              modalityState={[modality, setModality]}
-            />
-          )}
+          onClick={() =>
+            pushModal(
+              <ModalityEditModal modalityState={[modality, setModality]} />,
+            )
+          }
           type="primary"
           active={isAdminGeneral}
           flexible={true}
@@ -57,17 +78,40 @@ const ModalityInfoComponent = ( {
           Editar
         </Button>
         <Button
+          onClick={() =>
+            pushModal(
+              <ChoseOneModal
+                title={`Escolha formato de prova`}
+                allElementsLoader={() => modalityTypesApi
+                  .getAll({
+                    season_id: loadedSeason?.id,
+                  })
+                  .then((types) =>
+                    types.map((type) => ({ id: type.id, title: type.name })),
+                  )}
+                onSelect={(type) => handleAddToSeason(type?.id)}
+              />,
+            )
+          }
+          type="info"
+          active={isAdminGeneral && !modality.belongs_to_season}
+          flexible={true}
+        >
+          Adicionar à Temporada
+        </Button>
+        <Button
           onClick={handleDelete}
           type="danger"
-          active={isAdminGeneral}
+          active={isAdminGeneral && modality.belongs_to_season}
           confirmation={{
-            title: 'Eliminar modalidade',
-            message: 'Tem certeza que deseja eliminar esta modalidade?',
-            confirmLabel: 'Eliminar',
+            title: "Remover modalidade da temporada " + loadedSeason?.name,
+            message:
+              "Tem certeza que deseja remover esta modalidade da temporada? Os torneios, jogos e equipas associados desta modalidade desta temporada serão apagados. Esta ação não pode ser desfeita.",
+            confirmLabel: "Remover",
           }}
           flexible={true}
         >
-          Eliminar
+          Remover da Temporada
         </Button>
       </div>
     </div>

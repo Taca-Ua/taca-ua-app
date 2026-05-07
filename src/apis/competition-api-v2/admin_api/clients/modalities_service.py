@@ -585,6 +585,7 @@ class ModalityModalitiesService(BaseService):
         modality_id: str,
         name: Optional[str] = None,
         modality_type_id: Optional[str] = None,
+        season_id: Optional[int] = None,
     ) -> ModalityDTO:
         """Update a modality
 
@@ -592,7 +593,7 @@ class ModalityModalitiesService(BaseService):
             modality_id (str): ID of the modality
             name (Optional[str], optional): New name of the modality. Defaults to None.
             modality_type_id (Optional[str], optional): New modality type ID. Defaults to None.
-
+            season_id (Optional[int], optional): New season ID. Defaults to None.
         Returns:
             ModalityDTO: Updated ModalityDTO object
         """
@@ -602,6 +603,8 @@ class ModalityModalitiesService(BaseService):
             data["name"] = name
         if modality_type_id is not None:
             data["modality_type_id"] = modality_type_id
+        if season_id is not None:
+            data["season_id"] = season_id
 
         modality_data = self.put(f"/modalities/{modality_id}", data)
         return ModalityDTO(**modality_data)

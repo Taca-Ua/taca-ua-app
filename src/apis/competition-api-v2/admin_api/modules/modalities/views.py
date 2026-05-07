@@ -109,6 +109,7 @@ class ModalityDetailView(RoleRequiredMixin, APIView):
                 if serializer.validated_data.get("modality_type_id")
                 else None
             ),
+            season_id=serializer.validated_data.get("season_id"),
         )
 
         response_serializer = ModalitySerializer(modality)

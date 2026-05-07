@@ -20,6 +20,7 @@ export interface ModalityCreate {
 export interface ModalityUpdate {
   name?: string;
   modality_type_id?: string;
+  season_id?: number | null;
 }
 
 export interface ModalityTypeListParameters {

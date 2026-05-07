@@ -48,3 +48,4 @@ class ModalityUpdateSerializer(serializers.Serializer):
 
     name = serializers.CharField(required=False)
     modality_type_id = serializers.UUIDField(required=False)
+    season_id = serializers.IntegerField(required=False, allow_null=True)
