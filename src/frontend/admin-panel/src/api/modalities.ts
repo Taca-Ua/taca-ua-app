@@ -3,7 +3,8 @@ import { apiClient } from './client';
 export interface ModalityListItem {
   id: string;
   name: string;
-  modality_type: {
+  belongs_to_season: boolean;
+  modality_type?: {
     id: string;
     name: string;
   };

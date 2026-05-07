@@ -13,6 +13,7 @@ from rest_framework.views import APIView
 from .serializers import (
     ModalityCreateSerializer,
     ModalityListQuerySerializer,
+    ModalityListSerializer,
     ModalitySerializer,
     ModalityUpdateSerializer,
 )
@@ -23,13 +24,13 @@ from .service import modalities_service
 @extend_schema_view(
     get=extend_schema(
         parameters=[ModalityListQuerySerializer],
-        responses=ModalitySerializer(many=True),
+        responses=ModalityListSerializer(many=True),
         description="List all modalities",
         tags=["Modality Management"],
     ),
     post=extend_schema(
         request=ModalityCreateSerializer,
-        responses=ModalitySerializer,
+        responses=ModalityListSerializer,
         description="Create a new modality",
         tags=["Modality Management"],
     ),
@@ -44,7 +45,7 @@ class ModalityListCreateView(RoleRequiredMixin, APIView):
             season_id=serializer.validated_data.get("season_id")
         )
 
-        serializer = ModalitySerializer(modalities, many=True)
+        serializer = ModalityListSerializer(modalities, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @require_roles_class_method("general_admin")
@@ -57,7 +58,7 @@ class ModalityListCreateView(RoleRequiredMixin, APIView):
             name=serializer.validated_data["name"],
             modality_type_id=str(serializer.validated_data.get("modality_type_id")),
         )
-        response_serializer = ModalitySerializer(modality)
+        response_serializer = ModalityListSerializer(modality)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 

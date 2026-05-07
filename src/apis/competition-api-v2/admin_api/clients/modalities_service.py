@@ -79,13 +79,16 @@ class ModalityTypeDTO:
 class ModalityDTO:
     id: UUID
     name: str
-    modality_type: ModalityTypeDTO
+    belongs_to_season: bool
+    modality_type: Optional[ModalityTypeDTO] = None
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
 
     def __post_init__(self):
-        if not isinstance(self.modality_type, ModalityTypeDTO):
+        if self.modality_type is not None and not isinstance(
+            self.modality_type, ModalityTypeDTO
+        ):
             self.modality_type = ModalityTypeDTO(**self.modality_type)
 
 

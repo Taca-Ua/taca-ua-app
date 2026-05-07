@@ -17,6 +17,7 @@ class _ModalityType:
 class Modality:
     id: str
     name: str
+    belongs_to_season: bool
     modality_type: _ModalityType
 
 
@@ -34,6 +35,7 @@ class ModalitiesService:
         return Modality(
             id=dto.id,
             name=dto.name,
+            belongs_to_season=dto.belongs_to_season,
             modality_type=modality_type,
         )
 

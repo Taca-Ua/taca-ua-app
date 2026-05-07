@@ -15,7 +15,8 @@ class ModalityListSerializer(serializers.Serializer):
 
     id = serializers.UUIDField()
     name = serializers.CharField()
-    modality_type = _ModalityTypeSummarySerializer()
+    belongs_to_season = serializers.BooleanField()
+    modality_type = _ModalityTypeSummarySerializer(required=False)
 
 
 class ModalitySerializer(ModalityListSerializer):
