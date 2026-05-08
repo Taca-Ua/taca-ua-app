@@ -29,6 +29,7 @@ export interface TournamentDetail extends TournamentListItem {
     rank: string;
     points: number[];
   };
+  season_id: number;
 }
 
 // Input interfaces

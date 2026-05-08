@@ -51,6 +51,7 @@ class Tournament:
 
     competitors: List[Competitor] = field(default_factory=list)
     scoring_format: ScoringFormat = None
+    season_id: int = None
 
 
 class TournamentsService:
@@ -104,6 +105,7 @@ class TournamentsService:
             modality=modality,
             start_date=tournament_dto.start_date,
             competitor_type=tournament_dto.competitor_type,
+            season_id=tournament_dto.season_id,
         )
 
         # If requested, fetch and include the scoring format information

@@ -60,6 +60,7 @@ class TournamentDetailSerializer(TournamentListSerializer):
     competitor_type = serializers.ChoiceField(choices=COMPETITOR_TYPE_CHOICES)
     competitors = TournamentCompetitorSerializer(many=True)
     scoring_format = ScoringFormatSummarySerializer()
+    season_id = serializers.IntegerField(required=True)
 
 
 # Request serializers
