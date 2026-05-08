@@ -1,10 +1,10 @@
 FROM python:3.11-slim
 
-# Impedir buffers e ficheiros .pyc
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+# Configurações de ambiente
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-# Dependências de sistema para Django/Postgres
+# 1. Instalar dependências de sistema
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
@@ -12,19 +12,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# 1. Dependências do Python (Caminho absoluto a partir da raiz)
+# 2. PRIMEIRO: Copiar os pacotes partilhados que o requirements precisa
+# Criamos a estrutura de pastas temporária para o pip encontrar os locais
+COPY src/shared/platform /tmp/platform
+COPY src/shared/contracts /tmp/contracts
+
+# 3. DEPOIS: Copiar e instalar o requirements
+# Agora, se o requirements.txt procurar por /tmp/contracts/taca-events, ele já lá está!
 COPY src/apis/competition-api-v2/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 2. Instalar pacotes partilhados (Caminhos que confirmaste via ls)
-COPY src/shared/platform/taca-messaging /tmp/taca-messaging
-RUN pip install --no-cache-dir /tmp/taca-messaging && rm -rf /tmp/taca-messaging
+# 4. Instalar os pacotes partilhados no Python (se não estiverem no requirements)
+RUN pip install --no-cache-dir /tmp/platform/taca-messaging && \
+    pip install --no-cache-dir /tmp/platform/taca-outbox
 
-COPY src/shared/platform/taca-outbox /tmp/taca-outbox
-RUN pip install --no-cache-dir /tmp/taca-outbox && rm -rf /tmp/taca-outbox
-
-# 3. Código da API (Copia tudo o que está na pasta da API para o /app)
+# 5. Copiar o resto do código da API
 COPY src/apis/competition-api-v2 .
 
-# Execução
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
