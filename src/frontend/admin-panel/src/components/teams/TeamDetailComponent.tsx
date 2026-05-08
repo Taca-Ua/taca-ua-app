@@ -8,11 +8,15 @@ import ChooseMultipleModal, {
 import { athletesApi, type AthleteListItem } from "../../api/athletes";
 import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
+import { useNotification } from "../../contexts/NotificationProvider";
+import { useNavigate } from "react-router-dom";
 
 const TeamDetailComponent = ({ teamId }: { teamId: string }) => {
   const [team, setTeam] = useState<TeamDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const { pushModal } = useModal();
+  const { notify } = useNotification();
+  const navigate = useNavigate();
 
   const [avaiblePlayers, setAvailablePlayers] = useState<AthleteListItem[]>([]);
 
@@ -46,12 +50,15 @@ const TeamDetailComponent = ({ teamId }: { teamId: string }) => {
   }, []);
 
   const handleDelete = async () => {
-    try {
-      await teamsApi.delete(String(teamId));
-      // Redirect or update UI after deletion
-    } catch (error) {
-      console.error("Error deleting team:", error);
-    }
+    teamsApi.delete(teamId)
+      .then(() => {
+        notify("Equipa eliminada com sucesso.", "success");
+        navigate("/equipas");
+      })
+      .catch((error) => {
+        console.error("Error deleting team:", error);
+        notify("Erro ao eliminar a equipa.", "error");
+      });
   };
 
   const handleUpdatePlayers = async (players: GenericElement[]) => {

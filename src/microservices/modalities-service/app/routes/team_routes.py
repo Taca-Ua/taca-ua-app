@@ -23,6 +23,7 @@ from ..models import (
     Course,
     Modality,
     Nucleo,
+    Season,
     SeasonModality,
     Student,
     Team,
@@ -47,11 +48,15 @@ def list_teams(
 ):
     """List all teams"""
     query = db.query(Team)
-    if season_id is not None:
-        query = query.filter(Team.season_id == season_id)
-    else:
+
+    relevant_season_id = season_id
+    if season_id is None:
         active_season = get_active_season(db)
-        query = query.filter(Team.season_id == active_season.id)
+        relevant_season_id = active_season.id
+    query = query.filter(Team.season_id == relevant_season_id)
+
+    if modality_id:
+        query = query.filter(Team.modality_id == modality_id)
 
     # need to check if the team belongs to a course that belongs to a nucleo managed by the admin_id
     logger.debug(f"Filtering teams for admin_id: {admin_id}")
@@ -61,8 +66,7 @@ def list_teams(
             .join(Course.nucleo)
             .filter(Nucleo.admins_ids.any(admin_id))
         )
-    if modality_id:
-        query = query.filter(Team.modality_id == modality_id)
+
     teams = query.all()
     return [team.to_dict() for team in teams]
 
@@ -70,14 +74,24 @@ def list_teams(
 @router.post("/teams", response_model=TeamResponse, status_code=status.HTTP_201_CREATED)
 def create_team(team_data: TeamCreate, db: Session = Depends(get_db_session)):
     """Create a new team"""
-    active_season = get_active_season(db)
+
+    # Determine relevant season (use provided season_id or active season)
+    relevant_season = None
+    if team_data.season_id:
+        relevant_season = (
+            db.query(Season).filter(Season.id == team_data.season_id).first()
+        )
+        if not relevant_season:
+            raise HTTPException(status_code=404, detail="Season not found")
+    else:
+        relevant_season = get_active_season(db)
 
     # Validate modality exists for the active season
     modality = (
         db.query(Modality)
         .filter(Modality.id == team_data.modality_id)
         .join(SeasonModality)
-        .filter(SeasonModality.season_id == active_season.id)
+        .filter(SeasonModality.season_id == relevant_season.id)
         .first()
     )
     if not modality:
@@ -90,7 +104,7 @@ def create_team(team_data: TeamCreate, db: Session = Depends(get_db_session)):
         db.query(Course)
         .filter(Course.id == team_data.course_id)
         .join(season_courses)
-        .filter(season_courses.c.season_id == active_season.id)
+        .filter(season_courses.c.season_id == relevant_season.id)
         .first()
     )
     if not course:
@@ -102,7 +116,7 @@ def create_team(team_data: TeamCreate, db: Session = Depends(get_db_session)):
         name=team_data.name,
         modality_id=team_data.modality_id,
         course_id=team_data.course_id,
-        season_id=active_season.id,
+        season_id=relevant_season.id,
         created_by=DEFAULT_USER_ID,
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc),
@@ -148,48 +162,15 @@ def update_team(
     team_id: UUID, team_data: TeamUpdate, db: Session = Depends(get_db_session)
 ):
     """Update a team"""
-    active_season = get_active_season(db)
 
-    team = (
-        db.query(Team)
-        .filter(Team.id == team_id, Team.season_id == active_season.id)
-        .first()
-    )
+    team = db.query(Team).filter(Team.id == team_id).first()
     if not team:
-        raise HTTPException(status_code=404, detail="Team not found for active season")
+        raise HTTPException(status_code=404, detail="Team not found")
 
     changes_made = {}
     if team_data.name is not None:
         team.name = team_data.name
         changes_made["name"] = team_data.name
-    if team_data.modality_id is not None:
-        modality = (
-            db.query(Modality)
-            .filter(Modality.id == team_data.modality_id)
-            .join(SeasonModality)
-            .filter(SeasonModality.season_id == active_season.id)
-            .first()
-        )
-        if not modality:
-            raise HTTPException(
-                status_code=404, detail="Modality not found for active season"
-            )
-        team.modality_id = team_data.modality_id
-        changes_made["modality_id"] = str(team_data.modality_id)
-    if team_data.course_id is not None:
-        course = (
-            db.query(Course)
-            .filter(Course.id == team_data.course_id)
-            .join(season_courses)
-            .filter(season_courses.c.season_id == active_season.id)
-            .first()
-        )
-        if not course:
-            raise HTTPException(
-                status_code=404, detail="Course not found for active season"
-            )
-        team.course_id = team_data.course_id
-        changes_made["course_id"] = str(team_data.course_id)
 
     # Emit team updated event
     event = TeamUpdatedV1.create(
@@ -197,8 +178,6 @@ def update_team(
         data=TeamUpdatedData(
             team_id=team.id,
             name=changes_made.get("name"),
-            modality_id=changes_made.get("modality_id"),
-            course_id=changes_made.get("course_id"),
         ),
     )
     outbox_publisher.emit_event(
@@ -263,15 +242,10 @@ def update_team(
 @router.delete("/teams/{team_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_team(team_id: UUID, db: Session = Depends(get_db_session)):
     """Delete a team"""
-    active_season = get_active_season(db)
 
-    team = (
-        db.query(Team)
-        .filter(Team.id == team_id, Team.season_id == active_season.id)
-        .first()
-    )
+    team = db.query(Team).filter(Team.id == team_id).first()
     if not team:
-        raise HTTPException(status_code=404, detail="Team not found for active season")
+        raise HTTPException(status_code=404, detail="Team not found")
 
     # Emit team deleted event before deletion
     event = TeamDeletedV1.create(

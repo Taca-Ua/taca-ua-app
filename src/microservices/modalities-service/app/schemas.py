@@ -242,12 +242,11 @@ class TeamCreate(BaseModel):
     name: str
     modality_id: UUID
     course_id: UUID
+    season_id: Optional[int] = None
 
 
 class TeamUpdate(BaseModel):
     name: Optional[str] = None
-    modality_id: Optional[UUID] = None
-    course_id: Optional[UUID] = None
     players_add: Optional[List[UUID]] = None
     players_remove: Optional[List[UUID]] = None
 
