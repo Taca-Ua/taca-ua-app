@@ -4,7 +4,7 @@ Tournaments management service
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import List
+from typing import Dict, List
 
 from admin_api.clients.modalities_service import (
     ModalityDTO,
@@ -52,6 +52,10 @@ class Tournament:
     competitors: List[Competitor] = field(default_factory=list)
     scoring_format: ScoringFormat = None
     season_id: int = None
+
+
+class TeamDoesNotBelongToSeasonError(ValueError):
+    pass
 
 
 class TournamentsService:
@@ -355,7 +359,7 @@ class TournamentsService:
             elif competitor_type == "team":
                 teams.append(entity_id)
 
-        mapper: List[StudentDTO | TeamDTO] = {
+        mapper: Dict[str, List[StudentDTO | TeamDTO]] = {
             "athlete": (
                 modalities_service_client.students.get_students_by_ids(athletes)
                 if athletes
@@ -389,6 +393,18 @@ class TournamentsService:
                     ].course.id,
                 }
             )
+
+        # teams need to belong to the same season as the tournament
+        if teams:
+            tournament_season_id = tournaments_service_client.get_tournament(
+                tournament_id
+            ).season_id
+            for team_id in teams:
+                team: TeamDTO = mapper["team"][team_id]
+                if team.season_id != tournament_season_id:
+                    raise TeamDoesNotBelongToSeasonError(
+                        f"Team with ID {team_id} belongs to season {team.season_id}, but tournament belongs to season {tournament_season_id}"
+                    )
 
         tournament_dto = tournaments_service_client.add_competitors(
             tournament_id=tournament_id, competitors_data=processed_competitors_data

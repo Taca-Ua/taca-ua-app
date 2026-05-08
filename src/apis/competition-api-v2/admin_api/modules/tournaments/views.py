@@ -24,7 +24,7 @@ from .serializers import (
     TournamentListSerializer,
     TournamentUpdateSerializer,
 )
-from .service import tournaments_service
+from .service import TeamDoesNotBelongToSeasonError, tournaments_service
 
 
 @extend_schema_view(
@@ -186,10 +186,15 @@ def tournament_add_competitors(request, tournament_id):
             }
         )
 
-    tournament = tournaments_service.add_competitors(
-        tournament_id=tournament_id,
-        competitors_data=extracted_competitors_data,
-    )
+    try:
+        tournament = tournaments_service.add_competitors(
+            tournament_id=tournament_id,
+            competitors_data=extracted_competitors_data,
+        )
+    except TeamDoesNotBelongToSeasonError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        raise e
 
     serializer = TournamentDetailSerializer(tournament)
     return Response(serializer.data, status=status.HTTP_200_OK)
