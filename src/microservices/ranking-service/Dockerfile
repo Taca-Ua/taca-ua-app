@@ -2,15 +2,16 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# 1. Instalar dependências base
 COPY src/microservices/ranking-service/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install messaging package
-COPY src/shared/taca-messaging /tmp/taca-messaging
+# Install messaging package 
+COPY src/shared/platform/taca-messaging /tmp/taca-messaging
 RUN pip install --no-cache-dir /tmp/taca-messaging && rm -rf /tmp/taca-messaging
 
-# Install outbox package
-COPY src/shared/taca-outbox /tmp/taca-outbox
+# Install outbox package 
+COPY src/shared/platform/taca-outbox /tmp/taca-outbox
 RUN pip install --no-cache-dir /tmp/taca-outbox && rm -rf /tmp/taca-outbox
 
 # Install snapshots package
@@ -21,7 +22,8 @@ RUN pip install --no-cache-dir /tmp/taca-snapshots && rm -rf /tmp/taca-snapshots
 COPY src/shared/platform/taca-rebuild /tmp/taca-rebuild
 RUN pip install --no-cache-dir /tmp/taca-rebuild && rm -rf /tmp/taca-rebuild
 
+# Copiar o código do serviço
 COPY src/microservices/ranking-service .
 
 # Run migrations and start the service
-CMD alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000
+CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
