@@ -472,6 +472,7 @@ class ModalityTypesModalitiesService(BaseService):
         escaloes: List[str] = None,
         is_playoff: bool = False,
         tournament_competitor_type: str = None,
+        season_id: str = None,
     ) -> ModalityTypeDTO:
         """Create a new modality type
 
@@ -480,6 +481,8 @@ class ModalityTypesModalitiesService(BaseService):
             description (str, optional): Description of the modality type. Defaults to "".
             escaloes (List[str], optional): List of escaloes. Defaults to None.
             is_playoff (bool, optional): Whether this modality type is used for playoffs. Defaults to False.
+            tournament_competitor_type (str, optional): Type of competitors in the tournament. Defaults to None.
+            season_id (str, optional): ID of the season to which the modality type belongs. Defaults to None.
 
         Returns:
             ModalityTypeDTO: Created ModalityTypeDTO object
@@ -493,6 +496,7 @@ class ModalityTypesModalitiesService(BaseService):
             "escaloes": escaloes,
             "is_playoff": is_playoff,
             "tournament_competitor_type": tournament_competitor_type,
+            "season_id": season_id,
         }
         modality_type_data = self.post("/modality-types", data)
         return ModalityTypeDTO(**modality_type_data)

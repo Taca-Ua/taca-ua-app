@@ -59,6 +59,7 @@ class ModalityTypeCreateSerializer(serializers.Serializer):
     tournament_competitor_type = serializers.ChoiceField(
         choices=["individual", "team"], required=False
     )
+    season_id = serializers.IntegerField(required=False)
 
 
 class ModalityTypeUpdateSerializer(serializers.Serializer):

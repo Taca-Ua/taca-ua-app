@@ -93,6 +93,7 @@ class ModalityTypeCreate(BaseModel):
     escaloes: Optional[List[_Escalao]] = None
     is_playoff: bool = False
     tournament_competitor_type: Optional[str] = None
+    season_id: Optional[int] = None
 
     def escaloes_encoder(self):
         if not self.escaloes:

@@ -3,6 +3,7 @@ from typing import List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from taca_events.pydantic_schemas.modalities import (
@@ -17,7 +18,7 @@ from taca_events.pydantic_schemas.modalities import (
 
 from ..database import get_db_session
 from ..logger import logger
-from ..models import ModalityType
+from ..models import ModalityType, Season
 from ..outbox_publisher import outbox_publisher
 from ..schemas import ModalityTypeCreate, ModalityTypeResponse, ModalityTypeUpdate
 from ..utils import get_active_season
@@ -35,17 +36,18 @@ def list_modality_types(
     db: Session = Depends(get_db_session),
 ):
     """List all modality types"""
-    query = db.query(ModalityType)
-    if season_id is not None:
-        query = query.filter(ModalityType.season_id == season_id)
-    else:
-        # default to active season's modality types if no season_id provided
+    stmt = select(ModalityType)
+
+    relevant_season_id = season_id
+    if season_id is None:
         active_season = get_active_season(db)
-        query = query.filter(ModalityType.season_id == active_season.id)
+        relevant_season_id = active_season.id
+
+    query = stmt.filter(ModalityType.season_id == relevant_season_id)
 
     if exclude_playoff:
         query = query.filter(ModalityType.is_playoff == False)  # noqa: E712
-    modality_types = query.all()
+    modality_types = db.execute(query).scalars().unique().all()
     return [mt.to_dict() for mt in modality_types]
 
 
@@ -58,15 +60,24 @@ def create_modality_type(
     modality_type_data: ModalityTypeCreate, db: Session = Depends(get_db_session)
 ):
     """Create a new modality type"""
+    relevant_season = None
+    if modality_type_data.season_id is not None:
+        relevant_season = (
+            db.query(Season).filter(Season.id == modality_type_data.season_id).first()
+        )
+        if not relevant_season:
+            raise HTTPException(status_code=404, detail="Season not found")
+    else:
+        relevant_season = get_active_season(db)
+
     try:
-        active_season = get_active_season(db)
 
         # Check if a playoff type already exists
         if modality_type_data.is_playoff:
             existing_playoff = (
                 db.query(ModalityType)
                 .filter(
-                    ModalityType.season_id == active_season.id,
+                    ModalityType.season_id == relevant_season.id,
                     ModalityType.is_playoff == True,  # noqa: E712
                 )
                 .first()
@@ -83,7 +94,7 @@ def create_modality_type(
             escaloes=modality_type_data.escaloes_encoder(),
             is_playoff=modality_type_data.is_playoff,
             tournament_competitor_type=modality_type_data.tournament_competitor_type,
-            season_id=active_season.id,
+            season_id=relevant_season.id,
             created_by=DEFAULT_USER_ID,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
@@ -166,19 +177,15 @@ def update_modality_type(
     db: Session = Depends(get_db_session),
 ):
     """Update a modality type"""
-    active_season = get_active_season(db)
     modality_type = (
         db.query(ModalityType)
         .filter(
             ModalityType.id == modality_type_id,
-            ModalityType.season_id == active_season.id,
         )
         .first()
     )
     if not modality_type:
-        raise HTTPException(
-            status_code=404, detail="Modality type not found for active season"
-        )
+        raise HTTPException(status_code=404, detail="Modality type not found")
 
     changes_made = {}
     if modality_type_data.name is not None:
@@ -195,7 +202,11 @@ def update_modality_type(
             # If trying to set this modality type as playoff, check if another playoff type already exists
             existing_playoff = (
                 db.query(ModalityType)
-                .filter(ModalityType.is_playoff, ModalityType.id != modality_type_id)
+                .filter(
+                    ModalityType.is_playoff,
+                    ModalityType.season_id == modality_type.season_id,
+                    ModalityType.id != modality_type_id,
+                )
                 .first()
             )
             if existing_playoff:
@@ -257,12 +268,10 @@ def update_modality_type(
 )
 def delete_modality_type(modality_type_id: UUID, db: Session = Depends(get_db_session)):
     """Delete a modality type"""
-    active_season = get_active_season(db)
     modality_type = (
         db.query(ModalityType)
         .filter(
             ModalityType.id == modality_type_id,
-            ModalityType.season_id == active_season.id,
         )
         .first()
     )

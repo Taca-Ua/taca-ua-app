@@ -66,6 +66,7 @@ class ModalityTypeListCreateView(RoleRequiredMixin, APIView):
             tournament_competitor_type=serializer.validated_data.get(
                 "tournament_competitor_type"
             ),
+            season_id=serializer.validated_data.get("season_id"),
         )
         serializer = ModalityTypeListSerializer(modality_type)
         return Response(serializer.data, status=status.HTTP_201_CREATED)

@@ -32,6 +32,7 @@ export interface ModalityTypeCreate {
   escaloes: EscalaoRow[];
   is_playoff?: boolean;
   tournament_competitor_type: 'individual' | 'team';
+  season_id?: number;
 }
 
 export interface ModalityTypeUpdate {
