@@ -90,16 +90,12 @@ class TeamsService:
         self,
         team_id,
         name=None,
-        modality_id=None,
-        course_id=None,
         players_add=None,
         players_remove=None,
     ):
         team_answer = modalities_service_client.teams.update_team(
             team_id,
             name=name,
-            modality_id=modality_id,
-            course_id=course_id,
             players_add=players_add,
             players_remove=players_remove,
         )

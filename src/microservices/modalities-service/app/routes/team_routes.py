@@ -162,7 +162,6 @@ def update_team(
     team_id: UUID, team_data: TeamUpdate, db: Session = Depends(get_db_session)
 ):
     """Update a team"""
-    active_season = get_active_season(db)
 
     team = db.query(Team).filter(Team.id == team_id).first()
     if not team:
@@ -172,34 +171,6 @@ def update_team(
     if team_data.name is not None:
         team.name = team_data.name
         changes_made["name"] = team_data.name
-    if team_data.modality_id is not None:
-        modality = (
-            db.query(Modality)
-            .filter(Modality.id == team_data.modality_id)
-            .join(SeasonModality)
-            .filter(SeasonModality.season_id == active_season.id)
-            .first()
-        )
-        if not modality:
-            raise HTTPException(
-                status_code=404, detail="Modality not found for active season"
-            )
-        team.modality_id = team_data.modality_id
-        changes_made["modality_id"] = str(team_data.modality_id)
-    if team_data.course_id is not None:
-        course = (
-            db.query(Course)
-            .filter(Course.id == team_data.course_id)
-            .join(season_courses)
-            .filter(season_courses.c.season_id == active_season.id)
-            .first()
-        )
-        if not course:
-            raise HTTPException(
-                status_code=404, detail="Course not found for active season"
-            )
-        team.course_id = team_data.course_id
-        changes_made["course_id"] = str(team_data.course_id)
 
     # Emit team updated event
     event = TeamUpdatedV1.create(
@@ -207,8 +178,6 @@ def update_team(
         data=TeamUpdatedData(
             team_id=team.id,
             name=changes_made.get("name"),
-            modality_id=changes_made.get("modality_id"),
-            course_id=changes_made.get("course_id"),
         ),
     )
     outbox_publisher.emit_event(

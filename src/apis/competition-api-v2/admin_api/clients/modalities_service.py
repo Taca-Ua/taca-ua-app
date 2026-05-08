@@ -998,8 +998,6 @@ class TeamModalitiesService(BaseService):
         self,
         team_id: str,
         name: Optional[str] = None,
-        modality_id: Optional[str] = None,
-        course_id: Optional[str] = None,
         players_add: Optional[List[str]] = None,
         players_remove: Optional[List[str]] = None,
     ) -> TeamDTO:
@@ -1019,10 +1017,6 @@ class TeamModalitiesService(BaseService):
         data = {}
         if name is not None:
             data["name"] = name
-        if modality_id is not None:
-            data["modality_id"] = modality_id
-        if course_id is not None:
-            data["course_id"] = course_id
         if players_add is not None:
             data["players_add"] = players_add
         if players_remove is not None:

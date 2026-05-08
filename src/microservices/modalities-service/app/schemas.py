@@ -247,8 +247,6 @@ class TeamCreate(BaseModel):
 
 class TeamUpdate(BaseModel):
     name: Optional[str] = None
-    modality_id: Optional[UUID] = None
-    course_id: Optional[UUID] = None
     players_add: Optional[List[UUID]] = None
     players_remove: Optional[List[UUID]] = None
 

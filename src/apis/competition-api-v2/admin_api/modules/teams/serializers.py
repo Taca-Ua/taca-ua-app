@@ -47,8 +47,6 @@ class TeamCreateSerializer(serializers.Serializer):
 
 class TeamUpdateSerializer(serializers.Serializer):
     name = serializers.CharField(required=False, allow_blank=True)
-    modality_id = serializers.UUIDField(required=False)
-    course_id = serializers.UUIDField(required=False)
     players_add = serializers.ListField(child=serializers.UUIDField(), required=False)
     players_remove = serializers.ListField(
         child=serializers.UUIDField(), required=False

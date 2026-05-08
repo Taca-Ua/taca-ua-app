@@ -31,8 +31,6 @@ export interface TeamCreate {
 
 export interface TeamUpdate {
   name?: string;
-  modality_id?: string;
-  course_id?: string;
   players_add?: string[];  // IDs of players to add
   players_remove?: string[];  // IDs of players to remove
 }

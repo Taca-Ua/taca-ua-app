@@ -106,16 +106,6 @@ class TeamDetailView(RoleRequiredMixin, APIView):
         team = teams_service.update_team(
             team_id,
             name=serializer.validated_data.get("name"),
-            modality_id=(
-                str(serializer.validated_data["modality_id"])
-                if "modality_id" in serializer.validated_data
-                else None
-            ),
-            course_id=(
-                str(serializer.validated_data["course_id"])
-                if "course_id" in serializer.validated_data
-                else None
-            ),
             players_add=(
                 [str(pid) for pid in serializer.validated_data["players_add"]]
                 if "players_add" in serializer.validated_data
