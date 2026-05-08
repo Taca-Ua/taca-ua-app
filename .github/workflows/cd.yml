@@ -12,15 +12,15 @@ jobs:
     strategy:
       matrix:
         service:
-          - { path: src/apis/public-api, name: public-api }
+          #- { path: src/apis/public-api, name: public-api }
           - { path: src/apis/competition-api-v2, name: competition-api-v2 }
-          - { path: src/microservices/matches-service, name: matches-service }
-          - { path: src/microservices/modalities-service, name: modalities-service }
-          - { path: src/microservices/ranking-service, name: ranking-service }
-          - { path: src/microservices/read-model-updater, name: read-model-updater }
-          - { path: src/microservices/tournaments-service, name: tournaments-service }
-          - { path: src/frontend/admin-panel, name: admin-panel }
-          - { path: src/frontend/public-website, name: public-website }
+          #- { path: src/microservices/matches-service, name: matches-service }
+          #- { path: src/microservices/modalities-service, name: modalities-service }
+          #- { path: src/microservices/ranking-service, name: ranking-service }
+          #- { path: src/microservices/read-model-updater, name: read-model-updater }
+          #- { path: src/microservices/tournaments-service, name: tournaments-service }
+          #- { path: src/frontend/admin-panel, name: admin-panel }
+          #- { path: src/frontend/public-website, name: public-website }
     
     steps:
       - name: Checkout code
