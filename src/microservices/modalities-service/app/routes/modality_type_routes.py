@@ -3,6 +3,7 @@ from typing import List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from taca_events.pydantic_schemas.modalities import (
@@ -35,17 +36,18 @@ def list_modality_types(
     db: Session = Depends(get_db_session),
 ):
     """List all modality types"""
-    query = db.query(ModalityType)
-    if season_id is not None:
-        query = query.filter(ModalityType.season_id == season_id)
-    else:
-        # default to active season's modality types if no season_id provided
+    stmt = select(ModalityType)
+
+    relevant_season_id = season_id
+    if season_id is None:
         active_season = get_active_season(db)
-        query = query.filter(ModalityType.season_id == active_season.id)
+        relevant_season_id = active_season.id
+
+    query = stmt.filter(ModalityType.season_id == relevant_season_id)
 
     if exclude_playoff:
         query = query.filter(ModalityType.is_playoff == False)  # noqa: E712
-    modality_types = query.all()
+    modality_types = db.execute(query).scalars().unique().all()
     return [mt.to_dict() for mt in modality_types]
 
 
