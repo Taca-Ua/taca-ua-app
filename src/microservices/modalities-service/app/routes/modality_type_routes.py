@@ -18,7 +18,7 @@ from taca_events.pydantic_schemas.modalities import (
 
 from ..database import get_db_session
 from ..logger import logger
-from ..models import ModalityType
+from ..models import ModalityType, Season
 from ..outbox_publisher import outbox_publisher
 from ..schemas import ModalityTypeCreate, ModalityTypeResponse, ModalityTypeUpdate
 from ..utils import get_active_season
@@ -60,15 +60,24 @@ def create_modality_type(
     modality_type_data: ModalityTypeCreate, db: Session = Depends(get_db_session)
 ):
     """Create a new modality type"""
+    relevant_season = None
+    if modality_type_data.season_id is not None:
+        relevant_season = (
+            db.query(Season).filter(Season.id == modality_type_data.season_id).first()
+        )
+        if not relevant_season:
+            raise HTTPException(status_code=404, detail="Season not found")
+    else:
+        relevant_season = get_active_season(db)
+
     try:
-        active_season = get_active_season(db)
 
         # Check if a playoff type already exists
         if modality_type_data.is_playoff:
             existing_playoff = (
                 db.query(ModalityType)
                 .filter(
-                    ModalityType.season_id == active_season.id,
+                    ModalityType.season_id == relevant_season.id,
                     ModalityType.is_playoff == True,  # noqa: E712
                 )
                 .first()
@@ -85,7 +94,7 @@ def create_modality_type(
             escaloes=modality_type_data.escaloes_encoder(),
             is_playoff=modality_type_data.is_playoff,
             tournament_competitor_type=modality_type_data.tournament_competitor_type,
-            season_id=active_season.id,
+            season_id=relevant_season.id,
             created_by=DEFAULT_USER_ID,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
