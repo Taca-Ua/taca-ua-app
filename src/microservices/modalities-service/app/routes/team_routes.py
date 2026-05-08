@@ -164,13 +164,9 @@ def update_team(
     """Update a team"""
     active_season = get_active_season(db)
 
-    team = (
-        db.query(Team)
-        .filter(Team.id == team_id, Team.season_id == active_season.id)
-        .first()
-    )
+    team = db.query(Team).filter(Team.id == team_id).first()
     if not team:
-        raise HTTPException(status_code=404, detail="Team not found for active season")
+        raise HTTPException(status_code=404, detail="Team not found")
 
     changes_made = {}
     if team_data.name is not None:
