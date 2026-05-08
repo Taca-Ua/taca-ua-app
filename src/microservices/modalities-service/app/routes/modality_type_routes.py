@@ -177,19 +177,15 @@ def update_modality_type(
     db: Session = Depends(get_db_session),
 ):
     """Update a modality type"""
-    active_season = get_active_season(db)
     modality_type = (
         db.query(ModalityType)
         .filter(
             ModalityType.id == modality_type_id,
-            ModalityType.season_id == active_season.id,
         )
         .first()
     )
     if not modality_type:
-        raise HTTPException(
-            status_code=404, detail="Modality type not found for active season"
-        )
+        raise HTTPException(status_code=404, detail="Modality type not found")
 
     changes_made = {}
     if modality_type_data.name is not None:
@@ -206,7 +202,13 @@ def update_modality_type(
             # If trying to set this modality type as playoff, check if another playoff type already exists
             existing_playoff = (
                 db.query(ModalityType)
-                .filter(ModalityType.is_playoff, ModalityType.id != modality_type_id)
+                .filter(
+                    ModalityType.is_playoff,  # get all playoff types
+                    ModalityType.season_id
+                    == modality_type.season_id,  # filter by same season
+                    ModalityType.id
+                    != modality_type_id,  # exclude current modality type
+                )
                 .first()
             )
             if existing_playoff:
