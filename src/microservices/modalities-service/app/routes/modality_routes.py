@@ -17,7 +17,7 @@ from taca_events.pydantic_schemas.modalities import (
 
 from ..database import get_db_session
 from ..logger import logger
-from ..models import Modality, ModalityType, Season, SeasonModality
+from ..models import Modality, ModalityType, Season, SeasonModality, Team
 from ..outbox_publisher import outbox_publisher
 from ..schemas import (
     ModalityCreate,
@@ -263,6 +263,16 @@ def remove_modality_from_season(
         raise HTTPException(
             status_code=404,
             detail="Modality is not associated with the specified season",
+        )
+
+    # Check if modality there are teams associated with this modality in the season
+    teams = db.query(Team).filter(
+        Team.modality_id == modality_id, Team.season_id == modality_data.season_id
+    )
+    if teams.count() > 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot remove modality from season because there are teams associated with it",
         )
 
     db.delete(season_modality)
