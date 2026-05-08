@@ -26,6 +26,7 @@ export interface TeamCreate {
   name: string;
   modality_id: string;
   course_id: string;
+  season_id?: number;
 }
 
 export interface TeamUpdate {

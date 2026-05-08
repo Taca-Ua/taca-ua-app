@@ -242,6 +242,7 @@ class TeamCreate(BaseModel):
     name: str
     modality_id: UUID
     course_id: UUID
+    season_id: Optional[int] = None
 
 
 class TeamUpdate(BaseModel):

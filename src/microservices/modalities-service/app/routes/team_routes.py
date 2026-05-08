@@ -23,6 +23,7 @@ from ..models import (
     Course,
     Modality,
     Nucleo,
+    Season,
     SeasonModality,
     Student,
     Team,
@@ -73,14 +74,24 @@ def list_teams(
 @router.post("/teams", response_model=TeamResponse, status_code=status.HTTP_201_CREATED)
 def create_team(team_data: TeamCreate, db: Session = Depends(get_db_session)):
     """Create a new team"""
-    active_season = get_active_season(db)
+
+    # Determine relevant season (use provided season_id or active season)
+    relevant_season = None
+    if team_data.season_id:
+        relevant_season = (
+            db.query(Season).filter(Season.id == team_data.season_id).first()
+        )
+        if not relevant_season:
+            raise HTTPException(status_code=404, detail="Season not found")
+    else:
+        relevant_season = get_active_season(db)
 
     # Validate modality exists for the active season
     modality = (
         db.query(Modality)
         .filter(Modality.id == team_data.modality_id)
         .join(SeasonModality)
-        .filter(SeasonModality.season_id == active_season.id)
+        .filter(SeasonModality.season_id == relevant_season.id)
         .first()
     )
     if not modality:
@@ -93,7 +104,7 @@ def create_team(team_data: TeamCreate, db: Session = Depends(get_db_session)):
         db.query(Course)
         .filter(Course.id == team_data.course_id)
         .join(season_courses)
-        .filter(season_courses.c.season_id == active_season.id)
+        .filter(season_courses.c.season_id == relevant_season.id)
         .first()
     )
     if not course:
@@ -105,7 +116,7 @@ def create_team(team_data: TeamCreate, db: Session = Depends(get_db_session)):
         name=team_data.name,
         modality_id=team_data.modality_id,
         course_id=team_data.course_id,
-        season_id=active_season.id,
+        season_id=relevant_season.id,
         created_by=DEFAULT_USER_ID,
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc),

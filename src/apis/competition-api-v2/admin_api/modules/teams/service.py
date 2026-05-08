@@ -74,9 +74,9 @@ class TeamsService:
             self._build_team_from_modalities_response(team) for team in teams_answer
         ]
 
-    def create_team(self, name, modality_id, course_id):
+    def create_team(self, name, modality_id, course_id, season_id: int = None):
         team_answer = modalities_service_client.teams.create_team(
-            name=name, modality_id=modality_id, course_id=course_id
+            name=name, modality_id=modality_id, course_id=course_id, season_id=season_id
         )
         return self._build_team_from_modalities_response(team_answer)
 

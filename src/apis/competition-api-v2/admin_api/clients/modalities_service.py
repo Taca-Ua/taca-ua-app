@@ -944,13 +944,16 @@ class TeamModalitiesService(BaseService):
         teams_data = self.get("/teams", params=params)
         return [TeamDTO(**team) for team in teams_data]
 
-    def create_team(self, name: str, modality_id: str, course_id: str) -> TeamDTO:
+    def create_team(
+        self, name: str, modality_id: str, course_id: str, season_id: int = None
+    ) -> TeamDTO:
         """Create a new team
 
         Args:
             name (str): Name of the team
             modality_id (str): ID of the modality
             course_id (str): ID of the course
+            season_id (int, optional): ID of the season. Defaults to None.
 
         Returns:
             TeamDTO: TeamDTO object representing the created team
@@ -959,6 +962,7 @@ class TeamModalitiesService(BaseService):
             "name": name,
             "modality_id": modality_id,
             "course_id": course_id,
+            "season_id": season_id,
         }
         return TeamDTO(**self.post("/teams", data))
 

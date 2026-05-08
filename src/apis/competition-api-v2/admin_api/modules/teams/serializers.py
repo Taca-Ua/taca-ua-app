@@ -42,6 +42,7 @@ class TeamCreateSerializer(serializers.Serializer):
     name = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     modality_id = serializers.UUIDField(required=True)
     course_id = serializers.UUIDField(required=True)
+    season_id = serializers.IntegerField(required=False)
 
 
 class TeamUpdateSerializer(serializers.Serializer):
