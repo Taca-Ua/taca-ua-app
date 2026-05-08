@@ -203,11 +203,9 @@ def update_modality_type(
             existing_playoff = (
                 db.query(ModalityType)
                 .filter(
-                    ModalityType.is_playoff,  # get all playoff types
-                    ModalityType.season_id
-                    == modality_type.season_id,  # filter by same season
-                    ModalityType.id
-                    != modality_type_id,  # exclude current modality type
+                    ModalityType.is_playoff,
+                    ModalityType.season_id == modality_type.season_id,
+                    ModalityType.id != modality_type_id,
                 )
                 .first()
             )
@@ -270,12 +268,10 @@ def update_modality_type(
 )
 def delete_modality_type(modality_type_id: UUID, db: Session = Depends(get_db_session)):
     """Delete a modality type"""
-    active_season = get_active_season(db)
     modality_type = (
         db.query(ModalityType)
         .filter(
             ModalityType.id == modality_type_id,
-            ModalityType.season_id == active_season.id,
         )
         .first()
     )
