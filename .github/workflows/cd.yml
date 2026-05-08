@@ -3,7 +3,7 @@ name: CD - Deploy to Production
 on:
   push:
     branches:
-      - test-deploy
+      - feat/ci-cd
 
 jobs:
   build-and-push:
