@@ -210,7 +210,11 @@ class TournamentsService:
         ]
 
     def create_tournament(
-        self, name: str, modality_id: str, is_playoff: bool = False
+        self,
+        name: str,
+        modality_id: str,
+        is_playoff: bool = False,
+        season_id: int = None,
     ) -> Tournament:
         """Create a new tournament"""
 
@@ -231,8 +235,9 @@ class TournamentsService:
         else:
             scoring_format_id = modality.modality_type.id
 
-        # get current season id
-        season_id = modalities_service_client.seasons.get_current_season().id
+        # get current season id if not provided
+        if season_id is None:
+            season_id = modalities_service_client.seasons.get_current_season().id
 
         tournament_dto = tournaments_service_client.create_tournament(
             modality_id=modality_id,

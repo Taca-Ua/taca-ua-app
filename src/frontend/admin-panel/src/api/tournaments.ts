@@ -43,6 +43,7 @@ export interface TournamentCreate {
   modality_id: string;
   start_date?: string;
   is_playoff?: boolean;
+  season_id?: number;
 };
 
 export interface TournamentUpdate {
