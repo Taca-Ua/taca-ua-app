@@ -12,15 +12,7 @@ jobs:
     strategy:
       matrix:
         service:
-          #- { path: src/apis/public-api, name: public-api }
           - { path: src/apis/competition-api-v2, name: competition-api-v2 }
-          #- { path: src/microservices/matches-service, name: matches-service }
-          #- { path: src/microservices/modalities-service, name: modalities-service }
-          #- { path: src/microservices/ranking-service, name: ranking-service }
-          #- { path: src/microservices/read-model-updater, name: read-model-updater }
-          #- { path: src/microservices/tournaments-service, name: tournaments-service }
-          #- { path: src/frontend/admin-panel, name: admin-panel }
-          #- { path: src/frontend/public-website, name: public-website }
     
     steps:
       - name: Checkout code
@@ -33,7 +25,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-2026/05/08 14:34:07 dial tcp: lookup *** on 127.0.0.53:53: no such hostaction@v3
+        uses: docker/setup-buildx-action@v3
 
       - name: Build and Push Service Image
         uses: docker/build-push-action@v5
@@ -47,46 +39,29 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # deploy:
-  #   name: Update VM via SSH
-  #   needs: build-and-push
-  #   runs-on: ubuntu-24.04
-  #   steps:
-  #     - name: Deploy to VM
-  #       uses: appleboy/ssh-action@master
-  #       with:
-  #         host: ${{ secrets.VM_HOST }}
-  #         username: ${{ secrets.VM_USER }}
-  #         key: ${{ secrets.VM_SSH_KEY }}
-  #         port: ${{ secrets.VM_PORT }}
-  #         script: |
-  #           cd /home/mateusrocha/app
-  #           # Regista qual o SHA que está atualmente em produção
-  #           echo "DEPLOY_SHA=${{ github.sha }}" > .deploy_info
-  #           # Puxa as novas imagens (tag stable) do Docker Hub
-  #           docker compose pull
-  #           # Reinicia apenas os containers que sofreram alterações
-  #           docker compose up -d --remove-orphans
   deploy:
     name: Update VM via SSH
     needs: build-and-push
     runs-on: ubuntu-24.04
     steps:
-      - name: Diagnóstico de Rede
+      - name: Diagnostico de Rede
         run: |
-          echo "Testando resolução de DNS..."
-          nslookup mednat.ieeta.pt
-          echo "Testando rota..."
-          nc -zv -w5 mednat.ieeta.pt 8970
+          echo "Testando resolucao de DNS..."
+          nslookup mednat.ieeta.pt || echo "DNS falhou"
+          echo "Testando porta 8970..."
+          nc -zv -w5 mednat.ieeta.pt 8970 || echo "Porta fechada ou inacessivel"
 
       - name: Deploy to VM
         uses: appleboy/ssh-action@master
         with:
-          host: mednat.ieeta.pt  # ESCREVE O HOST DIRETO AQUI PARA TESTAR
+          host: mednat.ieeta.pt
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
           port: ${{ secrets.VM_PORT }}
           script: |
             cd /home/mateusrocha/app
+            # Atualiza info do deploy
+            echo "DEPLOY_SHA=${{ github.sha }}" > .deploy_info
+            # Puxa imagens e sobe containers
             docker compose pull
             docker compose up -d --remove-orphans
