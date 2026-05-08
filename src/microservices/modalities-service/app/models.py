@@ -531,7 +531,7 @@ class Team(Base):
             "name": self.name,
             "modality": self.modality.to_dict() if self.modality else None,
             "course": self.course.to_dict() if self.course else None,
-            "season": self.season.to_dict() if self.season else None,
+            "season_id": self.season_id,
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,

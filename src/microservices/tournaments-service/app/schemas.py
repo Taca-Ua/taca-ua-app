@@ -86,6 +86,7 @@ class TournamentResponse(BaseModel):
     scoring_format_id: UUID
     competitors: List[CompetitorResponse]
     competitor_type: str
+    season_id: int
 
     created_by: UUID
     created_at: datetime

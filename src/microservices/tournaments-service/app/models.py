@@ -6,12 +6,13 @@ Schema: tournaments
 import enum
 import uuid
 from datetime import datetime, timezone
+from typing import List
 
 import sqlalchemy as sa
 from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 from taca_outbox.models import create_outbox_model
 from taca_snapshots import tournaments as snapshot_models
 
@@ -125,7 +126,7 @@ class Tournament(Base):
         back_populates="tournament",
         cascade="all, delete-orphan",
     )
-    competitors = relationship(
+    competitors: Mapped[List[TournamentCompetitor]] = relationship(
         "TournamentCompetitor",
         back_populates="tournament",
         cascade="all, delete-orphan",
@@ -141,6 +142,7 @@ class Tournament(Base):
                 str(self.scoring_format_id) if self.scoring_format_id else None
             ),
             "competitor_type": self.competitor_type.value,
+            "season_id": self.season_id,
             "start_date": self.start_date.isoformat() if self.start_date else None,
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat() if self.created_at else None,

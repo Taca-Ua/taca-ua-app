@@ -37,6 +37,7 @@ class TournamentDTO:
     modality_id: UUID
     scoring_format_id: UUID
     competitor_type: str  # "team" or "athlete"
+    season_id: int
     start_date: Optional[str] = None  # ISO formatted datetime string
     competitors: List[CompetitorDTO] = field(default_factory=list)
     ranking_positions: List[_TournamentRankingPositionDTO] = field(default_factory=list)

@@ -128,6 +128,7 @@ class TeamDTO:
     modality: ModalityDTO
     course: CourseDTO
     players: List[StudentDTO]
+    season_id: int
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None

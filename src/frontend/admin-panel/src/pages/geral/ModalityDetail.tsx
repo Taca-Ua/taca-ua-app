@@ -45,7 +45,7 @@ const TournamentsTab = ({
         notify('Falha ao carregar torneios para esta modalidade.', 'error');
       })
       .finally(() => setIsLoading(false));
-  }, [modality.id, modality.belongs_to_season]);
+  }, [modality.id, modality.belongs_to_season, loadedSeason?.id]);
 
   const renderTournamentList = () => {
     if (isLoading) {

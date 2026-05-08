@@ -6,6 +6,7 @@ import { athletesApi } from "../../api/athletes";
 import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
 import { useAuth } from "../../hooks/useAuth";
+import { useNotification } from "../../contexts/NotificationProvider";
 
 const TournamentCompetitorsComponent = ({
   tournamentState,
@@ -17,6 +18,7 @@ const TournamentCompetitorsComponent = ({
 }) => {
   const { pushModal } = useModal();
   const { isAdminGeneral } = useAuth();
+  const { notify } = useNotification();
 
   const [tournament, setTournament] = tournamentState;
 
@@ -32,23 +34,29 @@ const TournamentCompetitorsComponent = ({
       // Add new competitors
       let updatedTournament: TournamentDetail | null = null;
 
-      await tournamentsApi.addCompetitors(tournament.id, addedCompetitors.map((c) => ({
-        competitor_type: tournament.competitor_type,
-        entity_id: c.id,
-      }))).then((updated) => {
-        updatedTournament = updated;
-      }).catch((error) => {
-        console.error("Error adding competitors:", error);
-      });
+      if (addedCompetitors.length > 0) {
+        await tournamentsApi.addCompetitors(tournament.id, addedCompetitors.map((c) => ({
+          competitor_type: tournament.competitor_type,
+          entity_id: c.id,
+        }))).then((updated) => {
+          updatedTournament = updated;
+        }).catch((error) => {
+          console.error("Error adding competitors:", error);
+          notify("Ocorreu um erro ao adicionar competidores. Tente novamente.", "error");
+        });
+      }
 
       // Remove old competitors
-      await tournamentsApi.removeCompetitors(tournament.id, {
-        competitors_ids: removedCompetitors.map((c) => c.id)
-      }).then((updated) => {
-        updatedTournament = updated;
-      }).catch((error) => {
-        console.error("Error removing competitors:", error);
-      });
+      if (removedCompetitors.length > 0) {
+        await tournamentsApi.removeCompetitors(tournament.id, {
+          competitors_ids: removedCompetitors.map((c) => c.id)
+        }).then((updated) => {
+          updatedTournament = updated;
+        }).catch((error) => {
+          console.error("Error removing competitors:", error);
+          notify("Ocorreu um erro ao remover competidores. Tente novamente.", "error");
+        });
+      }
 
       if (updatedTournament) {
         setTournament(updatedTournament);
@@ -62,6 +70,7 @@ const TournamentCompetitorsComponent = ({
     try {
       const teams = await teamsApi.getAll({
         modality_id: tournament.modality.id,
+        season_id: tournament.season_id || undefined,
       });
       return teams.map((team) => ({
         id: team.id,

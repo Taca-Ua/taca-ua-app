@@ -29,6 +29,7 @@ export interface TournamentDetail extends TournamentListItem {
     rank: string;
     points: number[];
   };
+  season_id: number;
 }
 
 // Input interfaces
@@ -43,6 +44,7 @@ export interface TournamentCreate {
   modality_id: string;
   start_date?: string;
   is_playoff?: boolean;
+  season_id?: number;
 };
 
 export interface TournamentUpdate {
