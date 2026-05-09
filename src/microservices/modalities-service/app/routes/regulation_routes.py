@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -72,8 +72,15 @@ def create_regulation_internal(
 
 
 @router.get("", response_model=List[RegulationResponse])
-def list_regulations(db: Session = Depends(get_db_session)):
-    regulations = db.query(Regulation).all()
+def list_regulations(
+    season_id: Optional[int] = None, db: Session = Depends(get_db_session)
+):
+    regulations = db.query(Regulation)
+
+    if season_id is not None:
+        regulations = regulations.filter(Regulation.season_id == season_id)
+
+    regulations = regulations.all()
     return [reg.to_dict() for reg in regulations]
 
 

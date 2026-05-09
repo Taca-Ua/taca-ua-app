@@ -9,6 +9,7 @@ from .serializers import (
     RegulationCreateSerializer,
     RegulationDetailSerializer,
     RegulationListSerializer,
+    RegulationQueryListSerializer,
     RegulationUpdateSerializer,
 )
 from .service import regulations_service
@@ -16,6 +17,7 @@ from .service import regulations_service
 
 @extend_schema_view(
     get=extend_schema(
+        parameters=[RegulationQueryListSerializer],
         responses=RegulationListSerializer(many=True),
         description="List all regulations from database",
         tags=["Regulation Management"],
@@ -29,7 +31,12 @@ from .service import regulations_service
 )
 class RegulationListCreateView(RoleRequiredMixin, APIView):
     def get(self, request):
-        regulations = regulations_service.list_regulations()
+        serializer = RegulationQueryListSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+
+        regulations = regulations_service.list_regulations(
+            season_id=serializer.validated_data.get("season_id")
+        )
 
         serializer = RegulationListSerializer(regulations, many=True)
         return Response(serializer.data)

@@ -30,8 +30,10 @@ class RegulationsService:
             description=dto.description,
         )
 
-    def list_regulations(self) -> List[Regulation]:
-        regulations_answer = modalities_service_client.regulations.list_regulations()
+    def list_regulations(self, season_id: Optional[int] = None) -> List[Regulation]:
+        regulations_answer = modalities_service_client.regulations.list_regulations(
+            season_id=season_id
+        )
         return [self._build_regulation_from_dto(dto) for dto in regulations_answer]
 
     def get_regulation(self, regulation_id: str) -> Regulation:

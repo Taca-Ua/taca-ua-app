@@ -25,8 +25,7 @@ export interface RegulationUpdate {
 }
 
 export const regulationsApi = {
-  async getAll(search?: string): Promise<RegulationListItem[]> {
-    const params = search ? { search } : undefined;
+  async getAll(params?: { season_id?: number }): Promise<RegulationListItem[]> {
     return apiClient.get<RegulationListItem[]>('/regulations/', params);
   },
 
