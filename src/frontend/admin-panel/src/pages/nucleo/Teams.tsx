@@ -27,10 +27,6 @@ const Equipas = () => {
       .finally(() => setLoading(false));
   }, [loadedSeason?.id]);
 
-  if (loading) {
-    return <div className="text-gray-500">Carregando equipas...</div>;
-  }
-
   if (!teams) {
     return <div className="text-red-500">Erro ao carregar equipas.</div>;
   }
@@ -55,9 +51,13 @@ const Equipas = () => {
           </div>
 
           <div className="bg-white rounded-lg shadow-md p-6">
-            <TeamsListComponent
-              teams={teams}
-            />
+            {!loading ? (
+              <TeamsListComponent teams={teams} />
+            ) : (
+              <p className="text-gray-500 text-center py-8">
+                Carregando equipas...
+              </p>
+            )}
           </div>
         </div>
       </div>
