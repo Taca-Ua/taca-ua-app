@@ -109,9 +109,9 @@ const Regulamentos = () => {
   }
 
   return (
-    <>
+    <div ref={mainRef}>
       <SeasonSelector />
-      <div className="flex-1 p-8" ref={mainRef}>
+      <div className="flex-1 p-8" >
         <div className="max-w-7xl mx-auto">
 
           <header className="flex justify-between items-center mb-8">
@@ -196,7 +196,7 @@ const Regulamentos = () => {
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
