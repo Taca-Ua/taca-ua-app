@@ -212,6 +212,7 @@ class Season(Base):
     name = Column(Text, nullable=False)
     created_by = Column(UUID(as_uuid=True), nullable=False)
     finished_by = Column(UUID(as_uuid=True), nullable=True)
+    season_id = Column(Integer, ForeignKey("modalities.season.id"), nullable=False)
 
     created_at = Column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
