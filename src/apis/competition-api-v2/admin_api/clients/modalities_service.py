@@ -37,6 +37,7 @@ class CourseDTO:
     abbreviation: str
     nucleo: Optional[NucleoDTO] = None
     belongs_to_season: Optional[bool] = False
+    relevant_season_ids: List[int] = field(default_factory=list)
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None

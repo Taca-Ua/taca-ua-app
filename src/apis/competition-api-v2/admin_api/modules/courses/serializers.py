@@ -26,7 +26,9 @@ class CourseListSerializer(serializers.Serializer):
 class CourseDetailSerializer(CourseListSerializer):
     """Serializer for course details"""
 
-    ...
+    relevant_season_ids = serializers.ListField(
+        child=serializers.IntegerField(), allow_empty=True
+    )
 
 
 # Request serializers

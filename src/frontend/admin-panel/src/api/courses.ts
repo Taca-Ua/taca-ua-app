@@ -12,7 +12,9 @@ export interface CourseListItem {
   belongs_to_season: boolean;
 }
 
-export interface CourseDetail extends CourseListItem {};
+export interface CourseDetail extends CourseListItem {
+  relevant_season_ids: number[]; // Seasons where this course is relevant (e.g., has active modalities)
+};
 
 export interface CourseCreate {
   name: string;
