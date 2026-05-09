@@ -22,6 +22,10 @@ class ModalityListSerializer(serializers.Serializer):
 class ModalitySerializer(ModalityListSerializer):
     """Serializer for retrieving a modality"""
 
+    relevant_season_ids = serializers.ListField(
+        child=serializers.IntegerField(), required=True, allow_empty=True
+    )
+
 
 # Request serializers
 class ModalityListQuerySerializer(serializers.Serializer):

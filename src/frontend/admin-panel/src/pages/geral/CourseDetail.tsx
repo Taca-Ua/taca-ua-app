@@ -5,6 +5,7 @@ import { navigateBack } from '../../utils';
 import { coursesApi, type CourseDetail } from '../../api/courses';
 import { useEffect, useState } from 'react';
 import { useSeason } from '../../contexts/SeasonContext';
+import SeasonSelector from '../../components/seasons/SeasonSelector';
 
 const CursoDetail = () => {
   const courseId = useParams<{ id: string }>().id;
@@ -32,25 +33,34 @@ const CursoDetail = () => {
     return null;
   }
 
-  return (
-    <div className="flex-1 p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8 flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-800">Detalhes do Curso</h1>
-          <div>
-            <Button
-              onClick={handleBack}
-              type='secondary'
-              padding='px-6 py-3'
-            >
-              Voltar
-            </Button>
-          </div>
-        </div>
-
-        <CourseInfoComponent courseState={[course, setCourse]} />
+  if (!course) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-gray-500">Carregando detalhes do curso...</p>
       </div>
-    </div>
+    );
+  }
+
+  return (
+    <>
+      <SeasonSelector relevantSeasonIds={course.relevant_season_ids || []} />
+      <div className="flex-1 p-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-8 flex justify-between items-center">
+            <h1 className="text-3xl font-bold text-gray-800">
+              Detalhes do Curso
+            </h1>
+            <div>
+              <Button onClick={handleBack} type="secondary" padding="px-6 py-3">
+                Voltar
+              </Button>
+            </div>
+          </div>
+
+          <CourseInfoComponent courseState={[course, setCourse]} />
+        </div>
+      </div>
+    </>
   );
 };
 

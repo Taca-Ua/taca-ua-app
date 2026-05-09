@@ -37,6 +37,7 @@ class CourseDTO:
     abbreviation: str
     nucleo: Optional[NucleoDTO] = None
     belongs_to_season: Optional[bool] = False
+    relevant_season_ids: List[int] = field(default_factory=list)
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -82,6 +83,7 @@ class ModalityDTO:
     name: str
     belongs_to_season: bool
     modality_type: Optional[ModalityTypeDTO] = None
+    relevant_season_ids: Optional[List[int]] = None
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None

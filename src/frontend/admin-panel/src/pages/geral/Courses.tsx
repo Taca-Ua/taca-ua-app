@@ -8,6 +8,7 @@ import { useModal } from '../../contexts/ModalContext';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { useSeason } from '../../contexts/SeasonContext';
 import { useNavigate } from 'react-router-dom';
+import SeasonSelector from '../../components/seasons/SeasonSelector';
 
 
 const Cursos = () => {
@@ -35,6 +36,8 @@ const Cursos = () => {
 
   if (isLoading) {
     return (
+      <>
+      <SeasonSelector />
       <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6 flex justify-between items-center">
@@ -45,6 +48,7 @@ const Cursos = () => {
           </div>
         </div>
       </div>
+      </>
     );
   }
 
@@ -64,6 +68,8 @@ const Cursos = () => {
   }
 
   return (
+    <>
+      <SeasonSelector />
       <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6 flex justify-between items-center">
@@ -86,6 +92,7 @@ const Cursos = () => {
           <CoursesListComponent coursesState={[courses, setCourses]} />
         </div>
       </div>
+    </>
   );
 };
 
