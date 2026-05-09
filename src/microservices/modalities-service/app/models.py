@@ -350,6 +350,11 @@ class Modality(Base):
             "belongs_to_season": (
                 season_modality.season_id is not None if season_modality else False
             ),
+            "relevant_season_ids": (
+                [sm.season_id for sm in self.season_modalities]
+                if self.season_modalities
+                else []
+            ),
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,

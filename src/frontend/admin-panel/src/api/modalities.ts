@@ -10,7 +10,9 @@ export interface ModalityListItem {
   };
 };
 
-export interface ModalityDetail extends ModalityListItem {};
+export interface ModalityDetail extends ModalityListItem {
+  relevant_season_ids: number[];  // List of season IDs where this modality is relevant (active)
+};
 
 export interface ModalityCreate {
   name: string;

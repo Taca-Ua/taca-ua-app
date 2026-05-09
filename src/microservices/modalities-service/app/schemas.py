@@ -160,6 +160,7 @@ class ModalityResponse(BaseModel):
     name: str
     belongs_to_season: bool = False
     modality_type: Optional[ModalityTypeResponse]
+    relevant_season_ids: Optional[List[int]] = None
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None

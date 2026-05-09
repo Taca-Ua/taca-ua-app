@@ -3,6 +3,7 @@ Modality management service
 """
 
 from dataclasses import dataclass
+from typing import Optional
 
 from admin_api.clients.modalities_service import ModalityDTO, modalities_service_client
 
@@ -19,6 +20,9 @@ class Modality:
     name: str
     belongs_to_season: bool
     modality_type: _ModalityType
+
+    # Detailed view only fields
+    relevant_season_ids: Optional[list[int]] = None
 
 
 class ModalitiesService:
@@ -37,6 +41,7 @@ class ModalitiesService:
             name=dto.name,
             belongs_to_season=dto.belongs_to_season,
             modality_type=modality_type,
+            relevant_season_ids=dto.relevant_season_ids,
         )
 
     def list_modalities(self, season_id: str = None):

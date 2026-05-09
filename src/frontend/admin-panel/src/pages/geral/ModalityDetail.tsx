@@ -13,6 +13,7 @@ import ModalityInfoComponent from '../../components/modalities/ModalityInfoCompo
 import { useNotification } from '../../contexts/NotificationProvider';
 import { teamsApi, type TeamListItem } from '../../api/teams';
 import { useSeason } from '../../contexts/SeasonContext';
+import SeasonSelector from '../../components/seasons/SeasonSelector';
 
 
 const TournamentsTab = ({
@@ -154,6 +155,7 @@ function ModalidadeDetail() {
 
   return (
     <>
+      <SeasonSelector relevantSeasonIds={modality.relevant_season_ids} />
       <div className="flex-1 p-8 max-w-5xl mx-auto">
         <div className="mb-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-800">Detalhes da Modalidade</h1>
