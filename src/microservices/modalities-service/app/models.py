@@ -571,6 +571,7 @@ class Regulation(Base):
     title = Column(Text, nullable=False)
     description = Column(Text, nullable=True)
     file_url = Column(Text, nullable=False)
+    season_id = Column(Integer, ForeignKey("modalities.season.id"), nullable=True)
 
     created_at = Column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)

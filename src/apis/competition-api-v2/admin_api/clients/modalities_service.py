@@ -1046,17 +1046,28 @@ class RegulationsModalitiesService(BaseService):
         )
         super().__init__(base_url)
 
-    def list_regulations(self) -> List[RegulationDTO]:
+    def list_regulations(self, season_id: Optional[int] = None) -> List[RegulationDTO]:
         """List all regulations
+
+        Args:
+            season_id (Optional[int], optional): ID of the season to filter regulations by. Defaults to None.
 
         Returns:
             List[RegulationDTO]: List of RegulationDTO objects representing the regulations
         """
-        regulations_data = self.get("/regulations")
+        params = {}
+        if season_id is not None:
+            params["season_id"] = season_id
+
+        regulations_data = self.get("/regulations", params=params)
         return [RegulationDTO(**regulation) for regulation in regulations_data]
 
     def create_regulation_internal(
-        self, title: str, file_url: str, description: Optional[str] = None
+        self,
+        title: str,
+        file_url: str,
+        description: Optional[str] = None,
+        season_id: Optional[int] = None,
     ) -> RegulationDTO:
         """Create a new regulation"""
         regulation_data = self.post(
@@ -1065,6 +1076,7 @@ class RegulationsModalitiesService(BaseService):
                 "title": title,
                 "file_url": file_url,
                 "description": description,
+                "season_id": season_id,
             },
         )
         return RegulationDTO(**regulation_data)

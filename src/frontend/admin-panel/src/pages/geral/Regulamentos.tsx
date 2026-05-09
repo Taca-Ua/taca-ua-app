@@ -6,6 +6,8 @@ import RegulationCreateModal from "../../components/regulations/RegulationCreate
 import RegulationInfoModal from "../../components/regulations/RegulationInfoModal";
 import { useModal } from "../../contexts/ModalContext";
 import Button from "../../components/utils/Button";
+import { useSeason } from "../../contexts/SeasonContext";
+import SeasonSelector from "../../components/seasons/SeasonSelector";
 
 const formatDisplayDate = (dateStr: string | undefined) => {
     if (!dateStr) return "Data indisponível";
@@ -31,6 +33,7 @@ const Regulamentos = () => {
   const { notify } = useNotification();
   const { isAdminGeneral } = useAuth();
   const { pushModal } = useModal();
+  const { loadedSeason } = useSeason();
 
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -80,7 +83,9 @@ const Regulamentos = () => {
 
   useEffect(() => {
     setLoading(true);
-    regulationsApi.getAll().then(data => {
+    regulationsApi.getAll({
+      season_id: loadedSeason?.id
+    }).then(data => {
       setRegulations(data);
       setLoading(false);
     }).catch((err: unknown) => {
@@ -88,7 +93,7 @@ const Regulamentos = () => {
       notify('Failed to load regulations.', 'error');
       setLoading(false);
     });
-  }, []);
+  }, [loadedSeason?.id]);
 
   const filteredRegulations = regulations
     .filter(r => r.title.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -104,7 +109,9 @@ const Regulamentos = () => {
   }
 
   return (
-      <div className="flex-1 p-8" ref={mainRef}>
+    <div ref={mainRef}>
+      <SeasonSelector />
+      <div className="flex-1 p-8" >
         <div className="max-w-7xl mx-auto">
 
           <header className="flex justify-between items-center mb-8">
@@ -189,6 +196,7 @@ const Regulamentos = () => {
           )}
         </div>
       </div>
+    </div>
   );
 };
 
