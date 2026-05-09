@@ -43,14 +43,21 @@ class RegulationsService:
         return self._build_regulation_from_dto(regulation_dto)
 
     def create_regulation(
-        self, title: str, file: UploadedFile, description: Optional[str] = ""
+        self,
+        title: str,
+        file: UploadedFile,
+        description: Optional[str] = "",
+        season_id: Optional[int] = None,
     ) -> Regulation:
 
         file_url = self.minio_service_client.upload_file(file)
 
         regulation_dto = (
             modalities_service_client.regulations.create_regulation_internal(
-                title=title, file_url=file_url, description=description
+                title=title,
+                file_url=file_url,
+                description=description,
+                season_id=season_id,
             )
         )
 

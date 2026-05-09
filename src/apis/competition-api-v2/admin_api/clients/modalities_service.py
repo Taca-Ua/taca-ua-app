@@ -1063,7 +1063,11 @@ class RegulationsModalitiesService(BaseService):
         return [RegulationDTO(**regulation) for regulation in regulations_data]
 
     def create_regulation_internal(
-        self, title: str, file_url: str, description: Optional[str] = None
+        self,
+        title: str,
+        file_url: str,
+        description: Optional[str] = None,
+        season_id: Optional[int] = None,
     ) -> RegulationDTO:
         """Create a new regulation"""
         regulation_data = self.post(
@@ -1072,6 +1076,7 @@ class RegulationsModalitiesService(BaseService):
                 "title": title,
                 "file_url": file_url,
                 "description": description,
+                "season_id": season_id,
             },
         )
         return RegulationDTO(**regulation_data)

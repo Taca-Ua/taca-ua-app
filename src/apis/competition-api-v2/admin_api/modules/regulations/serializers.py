@@ -31,6 +31,7 @@ class RegulationCreateSerializer(serializers.Serializer):
     file = serializers.FileField(required=True)
     title = serializers.CharField(required=True)
     description = serializers.CharField(required=False, allow_blank=True)
+    season_id = serializers.IntegerField(required=False)
 
 
 class RegulationUpdateSerializer(serializers.Serializer):

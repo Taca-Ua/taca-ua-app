@@ -50,6 +50,7 @@ class RegulationListCreateView(RoleRequiredMixin, APIView):
             title=serializer.validated_data["title"],
             file=serializer.validated_data.pop("file"),
             description=serializer.validated_data.get("description", ""),
+            season_id=serializer.validated_data.get("season_id"),
         )
 
         serializer = RegulationListSerializer(regulation)

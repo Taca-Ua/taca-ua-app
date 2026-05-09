@@ -21,6 +21,7 @@ from ..schemas import (
     RegulationInternalUpdate,
     RegulationResponse,
 )
+from ..utils import get_active_season
 
 logger = logging.getLogger(__name__)
 
@@ -33,11 +34,17 @@ router = APIRouter(prefix="/regulations", tags=["Regulations"])
 def create_regulation_internal(
     payload: RegulationInternalCreate, db: Session = Depends(get_db_session)
 ):
+    # If season_id is not provided, associate with active season
+    relevant_season_id = payload.season_id
+    if relevant_season_id is None:
+        relevant_season_id = get_active_season(db).id
+
     try:
         new_reg = Regulation(
             title=payload.title,
             description=payload.description,
             file_url=payload.file_url,
+            season_id=relevant_season_id,
         )
         db.add(new_reg)
         db.flush()  # Get ID before commit for event emission

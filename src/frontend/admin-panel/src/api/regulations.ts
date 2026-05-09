@@ -16,6 +16,7 @@ export interface RegulationCreate {
   title: string;
   file: File;
   description?: string;
+  season_id?: number;
 }
 
 export interface RegulationUpdate {
@@ -33,6 +34,7 @@ export const regulationsApi = {
     const formData = new FormData();
     formData.append('file', data.file);
     formData.append('title', data.title);
+    formData.append('season_id', data.season_id?.toString() ?? '');
     if (data.description) {
       formData.append('description', data.description);
     }

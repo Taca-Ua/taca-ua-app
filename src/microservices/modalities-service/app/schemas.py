@@ -275,6 +275,7 @@ class RegulationInternalCreate(BaseModel):
     title: str
     description: Optional[str] = None
     file_url: str
+    season_id: Optional[int] = None
 
 
 class RegulationInternalUpdate(BaseModel):
