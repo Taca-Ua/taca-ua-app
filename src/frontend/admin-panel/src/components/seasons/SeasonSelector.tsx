@@ -29,42 +29,43 @@ const SeasonSelector = ({
   const isActive = (seasonId: number) => seasonId === loadedSeason?.id;
 
   return (
-    <div className="flex flex-col space-y-2">
-      {/* Season selector buttons */}
-      <div className="flex items-center space-x-4">
-        {availableSeasons.map(season => {
-          const active = isActive(season.id);
-          const relevant = isRelevant(season.id);
+    <div className="bg-white rounded-lg shadow-md overflow-hidden">
+      <div className="border-b border-gray-200">
+        <div className="flex">
+          {availableSeasons.map(season => {
+            const active = isActive(season.id);
+            const relevant = isRelevant(season.id);
 
-          let buttonClass = "px-3 py-1 rounded transition-colors duration-200";
+            let buttonClass = "px-6 py-4 font-bold transition-colors border-b-2";
 
-          if (active) {
-            // Active state: loaded season
-            buttonClass += " bg-teal-600 text-white font-semibold";
-          } else if (relevant) {
-            // Relevant state: season is relevant but not loaded (e.g., modality active in this season)
-            buttonClass += " bg-teal-200 text-teal-900 hover:bg-teal-300 border border-teal-400";
-          } else {
-            // Inactive state: not relevant or not loaded
-            buttonClass += " bg-gray-200 text-gray-700 hover:bg-gray-300";
-          }
+            if (active) {
+              // Active state: loaded season
+              buttonClass += " border-teal-600 text-teal-600";
+            } else if (relevant) {
+              // Relevant state: season is relevant but not loaded (e.g., modality active in this season)
+              buttonClass += " border-teal-300 text-teal-500 hover:text-teal-600 hover:border-teal-400";
+            } else {
+              // Inactive state: not relevant or not loaded
+              buttonClass += " border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300";
+            }
 
-          return (
-            <button
-              key={season.id}
-              onClick={() => handleSeasonChange(season.id)}
-              disabled={isChangingSeason || active}
-              className={buttonClass}
-              title={
-                relevant && !active
-                  ? `This entity is active in ${season.name}`
-                  : undefined
-              }
-            >
-              {season.name}
-            </button>
-          );
-        })}
+            return (
+              <button
+                key={season.id}
+                onClick={() => handleSeasonChange(season.id)}
+                disabled={isChangingSeason || active}
+                className={buttonClass}
+                title={
+                  relevant && !active
+                    ? `This entity is active in ${season.name}`
+                    : undefined
+                }
+              >
+                {season.name}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
