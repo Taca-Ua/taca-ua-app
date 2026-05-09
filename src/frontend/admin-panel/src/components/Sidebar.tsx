@@ -232,7 +232,6 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      <div className="w-16 flex-shrink-0" />
     </>
   );
 }

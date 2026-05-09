@@ -19,7 +19,6 @@ class SeasonService:
         return Season(id=dto.id, name=dto.name)
 
     def list_seasons(self) -> list[Season]:
-        # Dummy implementation, replace with actual logic to fetch seasons
         season_dtos = modalities_service_client.seasons.list_seasons()
         return [self._build_season_from_dto(dto) for dto in season_dtos]
 

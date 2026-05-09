@@ -29,14 +29,14 @@ const SeasonSelector = ({
   const isActive = (seasonId: number) => seasonId === loadedSeason?.id;
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
-      <div className="border-b border-gray-200">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden ml-16">
+      <div className="border-b border-gray-200 overflow-auto">
         <div className="flex">
           {availableSeasons.map(season => {
             const active = isActive(season.id);
             const relevant = isRelevant(season.id);
 
-            let buttonClass = "px-6 py-4 font-bold transition-colors border-b-2";
+            let buttonClass = "px-6 py-4 font-bold transition-colors border-b-2 flex-shrink-0";
 
             if (active) {
               // Active state: loaded season
