@@ -6,6 +6,7 @@ import { useAuth } from '../../hooks/useAuth';
 import Button from '../../components/utils/Button';
 import { useModal } from '../../contexts/ModalContext';
 import { useSeason } from '../../contexts/SeasonContext';
+import SeasonSelector from '../../components/seasons/SeasonSelector';
 
 const Torneios = () => {
   const { isAdminGeneral } = useAuth();
@@ -25,6 +26,8 @@ const Torneios = () => {
   }, [loadedSeason?.id]);
 
   return (
+    <>
+      <SeasonSelector />
       <div className="flex-1 p-8 max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Torneios</h1>
@@ -48,6 +51,7 @@ const Torneios = () => {
           />
         </div>
       </div>
+    </>
   );
 };
 

@@ -5,6 +5,7 @@ import TeamsCreateModal from '../../components/teams/TeamsCreateModal';
 import Button from '../../components/utils/Button';
 import { useModal } from '../../contexts/ModalContext';
 import { useSeason } from '../../contexts/SeasonContext';
+import SeasonSelector from '../../components/seasons/SeasonSelector';
 
 const Equipas = () => {
   const { pushModal } = useModal();
@@ -35,6 +36,8 @@ const Equipas = () => {
   }
 
   return (
+    <>
+      <SeasonSelector />
       <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8 flex justify-between items-center">
@@ -58,6 +61,7 @@ const Equipas = () => {
           </div>
         </div>
       </div>
+    </>
   );
 };
 

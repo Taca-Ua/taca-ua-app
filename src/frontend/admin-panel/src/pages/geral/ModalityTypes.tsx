@@ -7,6 +7,7 @@ import Button from "../../components/utils/Button";
 import { useModal } from "../../contexts/ModalContext";
 import { useAuth } from "../../hooks/useAuth";
 import { useSeason } from "../../contexts/SeasonContext";
+import SeasonSelector from "../../components/seasons/SeasonSelector";
 
 const ModalityTypes = () => {
   const { notify } = useNotification();
@@ -36,6 +37,8 @@ const ModalityTypes = () => {
   const sortedModalityTypes = modalityTypes.sort((a, b) => a.name.localeCompare(b.name));
 
   return (
+    <>
+      <SeasonSelector />
       <div className="flex-1 p-8 max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Formatos de Prova</h1>
@@ -100,6 +103,7 @@ const ModalityTypes = () => {
           )}
         </div>
       </div>
+    </>
   );
 };
 
