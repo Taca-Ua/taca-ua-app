@@ -19,6 +19,11 @@ class TeamPlayerSummary(serializers.Serializer):
     student_number = serializers.CharField()
 
 
+class TeamSeasonSummary(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+
+
 # Response serializers
 class TeamListSerializer(serializers.Serializer):
     id = serializers.UUIDField()
@@ -29,6 +34,7 @@ class TeamListSerializer(serializers.Serializer):
 
 class TeamDetailSerializer(TeamListSerializer):
     players = TeamPlayerSummary(many=True)
+    season = TeamSeasonSummary()
 
 
 # Request serializers

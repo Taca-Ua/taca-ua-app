@@ -20,6 +20,10 @@ export interface TeamDetail extends TeamListItem {
     full_name: string;
     student_number: string;
   }[];
+  season: {
+    id: number;
+    name: string;
+  }
 }
 
 export interface TeamCreate {

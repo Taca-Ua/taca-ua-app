@@ -26,18 +26,27 @@ class _PlayerDTO:
 
 
 @dataclass
+class _SeasonDTO:
+    id: int
+    name: str
+
+
+@dataclass
 class TeamDTO:
     id: str
     name: str
     modality: _ModalityDTO
     course: _CourseDTO
+
+    # Optional fields for detailed view
     players: Optional[List[_PlayerDTO]] = field(default_factory=list)
+    season: Optional[_SeasonDTO] = None
 
 
 class TeamsService:
 
     def _build_team_from_modalities_response(
-        self, team_data: ModalitiesTeamDTO, include_players: bool = False
+        self, team_data: ModalitiesTeamDTO, include_details: bool = False
     ) -> TeamDTO:
 
         obj = TeamDTO(
@@ -54,7 +63,10 @@ class TeamsService:
             ),
         )
 
-        if include_players and team_data.players:
+        if not include_details:
+            return obj
+
+        if team_data.players:
             obj.players = [
                 _PlayerDTO(
                     id=player.id,
@@ -63,6 +75,12 @@ class TeamsService:
                 )
                 for player in team_data.players
             ]
+
+        if team_data.season:
+            obj.season = _SeasonDTO(
+                id=team_data.season.id,
+                name=team_data.season.name,
+            )
 
         return obj
 
@@ -83,7 +101,7 @@ class TeamsService:
     def get_team(self, team_id):
         team_answer = modalities_service_client.teams.get_team(team_id)
         return self._build_team_from_modalities_response(
-            team_answer, include_players=True
+            team_answer, include_details=True
         )
 
     def update_team(
@@ -100,7 +118,7 @@ class TeamsService:
             players_remove=players_remove,
         )
         return self._build_team_from_modalities_response(
-            team_answer, include_players=True
+            team_answer, include_details=True
         )
 
     def delete_team(self, team_id):

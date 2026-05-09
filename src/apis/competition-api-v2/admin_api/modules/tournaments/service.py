@@ -401,9 +401,9 @@ class TournamentsService:
             ).season_id
             for team_id in teams:
                 team: TeamDTO = mapper["team"][team_id]
-                if team.season_id != tournament_season_id:
+                if team.season.id != tournament_season_id:
                     raise TeamDoesNotBelongToSeasonError(
-                        f"Team with ID {team_id} belongs to season {team.season_id}, but tournament belongs to season {tournament_season_id}"
+                        f"Team with ID {team_id} belongs to season {team.season.id}, but tournament belongs to season {tournament_season_id}"
                     )
 
         tournament_dto = tournaments_service_client.add_competitors(

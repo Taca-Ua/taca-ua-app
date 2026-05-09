@@ -11,7 +11,7 @@ import { useModal } from "../../contexts/ModalContext";
 import { useNotification } from "../../contexts/NotificationProvider";
 import { useNavigate } from "react-router-dom";
 
-const TeamDetailComponent = ({
+const TeamInfoComponent = ({
   teamState
 } : {
   teamState: [TeamDetail | null, React.Dispatch<React.SetStateAction<TeamDetail | null>>]
@@ -113,6 +113,20 @@ const TeamDetailComponent = ({
           </label>
           <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
             {team.modality.name}
+          </div>
+        </div>
+
+        {/* Season */}
+        <div>
+          <label className="block text-teal-500 font-medium mb-2">
+            Temporada{" "}
+            <HelpTooltip
+              text="Temporada em que esta equipa está inscrita."
+              className="ml-1"
+            />
+          </label>
+          <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
+            {team.season.name}
           </div>
         </div>
 
@@ -226,4 +240,4 @@ const TeamDetailComponent = ({
   );
 };
 
-export default TeamDetailComponent;
+export default TeamInfoComponent;

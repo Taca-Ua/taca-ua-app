@@ -130,7 +130,7 @@ class TeamDTO:
     modality: ModalityDTO
     course: CourseDTO
     players: List[StudentDTO]
-    season_id: int
+    season: "SeasonDTO"
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -146,6 +146,9 @@ class TeamDTO:
             player if isinstance(player, StudentDTO) else StudentDTO(**player)
             for player in self.players
         ]
+
+        if not isinstance(self.season, SeasonDTO) and self.season is not None:
+            self.season = SeasonDTO(**self.season)
 
 
 @dataclass

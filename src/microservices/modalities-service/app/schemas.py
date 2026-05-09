@@ -258,7 +258,7 @@ class TeamResponse(BaseModel):
     name: str
     modality: ModalityResponse
     course: CourseResponse
-    season_id: int
+    season: Optional["SeasonResponse"] = None
     players: List[StudentResponse] = Field(default_factory=list)
     created_by: Optional[str] = None
     created_at: Optional[str] = None
