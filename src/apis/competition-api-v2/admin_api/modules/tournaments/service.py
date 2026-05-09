@@ -67,25 +67,140 @@ class TeamDoesNotBelongToSeasonError(ValueError):
 class TournamentsService:
     """Service for tournament management"""
 
+    # Helper methods to build domain objects from DTOs and to populate additional data by calling other services
+    def _populate_tournament_scoring_format(
+        self,
+        tournament: Tournament,
+        tournament_dto: TournamentDTO,
+        force_playoff_scoring_format: bool,
+    ) -> None:
+        """
+        Populate the scoring format information for a tournament based on its modality and the number of competitors, by fetching the necessary data from the modalities and ranking services.
+
+        Args:
+            tournament (Tournament): The tournament domain object to populate the scoring format for. This object will be modified in place.
+            tournament_dto (TournamentDTO): The tournament data transfer object received from the tournaments service, which contains the raw data needed to determine the scoring format.
+            force_playoff_scoring_format (bool): Whether to force the use of playoff scoring format. Needed for cases when events may not have processed the update yet.
+
+        Returns:
+            None: This method modifies the provided tournament object in place and does not return anything.
+        """
+
+        scoring_format_type = None
+        if force_playoff_scoring_format:
+            scoring_format_type = (
+                modalities_service_client.modality_types.get_playoff_modality_type()
+            )
+        else:
+            scoring_format_type = (
+                modalities_service_client.modality_types.get_modality_type(
+                    tournament_dto.scoring_format_id
+                )
+            )
+
+        scoring_format = ranking_service_client.calculate_tournament_tier(
+            tournament_id=tournament.id,
+            modality_type_id=scoring_format_type.id,
+            participant_count=len(tournament_dto.competitors),
+        )
+        tournament.scoring_format = ScoringFormat(
+            name=scoring_format_type.name,
+            rank=scoring_format.rank,
+            points=scoring_format.points,
+        )
+
+    def _populate_tournament_competitors(
+        self, tournament: Tournament, tournament_dto: TournamentDTO
+    ) -> None:
+        """
+        Populate the competitors information for a tournament based on the competitors data in the tournament DTO, by fetching the necessary data from the modalities service.
+
+        Args:
+            tournament (Tournament): The tournament domain object to populate the competitors for. This object will be modified in place.
+            tournament_dto (TournamentDTO): The tournament data transfer object received from the tournaments service, which contains the raw competitors data.
+
+        Returns:
+            None: This method modifies the provided tournament object in place and does not return anything.
+        """
+        athlete_ids = [
+            c.competitor_entity_id
+            for c in tournament_dto.competitors
+            if c.competitor_type == "athlete"
+        ]
+        team_ids = [
+            c.competitor_entity_id
+            for c in tournament_dto.competitors
+            if c.competitor_type == "team"
+        ]
+
+        athletes = (
+            modalities_service_client.students.get_students_by_ids(athlete_ids)
+            if athlete_ids
+            else {}
+        )
+        teams = (
+            modalities_service_client.teams.get_teams_by_ids(team_ids)
+            if team_ids
+            else {}
+        )
+
+        for competitor_dto in tournament_dto.competitors:
+            course_name = None
+            competitor_name = None
+
+            if competitor_dto.competitor_type == "athlete":
+                athlete = athletes.get(competitor_dto.competitor_entity_id)
+                if athlete:
+                    course_name = athlete.course.name
+                    competitor_name = athlete.full_name
+            elif competitor_dto.competitor_type == "team":
+                team = teams.get(competitor_dto.competitor_entity_id)
+                if team:
+                    course_name = team.course.name
+                    competitor_name = team.name
+
+            tournament.competitors.append(
+                Competitor(
+                    id=competitor_dto.id,
+                    name=competitor_name,
+                    course_name=course_name,
+                    entity_id=competitor_dto.competitor_entity_id,
+                )
+            )
+
+    def _populate_tournament_season(
+        self, tournament: Tournament, tournament_dto: TournamentDTO
+    ) -> None:
+        """
+        Populate the season information for a tournament based on the season data in the tournament DTO, by fetching the necessary data from the modalities service.
+
+        Args:
+            tournament (Tournament): The tournament domain object to populate the season for. This object will be modified in place.
+            tournament_dto (TournamentDTO): The tournament data transfer object received from the tournaments service, which contains the raw season data.
+
+        Returns:
+            None: This method modifies the provided tournament object in place and does not return anything.
+        """
+        season_data = modalities_service_client.seasons.get_season(
+            tournament_dto.season_id
+        )
+        tournament.season = _Season(id=season_data.id, name=season_data.name)
+
     def _build_tournament_from_dto(
         self,
         tournament_dto: TournamentDTO,
         *,
         modalities_data: dict[str, ModalityDTO] = None,
-        include_scoring_format: bool = False,
-        include_competitors: bool = False,
+        include_details: bool = False,
         force_playoff_scoring_format: bool = False,
-        include_season: bool = False,
     ) -> Tournament:
         """Helper method to build a Tournament domain object from a TournamentDTO, fetching the modality data as needed
 
         Args:
             tournament_dto (TournamentDTO): The tournament data transfer object received from the tournaments service
             modalities_data (dict[str, ModalityDTO]): A dictionary of modality data that can be used to avoid fetching modality data multiple times (to prevent N+1 problem). The keys are modality IDs and the values are ModalityDTO objects.
-            include_scoring_format (bool): Whether to include scoring format information in the constructed Tournament object.
-            include_competitors (bool): Whether to include competitor information in the constructed Tournament object.
+            include_details (bool): Whether to include detailed information in the constructed Tournament object.
             force_playoff_scoring_format (bool): Whether to force the use of playoff scoring format. Needed for cases when events may not have processed the update yet.
-            include_season (bool): Whether to include season information in the constructed Tournament object.
 
         Raises:
             ValueError: If the modality data cannot be found for the given tournament DTO
@@ -119,91 +234,21 @@ class TournamentsService:
             competitor_type=tournament_dto.competitor_type,
         )
 
-        # If requested, fetch and include the scoring format information
-        if include_scoring_format:
-
-            scoring_format_type = None
-            if force_playoff_scoring_format:
-                scoring_format_type = (
-                    modalities_service_client.modality_types.get_playoff_modality_type()
-                )
-            else:
-                scoring_format_type = (
-                    modalities_service_client.modality_types.get_modality_type(
-                        tournament_dto.scoring_format_id
-                    )
-                )
-
-            scoring_format = ranking_service_client.calculate_tournament_tier(
-                tournament_id=tournament.id,
-                modality_type_id=scoring_format_type.id,
-                participant_count=len(tournament_dto.competitors),
-            )
-            tournament.scoring_format = ScoringFormat(
-                name=scoring_format_type.name,
-                rank=scoring_format.rank,
-                points=scoring_format.points,
+        if include_details:
+            # Add scoring format of the tournament based on its modality and the number of competitors
+            self._populate_tournament_scoring_format(
+                tournament, tournament_dto, force_playoff_scoring_format
             )
 
-        # If requested, include the competitors information
-        if include_competitors:
-            # For each competitor, we need to fetch the course name based on the competitor type (athlete or team)
-            athlete_ids = [
-                c.competitor_entity_id
-                for c in tournament_dto.competitors
-                if c.competitor_type == "athlete"
-            ]
-            team_ids = [
-                c.competitor_entity_id
-                for c in tournament_dto.competitors
-                if c.competitor_type == "team"
-            ]
+            # Add competitors information to the tournament
+            self._populate_tournament_competitors(tournament, tournament_dto)
 
-            athletes = (
-                modalities_service_client.students.get_students_by_ids(athlete_ids)
-                if athlete_ids
-                else {}
-            )
-            teams = (
-                modalities_service_client.teams.get_teams_by_ids(team_ids)
-                if team_ids
-                else {}
-            )
-
-            for competitor_dto in tournament_dto.competitors:
-                course_name = None
-                competitor_name = None
-
-                if competitor_dto.competitor_type == "athlete":
-                    athlete = athletes.get(competitor_dto.competitor_entity_id)
-                    if athlete:
-                        course_name = athlete.course.name
-                        competitor_name = athlete.full_name
-                elif competitor_dto.competitor_type == "team":
-                    team = teams.get(competitor_dto.competitor_entity_id)
-                    if team:
-                        course_name = team.course.name
-                        competitor_name = team.name
-
-                tournament.competitors.append(
-                    Competitor(
-                        id=competitor_dto.id,
-                        name=competitor_name,
-                        course_name=course_name,
-                        entity_id=competitor_dto.competitor_entity_id,
-                    )
-                )
-
-        if include_season:
-            tournament.season = _Season(
-                id=tournament_dto.season_id,
-                name=modalities_service_client.seasons.get_season(
-                    tournament_dto.season_id
-                ).name,
-            )
+            # Add season information to the tournament
+            self._populate_tournament_season(tournament, tournament_dto)
 
         return tournament
 
+    # Public methods for tournament management, which will be called by the API views/controllers
     def list_tournaments(
         self, status: str = None, modality_id: str = None, season_id: int = None
     ) -> list[Tournament]:
@@ -285,9 +330,7 @@ class TournamentsService:
 
         return self._build_tournament_from_dto(
             tournament_dto,
-            include_scoring_format=True,
-            include_competitors=True,
-            include_season=True,
+            include_details=True,
         )
 
     def update_tournament(
@@ -334,13 +377,11 @@ class TournamentsService:
         return self._build_tournament_from_dto(
             tournament_dto,
             modalities_data={tournament_modality.id: tournament_modality},
-            include_scoring_format=True,
-            include_competitors=True,
+            include_details=True,
             # if is_playoff is None, it means playoff status is not being changed, so we should not force playoff scoring format
             force_playoff_scoring_format=(
                 is_playoff if is_playoff is not None else False
             ),
-            include_season=True,
         )
 
     def delete_tournament(self, tournament_id: str) -> None:
@@ -360,9 +401,7 @@ class TournamentsService:
 
         return self._build_tournament_from_dto(
             tournament_dto,
-            include_scoring_format=True,
-            include_competitors=True,
-            include_season=True,
+            include_details=True,
         )
 
     def add_competitors(
@@ -434,9 +473,7 @@ class TournamentsService:
 
         return self._build_tournament_from_dto(
             tournament_dto,
-            include_scoring_format=True,
-            include_competitors=True,
-            include_season=True,
+            include_details=True,
         )
 
     def remove_competitors(
@@ -450,9 +487,7 @@ class TournamentsService:
 
         return self._build_tournament_from_dto(
             tournament_dto,
-            include_scoring_format=True,
-            include_competitors=True,
-            include_season=True,
+            include_details=True,
         )
 
 
