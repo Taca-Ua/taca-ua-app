@@ -70,7 +70,7 @@ const TournamentCompetitorsComponent = ({
     try {
       const teams = await teamsApi.getAll({
         modality_id: tournament.modality.id,
-        season_id: tournament.season_id || undefined,
+        season_id: tournament.season?.id || undefined,
       });
       return teams.map((team) => ({
         id: team.id,

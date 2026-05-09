@@ -41,6 +41,12 @@ class Competitor:
 
 
 @dataclass
+class _Season:
+    id: int
+    name: str
+
+
+@dataclass
 class Tournament:
     id: str
     name: str
@@ -51,7 +57,7 @@ class Tournament:
 
     competitors: List[Competitor] = field(default_factory=list)
     scoring_format: ScoringFormat = None
-    season_id: int = None
+    season: _Season = None
 
 
 class TeamDoesNotBelongToSeasonError(ValueError):
@@ -69,6 +75,7 @@ class TournamentsService:
         include_scoring_format: bool = False,
         include_competitors: bool = False,
         force_playoff_scoring_format: bool = False,
+        include_season: bool = False,
     ) -> Tournament:
         """Helper method to build a Tournament domain object from a TournamentDTO, fetching the modality data as needed
 
@@ -78,6 +85,7 @@ class TournamentsService:
             include_scoring_format (bool): Whether to include scoring format information in the constructed Tournament object.
             include_competitors (bool): Whether to include competitor information in the constructed Tournament object.
             force_playoff_scoring_format (bool): Whether to force the use of playoff scoring format. Needed for cases when events may not have processed the update yet.
+            include_season (bool): Whether to include season information in the constructed Tournament object.
 
         Raises:
             ValueError: If the modality data cannot be found for the given tournament DTO
@@ -109,7 +117,6 @@ class TournamentsService:
             modality=modality,
             start_date=tournament_dto.start_date,
             competitor_type=tournament_dto.competitor_type,
-            season_id=tournament_dto.season_id,
         )
 
         # If requested, fetch and include the scoring format information
@@ -186,6 +193,14 @@ class TournamentsService:
                         entity_id=competitor_dto.competitor_entity_id,
                     )
                 )
+
+        if include_season:
+            tournament.season = _Season(
+                id=tournament_dto.season_id,
+                name=modalities_service_client.seasons.get_season(
+                    tournament_dto.season_id
+                ).name,
+            )
 
         return tournament
 
@@ -269,7 +284,10 @@ class TournamentsService:
         tournament_dto = tournaments_service_client.get_tournament(tournament_id)
 
         return self._build_tournament_from_dto(
-            tournament_dto, include_scoring_format=True, include_competitors=True
+            tournament_dto,
+            include_scoring_format=True,
+            include_competitors=True,
+            include_season=True,
         )
 
     def update_tournament(
@@ -322,6 +340,7 @@ class TournamentsService:
             force_playoff_scoring_format=(
                 is_playoff if is_playoff is not None else False
             ),
+            include_season=True,
         )
 
     def delete_tournament(self, tournament_id: str) -> None:
@@ -340,7 +359,10 @@ class TournamentsService:
         )
 
         return self._build_tournament_from_dto(
-            tournament_dto, include_scoring_format=True, include_competitors=True
+            tournament_dto,
+            include_scoring_format=True,
+            include_competitors=True,
+            include_season=True,
         )
 
     def add_competitors(
@@ -411,7 +433,10 @@ class TournamentsService:
         )
 
         return self._build_tournament_from_dto(
-            tournament_dto, include_scoring_format=True, include_competitors=True
+            tournament_dto,
+            include_scoring_format=True,
+            include_competitors=True,
+            include_season=True,
         )
 
     def remove_competitors(
@@ -424,7 +449,10 @@ class TournamentsService:
         )
 
         return self._build_tournament_from_dto(
-            tournament_dto, include_scoring_format=True, include_competitors=True
+            tournament_dto,
+            include_scoring_format=True,
+            include_competitors=True,
+            include_season=True,
         )
 
 

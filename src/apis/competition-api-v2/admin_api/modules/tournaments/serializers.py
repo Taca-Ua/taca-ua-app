@@ -32,6 +32,13 @@ class ScoringFormatSummarySerializer(serializers.Serializer):
     points = serializers.ListField(child=serializers.IntegerField())
 
 
+class TournamentSeasonSummarySerializer(serializers.Serializer):
+    """Serializer for tournament season summary"""
+
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+
+
 # Response serializers
 class TournamentCompetitorSerializer(serializers.Serializer):
     """
@@ -60,7 +67,7 @@ class TournamentDetailSerializer(TournamentListSerializer):
     competitor_type = serializers.ChoiceField(choices=COMPETITOR_TYPE_CHOICES)
     competitors = TournamentCompetitorSerializer(many=True)
     scoring_format = ScoringFormatSummarySerializer()
-    season_id = serializers.IntegerField(required=True)
+    season = TournamentSeasonSummarySerializer()
 
 
 # Request serializers

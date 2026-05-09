@@ -1163,6 +1163,18 @@ class SeasonModalitiesService(BaseService):
         season_data = self.post("/seasons", data)
         return SeasonDTO(**season_data)
 
+    def get_season(self, season_id: str) -> SeasonDTO:
+        """Get a season by ID
+
+        Args:
+            season_id (str): ID of the season
+
+        Returns:
+            SeasonDTO: SeasonDTO object representing the season
+        """
+        season_data = self.get(f"/seasons/{season_id}")
+        return SeasonDTO(**season_data)
+
     def get_current_season(self) -> SeasonDTO:
         """Get the current season
 

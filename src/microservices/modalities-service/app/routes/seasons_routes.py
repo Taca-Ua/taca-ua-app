@@ -136,3 +136,17 @@ def get_current_season_route(db: Session = Depends(get_db_session)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred",
         )
+
+
+@router.get("/seasons/{season_id}", response_model=SeasonResponse)
+def get_season_by_id(season_id: int, db: Session = Depends(get_db_session)):
+    """
+    Retrieve a specific season by its ID, including its associated modalities and modality types.
+    """
+
+    season = db.query(Season).filter(Season.id == season_id).first()
+    if not season:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Season not found"
+        )
+    return season.to_dict()
