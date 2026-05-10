@@ -127,7 +127,7 @@ services:
   competition-api:
     build:
       context: .
-      dockerfile: src/apis/competiotion-api/Dockerfile
+      dockerfile: src/apis/competition-api-v2/Dockerfile
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
