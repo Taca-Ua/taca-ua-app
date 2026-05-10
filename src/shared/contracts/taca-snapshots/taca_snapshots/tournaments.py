@@ -24,6 +24,7 @@ class TournamentSnapshotItem(SnapshotBase):
     id: str
     modality_id: str
     name: str
+    season_id: int
     scoring_format_id: Optional[str] = None
     status: Optional[str] = None
     start_date: Optional[datetime] = None
@@ -38,6 +39,7 @@ class TournamentSnapshotItem(SnapshotBase):
             "id": self.id,
             "modality_id": self.modality_id,
             "name": self.name,
+            "season_id": self.season_id,
             "scoring_format_id": self.scoring_format_id,
             "status": self.status,
             "start_date": self.start_date.isoformat() if self.start_date else None,

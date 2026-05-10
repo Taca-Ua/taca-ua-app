@@ -194,6 +194,7 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
                         tournament_id=item.id,
                         modality_id=item.modality_id,
                         scoring_format_id=item.scoring_format_id,
+                        season_id=item.season_id,
                     )
                     for item in map(
                         lambda x: tournament_snapshots.TournamentSnapshotItem(**x),

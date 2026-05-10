@@ -165,6 +165,7 @@ class Tournament(Base):
             modality_id=str(self.modality_id),
             name=self.name,
             status=self.status,
+            season_id=self.season_id,
             scoring_format_id=(
                 str(self.scoring_format_id) if self.scoring_format_id else None
             ),
