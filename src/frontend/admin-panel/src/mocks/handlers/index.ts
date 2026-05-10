@@ -3,6 +3,7 @@ import { tournamentHandlers } from './tournaments'
 import { teamHandlers } from './teams'
 import { regulationHandlers } from './regulamentos'
 import { nucleosHandlers } from './nucleos'
+import { courseHandlers } from './courses'
 
 export const handlers = [
   ...modalityHandlers,
@@ -10,4 +11,5 @@ export const handlers = [
   ...teamHandlers,
   ...regulationHandlers,
   ...nucleosHandlers,
+  ...courseHandlers,
 ]
