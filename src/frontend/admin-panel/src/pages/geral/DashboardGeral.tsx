@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { modalitiesApi } from '../../api/modalities';
-import { teamsApi } from '../../api/teams';
-import { tournamentsApi } from '../../api/tournaments';
-import { nucleosApi } from '../../api/nucleos';
 import { useAuth } from '../../hooks/useAuth';
 import { useSeason } from '../../contexts/SeasonContext';
 import Button from '../../components/utils/Button';
 import { useModal } from '../../contexts/ModalContext';
 import NewSeasonModal from '../../components/seasons/NewSeasonModal';
+import { seasonsApi, type SeasonSummary } from '../../api/seasons';
+import SeasonSelector from '../../components/seasons/SeasonSelector';
 
 function DashboardGeral() {
   const navigate = useNavigate();
@@ -17,62 +15,28 @@ function DashboardGeral() {
   const { loadedSeason } = useSeason();
   const { pushModal } = useModal();
 
-  const [stats, setStats] = useState({
-    modalities: 0,
-    courses: 0,
-    tournaments: 0,
-    activeTournaments: 0,
-    teams: 0,
-  });
+  const [seasonStatistics, setSeasonStatistics] = useState<SeasonSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        setLoading(true);
-
-        // Fetch all data in parallel
-        const [modalities, tournaments, teams, nucleos] = await Promise.all([
-          modalitiesApi.getAll({
-            season_id: loadedSeason?.id,
-          }),
-          tournamentsApi.getAll({
-            season_id: loadedSeason?.id,
-          }),
-          teamsApi.getAll(), // Get teams from all courses
-          // seasonsApi.getAll(),
-          nucleosApi.getAll(),
-        ]);
-
-        // Count active tournaments
-        const activeTournaments = tournaments.filter(t => t.status === 'active').length;
-
-        // Find current active season and draft season
-        // const active = seasons.find(s => s.status === 'active') || null;
-        // const draft = seasons.find(s => s.status === 'draft') || null;
-
-        // setCurrentSeason(active);
-        // setDraftSeason(draft);
-
-        setStats({
-          modalities: modalities.length,
-          courses: nucleos.length,
-          tournaments: tournaments.length,
-          activeTournaments,
-          teams: teams.length,
-        });
-      } catch (err) {
-        console.error('Failed to fetch dashboard stats:', err);
-      } finally {
+    if (!loadedSeason) return;
+    setLoading(true);
+    seasonsApi.getSeasonSummary(loadedSeason?.id ?? -1)
+      .then((summary) => {
+        setSeasonStatistics(summary);
+      })
+      .catch((error) => {
+        console.error('Error fetching season summary:', error);
+      })
+      .finally(() => {
         setLoading(false);
-      }
-    };
-
-    fetchStats();
+      });
   }, [loadedSeason?.id]);
 
 
   return (
+    <>
+      <SeasonSelector />
       <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-4xl font-bold mb-4 text-gray-800">Dashboard - Administrador Geral</h1>
@@ -102,48 +66,112 @@ function DashboardGeral() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              {/* Main Stats Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <button
                   type="button"
                   onClick={() => navigate('/modalidades')}
                   className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
-                  <h2 className="text-xl font-semibold mb-2 text-teal-600">Modalidades</h2>
-                  <p className="text-3xl font-bold text-gray-800">{stats.modalities}</p>
-                  <p className="text-sm text-gray-500 mt-2">Modalidades registadas</p>
+                  <h2 className="text-sm font-semibold text-teal-600 uppercase tracking-wide mb-3">Modalidades</h2>
+                  <p className="text-4xl font-bold text-gray-800 mb-1">{seasonStatistics?.active_modalities_count ?? 0}</p>
+                  <p className="text-xs text-gray-500">Ativas nesta época</p>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => navigate('/torneios')}
-                  className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  onClick={() => navigate('/cursos')}
+                  className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left w-full focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
-                  <h2 className="text-xl font-semibold mb-2 text-purple-600">Torneios</h2>
-                  <p className="text-3xl font-bold text-gray-800">{stats.tournaments}</p>
-                  <p className="text-sm text-gray-500 mt-2">Total de torneios</p>
+                  <h2 className="text-sm font-semibold text-purple-600 uppercase tracking-wide mb-3">Cursos</h2>
+                  <p className="text-4xl font-bold text-gray-800 mb-1">{seasonStatistics?.active_courses_count ?? 0}</p>
+                  <p className="text-xs text-gray-500">Ativos nesta época</p>
                 </button>
 
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                  <h2 className="text-xl font-semibold mb-2 text-orange-600">Torneios Ativos</h2>
-                  <p className="text-3xl font-bold text-gray-800">{stats.activeTournaments}</p>
-                  <p className="text-sm text-gray-500 mt-2">Em andamento</p>
+                <button
+                  type="button"
+                  onClick={() => navigate('/teams')}
+                  className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <h2 className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">Equipas</h2>
+                  <p className="text-4xl font-bold text-gray-800 mb-1">{seasonStatistics?.teams_count ?? 0}</p>
+                  <p className="text-xs text-gray-500">Total registadas</p>
+                </button>
+              </div>
+
+              {/* Tournaments Section */}
+              <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h2 className="text-lg font-bold text-gray-800 mb-4">Torneios</h2>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-lg">
+                    <p className="text-sm text-orange-700 font-semibold">Em Andamento</p>
+                    <p className="text-3xl font-bold text-orange-900 mt-2">{seasonStatistics?.tournaments_summary.ongoing ?? 0}</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg">
+                    <p className="text-sm text-green-700 font-semibold">Finalizados</p>
+                    <p className="text-3xl font-bold text-green-900 mt-2">{seasonStatistics?.tournaments_summary.finished ?? 0}</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg">
+                    <p className="text-sm text-blue-700 font-semibold">Agendados</p>
+                    <p className="text-3xl font-bold text-blue-900 mt-2">{seasonStatistics?.tournaments_summary.scheduled ?? 0}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/torneios')}
+                    className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg hover:shadow-md transition-shadow text-left focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <p className="text-sm text-purple-700 font-semibold">Total</p>
+                    <p className="text-3xl font-bold text-purple-900 mt-2">
+                      {(seasonStatistics?.tournaments_summary.ongoing ?? 0) + (seasonStatistics?.tournaments_summary.finished ?? 0) + (seasonStatistics?.tournaments_summary.scheduled ?? 0)}
+                    </p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Matches & Members Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <h2 className="text-lg font-bold text-gray-800 mb-4">Jogos</h2>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center p-3 bg-orange-50 rounded">
+                      <span className="text-sm font-medium text-gray-700">Em Andamento</span>
+                      <span className="text-2xl font-bold text-orange-600">{seasonStatistics?.matches_summary.ongoing ?? 0}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-blue-50 rounded">
+                      <span className="text-sm font-medium text-gray-700">Agendados</span>
+                      <span className="text-2xl font-bold text-blue-600">{seasonStatistics?.matches_summary.scheduled ?? 0}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-green-50 rounded">
+                      <span className="text-sm font-medium text-gray-700">Finalizados</span>
+                      <span className="text-2xl font-bold text-green-600">{seasonStatistics?.matches_summary.finished ?? 0}</span>
+                    </div>
+                  </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => navigate('/nucleos')}
-                  className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                  <h2 className="text-xl font-semibold mb-2 text-teal-600">Núcleos</h2>
-                  <p className="text-3xl font-bold text-gray-800">{stats.courses}</p>
-                  <p className="text-sm text-gray-500 mt-2">Núcleos ativos</p>
-                </button>
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <h2 className="text-lg font-bold text-gray-800 mb-4">Membros</h2>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center p-3 bg-indigo-50 rounded">
+                      <span className="text-sm font-medium text-gray-700">Atletas</span>
+                      <span className="text-2xl font-bold text-indigo-600">{seasonStatistics?.members_summary.athletes ?? 0}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-slate-50 rounded">
+                      <span className="text-sm font-medium text-gray-700">Staff</span>
+                      <span className="text-2xl font-bold text-slate-600">{seasonStatistics?.members_summary.staff ?? 0}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-gray-100 rounded">
+                      <span className="text-sm font-medium text-gray-700">Total</span>
+                      <span className="text-2xl font-bold text-gray-800">{(seasonStatistics?.members_summary.athletes ?? 0) + (seasonStatistics?.members_summary.staff ?? 0)}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
             </>
           )}
         </div>
       </div>
+    </>
   );
 }
 
