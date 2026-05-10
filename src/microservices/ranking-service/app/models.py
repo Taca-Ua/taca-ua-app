@@ -47,6 +47,7 @@ class Tournament(Base):
     __table_args__ = {"schema": "ranking"}
 
     tournament_id = Column(UUID(as_uuid=True), primary_key=True)
+    season_id = Column(Integer, nullable=False)
     modality_id = Column(UUID(as_uuid=True), nullable=False)
     scoring_format_id = Column(UUID(as_uuid=True), nullable=True)
 
@@ -81,6 +82,7 @@ class GeneralRanking(Base):
     __tablename__ = "general_rankings"
     __table_args__ = {"schema": "ranking"}
 
+    season_id = Column(Integer, primary_key=True)
     course_id = Column(UUID(as_uuid=True), primary_key=True)
     points = Column(Integer, nullable=False)
 
@@ -95,6 +97,7 @@ class ModalityRanking(Base):
     __tablename__ = "modality_rankings"
     __table_args__ = {"schema": "ranking"}
 
+    season_id = Column(Integer, primary_key=True)
     modality_id = Column(UUID(as_uuid=True), primary_key=True)
     course_id = Column(UUID(as_uuid=True), primary_key=True)
     points = Column(Integer, nullable=False)
@@ -111,6 +114,7 @@ class CourseRanking(Base):
     __tablename__ = "course_rankings"
     __table_args__ = {"schema": "ranking"}
 
+    season_id = Column(Integer, primary_key=True)
     course_id = Column(UUID(as_uuid=True), primary_key=True)
     points = Column(Integer, nullable=False)
     modality_breakdown = Column(ARRAY(Integer), nullable=False)  # Points per modality
