@@ -310,3 +310,19 @@ class SeasonResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class SeasonSummaryResponse(BaseModel):
+    id: int
+    name: str
+
+    modality_types_count: int
+    active_modalities_count: int
+    active_courses_count: int
+    teams_count: int
+
+    athletes_count: int
+    staff_count: int
+
+    class Config:
+        from_attributes = True

@@ -62,6 +62,15 @@ class TournamentDTO:
         )
 
 
+@dataclass
+class TournamentSeasonSummary:
+    tournaments_finished: int
+    tournaments_ongoing: int
+    tournaments_scheduled: int
+
+    tournaments_ids: List[UUID]  # List of tournament IDs in the season
+
+
 class TournamentsService(BaseService):
     """Service for managing tournaments via tournaments-service"""
 
@@ -252,6 +261,24 @@ class TournamentsService(BaseService):
             f"/tournaments/{tournament_id}/competitors/remove", data=data
         )
         return TournamentDTO(**tournament_data)
+
+    def get_tournaments_summary(self, season_id: int) -> TournamentSeasonSummary:
+        """
+        Get summary information for all tournaments in a season
+
+        Args:
+            season_id: Season ID
+
+        Returns:
+            Tournament season summary dictionary
+        """
+        summary_data = self.get(f"/tournaments/summary?season_id={season_id}")
+        return TournamentSeasonSummary(
+            tournaments_finished=summary_data.get("tournaments_finished", 0),
+            tournaments_ongoing=summary_data.get("tournaments_ongoing", 0),
+            tournaments_scheduled=summary_data.get("tournaments_scheduled", 0),
+            tournaments_ids=summary_data.get("tournaments_ids", []),
+        )
 
 
 # Singleton instance

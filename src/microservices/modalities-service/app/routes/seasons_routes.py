@@ -7,8 +7,8 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db_session
 from ..logger import logger
-from ..models import ModalityType, Season, SeasonModality, Team
-from ..schemas import SeasonCreate, SeasonResponse
+from ..models import ModalityType, Season, SeasonModality, Staff, Student, Team
+from ..schemas import SeasonCreate, SeasonResponse, SeasonSummaryResponse
 from ..utils import get_active_season
 
 router = APIRouter()
@@ -150,3 +150,32 @@ def get_season_by_id(season_id: int, db: Session = Depends(get_db_session)):
             status_code=status.HTTP_404_NOT_FOUND, detail="Season not found"
         )
     return season.to_dict()
+
+
+@router.get("/seasons/{season_id}/summary", response_model=SeasonSummaryResponse)
+def get_season_summary(season_id: int, db: Session = Depends(get_db_session)):
+    """
+    Retrieve summary information for a specific season by its ID.
+    """
+    season = db.query(Season).filter(Season.id == season_id).first()
+    if not season:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Season not found"
+        )
+
+    athletes_count = (
+        db.query(Student).filter(Student.is_member == True).count()  # noqa: E712
+    )
+
+    staff_count = db.query(Staff).count()
+
+    return SeasonSummaryResponse(
+        id=season.id,
+        name=season.name,
+        modality_types_count=len(season.season_modality_types),
+        active_modalities_count=len(season.season_modalities),
+        active_courses_count=len(season.season_courses),
+        teams_count=len(season.season_teams),
+        athletes_count=athletes_count,
+        staff_count=staff_count,
+    )

@@ -201,6 +201,51 @@ def create_match(
     return match.to_dict(include_details=False)
 
 
+@router.post("/matches/summary", response_model=schemas.MatchSummaryResponse)
+def get_matches_summary(
+    request_data: schemas.MatchesSummaryRequest,
+    db: Session = Depends(get_db_session),
+):
+    """Get summary information about matches, optionally filtered by tournament."""
+    tournament_ids = request_data.tournaments_ids if request_data else None
+
+    print(f"Received summary request for tournaments: {tournament_ids}", flush=True)
+
+    relevant_matches_query = (
+        db.query(Match).filter(Match.tournament_id.in_(tournament_ids))
+        if tournament_ids is not None
+        else db.query(Match)
+    )
+
+    total_matches = relevant_matches_query.count()
+    finished = relevant_matches_query.filter(
+        Match.status == MatchStatus.FINISHED
+    ).count()
+    ongoing = relevant_matches_query.filter(
+        Match.status == MatchStatus.IN_PROGRESS
+    ).count()
+    scheduled = relevant_matches_query.filter(
+        Match.status == MatchStatus.SCHEDULED
+    ).count()
+
+    logger.info(
+        "Matches summary fetched successfully",
+        extra={
+            "total_matches": total_matches,
+            "finished": finished,
+            "ongoing": ongoing,
+            "scheduled": scheduled,
+        },
+    )
+
+    return schemas.MatchSummaryResponse(
+        total_matches=total_matches,
+        finished=finished,
+        ongoing=ongoing,
+        scheduled=scheduled,
+    )
+
+
 @router.get("/matches/{match_id}", response_model=schemas.MatchResponse)
 def get_match(
     match_id: UUID,

@@ -112,6 +112,16 @@ class TournamentFinish(BaseModel):
     finished_by: UUID
 
 
+class TournamentSeasonSummary(BaseModel):
+    """Schema for tournament season summary"""
+
+    tournaments_finished: int
+    tournaments_ongoing: int
+    tournaments_scheduled: int
+
+    tournaments_ids: List[UUID]
+
+
 # ==================== Outbox Schemas ====================
 
 

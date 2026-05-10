@@ -135,3 +135,19 @@ class MatchResultUpdate(BaseModel):
     status: Optional[str] = Field(
         "finished", description="Match status after result update"
     )
+
+
+# Summary Schemas
+class MatchesSummaryRequest(BaseModel):
+    """Schema for matches summary request."""
+
+    tournaments_ids: Optional[List[UUID]] = None
+
+
+class MatchSummaryResponse(BaseModel):
+    """Schema for match summary response."""
+
+    total_matches: int
+    finished: int
+    ongoing: int
+    scheduled: int

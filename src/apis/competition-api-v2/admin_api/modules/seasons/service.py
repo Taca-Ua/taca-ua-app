@@ -4,13 +4,46 @@ Seasons management service
 
 from dataclasses import dataclass
 
+from admin_api.clients.matches_service import matches_service_client
 from admin_api.clients.modalities_service import SeasonDTO, modalities_service_client
+from admin_api.clients.tournaments_service import tournaments_service_client
 
 
 @dataclass
 class Season:
     id: int
     name: str
+
+
+@dataclass
+class SeasonSummary:
+    @dataclass
+    class _TournamentSummary:
+        finished: int
+        ongoing: int
+        scheduled: int
+
+    @dataclass
+    class _MatchesSummary:
+        finished: int
+        ongoing: int
+        scheduled: int
+
+    @dataclass
+    class _MembersSummary:
+        athletes: int
+        staff: int
+
+    id: int
+    name: str
+
+    modality_types_count: int
+    active_modalities_count: int
+    active_courses_count: int
+    teams_count: int
+    tournaments_summary: _TournamentSummary
+    matches_summary: _MatchesSummary
+    members_summary: _MembersSummary
 
 
 class SeasonService:
@@ -33,6 +66,40 @@ class SeasonService:
         if not current_season_dto:
             return None
         return self._build_season_from_dto(current_season_dto)
+
+    def get_season_summary(self, season_id: int) -> SeasonSummary | None:
+        modalities_summary_dto = modalities_service_client.seasons.get_season_summary(
+            season_id
+        )
+        tournaments_summary = tournaments_service_client.get_tournaments_summary(
+            season_id
+        )
+        matches_summary = matches_service_client.get_matches_summary(
+            tournaments_ids=tournaments_summary.tournaments_ids
+        )
+
+        return SeasonSummary(
+            id=modalities_summary_dto.id,
+            name=modalities_summary_dto.name,
+            modality_types_count=modalities_summary_dto.modality_types_count,
+            active_modalities_count=modalities_summary_dto.active_modalities_count,
+            active_courses_count=modalities_summary_dto.active_courses_count,
+            teams_count=modalities_summary_dto.teams_count,
+            members_summary=SeasonSummary._MembersSummary(
+                athletes=modalities_summary_dto.athletes_count,
+                staff=modalities_summary_dto.staff_count,
+            ),
+            tournaments_summary=SeasonSummary._TournamentSummary(
+                finished=tournaments_summary.tournaments_finished,
+                ongoing=tournaments_summary.tournaments_ongoing,
+                scheduled=tournaments_summary.tournaments_scheduled,
+            ),
+            matches_summary=SeasonSummary._MatchesSummary(
+                finished=matches_summary.finished,
+                ongoing=matches_summary.ongoing,
+                scheduled=matches_summary.scheduled,
+            ),
+        )
 
 
 seasons_service = SeasonService()

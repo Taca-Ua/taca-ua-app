@@ -62,6 +62,8 @@ class BaseService:
                 headers=headers,
                 timeout=self.timeout,
             )
+            # check payload
+            print(f"Response from {url}: {response.request.body}", flush=True)
 
             # Handle different status codes
             if response.status_code == 204:

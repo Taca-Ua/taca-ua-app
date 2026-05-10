@@ -161,6 +161,20 @@ class SeasonDTO:
 
 
 @dataclass
+class SeasonSummaryDTO:
+    id: int
+    name: str
+
+    modality_types_count: int
+    active_modalities_count: int
+    active_courses_count: int
+    teams_count: int
+
+    athletes_count: int
+    staff_count: int
+
+
+@dataclass
 class RegulationDTO:
     id: UUID
     title: str
@@ -1183,6 +1197,18 @@ class SeasonModalitiesService(BaseService):
         """
         season_data = self.get("/seasons/current")
         return SeasonDTO(**season_data)
+
+    def get_season_summary(self, season_id: str) -> SeasonSummaryDTO:
+        """Get a summary of the season, including counts of courses, modalities, teams, and students
+
+        Args:
+            season_id (str): ID of the season
+
+        Returns:
+            SeasonSummaryDTO: SeasonSummaryDTO object representing the summary of the season
+        """
+        summary_data = self.get(f"/seasons/{season_id}/summary")
+        return SeasonSummaryDTO(**summary_data)
 
 
 class ModalitiesService(BaseService):

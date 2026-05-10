@@ -38,6 +38,7 @@ from .schemas import (
     TournamentCreate,
     TournamentFinish,
     TournamentResponse,
+    TournamentSeasonSummary,
     TournamentUpdate,
 )
 
@@ -143,6 +144,28 @@ async def list_tournaments(
 
     tournaments = query.all()
     return [TournamentResponse(**t.to_dict(include_ranking=False)) for t in tournaments]
+
+
+@router.get("/tournaments/summary", response_model=TournamentSeasonSummary)
+async def get_tournament_summary(
+    season_id: int = None, db: Session = Depends(get_db_session)
+):
+    """Get summary information for all tournaments in a season"""
+
+    tournaments = db.query(Tournament)
+    if season_id:
+        tournaments = tournaments.filter(Tournament.season_id == season_id)
+
+    t_finished = tournaments.filter(Tournament.status == "finished").count()
+    t_ongoing = tournaments.filter(Tournament.status == "active").count()
+    t_scheduled = tournaments.filter(Tournament.status == "draft").count()
+
+    return TournamentSeasonSummary(
+        tournaments_finished=t_finished,
+        tournaments_ongoing=t_ongoing,
+        tournaments_scheduled=t_scheduled,
+        tournaments_ids=[t.id for t in tournaments.all()],
+    )
 
 
 @router.get("/tournaments/{tournament_id}", response_model=TournamentResponse)
