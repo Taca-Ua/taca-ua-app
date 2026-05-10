@@ -2,9 +2,9 @@ import '@testing-library/jest-dom'
 import 'whatwg-fetch'
 import { server } from './mocks/server'
 import { resetModalityHandlers } from './mocks/handlers/modalities'
+import { resetRegulationHandlers } from './mocks/handlers/regulamentos'
 
 
-// Create a simple mock for localStorage
 const localStorageMock = (function () {
   let store: Record<string, string> = {}
   return {
@@ -15,16 +15,15 @@ const localStorageMock = (function () {
   }
 })()
 
-// Assign it to the global window object
 Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
 })
 
 
-// Start MSW before all tests and close after
 beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }))
 afterEach(() => {
   resetModalityHandlers()
+  resetRegulationHandlers()
   server.resetHandlers()
 })
 afterAll(() => server.close())
