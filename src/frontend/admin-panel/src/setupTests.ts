@@ -3,6 +3,7 @@ import 'whatwg-fetch'
 import { server } from './mocks/server'
 import { resetModalityHandlers } from './mocks/handlers/modalities'
 import { resetRegulationHandlers } from './mocks/handlers/regulamentos'
+import { resetNucleosHandlers } from './mocks/handlers/nucleos'
 
 
 const localStorageMock = (function () {
@@ -24,6 +25,7 @@ beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }))
 afterEach(() => {
   resetModalityHandlers()
   resetRegulationHandlers()
+  resetNucleosHandlers()
   server.resetHandlers()
 })
 afterAll(() => server.close())
