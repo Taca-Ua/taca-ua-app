@@ -263,8 +263,10 @@ async def post_rebuild_tasks(db: Session) -> int:
     count = 0
     print("Starting post-rebuild tasks: computing rankings...", flush=True)
     try:
-        count += compute_all_rankings(db)
-        emit_ranking_computed_event(db, outbox_publisher)
+        seasons = db.query(Tournament.season_id).distinct().all()
+        for (season_id,) in seasons:
+            count += compute_all_rankings(db, season_id)
+            emit_ranking_computed_event(db, outbox_publisher, season_id)
         db.commit()
         return count  # Return the count of processed records
     except Exception as exc:

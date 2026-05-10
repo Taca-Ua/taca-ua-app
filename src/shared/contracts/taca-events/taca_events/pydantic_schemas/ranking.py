@@ -33,6 +33,7 @@ class ModalityRankingEntryData(BaseModel):
 class RankingComputedData(BaseModel):
     """Payload emitted whenever all ranking tables are recomputed."""
 
+    season_id: int
     general_ranking: List[GeneralRankingEntryData] = []
     modality_rankings: List[ModalityRankingEntryData] = []
 
