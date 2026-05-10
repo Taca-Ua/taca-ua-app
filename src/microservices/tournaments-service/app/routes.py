@@ -223,10 +223,13 @@ async def get_tournament_summary_post(
 
         stmt_tournaments_competitors = stmt_tournaments_competitors.distinct()
 
-    # Get distinct tournament IDs that match the criteria
-    filtered_tournament_ids = {
-        tc.tournament_id for tc in stmt_tournaments_competitors.all()
-    }
+        # Get distinct tournament IDs that match the criteria
+        filtered_tournament_ids = {
+            tc.tournament_id for tc in stmt_tournaments_competitors.all()
+        }
+    else:
+        # No competitor filters provided, include all tournaments (even empty ones)
+        filtered_tournament_ids = {t.id for t in stmt_tournaments.all()}
 
     # Count tournaments by status, considering only filtered tournaments
     stmt_tournaments = stmt_tournaments.filter(
