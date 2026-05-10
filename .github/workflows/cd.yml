@@ -7,13 +7,16 @@ on:
 
 jobs:
   build-and-push:
-    name: Build and Push to Docker Hub
-    runs-on: ubuntu-24.04 
+    name: Build and Push - ${{ matrix.service.name }}
+    runs-on: self-hosted
     strategy:
+      # Impede que todos os builds parem se um deles falhar
+      fail-fast: false
       matrix:
         service:
           - { path: src/apis/competition-api-v2, name: competition-api-v2 }
-    
+          # - { path: src/microservices/ranking-service, name: ranking-service }
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -36,32 +39,27 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/taca-ua-${{ matrix.service.name }}:${{ github.sha }}
             ${{ secrets.DOCKERHUB_USERNAME }}/taca-ua-${{ matrix.service.name }}:stable
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
 
   deploy:
-    name: Update VM via SSH
+    name: Deploy to Production
     needs: build-and-push
-    runs-on: ubuntu-24.04
+    runs-on: self-hosted
     steps:
-      - name: Diagnostico de Rede
-        run: |
-          echo "Testando resolucao de DNS..."
-          nslookup mednat.ieeta.pt || echo "DNS falhou"
-          echo "Testando porta 8970..."
-          nc -zv -w5 mednat.ieeta.pt 8970 || echo "Porta fechada ou inacessivel"
+      - name: Checkout code (to get docker-compose file)
+        uses: actions/checkout@v4
 
-      - name: Deploy to VM
-        uses: appleboy/ssh-action@master
-        with:
-          host: mednat.ieeta.pt
-          username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.VM_SSH_KEY }}
-          port: ${{ secrets.VM_PORT }}
-          script: |
-            cd /home/mateusrocha/app
-            # Atualiza info do deploy
-            echo "DEPLOY_SHA=${{ github.sha }}" > .deploy_info
-            # Puxa imagens e sobe containers
-            docker compose pull
-            docker compose up -d --remove-orphans
+      - name: Local Docker Compose Deploy
+        run: |
+          cd $GITHUB_WORKSPACE
+          
+          # 1. Puxar as imagens atualizadas do Docker Hub
+          docker compose pull
+          
+          # 2. Subir os serviços
+          # O --remove-orphans limpa serviços antigos que foram removidos do yaml
+          docker compose up -d --remove-orphans
+          
+          # 3. Limpeza de disco: remove imagens 'dangling' que ficaram para trás
+          docker image prune -f
