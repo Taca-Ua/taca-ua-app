@@ -7,6 +7,7 @@ import { useModal } from '../../contexts/ModalContext';
 import NewSeasonModal from '../../components/seasons/NewSeasonModal';
 import { seasonsApi, type SeasonSummary } from '../../api/seasons';
 import SeasonSelector from '../../components/seasons/SeasonSelector';
+import { useNotification } from '../../contexts/NotificationProvider';
 
 function DashboardGeral() {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ function DashboardGeral() {
   const { username } = useAuth();
   const { loadedSeason } = useSeason();
   const { pushModal } = useModal();
+  const { notify } = useNotification();
 
   const [seasonStatistics, setSeasonStatistics] = useState<SeasonSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,6 +29,7 @@ function DashboardGeral() {
       })
       .catch((error) => {
         console.error('Error fetching season summary:', error);
+        notify('Erro ao carregar estatísticas da época. Por favor, tente novamente mais tarde.', 'error');
       })
       .finally(() => {
         setLoading(false);
