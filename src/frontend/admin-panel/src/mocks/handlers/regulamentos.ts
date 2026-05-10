@@ -46,4 +46,26 @@ export const regulationHandlers = [
     regulations = regulations.filter((item) => item.id !== id)
     return new HttpResponse(null, { status: 204 })
   }),
+
+  http.put(`${API_BASE}/regulations/:id/`, async ({ params, request }) => {
+    const { id } = params
+    const target = regulations.find((item) => item.id === id)
+
+    if (!target) {
+      return new HttpResponse(null, { status: 404 })
+    }
+
+    const formData = await request.formData()
+    const title = formData.get('title')
+    const description = formData.get('description')
+
+    const updated = {
+      ...target,
+      title: typeof title === 'string' && title.trim().length > 0 ? title : target.title,
+      description: typeof description === 'string' ? description : target.description,
+    }
+
+    regulations = regulations.map((item) => (item.id === id ? updated : item))
+    return HttpResponse.json(updated)
+  }),
 ]
