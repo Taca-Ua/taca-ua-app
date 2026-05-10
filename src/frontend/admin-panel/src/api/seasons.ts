@@ -13,6 +13,33 @@ export interface SeasonCreateRequest {
   name: string;
 }
 
+export interface SeasonSummary {
+  id: number;
+  name: string;
+
+  modality_types_count: number;
+  active_modalities_count: number;
+  active_courses_count: number;
+  teams_count: number;
+
+  tournaments_summary: {
+    finished: number;
+    ongoing: number;
+    scheduled: number;
+  };
+
+  matches_summary: {
+    finished: number;
+    ongoing: number;
+    scheduled: number;
+  };
+
+  members_summary: {
+    athletes: number;
+    staff: number;
+  };
+}
+
 export const seasonsApi = {
   async getAll(): Promise<SeasonListItem[]> {
     return apiClient.get<SeasonListItem[]>('/seasons/');
@@ -24,5 +51,14 @@ export const seasonsApi = {
 
   async getCurrent(): Promise<SeasonDetail> {
     return apiClient.get<SeasonDetail>('/seasons/current/');
+  },
+
+  async getSeasonSummary(seasonId?: number): Promise<SeasonSummary> {
+    let params = {};
+    if (seasonId) {
+      params = { ...params, season_id: seasonId };
+    }
+
+    return apiClient.get<SeasonSummary>(`/seasons/summary/`, params );
   },
 };

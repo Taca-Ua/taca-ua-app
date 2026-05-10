@@ -161,6 +161,25 @@ class SeasonDTO:
 
 
 @dataclass
+class SeasonSummaryDTO:
+    id: int
+    name: str
+
+    modality_types_count: int
+    active_modalities_count: int
+    active_courses_count: int
+    teams_count: int
+
+    athletes_count: int
+    staff_count: int
+
+    # Fields when passed admin_id for filtering
+    admin_courses_ids: Optional[List[int]] = None
+    admin_teams_ids: Optional[List[int]] = None
+    admin_athletes_ids: Optional[List[str]] = None
+
+
+@dataclass
 class RegulationDTO:
     id: UUID
     title: str
@@ -1183,6 +1202,25 @@ class SeasonModalitiesService(BaseService):
         """
         season_data = self.get("/seasons/current")
         return SeasonDTO(**season_data)
+
+    def get_season_summary(
+        self, season_id: str, admin_id: str | None = None
+    ) -> SeasonSummaryDTO:
+        """Get a summary of the season, including counts of courses, modalities, teams, and students
+
+        Args:
+            season_id (str): ID of the season
+            admin_id (str | None): ID of the admin user, if applicable
+
+        Returns:
+            SeasonSummaryDTO: SeasonSummaryDTO object representing the summary of the season
+        """
+        params = {}
+        if admin_id is not None:
+            params["admin_id"] = admin_id
+
+        summary_data = self.get(f"/seasons/{season_id}/summary", params=params)
+        return SeasonSummaryDTO(**summary_data)
 
 
 class ModalitiesService(BaseService):

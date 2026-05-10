@@ -14,7 +14,12 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import SeasonCreateSerializer, SeasonListSerializer
+from .serializers import (
+    SeasonCreateSerializer,
+    SeasonListSerializer,
+    SeasonSummaryRequestSerializer,
+    SeasonSummarySerializer,
+)
 from .service import seasons_service
 
 
@@ -69,7 +74,34 @@ def current_season(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    parameters=[SeasonSummaryRequestSerializer],
+    responses=SeasonSummarySerializer,
+    description="Get summary information for a specific season",
+    tags=["Season Management"],
+)
+@api_view(["GET"])
+@require_auth
+def season_summary(request):
+    serializer = SeasonSummaryRequestSerializer(data=request.query_params)
+    serializer.is_valid(raise_exception=True)
+
+    admin_id = request.user_id if "nucleo_admin" in request.roles else None
+
+    season = seasons_service.get_season_summary(
+        season_id=serializer.validated_data.get("season_id"), admin_id=admin_id
+    )
+    if not season:
+        return Response(
+            {"detail": "Season not found."}, status=status.HTTP_404_NOT_FOUND
+        )
+
+    serializer = SeasonSummarySerializer(season)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 urlpatterns = [
     path("", SeasonListCreateView.as_view(), name="season-list"),
     path("current/", current_season, name="season-current"),
+    path("summary/", season_summary, name="season-summary"),
 ]

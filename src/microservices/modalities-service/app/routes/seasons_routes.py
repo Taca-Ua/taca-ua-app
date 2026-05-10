@@ -7,8 +7,17 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db_session
 from ..logger import logger
-from ..models import ModalityType, Season, SeasonModality, Team
-from ..schemas import SeasonCreate, SeasonResponse
+from ..models import (
+    Course,
+    ModalityType,
+    Nucleo,
+    Season,
+    SeasonModality,
+    Staff,
+    Student,
+    Team,
+)
+from ..schemas import SeasonCreate, SeasonResponse, SeasonSummaryResponse
 from ..utils import get_active_season
 
 router = APIRouter()
@@ -150,3 +159,63 @@ def get_season_by_id(season_id: int, db: Session = Depends(get_db_session)):
             status_code=status.HTTP_404_NOT_FOUND, detail="Season not found"
         )
     return season.to_dict()
+
+
+@router.get("/seasons/{season_id}/summary", response_model=SeasonSummaryResponse)
+def get_season_summary(
+    season_id: int, admin_id: str | None = None, db: Session = Depends(get_db_session)
+):
+    """
+    Retrieve summary information for a specific season by its ID.
+    """
+    season_stmt = db.query(Season).filter(Season.id == season_id)
+    if not season_stmt.first():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Season not found"
+        )
+    base_season = season_stmt.first()
+
+    # Build queries for courses, teams, and athletes, applying admin_id filter if provided
+    courses_query = (
+        db.query(Course).join(Season.season_courses).filter(Season.id == season_id)
+    )
+    teams_query = db.query(Team).filter(Team.season_id == season_id)
+    athletes_query = db.query(Student).filter(Student.is_member == True)  # noqa: E712
+    if admin_id:
+        courses_query = courses_query.join(Course.nucleo).filter(
+            Nucleo.admins_ids.any(admin_id)
+        )
+        teams_query = (
+            teams_query.join(Team.course)
+            .join(Course.nucleo)
+            .filter(Nucleo.admins_ids.any(admin_id))
+        )
+        athletes_query = (
+            athletes_query.join(Student.course)
+            .join(Course.nucleo)
+            .filter(Nucleo.admins_ids.any(admin_id))
+        )
+
+    courses_count = courses_query.count()
+    teams_count = teams_query.count()
+    athletes_count = athletes_query.count()
+    staff_count = db.query(Staff).count()
+
+    # Build response obect
+    resp_obj = SeasonSummaryResponse(
+        id=base_season.id,
+        name=base_season.name,
+        modality_types_count=len(base_season.season_modality_types),
+        active_modalities_count=len(base_season.season_modalities),
+        active_courses_count=courses_count,
+        teams_count=teams_count,
+        athletes_count=athletes_count,
+        staff_count=staff_count,
+    )
+
+    if admin_id:
+        resp_obj.admin_courses_ids = [course.id for course in courses_query.all()]
+        resp_obj.admin_teams_ids = [team.id for team in teams_query.all()]
+        resp_obj.admin_athletes_ids = [athlete.id for athlete in athletes_query.all()]
+
+    return resp_obj
