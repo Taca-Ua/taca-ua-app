@@ -112,14 +112,28 @@ class TournamentFinish(BaseModel):
     finished_by: UUID
 
 
+class TournamentSeasonSummaryRequest(BaseModel):
+    """Schema for tournament season summary request"""
+
+    season_id: int
+    teams_ids: Optional[List[UUID]] = None
+    athletes_ids: Optional[List[UUID]] = None
+
+
 class TournamentSeasonSummary(BaseModel):
     """Schema for tournament season summary"""
+
+    class _TournamentSeasonSummaryCompetitors(BaseModel):
+        tournament_id: UUID
+        competitors_ids: List[UUID]
 
     tournaments_finished: int
     tournaments_ongoing: int
     tournaments_scheduled: int
 
     tournaments_ids: List[UUID]
+
+    competitors_distribution: Optional[List[_TournamentSeasonSummaryCompetitors]] = None
 
 
 # ==================== Outbox Schemas ====================

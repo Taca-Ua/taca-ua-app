@@ -67,15 +67,27 @@ class SeasonService:
             return None
         return self._build_season_from_dto(current_season_dto)
 
-    def get_season_summary(self, season_id: int) -> SeasonSummary | None:
+    def get_season_summary(
+        self, season_id: int, admin_id: str = None
+    ) -> SeasonSummary | None:
         modalities_summary_dto = modalities_service_client.seasons.get_season_summary(
-            season_id
+            season_id, admin_id=admin_id
         )
         tournaments_summary = tournaments_service_client.get_tournaments_summary(
-            season_id
+            season_id,
+            teams_ids=modalities_summary_dto.admin_teams_ids,
+            athletes_ids=modalities_summary_dto.admin_athletes_ids,
         )
         matches_summary = matches_service_client.get_matches_summary(
-            tournaments_ids=tournaments_summary.tournaments_ids
+            tournaments_ids=tournaments_summary.tournaments_ids,
+            tournaments_distribution=(
+                {
+                    str(tc.tournament_id): [str(a_id) for a_id in tc.competitors_ids]
+                    for tc in tournaments_summary.competitors_distribution
+                }
+                if tournaments_summary.competitors_distribution
+                else None
+            ),
         )
 
         return SeasonSummary(

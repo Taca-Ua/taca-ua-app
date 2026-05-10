@@ -9,6 +9,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from taca_events.pydantic_schemas.matches import (
     LineupPlayerData,
@@ -208,15 +209,35 @@ def get_matches_summary(
 ):
     """Get summary information about matches, optionally filtered by tournament."""
     tournament_ids = request_data.tournaments_ids if request_data else None
-
-    print(f"Received summary request for tournaments: {tournament_ids}", flush=True)
-
-    relevant_matches_query = (
-        db.query(Match).filter(Match.tournament_id.in_(tournament_ids))
-        if tournament_ids is not None
-        else db.query(Match)
+    tournaments_distribution = (
+        request_data.tournaments_distribution if request_data else None
     )
 
+    relevant_matches_query = db.query(Match)
+
+    # If filtering by tournament IDs, apply filter
+    if tournament_ids is not None:
+        relevant_matches_query = relevant_matches_query.filter(
+            Match.tournament_id.in_(tournament_ids)
+        )
+
+    # If filtering by tournaments distribution, we need to join with participants and apply complex filtering
+    if tournaments_distribution is not None:
+        relevant_matches_query = relevant_matches_query.join(
+            MatchParticipant, Match.id == MatchParticipant.match_id
+        )
+
+        or_conditions = []
+        for tournament_id, competitor_ids in tournaments_distribution.items():
+            or_conditions.append(
+                (Match.tournament_id == tournament_id)
+                & (MatchParticipant.participant.in_(competitor_ids))
+            )
+        relevant_matches_query = relevant_matches_query.filter(
+            or_(*or_conditions)
+        ).distinct()
+
+    # Count matches by status
     total_matches = relevant_matches_query.count()
     finished = relevant_matches_query.filter(
         Match.status == MatchStatus.FINISHED

@@ -324,5 +324,10 @@ class SeasonSummaryResponse(BaseModel):
     athletes_count: int
     staff_count: int
 
+    # Fields when passed admin_id for filtering
+    admin_courses_ids: Optional[List[int]] = None
+    admin_teams_ids: Optional[List[int]] = None
+    admin_athletes_ids: Optional[List[str]] = None
+
     class Config:
         from_attributes = True

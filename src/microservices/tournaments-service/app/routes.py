@@ -39,6 +39,7 @@ from .schemas import (
     TournamentFinish,
     TournamentResponse,
     TournamentSeasonSummary,
+    TournamentSeasonSummaryRequest,
     TournamentUpdate,
 )
 
@@ -165,6 +166,102 @@ async def get_tournament_summary(
         tournaments_ongoing=t_ongoing,
         tournaments_scheduled=t_scheduled,
         tournaments_ids=[t.id for t in tournaments.all()],
+    )
+
+
+@router.post("/tournaments/summary", response_model=TournamentSeasonSummary)
+async def get_tournament_summary_post(
+    request: TournamentSeasonSummaryRequest, db: Session = Depends(get_db_session)
+):
+    """Get summary information for all tournaments in a season (POST version)"""
+    season_id = request.season_id
+
+    stmt_tournaments = db.query(Tournament)
+    if season_id:
+        stmt_tournaments = stmt_tournaments.filter(Tournament.season_id == season_id)
+
+    # Start with base query for competitors
+    stmt_tournaments_competitors = stmt_tournaments.join(
+        TournamentCompetitor
+    ).with_entities(
+        TournamentCompetitor.id,
+        TournamentCompetitor.tournament_id,
+        TournamentCompetitor.competitor_type,
+        TournamentCompetitor.athlete_id,
+        TournamentCompetitor.team_id,
+    )
+
+    # Apply additional filters for teams and athletes if provided
+    if request.teams_ids or request.athletes_ids:
+        tournaments_teams = None
+        tournaments_athletes = None
+
+        if request.teams_ids:
+            tournaments_teams = stmt_tournaments_competitors.filter(
+                TournamentCompetitor.competitor_type == CompetitorType.TEAM,
+                TournamentCompetitor.team_id.in_(request.teams_ids),
+            )
+
+        if request.athletes_ids:
+            tournaments_athletes = stmt_tournaments_competitors.filter(
+                TournamentCompetitor.competitor_type == CompetitorType.ATHLETE,
+                TournamentCompetitor.athlete_id.in_(request.athletes_ids),
+            )
+
+        if request.teams_ids and request.athletes_ids:
+            # If both filters are provided, we take the union of the two filtered sets
+            assert tournaments_teams is not None and tournaments_athletes is not None
+            stmt_tournaments_competitors = tournaments_teams.union(tournaments_athletes)
+        elif request.teams_ids:
+            # If only team filter is provided, use that
+            assert tournaments_teams is not None
+            stmt_tournaments_competitors = tournaments_teams
+        elif request.athletes_ids:
+            assert tournaments_athletes is not None
+            # If only athlete filter is provided, use that
+            stmt_tournaments_competitors = tournaments_athletes
+
+        stmt_tournaments_competitors = stmt_tournaments_competitors.distinct()
+
+    # Get distinct tournament IDs that match the criteria
+    filtered_tournament_ids = {
+        tc.tournament_id for tc in stmt_tournaments_competitors.all()
+    }
+
+    # Count tournaments by status, considering only filtered tournaments
+    stmt_tournaments = stmt_tournaments.filter(
+        Tournament.id.in_(filtered_tournament_ids)
+    )
+    t_finished = stmt_tournaments.filter(Tournament.status == "finished").count()
+    t_ongoing = stmt_tournaments.filter(Tournament.status == "active").count()
+    t_scheduled = stmt_tournaments.filter(Tournament.status == "draft").count()
+
+    # Build competitors distribution for each relevant tournament
+    tournament_competitors_distribution: dict[UUID, set[UUID]] = {}
+    for tc in stmt_tournaments_competitors.all():
+        tournament_id = tc.tournament_id
+
+        if tournament_id not in tournament_competitors_distribution:
+            tournament_competitors_distribution[tournament_id] = set()
+
+        tournament_competitors_distribution[tournament_id].add(tc.id)
+
+    return TournamentSeasonSummary(
+        tournaments_finished=t_finished,
+        tournaments_ongoing=t_ongoing,
+        tournaments_scheduled=t_scheduled,
+        tournaments_ids=list(filtered_tournament_ids),
+        competitors_distribution=(
+            [
+                TournamentSeasonSummary._TournamentSeasonSummaryCompetitors(
+                    tournament_id=t_id,
+                    competitors_ids=list(competitors_ids),
+                )
+                for t_id, competitors_ids in tournament_competitors_distribution.items()
+            ]
+            if tournament_competitors_distribution
+            else None
+        ),
     )
 
 

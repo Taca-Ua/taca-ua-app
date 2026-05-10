@@ -542,13 +542,16 @@ class MatchesService(BaseService):
         return MatchDTO(**match_data)
 
     def get_matches_summary(
-        self, tournaments_ids: Optional[List[UUID]] = None
+        self,
+        tournaments_ids: Optional[List[UUID]] = None,
+        tournaments_distribution: Optional[dict[UUID, List[UUID]]] = None,
     ) -> MatchesSummary:
         """
         Get summary information about matches, optionally filtered by tournament.
 
         Args:
             tournaments_ids: List of tournament UUIDs to filter by (optional)
+            tournaments_distribution: Dict mapping tournament UUIDs to lists of competitor UUIDs (optional)
 
         Returns:
             Summary data with total matches, matches by status, and optionally matches by tournament
@@ -559,7 +562,8 @@ class MatchesService(BaseService):
                 [str(id) for id in tournaments_ids]
                 if tournaments_ids is not None
                 else None
-            )
+            ),
+            "tournaments_distribution": tournaments_distribution,
         }
 
         summary_data = self.post("/matches/summary", data=data)

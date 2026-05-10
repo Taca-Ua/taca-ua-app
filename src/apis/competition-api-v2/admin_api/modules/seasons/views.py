@@ -81,7 +81,10 @@ def current_season(request):
 @api_view(["GET"])
 @require_auth
 def season_summary(request, season_id):
-    season = seasons_service.get_season_summary(season_id)
+
+    admin_id = request.user_id if "nucleo_admin" in request.roles else None
+
+    season = seasons_service.get_season_summary(season_id, admin_id=admin_id)
     if not season:
         return Response(
             {"detail": "Season not found."}, status=status.HTTP_404_NOT_FOUND

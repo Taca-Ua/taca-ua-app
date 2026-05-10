@@ -142,6 +142,9 @@ class MatchesSummaryRequest(BaseModel):
     """Schema for matches summary request."""
 
     tournaments_ids: Optional[List[UUID]] = None
+    tournaments_distribution: Optional[dict[UUID, List[UUID]]] = (
+        None  # tournament_id -> list of competitor_ids
+    )
 
 
 class MatchSummaryResponse(BaseModel):
