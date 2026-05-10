@@ -102,6 +102,7 @@ const ModalityInfoComponent = ( {
                     types.map((type) => ({ id: type.id, title: type.name })),
                   )}
                 onSelect={(type) => handleAddToSeason(type?.id)}
+                hideClearButton={true}
               />,
             )
           }
