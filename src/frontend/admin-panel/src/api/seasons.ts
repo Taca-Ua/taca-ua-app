@@ -53,7 +53,12 @@ export const seasonsApi = {
     return apiClient.get<SeasonDetail>('/seasons/current/');
   },
 
-  async getSeasonSummary(seasonId: number): Promise<SeasonSummary> {
-    return apiClient.get<SeasonSummary>(`/seasons/${seasonId}/summary/`);
+  async getSeasonSummary(seasonId?: number): Promise<SeasonSummary> {
+    let params = {};
+    if (seasonId) {
+      params = { ...params, season_id: seasonId };
+    }
+
+    return apiClient.get<SeasonSummary>(`/seasons/summary/`, params );
   },
 };

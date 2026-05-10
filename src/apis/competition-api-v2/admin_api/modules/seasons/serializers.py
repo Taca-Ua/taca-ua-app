@@ -51,3 +51,9 @@ class SeasonCreateSerializer(serializers.Serializer):
     """Serializer for creating a season"""
 
     name = serializers.CharField(max_length=100)
+
+
+class SeasonSummaryRequestSerializer(serializers.Serializer):
+    """Serializer for season summary request"""
+
+    season_id = serializers.IntegerField(required=False)

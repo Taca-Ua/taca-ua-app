@@ -68,8 +68,24 @@ class SeasonService:
         return self._build_season_from_dto(current_season_dto)
 
     def get_season_summary(
-        self, season_id: int, admin_id: str = None
+        self, season_id: int = None, admin_id: str = None
     ) -> SeasonSummary | None:
+        """Get summary information for a specific season.
+
+        Args:
+            season_id (int, optional): The ID of the season for which to retrieve summary information. Defaults to None.
+            admin_id (str, optional): The ID of the administrator. Defaults to None.
+
+        Returns:
+            SeasonSummary | None: The summary information for the specified season, or None if not found.
+        """
+
+        if season_id is None:
+            current_season_dto = modalities_service_client.seasons.get_current_season()
+            if not current_season_dto:
+                return None
+            season_id = current_season_dto.id
+
         modalities_summary_dto = modalities_service_client.seasons.get_season_summary(
             season_id, admin_id=admin_id
         )

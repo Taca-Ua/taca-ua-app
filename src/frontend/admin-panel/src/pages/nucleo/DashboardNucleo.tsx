@@ -315,24 +315,17 @@ function DashboardNucleo() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        setLoading(true);
-        const [seasonStats] = await Promise.all([
-          seasonsApi.getSeasonSummary(loadedSeason?.id || -1),
-        ]);
-
+    setLoading(true);
+    seasonsApi.getSeasonSummary(loadedSeason?.id)
+      .then(seasonStats => {
         setSeasonStatistics(seasonStats);
-
-      } catch (err) {
+      }).catch(err => {
         console.error('Failed to fetch dashboard stats:', err);
-      } finally {
+      })
+      .finally(() => {
         setLoading(false);
-      }
-    };
+      });
 
-    console.log('Mounting DashboardNucleo, fetching stats...');
-    fetchStats();
   }, [loadedSeason?.id]);
 
   if (loading) {
