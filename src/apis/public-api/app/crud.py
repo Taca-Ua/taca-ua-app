@@ -2,7 +2,7 @@
 CRUD operations for Public API.
 
 This module provides read-only operations on the materialized views
-in the public_read schema.
+in the public_read schema. All read operations include caching via Redis.
 """
 
 from typing import Optional
@@ -22,9 +22,18 @@ from taca_models import (
     TournamentStandingsView,
 )
 
-# ==================== Team Detail View Operations ====================
+from .cache import CACHE_TTL, CacheKeyGenerator, cached
+
+# ==================== Nucleo Operations ====================
 
 
+@cached(
+    cache_key="",
+    ttl=CACHE_TTL["nucleo_list"],
+    key_builder=lambda db, skip=0, limit=100: CacheKeyGenerator.nucleo_list(
+        skip, limit
+    ),
+)
 def get_nucleos(
     db: Session,
     skip: int = 0,
@@ -41,6 +50,11 @@ def get_nucleos(
     return query.offset(skip).limit(limit).all(), total
 
 
+@cached(
+    cache_key="",
+    ttl=CACHE_TTL["nucleo"],
+    key_builder=lambda db, nucleo_id: CacheKeyGenerator.nucleo(nucleo_id),
+)
 def get_nucleo_by_id(db: Session, nucleo_id: UUID) -> Optional[NucleoDetailView]:
     """
     Get a specific nucleo by ID.
@@ -58,6 +72,13 @@ def get_nucleo_by_id(db: Session, nucleo_id: UUID) -> Optional[NucleoDetailView]
 # ==================== Team Detail View Operations ====================
 
 
+@cached(
+    cache_key="",
+    ttl=CACHE_TTL["team_list"],
+    key_builder=lambda db, skip=0, limit=100, course_id=None, nucleo_id=None, modality_id=None: CacheKeyGenerator.team_list(
+        skip, limit, course_id, nucleo_id, modality_id
+    ),
+)
 def get_teams(
     db: Session,
     skip: int = 0,
@@ -99,6 +120,11 @@ def get_teams(
     return teams, total
 
 
+@cached(
+    cache_key="",
+    ttl=CACHE_TTL["team"],
+    key_builder=lambda db, team_id: CacheKeyGenerator.team(team_id),
+)
 def get_team_by_id(db: Session, team_id: UUID) -> Optional[TeamDetailView]:
     """
     Get a specific team by ID.
@@ -116,6 +142,13 @@ def get_team_by_id(db: Session, team_id: UUID) -> Optional[TeamDetailView]:
 # ==================== Student Detail View Operations ====================
 
 
+@cached(
+    cache_key="",
+    ttl=CACHE_TTL["student_list"],
+    key_builder=lambda db, skip=0, limit=100, course_id=None, nucleo_id=None, is_member=None, search=None: CacheKeyGenerator.student_list(
+        skip, limit, course_id, nucleo_id, is_member, search
+    ),
+)
 def get_students(
     db: Session,
     skip: int = 0,
@@ -167,6 +200,11 @@ def get_students(
     return students, total
 
 
+@cached(
+    cache_key="",
+    ttl=CACHE_TTL["student"],
+    key_builder=lambda db, student_id: CacheKeyGenerator.student(student_id),
+)
 def get_student_by_id(db: Session, student_id: UUID) -> Optional[StudentDetailView]:
     """
     Get a specific student by ID.
@@ -185,6 +223,13 @@ def get_student_by_id(db: Session, student_id: UUID) -> Optional[StudentDetailVi
     )
 
 
+@cached(
+    cache_key="",
+    ttl=CACHE_TTL["student"],
+    key_builder=lambda db, student_number: CacheKeyGenerator.student_by_number(
+        student_number
+    ),
+)
 def get_student_by_number(
     db: Session, student_number: str
 ) -> Optional[StudentDetailView]:
@@ -208,6 +253,13 @@ def get_student_by_number(
 # ==================== Tournament Detail View Operations ====================
 
 
+@cached(
+    cache_key="",
+    ttl=CACHE_TTL["tournament_list"],
+    key_builder=lambda db, skip=0, limit=100, modality_id=None, status=None: CacheKeyGenerator.tournament_list(
+        skip, limit, modality_id, status
+    ),
+)
 def get_tournaments(
     db: Session,
     skip: int = 0,
@@ -250,6 +302,11 @@ def get_tournaments(
     return tournaments, total
 
 
+@cached(
+    cache_key="",
+    ttl=CACHE_TTL["tournament"],
+    key_builder=lambda db, tournament_id: CacheKeyGenerator.tournament(tournament_id),
+)
 def get_tournament_by_id(
     db: Session, tournament_id: UUID
 ) -> Optional[TournamentDetailView]:
@@ -273,6 +330,13 @@ def get_tournament_by_id(
 # ==================== Match Detail View Operations ====================
 
 
+@cached(
+    cache_key="",
+    ttl=CACHE_TTL["match_list"],
+    key_builder=lambda db, skip=0, limit=100, tournament_id=None, status=None: CacheKeyGenerator.match_list(
+        skip, limit, tournament_id, status
+    ),
+)
 def get_matches(
     db: Session,
     skip: int = 0,
@@ -315,6 +379,11 @@ def get_matches(
     return matches, total
 
 
+@cached(
+    cache_key="",
+    ttl=CACHE_TTL["match"],
+    key_builder=lambda db, match_id: CacheKeyGenerator.match(match_id),
+)
 def get_match_by_id(db: Session, match_id: UUID) -> Optional[MatchDetailView]:
     """
     Get a specific match by ID.
@@ -334,6 +403,11 @@ def get_match_by_id(db: Session, match_id: UUID) -> Optional[MatchDetailView]:
 # ==================== Tournament Standings View Operations ====================
 
 
+@cached(
+    cache_key="",
+    ttl=CACHE_TTL["ranking"],
+    key_builder=lambda db, tournament_id, skip=0, limit=100: f"standings:{tournament_id}:{skip}:{limit}",
+)
 def get_tournament_standings(
     db: Session,
     tournament_id: UUID,
@@ -393,6 +467,11 @@ def get_standings_by_competitor(
 # ==================== General Ranking View Operations ====================
 
 
+@cached(
+    cache_key="",
+    ttl=CACHE_TTL["ranking"],
+    key_builder=lambda db, nucleo_id=None: f"ranking:general:{nucleo_id}",
+)
 def get_general_ranking(
     db: Session,
     nucleo_id: Optional[UUID] = None,
@@ -428,6 +507,11 @@ def get_general_ranking(
     return rankings, total
 
 
+@cached(
+    cache_key="",
+    ttl=CACHE_TTL["ranking"],
+    key_builder=lambda db, course_id: f"ranking:course:{course_id}",
+)
 def get_course_ranking(db: Session, course_id: UUID) -> Optional[GeneralRankingView]:
     """
     Get ranking information for a specific course.
@@ -449,6 +533,11 @@ def get_course_ranking(db: Session, course_id: UUID) -> Optional[GeneralRankingV
 # ==================== Regulation Operations ====================
 
 
+@cached(
+    cache_key="",
+    ttl=CACHE_TTL["regulation"],
+    key_builder=lambda db, search=None: f"regulation:list:{search}",
+)
 def get_regulations(
     db: Session,
     search: Optional[str] = None,
@@ -480,6 +569,11 @@ def get_regulations(
 # ==================== Modality Ranking View Operations ====================
 
 
+@cached(
+    cache_key="",
+    ttl=CACHE_TTL["ranking"],
+    key_builder=lambda db, modality_id=None, nucleo_id=None: f"ranking:modality:{modality_id}:{nucleo_id}",
+)
 def get_modality_ranking(
     db: Session,
     modality_id: Optional[UUID] = None,
@@ -521,6 +615,11 @@ def get_modality_ranking(
     return rankings, total
 
 
+@cached(
+    cache_key="",
+    ttl=CACHE_TTL["ranking"],
+    key_builder=lambda db, course_id: f"ranking:modality:course:{course_id}",
+)
 def get_course_modality_rankings(
     db: Session,
     course_id: UUID,

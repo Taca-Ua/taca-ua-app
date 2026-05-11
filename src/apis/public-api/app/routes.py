@@ -468,6 +468,8 @@ def get_general_ranking(
         filters={"nucleo_id": str(nucleo_id) if nucleo_id else None},
     )
 
+    print(type(rankings[0]), flush=True)
+
     return schemas.GeneralRankingList(
         items=rankings,
         total=total,
