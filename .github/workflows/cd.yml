@@ -17,6 +17,7 @@ jobs:
           - { path: src/microservices/matches-service, name: matches-service }
           - { path: src/microservices/modalities-service, name: modalities-service } 
           - { path: src/microservices/ranking-service, name: ranking-service }
+          - { path: src/microservices/read-model-updater, name: read-model-updater }
 
     steps:
       - name: Checkout code
