@@ -7,6 +7,7 @@ aggregated competition data from multiple microservices.
 
 from contextlib import asynccontextmanager
 from datetime import datetime
+from sqlalchemy import text
 
 from fastapi import Depends, FastAPI, HTTPException
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -80,7 +81,7 @@ def health_check(db: Session = Depends(get_db)):
     """
     try:
         # Test database connection
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
         logger.info("health_check", status="healthy")
         return schemas.HealthResponse(
             status="healthy",

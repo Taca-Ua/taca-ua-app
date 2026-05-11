@@ -9,7 +9,7 @@ import os
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Generator
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import Session, sessionmaker
 from taca_logging import get_logger
@@ -71,8 +71,7 @@ def check_db_connection() -> bool:
     """
     try:
         db = SessionLocal()
-        db.execute("SELECT 1")
-        db.close()
+        db.execute(text("SELECT 1"))
         logger.info("database_connection_check", status="success")
         return True
     except Exception as e:
