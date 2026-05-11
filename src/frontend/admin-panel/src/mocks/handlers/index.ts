@@ -4,6 +4,8 @@ import { teamHandlers } from './teams'
 import { regulationHandlers } from './regulamentos'
 import { nucleosHandlers } from './nucleos'
 import { courseHandlers } from './courses'
+import { athletesHandlers } from './athletes'
+import { staffHandlers } from './staff'
 
 export const handlers = [
   ...modalityHandlers,
@@ -12,4 +14,6 @@ export const handlers = [
   ...regulationHandlers,
   ...nucleosHandlers,
   ...courseHandlers,
+  ...athletesHandlers,
+  ...staffHandlers,
 ]
