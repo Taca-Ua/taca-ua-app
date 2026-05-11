@@ -15,6 +15,7 @@ jobs:
         service:
           - { path: src/apis/competition-api-v2, name: competition-api-v2 }
           - { path: src/microservices/matches-service, name: matches-service }
+          - { path: src/microservices/modalities-service, name: modalities-service } 
 
     steps:
       - name: Checkout code
