@@ -69,7 +69,7 @@ def get_redis_client() -> Optional[redis.Redis]:
                     host=REDIS_HOST,
                     port=REDIS_PORT,
                     db=REDIS_DB,
-                    max_connections=10,
+                    max_connections=100,
                 ),
             )
             # Test connection
