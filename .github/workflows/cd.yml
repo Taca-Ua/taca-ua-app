@@ -13,7 +13,7 @@ jobs:
       fail-fast: false
       matrix:
         service:
-          - { path: src/apis/competition-api-v2, name: competition-api-v2 }
+          - { path: src/apis/competition-api-v2, name: competition-api }
           - { path: src/microservices/matches-service, name: matches-service }
           - { path: src/microservices/modalities-service, name: modalities-service } 
           - { path: src/microservices/ranking-service, name: ranking-service }
@@ -46,9 +46,19 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
 
   deploy:
-    name: Deploy to Production
+    name: Deploy - ${{ matrix.service.name }}
     needs: build-and-push
     runs-on: self-hosted
+    strategy:
+      matrix:
+        # Repetimos a matrix aqui para que cada build dispare o seu próprio deploy
+        service:
+          - { name: competition-api }
+          - { name: matches-service }
+          - { name: modalities-service } 
+          - { name: ranking-service }
+          - { name: read-model-updater }
+          - { name: tournaments-service }
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -57,22 +67,22 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE
 
-          # 1. Preparar o ambiente com o .env da sua HOME
+          # 1. Preparar o ambiente
           if [ -f "$HOME/.env" ]; then
             cp "$HOME/.env" .env
-            echo ".env copiado com sucesso."
           else
             echo "ERRO: Ficheiro .env não encontrado em $HOME"
             exit 1
           fi
           
-          # 2. Puxar apenas a imagem que acabou de ser buildada
-          # Nota: O nome 'competition-api' deve ser o nome do serviço no seu docker-compose.yml
-          docker compose pull competition-api
+          # 2. Puxar a imagem específica deste serviço da matrix
+          # Usamos o nome que está no docker-compose.yml
+          docker compose pull ${{ matrix.service.name }}
           
-          # 3. Subir APENAS a competition-api e suas dependências diretas (DB, Rabbit)
-          # Usamos o nome do serviço definido no docker-compose.yml
-          docker compose up -d competition-api
+          # 3. Atualizar o serviço específico
+          # O Docker Compose vai verificar se a imagem mudou e reiniciar apenas este container
+          # Mantemos o 'minio' e 'redis' no 'up' para garantir que a infra base está sempre ligada
+          docker compose up -d ${{ matrix.service.name }} minio redis rabbitmq postgres
           
-          # 4. Limpeza de imagens antigas
+          # 4. Limpeza
           docker image prune -f
