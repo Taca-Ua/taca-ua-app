@@ -11,6 +11,7 @@ jobs:
     runs-on: self-hosted
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         service:
           # - { path: src/apis/competition-api-v2, name: competition-api }
