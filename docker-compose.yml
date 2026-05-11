@@ -133,7 +133,7 @@ services:
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
-      - DATABASE_URL=postgres://user:password@postgres:5432/taca_ua
+      - DATABASE_URL=${DATABASE_URL}
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
     depends_on:
       rabbitmq:
