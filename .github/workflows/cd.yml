@@ -19,6 +19,7 @@ jobs:
           - { path: src/microservices/ranking-service, name: ranking-service }
           - { path: src/microservices/read-model-updater, name: read-model-updater }
           - { path: src/microservices/tournaments-service, name: tournaments-service }
+          - { path: src/apis/public-api, name: public-api }
 
     steps:
       - name: Checkout code
@@ -59,6 +60,7 @@ jobs:
           - { name: ranking-service }
           - { name: read-model-updater }
           - { name: tournaments-service }
+          - { name: public-api }
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
