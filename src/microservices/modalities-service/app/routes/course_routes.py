@@ -16,7 +16,7 @@ from taca_events.pydantic_schemas.modalities import (
 
 from ..database import get_db_session
 from ..logger import logger
-from ..models import Course, Nucleo, Season, season_courses
+from ..models import Course, Nucleo, Season, Team, season_courses
 from ..outbox_publisher import outbox_publisher
 from ..schemas import (
     CourseAddToSeason,
@@ -226,7 +226,12 @@ def remove_course_from_season(
         raise HTTPException(status_code=400, detail="Course not in season")
 
     # Check if the course has teams registered in the season before removing
-    if course.teams:
+    season_course_teams = (
+        db.query(Team)
+        .filter(Team.course_id == course_id)
+        .filter(Team.season_id == data.season_id)
+    )
+    if season_course_teams.count() > 0:
         raise HTTPException(
             status_code=400,
             detail="Cannot remove course from season with registered teams",
