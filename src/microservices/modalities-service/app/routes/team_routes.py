@@ -71,6 +71,20 @@ def list_teams(
     return [team.to_dict() for team in teams]
 
 
+@router.get("/teams/admin/{admin_id}", response_model=List[UUID])
+def list_team_ids_for_admin(admin_id: str, db: Session = Depends(get_db_session)):
+    """List all team IDs that an admin has access to"""
+    teams = (
+        db.query(Team.id)
+        .join(Team.course)
+        .join(Course.nucleo)
+        .filter(Nucleo.admins_ids.any(admin_id))
+        .distinct()
+        .all()
+    )
+    return [team.id for team in teams]
+
+
 @router.post("/teams", response_model=TeamResponse, status_code=status.HTTP_201_CREATED)
 def create_team(team_data: TeamCreate, db: Session = Depends(get_db_session)):
     """Create a new team"""

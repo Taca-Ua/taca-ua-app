@@ -83,10 +83,12 @@ class MatchesService:
             list(all_player_ids)
         )
 
-        teams_ids_i_am_allowed_to_see = [
-            team.id
-            for team in modalities_service_client.teams.list_teams(admin_id=admin_id)
-        ]
+        teams_ids_i_am_allowed_to_see = set(
+            map(
+                str,
+                modalities_service_client.teams.list_teams_by_admin(admin_id=admin_id),
+            )
+        )
 
         for match_dto in matches_dto:
             matches_index[match_dto.id].lineups = []
@@ -95,19 +97,21 @@ class MatchesService:
             for lineup in match_dto.lineups:
                 lineup_players = []
 
-                participant = next(
-                    (
-                        p
-                        for p in matches_index[match_dto.id].participants
-                        if p.id == lineup.participant_id
-                    ),
-                    None,
-                )
-                if participant.entity_id not in teams_ids_i_am_allowed_to_see:
-                    matches_index[match_dto.id].lineups.append(
-                        Lineup(participant_id=lineup.participant_id, lineup=None)
+                # If admin_id is None, we can assume it's a superadmin who can see all lineups, so we skip the check
+                if admin_id is not None:
+                    participant = next(
+                        (
+                            p
+                            for p in matches_index[match_dto.id].participants
+                            if p.id == lineup.participant_id
+                        ),
+                        None,
                     )
-                    continue
+                    if participant.entity_id not in teams_ids_i_am_allowed_to_see:
+                        matches_index[match_dto.id].lineups.append(
+                            Lineup(participant_id=lineup.participant_id, lineup=None)
+                        )
+                        continue
 
                 for player in lineup.lineup:
                     player_data = players_data.get(player.player_id)

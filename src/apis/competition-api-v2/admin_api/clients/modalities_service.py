@@ -1058,6 +1058,18 @@ class TeamModalitiesService(BaseService):
         """
         self.delete(f"/teams/{team_id}")
 
+    def list_teams_by_admin(self, admin_id: str) -> List[UUID]:
+        """List all teams associated with a specific admin user ID
+
+        Args:
+            admin_id (str): Admin user ID
+
+        Returns:
+            List[UUID]: List of team IDs representing the teams associated with the admin
+        """
+        team_ids = self.get(f"/teams/admin/{admin_id}")
+        return [UUID(team_id) for team_id in team_ids]
+
 
 class RegulationsModalitiesService(BaseService):
     """Service for managing regulations via modalities-service"""
