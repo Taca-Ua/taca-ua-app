@@ -1,15 +1,10 @@
-import json
 from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse
-
 from . import crud, schemas
-from .cache import CACHE_TTL, CacheKeyGenerator, get_redis_client, json_serializer
 from .database import get_db
 from .logger import logger
 
@@ -228,14 +223,6 @@ def list_tournaments(
     - **status**: Optional filter by status (draft, active, finished, cancelled)
     """
     skip = (page - 1) * page_size
-    cache_key = CacheKeyGenerator.tournament_list(skip=skip, limit=page_size, modality_id=modality_id, status=status)
-    _rc = get_redis_client()
-    if _rc:
-        _hit = _rc.get(cache_key)
-        if _hit is not None:
-            logger.info("tournaments_listed_from_cache", page=page, page_size=page_size)
-            return JSONResponse(content=json.loads(_hit))
-
     tournaments, total = crud.get_tournaments(
         db=db,
         skip=skip,
@@ -255,18 +242,12 @@ def list_tournaments(
         },
     )
 
-    result = schemas.TournamentDetailList(
+    return schemas.TournamentDetailList(
         items=tournaments,
         total=total,
         page=page,
         page_size=page_size,
     )
-    if _rc:
-        try:
-            _rc.setex(cache_key, CACHE_TTL["tournament_list"], json.dumps(jsonable_encoder(result), default=json_serializer))
-        except Exception:
-            pass
-    return result
 
 
 @router.get(
@@ -369,14 +350,6 @@ def list_matches(
     - **status**: Optional filter by status (scheduled, in_progress, completed, finished, cancelled)
     """
     skip = (page - 1) * page_size
-    cache_key = CacheKeyGenerator.match_list(skip=skip, limit=page_size, tournament_id=tournament_id, status=status)
-    _rc = get_redis_client()
-    if _rc:
-        _hit = _rc.get(cache_key)
-        if _hit is not None:
-            logger.info("matches_listed_from_cache", page=page, page_size=page_size)
-            return JSONResponse(content=json.loads(_hit))
-
     matches, total = crud.get_matches(
         db=db,
         skip=skip,
@@ -396,18 +369,12 @@ def list_matches(
         },
     )
 
-    result = schemas.MatchDetailList(
+    return schemas.MatchDetailList(
         items=matches,
         total=total,
         page=page,
         page_size=page_size,
     )
-    if _rc:
-        try:
-            _rc.setex(cache_key, CACHE_TTL["match_list"], json.dumps(jsonable_encoder(result), default=json_serializer))
-        except Exception:
-            pass
-    return result
 
 
 @router.get(
@@ -493,14 +460,6 @@ def get_general_ranking(
 
     - **nucleo_id**: Optional filter to show ranking only for a specific nucleo
     """
-    cache_key = f"ranking:general:{nucleo_id}"
-    _rc = get_redis_client()
-    if _rc:
-        _hit = _rc.get(cache_key)
-        if _hit is not None:
-            logger.info("general_ranking_from_cache", nucleo_id=str(nucleo_id) if nucleo_id else None)
-            return JSONResponse(content=json.loads(_hit))
-
     rankings, total = crud.get_general_ranking(db=db, nucleo_id=nucleo_id)
 
     logger.info(
@@ -509,13 +468,7 @@ def get_general_ranking(
         filters={"nucleo_id": str(nucleo_id) if nucleo_id else None},
     )
 
-    result = schemas.GeneralRankingList(items=rankings, total=total)
-    if _rc:
-        try:
-            _rc.setex(cache_key, CACHE_TTL["ranking"], json.dumps(jsonable_encoder(result), default=json_serializer))
-        except Exception:
-            pass
-    return result
+    return schemas.GeneralRankingList(items=rankings, total=total)
 
 
 @router.get(
@@ -631,16 +584,6 @@ def get_modality_ranking(
     - **modality_id**: Optional filter to show ranking only for a specific modality
     - **nucleo_id**: Optional filter to show ranking only for a specific nucleo
     """
-    cache_key = f"ranking:modality:{modality_id}:{nucleo_id}"
-    _rc = get_redis_client()
-    if _rc:
-        _hit = _rc.get(cache_key)
-        if _hit is not None:
-            logger.info("modality_ranking_from_cache",
-                        modality_id=str(modality_id) if modality_id else None,
-                        nucleo_id=str(nucleo_id) if nucleo_id else None)
-            return JSONResponse(content=json.loads(_hit))
-
     rankings, total = crud.get_modality_ranking(
         db=db,
         modality_id=modality_id,
@@ -656,13 +599,7 @@ def get_modality_ranking(
         },
     )
 
-    result = schemas.ModalityRankingList(items=rankings, total=total)
-    if _rc:
-        try:
-            _rc.setex(cache_key, CACHE_TTL["ranking"], json.dumps(jsonable_encoder(result), default=json_serializer))
-        except Exception:
-            pass
-    return result
+    return schemas.ModalityRankingList(items=rankings, total=total)
 
 
 @router.get(
