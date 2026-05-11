@@ -12,16 +12,17 @@ services:
       - certbot-certs:/etc/letsencrypt:ro
     environment:
       - DOMAIN=${DOMAIN:-localhost}
-    depends_on:
-      - competition-api
-      - public-api
-      - admin-panel
-      - public-website
-      - grafana
-      - keycloak
-      - minio
-      - prometheus
-      - loki
+    # TODO: descomentar aqui depois de subir os containers 
+    # depends_on: 
+    #   - competition-api
+    #   - public-api
+    #   - admin-panel
+    #   - public-website
+    #   - grafana
+    #   - keycloak
+    #   - minio
+    #   - prometheus
+    #   - loki
     restart: unless-stopped
     networks:
       - default

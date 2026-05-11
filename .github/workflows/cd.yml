@@ -13,13 +13,14 @@ jobs:
       fail-fast: false
       matrix:
         service:
-          - { path: src/apis/competition-api-v2, name: competition-api }
-          - { path: src/microservices/matches-service, name: matches-service }
-          - { path: src/microservices/modalities-service, name: modalities-service } 
-          - { path: src/microservices/ranking-service, name: ranking-service }
-          - { path: src/microservices/read-model-updater, name: read-model-updater }
-          - { path: src/microservices/tournaments-service, name: tournaments-service }
+          # - { path: src/apis/competition-api-v2, name: competition-api }
+          # - { path: src/microservices/matches-service, name: matches-service }
+          # - { path: src/microservices/modalities-service, name: modalities-service } 
+          # - { path: src/microservices/ranking-service, name: ranking-service }
+          # - { path: src/microservices/read-model-updater, name: read-model-updater }
+          # - { path: src/microservices/tournaments-service, name: tournaments-service }
           - { path: src/apis/public-api, name: public-api }
+          - { path: src/configs/nginx, name: nginx }
 
     steps:
       - name: Checkout code
@@ -54,13 +55,15 @@ jobs:
       matrix:
         # Repetimos a matrix aqui para que cada build dispare o seu próprio deploy
         service:
-          - { name: competition-api }
-          - { name: matches-service }
-          - { name: modalities-service } 
-          - { name: ranking-service }
-          - { name: read-model-updater }
-          - { name: tournaments-service }
+          # - { name: competition-api }
+          # - { name: matches-service }
+          # - { name: modalities-service } 
+          # - { name: ranking-service }
+          # - { name: read-model-updater }
+          # - { name: tournaments-service }
           - { name: public-api }
+          - { name: nginx }
+          
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
