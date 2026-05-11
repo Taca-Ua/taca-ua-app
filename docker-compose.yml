@@ -12,6 +12,7 @@ services:
       - certbot-certs:/etc/letsencrypt:ro
     environment:
       - DOMAIN=${DOMAIN:-localhost}
+      - FRONTEND_PORT=80
     depends_on: 
       - competition-api
       - public-api
