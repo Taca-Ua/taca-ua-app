@@ -19,8 +19,10 @@ jobs:
           # - { path: src/microservices/ranking-service, name: ranking-service }
           # - { path: src/microservices/read-model-updater, name: read-model-updater }
           # - { path: src/microservices/tournaments-service, name: tournaments-service }
-          - { path: src/apis/public-api, name: public-api }
+          #- { path: src/apis/public-api, name: public-api }
           - { path: src/configs/nginx, name: nginx }
+          - { path: src/frontend/admin-panel, name: admin-panel }   # NOVO
+          - { path: src/frontend/public-website, name: public-website } # NOVO
 
     steps:
       - name: Checkout code
@@ -61,8 +63,10 @@ jobs:
           # - { name: ranking-service }
           # - { name: read-model-updater }
           # - { name: tournaments-service }
-          - { name: public-api }
+          #- { name: public-api }
           - { name: nginx }
+          - { name: admin-panel }
+          - { name: public-website }
           
     steps:
       - name: Checkout code
@@ -87,7 +91,7 @@ jobs:
           # 3. Atualizar o serviço específico
           # O Docker Compose vai verificar se a imagem mudou e reiniciar apenas este container
           # Mantemos o 'minio' e 'redis' no 'up' para garantir que a infra base está sempre ligada
-          docker compose up -d ${{ matrix.service.name }} minio redis rabbitmq postgres
+          docker compose up -d ${{ matrix.service.name }} minio redis rabbitmq postgres keycloak grafana prometheus loki
           
           # 4. Limpeza
           docker image prune -f
