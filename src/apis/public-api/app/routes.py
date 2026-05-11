@@ -494,9 +494,12 @@ def get_general_ranking(
         filters={"nucleo_id": str(nucleo_id) if nucleo_id else None},
     )
 
-    result = schemas.GeneralRankingList(items=rankings, total=total)
-    cache_set(cache_key, result, TTL_RANKINGS)
-    return result
+    print(type(rankings[0]), flush=True)
+
+    return schemas.GeneralRankingList(
+        items=rankings,
+        total=total,
+    )
 
 
 @router.get(

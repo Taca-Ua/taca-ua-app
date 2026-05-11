@@ -85,6 +85,33 @@ def check_db_connection() -> bool:
         return False
 
 
+def check_redis_connection() -> bool:
+    """
+    Check if Redis cache connection is working.
+
+    Returns:
+        bool: True if connection is successful, False otherwise
+    """
+    try:
+        from .cache import get_redis_client
+
+        client = get_redis_client()
+        if client is None:
+            logger.warning("redis_connection_check", status="disabled")
+            return True  # Caching is optional
+
+        client.ping()
+        logger.info("redis_connection_check", status="success")
+        return True
+    except Exception as e:
+        logger.error(
+            "redis_connection_check",
+            status="failed",
+            error=str(e),
+        )
+        return False
+
+
 @asynccontextmanager
 async def get_async_db() -> AsyncGenerator[AsyncSession, None]:
     """
