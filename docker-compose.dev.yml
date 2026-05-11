@@ -147,6 +147,7 @@ services:
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
       - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=redis://redis:6379/0
     depends_on:
       loki:
         condition: service_started

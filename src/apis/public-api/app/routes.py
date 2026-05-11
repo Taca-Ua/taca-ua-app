@@ -4,7 +4,11 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
+
 from . import crud, schemas
+from .cache import TTL_LISTS, TTL_RANKINGS, cache_get, cache_set
 from .database import get_db
 from .logger import logger
 
@@ -222,6 +226,12 @@ def list_tournaments(
     - **modality_id**: Optional filter by modality
     - **status**: Optional filter by status (draft, active, finished, cancelled)
     """
+    cache_key = f"tournaments:p{page}:ps{page_size}:m{modality_id}:s{status}"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        logger.info("tournaments_listed_from_cache", page=page, page_size=page_size)
+        return JSONResponse(content=cached)
+
     skip = (page - 1) * page_size
     tournaments, total = crud.get_tournaments(
         db=db,
@@ -242,12 +252,14 @@ def list_tournaments(
         },
     )
 
-    return schemas.TournamentDetailList(
+    result = schemas.TournamentDetailList(
         items=tournaments,
         total=total,
         page=page,
         page_size=page_size,
     )
+    cache_set(cache_key, result, TTL_LISTS)
+    return result
 
 
 @router.get(
@@ -349,6 +361,12 @@ def list_matches(
     - **tournament_id**: Optional filter by tournament
     - **status**: Optional filter by status (scheduled, in_progress, completed, finished, cancelled)
     """
+    cache_key = f"matches:p{page}:ps{page_size}:t{tournament_id}:s{status}"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        logger.info("matches_listed_from_cache", page=page, page_size=page_size)
+        return JSONResponse(content=cached)
+
     skip = (page - 1) * page_size
     matches, total = crud.get_matches(
         db=db,
@@ -369,12 +387,14 @@ def list_matches(
         },
     )
 
-    return schemas.MatchDetailList(
+    result = schemas.MatchDetailList(
         items=matches,
         total=total,
         page=page,
         page_size=page_size,
     )
+    cache_set(cache_key, result, TTL_LISTS)
+    return result
 
 
 @router.get(
@@ -460,6 +480,12 @@ def get_general_ranking(
 
     - **nucleo_id**: Optional filter to show ranking only for a specific nucleo
     """
+    cache_key = f"ranking:general:{nucleo_id}"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        logger.info("general_ranking_from_cache", nucleo_id=str(nucleo_id) if nucleo_id else None)
+        return JSONResponse(content=cached)
+
     rankings, total = crud.get_general_ranking(db=db, nucleo_id=nucleo_id)
 
     logger.info(
@@ -468,10 +494,9 @@ def get_general_ranking(
         filters={"nucleo_id": str(nucleo_id) if nucleo_id else None},
     )
 
-    return schemas.GeneralRankingList(
-        items=rankings,
-        total=total,
-    )
+    result = schemas.GeneralRankingList(items=rankings, total=total)
+    cache_set(cache_key, result, TTL_RANKINGS)
+    return result
 
 
 @router.get(
@@ -587,6 +612,14 @@ def get_modality_ranking(
     - **modality_id**: Optional filter to show ranking only for a specific modality
     - **nucleo_id**: Optional filter to show ranking only for a specific nucleo
     """
+    cache_key = f"ranking:modality:{modality_id}:{nucleo_id}"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        logger.info("modality_ranking_from_cache",
+                    modality_id=str(modality_id) if modality_id else None,
+                    nucleo_id=str(nucleo_id) if nucleo_id else None)
+        return JSONResponse(content=cached)
+
     rankings, total = crud.get_modality_ranking(
         db=db,
         modality_id=modality_id,
@@ -602,10 +635,9 @@ def get_modality_ranking(
         },
     )
 
-    return schemas.ModalityRankingList(
-        items=rankings,
-        total=total,
-    )
+    result = schemas.ModalityRankingList(items=rankings, total=total)
+    cache_set(cache_key, result, TTL_RANKINGS)
+    return result
 
 
 @router.get(
