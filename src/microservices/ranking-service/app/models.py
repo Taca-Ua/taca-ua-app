@@ -32,6 +32,7 @@ class ModalityType(Base):
     __tablename__ = "modality_types"
     __table_args__ = {"schema": "ranking"}
     modality_type_id = Column(UUID(as_uuid=True), primary_key=True)
+    season_id = Column(Integer, nullable=False, primary_key=True)
 
 
 class Modality(Base):

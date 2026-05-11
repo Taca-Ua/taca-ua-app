@@ -143,6 +143,7 @@ class _EscalaoData(BaseModel):
 class ModalityTypeCreatedData(BaseModel):
 
     modality_type_id: UUID
+    season_id: int
     name: str
     description: str
     escaloes: list[_EscalaoData]

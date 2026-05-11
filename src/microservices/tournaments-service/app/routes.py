@@ -326,6 +326,7 @@ async def create_tournament(
                 start_date=tournament.start_date.isoformat(),
                 status=tournament.status,
                 scoring_format_id=tournament.scoring_format_id,
+                season_id=tournament.season_id,
             ),
         )
         outbox_publisher.emit_event(
