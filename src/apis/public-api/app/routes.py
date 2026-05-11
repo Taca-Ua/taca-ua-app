@@ -1,3 +1,4 @@
+import json
 from typing import Optional
 from uuid import UUID
 
@@ -8,7 +9,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
 from . import crud, schemas
-from .cache import TTL_LISTS, TTL_RANKINGS, cache_get, cache_set
+from .cache import CACHE_TTL, CacheKeyGenerator, get_redis_client, json_serializer
 from .database import get_db
 from .logger import logger
 
@@ -226,13 +227,15 @@ def list_tournaments(
     - **modality_id**: Optional filter by modality
     - **status**: Optional filter by status (draft, active, finished, cancelled)
     """
-    cache_key = f"tournaments:p{page}:ps{page_size}:m{modality_id}:s{status}"
-    cached = cache_get(cache_key)
-    if cached is not None:
-        logger.info("tournaments_listed_from_cache", page=page, page_size=page_size)
-        return JSONResponse(content=cached)
-
     skip = (page - 1) * page_size
+    cache_key = CacheKeyGenerator.tournament_list(skip=skip, limit=page_size, modality_id=modality_id, status=status)
+    _rc = get_redis_client()
+    if _rc:
+        _hit = _rc.get(cache_key)
+        if _hit is not None:
+            logger.info("tournaments_listed_from_cache", page=page, page_size=page_size)
+            return JSONResponse(content=json.loads(_hit))
+
     tournaments, total = crud.get_tournaments(
         db=db,
         skip=skip,
@@ -258,7 +261,11 @@ def list_tournaments(
         page=page,
         page_size=page_size,
     )
-    cache_set(cache_key, result, TTL_LISTS)
+    if _rc:
+        try:
+            _rc.setex(cache_key, CACHE_TTL["tournament_list"], json.dumps(jsonable_encoder(result), default=json_serializer))
+        except Exception:
+            pass
     return result
 
 
@@ -361,13 +368,15 @@ def list_matches(
     - **tournament_id**: Optional filter by tournament
     - **status**: Optional filter by status (scheduled, in_progress, completed, finished, cancelled)
     """
-    cache_key = f"matches:p{page}:ps{page_size}:t{tournament_id}:s{status}"
-    cached = cache_get(cache_key)
-    if cached is not None:
-        logger.info("matches_listed_from_cache", page=page, page_size=page_size)
-        return JSONResponse(content=cached)
-
     skip = (page - 1) * page_size
+    cache_key = CacheKeyGenerator.match_list(skip=skip, limit=page_size, tournament_id=tournament_id, status=status)
+    _rc = get_redis_client()
+    if _rc:
+        _hit = _rc.get(cache_key)
+        if _hit is not None:
+            logger.info("matches_listed_from_cache", page=page, page_size=page_size)
+            return JSONResponse(content=json.loads(_hit))
+
     matches, total = crud.get_matches(
         db=db,
         skip=skip,
@@ -393,7 +402,11 @@ def list_matches(
         page=page,
         page_size=page_size,
     )
-    cache_set(cache_key, result, TTL_LISTS)
+    if _rc:
+        try:
+            _rc.setex(cache_key, CACHE_TTL["match_list"], json.dumps(jsonable_encoder(result), default=json_serializer))
+        except Exception:
+            pass
     return result
 
 
@@ -481,10 +494,12 @@ def get_general_ranking(
     - **nucleo_id**: Optional filter to show ranking only for a specific nucleo
     """
     cache_key = f"ranking:general:{nucleo_id}"
-    cached = cache_get(cache_key)
-    if cached is not None:
-        logger.info("general_ranking_from_cache", nucleo_id=str(nucleo_id) if nucleo_id else None)
-        return JSONResponse(content=cached)
+    _rc = get_redis_client()
+    if _rc:
+        _hit = _rc.get(cache_key)
+        if _hit is not None:
+            logger.info("general_ranking_from_cache", nucleo_id=str(nucleo_id) if nucleo_id else None)
+            return JSONResponse(content=json.loads(_hit))
 
     rankings, total = crud.get_general_ranking(db=db, nucleo_id=nucleo_id)
 
@@ -494,12 +509,13 @@ def get_general_ranking(
         filters={"nucleo_id": str(nucleo_id) if nucleo_id else None},
     )
 
-    print(type(rankings[0]), flush=True)
-
-    return schemas.GeneralRankingList(
-        items=rankings,
-        total=total,
-    )
+    result = schemas.GeneralRankingList(items=rankings, total=total)
+    if _rc:
+        try:
+            _rc.setex(cache_key, CACHE_TTL["ranking"], json.dumps(jsonable_encoder(result), default=json_serializer))
+        except Exception:
+            pass
+    return result
 
 
 @router.get(
@@ -616,12 +632,14 @@ def get_modality_ranking(
     - **nucleo_id**: Optional filter to show ranking only for a specific nucleo
     """
     cache_key = f"ranking:modality:{modality_id}:{nucleo_id}"
-    cached = cache_get(cache_key)
-    if cached is not None:
-        logger.info("modality_ranking_from_cache",
-                    modality_id=str(modality_id) if modality_id else None,
-                    nucleo_id=str(nucleo_id) if nucleo_id else None)
-        return JSONResponse(content=cached)
+    _rc = get_redis_client()
+    if _rc:
+        _hit = _rc.get(cache_key)
+        if _hit is not None:
+            logger.info("modality_ranking_from_cache",
+                        modality_id=str(modality_id) if modality_id else None,
+                        nucleo_id=str(nucleo_id) if nucleo_id else None)
+            return JSONResponse(content=json.loads(_hit))
 
     rankings, total = crud.get_modality_ranking(
         db=db,
@@ -639,7 +657,11 @@ def get_modality_ranking(
     )
 
     result = schemas.ModalityRankingList(items=rankings, total=total)
-    cache_set(cache_key, result, TTL_RANKINGS)
+    if _rc:
+        try:
+            _rc.setex(cache_key, CACHE_TTL["ranking"], json.dumps(jsonable_encoder(result), default=json_serializer))
+        except Exception:
+            pass
     return result
 
 

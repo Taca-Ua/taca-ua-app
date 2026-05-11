@@ -29,10 +29,10 @@ CACHE_TTL = {
     "student": 3600,  # 1 hour
     "student_list": 1800,  # 30 minutes
     "tournament": 3600,  # 1 hour
-    "tournament_list": 1800,  # 30 minutes
+    "tournament_list": 60,  # 1 minute
     "match": 1800,  # 30 minutes
-    "match_list": 900,  # 15 minutes
-    "ranking": 1800,  # 30 minutes
+    "match_list": 30,  # 30 seconds
+    "ranking": 60,  # 1 minute
     "modality": 3600,  # 1 hour
     "nucleo": 3600,  # 1 hour
     "nucleo_list": 7200,  # 2 hours
