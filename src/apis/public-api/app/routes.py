@@ -468,10 +468,7 @@ def get_general_ranking(
         filters={"nucleo_id": str(nucleo_id) if nucleo_id else None},
     )
 
-    return schemas.GeneralRankingList(
-        items=rankings,
-        total=total,
-    )
+    return schemas.GeneralRankingList(items=rankings, total=total)
 
 
 @router.get(
@@ -602,10 +599,7 @@ def get_modality_ranking(
         },
     )
 
-    return schemas.ModalityRankingList(
-        items=rankings,
-        total=total,
-    )
+    return schemas.ModalityRankingList(items=rankings, total=total)
 
 
 @router.get(
