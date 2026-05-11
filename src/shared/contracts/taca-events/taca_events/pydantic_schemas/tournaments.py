@@ -21,6 +21,7 @@ class TournamentCreatedData(BaseModel):
     start_date: str  # ISO 8601 date string
     status: str
     scoring_format_id: UUID
+    season_id: int
 
 
 class TournamentUpdatedData(BaseModel):

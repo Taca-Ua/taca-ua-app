@@ -37,9 +37,13 @@ def populate_modalities_types(step_by_step=False, delete_existing=False) -> int:
                     f"Failed to delete modality type: {modality_type['name']}, Status Code: {del_response.status_code}, Response: {del_response.text}"
                 )
                 raise Exception("Failed to delete modality types.")
-    elif check.status_code == 200 and len(check.json()) > 0:
-        print("Modality types already populated.")
-        return 0
+    if check.status_code != 200:
+        print(
+            f"Failed to fetch modality types, Status Code: {check.status_code}, Response: {check.text}"
+        )
+        raise Exception("Failed to fetch modality types.")
+
+    existing_modality_types = {mt["name"]: mt["id"] for mt in check.json()}
 
     modalities_types = [
         {
@@ -231,6 +235,14 @@ def populate_modalities_types(step_by_step=False, delete_existing=False) -> int:
 
     ids = {}
     for modality_type in modalities_types:
+        if modality_type["name"] in existing_modality_types:
+            print(f"Modality type already exists: {modality_type['name']}")
+            STATS["modalities_types"]["skipped"] = (
+                STATS["modalities_types"]["skipped"] + 1
+            )
+            ids[modality_type["name"]] = existing_modality_types[modality_type["name"]]
+            continue
+
         if step_by_step:
             input(
                 f"About to create modality type: {modality_type['name']}. Press Enter to continue..."

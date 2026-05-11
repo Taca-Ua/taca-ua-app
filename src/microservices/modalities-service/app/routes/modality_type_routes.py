@@ -106,6 +106,7 @@ def create_modality_type(
         event = ModalityTypeCreatedV1.create(
             aggregate_id=modality_type.id,
             data=ModalityTypeCreatedData(
+                season_id=relevant_season.id,
                 modality_type_id=modality_type.id,
                 name=modality_type.name,
                 description=modality_type.description,
