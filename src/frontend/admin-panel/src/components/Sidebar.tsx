@@ -127,28 +127,6 @@ export default function Sidebar() {
               </div>
             )}
 
-            {/* Season Selector */}
-            {availableSeasons.length > 0 && (
-              <div className="border-b border-gray-200 px-3 py-3">
-                <label className={`text-xs font-semibold text-gray-600 block mb-2 ${!isOpen && "sr-only"}`}>
-                  Época
-                </label>
-                <select
-                  value={loadedSeason?.id || ""}
-                  onChange={(e) => handleSeasonChange(Number(e.target.value))}
-                  disabled={isChangingSeason}
-                  className="w-full px-2 py-2 text-sm border border-gray-300 rounded text-gray-700 hover:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={!isOpen ? `${loadedSeason?.name}` : undefined}
-                >
-                  {availableSeasons.sort((a, b) => b.id - a.id).map((season) => (
-                    <option key={season.id} value={season.id}>
-                      {season.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
             <div className="overflow-y-auto flex-1 min-h-0">
             {
               // Render nav items in groups with separators
