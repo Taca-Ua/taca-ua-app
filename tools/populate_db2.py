@@ -9,7 +9,7 @@ HEADERS = {
 }
 
 STATS = {
-    "modalities_types": {"created": 0, "failed": 0},
+    "modalities_types": {"created": 0, "failed": 0, "skipped": 0},
     "nucleos": {"created": 0, "failed": 0, "skipped": 0},
     "courses": {"created": 0, "failed": 0, "skipped": 0},
     "modalities": {"created": 0, "failed": 0, "skipped": 0},
@@ -704,7 +704,17 @@ def populate_tournaments():
             if match.day == "":
                 iso_time = "2026-01-01T00:00:00+00:00"  # Default to midnight if no day is provided
             else:
-                iso_time = f"{match.day.split()[0]}T{match.hour.lower().replace('h', ':')}:00+00:00"
+                hour_formatted = match.hour.lower().split("h")[0].zfill(2)
+                minute_formatted = (
+                    match.hour.lower().split("h")[1].zfill(2)
+                    if "h" in match.hour.lower()
+                    else "00"
+                )
+                iso_time = (
+                    f"{match.day.split()[0]}T"
+                    + f"{hour_formatted}:{minute_formatted}"
+                    + ":00+00:00"
+                )
             local = match.local if match.local else "TBD"
 
             if (match.team1 not in tournament_teams) or (

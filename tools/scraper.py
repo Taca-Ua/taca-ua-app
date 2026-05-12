@@ -9,7 +9,7 @@ import requests as httpx
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 
-def step1():
+def step1(year: str = "25_26") -> bool:
     """Baixar os arquivos CSV de classificação, detalhe e elo para cada modalidade esportiva e salvar localmente."""
 
     """
@@ -73,7 +73,7 @@ def step1():
         os.makedirs(f"{output_dir}/{mod}/", exist_ok=True)
 
         with open(f"{output_dir}/{mod}/detalhe.csv", "wb+") as f:
-            full_url = f"{base_url}output/csv_modalidades/{mod}_25_26.csv"
+            full_url = f"{base_url}output/csv_modalidades/{mod}_{year}.csv"
             resp = httpx.get(full_url)
             if resp.status_code == 200:
                 f.write(resp.content)
@@ -272,7 +272,7 @@ def step3():
 
 
 def main():
-    succes = step1()
+    succes = step1(year="25_26")
     if not succes:
         print("Erro ao processar config_cursos.json")
         return

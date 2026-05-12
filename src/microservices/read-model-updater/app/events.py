@@ -321,6 +321,10 @@ def handle_course_deleted(event: CourseDeletedV1):
 def handle_modality_type_created(event: ModalityTypeCreatedV1):
     """Handle modality type created event."""
     modality_type_id = event.data.modality_type_id
+    modality_type_name = event.data.name
+    modality_type_description = event.data.description
+    modality_type_escaloes = event.data.escaloes
+
     logger.info(
         "event_received",
         event_type="modality_type.created",
@@ -330,15 +334,15 @@ def handle_modality_type_created(event: ModalityTypeCreatedV1):
     with get_db() as db:
         modality_type = ModalityType(
             modality_type_id=modality_type_id,
-            name=event.data.name,
-            description=event.data.description,
+            name=modality_type_name,
+            description=modality_type_description,
             escaloes=[
                 {
                     "min_participants": e.min_participants,
                     "max_participants": e.max_participants,
                     "points": e.points,
                 }
-                for e in event.data.escaloes
+                for e in modality_type_escaloes
             ],
         )
         db.add(modality_type)
@@ -348,6 +352,10 @@ def handle_modality_type_created(event: ModalityTypeCreatedV1):
 def handle_modality_type_updated(event: ModalityTypeUpdatedV1):
     """Handle modality type updated event."""
     modality_type_id = event.data.modality_type_id
+    modality_type_name = event.data.name
+    modality_type_description = event.data.description
+    modality_type_escaloes = event.data.escaloes
+
     logger.info(
         "event_received",
         event_type="modality_type.updated",
@@ -366,18 +374,18 @@ def handle_modality_type_updated(event: ModalityTypeUpdatedV1):
             )
             return
 
-        if event.data.name is not None:
-            modality_type.name = event.data.name
-        if event.data.description is not None:
-            modality_type.description = event.data.description
-        if event.data.escaloes is not None:
+        if modality_type_name is not None:
+            modality_type.name = modality_type_name
+        if modality_type_description is not None:
+            modality_type.description = modality_type_description
+        if modality_type_escaloes is not None:
             modality_type.escaloes = [
                 {
                     "min_participants": e.min_participants,
                     "max_participants": e.max_participants,
                     "points": e.points,
                 }
-                for e in event.data.escaloes
+                for e in modality_type_escaloes
             ]
 
 
@@ -856,20 +864,26 @@ def handle_match_created(event: MatchCreatedV1):
     participant_id is now the competitor_id from the tournament.
     """
     match_id = event.data.match_id
+    match_tournament_id = event.data.tournament_id
+    match_location = event.data.location
+    match_status = event.data.status
+    match_start_time = event.data.start_time
+    match_participants = event.data.participants
+
     logger.info("event_received", event_type="match.created", match_id=str(match_id))
 
     with get_db() as db:
         match = Match(
             match_id=match_id,
-            tournament_id=event.data.tournament_id,
-            location=event.data.location,
-            status=MatchStatus(event.data.status),
-            start_time=_parse_dt(event.data.start_time),
+            tournament_id=match_tournament_id,
+            location=match_location,
+            status=MatchStatus(match_status),
+            start_time=_parse_dt(match_start_time),
         )
         db.add(match)
         db.flush()
 
-        for participant_data in event.data.participants:
+        for participant_data in match_participants:
             print(
                 f"Adding participant {participant_data.participant_id} to match {match_id}",
                 flush=True,
