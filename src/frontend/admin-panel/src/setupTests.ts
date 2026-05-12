@@ -9,6 +9,7 @@ import { resetAthletesHandlers } from './mocks/handlers/athletes'
 import { resetStaffHandlers } from './mocks/handlers/staff'
 import { resetTournamentHandlers } from './mocks/handlers/tournaments'
 import { resetMatchHandlers } from './mocks/handlers/matches'
+import { resetTeamHandlers } from './mocks/handlers/teams'
 
 
 const localStorageMock = (function () {
@@ -36,6 +37,7 @@ afterEach(() => {
   resetStaffHandlers()
   resetTournamentHandlers()
   resetMatchHandlers()
+  resetTeamHandlers()
   server.resetHandlers()
 })
 afterAll(() => server.close())

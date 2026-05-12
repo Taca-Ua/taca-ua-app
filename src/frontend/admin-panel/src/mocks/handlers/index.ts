@@ -6,7 +6,6 @@ import { nucleosHandlers } from './nucleos'
 import { courseHandlers } from './courses'
 import { athletesHandlers } from './athletes'
 import { staffHandlers } from './staff'
-import { tournamentHandlers } from './tournaments'
 import { matchHandlers } from './matches'
 
 export const handlers = [
