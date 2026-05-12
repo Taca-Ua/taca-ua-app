@@ -49,7 +49,7 @@ test('add and delete comment flow', async () => {
 
   // delete the comment
   const commentBlock = screen.getByText('Nice match').closest('div')
-  const deleteBtn = within(commentBlock as Element).getByRole('button')
+  const deleteBtn = within(commentBlock as HTMLElement).getByRole('button')
   await user.click(deleteBtn)
 
   // confirm modal appears with 'Eliminar' label
