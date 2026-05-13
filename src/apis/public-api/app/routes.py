@@ -620,10 +620,7 @@ def get_modality_ranking(
         },
     )
 
-    return schemas.ModalityRankingList(
-        items=rankings,
-        total=total,
-    )
+    return schemas.ModalityRankingList(items=rankings, total=total)
 
 
 @router.get(
