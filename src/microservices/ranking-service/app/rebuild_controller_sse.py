@@ -64,6 +64,7 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
         self.db.query(Modality).delete()
         self.db.query(ModalityType).delete()
         self.db.query(Course).delete()
+        self.db.query(ModalityTypeEscalao).delete()
         self.db.flush()
         logger.info("projections_cleared")
 
@@ -145,6 +146,7 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
             self.db.bulk_save_objects(
                 [
                     ModalityType(
+                        season_id=item.season_id,
                         modality_type_id=item.id,
                     )
                     for item in transformed_items

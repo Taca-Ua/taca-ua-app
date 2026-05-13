@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { tournamentsApi, type TournamentDetail } from '../../api';
+import { type SeasonDetail, seasonsApi } from '../../api/seasons';
 
 function Tournaments() {
   const [tournaments, setTournaments] = useState<TournamentDetail[]>([]);
@@ -11,6 +12,16 @@ function Tournaments() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [seasons, setSeasons] = useState<SeasonDetail[]>([]);
+  const [seasonFilter, setSeasonFilter] = useState<number>(1);
+
+  useEffect(() => {
+    seasonsApi.getAll().then((data) => {
+      setSeasons(data.items);
+    }).catch((err) => {
+      console.error('Error fetching seasons:', err);
+    });
+  }, []);
 
   useEffect(() => {
     const fetchTournaments = async () => {
@@ -22,6 +33,7 @@ function Tournaments() {
           page,
           page_size: 20,
           ...(statusFilter !== 'all' && { status: statusFilter }),
+          ...({ season_id: seasonFilter }),
         };
 
         const data = await tournamentsApi.getAll(params);
@@ -36,7 +48,7 @@ function Tournaments() {
     };
 
     fetchTournaments();
-  }, [page, statusFilter]);
+  }, [page, statusFilter, seasonFilter]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -103,6 +115,19 @@ function Tournaments() {
               <option value="active">Ativo</option>
               <option value="finished">Finalizado</option>
               <option value="cancelled">Cancelado</option>
+            </select>
+
+            <select
+              id="season-filter"
+              value={seasonFilter}
+              onChange={(e) => setSeasonFilter(parseInt(e.target.value))}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            >
+              {seasons.map((season) => (
+                <option key={season.season_id} value={season.season_id}>
+                  {season.name}
+                </option>
+              ))}
             </select>
           </div>
 

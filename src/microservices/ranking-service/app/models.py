@@ -89,6 +89,7 @@ class GeneralRanking(Base):
 
     def to_snapshot(self) -> ranking_snapshots.GeneralRankingSnapshotItem:
         return ranking_snapshots.GeneralRankingSnapshotItem(
+            season_id=self.season_id,
             course_id=str(self.course_id),
             points=self.points,
         )
@@ -105,6 +106,7 @@ class ModalityRanking(Base):
 
     def to_snapshot(self) -> ranking_snapshots.ModalityRankingSnapshotItem:
         return ranking_snapshots.ModalityRankingSnapshotItem(
+            season_id=self.season_id,
             modality_id=str(self.modality_id),
             course_id=str(self.course_id),
             points=self.points,

@@ -37,6 +37,7 @@ CACHE_TTL = {
     "nucleo": 3600,  # 1 hour
     "nucleo_list": 7200,  # 2 hours
     "regulation": 7200,  # 2 hours
+    "season": 7200,  # 2 hours
 }
 
 # Redis client instance
@@ -166,9 +167,10 @@ class CacheKeyGenerator:
         course_id: Optional[UUID] = None,
         nucleo_id: Optional[UUID] = None,
         modality_id: Optional[UUID] = None,
+        season_id: Optional[int] = None,
     ) -> str:
         """Cache key for team list with filters."""
-        filters = f"course={course_id}:nucleo={nucleo_id}:modality={modality_id}"
+        filters = f"course={course_id}:nucleo={nucleo_id}:modality={modality_id}:season={season_id}"
         return f"team:list:{skip}:{limit}:{filters}"
 
     @staticmethod
@@ -207,9 +209,10 @@ class CacheKeyGenerator:
         limit: int = 50,
         modality_id: Optional[UUID] = None,
         status: Optional[str] = None,
+        season_id: Optional[int] = None,
     ) -> str:
         """Cache key for tournament list with filters."""
-        filters = f"modality={modality_id}:status={status}"
+        filters = f"modality={modality_id}:status={status}:season={season_id}"
         return f"tournament:list:{skip}:{limit}:{filters}"
 
     @staticmethod

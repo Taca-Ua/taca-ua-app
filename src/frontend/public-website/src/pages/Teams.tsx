@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { teamsApi, type TeamDetail } from '../api';
+import { type SeasonDetail, seasonsApi } from '../api/seasons';
 
 function Teams() {
   const [teams, setTeams] = useState<TeamDetail[]>([]);
@@ -10,6 +11,23 @@ function Teams() {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [seasons, setSeasons] = useState<SeasonDetail[]>([]);
+  const [seasonFilter, setSeasonFilter] = useState<number>(1); // Default season ID
+
+  useEffect(() => {
+    seasonsApi
+      .getAll()
+      .then((data) => {
+        setSeasons(data.items);
+        if (data.items.length > 0) {
+          setSeasonFilter(data.items[0].season_id); // Set default season filter to the first season
+        }
+      })
+      .catch((err) => {
+        console.error('Error fetching seasons:', err);
+        setError('Erro ao carregar épocas. Por favor, tente novamente.');
+      });
+  }, []);
 
   useEffect(() => {
     const fetchTeams = async () => {
@@ -20,6 +38,7 @@ function Teams() {
         const params = {
           page,
           page_size: 20,
+          season_id: seasonFilter, // Filter teams by selected season
         };
 
         const data = await teamsApi.getAll(params);
@@ -34,7 +53,7 @@ function Teams() {
     };
 
     fetchTeams();
-  }, [page]);
+  }, [page, seasonFilter]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -50,6 +69,21 @@ function Teams() {
             <p className="text-lg text-gray-600">
               Veja todas as equipas participantes da Taça UA
             </p>
+          </div>
+
+          <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <select
+              id="season-filter"
+              value={seasonFilter}
+              onChange={(e) => setSeasonFilter(parseInt(e.target.value))}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            >
+              {seasons.map((season) => (
+                <option key={season.season_id} value={season.season_id}>
+                  {season.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Error Message */}

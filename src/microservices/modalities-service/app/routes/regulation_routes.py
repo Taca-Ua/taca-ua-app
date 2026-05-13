@@ -56,6 +56,7 @@ def create_regulation_internal(
                 title=new_reg.title,
                 description=new_reg.description,
                 file_url=new_reg.file_url,
+                season_id=new_reg.season_id,
             ),
         )
         outbox_publisher.emit_event(

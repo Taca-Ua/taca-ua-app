@@ -25,6 +25,7 @@ from .models import (
     ModalityType,
     Nucleo,
     Regulation,
+    Season,
     Staff,
     Student,
     Team,
@@ -74,6 +75,7 @@ def get_snapshot(
         staff = db.query(Staff).offset(offset).limit(limit).all()
         teams = db.query(Team).offset(offset).limit(limit).all()
         regulations = db.query(Regulation).offset(offset).limit(limit).all()
+        seasons = db.query(Season).offset(offset).limit(limit).all()
 
         # Build typed DTOs
         nucleo_dtos = [n.to_snapshot() for n in nucleos]
@@ -92,6 +94,8 @@ def get_snapshot(
 
         regulation_dtos = [r.to_snapshot() for r in regulations]
 
+        season_dtos = [s.to_snapshot() for s in seasons]
+
         snapshot = ModalitiesSnapshotResponse(
             nucleos=nucleo_dtos,
             courses=course_dtos,
@@ -101,6 +105,7 @@ def get_snapshot(
             staff=staff_dtos,
             teams=team_dtos,
             regulations=regulation_dtos,
+            seasons=season_dtos,
         )
 
         logger.info(
@@ -115,6 +120,7 @@ def get_snapshot(
             teams_count=len(team_dtos),
             team_players_count=0,  # team_player_dtos is not defined
             regulations_count=len(regulation_dtos),
+            seasons_count=len(season_dtos),
         )
 
         return snapshot
@@ -172,6 +178,7 @@ async def stream_snapshot(
             team_count = db.query(Team).count()
             team_player_count = db.query(team_players).count()
             regulation_count = db.query(Regulation).count()
+            season_count = db.query(Season).count()
 
             total_count = (
                 nucleo_count
@@ -183,6 +190,7 @@ async def stream_snapshot(
                 + team_count
                 + team_player_count
                 + regulation_count
+                + season_count
             )
 
             # Emit metadata
@@ -293,6 +301,19 @@ async def stream_snapshot(
             if batch:
                 yield f"data: {json.dumps({'type': 'batch', 'items': batch, 'category': 'regulations'})}\n\n"
                 records_emitted += len(batch)
+
+            # Stream seasons
+            for s in db.query(Season).all():
+                batch.append(s.to_snapshot().to_dict())
+                if len(batch) >= batch_size:
+                    yield f"data: {json.dumps({'type': 'batch', 'items': batch, 'category': 'seasons'})}\n\n"
+                    records_emitted += len(batch)
+                    batch.clear()
+
+            if batch:
+                yield f"data: {json.dumps({'type': 'batch', 'items': batch, 'category': 'seasons'})}\n\n"
+                records_emitted += len(batch)
+                batch.clear()
 
             # Emit completion
             yield f"data: {json.dumps({'type': 'complete', 'records': records_emitted})}\n\n"

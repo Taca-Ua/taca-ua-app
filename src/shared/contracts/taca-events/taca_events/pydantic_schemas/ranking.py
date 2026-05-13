@@ -17,6 +17,7 @@ from .base import EventSchema
 class GeneralRankingEntryData(BaseModel):
     """Points earned by a single course across all modalities."""
 
+    season_id: int
     course_id: UUID
     points: int
     tournaments_participated: int = 0
@@ -25,6 +26,7 @@ class GeneralRankingEntryData(BaseModel):
 class ModalityRankingEntryData(BaseModel):
     """Points earned by a single course within a specific modality."""
 
+    season_id: int
     modality_id: UUID
     course_id: UUID
     points: int

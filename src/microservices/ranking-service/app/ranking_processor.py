@@ -49,7 +49,15 @@ def _find_escalao(
     escaloes: List[ModalityTypeEscalao], participant_count: int
 ) -> Optional[ModalityTypeEscalao]:
     """Return the escalao whose participant range covers *participant_count*."""
+    print(
+        f"Finding escalao for participant count {participant_count} among {len(escaloes)} candidates",
+        flush=True,
+    )
     for escalao in escaloes:
+        print(
+            f"Checking escalao with range [{escalao.min_participants}, {escalao.max_participants}] against participant count {participant_count}",
+            flush=True,
+        )
         if (
             escalao.min_participants is not None
             and participant_count < escalao.min_participants
@@ -131,6 +139,7 @@ def compute_all_rankings(db: Session, season_id: int) -> int:
     for modality in modalities:
         tournaments: List[Tournament] = (
             db.query(Tournament)
+            .filter(Tournament.season_id == season_id)
             .filter(Tournament.modality_id == modality.modality_id)
             .all()
         )
@@ -311,6 +320,7 @@ def emit_ranking_computed_event(db: Session, publisher, season_id: int) -> None:
 
     general_data = [
         GeneralRankingEntryData(
+            season_id=r.season_id,
             course_id=r.course_id,
             points=r.points,
             tournaments_participated=tournaments_by_course.get(r.course_id, 0),
@@ -319,6 +329,7 @@ def emit_ranking_computed_event(db: Session, publisher, season_id: int) -> None:
     ]
     modality_data = [
         ModalityRankingEntryData(
+            season_id=r.season_id,
             modality_id=r.modality_id,
             course_id=r.course_id,
             points=r.points,

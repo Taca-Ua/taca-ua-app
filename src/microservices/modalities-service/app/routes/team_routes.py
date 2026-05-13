@@ -146,12 +146,13 @@ def create_team(team_data: TeamCreate, db: Session = Depends(get_db_session)):
             name=team.name,
             modality_id=team.modality_id,
             course_id=team.course_id,
+            season_id=team.season_id,
         ),
     )
     outbox_publisher.emit_event(
         db=db,
         event_type=event.event_type(),
-        aggregate_type="team",
+        aggregate_type=event.aggregate_type(),
         aggregate_id=team.id,
         data=event.to_data_dict(),
     )

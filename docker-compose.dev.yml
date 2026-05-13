@@ -43,8 +43,8 @@ services:
       POSTGRES_DB: taca_ua
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    # ports:
-    #   - "5432:5432"
+    ports:
+      - "5432:5432"
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-user}", "-d", "taca_ua"]
       interval: 10s
@@ -150,7 +150,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_DB=0
-      - CACHE_ENABLED=true
+      - CACHE_ENABLED=false
     depends_on:
       loki:
         condition: service_started
