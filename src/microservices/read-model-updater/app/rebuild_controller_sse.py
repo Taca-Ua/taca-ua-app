@@ -295,6 +295,7 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
                         "modality_id": item.modality_id,
                         "course_id": item.course_id,
                         "name": item.name,
+                        "season_id": item.season_id,
                         "created_at": item.created_at,
                         "updated_at": item.updated_at,
                     }

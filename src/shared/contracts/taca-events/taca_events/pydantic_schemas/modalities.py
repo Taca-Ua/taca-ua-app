@@ -383,6 +383,7 @@ class TeamCreatedData(BaseModel):
     name: str
     modality_id: UUID
     course_id: UUID
+    season_id: int
 
 
 class TeamUpdatedData(BaseModel):

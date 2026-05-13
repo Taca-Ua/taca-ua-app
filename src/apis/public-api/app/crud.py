@@ -76,8 +76,8 @@ def get_nucleo_by_id(db: Session, nucleo_id: UUID) -> Optional[NucleoDetailView]
 @cached(
     cache_key="",
     ttl=CACHE_TTL["team_list"],
-    key_builder=lambda db, skip=0, limit=100, course_id=None, nucleo_id=None, modality_id=None: CacheKeyGenerator.team_list(
-        skip, limit, course_id, nucleo_id, modality_id
+    key_builder=lambda db, skip=0, limit=100, course_id=None, nucleo_id=None, modality_id=None, season_id=None: CacheKeyGenerator.team_list(
+        skip, limit, course_id, nucleo_id, modality_id, season_id
     ),
 )
 def get_teams(
@@ -87,6 +87,7 @@ def get_teams(
     course_id: Optional[UUID] = None,
     nucleo_id: Optional[UUID] = None,
     modality_id: Optional[UUID] = None,
+    season_id: Optional[int] = None,
 ) -> tuple[list[TeamDetailView], int]:
     """
     Get list of teams with pagination and optional filters.
@@ -98,7 +99,7 @@ def get_teams(
         course_id: Filter by course ID
         nucleo_id: Filter by nucleo ID
         modality_id: Filter by modality ID
-
+        season_id: Filter by season ID
     Returns:
         Tuple of (list of teams, total count)
     """
@@ -111,6 +112,8 @@ def get_teams(
         query = query.filter(TeamDetailView.nucleo_id == nucleo_id)
     if modality_id:
         query = query.filter(TeamDetailView.modality_id == modality_id)
+    if season_id:
+        query = query.filter(TeamDetailView.team_season_id == season_id)
 
     # Get total count
     total = query.count()

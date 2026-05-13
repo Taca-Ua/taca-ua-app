@@ -86,6 +86,7 @@ def rebuild_team_projection(session: Session, team_id: UUID) -> None:
     projection = TeamDetailView(
         team_id=team.team_id,
         team_name=team.name,
+        team_season_id=team.season_id,
         course_id=course.course_id if course else None,
         course_name=course.name if course else "",
         course_abbreviation=course.abbreviation if course else "",

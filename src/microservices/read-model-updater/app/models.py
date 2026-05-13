@@ -209,6 +209,7 @@ class Team(Base):
     modality_id = Column(UUID(as_uuid=True), nullable=False)
     course_id = Column(UUID(as_uuid=True), nullable=False)
     name = Column(String, nullable=False)
+    season_id = Column(Integer, nullable=False)
     deleted_at = Column(DateTime, nullable=True)
 
     # Relationships

@@ -186,6 +186,7 @@ class TeamSnapshotItem(SnapshotBase):
     modality_id: str
     course_id: str
     name: str
+    season_id: int
     players: List[str] = field(default_factory=list)  # List of student IDs
     created_by: Optional[str] = None
     created_at: Optional[datetime] = None
@@ -198,6 +199,7 @@ class TeamSnapshotItem(SnapshotBase):
             "modality_id": self.modality_id,
             "course_id": self.course_id,
             "name": self.name,
+            "season_id": self.season_id,
             "players": self.players,
             "created_by": self.created_by,
             "created_at": self.created_at.isoformat() if self.created_at else None,

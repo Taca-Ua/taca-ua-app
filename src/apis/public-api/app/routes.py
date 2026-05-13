@@ -25,6 +25,7 @@ def list_teams(
     course_id: Optional[UUID] = Query(None, description="Filter by course ID"),
     nucleo_id: Optional[UUID] = Query(None, description="Filter by nucleo ID"),
     modality_id: Optional[UUID] = Query(None, description="Filter by modality ID"),
+    season_id: Optional[int] = Query(None, description="Filter by season ID"),
     db: Session = Depends(get_db),
 ):
     """
@@ -35,6 +36,7 @@ def list_teams(
     - **course_id**: Optional filter by course
     - **nucleo_id**: Optional filter by nucleo
     - **modality_id**: Optional filter by modality
+    - **season_id**: Optional filter by season
     """
     skip = (page - 1) * page_size
     teams, total = crud.get_teams(
@@ -44,6 +46,7 @@ def list_teams(
         course_id=course_id,
         nucleo_id=nucleo_id,
         modality_id=modality_id,
+        season_id=season_id,
     )
 
     logger.info(
@@ -55,6 +58,7 @@ def list_teams(
             "course_id": str(course_id) if course_id else None,
             "nucleo_id": str(nucleo_id) if nucleo_id else None,
             "modality_id": str(modality_id) if modality_id else None,
+            "season_id": str(season_id) if season_id else None,
         },
     )
 

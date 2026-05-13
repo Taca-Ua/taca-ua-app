@@ -565,6 +565,7 @@ class Team(Base):
             modality_id=str(self.modality_id),
             course_id=str(self.course_id),
             name=self.name,
+            season_id=self.season_id,
             players=[str(player.id) for player in self.players],
             created_by=str(self.created_by),
             created_at=self.created_at.isoformat() if self.created_at else None,

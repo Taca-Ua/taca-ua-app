@@ -44,6 +44,7 @@ class TeamDetailView(Base):
 
     team_id = Column(UUID(as_uuid=True), primary_key=True)
     team_name = Column(String, nullable=False)
+    team_season_id = Column(Integer, nullable=False)
 
     # Course info
     course_id = Column(UUID(as_uuid=True), nullable=False)

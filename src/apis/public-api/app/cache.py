@@ -167,9 +167,10 @@ class CacheKeyGenerator:
         course_id: Optional[UUID] = None,
         nucleo_id: Optional[UUID] = None,
         modality_id: Optional[UUID] = None,
+        season_id: Optional[int] = None,
     ) -> str:
         """Cache key for team list with filters."""
-        filters = f"course={course_id}:nucleo={nucleo_id}:modality={modality_id}"
+        filters = f"course={course_id}:nucleo={nucleo_id}:modality={modality_id}:season={season_id}"
         return f"team:list:{skip}:{limit}:{filters}"
 
     @staticmethod

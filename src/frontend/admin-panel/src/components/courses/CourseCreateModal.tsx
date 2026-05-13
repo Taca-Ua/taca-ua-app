@@ -7,6 +7,7 @@ import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
 import { useAuth } from "../../hooks/useAuth";
 import { useSeason } from "../../contexts/SeasonContext";
+import { useNotification } from "../../contexts/NotificationProvider";
 
 const CourseCreateModal = ({
   onCreate,
@@ -16,6 +17,7 @@ const CourseCreateModal = ({
   const { popModal, pushModal } = useModal();
   const { isAdminGeneral } = useAuth();
   const { loadedSeasonIsTheCurrentSeason, activeSeason } = useSeason();
+  const { notify } = useNotification();
 
   const [newCourseName, setNewCourseName] = useState("");
   const [newCourseAbbreviation, setNewCourseAbbreviation] = useState("");
@@ -23,15 +25,15 @@ const CourseCreateModal = ({
 
   const handleAddCourse = async () => {
     if (!newCourseName.trim()) {
-      alert("Por favor, preencha o nome do curso.");
+      notify("Por favor, preencha o nome do curso.", "error");
       return;
     }
     if (!newCourseAbbreviation.trim()) {
-      alert("Por favor, preencha a abreviatura do curso.");
+      notify("Por favor, preencha a abreviatura do curso.", "error");
       return;
     }
     if (!selectedNucleo) {
-      alert("Por favor, selecione um núcleo.");
+      notify("Por favor, selecione um núcleo.", "error");
       return;
     }
 
@@ -46,7 +48,7 @@ const CourseCreateModal = ({
       onClose();
     } catch (err) {
       console.error("Failed to create course:", err);
-      alert("Não foi possível criar o curso. Tente novamente.");
+      notify("Não foi possível criar o curso. Tente novamente.", "error");
     }
   };
 

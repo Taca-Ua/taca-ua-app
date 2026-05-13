@@ -483,6 +483,7 @@ def handle_team_created(event: TeamCreatedV1):
             modality_id=event.data.modality_id,
             course_id=event.data.course_id,
             name=event.data.name,
+            season_id=event.data.season_id,
         )
         db.add(team)
         db.flush()
