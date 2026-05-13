@@ -39,6 +39,13 @@ class TournamentSeasonSummarySerializer(serializers.Serializer):
     name = serializers.CharField()
 
 
+class TournamentRankingPositionSerializer(serializers.Serializer):
+    """Serializer for tournament ranking position"""
+
+    competitor_id = serializers.UUIDField()
+    position = serializers.IntegerField()
+
+
 # Response serializers
 class TournamentCompetitorSerializer(serializers.Serializer):
     """
@@ -68,6 +75,7 @@ class TournamentDetailSerializer(TournamentListSerializer):
     competitors = TournamentCompetitorSerializer(many=True)
     scoring_format = ScoringFormatSummarySerializer()
     season = TournamentSeasonSummarySerializer()
+    standings = TournamentRankingPositionSerializer(many=True, required=False)
 
 
 # Request serializers

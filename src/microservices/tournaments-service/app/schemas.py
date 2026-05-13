@@ -65,11 +65,11 @@ class TournamentUpdate(BaseModel):
 class TournamentRankingPositionSchema(BaseModel):
     """Schema for tournament ranking position"""
 
-    id: UUID
-    tournament_id: UUID
-    team_id: UUID
+    # id: UUID
+    # tournament_id: UUID
+    competitor_id: UUID
     position: int
-    created_at: datetime
+    # created_at: datetime
 
     class Config:
         from_attributes = True
