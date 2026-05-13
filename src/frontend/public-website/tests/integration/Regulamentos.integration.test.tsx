@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { expect, test } from 'vitest'
-import Regulamentos from './Regulamentos'
+import Regulamentos from '../../src/pages/Regulamentos'
 import { renderWithRouter } from '../test-utils'
 
 test('loads and displays regulations list', async () => {

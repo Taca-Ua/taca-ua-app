@@ -1,12 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { vi } from 'vitest'
-import Tournaments from './Tournaments'
-import { renderWithProviders } from '../../test-utils'
-
-vi.mock('../../hooks/useAuth', () => ({
-  useAuth: () => ({ isAdminGeneral: true }),
-}))
+import Tournaments from '../../src/pages/geral/Tournaments'
+import { renderWithProviders } from '../test-utils'
 
 test('loads tournaments, filters the list, and creates a new tournament', async () => {
   renderWithProviders(<Tournaments />)

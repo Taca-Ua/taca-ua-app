@@ -1,14 +1,10 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
-import { expect, vi } from 'vitest'
-import ModalidadeDetail from './ModalityDetail'
-import Modalities from './Modalities'
-import { renderWithProviders } from '../../test-utils'
-
-vi.mock('../../hooks/useAuth', () => ({
-  useAuth: () => ({ isAdminGeneral: true }),
-}))
+import { expect } from 'vitest'
+import ModalidadeDetail from '../../src/pages/geral/ModalityDetail'
+import Modalities from '../../src/pages/geral/Modalities'
+import { renderWithProviders } from '../test-utils'
 
 test('loads modality, shows tournaments and teams, and deletes modality via confirm modal', async () => {
   renderWithProviders(

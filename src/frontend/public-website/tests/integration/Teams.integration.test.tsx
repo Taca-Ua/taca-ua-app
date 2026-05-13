@@ -1,7 +1,6 @@
 import { screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { expect, test } from 'vitest'
-import Teams from './Teams'
+import Teams from '../../src/pages/Teams'
 import { renderWithRouter } from '../test-utils'
 
 test('loads and displays teams list', async () => {

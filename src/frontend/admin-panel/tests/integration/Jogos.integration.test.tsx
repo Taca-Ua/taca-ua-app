@@ -1,12 +1,8 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { expect, test, vi } from 'vitest'
-import Jogos from './Jogos'
-import { renderWithProviders } from '../../test-utils'
-
-vi.mock('../../hooks/useAuth', () => ({
-  useAuth: () => ({ isAdminGeneral: true }),
-}))
+import { expect, test } from 'vitest'
+import Jogos from '../../src/pages/nucleo/Jogos'
+import { renderWithProviders } from '../test-utils'
 
 test('loads matches and filters by status', async () => {
   renderWithProviders(<Jogos />)

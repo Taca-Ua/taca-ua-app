@@ -1,14 +1,10 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
-import { expect, test, vi } from 'vitest'
-import Equipas from './Teams'
-import TeamDetailPage from './TeamDetail'
-import { renderWithProviders } from '../../test-utils'
-
-vi.mock('../../hooks/useAuth', () => ({
-  useAuth: () => ({ isAdminGeneral: true }),
-}))
+import { expect, test } from 'vitest'
+import Equipas from '../../src/pages/nucleo/Teams'
+import TeamDetailPage from '../../src/pages/nucleo/TeamDetail'
+import { renderWithProviders } from '../test-utils'
 
 test('loads teams and filters by modality and course', async () => {
   renderWithProviders(<Equipas />)

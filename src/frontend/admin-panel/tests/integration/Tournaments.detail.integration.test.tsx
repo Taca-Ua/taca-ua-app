@@ -1,14 +1,10 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
-import { expect, vi } from 'vitest'
-import Torneios from './Tournaments'
-import TorneioDetails from './TorneioDetails'
-import { renderWithProviders } from '../../test-utils'
-
-vi.mock('../../hooks/useAuth', () => ({
-  useAuth: () => ({ isAdminGeneral: true }),
-}))
+import { expect } from 'vitest'
+import Torneios from '../../src/pages/geral/Tournaments'
+import TorneioDetails from '../../src/pages/geral/TorneioDetails'
+import { renderWithProviders } from '../test-utils'
 
 test('opens a tournament detail page and activates a draft tournament', async () => {
   renderWithProviders(

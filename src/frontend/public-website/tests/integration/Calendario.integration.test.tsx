@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { expect, test } from 'vitest'
-import Calendario from './Calendario'
+import Calendario from '../../src/pages/Calendario'
 import { renderWithRouter } from '../test-utils'
 
 test('renders Calendario component and switches to list view', async () => {

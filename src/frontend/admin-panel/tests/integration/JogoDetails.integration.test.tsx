@@ -1,13 +1,9 @@
 import { screen, within, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
-import { expect, test, vi } from 'vitest'
-import JogoDetails from './JogoDetails'
-import { renderWithProviders } from '../../test-utils'
-
-vi.mock('../../hooks/useAuth', () => ({
-  useAuth: () => ({ isAdminGeneral: true }),
-}))
+import { expect, test } from 'vitest'
+import JogoDetails from '../../src/pages/geral/JogoDetails'
+import { renderWithProviders } from '../test-utils'
 
 test('loads match detail and shows participants and actions', async () => {
   renderWithProviders(

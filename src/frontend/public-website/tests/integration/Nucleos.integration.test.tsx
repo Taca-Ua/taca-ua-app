@@ -1,7 +1,7 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { expect, test, vi } from 'vitest'
-import Nucleos from './Nucleos'
+import { expect, test } from 'vitest'
+import Nucleos from '../../src/pages/Nucleos'
 import { renderWithRouter } from '../test-utils'
 
 test('loads nucleos and displays list', async () => {

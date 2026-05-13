@@ -1,11 +1,6 @@
 import { screen } from '@testing-library/react'
-import { vi } from 'vitest'
-import Modalities from './Modalities'
-import { renderWithProviders } from '../../test-utils'
-
-vi.mock('../../hooks/useAuth', () => ({
-  useAuth: () => ({ isAdminGeneral: true }),
-}))
+import Modalities from '../../src/pages/geral/Modalities'
+import { renderWithProviders } from '../test-utils'
 
 test('loads modalities and shows the available filter options', async () => {
   renderWithProviders(<Modalities />)

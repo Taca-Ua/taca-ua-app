@@ -1,15 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { vi } from 'vitest'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
-import { renderWithProviders } from '../../test-utils'
-import Nucleo from './Nucleos'
-import NucleoDetails from './NucleoDetails'
-
-vi.mock('../../hooks/useAuth', () => ({
-  useAuth: () => ({ isAdminGeneral: true }),
-}))
+import { renderWithProviders } from '../test-utils'
+import Nucleo from '../../src/pages/geral/Nucleos'
+import NucleoDetails from '../../src/pages/geral/NucleoDetails'
 
 describe('Nucleos Integration Tests', () => {
   beforeEach(() => {

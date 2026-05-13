@@ -1,12 +1,8 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { expect, vi } from 'vitest'
-import Regulamentos from './Regulamentos'
-import { renderWithProviders } from '../../test-utils'
-
-vi.mock('../../hooks/useAuth', () => ({
-  useAuth: () => ({ isAdminGeneral: true }),
-}))
+import { expect } from 'vitest'
+import Regulamentos from '../../src/pages/geral/Regulamentos'
+import { renderWithProviders } from '../test-utils'
 
 test('loads regulations, filters by search, opens details modal, and removes regulation after delete confirmation', async () => {
   renderWithProviders(<Regulamentos />)

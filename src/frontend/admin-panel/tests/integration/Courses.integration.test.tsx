@@ -1,14 +1,10 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
-import { expect, it, vi } from 'vitest'
-import Cursos from './Courses'
-import CursoDetail from './CourseDetail'
-import { renderWithProviders } from '../../test-utils'
-
-vi.mock('../../hooks/useAuth', () => ({
-  useAuth: () => ({ isAdminGeneral: true }),
-}))
+import { expect, it } from 'vitest'
+import Cursos from '../../src/pages/geral/Courses'
+import CursoDetail from '../../src/pages/geral/CourseDetail'
+import { renderWithProviders } from '../test-utils'
 
 describe('Cursos Integration Tests', () => {
   it('loads courses, filters by search and nucleo, and keeps the list sorted', async () => {

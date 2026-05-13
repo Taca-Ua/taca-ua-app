@@ -1,12 +1,8 @@
 import React from 'react'
-import { renderWithProviders } from '../../test-utils'
-import SociosContent from './SociosContent'
+import { renderWithProviders } from '../test-utils'
+import SociosContent from '../../src/pages/socios/SociosContent'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-
-vi.mock('../../hooks/useAuth', () => ({
-  useAuth: () => ({ isAdminGeneral: true }),
-}))
 
 describe('Socios (athletes) flows', () => {
   test('loads athletes, filters and toggles membership', async () => {

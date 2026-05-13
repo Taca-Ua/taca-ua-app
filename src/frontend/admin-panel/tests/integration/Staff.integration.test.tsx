@@ -1,12 +1,7 @@
-import React from 'react'
-import { renderWithProviders } from '../../test-utils'
-import SociosContent from './SociosContent'
-import { screen, waitFor, within } from '@testing-library/react'
+import { renderWithProviders } from '../test-utils'
+import SociosContent from '../../src/pages/socios/SociosContent'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-
-vi.mock('../../hooks/useAuth', () => ({
-  useAuth: () => ({ isAdminGeneral: true }),
-}))
 
 describe('Socios (staff) flows', () => {
   test('loads staff and deletes a member', async () => {
