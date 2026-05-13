@@ -115,6 +115,7 @@ class TournamentDetailView(Base):
 
     tournament_id = Column(UUID(as_uuid=True), primary_key=True)
     tournament_name = Column(String, nullable=False)
+    tournament_season_id = Column(Integer, nullable=False)
     start_date = Column(Date, nullable=False)
     status = Column(String, nullable=False)
 

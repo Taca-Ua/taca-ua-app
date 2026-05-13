@@ -235,6 +235,7 @@ def rebuild_tournament_projection(session: Session, tournament_id: UUID) -> None
     projection = TournamentDetailView(
         tournament_id=tournament.tournament_id,
         tournament_name=tournament.name,
+        tournament_season_id=tournament.season_id,
         start_date=tournament.start_date,
         status=tournament.status,
         modality_id=modality.modality_id if modality else None,

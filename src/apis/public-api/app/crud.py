@@ -260,8 +260,8 @@ def get_student_by_number(
 @cached(
     cache_key="",
     ttl=CACHE_TTL["tournament_list"],
-    key_builder=lambda db, skip=0, limit=100, modality_id=None, status=None: CacheKeyGenerator.tournament_list(
-        skip, limit, modality_id, status
+    key_builder=lambda db, skip=0, limit=100, modality_id=None, status=None, season_id=None: CacheKeyGenerator.tournament_list(
+        skip, limit, modality_id, status, season_id
     ),
 )
 def get_tournaments(
@@ -270,6 +270,7 @@ def get_tournaments(
     limit: int = 100,
     modality_id: Optional[UUID] = None,
     status: Optional[str] = None,
+    season_id: Optional[int] = None,
 ) -> tuple[list[TournamentDetailView], int]:
     """
     Get list of tournaments with pagination and optional filters.
@@ -280,7 +281,7 @@ def get_tournaments(
         limit: Maximum number of records to return
         modality_id: Filter by modality ID
         status: Filter by tournament status
-
+        season_id: Filter by season ID
     Returns:
         Tuple of (list of tournaments, total count)
     """
@@ -291,6 +292,8 @@ def get_tournaments(
         query = query.filter(TournamentDetailView.modality_id == modality_id)
     if status:
         query = query.filter(TournamentDetailView.status == status)
+    if season_id:
+        query = query.filter(TournamentDetailView.tournament_season_id == season_id)
 
     # Get total count
     total = query.count()

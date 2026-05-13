@@ -209,9 +209,10 @@ class CacheKeyGenerator:
         limit: int = 50,
         modality_id: Optional[UUID] = None,
         status: Optional[str] = None,
+        season_id: Optional[int] = None,
     ) -> str:
         """Cache key for tournament list with filters."""
-        filters = f"modality={modality_id}:status={status}"
+        filters = f"modality={modality_id}:status={status}:season={season_id}"
         return f"tournament:list:{skip}:{limit}:{filters}"
 
     @staticmethod

@@ -610,6 +610,7 @@ def handle_tournament_created(event: TournamentCreatedV1):
             name=event.data.name,
             start_date=_parse_date(event.data.start_date),
             status=event.data.status,
+            season_id=event.data.season_id,
         )
         db.add(tournament)
         db.flush()

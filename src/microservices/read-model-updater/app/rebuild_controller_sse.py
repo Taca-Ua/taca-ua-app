@@ -362,6 +362,7 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
                         "tournament_id": item.id,
                         "modality_id": item.modality_id,
                         "name": item.name,
+                        "season_id": item.season_id,
                         "start_date": item.start_date,
                         "status": item.status,
                         "created_at": item.created_at,

@@ -216,6 +216,7 @@ def list_tournaments(
     page_size: int = Query(50, ge=1, le=100, description="Items per page"),
     modality_id: Optional[UUID] = Query(None, description="Filter by modality ID"),
     status: Optional[str] = Query(None, description="Filter by tournament status"),
+    season_id: Optional[int] = Query(None, description="Filter by season ID"),
     db: Session = Depends(get_db),
 ):
     """
@@ -225,6 +226,7 @@ def list_tournaments(
     - **page_size**: Number of items per page (max 100)
     - **modality_id**: Optional filter by modality
     - **status**: Optional filter by status (draft, active, finished, cancelled)
+    - **season_id**: Optional filter by season
     """
     skip = (page - 1) * page_size
     tournaments, total = crud.get_tournaments(
@@ -233,6 +235,7 @@ def list_tournaments(
         limit=page_size,
         modality_id=modality_id,
         status=status,
+        season_id=season_id,
     )
 
     logger.info(
@@ -243,6 +246,7 @@ def list_tournaments(
         filters={
             "modality_id": str(modality_id) if modality_id else None,
             "status": status,
+            "season_id": str(season_id) if season_id else None,
         },
     )
 

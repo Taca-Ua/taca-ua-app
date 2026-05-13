@@ -278,6 +278,7 @@ class Tournament(Base):
 
     tournament_id = Column(UUID(as_uuid=True), primary_key=True)
     modality_id = Column(UUID(as_uuid=True), nullable=False)
+    season_id = Column(Integer, nullable=False)
     name = Column(String, nullable=False)
     start_date = Column(Date, nullable=False)
     status = Column(String, nullable=False)
