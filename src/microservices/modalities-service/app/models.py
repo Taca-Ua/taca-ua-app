@@ -240,6 +240,16 @@ class Season(Base):
             "finished_at": self.finished_at.isoformat() if self.finished_at else None,
         }
 
+    def to_snapshot(self) -> snapshot_models.SeasonSnapshotItem:
+        return snapshot_models.SeasonSnapshotItem(
+            id=self.id,
+            name=self.name,
+            created_by=str(self.created_by),
+            finished_by=str(self.finished_by) if self.finished_by else None,
+            created_at=self.created_at.isoformat() if self.created_at else None,
+            finished_at=self.finished_at.isoformat() if self.finished_at else None,
+        )
+
 
 class ModalityType(Base):
     """Enumeration for modality types"""
@@ -306,6 +316,7 @@ class ModalityType(Base):
             name=self.name,
             description=self.description,
             escaloes=escaloes_list if escaloes_list else None,
+            season_id=str(self.season_id) if self.season_id else None,
             created_by=str(self.created_by),
             created_at=self.created_at.isoformat() if self.created_at else None,
             updated_at=self.updated_at.isoformat() if self.updated_at else None,

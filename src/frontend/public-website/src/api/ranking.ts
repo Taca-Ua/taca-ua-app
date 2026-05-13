@@ -19,13 +19,15 @@ export interface GeneralRankingList {
 }
 
 export interface RankingListParams {
+  season_id: number;
   nucleo_id?: string;
 }
 
 export const rankingApi = {
-  async getGeneralRanking(params?: RankingListParams): Promise<GeneralRankingList> {
+  async getGeneralRanking(params: RankingListParams): Promise<GeneralRankingList> {
     const queryParams: Record<string, string | undefined> = {
-      nucleo_id: params?.nucleo_id,
+      season_id: params.season_id.toString(),
+      nucleo_id: params.nucleo_id,
     };
     const queryString = buildQueryString(queryParams);
     return apiCall<GeneralRankingList>(`/ranking/general${queryString}`);

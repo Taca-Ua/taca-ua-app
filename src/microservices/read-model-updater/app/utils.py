@@ -20,6 +20,7 @@ from .models import (
     MatchResult,
     Modality,
     Nucleo,
+    Season,
     Student,
     StudentDetailView,
     Team,
@@ -561,7 +562,7 @@ def _update_tournament_ranks(session: Session, tournament_id: UUID) -> None:
 # ==================== Ranking Views ====================
 
 
-def rebuild_general_ranking_projection(session: Session) -> None:
+def rebuild_general_ranking_projection(session: Session, season_id: int) -> None:
     """
     Rebuild the general rankings materialized view from core ranking data.
 
@@ -572,9 +573,15 @@ def rebuild_general_ranking_projection(session: Session) -> None:
     from .models import GeneralRankings, GeneralRankingView
 
     # Clear existing general ranking view
-    session.query(GeneralRankingView).delete()
+    session.query(GeneralRankingView).filter(
+        GeneralRankingView.season_id == season_id
+    ).delete()
 
-    general_rankings_core_data = session.query(GeneralRankings).all()
+    general_rankings_core_data = (
+        session.query(GeneralRankings)
+        .filter(GeneralRankings.season_id == season_id)
+        .all()
+    )
 
     for rank, entry in enumerate(
         sorted(general_rankings_core_data, key=lambda x: x.points, reverse=True),
@@ -586,6 +593,7 @@ def rebuild_general_ranking_projection(session: Session) -> None:
         nucleo = course.nucleo if course else None
 
         projection = GeneralRankingView(
+            season_id=entry.season_id,
             course_id=course.course_id,
             course_name=course.name,
             course_abbreviation=course.abbreviation,
@@ -599,7 +607,7 @@ def rebuild_general_ranking_projection(session: Session) -> None:
         session.merge(projection)
 
 
-def rebuild_modality_ranking_projection(session: Session) -> None:
+def rebuild_modality_ranking_projection(session: Session, season_id: int) -> None:
     """
     Rebuild modality rankings view.
 
@@ -609,9 +617,15 @@ def rebuild_modality_ranking_projection(session: Session) -> None:
     from .models import ModalityRankings, ModalityRankingView
 
     # Clear existing modality ranking view
-    session.query(ModalityRankingView).delete()
+    session.query(ModalityRankingView).filter(
+        ModalityRankingView.season_id == season_id
+    ).delete()
 
-    modality_rankings_core_data = session.query(ModalityRankings).all()
+    modality_rankings_core_data = (
+        session.query(ModalityRankings)
+        .filter(ModalityRankings.season_id == season_id)
+        .all()
+    )
 
     # grup by modality_id
     modality_groups: Dict[UUID, List[ModalityRankings]] = {}
@@ -636,6 +650,7 @@ def rebuild_modality_ranking_projection(session: Session) -> None:
             nucleo = course.nucleo if course else None
 
             projection = ModalityRankingView(
+                season_id=entry.season_id,
                 modality_id=modality_id,
                 modality_name=modality_name,
                 course_id=course.course_id,
@@ -677,6 +692,36 @@ def rebuild_nucleo_projection(session: Session, nucleo_id: UUID) -> None:
         name=nucleo.name,
         abbreviation=nucleo.abbreviation,
         logo_url=nucleo.logo_url,
+    )
+
+    session.merge(projection)
+
+
+# ==================== Season Views ====================
+
+
+def rebuild_season_projection(session: Session, season_id: int) -> None:
+    """Rebuild the projection for a specific season.
+
+    Dependencies: Season
+
+    Call when:
+        - Season created/updated/deleted
+    """
+    from .models import Season, SeasonDetailView
+
+    season = session.query(Season).filter(Season.season_id == season_id).first()
+
+    if not season:
+        # Delete projection if season no longer exists
+        session.query(SeasonDetailView).filter(
+            SeasonDetailView.season_id == season_id
+        ).delete()
+        return
+
+    projection = SeasonDetailView(
+        season_id=season.season_id,
+        name=season.name,
     )
 
     session.merge(projection)
@@ -733,3 +778,10 @@ def rebuild_all_nucleos(session: Session) -> None:
     nucleos = session.query(Nucleo.nucleo_id).all()
     for (nucleo_id,) in nucleos:
         rebuild_nucleo_projection(session, nucleo_id)
+
+
+def rebuild_all_seasons(session: Session) -> None:
+    """Rebuild projections for all seasons."""
+    seasons = session.query(Season.season_id).all()
+    for (season_id,) in seasons:
+        rebuild_season_projection(session, season_id)

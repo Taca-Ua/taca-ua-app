@@ -50,7 +50,7 @@ from taca_events.pydantic_schemas.modalities import (
     RegulationDeletedV1,
     RegulationUpdatedV1,
 )
-from taca_messaging.rabbitmq_service import RabbitMQService
+from taca_messaging.rabbitmq_service import PausableRabbitMQService
 from taca_models.models import Regulation
 
 from .database import get_db
@@ -88,82 +88,6 @@ from .utils import (
     rebuild_tournament_projection,
     rebuild_tournament_standings,
 )
-
-
-class PausableRabbitMQService(RabbitMQService):
-    """
-    Extended RabbitMQ service with pause/resume capabilities.
-
-    This is needed for the rebuild process to temporarily stop
-    event consumption while projections are being rebuilt.
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._paused = False
-        self._original_on_message = None
-
-    def is_paused(self) -> bool:
-        """Check if event consumption is currently paused."""
-        return self._paused
-
-    async def pause_consumption(self) -> None:
-        """
-        Pause event consumption.
-
-        Events will be buffered in RabbitMQ queue but not processed
-        until consumption is resumed.
-        """
-        if self._paused:
-            self.logger.warning("event_consumption_already_paused")
-            return
-
-        self._paused = True
-
-        # Cancel the consumer to stop receiving messages
-        # Messages will remain in the queue
-        if self.channel and hasattr(self.channel, "_consumers"):
-            # Store consumer tags to cancel them
-            consumer_tags = (
-                list(self.channel._consumers.keys())
-                if hasattr(self.channel, "_consumers")
-                else []
-            )
-            for tag in consumer_tags:
-                try:
-                    await self.channel.cancel(tag)
-                    self.logger.info("consumer_cancelled", consumer_tag=tag)
-                except Exception as e:
-                    self.logger.error(
-                        "consumer_cancel_failed", consumer_tag=tag, error=str(e)
-                    )
-
-        self.logger.info(
-            "event_consumption_paused",
-            message="Events will queue but not be processed",
-        )
-
-    async def resume_consumption(self) -> None:
-        """
-        Resume event consumption.
-
-        Starts processing events from the queue again.
-        """
-        if not self._paused:
-            self.logger.warning("event_consumption_not_paused")
-            return
-
-        self._paused = False
-
-        # Restart consuming by calling start_consuming again
-        # This will re-bind to the queue and start processing
-        try:
-            await self.start_consuming()
-            self.logger.info("event_consumption_resumed")
-        except Exception as e:
-            self.logger.error("event_consumption_resume_failed", error=str(e))
-            raise
-
 
 # Initialize RabbitMQ service with pause/resume capabilities
 rabbitmq_service = PausableRabbitMQService(
@@ -1128,11 +1052,13 @@ def handle_ranking_computed(event: RankingComputedV1):
     """
     general_entries = event.data.general_ranking
     modality_entries = event.data.modality_rankings
+    season_id = event.data.season_id
     logger.info(
         "event_received",
         event_type="ranking.computed",
         general_entries=len(general_entries),
         modality_entries=len(modality_entries),
+        season_id=season_id,
     )
 
     with get_db() as db:
@@ -1144,6 +1070,7 @@ def handle_ranking_computed(event: RankingComputedV1):
         for entry in general_entries:
             db.add(
                 GeneralRankings(
+                    season_id=entry.season_id,
                     course_id=entry.course_id,
                     points=entry.points,
                     tournaments_participated=entry.tournaments_participated,
@@ -1154,6 +1081,7 @@ def handle_ranking_computed(event: RankingComputedV1):
         for entry in modality_entries:
             db.add(
                 ModalityRankings(
+                    season_id=entry.season_id,
                     modality_id=entry.modality_id,
                     course_id=entry.course_id,
                     points=entry.points,
@@ -1162,15 +1090,17 @@ def handle_ranking_computed(event: RankingComputedV1):
 
         db.flush()
 
-        # Rebuild the GeneralRankingView and ModalityRankingView projections
-        rebuild_general_ranking_projection(db)
-        rebuild_modality_ranking_projection(db)
-
         logger.info(
             "rankings_updated",
             general_entries=len(general_entries),
             modality_entries=len(modality_entries),
+            season_id=season_id,
         )
+
+    with get_db() as db:
+        # Rebuild the GeneralRankingView and ModalityRankingView projections
+        rebuild_general_ranking_projection(db, season_id=season_id)
+        rebuild_modality_ranking_projection(db, season_id=season_id)
 
 
 # ==================== Regulation Events ====================

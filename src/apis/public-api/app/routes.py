@@ -448,6 +448,7 @@ def get_competitor_standings(
     description="Get the general ranking of all courses based on tournament performance",
 )
 def get_general_ranking(
+    season_id: int = Query(..., description="Season ID to filter the ranking"),
     nucleo_id: Optional[UUID] = Query(None, description="Optional filter by nucleo ID"),
     db: Session = Depends(get_db),
 ):
@@ -458,17 +459,18 @@ def get_general_ranking(
     Points are awarded based on final positions in tournaments according to
     the modality type's escaloes configuration.
 
+    - **season_id**: Season ID to filter the ranking
     - **nucleo_id**: Optional filter to show ranking only for a specific nucleo
     """
-    rankings, total = crud.get_general_ranking(db=db, nucleo_id=nucleo_id)
+    rankings, total = crud.get_general_ranking(
+        db=db, season_id=season_id, nucleo_id=nucleo_id
+    )
 
     logger.info(
         "general_ranking_retrieved",
         total=total,
         filters={"nucleo_id": str(nucleo_id) if nucleo_id else None},
     )
-
-    print(type(rankings[0]), flush=True)
 
     return schemas.GeneralRankingList(
         items=rankings,
@@ -575,6 +577,7 @@ def list_regulations(
     ),
 )
 def get_modality_ranking(
+    season_id: int = Query(..., description="Season ID to filter the ranking"),
     modality_id: Optional[UUID] = Query(
         None, description="Optional filter by modality ID"
     ),
@@ -586,11 +589,13 @@ def get_modality_ranking(
     The ranking is calculated based on points earned in tournaments for each
     modality separately. Rankings are ordered by rank and points.
 
+    - **season_id**: Season ID to filter the ranking
     - **modality_id**: Optional filter to show ranking only for a specific modality
     - **nucleo_id**: Optional filter to show ranking only for a specific nucleo
     """
     rankings, total = crud.get_modality_ranking(
         db=db,
+        season_id=season_id,
         modality_id=modality_id,
         nucleo_id=nucleo_id,
     )
@@ -599,6 +604,7 @@ def get_modality_ranking(
         "modality_ranking_retrieved",
         total=total,
         filters={
+            "season_id": str(season_id),
             "modality_id": str(modality_id) if modality_id else None,
             "nucleo_id": str(nucleo_id) if nucleo_id else None,
         },
@@ -635,3 +641,35 @@ def get_course_modality_rankings(
     )
 
     return rankings
+
+
+# ==================== Season Endpoints ====================
+
+
+@router.get(
+    "/seasons",
+    response_model=schemas.SeasonDetailList,
+    summary="List all seasons",
+    description="Get a list of all seasons with their details",
+)
+def list_seasons(
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve a list of all seasons.
+
+    Seasons are ordered by most recent first.
+
+    - **db**: Database session
+    """
+    seasons, total = crud.get_seasons(db=db)
+
+    logger.info(
+        "seasons_listed",
+        total=total,
+        filters={},
+    )
+    return schemas.SeasonDetailList(
+        items=seasons,
+        total=total,
+    )

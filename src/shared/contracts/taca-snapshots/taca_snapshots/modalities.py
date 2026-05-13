@@ -88,6 +88,7 @@ class ModalityTypeSnapshotItem(SnapshotBase):
     name: str
     description: Optional[str] = None
     escaloes: Optional[List[EscaloType]] = None
+    season_id: str
     created_by: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -99,6 +100,7 @@ class ModalityTypeSnapshotItem(SnapshotBase):
             "name": self.name,
             "description": self.description,
             "escaloes": [e.to_dict() for e in self.escaloes] if self.escaloes else None,
+            "season_id": self.season_id,
             "created_by": self.created_by,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
@@ -228,6 +230,28 @@ class RegulationSnapshotItem(SnapshotBase):
         }
 
 
+class SeasonSnapshotItem(SnapshotBase):
+    """A single season record."""
+
+    id: int
+    name: str
+    created_by: Optional[str] = None
+    finished_by: Optional[str] = None
+    created_at: Optional[datetime] = None
+    finished_at: Optional[datetime] = None
+
+    def to_dict(self) -> dict:
+        """Convert to a plain dict for JSON serialisation."""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "created_by": self.created_by,
+            "finished_by": self.finished_by,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "finished_at": self.finished_at.isoformat() if self.finished_at else None,
+        }
+
+
 # ---------------------------------------------------------------------------
 # Aggregate snapshot response (full HTTP response body)
 # ---------------------------------------------------------------------------
@@ -252,3 +276,4 @@ class ModalitiesSnapshotResponse(SnapshotBase):
     teams: List[TeamSnapshotItem] = []
     team_players: List[TeamPlayerSnapshotItem] = []
     regulations: List[RegulationSnapshotItem] = []
+    seasons: List[SeasonSnapshotItem] = []

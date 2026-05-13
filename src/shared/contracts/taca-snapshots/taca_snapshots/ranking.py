@@ -20,12 +20,14 @@ from .base import SnapshotBase
 class GeneralRankingSnapshotItem(SnapshotBase):
     """Points earned by a single course across all modalities."""
 
+    season_id: int
     course_id: str
     points: int
     tournaments_participated: int = 0
 
     def to_dict(self) -> dict:
         return {
+            "season_id": self.season_id,
             "course_id": self.course_id,
             "points": self.points,
             "tournaments_participated": self.tournaments_participated,
@@ -35,12 +37,14 @@ class GeneralRankingSnapshotItem(SnapshotBase):
 class ModalityRankingSnapshotItem(SnapshotBase):
     """Points earned by a course within a specific modality."""
 
+    season_id: int
     modality_id: str
     course_id: str
     points: int
 
     def to_dict(self) -> dict:
         return {
+            "season_id": self.season_id,
             "modality_id": self.modality_id,
             "course_id": self.course_id,
             "points": self.points,

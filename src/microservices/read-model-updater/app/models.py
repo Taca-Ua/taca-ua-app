@@ -13,23 +13,22 @@ from sqlalchemy import JSON, Boolean, Column, Date, DateTime
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy import Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
 # Re-export all models from shared package
 from taca_models import (  # Materialized Views
+    Base,
     GeneralRankingView,
     MatchDetailView,
     ModalityRankingView,
     NucleoDetailView,
     Regulation,
+    SeasonDetailView,
     StudentDetailView,
     TeamDetailView,
     TournamentDetailView,
     TournamentStandingsView,
 )
-
-Base = declarative_base()
 
 # ==================== Enums ====================
 
@@ -478,11 +477,14 @@ class GeneralRankings(Base):
     __tablename__ = "general_rankings"
     __table_args__ = (
         Index("ix_general_rankings_course_id", "course_id"),
-        UniqueConstraint("course_id", name="uq_general_rankings_course"),
+        UniqueConstraint(
+            "course_id", "season_id", name="uq_general_rankings_course_season"
+        ),
         {"schema": "public_read"},
     )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    season_id = Column(Integer, nullable=False)
     course_id = Column(UUID(as_uuid=True), nullable=False)
     points = Column(Integer, nullable=False, default=0)
     tournaments_participated = Column(Integer, nullable=False, default=0)
@@ -496,15 +498,29 @@ class ModalityRankings(Base):
         Index("ix_modality_rankings_modality_id", "modality_id"),
         Index("ix_modality_rankings_course_id", "course_id"),
         UniqueConstraint(
-            "modality_id", "course_id", name="uq_modality_rankings_modality_course"
+            "modality_id",
+            "course_id",
+            "season_id",
+            name="uq_modality_rankings_course_modality_season",
         ),
         {"schema": "public_read"},
     )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    season_id = Column(Integer, nullable=False)
     modality_id = Column(UUID(as_uuid=True), nullable=False)
     course_id = Column(UUID(as_uuid=True), nullable=False)
     points = Column(Integer, nullable=False, default=0)
+
+
+class Season(Base):
+    """Season information - populated from seasons service events."""
+
+    __tablename__ = "seasons"
+    __table_args__ = {"schema": "public_read"}
+
+    season_id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
 
 
 __all__ = [
@@ -538,4 +554,5 @@ __all__ = [
     "GeneralRankings",
     "ModalityRankingView",
     "NucleoDetailView",
+    "SeasonDetailView",
 ]

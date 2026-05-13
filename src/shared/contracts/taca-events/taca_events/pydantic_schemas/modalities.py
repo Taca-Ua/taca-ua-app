@@ -523,3 +523,25 @@ class RegulationDeletedV1(EventSchema):
     @classmethod
     def aggregate_type(cls) -> str:
         return "regulation"
+
+
+# ================================================================== #
+# Season
+# ================================================================== #
+
+
+class SeasonCreatedData(BaseModel):
+    season_id: int
+    name: str
+
+
+class SeasonCreatedV1(EventSchema):
+    data: SeasonCreatedData
+
+    @classmethod
+    def event_type(cls) -> str:
+        return "season.created.v1"
+
+    @classmethod
+    def aggregate_type(cls) -> str:
+        return "season"

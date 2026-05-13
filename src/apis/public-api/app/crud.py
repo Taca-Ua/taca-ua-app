@@ -5,7 +5,7 @@ This module provides read-only operations on the materialized views
 in the public_read schema. All read operations include caching via Redis.
 """
 
-from typing import Optional
+from typing import Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy import or_
@@ -16,6 +16,7 @@ from taca_models import (
     ModalityRankingView,
     NucleoDetailView,
     Regulation,
+    SeasonDetailView,
     StudentDetailView,
     TeamDetailView,
     TournamentDetailView,
@@ -470,10 +471,11 @@ def get_standings_by_competitor(
 @cached(
     cache_key="",
     ttl=CACHE_TTL["ranking"],
-    key_builder=lambda db, nucleo_id=None: f"ranking:general:{nucleo_id}",
+    key_builder=lambda db, season_id, nucleo_id=None: f"ranking:general:{season_id}:{nucleo_id}",
 )
 def get_general_ranking(
     db: Session,
+    season_id: int,
     nucleo_id: Optional[UUID] = None,
 ) -> tuple[list[GeneralRankingView], int]:
     """
@@ -481,12 +483,15 @@ def get_general_ranking(
 
     Args:
         db: Database session
+        season_id: Season ID to filter the ranking
         nucleo_id: Optional filter by nucleo ID
 
     Returns:
         Tuple of (list of rankings, total count)
     """
-    query = db.query(GeneralRankingView)
+    query = db.query(GeneralRankingView).filter(
+        GeneralRankingView.season_id == season_id
+    )
 
     # Apply filters
     if nucleo_id:
@@ -572,10 +577,11 @@ def get_regulations(
 @cached(
     cache_key="",
     ttl=CACHE_TTL["ranking"],
-    key_builder=lambda db, modality_id=None, nucleo_id=None: f"ranking:modality:{modality_id}:{nucleo_id}",
+    key_builder=lambda db, season_id, modality_id=None, nucleo_id=None: f"ranking:modality:{season_id}:{modality_id}:{nucleo_id}",
 )
 def get_modality_ranking(
     db: Session,
+    season_id: int,
     modality_id: Optional[UUID] = None,
     nucleo_id: Optional[UUID] = None,
 ) -> tuple[list[ModalityRankingView], int]:
@@ -585,13 +591,16 @@ def get_modality_ranking(
 
     Args:
         db: Database session
+        season_id: Season ID to filter the ranking
         modality_id: Optional filter by modality ID
         nucleo_id: Optional filter by nucleo ID
 
     Returns:
         Tuple of (list of rankings, total count)
     """
-    query = db.query(ModalityRankingView)
+    query = db.query(ModalityRankingView).filter(
+        ModalityRankingView.season_id == season_id
+    )
 
     # Apply filters
     if modality_id:
@@ -642,3 +651,24 @@ def get_course_modality_rankings(
         )
         .all()
     )
+
+
+# ==================== Season View Operations ====================
+
+
+@cached(
+    cache_key="",
+    ttl=CACHE_TTL["season"],
+    key_builder=lambda db: "season:list",
+)
+def get_seasons(db: Session) -> Tuple[list[SeasonDetailView], int]:
+    """Get list of all seasons.
+
+    Returns:
+        List of season details ordered by most recent first
+    """
+
+    query = db.query(SeasonDetailView)
+    total = query.count()
+
+    return query.all(), total

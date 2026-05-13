@@ -4,6 +4,15 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from taca_events.pydantic_schemas.modalities import (
+    ModalityTypeCreatedData,
+    ModalityTypeCreatedV1,
+    SeasonCreatedData,
+    SeasonCreatedV1,
+    TeamCreatedData,
+    TeamCreatedV1,
+    _EscalaoData,
+)
 
 from ..database import get_db_session
 from ..logger import logger
@@ -17,6 +26,7 @@ from ..models import (
     Student,
     Team,
 )
+from ..outbox_publisher import outbox_publisher
 from ..schemas import SeasonCreate, SeasonResponse, SeasonSummaryResponse
 from ..utils import get_active_season
 
@@ -80,6 +90,34 @@ def create_season(season_payload: SeasonCreate, db: Session = Depends(get_db_ses
             )
             db.add(new_modality_type)
             db.flush()  # Flush to get the new modality type ID
+
+            # Emit event via outbox
+            event = ModalityTypeCreatedV1.create(
+                aggregate_id=new_modality_type.id,
+                data=ModalityTypeCreatedData(
+                    season_id=new_season.id,
+                    new_modality_type_id=new_modality_type.id,
+                    name=new_modality_type.name,
+                    description=new_modality_type.description,
+                    escaloes=[
+                        _EscalaoData(
+                            min_participants=e["minParticipants"],
+                            max_participants=e["maxParticipants"],
+                            points=e["points"],
+                            name=e["escalao"],
+                        )
+                        for e in modality_type.escaloes
+                    ],
+                ),
+            )
+            outbox_publisher.emit_event(
+                db=db,
+                event_type=event.event_type(),
+                aggregate_type=event.aggregate_type(),
+                aggregate_id=new_modality_type.id,
+                data=event.to_data_dict(),
+            )
+
             modality_types_to_map[modality_type.id] = new_modality_type.id
         db.flush()  # Flush to save the new modality types
         for team in current_season.season_teams:
@@ -92,7 +130,25 @@ def create_season(season_payload: SeasonCreate, db: Session = Depends(get_db_ses
                 derived_from_team_id=team.id,  # Track lineage of teams across seasons
             )
             db.add(new_team)
-        db.flush()  # Flush to save the new teams
+            db.flush()  # Flush to save the new teams
+
+            # Emit event via outbox
+            event = TeamCreatedV1.create(
+                aggregate_id=new_team.id,
+                data=TeamCreatedData(
+                    team_id=new_team.id,
+                    name=new_team.name,
+                    modality_id=new_team.modality_id,
+                    course_id=new_team.course_id,
+                ),
+            )
+            outbox_publisher.emit_event(
+                db=db,
+                event_type=event.event_type(),
+                aggregate_type=event.aggregate_type(),
+                aggregate_id=new_team.id,
+                data=event.to_data_dict(),
+            )
 
         # Create an entry associating Modalities and Courses with the new season
         for modality in current_season.season_modalities:
@@ -109,6 +165,21 @@ def create_season(season_payload: SeasonCreate, db: Session = Depends(get_db_ses
         for course in current_season.season_courses:
             new_season.season_courses.append(course)
         db.flush()  # Flush to save the new season courses
+
+        event = SeasonCreatedV1.create(
+            aggregate_id=new_season.id,
+            data=SeasonCreatedData(
+                season_id=new_season.id,
+                name=new_season.name,
+            ),
+        )
+        outbox_publisher.emit_event(
+            db=db,
+            event_type=event.event_type(),
+            aggregate_type=event.aggregate_type(),
+            aggregate_id=new_season.id,
+            data=event.to_data_dict(),
+        )
 
         db.commit()
         return new_season.to_dict()
