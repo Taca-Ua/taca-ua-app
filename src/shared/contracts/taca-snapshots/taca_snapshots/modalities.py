@@ -221,6 +221,7 @@ class RegulationSnapshotItem(SnapshotBase):
     title: str
     description: Optional[str] = None
     file_url: Optional[str] = None
+    season_id: int
 
     def to_dict(self) -> dict:
         """Convert to a plain dict for JSON serialisation."""
@@ -229,6 +230,7 @@ class RegulationSnapshotItem(SnapshotBase):
             "title": self.title,
             "description": self.description,
             "file_url": self.file_url,
+            "season_id": self.season_id,
         }
 
 

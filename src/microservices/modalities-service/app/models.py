@@ -607,5 +607,6 @@ class Regulation(Base):
             title=self.title,
             description=self.description,
             file_url=self.file_url,
+            season_id=self.season_id,
             created_at=self.created_at.isoformat() if self.created_at else None,
         )

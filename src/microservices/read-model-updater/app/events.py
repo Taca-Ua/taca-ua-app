@@ -1122,6 +1122,7 @@ def handle_regulation_created(event: RegulationCreatedV1):
             title=event.data.title,
             description=event.data.description,
             file_url=event.data.file_url,
+            season_id=event.data.season_id,
         )
         db.add(regulation)
 

@@ -7,7 +7,7 @@ export interface Regulation {
   file_url: string;
 }
 
-export async function getRegulations(search?: string): Promise<Regulation[]> {
-  const qs = buildQueryString({ search });
+export async function getRegulations(search?: string, season_id?: number): Promise<Regulation[]> {
+  const qs = buildQueryString({ search, season_id: season_id?.toString() });
   return apiCall<Regulation[]>(`/regulations${qs}`);
 }

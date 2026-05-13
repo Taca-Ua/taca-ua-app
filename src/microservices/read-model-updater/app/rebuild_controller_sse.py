@@ -326,6 +326,7 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
                         "title": item.title,
                         "description": item.description,
                         "file_url": item.file_url,
+                        "season_id": item.season_id,
                     }
                     for item in map(
                         lambda x: modality_snapshots.RegulationSnapshotItem(**x), items

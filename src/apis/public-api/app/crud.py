@@ -547,11 +547,12 @@ def get_course_ranking(db: Session, course_id: UUID) -> Optional[GeneralRankingV
 @cached(
     cache_key="",
     ttl=CACHE_TTL["regulation"],
-    key_builder=lambda db, search=None: f"regulation:list:{search}",
+    key_builder=lambda db, search=None, season_id=None: f"regulation:list:{search}:{season_id}",
 )
 def get_regulations(
     db: Session,
     search: Optional[str] = None,
+    season_id: Optional[int] = None,
 ) -> list[Regulation]:
     """
     Get all regulations, optionally filtered by a search term.
@@ -559,11 +560,14 @@ def get_regulations(
     Args:
         db: Database session
         search: Optional search string matched against title and description
-
+        season_id: Optional filter by season ID
     Returns:
         List of regulations ordered by creation date (newest first)
     """
     query = db.query(Regulation)
+
+    if season_id:
+        query = query.filter(Regulation.season_id == season_id)
 
     if search:
         term = f"%{search}%"

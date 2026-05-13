@@ -477,6 +477,7 @@ class RegulationCreatedData(BaseModel):
     title: str
     description: str
     file_url: Optional[str] = None
+    season_id: int
 
 
 class RegulationUpdatedData(BaseModel):

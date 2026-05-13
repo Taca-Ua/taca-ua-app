@@ -334,4 +334,5 @@ class Regulation(Base):
     title = Column(Text, nullable=False)
     description = Column(Text, nullable=True)
     file_url = Column(String(500), nullable=False)
+    season_id = Column(Integer, nullable=False)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)

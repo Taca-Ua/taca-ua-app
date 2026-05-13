@@ -560,14 +560,16 @@ def get_nucleo(
 )
 def list_regulations(
     search: Optional[str] = Query(None, description="Search in title and description"),
+    season_id: Optional[int] = Query(None, description="Filter by season ID"),
     db: Session = Depends(get_db),
 ):
     """
     Retrieve the list of regulation documents.
 
     - **search**: Optional text to filter by title or description
+    - **season_id**: Optional filter by season ID
     """
-    regulations = crud.get_regulations(db=db, search=search)
+    regulations = crud.get_regulations(db=db, search=search, season_id=season_id)
     logger.info("regulations_listed", total=len(regulations))
     return regulations
 
