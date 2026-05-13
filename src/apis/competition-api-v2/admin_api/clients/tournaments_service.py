@@ -22,11 +22,11 @@ class CompetitorDTO:
 
 @dataclass
 class _TournamentRankingPositionDTO:
-    id: UUID
-    tournament_id: UUID
-    team_id: UUID
+    # id: UUID
+    # tournament_id: UUID
+    competitor_id: UUID
     position: int
-    created_at: str  # ISO formatted datetime string
+    # created_at: str  # ISO formatted datetime string
 
 
 @dataclass

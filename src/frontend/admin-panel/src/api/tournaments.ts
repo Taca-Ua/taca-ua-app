@@ -33,6 +33,10 @@ export interface TournamentDetail extends TournamentListItem {
     id: number;
     name: string;
   };
+  standings?: {
+    position: number;
+    competitor_id: string;
+  }[];
 }
 
 // Input interfaces

@@ -121,7 +121,7 @@ class Tournament(Base):
     finished_by = Column(UUID(as_uuid=True), nullable=True)
 
     # Relationships
-    ranking_positions = relationship(
+    ranking_positions: Mapped[List["TournamentRankingPosition"]] = relationship(
         "TournamentRankingPosition",
         back_populates="tournament",
         cascade="all, delete-orphan",
@@ -152,7 +152,7 @@ class Tournament(Base):
             "competitors": [comp.to_dict() for comp in self.competitors],
         }
 
-        if include_ranking:
+        if self.status == "finished":
             result["ranking_positions"] = [
                 rp.to_dict() for rp in self.ranking_positions
             ]
@@ -208,11 +208,11 @@ class TournamentRankingPosition(Base):
 
     def to_dict(self):
         return {
-            "id": str(self.id),
-            "tournament_id": str(self.tournament_id),
+            # "id": str(self.id),
+            # "tournament_id": str(self.tournament_id),
             "competitor_id": str(self.competitor_id),
             "position": self.position,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
+            # "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
     def to_snapshot(self) -> snapshot_models.TournamentRankingPositionSnapshotItem:

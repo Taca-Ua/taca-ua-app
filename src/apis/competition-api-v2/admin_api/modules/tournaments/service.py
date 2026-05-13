@@ -4,7 +4,7 @@ Tournaments management service
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from admin_api.clients.modalities_service import (
     ModalityDTO,
@@ -47,6 +47,15 @@ class _Season:
 
 
 @dataclass
+class _StandingsEntry:
+    competitor_id: str
+    # competitor_name: str
+    # competitor_course_name: str
+    position: int
+    points: Optional[int] = None
+
+
+@dataclass
 class Tournament:
     id: str
     name: str
@@ -58,6 +67,7 @@ class Tournament:
     competitors: List[Competitor] = field(default_factory=list)
     scoring_format: ScoringFormat = None
     season: _Season = None
+    standings: List[_StandingsEntry] = None
 
 
 class TeamDoesNotBelongToSeasonError(ValueError):
@@ -245,6 +255,18 @@ class TournamentsService:
 
             # Add season information to the tournament
             self._populate_tournament_season(tournament, tournament_dto)
+
+            # Add standings information to the tournament if it's finished
+            if tournament.status == "finished":
+                print("Populating tournament standings...", flush=True)
+                tournament.standings = []
+                for entry in tournament_dto.ranking_positions:
+                    tournament.standings.append(
+                        _StandingsEntry(
+                            competitor_id=entry.competitor_id,
+                            position=entry.position,
+                        )
+                    )
 
         return tournament
 
