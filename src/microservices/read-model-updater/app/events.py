@@ -85,6 +85,7 @@ from .utils import (
     rebuild_match_projection,
     rebuild_modality_ranking_projection,
     rebuild_nucleo_projection,
+    rebuild_season_projection,
     rebuild_student_projection,
     rebuild_team_projection,
     rebuild_tournament_projection,
@@ -1189,3 +1190,7 @@ def handle_season_created(event: SeasonCreatedV1):
             name=event.data.name,
         )
         db.add(season)
+
+    with get_db() as db:
+        # Rebuild season projection
+        rebuild_season_projection(db, season_id=season_id)
