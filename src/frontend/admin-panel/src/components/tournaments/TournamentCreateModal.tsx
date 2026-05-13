@@ -27,7 +27,6 @@ const TournamentCreateModal = ({
 
   const [name, setName] = useState(starterName || '');
   const [chosenModalityId, setChosenModalityId] = useState<string | null>(modalityId || null);
-  const [isPlayoff, setIsPlayoff] = useState(false);
   const [chosenScoringFormat, setChosenScoringFormat] = useState<{ id: string, title: string } | null>(null);
 
   const [modalityOptions, setModalityOptions] = useState<ModalityListItem[]>([]);
@@ -81,7 +80,6 @@ const TournamentCreateModal = ({
       const newTournament: TournamentCreate = {
         name,
         modality_id: modalityIdToUse,
-        is_playoff: isPlayoff,
         season_id: loadedSeason?.id,
         scoring_format_id: chosenScoringFormat ? chosenScoringFormat.id : undefined,
       };
@@ -99,7 +97,6 @@ const TournamentCreateModal = ({
 
   const onClose = () => {
     setName('');
-    setIsPlayoff(false);
     setChosenModalityId(modalityId || chosenModalityId);
     popModal();
   }
@@ -154,7 +151,7 @@ const TournamentCreateModal = ({
           </div>)}
 
           {/* Scoring Format */}
-          <div>
+          <div className="mb-4">
             <label className="font-medium">
               Formato de Pontuação
             </label>
@@ -168,19 +165,6 @@ const TournamentCreateModal = ({
               }}
               elementState={[chosenScoringFormat, (ele) => setChosenScoringFormat(ele)]}
             />
-          </div>
-
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="is_playoff_create"
-              checked={isPlayoff}
-              onChange={(e) => setIsPlayoff(e.target.checked)}
-              className="w-4 h-4 accent-teal-500"
-            />
-            <label htmlFor="is_playoff_create" className="font-medium cursor-pointer">
-              Torneio de Playoff
-            </label>
           </div>
 
           <div className="flex justify-end space-x-2">

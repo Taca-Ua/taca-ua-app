@@ -301,7 +301,6 @@ class TournamentsService:
         self,
         name: str,
         modality_id: str,
-        is_playoff: bool = False,
         season_id: int = None,
         scoring_format_id: str = None,
     ) -> Tournament:
