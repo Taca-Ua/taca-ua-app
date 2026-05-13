@@ -62,6 +62,7 @@ export interface ModalityRankingList {
 export interface ModalityRankingListParams {
   modality_id?: string;
   nucleo_id?: string;
+  season_id?: number;
 }
 
 export const modalityRankingApi = {
@@ -71,6 +72,7 @@ export const modalityRankingApi = {
     const queryParams: Record<string, string | undefined> = {
       modality_id: params?.modality_id,
       nucleo_id: params?.nucleo_id,
+      season_id: params?.season_id?.toString(),
     };
     const queryString = buildQueryString(queryParams);
     return apiCall<ModalityRankingList>(`/ranking/modality${queryString}`);
