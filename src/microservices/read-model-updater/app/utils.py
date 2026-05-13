@@ -724,6 +724,7 @@ def rebuild_season_projection(session: Session, season_id: int) -> None:
     projection = SeasonDetailView(
         season_id=season.season_id,
         name=season.name,
+        is_active=season.finished_at is None,
     )
 
     session.merge(projection)

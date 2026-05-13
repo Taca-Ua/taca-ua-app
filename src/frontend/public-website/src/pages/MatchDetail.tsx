@@ -79,8 +79,8 @@ function MatchDetailPage() {
 
   const participantLink = (p: Record<string, any>) =>
     p.participant_type === 'team'
-      ? `/equipas/${p.participant_entity_id}`
-      : `/estudantes/${p.participant_entity_id}`;
+      ? `/equipas/${p.competitor_entity_id}`
+      : `/estudantes/${p.competitor_entity_id}`;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">

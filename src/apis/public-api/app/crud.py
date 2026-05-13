@@ -678,7 +678,7 @@ def get_seasons(db: Session) -> Tuple[list[SeasonDetailView], int]:
         List of season details ordered by most recent first
     """
 
-    query = db.query(SeasonDetailView)
+    query = db.query(SeasonDetailView).order_by(SeasonDetailView.season_id.desc())
     total = query.count()
 
     return query.all(), total

@@ -523,6 +523,7 @@ class Season(Base):
 
     season_id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
+    finished_at = Column(DateTime, nullable=True)
 
 
 __all__ = [
