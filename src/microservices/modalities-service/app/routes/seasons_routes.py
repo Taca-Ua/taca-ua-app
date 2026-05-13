@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime, timezone
 from typing import List
 
@@ -96,7 +97,7 @@ def create_season(season_payload: SeasonCreate, db: Session = Depends(get_db_ses
                 aggregate_id=new_modality_type.id,
                 data=ModalityTypeCreatedData(
                     season_id=new_season.id,
-                    new_modality_type_id=new_modality_type.id,
+                    modality_type_id=new_modality_type.id,
                     name=new_modality_type.name,
                     description=new_modality_type.description,
                     escaloes=[
@@ -140,6 +141,7 @@ def create_season(season_payload: SeasonCreate, db: Session = Depends(get_db_ses
                     name=new_team.name,
                     modality_id=new_team.modality_id,
                     course_id=new_team.course_id,
+                    season_id=new_season.id,
                 ),
             )
             outbox_publisher.emit_event(
@@ -166,8 +168,9 @@ def create_season(season_payload: SeasonCreate, db: Session = Depends(get_db_ses
             new_season.season_courses.append(course)
         db.flush()  # Flush to save the new season courses
 
+        aggregate_id = uuid.uuid4()
         event = SeasonCreatedV1.create(
-            aggregate_id=new_season.id,
+            aggregate_id=aggregate_id,
             data=SeasonCreatedData(
                 season_id=new_season.id,
                 name=new_season.name,
@@ -177,7 +180,7 @@ def create_season(season_payload: SeasonCreate, db: Session = Depends(get_db_ses
             db=db,
             event_type=event.event_type(),
             aggregate_type=event.aggregate_type(),
-            aggregate_id=new_season.id,
+            aggregate_id=aggregate_id,
             data=event.to_data_dict(),
         )
 

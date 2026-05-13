@@ -8,7 +8,7 @@ import Button from "../utils/Button";
 
 const NewSeasonModal = () => {
     const { popModal } = useModal();
-    const { activeSeason } = useSeason();
+    const { activeSeason, refreshSeasons } = useSeason();
     const { notify } = useNotification();
 
     const [confirmationText, setConfirmationText] = useState("");
@@ -34,6 +34,7 @@ const NewSeasonModal = () => {
         }).then(() => {
             notify(`Época ${activeSeason?.name} finalizada com sucesso!`, "success");
             onClose();
+            refreshSeasons();
         }).catch((error) => {
             console.error("Erro ao finalizar época:", error);
             notify("Ocorreu um erro ao finalizar a época. Por favor, tente novamente.", "error");
