@@ -20,10 +20,10 @@ jobs:
           # - { path: src/microservices/ranking-service, name: ranking-service }
           # - { path: src/microservices/read-model-updater, name: read-model-updater }
           # - { path: src/microservices/tournaments-service, name: tournaments-service }
-          - { path: src/apis/public-api, name: public-api }
+          #- { path: src/apis/public-api, name: public-api }
           - { path: src/configs/nginx, name: nginx }
-          # - { path: src/frontend/admin-panel, name: admin-panel }   # NOVO
-          # - { path: src/frontend/public-website, name: public-website } # NOVO
+          # - { path: src/frontend/admin-panel, name: admin-panel }
+          # - { path: src/frontend/public-website, name: public-website }
 
     steps:
       - name: Checkout code

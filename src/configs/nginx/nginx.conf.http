@@ -6,7 +6,7 @@ map $http_upgrade $connection_upgrade {
 # Servidor HTTP - serve aplicação e desafio ACME (antes de ter certificados)
 server {
     listen 80;
-    server_name _;
+    server_name ${DOMAIN} localhost;
 
     # Desafio ACME do Let's Encrypt (certbot)
     location /.well-known/acme-challenge/ {
