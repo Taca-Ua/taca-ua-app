@@ -158,8 +158,8 @@ const ModalityTypeCreateModal = ( {
                     </label>
                     <DefinedStatesMenuComponent
                       states={[
-                        {value: 'individual', label: 'Individual'},
-                        {value: 'team', label: 'Equipa'},
+                        {value: 'individual', label: 'Individual', helpText: 'Formato destinado a torneios onde os competidores são atletas individuais.'},
+                        {value: 'team', label: 'Equipa', helpText: 'Formato destinado a torneios onde os competidores são equipas.'},
                       ]}
                       onSelect={(value) => setTournamentCompetitorType(value as 'individual' | 'team')}
                     />
