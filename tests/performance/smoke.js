@@ -24,6 +24,7 @@ export const options = {
 
 const BASE = __ENV.BASE_URL || "http://localhost";
 const API = `${BASE}/api/public`;
+const SEASON_ID = __ENV.SEASON_ID || "2";
 
 export default function () {
   const endpoints = [
@@ -31,8 +32,8 @@ export default function () {
     { url: `${API}/teams`, name: "teams" },
     { url: `${API}/tournaments`, name: "tournaments" },
     { url: `${API}/matches`, name: "matches" },
-    { url: `${API}/ranking/general`, name: "ranking_general" },
-    { url: `${API}/ranking/modality`, name: "ranking_modality" },
+    { url: `${API}/ranking/general?season_id=${SEASON_ID}`, name: "ranking_general" },
+    { url: `${API}/ranking/modality?season_id=${SEASON_ID}`, name: "ranking_modality" },
     { url: `${API}/regulations`, name: "regulations" },
   ];
 

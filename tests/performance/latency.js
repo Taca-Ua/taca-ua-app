@@ -46,6 +46,7 @@ export const options = {
 
 const BASE = __ENV.BASE_URL || "http://localhost";
 const API = `${BASE}/api/public`;
+const SEASON_ID = __ENV.SEASON_ID || "2";
 
 export default function () {
   let res;
@@ -64,14 +65,14 @@ export default function () {
 
   sleep(0.3);
 
-  res = http.get(`${API}/ranking/general`);
+  res = http.get(`${API}/ranking/general?season_id=${SEASON_ID}`);
   latencyGeneralRank.add(res.timings.duration);
   errorRate.add(res.status !== 200);
   check(res, { "general ranking 200": (r) => r.status === 200 });
 
   sleep(0.3);
 
-  res = http.get(`${API}/ranking/modality`);
+  res = http.get(`${API}/ranking/modality?season_id=${SEASON_ID}`);
   latencyModalityRank.add(res.timings.duration);
   errorRate.add(res.status !== 200);
   check(res, { "modality ranking 200": (r) => r.status === 200 });

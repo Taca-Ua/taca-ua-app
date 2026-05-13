@@ -41,10 +41,11 @@ export const options = {
 
 const BASE = __ENV.BASE_URL || "http://localhost";
 const API = `${BASE}/api/public`;
+const SEASON_ID = __ENV.SEASON_ID || "2";
 
 const HEAVY_ENDPOINTS = [
-  `${API}/ranking/general`,
-  `${API}/ranking/modality`,
+  `${API}/ranking/general?season_id=${SEASON_ID}`,
+  `${API}/ranking/modality?season_id=${SEASON_ID}`,
   `${API}/tournaments?page=1&page_size=50`,
   `${API}/matches?page=1&page_size=50`,
   `${API}/teams?page=1&page_size=50`,
