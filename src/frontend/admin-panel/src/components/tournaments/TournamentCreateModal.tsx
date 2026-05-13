@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import HelpTooltip from '../HelpTooltip';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { tournamentsApi, type TournamentListItem, type TournamentCreate } from '../../api/tournaments';
-import { modalitiesApi, type ModalityListItem } from '../../api/modalities';
+import { modalitiesApi } from '../../api/modalities';
 import Button from '../utils/Button';
 import { useModal } from '../../contexts/ModalContext';
 import ChoseOneInput from '../utils/inputs/ChoseOneInput';
+import { useSeason } from '../../contexts/SeasonContext';
 
 
 const TournamentCreateModal = ({
@@ -19,31 +20,13 @@ const TournamentCreateModal = ({
 }) => {
   const { notify } = useNotification();
   const { popModal } = useModal();
+  const { loadedSeason } = useSeason();
 
-  const [modalities, setModalities] = useState<ModalityListItem[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [name, setName] = useState(starterName || '');
   const [chosenModalityId, setChosenModalityId] = useState<string | null>(null);
   const [isPlayoff, setIsPlayoff] = useState(false);
-
-  // Fetch modalities if needed (only when modality is not fixed)
-  useEffect(() => {
-    if (modalityId) return;  // No need to fetch if modality is fixed
-
-    const fetchModalities = async () => {
-      try {
-        const modalitiesData = await modalitiesApi.getAll();
-        setModalities(modalitiesData);
-      } catch (err) {
-        console.error('Failed to fetch modalities:', err);
-      }
-    };
-
-    if (modalities.length === 0) {
-      fetchModalities();
-    }
-  }, []);
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -66,6 +49,7 @@ const TournamentCreateModal = ({
         name,
         modality_id: modalityIdToUse,
         is_playoff: isPlayoff,
+        season_id: loadedSeason?.id
       };
       console.log('Creating tournament with data:', newTournament);
       const createdTournament = await tournamentsApi.create(newTournament);
@@ -121,8 +105,14 @@ const TournamentCreateModal = ({
               <span className="text-red-500">*</span>
             </label>
             <ChoseOneInput
-              allElementsLoader={() => modalitiesApi.getAll().then(res => res.map(c => ({ id: c.id, title: c.name })))}
-              onSelect={(ele) => setChosenModalityId(ele ? ele.id : null)}
+              allElementsLoader={() => modalitiesApi.getAll({
+                season_id: loadedSeason?.id
+              }).then(res => res.filter(c => c.belongs_to_season).map(c => ({ id: c.id, title: c.name })))}
+              onSelect={(ele) => {
+                if (!ele) return;
+                setChosenModalityId(ele.id);
+                if (!name) setName(ele.title);
+              }}
             />
           </div>)}
 

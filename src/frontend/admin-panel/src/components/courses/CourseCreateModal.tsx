@@ -6,6 +6,8 @@ import ChoseOneModal from "../utils/costum_menus/ChoseOneModal";
 import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
 import { useAuth } from "../../hooks/useAuth";
+import { useSeason } from "../../contexts/SeasonContext";
+import { useNotification } from "../../contexts/NotificationProvider";
 
 const CourseCreateModal = ({
   onCreate,
@@ -14,6 +16,8 @@ const CourseCreateModal = ({
 }) => {
   const { popModal, pushModal } = useModal();
   const { isAdminGeneral } = useAuth();
+  const { loadedSeasonIsTheCurrentSeason, activeSeason } = useSeason();
+  const { notify } = useNotification();
 
   const [newCourseName, setNewCourseName] = useState("");
   const [newCourseAbbreviation, setNewCourseAbbreviation] = useState("");
@@ -21,15 +25,15 @@ const CourseCreateModal = ({
 
   const handleAddCourse = async () => {
     if (!newCourseName.trim()) {
-      alert("Por favor, preencha o nome do curso.");
+      notify("Por favor, preencha o nome do curso.", "error");
       return;
     }
     if (!newCourseAbbreviation.trim()) {
-      alert("Por favor, preencha a abreviatura do curso.");
+      notify("Por favor, preencha a abreviatura do curso.", "error");
       return;
     }
     if (!selectedNucleo) {
-      alert("Por favor, selecione um núcleo.");
+      notify("Por favor, selecione um núcleo.", "error");
       return;
     }
 
@@ -44,7 +48,7 @@ const CourseCreateModal = ({
       onClose();
     } catch (err) {
       console.error("Failed to create course:", err);
-      alert("Não foi possível criar o curso. Tente novamente.");
+      notify("Não foi possível criar o curso. Tente novamente.", "error");
     }
   };
 
@@ -62,6 +66,13 @@ const CourseCreateModal = ({
         <h2 className="text-2xl font-bold mb-6 text-gray-800">
           Adicionar Curso
         </h2>
+
+        {!loadedSeasonIsTheCurrentSeason && (
+          <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6" role="alert">
+            <p className="font-medium">Atenção:</p>
+            <p>Este curso será adicionado à temporada ativa: <strong>{activeSeason?.name}</strong></p>
+          </div>
+        )}
 
         <div className="space-y-4">
           <div>

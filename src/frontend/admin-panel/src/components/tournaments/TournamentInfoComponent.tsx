@@ -80,6 +80,15 @@ const TournamentInfoComponent = ({
       </div>
 
       <div>
+        <label className="block text-teal-500 font-medium mb-2">
+          Temporada
+        </label>
+        <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
+          {tournament.season.name}
+        </div>
+      </div>
+
+      <div>
         <label className="block text-teal-500 font-medium mb-2">Estado</label>
         <div className="w-full px-4 py-3 bg-gray-100 rounded-md">
           <span

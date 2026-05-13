@@ -49,7 +49,15 @@ def _find_escalao(
     escaloes: List[ModalityTypeEscalao], participant_count: int
 ) -> Optional[ModalityTypeEscalao]:
     """Return the escalao whose participant range covers *participant_count*."""
+    print(
+        f"Finding escalao for participant count {participant_count} among {len(escaloes)} candidates",
+        flush=True,
+    )
     for escalao in escaloes:
+        print(
+            f"Checking escalao with range [{escalao.min_participants}, {escalao.max_participants}] against participant count {participant_count}",
+            flush=True,
+        )
         if (
             escalao.min_participants is not None
             and participant_count < escalao.min_participants
@@ -77,7 +85,7 @@ def _points_for_position(escalao: ModalityTypeEscalao, position: int) -> int:
 # ---------------------------------------------------------------------------
 
 
-def compute_all_rankings(db: Session) -> int:
+def compute_all_rankings(db: Session, season_id: int) -> int:
     """
     Recompute all derived ranking tables from the current core-table state.
 
@@ -94,9 +102,15 @@ def compute_all_rankings(db: Session) -> int:
     count = 0
 
     # --- 1. Clear derived tables -------------------------------------------
-    db.query(GeneralRanking).delete()
-    db.query(CourseRanking).delete()
-    db.query(ModalityRanking).delete()
+    db.query(GeneralRanking).filter(GeneralRanking.season_id == season_id).delete(
+        synchronize_session=False
+    )
+    db.query(CourseRanking).filter(CourseRanking.season_id == season_id).delete(
+        synchronize_session=False
+    )
+    db.query(ModalityRanking).filter(ModalityRanking.season_id == season_id).delete(
+        synchronize_session=False
+    )
     db.flush()
 
     # --- 2. Load modalities and their escaloes in bulk ----------------------
@@ -125,6 +139,7 @@ def compute_all_rankings(db: Session) -> int:
     for modality in modalities:
         tournaments: List[Tournament] = (
             db.query(Tournament)
+            .filter(Tournament.season_id == season_id)
             .filter(Tournament.modality_id == modality.modality_id)
             .all()
         )
@@ -209,6 +224,7 @@ def compute_all_rankings(db: Session) -> int:
                     modality_id=modality_id,
                     course_id=course_id,
                     points=pts,
+                    season_id=season_id,
                 )
             )
             count += 1
@@ -229,10 +245,13 @@ def compute_all_rankings(db: Session) -> int:
 
         db.add(
             CourseRanking(
-                course_id=course_id, points=total, modality_breakdown=breakdown
+                season_id=season_id,
+                course_id=course_id,
+                points=total,
+                modality_breakdown=breakdown,
             )
         )
-        db.add(GeneralRanking(course_id=course_id, points=total))
+        db.add(GeneralRanking(course_id=course_id, season_id=season_id, points=total))
         count += 2  # one CourseRanking + one GeneralRanking per course
         print(
             f"Course {course_id} has total {total} points with breakdown {breakdown}",
@@ -250,7 +269,7 @@ def compute_all_rankings(db: Session) -> int:
     return count
 
 
-def emit_ranking_computed_event(db: Session, publisher) -> None:
+def emit_ranking_computed_event(db: Session, publisher, season_id: int) -> None:
     """
     Build and persist a RankingComputedV1 outbox event from the current
     state of the derived ranking tables.
@@ -301,6 +320,7 @@ def emit_ranking_computed_event(db: Session, publisher) -> None:
 
     general_data = [
         GeneralRankingEntryData(
+            season_id=r.season_id,
             course_id=r.course_id,
             points=r.points,
             tournaments_participated=tournaments_by_course.get(r.course_id, 0),
@@ -309,6 +329,7 @@ def emit_ranking_computed_event(db: Session, publisher) -> None:
     ]
     modality_data = [
         ModalityRankingEntryData(
+            season_id=r.season_id,
             modality_id=r.modality_id,
             course_id=r.course_id,
             points=r.points,
@@ -320,6 +341,7 @@ def emit_ranking_computed_event(db: Session, publisher) -> None:
     event = RankingComputedV1.create(
         aggregate_id=aggregate_id,
         data=RankingComputedData(
+            season_id=season_id,
             general_ranking=general_data,
             modality_rankings=modality_data,
         ),

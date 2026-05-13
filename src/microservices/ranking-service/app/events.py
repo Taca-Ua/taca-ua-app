@@ -30,6 +30,7 @@ def handle_modality_type_created(event: modalities.ModalityTypeCreatedV1):
     """Handle modality type created event."""
     modality_type_id = event.data.modality_type_id
     escaloes_data = event.data.escaloes
+    season_id = event.data.season_id
     logger.info(
         "event_received",
         event_type="modality_type.created",
@@ -39,6 +40,7 @@ def handle_modality_type_created(event: modalities.ModalityTypeCreatedV1):
     with get_db() as db:
         modality_type = ModalityType(
             modality_type_id=modality_type_id,
+            season_id=season_id,
         )
         db.add(modality_type)
 
@@ -79,8 +81,8 @@ def handle_modality_type_updated(event: modalities.ModalityTypeUpdatedV1):
             return
 
         # Update modality type id if provided
-        if event.data.modality_type_id is not None:
-            modality_type.modality_type_id = event.data.modality_type_id
+        if modality_type_id is not None:
+            modality_type.modality_type_id = modality_type_id
             db.flush()
 
         # Update escaloes if provided
@@ -102,8 +104,10 @@ def handle_modality_type_updated(event: modalities.ModalityTypeUpdatedV1):
                 )
                 db.add(escalao)
         db.flush()
-        compute_all_rankings(db)
-        emit_ranking_computed_event(db, outbox_publisher)
+        compute_all_rankings(db, season_id=modality_type.season_id)
+        emit_ranking_computed_event(
+            db, outbox_publisher, season_id=modality_type.season_id
+        )
 
 
 @rabbitmq_service.event_handler(modalities.ModalityTypeDeletedV1)
@@ -127,10 +131,11 @@ def handle_modality_type_deleted(event: modalities.ModalityTypeDeletedV1):
                 "modality_type_not_found", modality_type_id=str(modality_type_id)
             )
             return
+        season_id = modality_type.season_id
         db.delete(modality_type)
         db.flush()
-        compute_all_rankings(db)
-        emit_ranking_computed_event(db, outbox_publisher)
+        compute_all_rankings(db, season_id=season_id)
+        emit_ranking_computed_event(db, outbox_publisher, season_id=season_id)
 
 
 # ==================== Modality Events ====================
@@ -205,6 +210,7 @@ def handle_tournament_created(event: tournaments.TournamentCreatedV1):
     """Handle tournament created event."""
     tournament_id = event.data.tournament_id
     scoring_format_id = event.data.scoring_format_id
+    season_id = event.data.season_id
     logger.info(
         "event_received",
         event_type="tournament.created",
@@ -217,6 +223,7 @@ def handle_tournament_created(event: tournaments.TournamentCreatedV1):
             tournament_id=tournament_id,
             modality_id=event.data.modality_id,
             scoring_format_id=scoring_format_id,
+            season_id=season_id,
         )
         db.add(tournament)
         db.flush()
@@ -248,8 +255,10 @@ def handle_tournament_updated(event: tournaments.TournamentUpdatedV1):
             tournament.scoring_format_id = scoring_format_id
 
         db.flush()
-        compute_all_rankings(db)
-        emit_ranking_computed_event(db, outbox_publisher)
+        compute_all_rankings(db, season_id=tournament.season_id)
+        emit_ranking_computed_event(
+            db, outbox_publisher, season_id=tournament.season_id
+        )
 
 
 @rabbitmq_service.event_handler(tournaments.TournamentDeletedV1)
@@ -274,10 +283,11 @@ def handle_tournament_deleted(event: tournaments.TournamentDeletedV1):
         if not tournament:
             logger.warning("tournament_not_found", tournament_id=str(tournament_id))
             return
+        season_id = tournament.season_id
         db.delete(tournament)
         db.flush()
-        compute_all_rankings(db)
-        emit_ranking_computed_event(db, outbox_publisher)
+        compute_all_rankings(db, season_id=season_id)
+        emit_ranking_computed_event(db, outbox_publisher, season_id=season_id)
 
 
 @rabbitmq_service.event_handler(tournaments.TournamentFinishedV1)
@@ -319,8 +329,10 @@ def handle_tournament_finished(event: tournaments.TournamentFinishedV1):
             tournament_id=str(tournament_id),
             ranking_entries_count=len(ranking_entries),
         )
-        compute_all_rankings(db)
-        emit_ranking_computed_event(db, outbox_publisher)
+        compute_all_rankings(db, season_id=tournament.season_id)
+        emit_ranking_computed_event(
+            db, outbox_publisher, season_id=tournament.season_id
+        )
 
 
 @rabbitmq_service.event_handler(tournaments.TournamentCompetitorAddedV1)

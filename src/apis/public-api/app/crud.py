@@ -5,7 +5,7 @@ This module provides read-only operations on the materialized views
 in the public_read schema. All read operations include caching via Redis.
 """
 
-from typing import Optional
+from typing import Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy import or_
@@ -16,6 +16,7 @@ from taca_models import (
     ModalityRankingView,
     NucleoDetailView,
     Regulation,
+    SeasonDetailView,
     StudentDetailView,
     TeamDetailView,
     TournamentDetailView,
@@ -75,8 +76,8 @@ def get_nucleo_by_id(db: Session, nucleo_id: UUID) -> Optional[NucleoDetailView]
 @cached(
     cache_key="",
     ttl=CACHE_TTL["team_list"],
-    key_builder=lambda db, skip=0, limit=100, course_id=None, nucleo_id=None, modality_id=None: CacheKeyGenerator.team_list(
-        skip, limit, course_id, nucleo_id, modality_id
+    key_builder=lambda db, skip=0, limit=100, course_id=None, nucleo_id=None, modality_id=None, season_id=None: CacheKeyGenerator.team_list(
+        skip, limit, course_id, nucleo_id, modality_id, season_id
     ),
 )
 def get_teams(
@@ -86,6 +87,7 @@ def get_teams(
     course_id: Optional[UUID] = None,
     nucleo_id: Optional[UUID] = None,
     modality_id: Optional[UUID] = None,
+    season_id: Optional[int] = None,
 ) -> tuple[list[TeamDetailView], int]:
     """
     Get list of teams with pagination and optional filters.
@@ -97,7 +99,7 @@ def get_teams(
         course_id: Filter by course ID
         nucleo_id: Filter by nucleo ID
         modality_id: Filter by modality ID
-
+        season_id: Filter by season ID
     Returns:
         Tuple of (list of teams, total count)
     """
@@ -110,6 +112,8 @@ def get_teams(
         query = query.filter(TeamDetailView.nucleo_id == nucleo_id)
     if modality_id:
         query = query.filter(TeamDetailView.modality_id == modality_id)
+    if season_id:
+        query = query.filter(TeamDetailView.team_season_id == season_id)
 
     # Get total count
     total = query.count()
@@ -256,8 +260,8 @@ def get_student_by_number(
 @cached(
     cache_key="",
     ttl=CACHE_TTL["tournament_list"],
-    key_builder=lambda db, skip=0, limit=100, modality_id=None, status=None: CacheKeyGenerator.tournament_list(
-        skip, limit, modality_id, status
+    key_builder=lambda db, skip=0, limit=100, modality_id=None, status=None, season_id=None: CacheKeyGenerator.tournament_list(
+        skip, limit, modality_id, status, season_id
     ),
 )
 def get_tournaments(
@@ -266,6 +270,7 @@ def get_tournaments(
     limit: int = 100,
     modality_id: Optional[UUID] = None,
     status: Optional[str] = None,
+    season_id: Optional[int] = None,
 ) -> tuple[list[TournamentDetailView], int]:
     """
     Get list of tournaments with pagination and optional filters.
@@ -276,7 +281,7 @@ def get_tournaments(
         limit: Maximum number of records to return
         modality_id: Filter by modality ID
         status: Filter by tournament status
-
+        season_id: Filter by season ID
     Returns:
         Tuple of (list of tournaments, total count)
     """
@@ -287,6 +292,8 @@ def get_tournaments(
         query = query.filter(TournamentDetailView.modality_id == modality_id)
     if status:
         query = query.filter(TournamentDetailView.status == status)
+    if season_id:
+        query = query.filter(TournamentDetailView.tournament_season_id == season_id)
 
     # Get total count
     total = query.count()
@@ -470,10 +477,11 @@ def get_standings_by_competitor(
 @cached(
     cache_key="",
     ttl=CACHE_TTL["ranking"],
-    key_builder=lambda db, nucleo_id=None: f"ranking:general:{nucleo_id}",
+    key_builder=lambda db, season_id, nucleo_id=None: f"ranking:general:{season_id}:{nucleo_id}",
 )
 def get_general_ranking(
     db: Session,
+    season_id: int,
     nucleo_id: Optional[UUID] = None,
 ) -> tuple[list[GeneralRankingView], int]:
     """
@@ -481,12 +489,15 @@ def get_general_ranking(
 
     Args:
         db: Database session
+        season_id: Season ID to filter the ranking
         nucleo_id: Optional filter by nucleo ID
 
     Returns:
         Tuple of (list of rankings, total count)
     """
-    query = db.query(GeneralRankingView)
+    query = db.query(GeneralRankingView).filter(
+        GeneralRankingView.season_id == season_id
+    )
 
     # Apply filters
     if nucleo_id:
@@ -536,11 +547,12 @@ def get_course_ranking(db: Session, course_id: UUID) -> Optional[GeneralRankingV
 @cached(
     cache_key="",
     ttl=CACHE_TTL["regulation"],
-    key_builder=lambda db, search=None: f"regulation:list:{search}",
+    key_builder=lambda db, search=None, season_id=None: f"regulation:list:{search}:{season_id}",
 )
 def get_regulations(
     db: Session,
     search: Optional[str] = None,
+    season_id: Optional[int] = None,
 ) -> list[Regulation]:
     """
     Get all regulations, optionally filtered by a search term.
@@ -548,11 +560,14 @@ def get_regulations(
     Args:
         db: Database session
         search: Optional search string matched against title and description
-
+        season_id: Optional filter by season ID
     Returns:
         List of regulations ordered by creation date (newest first)
     """
     query = db.query(Regulation)
+
+    if season_id:
+        query = query.filter(Regulation.season_id == season_id)
 
     if search:
         term = f"%{search}%"
@@ -572,10 +587,11 @@ def get_regulations(
 @cached(
     cache_key="",
     ttl=CACHE_TTL["ranking"],
-    key_builder=lambda db, modality_id=None, nucleo_id=None: f"ranking:modality:{modality_id}:{nucleo_id}",
+    key_builder=lambda db, season_id, modality_id=None, nucleo_id=None: f"ranking:modality:{season_id}:{modality_id}:{nucleo_id}",
 )
 def get_modality_ranking(
     db: Session,
+    season_id: int,
     modality_id: Optional[UUID] = None,
     nucleo_id: Optional[UUID] = None,
 ) -> tuple[list[ModalityRankingView], int]:
@@ -585,13 +601,16 @@ def get_modality_ranking(
 
     Args:
         db: Database session
+        season_id: Season ID to filter the ranking
         modality_id: Optional filter by modality ID
         nucleo_id: Optional filter by nucleo ID
 
     Returns:
         Tuple of (list of rankings, total count)
     """
-    query = db.query(ModalityRankingView)
+    query = db.query(ModalityRankingView).filter(
+        ModalityRankingView.season_id == season_id
+    )
 
     # Apply filters
     if modality_id:
@@ -642,3 +661,24 @@ def get_course_modality_rankings(
         )
         .all()
     )
+
+
+# ==================== Season View Operations ====================
+
+
+@cached(
+    cache_key="",
+    ttl=CACHE_TTL["season"],
+    key_builder=lambda db: "season:list",
+)
+def get_seasons(db: Session) -> Tuple[list[SeasonDetailView], int]:
+    """Get list of all seasons.
+
+    Returns:
+        List of season details ordered by most recent first
+    """
+
+    query = db.query(SeasonDetailView)
+    total = query.count()
+
+    return query.all(), total

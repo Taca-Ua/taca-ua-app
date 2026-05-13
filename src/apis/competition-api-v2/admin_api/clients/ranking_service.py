@@ -1,7 +1,5 @@
 """
 Service for communicating with ranking-service microservice
-
-NOT IMPLEMENTED YET - RANKING SERVICE IS NOT READY
 """
 
 import os

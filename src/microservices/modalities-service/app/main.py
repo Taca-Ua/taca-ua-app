@@ -14,6 +14,7 @@ from .routes import (
     modality_type_router,
     nucleo_router,
     regulation_router,
+    seasons_router,
     staff_router,
     student_router,
     team_router,
@@ -52,7 +53,8 @@ app.include_router(nucleo_router, tags=["nucleos"])
 app.include_router(staff_router, tags=["staff"])
 app.include_router(student_router, tags=["students"])
 app.include_router(team_router, tags=["teams"])
-app.include_router(regulation_router)
+app.include_router(regulation_router, tags=["regulations"])
+app.include_router(seasons_router, tags=["seasons"])
 app.include_router(internal_router)
 
 

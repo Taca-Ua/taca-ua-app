@@ -8,29 +8,20 @@ import ChooseMultipleModal, {
 import { athletesApi, type AthleteListItem } from "../../api/athletes";
 import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
+import { useNotification } from "../../contexts/NotificationProvider";
+import { useNavigate } from "react-router-dom";
 
-const TeamDetailComponent = ({ teamId }: { teamId: string }) => {
-  const [team, setTeam] = useState<TeamDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+const TeamInfoComponent = ({
+  teamState
+} : {
+  teamState: [TeamDetail | null, React.Dispatch<React.SetStateAction<TeamDetail | null>>]
+}) => {
+  const [team, setTeam] = teamState;
   const { pushModal } = useModal();
+  const { notify } = useNotification();
+  const navigate = useNavigate();
 
   const [avaiblePlayers, setAvailablePlayers] = useState<AthleteListItem[]>([]);
-
-  useEffect(() => {
-    setLoading(true);
-    const fetchTeam = async () => {
-      try {
-        const data = await teamsApi.get(teamId);
-        setTeam(data);
-      } catch (error) {
-        console.error("Error fetching team data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTeam();
-  }, [teamId]);
 
   useEffect(() => {
     const fetchAvailablePlayers = async () => {
@@ -46,15 +37,20 @@ const TeamDetailComponent = ({ teamId }: { teamId: string }) => {
   }, []);
 
   const handleDelete = async () => {
-    try {
-      await teamsApi.delete(String(teamId));
-      // Redirect or update UI after deletion
-    } catch (error) {
-      console.error("Error deleting team:", error);
-    }
+    if (!team) return;
+    teamsApi.delete(team.id)
+      .then(() => {
+        notify("Equipa eliminada com sucesso.", "success");
+        navigate("/equipas");
+      })
+      .catch((error) => {
+        console.error("Error deleting team:", error);
+        notify("Erro ao eliminar a equipa.", "error");
+      });
   };
 
   const handleUpdatePlayers = async (players: GenericElement[]) => {
+    if (!team) return;
     const playersToAdd = players.filter(
       (p) => !team?.players.some((tp) => tp.id === p.id),
     );
@@ -62,7 +58,7 @@ const TeamDetailComponent = ({ teamId }: { teamId: string }) => {
       team?.players.filter((tp) => !players.some((p) => p.id === tp.id)) || [];
 
     try {
-      const updatedTeam = await teamsApi.update(teamId, {
+      const updatedTeam = await teamsApi.update(team.id, {
         players_add: playersToAdd.map((p) => p.id),
         players_remove: playersToRemove.map((p) => p.id),
       });
@@ -71,33 +67,6 @@ const TeamDetailComponent = ({ teamId }: { teamId: string }) => {
       console.error("Error updating team players:", error);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <svg
-          className="animate-spin h-10 w-10 text-gray-600"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle
-            className="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            strokeWidth="4"
-          ></circle>
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-          ></path>
-        </svg>
-      </div>
-    );
-  }
 
   if (!team) {
     return (
@@ -144,6 +113,20 @@ const TeamDetailComponent = ({ teamId }: { teamId: string }) => {
           </label>
           <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
             {team.modality.name}
+          </div>
+        </div>
+
+        {/* Season */}
+        <div>
+          <label className="block text-teal-500 font-medium mb-2">
+            Temporada{" "}
+            <HelpTooltip
+              text="Temporada em que esta equipa está inscrita."
+              className="ml-1"
+            />
+          </label>
+          <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
+            {team.season.name}
           </div>
         </div>
 
@@ -257,4 +240,4 @@ const TeamDetailComponent = ({ teamId }: { teamId: string }) => {
   );
 };
 
-export default TeamDetailComponent;
+export default TeamInfoComponent;

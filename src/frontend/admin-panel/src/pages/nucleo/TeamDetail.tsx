@@ -1,12 +1,28 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import TeamDetailComponent from '../../components/teams/TeamDetailComponent';
+import TeamInfoComponent from '../../components/teams/TeamInfoComponent';
 import Button from '../../components/utils/Button';
 import { navigateBack } from '../../utils';
+import { teamsApi, type TeamDetail } from '../../api/teams';
+import { useEffect, useState } from 'react';
+import { useNotification } from '../../contexts/NotificationProvider';
 
 
 const TeamDetailPage = () => {
   const teamId = useParams<{ id: string }>().id || "";
   const navigate = useNavigate();
+  const { notify } = useNotification();
+
+  const [team, setTeam] = useState<TeamDetail | null>(null);
+
+  useEffect(() => {
+    teamsApi.get(teamId)
+      .then((data) => setTeam(data))
+      .catch((error) => {
+        console.error("Error fetching team data:", error);
+        setTeam(null);
+        notify("Erro ao carregar os detalhes da equipa.", "error");
+      });
+  }, [teamId]);
 
   const handleBack = () => {
     navigateBack(navigate, '/equipas');
@@ -28,8 +44,8 @@ const TeamDetailPage = () => {
             </div>
           </div>
 
-          <TeamDetailComponent
-            teamId={teamId}
+          <TeamInfoComponent
+            teamState={[team, setTeam]}
           />
         </div>
       </div>

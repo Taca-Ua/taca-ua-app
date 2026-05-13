@@ -49,14 +49,17 @@ class ModalityTypesService:
             tournament_competitor_type=modality.tournament_competitor_type,
         )
 
-    def list_modality_types(self, include_playoff=False) -> List[ModalityType]:
+    def list_modality_types(
+        self, include_playoff=False, season_id=None
+    ) -> List[ModalityType]:
         """List all modality types, optionally including playoff type
 
         Args:
             include_playoff (bool, optional): _description_. Defaults to False.
+            season_id (str, optional): ID of the season for which to list modality types. Defaults to None.
         """
         answer = modalities_service_client.modality_types.list_modality_types(
-            include_playoff=include_playoff
+            include_playoff=include_playoff, season_id=season_id
         )
         return [
             self._build_admin_from_modalities_answer(modality) for modality in answer
@@ -69,6 +72,7 @@ class ModalityTypesService:
         escaloes=None,
         is_playoff=False,
         tournament_competitor_type=None,
+        season_id=None,
     ) -> List[ModalityType]:
         """Create a new modality type
 
@@ -78,6 +82,7 @@ class ModalityTypesService:
             escaloes (list, optional): List of escaloes for the modality type. Defaults to None.
             is_playoff (bool, optional): Whether the modality type is a playoff. Defaults to False.
             tournament_competitor_type (str, optional): Type of competitors in the tournament. Defaults to None.
+            season_id (str, optional): ID of the season to which the modality type belongs. Defaults to None.
         """
         answer = modalities_service_client.modality_types.create_modality_type(
             name=name,
@@ -85,6 +90,7 @@ class ModalityTypesService:
             escaloes=escaloes or [],
             is_playoff=is_playoff,
             tournament_competitor_type=tournament_competitor_type,
+            season_id=season_id,
         )
         return self._build_admin_from_modalities_answer(answer)
 

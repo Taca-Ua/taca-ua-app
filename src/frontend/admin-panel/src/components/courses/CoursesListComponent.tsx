@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react"
-import { type CourseListItem, coursesApi } from "../../api/courses"
+import { useState } from "react"
+import { type CourseListItem } from "../../api/courses"
 import { useNavigate } from "react-router"
 
 const CourseEntry = (course: CourseListItem) => {
@@ -8,7 +8,7 @@ const CourseEntry = (course: CourseListItem) => {
     <button
       type="button"
       onClick={() => navigate(`/cursos/${course.id}`)}
-      className="w-full text-left px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-teal-500"
+      className={"w-full text-left px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-teal-500" + (course.belongs_to_season ? "" : " opacity-50")}
     >
       <div className="flex items-center gap-4">
         <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center border-2 border-teal-500 flex-shrink-0">
@@ -28,26 +28,18 @@ const CourseEntry = (course: CourseListItem) => {
 const CoursesListComponent = ( {
   coursesState,
 } : {
-  coursesState?: [CourseListItem[], React.Dispatch<React.SetStateAction<CourseListItem[]>>]
+  coursesState: [CourseListItem[], React.Dispatch<React.SetStateAction<CourseListItem[] | null>>]
 } ) => {
-  const [ courses, setCourses ] = coursesState? coursesState : useState<CourseListItem[] | null>(null)
+  const [ courses, ] = coursesState
 
   const [ searchQuery, setSearchQuery ] = useState('')
   const [ nucleoFilter, setNucleoFilter ] = useState('')
-
-  useEffect(() => {
-    coursesApi.getAll().then(data => {
-      setCourses(data)
-    }).catch(err => {
-      console.error("Failed to fetch courses:", err);
-      setCourses([]);
-    })
-  }, [])
 
   const filteredCourses = courses?.filter(c =>
     (c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.abbreviation.toLowerCase().includes(searchQuery.toLowerCase())) &&
     (nucleoFilter === '' || c.nucleo.id === nucleoFilter)
   ) || []
+  const sortedCourses = filteredCourses.sort((a, b) => a.name.localeCompare(b.name)).sort((a) => a.belongs_to_season? -1 : 1)
 
   if (courses === null) {
     return (
@@ -81,9 +73,8 @@ const CoursesListComponent = ( {
       </div>
 
       <div className="space-y-3">
-        {filteredCourses.length > 0 ? (
-          [...filteredCourses]
-            .sort((a, b) => a.name.localeCompare(b.name))
+        {sortedCourses.length > 0 ? (
+          sortedCourses
             .map((course) => (
               <CourseEntry key={course.id} {...course} />
             ))

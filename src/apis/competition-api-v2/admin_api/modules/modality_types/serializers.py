@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 
-# Sub-serializers
+# Helpers
 class _EscalaoSerializer(serializers.Serializer):
     """Serializer for Escalao within ModalityType serializers"""
 
@@ -11,7 +11,7 @@ class _EscalaoSerializer(serializers.Serializer):
     points = serializers.ListField(child=serializers.IntegerField())
 
 
-# Main serializers
+# Response serializers
 class ModalityTypeMinimalSerializer(serializers.Serializer):
     """Minimal serializer for modality type"""
 
@@ -40,6 +40,13 @@ class ModalityTypeDetailSerializer(ModalityTypeListSerializer):
     escaloes = _EscalaoSerializer(many=True)
 
 
+# Request serializers
+class ModalityTypeListQuerySerializer(serializers.Serializer):
+    """Serializer for modality type list query parameters"""
+
+    season_id = serializers.IntegerField(required=False)
+
+
 class ModalityTypeCreateSerializer(serializers.Serializer):
     """Serializer for creating a modality type"""
 
@@ -52,6 +59,7 @@ class ModalityTypeCreateSerializer(serializers.Serializer):
     tournament_competitor_type = serializers.ChoiceField(
         choices=["individual", "team"], required=False
     )
+    season_id = serializers.IntegerField(required=False)
 
 
 class ModalityTypeUpdateSerializer(serializers.Serializer):

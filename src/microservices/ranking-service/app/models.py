@@ -32,6 +32,7 @@ class ModalityType(Base):
     __tablename__ = "modality_types"
     __table_args__ = {"schema": "ranking"}
     modality_type_id = Column(UUID(as_uuid=True), primary_key=True)
+    season_id = Column(Integer, nullable=False, primary_key=True)
 
 
 class Modality(Base):
@@ -47,6 +48,7 @@ class Tournament(Base):
     __table_args__ = {"schema": "ranking"}
 
     tournament_id = Column(UUID(as_uuid=True), primary_key=True)
+    season_id = Column(Integer, nullable=False)
     modality_id = Column(UUID(as_uuid=True), nullable=False)
     scoring_format_id = Column(UUID(as_uuid=True), nullable=True)
 
@@ -81,11 +83,13 @@ class GeneralRanking(Base):
     __tablename__ = "general_rankings"
     __table_args__ = {"schema": "ranking"}
 
+    season_id = Column(Integer, primary_key=True)
     course_id = Column(UUID(as_uuid=True), primary_key=True)
     points = Column(Integer, nullable=False)
 
     def to_snapshot(self) -> ranking_snapshots.GeneralRankingSnapshotItem:
         return ranking_snapshots.GeneralRankingSnapshotItem(
+            season_id=self.season_id,
             course_id=str(self.course_id),
             points=self.points,
         )
@@ -95,12 +99,14 @@ class ModalityRanking(Base):
     __tablename__ = "modality_rankings"
     __table_args__ = {"schema": "ranking"}
 
+    season_id = Column(Integer, primary_key=True)
     modality_id = Column(UUID(as_uuid=True), primary_key=True)
     course_id = Column(UUID(as_uuid=True), primary_key=True)
     points = Column(Integer, nullable=False)
 
     def to_snapshot(self) -> ranking_snapshots.ModalityRankingSnapshotItem:
         return ranking_snapshots.ModalityRankingSnapshotItem(
+            season_id=self.season_id,
             modality_id=str(self.modality_id),
             course_id=str(self.course_id),
             points=self.points,
@@ -111,6 +117,7 @@ class CourseRanking(Base):
     __tablename__ = "course_rankings"
     __table_args__ = {"schema": "ranking"}
 
+    season_id = Column(Integer, primary_key=True)
     course_id = Column(UUID(as_uuid=True), primary_key=True)
     points = Column(Integer, nullable=False)
     modality_breakdown = Column(ARRAY(Integer), nullable=False)  # Points per modality

@@ -32,6 +32,7 @@ export interface ModalityTypeCreate {
   escaloes: EscalaoRow[];
   is_playoff?: boolean;
   tournament_competitor_type: 'individual' | 'team';
+  season_id?: number;
 }
 
 export interface ModalityTypeUpdate {
@@ -42,10 +43,14 @@ export interface ModalityTypeUpdate {
   tournament_competitor_type?: 'individual' | 'team';
 }
 
+export interface ModalityTypeListParameters {
+  season_id?: number;
+}
+
 // API methods
 export const modalityTypesApi = {
-  async getAll(): Promise<ModalityTypeListItem[]> {
-    return apiClient.get<ModalityTypeListItem[]>('/modality-types/');
+  async getAll(params?: ModalityTypeListParameters): Promise<ModalityTypeListItem[]> {
+    return apiClient.get<ModalityTypeListItem[]>('/modality-types/', params);
   },
 
   async create(data: ModalityTypeCreate): Promise<ModalityTypeListItem> {

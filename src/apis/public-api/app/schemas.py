@@ -342,3 +342,22 @@ class NucleoList(BaseModel):
     total: int = Field(..., ge=0, description="Total number of nucleos")
     page: int = Field(..., ge=1, description="Current page number")
     page_size: int = Field(..., ge=1, description="Number of items per page")
+
+
+# ==================== Season Schemas ====================
+
+
+class SeasonDetail(BaseModel):
+    """Schema for season detail view response."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    season_id: int = Field(..., description="Unique identifier for the season")
+    name: str = Field(..., description="Season name")
+
+
+class SeasonDetailList(BaseModel):
+    """Schema for paginated list of seasons."""
+
+    items: list[SeasonDetail] = Field(..., description="List of season details")
+    total: int = Field(..., ge=0, description="Total number of seasons")

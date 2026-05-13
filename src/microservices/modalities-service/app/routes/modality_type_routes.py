@@ -3,6 +3,7 @@ from typing import List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from taca_events.pydantic_schemas.modalities import (
@@ -17,9 +18,10 @@ from taca_events.pydantic_schemas.modalities import (
 
 from ..database import get_db_session
 from ..logger import logger
-from ..models import ModalityType
+from ..models import ModalityType, Season
 from ..outbox_publisher import outbox_publisher
 from ..schemas import ModalityTypeCreate, ModalityTypeResponse, ModalityTypeUpdate
+from ..utils import get_active_season
 
 router = APIRouter()
 
@@ -29,13 +31,23 @@ DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000"
 
 @router.get("/modality-types", response_model=List[ModalityTypeResponse])
 def list_modality_types(
-    exclude_playoff: bool = False, db: Session = Depends(get_db_session)
+    exclude_playoff: bool = False,
+    season_id: int = None,
+    db: Session = Depends(get_db_session),
 ):
     """List all modality types"""
-    query = db.query(ModalityType)
+    stmt = select(ModalityType)
+
+    relevant_season_id = season_id
+    if season_id is None:
+        active_season = get_active_season(db)
+        relevant_season_id = active_season.id
+
+    query = stmt.filter(ModalityType.season_id == relevant_season_id)
+
     if exclude_playoff:
         query = query.filter(ModalityType.is_playoff == False)  # noqa: E712
-    modality_types = query.all()
+    modality_types = db.execute(query).scalars().unique().all()
     return [mt.to_dict() for mt in modality_types]
 
 
@@ -48,11 +60,27 @@ def create_modality_type(
     modality_type_data: ModalityTypeCreate, db: Session = Depends(get_db_session)
 ):
     """Create a new modality type"""
+    relevant_season = None
+    if modality_type_data.season_id is not None:
+        relevant_season = (
+            db.query(Season).filter(Season.id == modality_type_data.season_id).first()
+        )
+        if not relevant_season:
+            raise HTTPException(status_code=404, detail="Season not found")
+    else:
+        relevant_season = get_active_season(db)
+
     try:
+
         # Check if a playoff type already exists
         if modality_type_data.is_playoff:
             existing_playoff = (
-                db.query(ModalityType).filter(ModalityType.is_playoff).first()
+                db.query(ModalityType)
+                .filter(
+                    ModalityType.season_id == relevant_season.id,
+                    ModalityType.is_playoff == True,  # noqa: E712
+                )
+                .first()
             )
             if existing_playoff:
                 raise HTTPException(
@@ -66,6 +94,7 @@ def create_modality_type(
             escaloes=modality_type_data.escaloes_encoder(),
             is_playoff=modality_type_data.is_playoff,
             tournament_competitor_type=modality_type_data.tournament_competitor_type,
+            season_id=relevant_season.id,
             created_by=DEFAULT_USER_ID,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
@@ -77,6 +106,7 @@ def create_modality_type(
         event = ModalityTypeCreatedV1.create(
             aggregate_id=modality_type.id,
             data=ModalityTypeCreatedData(
+                season_id=relevant_season.id,
                 modality_type_id=modality_type.id,
                 name=modality_type.name,
                 description=modality_type.description,
@@ -124,9 +154,20 @@ def get_modality_type(modality_type_id: UUID, db: Session = Depends(get_db_sessi
 @router.get("/playoff-modality-type", response_model=ModalityTypeResponse)
 def get_playoff_modality_type(db: Session = Depends(get_db_session)):
     """Get the modality type used for playoff tournaments"""
-    modality_type = db.query(ModalityType).filter(ModalityType.is_playoff).first()
+    active_season = get_active_season(
+        db
+    )  # Ensure we have an active season, will raise if not found
+    modality_type = (
+        db.query(ModalityType)
+        .filter(ModalityType.is_playoff)
+        .filter(ModalityType.season_id == active_season.id)
+        .first()
+    )
+
     if not modality_type:
-        raise HTTPException(status_code=404, detail="Playoff modality type not found")
+        raise HTTPException(
+            status_code=404, detail="Playoff modality type not found for active season"
+        )
     return modality_type.to_dict()
 
 
@@ -138,7 +179,11 @@ def update_modality_type(
 ):
     """Update a modality type"""
     modality_type = (
-        db.query(ModalityType).filter(ModalityType.id == modality_type_id).first()
+        db.query(ModalityType)
+        .filter(
+            ModalityType.id == modality_type_id,
+        )
+        .first()
     )
     if not modality_type:
         raise HTTPException(status_code=404, detail="Modality type not found")
@@ -158,7 +203,11 @@ def update_modality_type(
             # If trying to set this modality type as playoff, check if another playoff type already exists
             existing_playoff = (
                 db.query(ModalityType)
-                .filter(ModalityType.is_playoff, ModalityType.id != modality_type_id)
+                .filter(
+                    ModalityType.is_playoff,
+                    ModalityType.season_id == modality_type.season_id,
+                    ModalityType.id != modality_type_id,
+                )
                 .first()
             )
             if existing_playoff:
@@ -221,10 +270,16 @@ def update_modality_type(
 def delete_modality_type(modality_type_id: UUID, db: Session = Depends(get_db_session)):
     """Delete a modality type"""
     modality_type = (
-        db.query(ModalityType).filter(ModalityType.id == modality_type_id).first()
+        db.query(ModalityType)
+        .filter(
+            ModalityType.id == modality_type_id,
+        )
+        .first()
     )
     if not modality_type:
-        raise HTTPException(status_code=404, detail="Modality type not found")
+        raise HTTPException(
+            status_code=404, detail="Modality type not found for active season"
+        )
 
     # Emit modality type deleted event
     event = ModalityTypeDeletedV1.create(

@@ -15,7 +15,7 @@ from typing import Dict, List
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from taca_models.models import ModalityRankingView, NucleoDetailView
+from taca_models.models import ModalityRankingView, NucleoDetailView, SeasonDetailView
 from taca_rebuild import BaseSSERebuildService, make_sse_rebuild_router
 from taca_snapshots import matches as match_snapshots
 from taca_snapshots import modalities as modality_snapshots
@@ -40,6 +40,7 @@ from .models import (
     ModalityType,
     Nucleo,
     Regulation,
+    Season,
     Student,
     StudentDetailView,
     Team,
@@ -52,6 +53,7 @@ from .models import (
 )
 from .utils import (
     rebuild_all_nucleos,
+    rebuild_all_seasons,
     rebuild_general_ranking_projection,
     rebuild_match_projection,
     rebuild_modality_ranking_projection,
@@ -112,6 +114,8 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
         self.db.query(GeneralRankings).delete()
         self.db.query(ModalityRankings).delete()
         self.db.query(Regulation).delete()
+        self.db.query(Season).delete()
+        self.db.query(SeasonDetailView).delete()
         self.db.flush()
         logger.info("projections_cleared")
 
@@ -291,6 +295,7 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
                         "modality_id": item.modality_id,
                         "course_id": item.course_id,
                         "name": item.name,
+                        "season_id": item.season_id,
                         "created_at": item.created_at,
                         "updated_at": item.updated_at,
                     }
@@ -321,6 +326,7 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
                         "title": item.title,
                         "description": item.description,
                         "file_url": item.file_url,
+                        "season_id": item.season_id,
                     }
                     for item in map(
                         lambda x: modality_snapshots.RegulationSnapshotItem(**x), items
@@ -328,6 +334,20 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
                 ],
             )
             count += len(items)
+
+        elif category == "seasons":
+            self.db.bulk_insert_mappings(
+                Season,
+                [
+                    {
+                        "season_id": item.id,
+                        "name": item.name,
+                    }
+                    for item in map(
+                        lambda x: modality_snapshots.SeasonSnapshotItem(**x), items
+                    )
+                ],
+            )
 
         return count
 
@@ -343,6 +363,7 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
                         "tournament_id": item.id,
                         "modality_id": item.modality_id,
                         "name": item.name,
+                        "season_id": item.season_id,
                         "start_date": item.start_date,
                         "status": item.status,
                         "created_at": item.created_at,
@@ -467,10 +488,12 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
         count = 0
 
         if category == "general_rankings":
+            print("General Rankings:", items, flush=True)
             self.db.bulk_insert_mappings(
                 GeneralRankings,
                 [
                     {
+                        "season_id": item.season_id,
                         "course_id": item.course_id,
                         "points": item.points,
                         "tournaments_participated": item.tournaments_participated,
@@ -488,6 +511,7 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
                 ModalityRankings,
                 [
                     {
+                        "season_id": item.season_id,
                         "modality_id": item.modality_id,
                         "course_id": item.course_id,
                         "points": item.points,
@@ -541,6 +565,9 @@ async def run_post_rebuild_tasks(db_session: Session) -> int:
     """
     total = 0
 
+    rebuild_all_seasons(db_session)
+    total += db_session.query(Season).count()
+
     teams = (
         db_session.query(Team.team_id).filter(Team.deleted_at.is_(None)).yield_per(100)
     )
@@ -579,11 +606,17 @@ async def run_post_rebuild_tasks(db_session: Session) -> int:
         rebuild_tournament_standings(db_session, tournament_id)
     total += db_session.query(TournamentStandingsView).count()
 
-    rebuild_general_ranking_projection(db_session)
-    total += db_session.query(GeneralRankingView).count()
+    for (season_id,) in (
+        db_session.query(GeneralRankings.season_id).distinct().yield_per(100)
+    ):
+        rebuild_general_ranking_projection(db_session, season_id)
+        total += db_session.query(GeneralRankingView).count()
 
-    rebuild_modality_ranking_projection(db_session)
-    total += db_session.query(ModalityRankingView).count()
+    for (season_id,) in (
+        db_session.query(ModalityRankings.season_id).distinct().yield_per(100)
+    ):
+        rebuild_modality_ranking_projection(db_session, season_id)
+        total += db_session.query(ModalityRankingView).count()
 
     rebuild_all_nucleos(db_session)
     total += db_session.query(NucleoDetailView).count()

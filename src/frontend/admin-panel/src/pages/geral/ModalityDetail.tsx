@@ -12,6 +12,8 @@ import TabSystem from '../../components/TabSystem';
 import ModalityInfoComponent from '../../components/modalities/ModalityInfoComponent';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { teamsApi, type TeamListItem } from '../../api/teams';
+import { useSeason } from '../../contexts/SeasonContext';
+import SeasonSelector from '../../components/seasons/SeasonSelector';
 
 
 const TournamentsTab = ({
@@ -24,6 +26,7 @@ const TournamentsTab = ({
   const { pushModal } = useModal();
   const { isAdminGeneral } = useAuth();
   const { notify } = useNotification();
+  const { loadedSeason } = useSeason();
 
   const [tournaments, setTournaments] = tournamentsState || useState<TournamentListItem[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,9 +36,9 @@ const TournamentsTab = ({
   };
 
   useEffect(() => {
-    if (tournaments) return; // Evita recarregar se já temos os torneios carregados
+    if (!modality.belongs_to_season) return;
     setIsLoading(true);
-    tournamentsApi.getAll({ modality_id: modality.id })
+    tournamentsApi.getAll({ modality_id: modality.id, season_id: loadedSeason?.id })
       .then((data) => setTournaments(data))
       .catch((error) => {
         console.error('Erro ao carregar torneios:', error);
@@ -43,7 +46,7 @@ const TournamentsTab = ({
         notify('Falha ao carregar torneios para esta modalidade.', 'error');
       })
       .finally(() => setIsLoading(false));
-  }, [modality.id]);
+  }, [modality.id, modality.belongs_to_season, loadedSeason?.id]);
 
   const renderTournamentList = () => {
     if (isLoading) {
@@ -95,18 +98,18 @@ const TeamsTab = ({
 }) => {
   const [teams, setTeams] = teamsState || useState<TeamListItem[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { loadedSeason } = useSeason();
 
   useEffect(() => {
-    if (teams) return; // Evita recarregar se já temos as equipas carregadas
     setIsLoading(true);
-    teamsApi.getAll({ modality_id: modality.id })
+    teamsApi.getAll({ modality_id: modality.id, season_id: loadedSeason?.id })
       .then((data) => setTeams(data))
       .catch((error) => {
         console.error('Erro ao carregar equipas:', error);
         setTeams(null);
       })
       .finally(() => setIsLoading(false));
-  }, [modality.id]);
+  }, [modality.id, loadedSeason?.id]);
 
   if (isLoading) {
     return <div className="text-gray-500">Carregando equipas...</div>;
@@ -129,28 +132,22 @@ function ModalidadeDetail() {
 
   const { notify } = useNotification();
   const navigate = useNavigate();
+  const { loadedSeason } = useSeason();
 
   const [modality, setModality] = useState<ModalityDetail | null>(null);
-  const [loading, setLoading] = useState(true);
 
   const [tournaments, setTournaments] = useState<TournamentListItem[] | null>(null); // Estado para armazenar os torneios, passado para o TabSystem
   const [teams, setTeams] = useState<TeamListItem[] | null>(null); // Estado para armazenar as equipas, passado para o TabSystem
 
   useEffect(() => {
-    setLoading(true);
-    modalitiesApi.getById(modalityId)
+    modalitiesApi.getById(modalityId, loadedSeason?.id)
       .then((data) => setModality(data))
       .catch((error) => {
         console.error('Erro ao carregar modalidade:', error);
         setModality(null);
         notify('Falha ao carregar detalhes da modalidade.', 'error');
-      })
-      .finally(() => setLoading(false));
-  }, [modalityId]);
-
-  if (loading) {
-    return <div className="text-gray-500">Carregando detalhes da modalidade...</div>;
-  }
+      });
+  }, [modalityId, loadedSeason?.id]);
 
   if (!modality) {
     return <div className="text-red-500">Modalidade não encontrada.</div>;
@@ -158,6 +155,7 @@ function ModalidadeDetail() {
 
   return (
     <>
+      <SeasonSelector relevantSeasonIds={modality.relevant_season_ids} />
       <div className="flex-1 p-8 max-w-5xl mx-auto">
         <div className="mb-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-800">Detalhes da Modalidade</h1>
@@ -174,14 +172,16 @@ function ModalidadeDetail() {
         <ModalityInfoComponent modalityState={[modality, setModality]} />
 
       </div>
-      <div className="flex-1 max-w-7xl mx-auto">
-        <TabSystem
-          elements={[
-            { id: 'tournaments', label: 'Torneios', content: <TournamentsTab modality={modality} tournamentsState={[tournaments, setTournaments]} /> },
-            { id: 'teams', label: 'Equipas', content: <TeamsTab modality={modality} teamsState={[teams, setTeams]} /> },
-          ]}
-        />
-      </div>
+      { modality.belongs_to_season && (
+        <div className="flex-1 max-w-7xl mx-auto">
+          <TabSystem
+            elements={[
+              { id: 'tournaments', label: 'Torneios', content: <TournamentsTab modality={modality} tournamentsState={[tournaments, setTournaments]} /> },
+              { id: 'teams', label: 'Equipas', content: <TeamsTab modality={modality} teamsState={[teams, setTeams]} /> },
+            ]}
+          />
+        </div>
+      )}
     </>
   );
 }

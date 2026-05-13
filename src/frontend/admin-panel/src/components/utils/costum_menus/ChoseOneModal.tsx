@@ -6,12 +6,14 @@ const ChoseOneModal = ( {
     allElementsLoader,
     onSelect,
     title = "Escolha uma opção",
-    initialSelectedId
+    initialSelectedId,
+    hideClearButton = false
 } : {
     allElementsLoader: () => Promise<{id: string, title: string, subTitle?: string}[]>,
     onSelect: (element: {id: string, title: string, subTitle?: string} | null) => void,
     title?: string
     initialSelectedId?: string
+    hideClearButton?: boolean
 } ) => {
     const { popModal } = useModal();
     const searchInputRef = useRef<HTMLInputElement>(null);
@@ -139,6 +141,7 @@ const ChoseOneModal = ( {
               }}
               type="primary"
               flexible={true}
+              active={!hideClearButton}
             >
               Limpar
             </Button>

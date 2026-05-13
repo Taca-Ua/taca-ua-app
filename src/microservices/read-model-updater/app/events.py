@@ -49,8 +49,9 @@ from taca_events.pydantic_schemas.modalities import (
     RegulationCreatedV1,
     RegulationDeletedV1,
     RegulationUpdatedV1,
+    SeasonCreatedV1,
 )
-from taca_messaging.rabbitmq_service import RabbitMQService
+from taca_messaging.rabbitmq_service import PausableRabbitMQService
 from taca_models.models import Regulation
 
 from .database import get_db
@@ -68,6 +69,7 @@ from .models import (
     ModalityType,
     Nucleo,
     ParticipantType,
+    Season,
     Student,
     Team,
     TeamPlayer,
@@ -83,87 +85,12 @@ from .utils import (
     rebuild_match_projection,
     rebuild_modality_ranking_projection,
     rebuild_nucleo_projection,
+    rebuild_season_projection,
     rebuild_student_projection,
     rebuild_team_projection,
     rebuild_tournament_projection,
     rebuild_tournament_standings,
 )
-
-
-class PausableRabbitMQService(RabbitMQService):
-    """
-    Extended RabbitMQ service with pause/resume capabilities.
-
-    This is needed for the rebuild process to temporarily stop
-    event consumption while projections are being rebuilt.
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._paused = False
-        self._original_on_message = None
-
-    def is_paused(self) -> bool:
-        """Check if event consumption is currently paused."""
-        return self._paused
-
-    async def pause_consumption(self) -> None:
-        """
-        Pause event consumption.
-
-        Events will be buffered in RabbitMQ queue but not processed
-        until consumption is resumed.
-        """
-        if self._paused:
-            self.logger.warning("event_consumption_already_paused")
-            return
-
-        self._paused = True
-
-        # Cancel the consumer to stop receiving messages
-        # Messages will remain in the queue
-        if self.channel and hasattr(self.channel, "_consumers"):
-            # Store consumer tags to cancel them
-            consumer_tags = (
-                list(self.channel._consumers.keys())
-                if hasattr(self.channel, "_consumers")
-                else []
-            )
-            for tag in consumer_tags:
-                try:
-                    await self.channel.cancel(tag)
-                    self.logger.info("consumer_cancelled", consumer_tag=tag)
-                except Exception as e:
-                    self.logger.error(
-                        "consumer_cancel_failed", consumer_tag=tag, error=str(e)
-                    )
-
-        self.logger.info(
-            "event_consumption_paused",
-            message="Events will queue but not be processed",
-        )
-
-    async def resume_consumption(self) -> None:
-        """
-        Resume event consumption.
-
-        Starts processing events from the queue again.
-        """
-        if not self._paused:
-            self.logger.warning("event_consumption_not_paused")
-            return
-
-        self._paused = False
-
-        # Restart consuming by calling start_consuming again
-        # This will re-bind to the queue and start processing
-        try:
-            await self.start_consuming()
-            self.logger.info("event_consumption_resumed")
-        except Exception as e:
-            self.logger.error("event_consumption_resume_failed", error=str(e))
-            raise
-
 
 # Initialize RabbitMQ service with pause/resume capabilities
 rabbitmq_service = PausableRabbitMQService(
@@ -321,6 +248,10 @@ def handle_course_deleted(event: CourseDeletedV1):
 def handle_modality_type_created(event: ModalityTypeCreatedV1):
     """Handle modality type created event."""
     modality_type_id = event.data.modality_type_id
+    modality_type_name = event.data.name
+    modality_type_description = event.data.description
+    modality_type_escaloes = event.data.escaloes
+
     logger.info(
         "event_received",
         event_type="modality_type.created",
@@ -330,15 +261,15 @@ def handle_modality_type_created(event: ModalityTypeCreatedV1):
     with get_db() as db:
         modality_type = ModalityType(
             modality_type_id=modality_type_id,
-            name=event.data.name,
-            description=event.data.description,
+            name=modality_type_name,
+            description=modality_type_description,
             escaloes=[
                 {
                     "min_participants": e.min_participants,
                     "max_participants": e.max_participants,
                     "points": e.points,
                 }
-                for e in event.data.escaloes
+                for e in modality_type_escaloes
             ],
         )
         db.add(modality_type)
@@ -348,6 +279,10 @@ def handle_modality_type_created(event: ModalityTypeCreatedV1):
 def handle_modality_type_updated(event: ModalityTypeUpdatedV1):
     """Handle modality type updated event."""
     modality_type_id = event.data.modality_type_id
+    modality_type_name = event.data.name
+    modality_type_description = event.data.description
+    modality_type_escaloes = event.data.escaloes
+
     logger.info(
         "event_received",
         event_type="modality_type.updated",
@@ -366,18 +301,18 @@ def handle_modality_type_updated(event: ModalityTypeUpdatedV1):
             )
             return
 
-        if event.data.name is not None:
-            modality_type.name = event.data.name
-        if event.data.description is not None:
-            modality_type.description = event.data.description
-        if event.data.escaloes is not None:
+        if modality_type_name is not None:
+            modality_type.name = modality_type_name
+        if modality_type_description is not None:
+            modality_type.description = modality_type_description
+        if modality_type_escaloes is not None:
             modality_type.escaloes = [
                 {
                     "min_participants": e.min_participants,
                     "max_participants": e.max_participants,
                     "points": e.points,
                 }
-                for e in event.data.escaloes
+                for e in modality_type_escaloes
             ]
 
 
@@ -551,6 +486,7 @@ def handle_team_created(event: TeamCreatedV1):
             modality_id=event.data.modality_id,
             course_id=event.data.course_id,
             name=event.data.name,
+            season_id=event.data.season_id,
         )
         db.add(team)
         db.flush()
@@ -677,6 +613,7 @@ def handle_tournament_created(event: TournamentCreatedV1):
             name=event.data.name,
             start_date=_parse_date(event.data.start_date),
             status=event.data.status,
+            season_id=event.data.season_id,
         )
         db.add(tournament)
         db.flush()
@@ -856,20 +793,26 @@ def handle_match_created(event: MatchCreatedV1):
     participant_id is now the competitor_id from the tournament.
     """
     match_id = event.data.match_id
+    match_tournament_id = event.data.tournament_id
+    match_location = event.data.location
+    match_status = event.data.status
+    match_start_time = event.data.start_time
+    match_participants = event.data.participants
+
     logger.info("event_received", event_type="match.created", match_id=str(match_id))
 
     with get_db() as db:
         match = Match(
             match_id=match_id,
-            tournament_id=event.data.tournament_id,
-            location=event.data.location,
-            status=MatchStatus(event.data.status),
-            start_time=_parse_dt(event.data.start_time),
+            tournament_id=match_tournament_id,
+            location=match_location,
+            status=MatchStatus(match_status),
+            start_time=_parse_dt(match_start_time),
         )
         db.add(match)
         db.flush()
 
-        for participant_data in event.data.participants:
+        for participant_data in match_participants:
             print(
                 f"Adding participant {participant_data.participant_id} to match {match_id}",
                 flush=True,
@@ -1114,11 +1057,13 @@ def handle_ranking_computed(event: RankingComputedV1):
     """
     general_entries = event.data.general_ranking
     modality_entries = event.data.modality_rankings
+    season_id = event.data.season_id
     logger.info(
         "event_received",
         event_type="ranking.computed",
         general_entries=len(general_entries),
         modality_entries=len(modality_entries),
+        season_id=season_id,
     )
 
     with get_db() as db:
@@ -1130,6 +1075,7 @@ def handle_ranking_computed(event: RankingComputedV1):
         for entry in general_entries:
             db.add(
                 GeneralRankings(
+                    season_id=entry.season_id,
                     course_id=entry.course_id,
                     points=entry.points,
                     tournaments_participated=entry.tournaments_participated,
@@ -1140,6 +1086,7 @@ def handle_ranking_computed(event: RankingComputedV1):
         for entry in modality_entries:
             db.add(
                 ModalityRankings(
+                    season_id=entry.season_id,
                     modality_id=entry.modality_id,
                     course_id=entry.course_id,
                     points=entry.points,
@@ -1148,15 +1095,17 @@ def handle_ranking_computed(event: RankingComputedV1):
 
         db.flush()
 
-        # Rebuild the GeneralRankingView and ModalityRankingView projections
-        rebuild_general_ranking_projection(db)
-        rebuild_modality_ranking_projection(db)
-
         logger.info(
             "rankings_updated",
             general_entries=len(general_entries),
             modality_entries=len(modality_entries),
+            season_id=season_id,
         )
+
+    with get_db() as db:
+        # Rebuild the GeneralRankingView and ModalityRankingView projections
+        rebuild_general_ranking_projection(db, season_id=season_id)
+        rebuild_modality_ranking_projection(db, season_id=season_id)
 
 
 # ==================== Regulation Events ====================
@@ -1176,6 +1125,7 @@ def handle_regulation_created(event: RegulationCreatedV1):
             title=event.data.title,
             description=event.data.description,
             file_url=event.data.file_url,
+            season_id=event.data.season_id,
         )
         db.add(regulation)
 
@@ -1221,3 +1171,26 @@ def handle_regulation_deleted(event: RegulationDeletedV1):
             return
         db.delete(regulation)
         db.flush()
+
+
+# ==================== Season Events ====================
+@rabbitmq_service.event_handler(SeasonCreatedV1)
+def handle_season_created(event: SeasonCreatedV1):
+    """Handle season created event."""
+    season_id = event.data.season_id
+    logger.info(
+        "event_received",
+        event_type="season.created",
+        season_id=str(season_id),
+    )
+
+    with get_db() as db:
+        season = Season(
+            season_id=season_id,
+            name=event.data.name,
+        )
+        db.add(season)
+
+    with get_db() as db:
+        # Rebuild season projection
+        rebuild_season_projection(db, season_id=season_id)

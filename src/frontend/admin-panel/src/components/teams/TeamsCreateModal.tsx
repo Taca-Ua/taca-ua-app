@@ -7,6 +7,7 @@ import { useNotification } from "../../contexts/NotificationProvider";
 import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
 import ChoseOneInput from "../utils/inputs/ChoseOneInput";
+import { useSeason } from "../../contexts/SeasonContext";
 
 const TeamsCreateModal = ({
   onCreate,
@@ -19,6 +20,7 @@ const TeamsCreateModal = ({
   const [newTeamName, setNewTeamName] = useState('');
   const [selectedModality, setSelectedModality] = useState('');
   const [selectedCourse, setSelectedCourse] = useState('');
+  const { loadedSeason } = useSeason();
 
   const onClose = () => {
     popModal();
@@ -48,11 +50,13 @@ const TeamsCreateModal = ({
         modality_id: selectedModality,
         course_id: selectedCourse,
         name: newTeamName,
+        season_id: loadedSeason?.id
       });
 
       // Add to local state
       if (onCreate) onCreate(newTeam);
       onClose();
+      notify('Equipa criada com sucesso!', 'success');
     } catch (err) {
       console.error('Failed to create team:', err);
       notify('Não foi possível criar a equipa. Verifique os dados e tente novamente.', 'error');
@@ -79,7 +83,9 @@ const TeamsCreateModal = ({
               <span className="text-red-500">*</span>
             </label>
             <ChoseOneInput
-              allElementsLoader={() => coursesApi.getAll().then(courses => courses.map(course => ({ id: course.id, title: course.name })))}
+              allElementsLoader={() => coursesApi.getAll(
+                loadedSeason?.id
+              ).then(courses => courses.filter(course => course.belongs_to_season).map(course => ({ id: course.id, title: course.name })))}
               onSelect={(ele) => setSelectedCourse(ele?.id || "")}
             />
           </div>
@@ -118,7 +124,9 @@ const TeamsCreateModal = ({
               <span className="text-red-500">*</span>
             </label>
             <ChoseOneInput
-              allElementsLoader={() => modalitiesApi.getAll().then(modalities => modalities.map(modality => ({ id: modality.id, title: modality.name })))}
+              allElementsLoader={() => modalitiesApi.getAll({
+                  season_id: loadedSeason?.id
+              }).then(modalities => modalities.filter(modality => modality.belongs_to_season).map(modality => ({ id: modality.id, title: modality.name })))}
               onSelect={(ele) => setSelectedModality(ele?.id || "")}
             />
           </div>

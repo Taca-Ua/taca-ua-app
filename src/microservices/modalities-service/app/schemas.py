@@ -49,11 +49,21 @@ class CourseUpdate(BaseModel):
     nucleo_id: Optional[UUID] = None
 
 
+class CourseAddToSeason(BaseModel):
+    season_id: int
+
+
+class CourseRemoveFromSeason(BaseModel):
+    season_id: int
+
+
 class CourseResponse(BaseModel):
     id: str
     name: str
     abbreviation: str
     nucleo: Optional[NucleoResponse] = None
+    belongs_to_season: Optional[bool] = False
+    relevant_season_ids: Optional[List[int]] = None
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -84,6 +94,7 @@ class ModalityTypeCreate(BaseModel):
     escaloes: Optional[List[_Escalao]] = None
     is_playoff: bool = False
     tournament_competitor_type: Optional[str] = None
+    season_id: Optional[int] = None
 
     def escaloes_encoder(self):
         if not self.escaloes:
@@ -138,12 +149,19 @@ class ModalityCreate(BaseModel):
 class ModalityUpdate(BaseModel):
     name: Optional[str] = None
     modality_type_id: Optional[UUID] = None
+    season_id: Optional[int] = None
+
+
+class ModalityRemoveFromSeason(BaseModel):
+    season_id: int
 
 
 class ModalityResponse(BaseModel):
     id: str
     name: str
-    modality_type: ModalityTypeResponse
+    belongs_to_season: bool = False
+    modality_type: Optional[ModalityTypeResponse]
+    relevant_season_ids: Optional[List[int]] = None
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -226,12 +244,11 @@ class TeamCreate(BaseModel):
     name: str
     modality_id: UUID
     course_id: UUID
+    season_id: Optional[int] = None
 
 
 class TeamUpdate(BaseModel):
     name: Optional[str] = None
-    modality_id: Optional[UUID] = None
-    course_id: Optional[UUID] = None
     players_add: Optional[List[UUID]] = None
     players_remove: Optional[List[UUID]] = None
 
@@ -241,6 +258,7 @@ class TeamResponse(BaseModel):
     name: str
     modality: ModalityResponse
     course: CourseResponse
+    season: Optional["SeasonResponse"] = None
     players: List[StudentResponse] = Field(default_factory=list)
     created_by: Optional[str] = None
     created_at: Optional[str] = None
@@ -257,6 +275,7 @@ class RegulationInternalCreate(BaseModel):
     title: str
     description: Optional[str] = None
     file_url: str
+    season_id: Optional[int] = None
 
 
 class RegulationInternalUpdate(BaseModel):
@@ -269,6 +288,46 @@ class RegulationResponse(BaseModel):
     title: str
     description: Optional[str]
     file_url: str
+
+    class Config:
+        from_attributes = True
+
+
+# ==================== SEASON SCHEMAS ====================
+
+
+class SeasonCreate(BaseModel):
+    name: str
+    admin_id: str = None
+
+
+class SeasonResponse(BaseModel):
+    id: int
+    name: str
+    created_by: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class SeasonSummaryResponse(BaseModel):
+    id: int
+    name: str
+
+    modality_types_count: int
+    active_modalities_count: int
+    active_courses_count: int
+    teams_count: int
+
+    athletes_count: int
+    staff_count: int
+
+    # Fields when passed admin_id for filtering
+    admin_courses_ids: Optional[List[int]] = None
+    admin_teams_ids: Optional[List[int]] = None
+    admin_athletes_ids: Optional[List[str]] = None
 
     class Config:
         from_attributes = True

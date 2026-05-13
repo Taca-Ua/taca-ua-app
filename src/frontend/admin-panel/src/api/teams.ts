@@ -20,29 +20,28 @@ export interface TeamDetail extends TeamListItem {
     full_name: string;
     student_number: string;
   }[];
-}
-
-export interface TeamListParams {
-  modality_id?: string;
-  course_id?: string;
+  season: {
+    id: number;
+    name: string;
+  }
 }
 
 export interface TeamCreate {
   name: string;
   modality_id: string;
   course_id: string;
+  season_id?: number;
 }
 
 export interface TeamUpdate {
   name?: string;
-  modality_id?: string;
-  course_id?: string;
   players_add?: string[];  // IDs of players to add
   players_remove?: string[];  // IDs of players to remove
 }
 
 // Params interfaces
 export interface TeamListParams {
+  season_id?: number;
   modality_id?: string;
   course_id?: string;
 }

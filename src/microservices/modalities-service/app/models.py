@@ -6,7 +6,17 @@ Schema: modalities
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, String, Table, Text
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Table,
+    Text,
+)
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Mapped, relationship
@@ -19,7 +29,7 @@ Base = declarative_base()
 OutboxEvent = create_outbox_model(Base, schema="modalities")
 
 
-# Association table for Team-Student many-to-many relationship
+# Association tables for many-to-many relationships
 team_players = Table(
     "team_players",
     Base.metadata,
@@ -37,6 +47,50 @@ team_players = Table(
     ),
     schema="modalities",
 )
+
+season_courses = Table(
+    "season_course",
+    Base.metadata,
+    Column(
+        "season_id",
+        Integer,
+        ForeignKey("modalities.season.id"),
+        primary_key=True,
+    ),
+    Column(
+        "course_id",
+        UUID(as_uuid=True),
+        ForeignKey("modalities.course.id"),
+        primary_key=True,
+    ),
+    schema="modalities",
+)
+
+
+class SeasonModality(Base):  # need to be a full model to link modality_type
+    """Association table linking Season, Modality, and ModalityType"""
+
+    __tablename__ = "season_modality"
+    __table_args__ = {"schema": "modalities"}
+
+    season_id = Column(Integer, ForeignKey("modalities.season.id"), primary_key=True)
+    modality_id = Column(
+        UUID(as_uuid=True), ForeignKey("modalities.modality.id"), primary_key=True
+    )
+    modality_type_id = Column(
+        UUID(as_uuid=True), ForeignKey("modalities.modality_type.id"), nullable=False
+    )
+
+    # Relationships
+    season: Mapped["Season"] = relationship(
+        "Season", back_populates="season_modalities"
+    )
+    modality: Mapped["Modality"] = relationship(
+        "Modality", back_populates="season_modalities"
+    )
+    modality_type: Mapped["ModalityType"] = relationship(
+        "ModalityType", back_populates="season_modalities"
+    )
 
 
 class Nucleo(Base):
@@ -59,7 +113,7 @@ class Nucleo(Base):
     admins_ids = Column(ARRAY(Text), nullable=False, server_default="{}")
 
     # Relationships
-    courses = relationship("Course", back_populates="nucleo")
+    courses: Mapped[list["Course"]] = relationship("Course", back_populates="nucleo")
 
     def to_dict(self):
         return {
@@ -110,16 +164,27 @@ class Course(Base):
     )
 
     # Relationships
-    nucleo = relationship("Nucleo", back_populates="courses")
+    nucleo: Mapped["Nucleo"] = relationship("Nucleo", back_populates="courses")
     students = relationship("Student", back_populates="course")
     teams = relationship("Team", back_populates="course")
+    seasons: Mapped[list["Season"]] = relationship(
+        "Season", secondary=season_courses, back_populates="season_courses"
+    )
 
-    def to_dict(self, *, include_nucleo=True):
+    def to_dict(self, season_id: int = None, *, include_nucleo=True):
         return {
             "id": str(self.id),
             "name": self.name,
             "abbreviation": self.abbreviation,
             "nucleo": self.nucleo.to_dict() if self.nucleo and include_nucleo else None,
+            "belongs_to_season": (
+                any(season.id == season_id for season in self.seasons)
+                if season_id is not None
+                else False
+            ),
+            "relevant_season_ids": (
+                [season.id for season in self.seasons] if self.seasons else []
+            ),
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
@@ -137,6 +202,55 @@ class Course(Base):
         )
 
 
+class Season(Base):
+    """Represents a sports season"""
+
+    __tablename__ = "season"
+    __table_args__ = {"schema": "modalities"}
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(Text, nullable=False)
+    created_by = Column(UUID(as_uuid=True), nullable=False)
+    finished_by = Column(UUID(as_uuid=True), nullable=True)
+
+    created_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    finished_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Relationships
+    season_modality_types: Mapped[list["ModalityType"]] = relationship(
+        "ModalityType", back_populates="season"
+    )
+    season_modalities: Mapped[list["SeasonModality"]] = relationship(
+        "SeasonModality", back_populates="season"
+    )
+    season_courses: Mapped[list["Course"]] = relationship(
+        "Course", secondary=season_courses
+    )
+    season_teams: Mapped[list["Team"]] = relationship("Team", back_populates="season")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "created_by": str(self.created_by),
+            "finished_by": str(self.finished_by) if self.finished_by else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "finished_at": self.finished_at.isoformat() if self.finished_at else None,
+        }
+
+    def to_snapshot(self) -> snapshot_models.SeasonSnapshotItem:
+        return snapshot_models.SeasonSnapshotItem(
+            id=self.id,
+            name=self.name,
+            created_by=str(self.created_by),
+            finished_by=str(self.finished_by) if self.finished_by else None,
+            created_at=self.created_at.isoformat() if self.created_at else None,
+            finished_at=self.finished_at.isoformat() if self.finished_at else None,
+        )
+
+
 class ModalityType(Base):
     """Enumeration for modality types"""
 
@@ -144,7 +258,7 @@ class ModalityType(Base):
     __table_args__ = {"schema": "modalities"}
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(Text, unique=True, nullable=False)
+    name = Column(Text, nullable=False)
     description = Column(Text, nullable=True)
     escaloes = Column(JSON, nullable=True)  # Array of escaloes stored as JSON
     is_playoff = Column(
@@ -153,6 +267,7 @@ class ModalityType(Base):
     tournament_competitor_type = Column(
         Text, nullable=True
     )  # e.g. "individual", "team"
+    season_id = Column(Integer, ForeignKey("modalities.season.id"), nullable=True)
 
     # bulshit fields
     created_by = Column(UUID(as_uuid=True), nullable=False)
@@ -164,7 +279,12 @@ class ModalityType(Base):
     )
 
     # Relationships
-    modalities = relationship("Modality", back_populates="modality_type")
+    season_modalities: Mapped[list["SeasonModality"]] = relationship(
+        "SeasonModality", back_populates="modality_type"
+    )
+    season: Mapped["Season"] = relationship(
+        "Season", back_populates="season_modality_types"
+    )
 
     def to_dict(self):
         return {
@@ -196,6 +316,7 @@ class ModalityType(Base):
             name=self.name,
             description=self.description,
             escaloes=escaloes_list if escaloes_list else None,
+            season_id=str(self.season_id) if self.season_id else None,
             created_by=str(self.created_by),
             created_at=self.created_at.isoformat() if self.created_at else None,
             updated_at=self.updated_at.isoformat() if self.updated_at else None,
@@ -210,9 +331,6 @@ class Modality(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(Text, unique=True, nullable=False)
-    modality_type_id = Column(
-        UUID(as_uuid=True), ForeignKey("modalities.modality_type.id"), nullable=False
-    )
     created_by = Column(UUID(as_uuid=True), nullable=False)
     created_at = Column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
@@ -222,15 +340,34 @@ class Modality(Base):
     )
 
     # Relationships
-    modality_type = relationship("ModalityType", back_populates="modalities")
     teams = relationship("Team", back_populates="modality")
+    season_modalities: Mapped[list["SeasonModality"]] = relationship(
+        "SeasonModality", back_populates="modality"
+    )
 
-    def to_dict(self):
+    def to_dict(self, season_id: int = None):
+        # Get modality_type from the first available season_modality
+        modality_type_data = None
+        season_modality = None
+        if self.season_modalities and season_id is not None:
+            season_modality = next(
+                (sm for sm in self.season_modalities if sm.season_id == season_id),
+                None,
+            )
+            if season_modality and season_modality.modality_type:
+                modality_type_data = season_modality.modality_type.to_dict()
+
         return {
             "id": str(self.id),
             "name": self.name,
-            "modality_type": (
-                self.modality_type.to_dict() if self.modality_type else None
+            "modality_type": modality_type_data,
+            "belongs_to_season": (
+                season_modality.season_id is not None if season_modality else False
+            ),
+            "relevant_season_ids": (
+                [sm.season_id for sm in self.season_modalities]
+                if self.season_modalities
+                else []
             ),
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat() if self.created_at else None,
@@ -238,10 +375,15 @@ class Modality(Base):
         }
 
     def to_snapshot(self) -> snapshot_models.ModalitySnapshotItem:
+        # Get modality_type_id from the first available season_modality
+        modality_type_id = None
+        if self.season_modalities and self.season_modalities[0].modality_type_id:
+            modality_type_id = str(self.season_modalities[0].modality_type_id)
+
         return snapshot_models.ModalitySnapshotItem(
             id=str(self.id),
             name=self.name,
-            modality_type_id=str(self.modality_type_id),
+            modality_type_id=modality_type_id,
             created_by=str(self.created_by),
             created_at=self.created_at.isoformat() if self.created_at else None,
             updated_at=self.updated_at.isoformat() if self.updated_at else None,
@@ -381,6 +523,11 @@ class Team(Base):
         UUID(as_uuid=True), ForeignKey("modalities.course.id"), nullable=False
     )
     name = Column(Text, nullable=False)
+    season_id = Column(Integer, ForeignKey("modalities.season.id"), nullable=True)
+    derived_from_team_id = Column(
+        UUID(as_uuid=True), ForeignKey("modalities.team.id"), nullable=True
+    )  # For tracking team lineage across seasons
+
     created_by = Column(UUID(as_uuid=True), nullable=False)
     created_at = Column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
@@ -390,8 +537,9 @@ class Team(Base):
     )
 
     # Relationships
-    modality = relationship("Modality", back_populates="teams")
-    course = relationship("Course", back_populates="teams")
+    modality: Mapped["Modality"] = relationship("Modality", back_populates="teams")
+    course: Mapped["Course"] = relationship("Course", back_populates="teams")
+    season: Mapped["Season"] = relationship("Season", back_populates="season_teams")
     players: Mapped[list["Student"]] = relationship(
         "Student", secondary=team_players, back_populates="teams"
     )
@@ -402,6 +550,7 @@ class Team(Base):
             "name": self.name,
             "modality": self.modality.to_dict() if self.modality else None,
             "course": self.course.to_dict() if self.course else None,
+            "season": self.season.to_dict() if self.season else None,
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
@@ -416,6 +565,7 @@ class Team(Base):
             modality_id=str(self.modality_id),
             course_id=str(self.course_id),
             name=self.name,
+            season_id=self.season_id,
             players=[str(player.id) for player in self.players],
             created_by=str(self.created_by),
             created_at=self.created_at.isoformat() if self.created_at else None,
@@ -433,6 +583,7 @@ class Regulation(Base):
     title = Column(Text, nullable=False)
     description = Column(Text, nullable=True)
     file_url = Column(Text, nullable=False)
+    season_id = Column(Integer, ForeignKey("modalities.season.id"), nullable=True)
 
     created_at = Column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
@@ -456,5 +607,6 @@ class Regulation(Base):
             title=self.title,
             description=self.description,
             file_url=self.file_url,
+            season_id=self.season_id,
             created_at=self.created_at.isoformat() if self.created_at else None,
         )
