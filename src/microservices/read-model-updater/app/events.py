@@ -49,6 +49,7 @@ from taca_events.pydantic_schemas.modalities import (
     RegulationCreatedV1,
     RegulationDeletedV1,
     RegulationUpdatedV1,
+    SeasonCreatedV1,
 )
 from taca_messaging.rabbitmq_service import PausableRabbitMQService
 from taca_models.models import Regulation
@@ -68,6 +69,7 @@ from .models import (
     ModalityType,
     Nucleo,
     ParticipantType,
+    Season,
     Student,
     Team,
     TeamPlayer,
@@ -1168,3 +1170,22 @@ def handle_regulation_deleted(event: RegulationDeletedV1):
             return
         db.delete(regulation)
         db.flush()
+
+
+# ==================== Season Events ====================
+@rabbitmq_service.event_handler(SeasonCreatedV1)
+def handle_season_created(event: SeasonCreatedV1):
+    """Handle season created event."""
+    season_id = event.data.season_id
+    logger.info(
+        "event_received",
+        event_type="season.created",
+        season_id=str(season_id),
+    )
+
+    with get_db() as db:
+        season = Season(
+            season_id=season_id,
+            name=event.data.name,
+        )
+        db.add(season)

@@ -519,6 +519,7 @@ def populate_teams():
     from data.processed_data import processed_data_typed
 
     teams_created = 0
+    create_team_payloads = []
     for modality in processed_data_typed:
         if modality.name not in modality_name_to_id:
             print(
@@ -554,11 +555,34 @@ def populate_teams():
             if response.status_code == 201:
                 print(f"Created team: {team}")
                 teams_created += 1
+                create_team_payloads.append(team_payload)
             else:
                 print(
                     f"Failed to create team: {team}, Status Code: {response.status_code}, Response: {response.text}"
                 )
                 STATS["teams"]["failed"] = STATS["teams"]["failed"] + 1
+
+        # Delete teams that exist in the database but are not present in the processed data for the modality
+        for existing_team_key in existing_teams:
+            existing_team_name, existing_team_modality_id, existing_team_course_id = (
+                existing_team_key
+            )
+            if (
+                existing_team_modality_id == modality_name_to_id.get(modality.name)
+                and existing_team_course_id in course_name_to_id.values()
+                and existing_team_name not in modality.teams
+            ):
+                del_response = requests.delete(
+                    f"{API_URL}/teams/{existing_teams[existing_team_key]}/",
+                    headers=HEADERS,
+                )
+                if del_response.status_code == 204:
+                    print(f"Deleted team: {existing_team_name}")
+                else:
+                    print(
+                        f"Failed to delete team: {existing_team_name}, Status Code: {del_response.status_code}, Response: {del_response.text}"
+                    )
+                    STATS["teams"]["failed"] = STATS["teams"]["failed"] + 1
 
     STATS["teams"]["created"] = teams_created
     return teams_created
