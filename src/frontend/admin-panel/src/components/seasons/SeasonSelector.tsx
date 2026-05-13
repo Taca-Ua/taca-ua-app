@@ -29,7 +29,7 @@ const SeasonSelector = ({
   const isActive = (seasonId: number) => seasonId === loadedSeason?.id;
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden ml-16">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden">
       <div className="border-b border-gray-200 overflow-auto">
         <div className="flex">
           {availableSeasons.map(season => {
