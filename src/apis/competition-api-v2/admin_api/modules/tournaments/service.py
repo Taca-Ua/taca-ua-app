@@ -301,8 +301,8 @@ class TournamentsService:
         self,
         name: str,
         modality_id: str,
-        is_playoff: bool = False,
         season_id: int = None,
+        scoring_format_id: str = None,
     ) -> Tournament:
         """Create a new tournament"""
 
@@ -310,18 +310,10 @@ class TournamentsService:
         modality = modalities_service_client.modalities.get_modality(modality_id)
 
         # infer the scoring format based on whether it's a playoff or not.
-        scoring_format_id = None
-        if is_playoff:
-            playoff_modality_type = (
-                modalities_service_client.modality_types.get_playoff_modality_type()
-            )
-            if not playoff_modality_type:
-                raise ValueError(
-                    "No playoff modality type found, cannot create playoff tournament"
-                )
-            scoring_format_id = playoff_modality_type.id
-        else:
-            scoring_format_id = modality.modality_type.id
+        if scoring_format_id is None:
+            scoring_format_id = (
+                modality.modality_type.id
+            )  # default to the modality type's scoring format
 
         # get current season id if not provided
         if season_id is None:

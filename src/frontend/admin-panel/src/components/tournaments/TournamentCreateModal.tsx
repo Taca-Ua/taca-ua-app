@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import HelpTooltip from '../HelpTooltip';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { tournamentsApi, type TournamentListItem, type TournamentCreate } from '../../api/tournaments';
-import { modalitiesApi } from '../../api/modalities';
+import { modalitiesApi, type ModalityListItem } from '../../api/modalities';
 import Button from '../utils/Button';
 import { useModal } from '../../contexts/ModalContext';
 import ChoseOneInput from '../utils/inputs/ChoseOneInput';
 import { useSeason } from '../../contexts/SeasonContext';
+import { modalityTypesApi } from '../../api/modality-types';
 
 
 const TournamentCreateModal = ({
@@ -25,8 +26,39 @@ const TournamentCreateModal = ({
   const [loading, setLoading] = useState(false);
 
   const [name, setName] = useState(starterName || '');
-  const [chosenModalityId, setChosenModalityId] = useState<string | null>(null);
-  const [isPlayoff, setIsPlayoff] = useState(false);
+  const [chosenModalityId, setChosenModalityId] = useState<string | null>(modalityId || null);
+  const [chosenScoringFormat, setChosenScoringFormat] = useState<{ id: string, title: string } | null>(null);
+
+  const [modalityOptions, setModalityOptions] = useState<ModalityListItem[]>([]);
+
+  const fetchModalities = async () => {
+    return (await modalitiesApi.getAll({ season_id: loadedSeason?.id })).filter(c => c.belongs_to_season);
+  };
+
+  useEffect(() => {
+    fetchModalities().then(res => {
+      const options = res.filter(c => c.belongs_to_season);
+      setModalityOptions(options);
+      if (chosenModalityId) {
+        const foundModality = options.find(m => m.id === chosenModalityId);
+        if (!foundModality) {
+          setChosenModalityId(null);
+          notify('A modalidade selecionada não pertence à época atual. Por favor, selecione outra modalidade.', 'error');
+        } else {
+          let modalityType = options.find(m => m.id === chosenModalityId)?.modality_type;
+          setChosenScoringFormat(modalityType ? { id: modalityType.id, title: modalityType.name } : null);
+        }
+      } else if (options.length === 1) {
+        setChosenModalityId(options[0].id);
+        let modalityType = options[0].modality_type;
+        setChosenScoringFormat(modalityType ? { id: modalityType.id, title: modalityType.name } : null);
+        if (!name) setName(options[0].name);
+      }
+    }).catch(err => {
+      console.error('Failed to load modalities:', err);
+      notify('Não foi possível carregar as modalidades. Tente novamente mais tarde.', 'error');
+    });
+  }, [loadedSeason?.id]);
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -48,8 +80,8 @@ const TournamentCreateModal = ({
       const newTournament: TournamentCreate = {
         name,
         modality_id: modalityIdToUse,
-        is_playoff: isPlayoff,
-        season_id: loadedSeason?.id
+        season_id: loadedSeason?.id,
+        scoring_format_id: chosenScoringFormat ? chosenScoringFormat.id : undefined,
       };
       console.log('Creating tournament with data:', newTournament);
       const createdTournament = await tournamentsApi.create(newTournament);
@@ -65,7 +97,6 @@ const TournamentCreateModal = ({
 
   const onClose = () => {
     setName('');
-    setIsPlayoff(false);
     setChosenModalityId(modalityId || chosenModalityId);
     popModal();
   }
@@ -105,28 +136,35 @@ const TournamentCreateModal = ({
               <span className="text-red-500">*</span>
             </label>
             <ChoseOneInput
-              allElementsLoader={() => modalitiesApi.getAll({
-                season_id: loadedSeason?.id
-              }).then(res => res.filter(c => c.belongs_to_season).map(c => ({ id: c.id, title: c.name })))}
+              allElementsLoader={() => fetchModalities().then(res => res.map(c => ({ id: c.id, title: c.name })))}
               onSelect={(ele) => {
                 if (!ele) return;
                 setChosenModalityId(ele.id);
+                console.log('Selected modality ID:', ele.id);
+                console.log('Modality options:', modalityOptions.find(m => m.id === ele.id));
+
+                let modalityType = modalityOptions.find(m => m.id === ele.id)?.modality_type;
+                setChosenScoringFormat(modalityType ? { id: modalityType.id, title: modalityType.name } : null);
                 if (!name) setName(ele.title);
               }}
             />
           </div>)}
 
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="is_playoff_create"
-              checked={isPlayoff}
-              onChange={(e) => setIsPlayoff(e.target.checked)}
-              className="w-4 h-4 accent-teal-500"
-            />
-            <label htmlFor="is_playoff_create" className="font-medium cursor-pointer">
-              Torneio de Playoff
+          {/* Scoring Format */}
+          <div className="mb-4">
+            <label className="font-medium">
+              Formato de Pontuação
             </label>
+            <ChoseOneInput
+              allElementsLoader={() => modalityTypesApi.getAll({
+                season_id: loadedSeason?.id,
+              }).then(res => res.map(c => ({ id: c.id, title: c.name })))}
+              onSelect={(ele) => {
+                if (!ele) return;
+                setChosenScoringFormat(ele);
+              }}
+              elementState={[chosenScoringFormat, (ele) => setChosenScoringFormat(ele)]}
+            />
           </div>
 
           <div className="flex justify-end space-x-2">
