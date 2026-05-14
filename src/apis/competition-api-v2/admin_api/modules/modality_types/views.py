@@ -62,7 +62,7 @@ class ModalityTypeListCreateView(RoleRequiredMixin, APIView):
             name=serializer.validated_data["name"],
             description=serializer.validated_data.get("description", ""),
             escaloes=serializer.validated_data["escaloes"],
-            is_playoff=serializer.validated_data.get("is_playoff", False),
+            mode=serializer.validated_data["mode"],
             tournament_competitor_type=serializer.validated_data.get(
                 "tournament_competitor_type"
             ),

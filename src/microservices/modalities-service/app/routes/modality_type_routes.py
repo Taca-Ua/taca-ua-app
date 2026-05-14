@@ -45,8 +45,6 @@ def list_modality_types(
 
     query = stmt.filter(ModalityType.season_id == relevant_season_id)
 
-    if exclude_playoff:
-        query = query.filter(ModalityType.is_playoff == False)  # noqa: E712
     modality_types = db.execute(query).scalars().unique().all()
     return [mt.to_dict() for mt in modality_types]
 
@@ -72,27 +70,11 @@ def create_modality_type(
 
     try:
 
-        # Check if a playoff type already exists
-        if modality_type_data.is_playoff:
-            existing_playoff = (
-                db.query(ModalityType)
-                .filter(
-                    ModalityType.season_id == relevant_season.id,
-                    ModalityType.is_playoff == True,  # noqa: E712
-                )
-                .first()
-            )
-            if existing_playoff:
-                raise HTTPException(
-                    status_code=400,
-                    detail="A playoff modality type already exists",
-                )
-
         modality_type = ModalityType(
             name=modality_type_data.name,
             description=modality_type_data.description,
+            mode=modality_type_data.mode,
             escaloes=modality_type_data.escaloes_encoder(),
-            is_playoff=modality_type_data.is_playoff,
             tournament_competitor_type=modality_type_data.tournament_competitor_type,
             season_id=relevant_season.id,
             created_by=DEFAULT_USER_ID,
@@ -109,6 +91,7 @@ def create_modality_type(
                 season_id=relevant_season.id,
                 modality_type_id=modality_type.id,
                 name=modality_type.name,
+                mode=modality_type.mode,
                 description=modality_type.description,
                 escaloes=[
                     _EscalaoData(
@@ -124,7 +107,7 @@ def create_modality_type(
         outbox_publisher.emit_event(
             db=db,
             event_type=event.event_type(),
-            aggregate_type="modality_type",
+            aggregate_type=event.aggregate_type(),
             aggregate_id=modality_type.id,
             data=event.to_data_dict(),
         )
@@ -159,7 +142,6 @@ def get_playoff_modality_type(db: Session = Depends(get_db_session)):
     )  # Ensure we have an active season, will raise if not found
     modality_type = (
         db.query(ModalityType)
-        .filter(ModalityType.is_playoff)
         .filter(ModalityType.season_id == active_season.id)
         .first()
     )
@@ -198,25 +180,6 @@ def update_modality_type(
     if modality_type_data.escaloes is not None:
         modality_type.escaloes = modality_type_data.escaloes_encoder()
         changes_made["escaloes"] = [i.to_dict() for i in modality_type_data.escaloes]
-    if modality_type_data.is_playoff is not None:
-        if modality_type_data.is_playoff and not modality_type.is_playoff:
-            # If trying to set this modality type as playoff, check if another playoff type already exists
-            existing_playoff = (
-                db.query(ModalityType)
-                .filter(
-                    ModalityType.is_playoff,
-                    ModalityType.season_id == modality_type.season_id,
-                    ModalityType.id != modality_type_id,
-                )
-                .first()
-            )
-            if existing_playoff:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Another playoff modality type already exists",
-                )
-        modality_type.is_playoff = modality_type_data.is_playoff
-        changes_made["is_playoff"] = modality_type_data.is_playoff
     if modality_type_data.tournament_competitor_type is not None:
         modality_type.tournament_competitor_type = (
             modality_type_data.tournament_competitor_type
@@ -224,6 +187,9 @@ def update_modality_type(
         changes_made["tournament_competitor_type"] = (
             modality_type_data.tournament_competitor_type
         )
+    if modality_type_data.mode is not None:
+        modality_type.mode = modality_type_data.mode
+        changes_made["mode"] = modality_type_data.mode
     modality_type.updated_at = datetime.now(timezone.utc)
 
     # Emit modality type updated event

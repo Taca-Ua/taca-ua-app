@@ -24,8 +24,8 @@ const ModalityTypeCreateModal = ( {
 
     const [formatName, setFormatName] = useState('');
     const [formatDescription, setFormatDescription] = useState('');
-    const [isPlayoff, setIsPlayoff] = useState(false);
-    const [tournamentCompetitorType, setTournamentCompetitorType] = useState<'individual' | 'team'>('individual');
+    const [modalityTypeMode, setModalityTypeMode] = useState<'modality' | 'points' | null>(null);
+    const [tournamentCompetitorType, setTournamentCompetitorType] = useState<'individual' | 'team' | null>(null);
     const [escaloes, setEscaloes] = useState<{ escalao: string; minParticipants: number | null; maxParticipants: number | null; points: string }[]>([
         { escalao: 'A', minParticipants: null, maxParticipants: null, points: '' },
     ]);
@@ -34,14 +34,24 @@ const ModalityTypeCreateModal = ( {
         popModal();
         setFormatName('');
         setFormatDescription('');
-        setIsPlayoff(false);
-        setTournamentCompetitorType('individual');
+        setModalityTypeMode(null);
+        setTournamentCompetitorType(null);
         setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: '' }]);
     };
 
     const handleCreateFormat = async () => {
         if (!formatName.trim()) {
             notify('Por favor, preencha o nome do formato.', 'error');
+            return;
+        }
+
+        if (!modalityTypeMode) {
+            notify('Por favor, selecione o modo do formato.', 'error');
+            return;
+        }
+
+        if (modalityTypeMode === 'modality' && !tournamentCompetitorType) {
+            notify('Por favor, selecione o tipo de competidor para o formato de modalidade.', 'error');
             return;
         }
 
@@ -66,9 +76,8 @@ const ModalityTypeCreateModal = ( {
             const newFormat = await modalityTypesApi.create({
                 name: formatName,
                 description: formatDescription || undefined,
-                is_playoff: isPlayoff,
                 escaloes: escaloes.map(esc => ({ ...esc, points: parsePoints(esc.points) })),
-                    tournament_competitor_type: tournamentCompetitorType,
+                tournament_competitor_type: tournamentCompetitorType!,
                 season_id: loadedSeason?.id
             });
 
@@ -137,21 +146,26 @@ const ModalityTypeCreateModal = ( {
                   />
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    id="create-is-playoff"
-                    checked={isPlayoff}
-                    onChange={e => setIsPlayoff(e.target.checked)}
-                    className="w-4 h-4 accent-amber-500 cursor-pointer"
-                  />
-                  <label htmlFor="create-is-playoff" className="font-medium cursor-pointer select-none">
-                    Formato Playoff
+                {/* Mode */}
+                <div>
+                  <label className="block font-medium mb-2">
+                    Modo de Formato
+                    <HelpTooltip
+                      text="Define como este formato é aplicado na plataforma."
+                      className="ml-1"
+                    />
+                    <span className="text-red-500">*</span>
                   </label>
-                  <span className="text-sm text-gray-500">(só pode existir um formato de playoff de cada vez)</span>
+                  <DefinedStatesMenuComponent
+                    states={[
+                      {value: 'modality', label: 'Modalidade', helpText: 'Formato aplicado a uma modalidade, onde os competidores são atletas individuais ou equipas.'},
+                      {value: 'points', label: 'Pontuação', helpText: 'Formato que pode ser escolhido por torneios de qualquer modalidade. Apenas afeta pontuações do ranking geral.'},
+                    ]}
+                    onSelect={(value) => setModalityTypeMode(value as 'modality' | 'points')}
+                  />
                 </div>
 
-                {!isPlayoff && (
+                {(modalityTypeMode === 'modality') && (
                   <div>
                     <label className="block font-medium mb-2">
                       Tipo de Competidor <span className="text-red-500">*</span>

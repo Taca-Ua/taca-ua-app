@@ -16,6 +16,7 @@ export interface ModalityTypeMinimal {
 export interface ModalityTypeListItem {
   id: string;
   name: string;
+  mode: 'modality' | 'points';
   description?: string;
   is_playoff: boolean;
   tournament_competitor_type: 'individual' | 'team';
@@ -31,7 +32,7 @@ export interface ModalityTypeCreate {
   description?: string;
   escaloes: EscalaoRow[];
   is_playoff?: boolean;
-  tournament_competitor_type: 'individual' | 'team';
+  tournament_competitor_type?: 'individual' | 'team';
   season_id?: number;
 }
 

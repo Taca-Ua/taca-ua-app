@@ -24,6 +24,7 @@ class ModalityTypeListSerializer(serializers.Serializer):
 
     id = serializers.UUIDField()
     name = serializers.CharField()
+    mode = serializers.ChoiceField(choices=["modality", "points"])
     description = serializers.CharField(
         required=False, allow_null=True, allow_blank=True
     )
@@ -55,11 +56,24 @@ class ModalityTypeCreateSerializer(serializers.Serializer):
         required=False, allow_null=True, allow_blank=True
     )
     escaloes = _EscalaoSerializer(many=True)
-    is_playoff = serializers.BooleanField(default=False)
+    mode = serializers.ChoiceField(
+        choices=["modality", "points"], required=True, allow_null=False
+    )
     tournament_competitor_type = serializers.ChoiceField(
         choices=["individual", "team"], required=False
     )
     season_id = serializers.IntegerField(required=False)
+
+    def validate(self, data):
+        mode = data.get("mode")
+        tournament_competitor_type = data.get("tournament_competitor_type")
+
+        if mode == "modality" and not tournament_competitor_type:
+            raise serializers.ValidationError(
+                "tournament_competitor_type is required when mode is 'modality'"
+            )
+
+        return data
 
 
 class ModalityTypeUpdateSerializer(serializers.Serializer):
