@@ -8,10 +8,12 @@ import { useAuth } from "../../hooks/useAuth";
 
 const ModalityTypeInfoModal = ( {
     modalityTypeId,
-    onDelete
+    onDelete,
+    onEdit
 } : {
     modalityTypeId: string;
     onDelete?: () => void;
+    onEdit?: (updatedModalityType: ModalityTypeDetail) => void;
 } ) => {
     const { notify } = useNotification();
     const { popModal, pushModal } = useModal();
@@ -211,7 +213,15 @@ const ModalityTypeInfoModal = ( {
                 Eliminar
             </Button>
             <Button
-                onClick={() => pushModal(<ModalityTypeEditModal modalityTypeState={[modalityType, setModalityType]} />)}
+                onClick={() => pushModal(
+                  <ModalityTypeEditModal
+                    modalityTypeState={[modalityType, setModalityType]}
+                    onEdit={(updatedFormat) => {
+                      setModalityType(updatedFormat)
+                      if (onEdit) onEdit(updatedFormat);
+                    }}
+                  />
+                )}
                 type="info"
                 flexible={true}
                 active={isAdminGeneral}
