@@ -34,6 +34,7 @@ export interface ModalityTypeCreate {
   is_playoff?: boolean;
   tournament_competitor_type?: 'individual' | 'team';
   season_id?: number;
+  mode: 'modality' | 'points';
 }
 
 export interface ModalityTypeUpdate {

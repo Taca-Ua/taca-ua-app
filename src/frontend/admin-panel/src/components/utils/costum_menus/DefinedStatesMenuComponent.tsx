@@ -3,11 +3,13 @@ import { useState } from "react";
 const DefinedStatesMenuComponent = ( {
     states,
     onSelect,
-    initialValue
+    initialValue,
+    disabled = false
 } : {
     states: {value: string, label: string, helpText?: string}[],
     onSelect: (state: string) => void,
     initialValue?: string
+    disabled?: boolean
 } ) => {
 
     const [selectedState, setSelectedState] = useState<string | null>(initialValue || null);
@@ -24,10 +26,11 @@ const DefinedStatesMenuComponent = ( {
             <div key={state.value} className="flex-1 relative">
               <button
               type="button"
-              className={`w-full py-2 rounded-md border transition-colors font-semibold ${selectedState === state.value ? "bg-teal-500 text-white border-teal-600" : "bg-white text-teal-700 border-gray-300"}`}
+              className={`w-full py-2 rounded-md border transition-colors font-semibold ${selectedState === state.value ? "bg-teal-500 text-white border-teal-600" : "bg-white text-teal-700 border-gray-300"} disabled:opacity-50 disabled:cursor-not-allowed`}
               onClick={() => handleSelect(state.value)}
               onMouseEnter={() => setHoveredState(state.value)}
               onMouseLeave={() => setHoveredState(null)}
+              disabled={disabled}
               >
                   {state.label}
               </button>

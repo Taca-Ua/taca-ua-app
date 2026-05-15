@@ -78,11 +78,13 @@ const ModalityTypeCreateModal = ( {
                 description: formatDescription || undefined,
                 escaloes: escaloes.map(esc => ({ ...esc, points: parsePoints(esc.points) })),
                 tournament_competitor_type: tournamentCompetitorType!,
-                season_id: loadedSeason?.id
+                season_id: loadedSeason?.id,
+                mode: modalityTypeMode!,
             });
 
             if (onCreate) onCreate(newFormat);
             notify('Formato de prova criado com sucesso!', 'success');
+            onClose();
         } catch (err: unknown) {
             console.error('Failed to create scoring format:', err);
             const msg = err instanceof Error ? err.message : '';
@@ -91,9 +93,7 @@ const ModalityTypeCreateModal = ( {
             } else {
                 notify('Não foi possível criar o formato de prova. Verifique os dados e tente novamente.', 'error');
             }
-        } finally {
-            onClose();
-        }
+        };
     };
 
     const handleAddEscalao = () => {
