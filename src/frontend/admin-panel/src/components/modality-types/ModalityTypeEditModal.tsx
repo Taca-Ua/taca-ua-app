@@ -11,9 +11,11 @@ const parsePoints = (raw: string): number[] =>
   raw.split(/[\s,]+/).map(p => parseInt(p.trim())).filter(p => !isNaN(p));
 
 const ModalityTypeEditModal = ( {
-    modalityTypeState
+    modalityTypeState,
+    onEdit
 } : {
     modalityTypeState: [ModalityTypeDetail, React.Dispatch<React.SetStateAction<ModalityTypeDetail | null>>];
+    onEdit?: (updatedModalityType: ModalityTypeDetail) => void;
 } ) => {
 
     const { notify } = useNotification();
@@ -90,6 +92,7 @@ const ModalityTypeEditModal = ( {
             });
 
             setModalityType(updatedFormat);
+            if (onEdit) onEdit(updatedFormat);
             notify('Formato de prova atualizado com sucesso!', 'success');
         } catch (err: unknown) {
             console.error('Failed to update scoring format:', err);
