@@ -21,7 +21,6 @@ class ModalityType:
     name: str
     mode: str
     description: str
-    is_playoff: bool
     num_escaloes: int
     escaloes: List[_Escalao]
     tournament_competitor_type: str
@@ -37,7 +36,6 @@ class ModalityTypesService:
             name=modality.name,
             mode=modality.mode,
             description=modality.description,
-            is_playoff=modality.is_playoff,
             num_escaloes=len(modality.escaloes),
             escaloes=[
                 _Escalao(
@@ -51,17 +49,15 @@ class ModalityTypesService:
             tournament_competitor_type=modality.tournament_competitor_type,
         )
 
-    def list_modality_types(
-        self, include_playoff=False, season_id=None
-    ) -> List[ModalityType]:
+    def list_modality_types(self, season_id=None, mode=None) -> List[ModalityType]:
         """List all modality types, optionally including playoff type
 
         Args:
-            include_playoff (bool, optional): _description_. Defaults to False.
             season_id (str, optional): ID of the season for which to list modality types. Defaults to None.
+            mode (str, optional): Mode of the modality types to list. Defaults to None.
         """
         answer = modalities_service_client.modality_types.list_modality_types(
-            include_playoff=include_playoff, season_id=season_id
+            season_id=season_id, mode=mode
         )
         return [
             self._build_admin_from_modalities_answer(modality) for modality in answer

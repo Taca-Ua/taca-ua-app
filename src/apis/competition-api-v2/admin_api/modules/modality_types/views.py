@@ -47,7 +47,8 @@ class ModalityTypeListCreateView(RoleRequiredMixin, APIView):
         serializer.is_valid(raise_exception=True)
 
         modality_types = modality_types_service.list_modality_types(
-            include_playoff=True, season_id=serializer.validated_data.get("season_id")
+            season_id=serializer.validated_data.get("season_id"),
+            mode=serializer.validated_data.get("mode"),
         )
 
         serializer = ModalityTypeListSerializer(modality_types, many=True)

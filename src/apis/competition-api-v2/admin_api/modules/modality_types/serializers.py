@@ -28,7 +28,6 @@ class ModalityTypeListSerializer(serializers.Serializer):
     description = serializers.CharField(
         required=False, allow_null=True, allow_blank=True
     )
-    is_playoff = serializers.BooleanField(default=False)
     tournament_competitor_type = serializers.ChoiceField(
         choices=["individual", "team"], required=True, allow_null=True
     )
@@ -46,6 +45,9 @@ class ModalityTypeListQuerySerializer(serializers.Serializer):
     """Serializer for modality type list query parameters"""
 
     season_id = serializers.IntegerField(required=False)
+    mode = serializers.ChoiceField(
+        choices=["modality", "points"], required=False, allow_null=False
+    )
 
 
 class ModalityTypeCreateSerializer(serializers.Serializer):

@@ -31,8 +31,8 @@ DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000"
 
 @router.get("/modality-types", response_model=List[ModalityTypeResponse])
 def list_modality_types(
-    exclude_playoff: bool = False,
     season_id: int = None,
+    mode: str = None,
     db: Session = Depends(get_db_session),
 ):
     """List all modality types"""
@@ -42,10 +42,12 @@ def list_modality_types(
     if season_id is None:
         active_season = get_active_season(db)
         relevant_season_id = active_season.id
+    stmt = stmt.filter(ModalityType.season_id == relevant_season_id)
 
-    query = stmt.filter(ModalityType.season_id == relevant_season_id)
+    if mode is not None:
+        stmt = stmt.filter(ModalityType.mode == mode)
 
-    modality_types = db.execute(query).scalars().unique().all()
+    modality_types = db.execute(stmt).scalars().unique().all()
     return [mt.to_dict() for mt in modality_types]
 
 

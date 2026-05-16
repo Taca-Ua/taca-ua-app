@@ -66,7 +66,6 @@ class ModalityTypeDTO:
     description: str
     tournament_competitor_type: str
     escaloes: List[_EscalaDTO]
-    is_playoff: bool = False
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -474,18 +473,22 @@ class ModalityTypesModalitiesService(BaseService):
         super().__init__(base_url)
 
     def list_modality_types(
-        self, include_playoff: bool = True, season_id: str = None
+        self, season_id: str = None, mode: str = None
     ) -> List[ModalityTypeDTO]:
         """List all modality types
+
+        Args:
+            season_id (str, optional): ID of the season for which to list modality types. Defaults to None.
+            mode (str, optional): Mode of the modality types to list. Defaults to None.
 
         Returns:
             List[ModalityTypeDTO]: List of ModalityTypeDTO objects
         """
         params = {}
-        if not include_playoff:
-            params["exclude_playoff"] = True
         if season_id is not None:
             params["season_id"] = season_id
+        if mode is not None:
+            params["mode"] = mode
         modality_types_data = self.get("/modality-types", params=params)
         return [
             ModalityTypeDTO(**modality_type) for modality_type in modality_types_data
