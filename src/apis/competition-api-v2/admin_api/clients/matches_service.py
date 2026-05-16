@@ -214,6 +214,7 @@ class MatchesService(BaseService):
         created_by: UUID,
         tournament_id: Optional[UUID] = None,
         participants: Optional[List[Dict[str, Any]]] = None,
+        journey: Optional[int] = None,
     ) -> MatchDTO:
         """
         Create a new match with participants.
@@ -227,6 +228,7 @@ class MatchesService(BaseService):
                 - participant_type (str): "team" or "athlete"
                 - team_id (UUID, optional): Team ID if participant_type is "team"
                 - athlete_id (UUID, optional): Athlete ID if participant_type is "athlete"
+            journey: Journey number (optional)
 
         Returns:
             Created match data
@@ -240,6 +242,8 @@ class MatchesService(BaseService):
             data["tournament_id"] = str(tournament_id)
         if participants is not None:
             data["participants"] = participants
+        if journey is not None:
+            data["journey"] = journey
 
         match_data = self.post("/matches", data=data)
         return MatchDTO(**match_data)

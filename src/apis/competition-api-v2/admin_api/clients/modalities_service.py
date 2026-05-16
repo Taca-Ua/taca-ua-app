@@ -76,6 +76,9 @@ class ModalityTypeDTO:
             for escalao in self.escaloes
         ]
 
+        if isinstance(self.id, str):
+            self.id = UUID(self.id)
+
 
 @dataclass
 class ModalityDTO:

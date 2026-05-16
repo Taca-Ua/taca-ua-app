@@ -298,6 +298,7 @@ class MatchesService:
         location: str,
         start_time: str,
         participants_ids: List[str],
+        journey: int = None,
     ) -> Match:
         """Create a new match"""
         match_dto = matches_service_client.create_match(
@@ -305,6 +306,7 @@ class MatchesService:
             location=location,
             start_time=start_time,
             participants=participants_ids,
+            journey=journey,
             created_by="00000000-0000-0000-0000-000000000000",  # Placeholder for created_by
         )
         return self._build_match_from_dto(match_dto)

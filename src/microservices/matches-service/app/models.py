@@ -46,6 +46,9 @@ class Match(Base):
         nullable=False,
         default=MatchStatus.SCHEDULED,
     )
+    journey = Column(
+        Integer, nullable=False
+    )  # way to group matches in a tournament (e.g., round number)
 
     # Bullsh*t fields for auditing and traceability
     created_by = Column(UUID(as_uuid=True), nullable=False)
@@ -112,6 +115,7 @@ class Match(Base):
             "location": self.location,
             "start_time": self.start_time.isoformat(),
             "status": self.status.value,
+            "journey": self.journey,
             "participants": [p.to_dict() for p in self.participants],
             "comments": (
                 [
@@ -140,6 +144,7 @@ class Match(Base):
             location=self.location,
             status=self.status.value if self.status else None,
             start_time=self.start_time,
+            journey=self.journey,  # Include the journey field in the snapshot
             created_at=self.created_at,
             updated_at=self.updated_at,
             deleted_at=None,  # Domain model doesn't track deletions

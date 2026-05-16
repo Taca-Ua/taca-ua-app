@@ -34,11 +34,14 @@ class MatchParticipantResponse(BaseModel):
 class MatchCreate(BaseModel):
     """Schema for creating a match."""
 
-    tournament_id: Optional[UUID] = None
+    tournament_id: UUID
     location: str
     start_time: datetime
     created_by: UUID
     participants: List[UUID] = Field(default_factory=list)
+    journey: Optional[int] = (
+        None  # way to group matches in a tournament (e.g., round number)
+    )
 
 
 class MatchUpdate(BaseModel):

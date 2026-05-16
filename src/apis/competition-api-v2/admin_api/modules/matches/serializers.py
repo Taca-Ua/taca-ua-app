@@ -84,6 +84,7 @@ class MatchCreateSerializer(serializers.Serializer):
         allow_empty=False,
         help_text="List of tournament participants IDs participating in the match",
     )
+    journey = serializers.IntegerField(required=False, allow_null=True)
 
     def validate_participants(self, value):
         if value and len(value) < 2:

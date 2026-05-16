@@ -2,6 +2,7 @@
 Tournaments management service
 """
 
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -102,7 +103,7 @@ class TournamentsService:
 
         scoring_format = ranking_service_client.calculate_tournament_tier(
             tournament_id=tournament.id,
-            modality_type_id=scoring_format_type.id,
+            modality_type_id=str(scoring_format_type.id),
             participant_count=len(tournament_dto.competitors),
         )
         tournament.scoring_format = ScoringFormat(
@@ -288,9 +289,9 @@ class TournamentsService:
     def create_tournament(
         self,
         name: str,
-        modality_id: str,
+        modality_id: uuid.UUID,
         season_id: int = None,
-        scoring_format_id: str = None,
+        scoring_format_id: uuid.UUID = None,
     ) -> Tournament:
         """Create a new tournament"""
 
@@ -309,7 +310,7 @@ class TournamentsService:
                 )
             )
 
-            if modality.modality_type.tournament_competitor_type != "points":
+            if scoring_format_modality_type.mode != "points":
                 raise ValueError(
                     "Scoring format provided must be of mode 'points' or match the modality type's scoring format"
                 )

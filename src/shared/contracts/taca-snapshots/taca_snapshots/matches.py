@@ -24,6 +24,7 @@ class MatchSnapshotItem(SnapshotBase):
     match_id: str
     tournament_id: Optional[str] = None
     location: Optional[str] = None
+    journey: Optional[int] = None
     status: Optional[str] = None
     start_time: Optional[datetime] = None
     created_at: Optional[datetime] = None
