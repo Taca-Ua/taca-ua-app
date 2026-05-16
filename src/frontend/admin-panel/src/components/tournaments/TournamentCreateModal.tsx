@@ -31,6 +31,8 @@ const TournamentCreateModal = ({
 
   const [modalityOptions, setModalityOptions] = useState<ModalityListItem[]>([]);
 
+  const modalitySelected = modalityOptions.find(m => m.id === chosenModalityId);
+
   const fetchModalities = async () => {
     return (await modalitiesApi.getAll({ season_id: loadedSeason?.id })).filter(c => c.belongs_to_season);
   };
@@ -158,7 +160,10 @@ const TournamentCreateModal = ({
             <ChoseOneInput
               allElementsLoader={() => modalityTypesApi.getAll({
                 season_id: loadedSeason?.id,
-              }).then(res => res.map(c => ({ id: c.id, title: c.name })))}
+              }).then(res => res.filter(c => (
+                // Show all points formats or only the one related to the selected modality
+                c.mode === 'points' || c.id === modalitySelected?.modality_type?.id
+              )).map(c => ({ id: c.id, title: c.name })))}
               onSelect={(ele) => {
                 if (!ele) return;
                 setChosenScoringFormat(ele);

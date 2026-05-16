@@ -310,10 +310,23 @@ class TournamentsService:
         modality = modalities_service_client.modalities.get_modality(modality_id)
 
         # infer the scoring format based on whether it's a playoff or not.
-        if scoring_format_id is None:
-            scoring_format_id = (
-                modality.modality_type.id
-            )  # default to the modality type's scoring format
+        if scoring_format_id is None or modality.modality_type.id == scoring_format_id:
+            # default to the modality type's scoring format
+            scoring_format_id = modality.modality_type.id
+        else:
+            # if a scoring format id is provided we need to check its type
+            scoring_format_modality_type = (
+                modalities_service_client.modality_types.get_modality_type(
+                    scoring_format_id
+                )
+            )
+
+            if modality.modality_type.tournament_competitor_type != "points":
+                raise ValueError(
+                    "Scoring format provided must be of mode 'points' or match the modality type's scoring format"
+                )
+
+            scoring_format_id = scoring_format_modality_type.id
 
         # get current season id if not provided
         if season_id is None:

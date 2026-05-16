@@ -47,6 +47,7 @@ export interface ModalityTypeUpdate {
 
 export interface ModalityTypeListParameters {
   season_id?: number;
+  mode?: 'modality' | 'points';
 }
 
 // API methods
