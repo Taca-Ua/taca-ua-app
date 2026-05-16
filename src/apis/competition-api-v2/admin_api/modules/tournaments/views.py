@@ -113,7 +113,6 @@ class TournamentDetailView(RoleRequiredMixin, APIView):
             name=serializer.validated_data.get("name", None),
             start_date=updated_date,
             status=serializer.validated_data.get("status", None),
-            is_playoff=serializer.validated_data.get("is_playoff", None),
         )
 
         serializer = TournamentDetailSerializer(tournament)

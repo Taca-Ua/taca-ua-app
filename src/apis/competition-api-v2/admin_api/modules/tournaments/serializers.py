@@ -103,7 +103,6 @@ class TournamentUpdateSerializer(serializers.Serializer):
     name = serializers.CharField(required=False)
     start_date = serializers.DateTimeField(required=False, allow_null=True)
     status = serializers.ChoiceField(choices=STATUS_CHOICES, required=False)
-    is_playoff = serializers.BooleanField(default=None, required=False)
 
 
 class TournamentFinishSerializer(serializers.Serializer):
