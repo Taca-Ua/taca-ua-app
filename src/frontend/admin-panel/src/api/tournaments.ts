@@ -50,8 +50,8 @@ export interface TournamentCreate {
   name: string;
   modality_id: string;
   start_date?: string;
-  is_playoff?: boolean;
   season_id?: number;
+  scoring_format_id?: string;
 };
 
 export interface TournamentUpdate {

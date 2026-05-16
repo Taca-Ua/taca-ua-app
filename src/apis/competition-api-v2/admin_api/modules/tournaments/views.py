@@ -65,8 +65,8 @@ class TournamentListCreateView(RoleRequiredMixin, APIView):
         tournament = tournaments_service.create_tournament(
             name=serializer.validated_data["name"],
             modality_id=serializer.validated_data["modality_id"],
-            is_playoff=serializer.validated_data.get("is_playoff", False),
             season_id=serializer.validated_data.get("season_id", None),
+            scoring_format_id=serializer.validated_data.get("scoring_format_id", None),
         )
 
         serializer = TournamentListSerializer(tournament)
@@ -113,7 +113,6 @@ class TournamentDetailView(RoleRequiredMixin, APIView):
             name=serializer.validated_data.get("name", None),
             start_date=updated_date,
             status=serializer.validated_data.get("status", None),
-            is_playoff=serializer.validated_data.get("is_playoff", None),
         )
 
         serializer = TournamentDetailSerializer(tournament)

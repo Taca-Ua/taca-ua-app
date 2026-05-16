@@ -59,16 +59,6 @@ const TournamentInfoComponent = ({
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 space-y-4">
-      <h2 className="text-xl font-bold text-gray-800 mb-4">
-        Informação do Torneio
-      </h2>
-
-      <div>
-        <label className="block text-teal-500 font-medium mb-2">Nome</label>
-        <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
-          {tournament.name}
-        </div>
-      </div>
 
       <div>
         <label className="block text-teal-500 font-medium mb-2">

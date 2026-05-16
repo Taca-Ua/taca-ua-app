@@ -8,6 +8,7 @@ import { useModal } from "../../contexts/ModalContext";
 import { useAuth } from "../../hooks/useAuth";
 import { useSeason } from "../../contexts/SeasonContext";
 import SeasonSelector from "../../components/seasons/SeasonSelector";
+import { ModalityTypeBadge } from "../../components/modality-types/utils";
 
 const ModalityTypes = () => {
   const { notify } = useNotification();
@@ -69,22 +70,17 @@ const ModalityTypes = () => {
                 type="button"
                 className="w-full text-left p-4 bg-gray-100 rounded-md hover:bg-gray-200 flex justify-between items-center transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
                 onClick={() => pushModal(
-                  <ModalityTypeInfoModal modalityTypeId={format.id} onDelete={() => setModalityTypes((prev) => prev.filter((f) => f.id !== format.id))}/>
+                  <ModalityTypeInfoModal
+                    modalityTypeId={format.id}
+                    onDelete={() => setModalityTypes((prev) => prev.filter((f) => f.id !== format.id))}
+                    onEdit={(updatedFormat) => setModalityTypes((prev) => prev.map((f) => f.id === updatedFormat.id ? updatedFormat : f))}
+                  />
                 )}
               >
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-lg">{format.name}</span>
-                    {format.is_playoff && (
-                      <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-semibold rounded-full border border-amber-300">
-                        Playoff
-                      </span>
-                    )}
-                    {!format.is_playoff && format.tournament_competitor_type && (
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${format.tournament_competitor_type === 'individual' ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-green-100 text-green-700 border-green-300'}`}>
-                        {format.tournament_competitor_type === 'individual' ? 'Individual' : 'Equipa'}
-                      </span>
-                    )}
+                    <ModalityTypeBadge format={format} />
                   </div>
                   {format.description && (
                     <div className="text-sm text-gray-600 mt-1">{format.description}</div>

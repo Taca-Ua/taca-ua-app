@@ -5,13 +5,16 @@ import ModalityTypeEditModal from "./ModalityTypeEditModal";
 import { useModal } from "../../contexts/ModalContext";
 import { useEffect, useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
+import { ModalityTypeBadge } from "./utils";
 
 const ModalityTypeInfoModal = ( {
     modalityTypeId,
-    onDelete
+    onDelete,
+    onEdit
 } : {
     modalityTypeId: string;
     onDelete?: () => void;
+    onEdit?: (updatedModalityType: ModalityTypeDetail) => void;
 } ) => {
     const { notify } = useNotification();
     const { popModal, pushModal } = useModal();
@@ -89,24 +92,7 @@ const ModalityTypeInfoModal = ( {
           </div>
 
           <div className="mb-4 flex items-center gap-2">
-            {modalityType.is_playoff ? (
-              <span className="px-3 py-1 bg-amber-100 text-amber-700 text-sm font-semibold rounded-full border border-amber-300">
-                Formato Playoff
-              </span>
-            ) : (
-              <>
-                <span className="px-3 py-1 bg-gray-100 text-gray-500 text-sm rounded-full border border-gray-200">
-                  Formato Regular
-                </span>
-                <span
-                  className={`px-3 py-1 rounded-full text-sm font-semibold border ${modalityType.tournament_competitor_type === "individual" ? "bg-blue-100 text-blue-700 border-blue-300" : "bg-green-100 text-green-700 border-green-300"}`}
-                >
-                  {modalityType.tournament_competitor_type === "individual"
-                    ? "Individual"
-                    : "Equipa"}
-                </span>
-              </>
-            )}
+            <ModalityTypeBadge format={modalityType} />
           </div>
 
           {modalityType.description && (
@@ -211,7 +197,15 @@ const ModalityTypeInfoModal = ( {
                 Eliminar
             </Button>
             <Button
-                onClick={() => pushModal(<ModalityTypeEditModal modalityTypeState={[modalityType, setModalityType]} />)}
+                onClick={() => pushModal(
+                  <ModalityTypeEditModal
+                    modalityTypeState={[modalityType, setModalityType]}
+                    onEdit={(updatedFormat) => {
+                      setModalityType(updatedFormat)
+                      if (onEdit) onEdit(updatedFormat);
+                    }}
+                  />
+                )}
                 type="info"
                 flexible={true}
                 active={isAdminGeneral}

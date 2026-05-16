@@ -86,6 +86,7 @@ class ModalityTypeSnapshotItem(SnapshotBase):
 
     id: str
     name: str
+    mode: str
     description: Optional[str] = None
     escaloes: Optional[List[EscaloType]] = None
     season_id: str
@@ -98,6 +99,7 @@ class ModalityTypeSnapshotItem(SnapshotBase):
         return {
             "id": self.id,
             "name": self.name,
+            "mode": self.mode,
             "description": self.description,
             "escaloes": [e.to_dict() for e in self.escaloes] if self.escaloes else None,
             "season_id": self.season_id,

@@ -2,18 +2,26 @@ import { useState } from "react";
 import ChoseOneModal from "../costum_menus/ChoseOneModal";
 import { useModal } from "../../../contexts/ModalContext";
 
+interface GenericElement {
+    id: string;
+    title: string;
+    subTitle?: string;
+}
+
 const ChoseOneInput = ( {
     allElementsLoader,
     onSelect,
+    elementState,
     initialElement,
 } : {
-    allElementsLoader: () => Promise<{ id: string, title: string, subTitle?: string }[]>
-    onSelect: (element: { id: string, title: string, subTitle?: string } | null) => void
-    initialElement?: { id: string, title: string } | null
+    elementState?: [GenericElement | null, React.Dispatch<React.SetStateAction<GenericElement | null>>]
+    allElementsLoader: () => Promise<GenericElement[]>
+    onSelect: (element: GenericElement | null) => void
+    initialElement?: GenericElement | null
 } ) => {
     const { pushModal } = useModal();
 
-    const [element, setElement] = useState<{ id: string, title: string, subTitle?: string } | null>(initialElement || null);
+    const [element, setElement] = elementState || useState<GenericElement | null>(initialElement || null);
 
     return (
       <div>

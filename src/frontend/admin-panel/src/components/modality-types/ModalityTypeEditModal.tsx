@@ -5,14 +5,17 @@ import Button from "../utils/Button";
 import { useNotification } from "../../contexts/NotificationProvider";
 import { useModal } from "../../contexts/ModalContext";
 import { useAuth } from "../../hooks/useAuth";
+import DefinedStatesMenuComponent from "../utils/costum_menus/DefinedStatesMenuComponent";
 
 const parsePoints = (raw: string): number[] =>
   raw.split(/[\s,]+/).map(p => parseInt(p.trim())).filter(p => !isNaN(p));
 
 const ModalityTypeEditModal = ( {
-    modalityTypeState
+    modalityTypeState,
+    onEdit
 } : {
     modalityTypeState: [ModalityTypeDetail, React.Dispatch<React.SetStateAction<ModalityTypeDetail | null>>];
+    onEdit?: (updatedModalityType: ModalityTypeDetail) => void;
 } ) => {
 
     const { notify } = useNotification();
@@ -89,6 +92,7 @@ const ModalityTypeEditModal = ( {
             });
 
             setModalityType(updatedFormat);
+            if (onEdit) onEdit(updatedFormat);
             notify('Formato de prova atualizado com sucesso!', 'success');
         } catch (err: unknown) {
             console.error('Failed to update scoring format:', err);
@@ -158,46 +162,51 @@ const ModalityTypeEditModal = ( {
               />
             </div>
 
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="edit-is-playoff"
-                checked={isPlayoff}
-                onChange={(e) => setIsPlayoff(e.target.checked)}
-                className="w-4 h-4 accent-amber-500 cursor-pointer"
-              />
-              <label
-                htmlFor="edit-is-playoff"
-                className="font-medium cursor-pointer select-none"
-              >
-                Formato Playoff
+            <div>
+              <label className="block font-medium mb-2">
+                Modo de Formato
+                <HelpTooltip
+                  text="Define como este formato é aplicado na plataforma."
+                  className="ml-1"
+                />
+                <span className="text-red-500">*</span>
               </label>
-              <span className="text-sm text-gray-500">
-                (só pode existir um formato de playoff de cada vez)
-              </span>
+              <DefinedStatesMenuComponent
+                states={[
+                  {value: 'modality', label: 'Modalidade', helpText: 'Formato aplicado a uma modalidade, onde os competidores são atletas individuais ou equipas.'},
+                  {value: 'points', label: 'Pontuação', helpText: 'Formato que pode ser escolhido por torneios de qualquer modalidade. Apenas afeta pontuações do ranking geral.'},
+                ]}
+                onSelect={() => {}}
+                initialValue={modalityType.mode}
+                disabled={true}
+              />
             </div>
 
-            {!isPlayoff && (
+            {(modalityType.mode === "points") && (
+              <div>
+
+              </div>
+            )}
+
+            {(modalityType.mode == "modality") && (
               <div>
                 <label className="block font-medium mb-2">
                   Tipo de Competidor <span className="text-red-500">*</span>
                 </label>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    className={`flex-1 py-2 rounded-md border transition-colors font-semibold ${tournamentCompetitorType === "team" ? "bg-teal-500 text-white border-teal-600" : "bg-white text-teal-700 border-gray-300"}`}
-                    onClick={() => setTournamentCompetitorType("team")}
-                  >
-                    Equipa
-                  </button>
-                  <button
-                    type="button"
-                    className={`flex-1 py-2 rounded-md border transition-colors font-semibold ${tournamentCompetitorType === "individual" ? "bg-teal-500 text-white border-teal-600" : "bg-white text-teal-700 border-gray-300"}`}
-                    onClick={() => setTournamentCompetitorType("individual")}
-                  >
-                    Individual
-                  </button>
-                </div>
+                <DefinedStatesMenuComponent
+                    states={[
+                        { value: "team", label: "Equipa" },
+                        { value: "individual", label: "Individual" }
+                    ]}
+                    onSelect={(ele) => {
+                      if (ele === "team" || ele === "individual") {
+                        setTournamentCompetitorType(ele);
+                      } else {
+                        notify('Tipo de competidor inválido. Selecione "Equipa" ou "Individual".', 'error');
+                      }
+                    }}
+                    initialValue={modalityType.tournament_competitor_type}
+                />
               </div>
             )}
 

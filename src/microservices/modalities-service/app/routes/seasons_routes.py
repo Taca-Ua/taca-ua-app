@@ -275,7 +275,7 @@ def get_season_summary(
     athletes_count = athletes_query.count()
     staff_count = db.query(Staff).count()
 
-    # Build response obect
+    # Build response object
     resp_obj = SeasonSummaryResponse(
         id=base_season.id,
         name=base_season.name,
