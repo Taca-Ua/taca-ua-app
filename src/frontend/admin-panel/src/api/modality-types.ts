@@ -60,8 +60,8 @@ export const modalityTypesApi = {
     return apiClient.post<ModalityTypeListItem>('/modality-types/', data);
   },
 
-  async getAllMinimal(): Promise<ModalityTypeMinimal[]> {
-    return apiClient.get<ModalityTypeMinimal[]>('/modality-types/minimal/');
+  async getAllMinimal(params?: ModalityTypeListParameters): Promise<ModalityTypeMinimal[]> {
+    return apiClient.get<ModalityTypeMinimal[]>('/modality-types/minimal/', params);
   },
 
   async getById(id: string): Promise<ModalityTypeDetail> {

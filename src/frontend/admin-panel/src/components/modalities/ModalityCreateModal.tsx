@@ -88,7 +88,9 @@ const ModalityCreateModal = ({
               Tipo <HelpTooltip text="Classifica a modalidade como individual (atletas competem individualmente, ex: atletismo) ou coletiva (equipas competem entre si, ex: futebol)." className="ml-1" /> <span className="text-red-500">*</span>
             </label>
             <ChoseOneInput
-              allElementsLoader={() => modalityTypesApi.getAllMinimal().then(types => types.map(type => ({ id: type.id, title: type.name })))}
+              allElementsLoader={() => modalityTypesApi.getAllMinimal({
+                season_id: loadedSeasonIsTheCurrentSeason ? undefined : activeSeason?.id, mode: 'modality'
+              }).then(types => types.map(type => ({ id: type.id, title: type.name })))}
               onSelect={(ele) => setModalityType(ele?.id || "")}
             />
           </div>
