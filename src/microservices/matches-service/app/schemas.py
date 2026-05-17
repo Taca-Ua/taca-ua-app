@@ -60,6 +60,7 @@ class MatchResponse(BaseModel):
     location: str
     start_time: datetime
     status: str
+    journey: Optional[int] = None
     participants: List[MatchParticipantResponse] = Field(default_factory=list)
     comments: Optional[List["CommentResponse"]] = None
     lineups: Optional[List["LineupResponse"]] = None

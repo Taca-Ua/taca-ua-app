@@ -19,6 +19,7 @@ export interface MatchListItem {
   location: string;
   start_time: string;
   status: string;
+  journey?: number;
   participants: {
     id: string;
     entity_id: string;

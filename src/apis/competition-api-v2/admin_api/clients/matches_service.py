@@ -55,6 +55,7 @@ class MatchDTO:
     created_by: UUID
     created_at: str  # ISO format
     updated_at: str  # ISO format
+    journey: Optional[int] = None
     participants: List[MatchParticipantDTO] = field(default_factory=list)
     comments: List["CommentDTO"] = field(default_factory=list)
     lineups: List["MatchLineupDTO"] = field(default_factory=list)

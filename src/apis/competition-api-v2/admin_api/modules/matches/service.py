@@ -56,6 +56,7 @@ class Match:
     location: str
     start_time: str
     status: str
+    journey: int = None
     participants: List[Participant] = field(default_factory=list)
     comments: List[Comment] = field(default_factory=list)
     lineups: List[Lineup] = field(default_factory=list)
@@ -261,6 +262,7 @@ class MatchesService:
                 start_time=match_dto.start_time,
                 status=match_dto.status,
                 participants=participants,
+                journey=match_dto.journey,
                 comments=None,  # to be filled later if include_details is True
                 lineups=None,  # to be filled later if include_details is True
             )

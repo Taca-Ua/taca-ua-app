@@ -51,6 +51,7 @@ class MatchListSerializer(serializers.Serializer):
     location = serializers.CharField()
     start_time = serializers.DateTimeField()
     status = serializers.CharField()
+    journey = serializers.IntegerField(required=False, allow_null=True)
     participants = ParticipantsListSerializer(many=True)
 
 
