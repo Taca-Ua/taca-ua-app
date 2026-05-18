@@ -6,12 +6,13 @@ Schema: tournaments
 import enum
 import uuid
 from datetime import datetime, timezone
+from typing import List
 
 import sqlalchemy as sa
 from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 from taca_outbox.models import create_outbox_model
 from taca_snapshots import tournaments as snapshot_models
 
@@ -106,6 +107,7 @@ class Tournament(Base):
         Enum(CompetitorType, name="competitor_type"),
         nullable=False,
     )
+    season_id = Column(sa.Integer(), nullable=False, index=True)
 
     # bulshit fields
     created_by = Column(UUID(as_uuid=True), nullable=False)
@@ -119,12 +121,12 @@ class Tournament(Base):
     finished_by = Column(UUID(as_uuid=True), nullable=True)
 
     # Relationships
-    ranking_positions = relationship(
+    ranking_positions: Mapped[List["TournamentRankingPosition"]] = relationship(
         "TournamentRankingPosition",
         back_populates="tournament",
         cascade="all, delete-orphan",
     )
-    competitors = relationship(
+    competitors: Mapped[List[TournamentCompetitor]] = relationship(
         "TournamentCompetitor",
         back_populates="tournament",
         cascade="all, delete-orphan",
@@ -140,6 +142,7 @@ class Tournament(Base):
                 str(self.scoring_format_id) if self.scoring_format_id else None
             ),
             "competitor_type": self.competitor_type.value,
+            "season_id": self.season_id,
             "start_date": self.start_date.isoformat() if self.start_date else None,
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat() if self.created_at else None,
@@ -149,7 +152,7 @@ class Tournament(Base):
             "competitors": [comp.to_dict() for comp in self.competitors],
         }
 
-        if include_ranking:
+        if self.status == "finished":
             result["ranking_positions"] = [
                 rp.to_dict() for rp in self.ranking_positions
             ]
@@ -162,6 +165,7 @@ class Tournament(Base):
             modality_id=str(self.modality_id),
             name=self.name,
             status=self.status,
+            season_id=self.season_id,
             scoring_format_id=(
                 str(self.scoring_format_id) if self.scoring_format_id else None
             ),
@@ -204,11 +208,11 @@ class TournamentRankingPosition(Base):
 
     def to_dict(self):
         return {
-            "id": str(self.id),
-            "tournament_id": str(self.tournament_id),
+            # "id": str(self.id),
+            # "tournament_id": str(self.tournament_id),
             "competitor_id": str(self.competitor_id),
             "position": self.position,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
+            # "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
     def to_snapshot(self) -> snapshot_models.TournamentRankingPositionSnapshotItem:

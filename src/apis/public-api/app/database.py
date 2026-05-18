@@ -28,8 +28,9 @@ ASYNC_DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg:/
 # Create synchronous engine for read-only access
 engine = create_engine(
     DATABASE_URL,
-    pool_size=10,
-    max_overflow=20,
+    pool_size=30,
+    max_overflow=50,
+    pool_timeout=10,
     pool_pre_ping=True,
     pool_recycle=3600,
     echo=False,
@@ -78,6 +79,33 @@ def check_db_connection() -> bool:
     except Exception as e:
         logger.error(
             "database_connection_check",
+            status="failed",
+            error=str(e),
+        )
+        return False
+
+
+def check_redis_connection() -> bool:
+    """
+    Check if Redis cache connection is working.
+
+    Returns:
+        bool: True if connection is successful, False otherwise
+    """
+    try:
+        from .cache import get_redis_client
+
+        client = get_redis_client()
+        if client is None:
+            logger.warning("redis_connection_check", status="disabled")
+            return True  # Caching is optional
+
+        client.ping()
+        logger.info("redis_connection_check", status="success")
+        return True
+    except Exception as e:
+        logger.error(
+            "redis_connection_check",
             status="failed",
             error=str(e),
         )

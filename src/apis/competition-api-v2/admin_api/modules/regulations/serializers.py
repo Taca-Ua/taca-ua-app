@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 
+# Response serializers
 class RegulationListSerializer(serializers.Serializer):
     """Serializer for listing regulations"""
 
@@ -17,12 +18,20 @@ class RegulationDetailSerializer(RegulationListSerializer):
     pass
 
 
+# Request serializers
+class RegulationQueryListSerializer(serializers.Serializer):
+    """Serializer for listing regulations with query parameters"""
+
+    season_id = serializers.IntegerField(required=False)
+
+
 class RegulationCreateSerializer(serializers.Serializer):
     """Serializer for uploading a regulation"""
 
     file = serializers.FileField(required=True)
     title = serializers.CharField(required=True)
     description = serializers.CharField(required=False, allow_blank=True)
+    season_id = serializers.IntegerField(required=False)
 
 
 class RegulationUpdateSerializer(serializers.Serializer):

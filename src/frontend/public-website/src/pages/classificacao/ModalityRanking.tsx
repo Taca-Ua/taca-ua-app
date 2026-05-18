@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type TouchEvent } from 'react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { modalityRankingApi, type ModalityRanking } from '../../api';
+import { type SeasonDetail, seasonsApi } from '../../api/seasons';
 
 interface OptionItem {
   id: string;
@@ -14,6 +15,8 @@ function ModalityRankingPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [seasonFilter, setSeasonFilter] = useState<number | null>(null);
+  const [seasons, setSeasons] = useState<SeasonDetail[]>([]);
 
   const modalities: OptionItem[] = useMemo(
     () =>
@@ -39,11 +42,24 @@ function ModalityRankingPage() {
   );
 
   useEffect(() => {
+    seasonsApi.getAll().then((data) => {
+      setSeasons(data.items);
+      const active = data.items.find((s) => s.is_active);
+      const defaultSeason = active ?? data.items[0];
+      if (defaultSeason) setSeasonFilter(defaultSeason.season_id);
+    }).catch((err) => {
+      console.error('Error fetching seasons:', err);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (seasonFilter === null) return;
+
     const fetchRankings = async () => {
       try {
         setLoading(true);
         setError(null);
-        const data = await modalityRankingApi.getModalityRanking();
+        const data = await modalityRankingApi.getModalityRanking({ season_id: seasonFilter });
         setRankings(data.items);
         setCurrentIndex(0);
       } catch (err) {
@@ -55,7 +71,7 @@ function ModalityRankingPage() {
     };
 
     fetchRankings();
-  }, []);
+  }, [seasonFilter]);
 
   const getMedalIcon = (rank: number | null) => {
     if (rank === null) return null;
@@ -120,6 +136,21 @@ function ModalityRankingPage() {
             <p className="text-lg text-gray-600">
               Classificação dos cursos em cada modalidade, com base nos resultados dos torneios
             </p>
+          </div>
+
+          <div className="mb-6">
+            <select
+              id="season-filter"
+              value={seasonFilter}
+              onChange={(e) => setSeasonFilter(parseInt(e.target.value))}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            >
+              {seasons.map((season) => (
+                <option key={season.season_id} value={season.season_id}>
+                  {season.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Carousel Modality Selector - mobile first */}

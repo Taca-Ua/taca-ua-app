@@ -4,6 +4,7 @@ import HelpTooltip from "../HelpTooltip";
 import { useNotification } from "../../contexts/NotificationProvider";
 import { regulationsApi } from "../../api/regulations";
 import { useModal } from "../../contexts/ModalContext";
+import { useSeason } from "../../contexts/SeasonContext";
 
 const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return `${bytes} B`;
@@ -19,6 +20,7 @@ const RegulationCreateModal = ( {
 } ) => {
     const { notify } = useNotification();
     const { popModal } = useModal();
+    const { loadedSeason } = useSeason();
 
     const [ title, setTitle ] = useState("");
     const [ description, setDescription ] = useState("");
@@ -63,6 +65,7 @@ const RegulationCreateModal = ( {
             title,
             file,
             description: description || undefined,
+            season_id: loadedSeason?.id,
         }).then(newRegulation => {
             console.log('Regulamento criado:', newRegulation);
             if (onCreate) onCreate(newRegulation);

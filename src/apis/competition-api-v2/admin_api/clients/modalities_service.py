@@ -36,6 +36,8 @@ class CourseDTO:
     name: str
     abbreviation: str
     nucleo: Optional[NucleoDTO] = None
+    belongs_to_season: Optional[bool] = False
+    relevant_season_ids: List[int] = field(default_factory=list)
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -79,13 +81,17 @@ class ModalityTypeDTO:
 class ModalityDTO:
     id: UUID
     name: str
-    modality_type: ModalityTypeDTO
+    belongs_to_season: bool
+    modality_type: Optional[ModalityTypeDTO] = None
+    relevant_season_ids: Optional[List[int]] = None
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
 
     def __post_init__(self):
-        if not isinstance(self.modality_type, ModalityTypeDTO):
+        if self.modality_type is not None and not isinstance(
+            self.modality_type, ModalityTypeDTO
+        ):
             self.modality_type = ModalityTypeDTO(**self.modality_type)
 
 
@@ -124,6 +130,7 @@ class TeamDTO:
     modality: ModalityDTO
     course: CourseDTO
     players: List[StudentDTO]
+    season: "SeasonDTO"
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -139,6 +146,37 @@ class TeamDTO:
             player if isinstance(player, StudentDTO) else StudentDTO(**player)
             for player in self.players
         ]
+
+        if not isinstance(self.season, SeasonDTO) and self.season is not None:
+            self.season = SeasonDTO(**self.season)
+
+
+@dataclass
+class SeasonDTO:
+    id: int
+    name: str
+    created_by: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
+@dataclass
+class SeasonSummaryDTO:
+    id: int
+    name: str
+
+    modality_types_count: int
+    active_modalities_count: int
+    active_courses_count: int
+    teams_count: int
+
+    athletes_count: int
+    staff_count: int
+
+    # Fields when passed admin_id for filtering
+    admin_courses_ids: Optional[List[int]] = None
+    admin_teams_ids: Optional[List[int]] = None
+    admin_athletes_ids: Optional[List[str]] = None
 
 
 @dataclass
@@ -294,7 +332,9 @@ class CourseModalitiesService(BaseService):
         )
         super().__init__(base_url)
 
-    def list_courses(self, admin_id: str = None) -> List[CourseDTO]:
+    def list_courses(
+        self, admin_id: str = None, season_id: str = None
+    ) -> List[CourseDTO]:
         """List all courses
 
         Returns:
@@ -303,6 +343,8 @@ class CourseModalitiesService(BaseService):
         params = {}
         if admin_id is not None:
             params["admin_id"] = admin_id
+        if season_id is not None:
+            params["season_id"] = season_id
         courses_data = self.get("/courses", params=params)
         return [CourseDTO(**course) for course in courses_data]
 
@@ -325,16 +367,20 @@ class CourseModalitiesService(BaseService):
         course_data = self.post("/courses", data)
         return CourseDTO(**course_data)
 
-    def get_course(self, course_id: str) -> CourseDTO:
+    def get_course(self, course_id: str, season_id: str = None) -> CourseDTO:
         """Get a course by ID
 
         Args:
             course_id (str): ID of the course
+            season_id (str, optional): ID of the season to filter by. Defaults to None.
 
         Returns:
             CourseDTO: CourseDTO object representing the course
         """
-        course_data = self.get(f"/courses/{course_id}")
+        params = {}
+        if season_id is not None:
+            params["season_id"] = season_id
+        course_data = self.get(f"/courses/{course_id}", params=params)
         return CourseDTO(**course_data)
 
     def update_course(
@@ -364,6 +410,36 @@ class CourseModalitiesService(BaseService):
             data["nucleo_id"] = nucleo_id
 
         course_data = self.put(f"/courses/{course_id}", data)
+        return CourseDTO(**course_data)
+
+    def add_course_to_season(self, course_id: str, season_id: int) -> CourseDTO:
+        """Add a course to a season
+
+        Args:
+            course_id (str): ID of the course
+            season_id (int): ID of the season
+
+        Returns:
+            CourseDTO: Updated CourseDTO object with belongs_to_season set to True
+        """
+        course_data = self.post(
+            f"/courses/{course_id}/add_to_season", {"season_id": season_id}
+        )
+        return CourseDTO(**course_data)
+
+    def remove_course_from_season(self, course_id: str, season_id: int) -> CourseDTO:
+        """Remove a course from a season
+
+        Args:
+            course_id (str): ID of the course
+            season_id (int): ID of the season
+
+        Returns:
+            CourseDTO: Updated CourseDTO object with belongs_to_season set to False
+        """
+        course_data = self.post(
+            f"/courses/{course_id}/remove_from_season", {"season_id": season_id}
+        )
         return CourseDTO(**course_data)
 
     def delete_course(self, course_id: str) -> None:
@@ -397,7 +473,7 @@ class ModalityTypesModalitiesService(BaseService):
         super().__init__(base_url)
 
     def list_modality_types(
-        self, include_playoff: bool = True
+        self, include_playoff: bool = True, season_id: str = None
     ) -> List[ModalityTypeDTO]:
         """List all modality types
 
@@ -407,6 +483,8 @@ class ModalityTypesModalitiesService(BaseService):
         params = {}
         if not include_playoff:
             params["exclude_playoff"] = True
+        if season_id is not None:
+            params["season_id"] = season_id
         modality_types_data = self.get("/modality-types", params=params)
         return [
             ModalityTypeDTO(**modality_type) for modality_type in modality_types_data
@@ -419,6 +497,7 @@ class ModalityTypesModalitiesService(BaseService):
         escaloes: List[str] = None,
         is_playoff: bool = False,
         tournament_competitor_type: str = None,
+        season_id: str = None,
     ) -> ModalityTypeDTO:
         """Create a new modality type
 
@@ -427,6 +506,8 @@ class ModalityTypesModalitiesService(BaseService):
             description (str, optional): Description of the modality type. Defaults to "".
             escaloes (List[str], optional): List of escaloes. Defaults to None.
             is_playoff (bool, optional): Whether this modality type is used for playoffs. Defaults to False.
+            tournament_competitor_type (str, optional): Type of competitors in the tournament. Defaults to None.
+            season_id (str, optional): ID of the season to which the modality type belongs. Defaults to None.
 
         Returns:
             ModalityTypeDTO: Created ModalityTypeDTO object
@@ -440,6 +521,7 @@ class ModalityTypesModalitiesService(BaseService):
             "escaloes": escaloes,
             "is_playoff": is_playoff,
             "tournament_competitor_type": tournament_competitor_type,
+            "season_id": season_id,
         }
         modality_type_data = self.post("/modality-types", data)
         return ModalityTypeDTO(**modality_type_data)
@@ -522,13 +604,16 @@ class ModalityModalitiesService(BaseService):
         )
         super().__init__(base_url)
 
-    def list_modalities(self) -> List[ModalityDTO]:
+    def list_modalities(self, season_id: int = None) -> List[ModalityDTO]:
         """List all modalities
 
         Returns:
             List[ModalityDTO]: List of ModalityDTO objects representing the modalities
         """
-        modalities_data = self.get("/modalities")
+        params = {}
+        if season_id is not None:
+            params["season_id"] = season_id
+        modalities_data = self.get("/modalities", params=params)
         return [ModalityDTO(**modality) for modality in modalities_data]
 
     def create_modality(self, name: str, modality_type_id: str) -> ModalityDTO:
@@ -545,16 +630,20 @@ class ModalityModalitiesService(BaseService):
         modality_data = self.post("/modalities", data)
         return ModalityDTO(**modality_data)
 
-    def get_modality(self, modality_id: str) -> ModalityDTO:
+    def get_modality(self, modality_id: str, season_id: str = None) -> ModalityDTO:
         """Get a modality by ID
 
         Args:
             modality_id (str): ID of the modality
+            season_id (str, optional): ID of the season. Defaults to None.
 
         Returns:
             ModalityDTO: ModalityDTO object representing the modality
         """
-        modality_data = self.get(f"/modalities/{modality_id}")
+        params = {}
+        if season_id is not None:
+            params["season_id"] = season_id
+        modality_data = self.get(f"/modalities/{modality_id}", params=params)
         return ModalityDTO(**modality_data)
 
     def update_modality(
@@ -562,6 +651,7 @@ class ModalityModalitiesService(BaseService):
         modality_id: str,
         name: Optional[str] = None,
         modality_type_id: Optional[str] = None,
+        season_id: Optional[int] = None,
     ) -> ModalityDTO:
         """Update a modality
 
@@ -569,7 +659,7 @@ class ModalityModalitiesService(BaseService):
             modality_id (str): ID of the modality
             name (Optional[str], optional): New name of the modality. Defaults to None.
             modality_type_id (Optional[str], optional): New modality type ID. Defaults to None.
-
+            season_id (Optional[int], optional): New season ID. Defaults to None.
         Returns:
             ModalityDTO: Updated ModalityDTO object
         """
@@ -579,8 +669,23 @@ class ModalityModalitiesService(BaseService):
             data["name"] = name
         if modality_type_id is not None:
             data["modality_type_id"] = modality_type_id
+        if season_id is not None:
+            data["season_id"] = season_id
 
         modality_data = self.put(f"/modalities/{modality_id}", data)
+        return ModalityDTO(**modality_data)
+
+    def remove_from_season(self, modality_id: str, season_id: int) -> ModalityDTO:
+        """Remove a modality from a season
+
+        Args:
+            modality_id (str): ID of the modality
+            season_id (int): ID of the season to remove the modality from
+        Returns:
+            ModalityDTO: Updated ModalityDTO object
+        """
+        data = {"season_id": season_id}
+        modality_data = self.put(f"/modalities/{modality_id}/remove-from-season", data)
         return ModalityDTO(**modality_data)
 
     def delete_modality(self, modality_id: str) -> None:
@@ -841,13 +946,14 @@ class TeamModalitiesService(BaseService):
         super().__init__(base_url)
 
     def list_teams(
-        self, admin_id: str = None, modality_id: str = None
+        self, admin_id: str = None, modality_id: str = None, season_id: int = None
     ) -> List[TeamDTO]:
         """List teams, optionally filtered by admin user ID and/or modality ID
 
         Args:
             admin_id (str, optional): ID of the admin user to filter teams by. Defaults to None.
             modality_id (str, optional): ID of the modality to filter teams by. Defaults to None.
+            season_id (int, optional): ID of the season to filter teams by. Defaults to None.
         Returns:
             List[TeamDTO]: List of TeamDTO objects representing the teams
         """
@@ -857,17 +963,22 @@ class TeamModalitiesService(BaseService):
             params["admin_id"] = admin_id
         if modality_id is not None:
             params["modality_id"] = modality_id
+        if season_id is not None:
+            params["season_id"] = season_id
 
         teams_data = self.get("/teams", params=params)
         return [TeamDTO(**team) for team in teams_data]
 
-    def create_team(self, name: str, modality_id: str, course_id: str) -> TeamDTO:
+    def create_team(
+        self, name: str, modality_id: str, course_id: str, season_id: int = None
+    ) -> TeamDTO:
         """Create a new team
 
         Args:
             name (str): Name of the team
             modality_id (str): ID of the modality
             course_id (str): ID of the course
+            season_id (int, optional): ID of the season. Defaults to None.
 
         Returns:
             TeamDTO: TeamDTO object representing the created team
@@ -876,6 +987,7 @@ class TeamModalitiesService(BaseService):
             "name": name,
             "modality_id": modality_id,
             "course_id": course_id,
+            "season_id": season_id,
         }
         return TeamDTO(**self.post("/teams", data))
 
@@ -911,8 +1023,6 @@ class TeamModalitiesService(BaseService):
         self,
         team_id: str,
         name: Optional[str] = None,
-        modality_id: Optional[str] = None,
-        course_id: Optional[str] = None,
         players_add: Optional[List[str]] = None,
         players_remove: Optional[List[str]] = None,
     ) -> TeamDTO:
@@ -932,10 +1042,6 @@ class TeamModalitiesService(BaseService):
         data = {}
         if name is not None:
             data["name"] = name
-        if modality_id is not None:
-            data["modality_id"] = modality_id
-        if course_id is not None:
-            data["course_id"] = course_id
         if players_add is not None:
             data["players_add"] = players_add
         if players_remove is not None:
@@ -952,6 +1058,18 @@ class TeamModalitiesService(BaseService):
         """
         self.delete(f"/teams/{team_id}")
 
+    def list_teams_by_admin(self, admin_id: str) -> List[UUID]:
+        """List all teams associated with a specific admin user ID
+
+        Args:
+            admin_id (str): Admin user ID
+
+        Returns:
+            List[UUID]: List of team IDs representing the teams associated with the admin
+        """
+        team_ids = self.get(f"/teams/admin/{admin_id}")
+        return [UUID(team_id) for team_id in team_ids]
+
 
 class RegulationsModalitiesService(BaseService):
     """Service for managing regulations via modalities-service"""
@@ -962,17 +1080,28 @@ class RegulationsModalitiesService(BaseService):
         )
         super().__init__(base_url)
 
-    def list_regulations(self) -> List[RegulationDTO]:
+    def list_regulations(self, season_id: Optional[int] = None) -> List[RegulationDTO]:
         """List all regulations
+
+        Args:
+            season_id (Optional[int], optional): ID of the season to filter regulations by. Defaults to None.
 
         Returns:
             List[RegulationDTO]: List of RegulationDTO objects representing the regulations
         """
-        regulations_data = self.get("/regulations")
+        params = {}
+        if season_id is not None:
+            params["season_id"] = season_id
+
+        regulations_data = self.get("/regulations", params=params)
         return [RegulationDTO(**regulation) for regulation in regulations_data]
 
     def create_regulation_internal(
-        self, title: str, file_url: str, description: Optional[str] = None
+        self,
+        title: str,
+        file_url: str,
+        description: Optional[str] = None,
+        season_id: Optional[int] = None,
     ) -> RegulationDTO:
         """Create a new regulation"""
         regulation_data = self.post(
@@ -981,6 +1110,7 @@ class RegulationsModalitiesService(BaseService):
                 "title": title,
                 "file_url": file_url,
                 "description": description,
+                "season_id": season_id,
             },
         )
         return RegulationDTO(**regulation_data)
@@ -1030,6 +1160,81 @@ class RegulationsModalitiesService(BaseService):
         self.delete(f"/regulations/{regulation_id}")
 
 
+class SeasonModalitiesService(BaseService):
+    """Service for managing seasons via modalities-service"""
+
+    def __init__(self):
+        base_url = os.environ.get(
+            "MODALITIES_SERVICE_URL", "http://modalities-service:8000"
+        )
+        super().__init__(base_url)
+
+    def list_seasons(self) -> List[SeasonDTO]:
+        """List all seasons
+
+        Returns:
+            List[SeasonDTO]: List of SeasonDTO objects representing the seasons
+        """
+        seasons_data = self.get("/seasons")
+        return [SeasonDTO(**season) for season in seasons_data]
+
+    def create_season(self, name: str, created_by: Optional[str] = None) -> SeasonDTO:
+        """Create a new season
+
+        Args:
+            name (str): Name of the season
+            created_by (Optional[str], optional): ID of the user creating the season. Defaults to None.
+
+        Returns:
+            SeasonDTO: Created SeasonDTO object
+        """
+        data = {"name": name}
+        if created_by is not None:
+            data["admin_id"] = created_by
+        season_data = self.post("/seasons", data)
+        return SeasonDTO(**season_data)
+
+    def get_season(self, season_id: str) -> SeasonDTO:
+        """Get a season by ID
+
+        Args:
+            season_id (str): ID of the season
+
+        Returns:
+            SeasonDTO: SeasonDTO object representing the season
+        """
+        season_data = self.get(f"/seasons/{season_id}")
+        return SeasonDTO(**season_data)
+
+    def get_current_season(self) -> SeasonDTO:
+        """Get the current season
+
+        Returns:
+            SeasonDTO: SeasonDTO object representing the current season
+        """
+        season_data = self.get("/seasons/current")
+        return SeasonDTO(**season_data)
+
+    def get_season_summary(
+        self, season_id: str, admin_id: str | None = None
+    ) -> SeasonSummaryDTO:
+        """Get a summary of the season, including counts of courses, modalities, teams, and students
+
+        Args:
+            season_id (str): ID of the season
+            admin_id (str | None): ID of the admin user, if applicable
+
+        Returns:
+            SeasonSummaryDTO: SeasonSummaryDTO object representing the summary of the season
+        """
+        params = {}
+        if admin_id is not None:
+            params["admin_id"] = admin_id
+
+        summary_data = self.get(f"/seasons/{season_id}/summary", params=params)
+        return SeasonSummaryDTO(**summary_data)
+
+
 class ModalitiesService(BaseService):
     """Service for managing courses, modalities, teams, and students via modalities-service"""
 
@@ -1047,6 +1252,7 @@ class ModalitiesService(BaseService):
         self.staff = StaffModalitiesService()
         self.teams = TeamModalitiesService()
         self.regulations = RegulationsModalitiesService()
+        self.seasons = SeasonModalitiesService()
 
 
 # Singleton instance

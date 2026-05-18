@@ -42,7 +42,7 @@ const MatchCreateModal = ( {
         tournament_id: tournament.id,
         participants: selectedParticipants,
         location,
-        start_time: startTime
+        start_time: new Date(startTime).toISOString()
       } );
       notify("Jogo criado com sucesso!", "success");
       // Aqui você pode adicionar lógica para fechar o modal ou atualizar a lista de jogos

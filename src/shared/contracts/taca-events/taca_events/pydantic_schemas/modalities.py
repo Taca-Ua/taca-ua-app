@@ -143,6 +143,7 @@ class _EscalaoData(BaseModel):
 class ModalityTypeCreatedData(BaseModel):
 
     modality_type_id: UUID
+    season_id: int
     name: str
     description: str
     escaloes: list[_EscalaoData]
@@ -382,6 +383,7 @@ class TeamCreatedData(BaseModel):
     name: str
     modality_id: UUID
     course_id: UUID
+    season_id: int
 
 
 class TeamUpdatedData(BaseModel):
@@ -475,6 +477,7 @@ class RegulationCreatedData(BaseModel):
     title: str
     description: str
     file_url: Optional[str] = None
+    season_id: int
 
 
 class RegulationUpdatedData(BaseModel):
@@ -522,3 +525,25 @@ class RegulationDeletedV1(EventSchema):
     @classmethod
     def aggregate_type(cls) -> str:
         return "regulation"
+
+
+# ================================================================== #
+# Season
+# ================================================================== #
+
+
+class SeasonCreatedData(BaseModel):
+    season_id: int
+    name: str
+
+
+class SeasonCreatedV1(EventSchema):
+    data: SeasonCreatedData
+
+    @classmethod
+    def event_type(cls) -> str:
+        return "season.created.v1"
+
+    @classmethod
+    def aggregate_type(cls) -> str:
+        return "season"

@@ -44,6 +44,7 @@ class TeamDetailView(Base):
 
     team_id = Column(UUID(as_uuid=True), primary_key=True)
     team_name = Column(String, nullable=False)
+    team_season_id = Column(Integer, nullable=False)
 
     # Course info
     course_id = Column(UUID(as_uuid=True), nullable=False)
@@ -114,6 +115,7 @@ class TournamentDetailView(Base):
 
     tournament_id = Column(UUID(as_uuid=True), primary_key=True)
     tournament_name = Column(String, nullable=False)
+    tournament_season_id = Column(Integer, nullable=False)
     start_date = Column(Date, nullable=False)
     status = Column(String, nullable=False)
 
@@ -216,11 +218,14 @@ class GeneralRankingView(Base):
     __table_args__ = (
         Index("ix_mv_general_ranking_rank", "rank"),
         Index("ix_mv_general_ranking_course_id", "course_id"),
-        UniqueConstraint("course_id", name="uq_general_ranking_course"),
+        UniqueConstraint(
+            "course_id", "season_id", name="uq_mv_general_ranking_course_season"
+        ),
         {"schema": "public_read"},
     )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    season_id = Column(Integer, nullable=False)
     course_id = Column(UUID(as_uuid=True), nullable=False)
     course_name = Column(String, nullable=False)
     course_abbreviation = Column(String, nullable=False)
@@ -251,12 +256,16 @@ class ModalityRankingView(Base):
         Index("ix_mv_modality_rankings_rank", "modality_id", "rank"),
         Index("ix_mv_modality_rankings_course_id", "modality_id", "course_id"),
         UniqueConstraint(
-            "modality_id", "course_id", name="uq_modality_ranking_modality_course"
+            "modality_id",
+            "course_id",
+            "season_id",
+            name="uq_mv_modality_ranking_modality_course_season",
         ),
         {"schema": "public_read"},
     )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    season_id = Column(Integer, nullable=False)
     modality_id = Column(UUID(as_uuid=True), nullable=False)
     modality_name = Column(String, nullable=True)
 
@@ -293,6 +302,23 @@ class NucleoDetailView(Base):
     logo_url = Column(String(500), nullable=True)
 
 
+class SeasonDetailView(Base):
+    """
+    Materialized view: Season details with aggregated statistics.
+    Rebuilt when Season events are processed.
+    """
+
+    __tablename__ = "mv_season_details"
+    __table_args__ = (
+        Index("ix_mv_season_details_season_id", "season_id"),
+        {"schema": "public_read"},
+    )
+
+    season_id = Column(Integer, nullable=False, primary_key=True)
+    name = Column(String, nullable=False)
+    is_active = Column(Boolean, nullable=False, default=False)
+
+
 # ==================== Shared Operational Tables ====================
 
 
@@ -309,4 +335,5 @@ class Regulation(Base):
     title = Column(Text, nullable=False)
     description = Column(Text, nullable=True)
     file_url = Column(String(500), nullable=False)
+    season_id = Column(Integer, nullable=False)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)

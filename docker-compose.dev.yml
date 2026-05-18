@@ -147,11 +147,17 @@ services:
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
       - DATABASE_URL=${DATABASE_URL}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - CACHE_ENABLED=false
     depends_on:
       loki:
         condition: service_started
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_started
 
 # Microservices
   matches-service:

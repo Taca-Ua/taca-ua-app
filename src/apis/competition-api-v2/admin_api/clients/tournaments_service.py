@@ -22,11 +22,11 @@ class CompetitorDTO:
 
 @dataclass
 class _TournamentRankingPositionDTO:
-    id: UUID
-    tournament_id: UUID
-    team_id: UUID
+    # id: UUID
+    # tournament_id: UUID
+    competitor_id: UUID
     position: int
-    created_at: str  # ISO formatted datetime string
+    # created_at: str  # ISO formatted datetime string
 
 
 @dataclass
@@ -37,6 +37,7 @@ class TournamentDTO:
     modality_id: UUID
     scoring_format_id: UUID
     competitor_type: str  # "team" or "athlete"
+    season_id: int
     start_date: Optional[str] = None  # ISO formatted datetime string
     competitors: List[CompetitorDTO] = field(default_factory=list)
     ranking_positions: List[_TournamentRankingPositionDTO] = field(default_factory=list)
@@ -61,6 +62,35 @@ class TournamentDTO:
         )
 
 
+@dataclass
+class TournamentSeasonSummary:
+    @dataclass
+    class _TournamentsDistribution:
+        tournament_id: UUID
+        competitors_ids: List[UUID]
+
+        def __post_init__(self):
+            if isinstance(self.competitors_ids, list):
+                self.competitors_ids = [UUID(str(cid)) for cid in self.competitors_ids]
+
+    tournaments_finished: int
+    tournaments_ongoing: int
+    tournaments_scheduled: int
+
+    tournaments_ids: List[UUID]  # List of tournament IDs in the season
+    competitors_distribution: List[_TournamentsDistribution] = None
+
+    def __post_init__(self):
+        if self.competitors_distribution is None:
+            self.competitors_distribution = []
+
+        if isinstance(self.competitors_distribution, list):
+            self.competitors_distribution = [
+                self._TournamentsDistribution(**entry)
+                for entry in self.competitors_distribution
+            ]
+
+
 class TournamentsService(BaseService):
     """Service for managing tournaments via tournaments-service"""
 
@@ -71,7 +101,10 @@ class TournamentsService(BaseService):
         super().__init__(base_url)
 
     def list_tournaments(
-        self, status_filter: Optional[str] = None, modality_id: Optional[UUID] = None
+        self,
+        status_filter: Optional[str] = None,
+        modality_id: Optional[UUID] = None,
+        season_id: Optional[int] = None,
     ) -> List[TournamentDTO]:
         """
         List all tournaments with optional filters
@@ -79,6 +112,7 @@ class TournamentsService(BaseService):
         Args:
             status_filter: Filter by status (draft, active, finished)
             modality_id: Filter by modality ID
+            season_id: Filter by season ID
 
         Returns:
             List of tournament dictionaries
@@ -88,6 +122,8 @@ class TournamentsService(BaseService):
             params["status_filter"] = status_filter
         if modality_id:
             params["modality_id"] = str(modality_id)
+        if season_id:
+            params["season_id"] = season_id
 
         tournaments_data = self.get("/tournaments", params=params)
         return [TournamentDTO(**tournament) for tournament in tournaments_data]
@@ -111,6 +147,7 @@ class TournamentsService(BaseService):
         name: str,
         scoring_format_id: UUID,
         competitor_type: str,
+        season_id: int = None,
         start_date: Optional[str] = None,
     ) -> TournamentDTO:
         """
@@ -120,6 +157,8 @@ class TournamentsService(BaseService):
             modality_id: ID of the modality
             name: Tournament name
             scoring_format_id: ID of the scoring format (regular vs playoff)
+            competitor_type: "team" or "athlete"
+            season_id: Season ID
             start_date: Optional start date (ISO format)
 
         Returns:
@@ -130,6 +169,7 @@ class TournamentsService(BaseService):
             "name": name,
             "scoring_format_id": str(scoring_format_id),
             "competitor_type": competitor_type,
+            "season_id": season_id,
         }
         if start_date:
             data["start_date"] = start_date
@@ -241,6 +281,40 @@ class TournamentsService(BaseService):
             f"/tournaments/{tournament_id}/competitors/remove", data=data
         )
         return TournamentDTO(**tournament_data)
+
+    def get_tournaments_summary(
+        self,
+        season_id: int,
+        teams_ids: List[UUID] = None,
+        athletes_ids: List[UUID] = None,
+    ) -> TournamentSeasonSummary:
+        """
+        Get summary information for all tournaments in a season
+
+        Args:
+            season_id: Season ID
+            teams_ids: Optional list of team IDs to filter the summary
+            athletes_ids: Optional list of athlete IDs to filter the summary
+
+        Returns:
+            Tournament season summary dictionary
+        """
+        data = {"season_id": season_id}
+
+        if teams_ids is not None:
+            data["teams_ids"] = [str(team_id) for team_id in teams_ids]
+
+        if athletes_ids is not None:
+            data["athletes_ids"] = [str(athlete_id) for athlete_id in athletes_ids]
+
+        summary_data = self.post("/tournaments/summary", data=data)
+        return TournamentSeasonSummary(
+            tournaments_finished=summary_data.get("tournaments_finished", 0),
+            tournaments_ongoing=summary_data.get("tournaments_ongoing", 0),
+            tournaments_scheduled=summary_data.get("tournaments_scheduled", 0),
+            tournaments_ids=summary_data.get("tournaments_ids", []),
+            competitors_distribution=summary_data.get("competitors_distribution", []),
+        )
 
 
 # Singleton instance

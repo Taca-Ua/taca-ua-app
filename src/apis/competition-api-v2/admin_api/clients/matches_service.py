@@ -98,6 +98,14 @@ class CommentDTO:
     tournament_id: Optional[UUID] = None
 
 
+@dataclass
+class MatchesSummary:
+    total_matches: int
+    finished: int
+    ongoing: int
+    scheduled: int
+
+
 class MatchesService(BaseService):
     """Service for managing matches via matches-service"""
 
@@ -532,6 +540,34 @@ class MatchesService(BaseService):
 
         match_data = self.put(f"/matches/{match_id}/results", data=data)
         return MatchDTO(**match_data)
+
+    def get_matches_summary(
+        self,
+        tournaments_ids: Optional[List[UUID]] = None,
+        tournaments_distribution: Optional[dict[UUID, List[UUID]]] = None,
+    ) -> MatchesSummary:
+        """
+        Get summary information about matches, optionally filtered by tournament.
+
+        Args:
+            tournaments_ids: List of tournament UUIDs to filter by (optional)
+            tournaments_distribution: Dict mapping tournament UUIDs to lists of competitor UUIDs (optional)
+
+        Returns:
+            Summary data with total matches, matches by status, and optionally matches by tournament
+        """
+
+        data = {
+            "tournaments_ids": (
+                [str(id) for id in tournaments_ids]
+                if tournaments_ids is not None
+                else None
+            ),
+            "tournaments_distribution": tournaments_distribution,
+        }
+
+        summary_data = self.post("/matches/summary", data=data)
+        return MatchesSummary(**summary_data)
 
 
 # Singleton instance

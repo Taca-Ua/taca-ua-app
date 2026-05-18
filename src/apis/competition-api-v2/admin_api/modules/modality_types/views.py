@@ -18,6 +18,7 @@ from rest_framework.views import APIView
 from .serializers import (
     ModalityTypeCreateSerializer,
     ModalityTypeDetailSerializer,
+    ModalityTypeListQuerySerializer,
     ModalityTypeListSerializer,
     ModalityTypeMinimalSerializer,
     ModalityTypeUpdateSerializer,
@@ -27,6 +28,7 @@ from .service import modality_types_service
 
 @extend_schema_view(
     get=extend_schema(
+        parameters=[ModalityTypeListQuerySerializer],
         responses=ModalityTypeListSerializer(many=True),
         description="List all modality types",
         tags=["Modality Ttype Management"],
@@ -41,8 +43,11 @@ from .service import modality_types_service
 class ModalityTypeListCreateView(RoleRequiredMixin, APIView):
 
     def get(self, request: Request):
+        serializer = ModalityTypeListQuerySerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+
         modality_types = modality_types_service.list_modality_types(
-            include_playoff=True
+            include_playoff=True, season_id=serializer.validated_data.get("season_id")
         )
 
         serializer = ModalityTypeListSerializer(modality_types, many=True)
@@ -61,6 +66,7 @@ class ModalityTypeListCreateView(RoleRequiredMixin, APIView):
             tournament_competitor_type=serializer.validated_data.get(
                 "tournament_competitor_type"
             ),
+            season_id=serializer.validated_data.get("season_id"),
         )
         serializer = ModalityTypeListSerializer(modality_type)
         return Response(serializer.data, status=status.HTTP_201_CREATED)

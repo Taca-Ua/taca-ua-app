@@ -48,6 +48,7 @@ class TournamentCreate(BaseModel):
     scoring_format_id: UUID
     start_date: Optional[datetime]
     competitor_type: str  # "team" or "athlete"
+    season_id: int
 
 
 class TournamentUpdate(BaseModel):
@@ -64,11 +65,11 @@ class TournamentUpdate(BaseModel):
 class TournamentRankingPositionSchema(BaseModel):
     """Schema for tournament ranking position"""
 
-    id: UUID
-    tournament_id: UUID
-    team_id: UUID
+    # id: UUID
+    # tournament_id: UUID
+    competitor_id: UUID
     position: int
-    created_at: datetime
+    # created_at: datetime
 
     class Config:
         from_attributes = True
@@ -85,6 +86,7 @@ class TournamentResponse(BaseModel):
     scoring_format_id: UUID
     competitors: List[CompetitorResponse]
     competitor_type: str
+    season_id: int
 
     created_by: UUID
     created_at: datetime
@@ -108,6 +110,30 @@ class TournamentFinish(BaseModel):
 
     ranking_entries: List[TournamentFinishEntry]
     finished_by: UUID
+
+
+class TournamentSeasonSummaryRequest(BaseModel):
+    """Schema for tournament season summary request"""
+
+    season_id: int
+    teams_ids: Optional[List[UUID]] = None
+    athletes_ids: Optional[List[UUID]] = None
+
+
+class TournamentSeasonSummary(BaseModel):
+    """Schema for tournament season summary"""
+
+    class _TournamentSeasonSummaryCompetitors(BaseModel):
+        tournament_id: UUID
+        competitors_ids: List[UUID]
+
+    tournaments_finished: int
+    tournaments_ongoing: int
+    tournaments_scheduled: int
+
+    tournaments_ids: List[UUID]
+
+    competitors_distribution: Optional[List[_TournamentSeasonSummaryCompetitors]] = None
 
 
 # ==================== Outbox Schemas ====================

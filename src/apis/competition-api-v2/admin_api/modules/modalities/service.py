@@ -3,6 +3,7 @@ Modality management service
 """
 
 from dataclasses import dataclass
+from typing import Optional
 
 from admin_api.clients.modalities_service import ModalityDTO, modalities_service_client
 
@@ -17,7 +18,11 @@ class _ModalityType:
 class Modality:
     id: str
     name: str
+    belongs_to_season: bool
     modality_type: _ModalityType
+
+    # Detailed view only fields
+    relevant_season_ids: Optional[list[int]] = None
 
 
 class ModalitiesService:
@@ -34,11 +39,15 @@ class ModalitiesService:
         return Modality(
             id=dto.id,
             name=dto.name,
+            belongs_to_season=dto.belongs_to_season,
             modality_type=modality_type,
+            relevant_season_ids=dto.relevant_season_ids,
         )
 
-    def list_modalities(self):
-        answer = modalities_service_client.modalities.list_modalities()
+    def list_modalities(self, season_id: str = None):
+        answer = modalities_service_client.modalities.list_modalities(
+            season_id=season_id
+        )
         return [self._build_modality_from_dto(dto) for dto in answer]
 
     def create_modality(self, name: str, modality_type_id: str = None):
@@ -47,15 +56,27 @@ class ModalitiesService:
         )
         return self._build_modality_from_dto(answer)
 
-    def get_modality(self, modality_id: str):
-        answer = modalities_service_client.modalities.get_modality(modality_id)
+    def get_modality(self, modality_id: str, season_id: str = None):
+        answer = modalities_service_client.modalities.get_modality(
+            modality_id, season_id=season_id
+        )
         return self._build_modality_from_dto(answer)
 
     def update_modality(
-        self, modality_id: str, name: str = None, modality_type_id: str = None
+        self,
+        modality_id: str,
+        name: str = None,
+        modality_type_id: str = None,
+        season_id: int = None,
     ):
         answer = modalities_service_client.modalities.update_modality(
-            modality_id, name, modality_type_id
+            modality_id, name, modality_type_id, season_id=season_id
+        )
+        return self._build_modality_from_dto(answer)
+
+    def remove_modality_from_season(self, modality_id: str, season_id: int):
+        answer = modalities_service_client.modalities.remove_from_season(
+            modality_id, season_id
         )
         return self._build_modality_from_dto(answer)
 

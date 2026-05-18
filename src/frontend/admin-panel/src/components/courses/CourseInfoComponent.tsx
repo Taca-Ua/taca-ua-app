@@ -1,48 +1,45 @@
-import { useEffect, useState } from "react";
 import HelpTooltip from "../HelpTooltip";
 import { type CourseDetail, coursesApi } from "../../api/courses";
 import CourseEditModal from "./CourseEditModal";
 import { useAuth } from "../../hooks/useAuth";
 import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
+import { useSeason } from "../../contexts/SeasonContext";
+import { useNotification } from "../../contexts/NotificationProvider";
 
-const CourseDetailComponent = ( {courseId, onDelete} : { courseId: string, onDelete?: () => void } ) => {
+const CourseInfoComponent = ( {
+  courseState,
+} : {
+  courseState: [CourseDetail | null, React.Dispatch<React.SetStateAction<CourseDetail | null>>],
+}) => {
   const { isAdminGeneral } = useAuth();
   const { pushModal } = useModal();
+  const { loadedSeason } = useSeason();
+  const { notify } = useNotification();
 
-  const [course, setCourse] = useState<CourseDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [course, setCourse] = courseState;
 
-  const handleDelete = () => {
-    coursesApi.delete(courseId).then(() => {
-      if (onDelete) onDelete();
-    }).catch((error) => {
-      console.error("Erro ao eliminar curso:", error);
-    });
+  const handleRemoveFromSeason = () => {
+    if (!course || !loadedSeason) return;
+    coursesApi.removeFromSeason(course.id, loadedSeason.id)
+      .then((updatedCourse) => {
+        setCourse(updatedCourse);
+      }).catch((error) => {
+        notify("Erro ao remover curso da temporada.", "error");
+        console.error("Erro ao remover curso da temporada:", error);
+      });
   };
 
-  useEffect(() => {
-    const fetchCourse = async () => {
-      try {
-        const data = await coursesApi.getById(courseId);
-        setCourse(data);
-      } catch (error) {
-        console.error("Erro ao carregar detalhes do curso:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCourse();
-  }, [courseId]);
-
-  if (loading) {
-    return (
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <p className="text-gray-500">Carregando detalhes do curso...</p>
-      </div>
-    );
-  }
+  const handleAddToSeason = () => {
+    if (!course || !loadedSeason) return;
+    coursesApi.addToSeason(course.id, loadedSeason.id)
+      .then((updatedCourse) => {
+        setCourse(updatedCourse);
+      }).catch((error) => {
+        notify("Erro ao adicionar curso à temporada.", "error");
+        console.error("Erro ao adicionar curso à temporada:", error);
+      });
+  };
 
   if (!course) {
     return (
@@ -108,22 +105,36 @@ const CourseDetailComponent = ( {courseId, onDelete} : { courseId: string, onDel
           Editar
         </Button>
         <Button
-          onClick={handleDelete}
-          type="danger"
-          active={isAdminGeneral}
+          onClick={handleAddToSeason}
+          type="info"
+          active={isAdminGeneral && !course.belongs_to_season}
           confirmation={{
-            title: "Eliminar curso",
-            message: `Tem certeza que deseja eliminar "${course.name}"? Esta ação não pode ser desfeita.`,
-            confirmLabel: "Eliminar",
+            title: "Adicionar curso à temporada",
+            message: `Tem certeza que deseja adicionar "${course.name}" à temporada "${loadedSeason?.name}"?`,
+            confirmLabel: "Adicionar",
             cancelLabel: "Cancelar",
           }}
           flexible={true}
         >
-          Eliminar
+          Adicionar à temporada
+        </Button>
+        <Button
+          onClick={handleRemoveFromSeason}
+          type="danger"
+          active={isAdminGeneral && course.belongs_to_season}
+          confirmation={{
+            title: "Remover curso",
+            message: `Tem certeza que deseja remover "${course.name}" da temporada "${loadedSeason?.name}"? Esta ação não pode ser desfeita.`,
+            confirmLabel: "Remover",
+            cancelLabel: "Cancelar",
+          }}
+          flexible={true}
+        >
+          Remover da temporada
         </Button>
       </div>
     </div>
   );
 };
 
-export default CourseDetailComponent;
+export default CourseInfoComponent;

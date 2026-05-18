@@ -1,21 +1,64 @@
 import { apiClient } from './client';
 
-export interface Season {
+export interface SeasonListItem {
   id: number;
-  year: number;
-  status: 'draft' | 'active' | 'finished';
+  name: string;
+}
+
+export interface SeasonDetail extends SeasonListItem {
+
+}
+
+export interface SeasonCreateRequest {
+  name: string;
+}
+
+export interface SeasonSummary {
+  id: number;
+  name: string;
+
+  modality_types_count: number;
+  active_modalities_count: number;
+  active_courses_count: number;
+  teams_count: number;
+
+  tournaments_summary: {
+    finished: number;
+    ongoing: number;
+    scheduled: number;
+  };
+
+  matches_summary: {
+    finished: number;
+    ongoing: number;
+    scheduled: number;
+  };
+
+  members_summary: {
+    athletes: number;
+    staff: number;
+  };
 }
 
 export const seasonsApi = {
-  async getAll(): Promise<Season[]> {
-    return apiClient.get<Season[]>('/seasons');
+  async getAll(): Promise<SeasonListItem[]> {
+    return apiClient.get<SeasonListItem[]>('/seasons/');
   },
 
-  async start(seasonId: number): Promise<Season> {
-    return apiClient.post<Season>(`/seasons/${seasonId}/start`, {});
+  async createSeason(seasonData: SeasonCreateRequest): Promise<SeasonListItem> {
+    return apiClient.post<SeasonListItem>('/seasons/', seasonData);
   },
 
-  async finish(seasonId: number): Promise<Season> {
-    return apiClient.post<Season>(`/seasons/${seasonId}/finish`, {});
+  async getCurrent(): Promise<SeasonDetail> {
+    return apiClient.get<SeasonDetail>('/seasons/current/');
+  },
+
+  async getSeasonSummary(seasonId?: number): Promise<SeasonSummary> {
+    let params = {};
+    if (seasonId) {
+      params = { ...params, season_id: seasonId };
+    }
+
+    return apiClient.get<SeasonSummary>(`/seasons/summary/`, params );
   },
 };

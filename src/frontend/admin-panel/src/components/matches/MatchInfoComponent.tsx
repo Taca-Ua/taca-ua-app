@@ -13,9 +13,15 @@ const MatchInfoComponent = ( {
 } ) => {
     const { notify } = useNotification();
 
+    const toLocalDatetimeInput = (utcIsoString: string): string => {
+      const date = new Date(utcIsoString);
+      const pad = (n: number) => n.toString().padStart(2, "0");
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    };
+
     const [isEditingInfo, setIsEditingInfo] = useState(false);
     const [editedLocation, setEditedLocation] = useState<string>(match.location);
-    const [editedStartTime, setEditedStartTime] = useState<string>(match.start_time);
+    const [editedStartTime, setEditedStartTime] = useState<string>(toLocalDatetimeInput(match.start_time));
     const [editedStatus, setEditedStatus] = useState<string>(match.status);
     const [saving, setSaving] = useState(false);
 
@@ -52,7 +58,7 @@ const MatchInfoComponent = ( {
 
     const onCancel = () => {
         setEditedLocation(match.location);
-        setEditedStartTime(match.start_time);
+        setEditedStartTime(toLocalDatetimeInput(match.start_time));
         setEditedStatus(match.status);
         setIsEditingInfo(false);
     }
@@ -74,7 +80,7 @@ const MatchInfoComponent = ( {
         try {
             const updatedMatch = await matchesApi.update(match.id, {
                 location: editedLocation,
-                start_time: editedStartTime,
+                start_time: new Date(editedStartTime).toISOString(),
                 status: editedStatus,
             });
             // Update local state with new match details
@@ -130,7 +136,7 @@ const MatchInfoComponent = ( {
               type="text"
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent"
               value={editedLocation}
-              onChange={() => setEditedLocation((prev) => prev === null ? "" : prev)}
+              onChange={(e) => setEditedLocation(e.target.value)}
               placeholder="Ex: Campo Municipal"
               required
             />
@@ -144,7 +150,7 @@ const MatchInfoComponent = ( {
               type="datetime-local"
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent"
               value={editedStartTime}
-              onChange={() => setEditedStartTime((prev) => prev === null ? "" : prev)}
+              onChange={(e) => setEditedStartTime(e.target.value)}
               required
             />
           </div>

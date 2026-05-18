@@ -6,6 +6,7 @@ import DefinedStatesMenuComponent from "../utils/costum_menus/DefinedStatesMenuC
 import { useNotification } from "../../contexts/NotificationProvider";
 import { useModal } from "../../contexts/ModalContext";
 import { useAuth } from "../../hooks/useAuth";
+import { useSeason } from "../../contexts/SeasonContext";
 
 const parsePoints = (raw: string): number[] =>
   raw.split(/[\s,]+/).map(p => parseInt(p.trim())).filter(p => !isNaN(p));
@@ -18,6 +19,7 @@ const ModalityTypeCreateModal = ( {
     const { notify } = useNotification();
     const { popModal } = useModal();
     const { isAdminGeneral } = useAuth();
+    const { loadedSeason } = useSeason();
 
 
     const [formatName, setFormatName] = useState('');
@@ -67,6 +69,7 @@ const ModalityTypeCreateModal = ( {
                 is_playoff: isPlayoff,
                 escaloes: escaloes.map(esc => ({ ...esc, points: parsePoints(esc.points) })),
                     tournament_competitor_type: tournamentCompetitorType,
+                season_id: loadedSeason?.id
             });
 
             if (onCreate) onCreate(newFormat);
@@ -155,8 +158,8 @@ const ModalityTypeCreateModal = ( {
                     </label>
                     <DefinedStatesMenuComponent
                       states={[
-                        {value: 'individual', label: 'Individual'},
-                        {value: 'team', label: 'Equipa'},
+                        {value: 'individual', label: 'Individual', helpText: 'Formato destinado a torneios onde os competidores são atletas individuais.'},
+                        {value: 'team', label: 'Equipa', helpText: 'Formato destinado a torneios onde os competidores são equipas.'},
                       ]}
                       onSelect={(value) => setTournamentCompetitorType(value as 'individual' | 'team')}
                     />

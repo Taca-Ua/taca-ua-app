@@ -24,7 +24,7 @@ from .serializers import (
     TournamentListSerializer,
     TournamentUpdateSerializer,
 )
-from .service import tournaments_service
+from .service import TeamDoesNotBelongToSeasonError, tournaments_service
 
 
 @extend_schema_view(
@@ -50,6 +50,7 @@ class TournamentListCreateView(RoleRequiredMixin, APIView):
         tournaments = tournaments_service.list_tournaments(
             status=serializer.validated_data.get("status", None),
             modality_id=serializer.validated_data.get("modality_id", None),
+            season_id=serializer.validated_data.get("season_id", None),
         )
 
         serializer = TournamentListSerializer(tournaments, many=True)
@@ -64,7 +65,8 @@ class TournamentListCreateView(RoleRequiredMixin, APIView):
         tournament = tournaments_service.create_tournament(
             name=serializer.validated_data["name"],
             modality_id=serializer.validated_data["modality_id"],
-            is_playoff=serializer.validated_data.get("is_playoff", False),
+            season_id=serializer.validated_data.get("season_id", None),
+            scoring_format_id=serializer.validated_data.get("scoring_format_id", None),
         )
 
         serializer = TournamentListSerializer(tournament)
@@ -184,10 +186,15 @@ def tournament_add_competitors(request, tournament_id):
             }
         )
 
-    tournament = tournaments_service.add_competitors(
-        tournament_id=tournament_id,
-        competitors_data=extracted_competitors_data,
-    )
+    try:
+        tournament = tournaments_service.add_competitors(
+            tournament_id=tournament_id,
+            competitors_data=extracted_competitors_data,
+        )
+    except TeamDoesNotBelongToSeasonError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        raise e
 
     serializer = TournamentDetailSerializer(tournament)
     return Response(serializer.data, status=status.HTTP_200_OK)

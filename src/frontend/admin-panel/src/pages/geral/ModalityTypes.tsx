@@ -6,37 +6,39 @@ import ModalityTypeInfoModal from "../../components/modality-types/ModalityTypeI
 import Button from "../../components/utils/Button";
 import { useModal } from "../../contexts/ModalContext";
 import { useAuth } from "../../hooks/useAuth";
+import { useSeason } from "../../contexts/SeasonContext";
+import SeasonSelector from "../../components/seasons/SeasonSelector";
 
 const ModalityTypes = () => {
-  const [scoringFormats, setModalityTypes] = useState<ModalityTypeListItem[]>([]);
-  const [loading] = useState(false);
   const { notify } = useNotification();
   const { pushModal } = useModal();
   const { isAdminGeneral } = useAuth();
+  const { loadedSeason } = useSeason();
 
-
+  const [modalityTypes, setModalityTypes] = useState<ModalityTypeListItem[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
-
-    (async () => {
-      try {
-        const formats = await modalityTypesApi.getAll();
-        if (!mounted) return;
-        setModalityTypes(formats);
-      } catch (err) {
-        console.error('Failed to fetch scoring formats:', err);
-        if (!mounted) return;
+    setLoading(true);
+    modalityTypesApi.getAll({
+      season_id: loadedSeason?.id
+    })
+      .then((formats) => setModalityTypes(formats))
+      .catch((err) => {
+        console.error('Failed to fetch modality types:', err);
         notify('Não foi possível carregar os formatos de prova. Tente recarregar a página.', 'error');
-      }
-    })();
+        setModalityTypes([]);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [loadedSeason?.id]);
 
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  const sortedModalityTypes = modalityTypes.sort((a, b) => a.name.localeCompare(b.name));
 
   return (
+    <>
+      <SeasonSelector />
       <div className="flex-1 p-8 max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Formatos de Prova</h1>
@@ -60,14 +62,18 @@ const ModalityTypes = () => {
               <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-teal-500 border-r-transparent"></div>
               <p className="mt-2 text-gray-600">A carregar...</p>
             </div>
-          ) : scoringFormats.length > 0 ? (
-            [...scoringFormats].sort((a, b) => a.name.localeCompare(b.name)).map(format => (
+          ) : modalityTypes.length > 0 ? (
+            sortedModalityTypes.map(format => (
               <button
                 key={format.id}
                 type="button"
                 className="w-full text-left p-4 bg-gray-100 rounded-md hover:bg-gray-200 flex justify-between items-center transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
                 onClick={() => pushModal(
-                  <ModalityTypeInfoModal modalityTypeId={format.id} onDelete={() => setModalityTypes((prev) => prev.filter((f) => f.id !== format.id))}/>
+                  <ModalityTypeInfoModal
+                    modalityTypeId={format.id}
+                    onDelete={() => setModalityTypes((prev) => prev.filter((f) => f.id !== format.id))}
+                    onEdit={(updatedFormat) => setModalityTypes((prev) => prev.map((f) => f.id === updatedFormat.id ? updatedFormat : f))}
+                  />
                 )}
               >
                 <div>
@@ -101,6 +107,7 @@ const ModalityTypes = () => {
           )}
         </div>
       </div>
+    </>
   );
 };
 

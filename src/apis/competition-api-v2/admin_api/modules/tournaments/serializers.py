@@ -32,6 +32,20 @@ class ScoringFormatSummarySerializer(serializers.Serializer):
     points = serializers.ListField(child=serializers.IntegerField())
 
 
+class TournamentSeasonSummarySerializer(serializers.Serializer):
+    """Serializer for tournament season summary"""
+
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+
+
+class TournamentRankingPositionSerializer(serializers.Serializer):
+    """Serializer for tournament ranking position"""
+
+    competitor_id = serializers.UUIDField()
+    position = serializers.IntegerField()
+
+
 # Response serializers
 class TournamentCompetitorSerializer(serializers.Serializer):
     """
@@ -60,6 +74,8 @@ class TournamentDetailSerializer(TournamentListSerializer):
     competitor_type = serializers.ChoiceField(choices=COMPETITOR_TYPE_CHOICES)
     competitors = TournamentCompetitorSerializer(many=True)
     scoring_format = ScoringFormatSummarySerializer()
+    season = TournamentSeasonSummarySerializer()
+    standings = TournamentRankingPositionSerializer(many=True, required=False)
 
 
 # Request serializers
@@ -68,6 +84,7 @@ class TournamentListQuerySerializer(serializers.Serializer):
 
     status = serializers.ChoiceField(choices=STATUS_CHOICES, required=False)
     modality_id = serializers.UUIDField(required=False)
+    season_id = serializers.IntegerField(required=False)
 
 
 class TournamentCreateSerializer(serializers.Serializer):
@@ -76,7 +93,8 @@ class TournamentCreateSerializer(serializers.Serializer):
     name = serializers.CharField(required=True)
     modality_id = serializers.UUIDField(required=True)
     start_date = serializers.DateTimeField(required=False, allow_null=True)
-    is_playoff = serializers.BooleanField(required=False, default=False)
+    season_id = serializers.IntegerField(required=False)
+    scoring_format_id = serializers.UUIDField(required=False)
 
 
 class TournamentUpdateSerializer(serializers.Serializer):

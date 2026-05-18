@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { teamsApi, type TeamDetail } from '../api';
+import { type SeasonDetail, seasonsApi } from '../api/seasons';
 
 function Teams() {
   const [teams, setTeams] = useState<TeamDetail[]>([]);
@@ -10,8 +11,32 @@ function Teams() {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [seasons, setSeasons] = useState<SeasonDetail[]>([]);
+  const [seasonFilter, setSeasonFilter] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
+    seasonsApi
+      .getAll()
+      .then((data) => {
+        setSeasons(data.items);
+        const active = data.items.find((s) => s.is_active);
+        const defaultSeason = active ?? data.items[0];
+        if (defaultSeason) setSeasonFilter(defaultSeason.season_id);
+      })
+      .catch((err) => {
+        console.error('Error fetching seasons:', err);
+        setError('Erro ao carregar épocas. Por favor, tente novamente.');
+      });
+  }, []);
+
+  const filteredTeams = teams.filter((t) =>
+    t.team_name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  useEffect(() => {
+    if (seasonFilter === null) return;
+
     const fetchTeams = async () => {
       try {
         setLoading(true);
@@ -20,6 +45,7 @@ function Teams() {
         const params = {
           page,
           page_size: 20,
+          season_id: seasonFilter,
         };
 
         const data = await teamsApi.getAll(params);
@@ -34,7 +60,7 @@ function Teams() {
     };
 
     fetchTeams();
-  }, [page]);
+  }, [page, seasonFilter]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -50,6 +76,28 @@ function Teams() {
             <p className="text-lg text-gray-600">
               Veja todas as equipas participantes da Taça UA
             </p>
+          </div>
+
+          <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <input
+              type="text"
+              placeholder="Pesquisar equipa..."
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent w-full md:w-72"
+            />
+            <select
+              id="season-filter"
+              value={seasonFilter ?? ''}
+              onChange={(e) => { setSeasonFilter(parseInt(e.target.value)); setPage(1); }}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            >
+              {seasons.map((season) => (
+                <option key={season.season_id} value={season.season_id}>
+                  {season.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Error Message */}
@@ -69,12 +117,12 @@ function Teams() {
             <>
               {/* Teams Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {teams.length === 0 ? (
+                {filteredTeams.length === 0 ? (
                   <div className="col-span-full bg-white rounded-lg shadow p-8 text-center">
                     <p className="text-gray-500">Não há equipas disponíveis.</p>
                   </div>
                 ) : (
-                  teams.map((team) => (
+                  filteredTeams.map((team) => (
                     <Link
                       key={team.team_id}
                       to={`/equipas/${team.team_id}`}

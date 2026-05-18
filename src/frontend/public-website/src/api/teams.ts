@@ -35,6 +35,7 @@ export interface TeamListParams {
   course_id?: string;
   nucleo_id?: string;
   modality_id?: string;
+  season_id?: number; // New filter parameter for season
 }
 
 export const teamsApi = {
@@ -45,6 +46,7 @@ export const teamsApi = {
       course_id: params?.course_id,
       nucleo_id: params?.nucleo_id,
       modality_id: params?.modality_id,
+      season_id: params?.season_id?.toString(), // Include season_id in query parameters
     };
     const queryString = buildQueryString(queryParams);
     return apiCall<TeamDetailList>(`/teams${queryString}`);

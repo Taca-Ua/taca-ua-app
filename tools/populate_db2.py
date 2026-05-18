@@ -9,7 +9,7 @@ HEADERS = {
 }
 
 STATS = {
-    "modalities_types": {"created": 0, "failed": 0},
+    "modalities_types": {"created": 0, "failed": 0, "skipped": 0},
     "nucleos": {"created": 0, "failed": 0, "skipped": 0},
     "courses": {"created": 0, "failed": 0, "skipped": 0},
     "modalities": {"created": 0, "failed": 0, "skipped": 0},
@@ -37,9 +37,13 @@ def populate_modalities_types(step_by_step=False, delete_existing=False) -> int:
                     f"Failed to delete modality type: {modality_type['name']}, Status Code: {del_response.status_code}, Response: {del_response.text}"
                 )
                 raise Exception("Failed to delete modality types.")
-    elif check.status_code == 200 and len(check.json()) > 0:
-        print("Modality types already populated.")
-        return 0
+    if check.status_code != 200:
+        print(
+            f"Failed to fetch modality types, Status Code: {check.status_code}, Response: {check.text}"
+        )
+        raise Exception("Failed to fetch modality types.")
+
+    existing_modality_types = {mt["name"]: mt["id"] for mt in check.json()}
 
     modalities_types = [
         {
@@ -231,6 +235,14 @@ def populate_modalities_types(step_by_step=False, delete_existing=False) -> int:
 
     ids = {}
     for modality_type in modalities_types:
+        if modality_type["name"] in existing_modality_types:
+            print(f"Modality type already exists: {modality_type['name']}")
+            STATS["modalities_types"]["skipped"] = (
+                STATS["modalities_types"]["skipped"] + 1
+            )
+            ids[modality_type["name"]] = existing_modality_types[modality_type["name"]]
+            continue
+
         if step_by_step:
             input(
                 f"About to create modality type: {modality_type['name']}. Press Enter to continue..."
@@ -507,6 +519,7 @@ def populate_teams():
     from data.processed_data import processed_data_typed
 
     teams_created = 0
+    create_team_payloads = []
     for modality in processed_data_typed:
         if modality.name not in modality_name_to_id:
             print(
@@ -542,11 +555,34 @@ def populate_teams():
             if response.status_code == 201:
                 print(f"Created team: {team}")
                 teams_created += 1
+                create_team_payloads.append(team_payload)
             else:
                 print(
                     f"Failed to create team: {team}, Status Code: {response.status_code}, Response: {response.text}"
                 )
                 STATS["teams"]["failed"] = STATS["teams"]["failed"] + 1
+
+        # Delete teams that exist in the database but are not present in the processed data for the modality
+        for existing_team_key in existing_teams:
+            existing_team_name, existing_team_modality_id, existing_team_course_id = (
+                existing_team_key
+            )
+            if (
+                existing_team_modality_id == modality_name_to_id.get(modality.name)
+                and existing_team_course_id in course_name_to_id.values()
+                and existing_team_name not in modality.teams
+            ):
+                del_response = requests.delete(
+                    f"{API_URL}/teams/{existing_teams[existing_team_key]}/",
+                    headers=HEADERS,
+                )
+                if del_response.status_code == 204:
+                    print(f"Deleted team: {existing_team_name}")
+                else:
+                    print(
+                        f"Failed to delete team: {existing_team_name}, Status Code: {del_response.status_code}, Response: {del_response.text}"
+                    )
+                    STATS["teams"]["failed"] = STATS["teams"]["failed"] + 1
 
     STATS["teams"]["created"] = teams_created
     return teams_created
@@ -692,7 +728,17 @@ def populate_tournaments():
             if match.day == "":
                 iso_time = "2026-01-01T00:00:00+00:00"  # Default to midnight if no day is provided
             else:
-                iso_time = f"{match.day.split()[0]}T{match.hour.lower().replace('h', ':')}:00+00:00"
+                hour_formatted = match.hour.lower().split("h")[0].zfill(2)
+                minute_formatted = (
+                    match.hour.lower().split("h")[1].zfill(2)
+                    if "h" in match.hour.lower()
+                    else "00"
+                )
+                iso_time = (
+                    f"{match.day.split()[0]}T"
+                    + f"{hour_formatted}:{minute_formatted}"
+                    + ":00+00:00"
+                )
             local = match.local if match.local else "TBD"
 
             if (match.team1 not in tournament_teams) or (
