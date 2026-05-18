@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { matchesApi, type MatchListItem } from "../../api/matches"
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { useNotification } from "../../contexts/NotificationProvider";
 import Button from "../utils/Button";
 import { useAuth } from "../../hooks/useAuth";
