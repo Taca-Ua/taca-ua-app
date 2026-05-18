@@ -5,6 +5,18 @@ import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-p
 import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
 
+interface StandingEntry {
+  competitor_name: string;
+  competitor_type: string;
+  matches_played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  points: number;
+  total_score: number;
+  rank: number | null;
+}
+
 interface TournamentCompetitor {
   id: string;
   name: string;
@@ -137,6 +149,8 @@ const TournamentFinishModal = ({
   // State: position assignments and unassigned competitors
   const [standings, setStandings] = useState<{ [id: string]: number }>({});
   const [unassigned, setUnassigned] = useState<string[]>(() => tournament.competitors.map((c) => c.id));
+  const [liveStandings, setLiveStandings] = useState<StandingEntry[]>([]);
+  const [loadingStandings, setLoadingStandings] = useState(false);
 
   const competitorsById = useMemo(() => {
     const map: Record<string, (typeof tournament.competitors)[0]> = {};
@@ -239,11 +253,19 @@ const TournamentFinishModal = ({
     // reset state when opening
     setStandings({});
     setUnassigned(tournament.competitors.map((c) => c.id));
-  }, [tournament.competitors]);
+
+    // fetch live standings from public read model
+    setLoadingStandings(true);
+    fetch(`/api/public/tournaments/${tournament.id}/standings?page_size=100`)
+      .then((r) => r.json())
+      .then((data) => setLiveStandings(data.items ?? []))
+      .catch(() => setLiveStandings([]))
+      .finally(() => setLoadingStandings(false));
+  }, [tournament.id, tournament.competitors]);
 
   return (
 
-      <div className="bg-white rounded-lg p-8 w-full max-w-md md:min-w-[900px]">
+      <div className="bg-white rounded-lg p-8 w-full max-w-md md:min-w-[1200px]">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">
           Finalizar Torneio - Classificação Final
         </h2>
@@ -252,20 +274,52 @@ const TournamentFinishModal = ({
           Arraste os competidores para as posições finais. Para empates, arraste mais de um competidor para a mesma posição.
         </p>
 
-        <DragDropContext onDragEnd={onDragEnd}>
-          <div className="flex gap-8 mb-8 flex-1 min-h-0">
-            <PositionsColumn
-              numPositions={numPositions}
-              standings={standings}
-              competitorsById={competitorsById}
-              getPositionLabel={getPositionLabel}
-            />
-            <UnassignedColumn
-              unassigned={unassigned}
-              competitorsById={competitorsById}
-            />
+        <div className="flex gap-8 mb-8 min-h-0">
+          {/* Drag-and-drop area */}
+          <div className="flex-1 min-w-0">
+            <DragDropContext onDragEnd={onDragEnd}>
+              <div className="flex gap-8 flex-1 min-h-0">
+                <PositionsColumn
+                  numPositions={numPositions}
+                  standings={standings}
+                  competitorsById={competitorsById}
+                  getPositionLabel={getPositionLabel}
+                />
+                <UnassignedColumn
+                  unassigned={unassigned}
+                  competitorsById={competitorsById}
+                />
+              </div>
+            </DragDropContext>
           </div>
-        </DragDropContext>
+
+          {/* Live standings panel */}
+          <div className="w-72 shrink-0">
+            <h3 className="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">
+              Classificação Atual
+            </h3>
+            {loadingStandings ? (
+              <div className="text-sm text-gray-400">A carregar...</div>
+            ) : liveStandings.length === 0 ? (
+              <div className="text-sm text-gray-400">Sem dados de classificação</div>
+            ) : (
+              <div className="overflow-y-auto max-h-[60vh] border border-gray-200 rounded-md divide-y divide-gray-100">
+                {[...liveStandings]
+                  .sort((a, b) => (b.points ?? 0) - (a.points ?? 0) || (b.total_score ?? 0) - (a.total_score ?? 0))
+                  .map((s, i) => (
+                    <div key={i} className="px-3 py-2 flex items-center gap-2 text-sm hover:bg-gray-50">
+                      <span className="w-6 text-center font-bold text-gray-500">{s.rank ?? '-'}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-800 truncate">{s.competitor_name}</p>
+                        <p className="text-xs text-gray-400">{s.matches_played}J · {s.wins}V {s.draws}E {s.losses}D</p>
+                      </div>
+                      <span className="font-bold text-teal-600">{s.points}pt</span>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        </div>
 
         {numPositions < tournament.competitors.length && (
           <div className="mb-4 p-3 bg-yellow-100 border border-yellow-400 text-yellow-800 rounded-md text-sm">

@@ -1185,9 +1185,14 @@ def handle_season_created(event: SeasonCreatedV1):
     )
 
     with get_db() as db:
+        # Mark the currently active season as finished (new season supersedes it)
+        db.query(Season).filter(Season.finished_at.is_(None)).update(
+            {"finished_at": datetime.utcnow()}
+        )
         season = Season(
             season_id=season_id,
             name=event.data.name,
+            finished_at=None,
         )
         db.add(season)
 

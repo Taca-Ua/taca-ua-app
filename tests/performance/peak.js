@@ -48,18 +48,19 @@ export const options = {
 
 const BASE = __ENV.BASE_URL || "http://localhost";
 const API = `${BASE}/api/public`;
+const SEASON_ID = __ENV.SEASON_ID || "2";
 
 export default function () {
   const scenario = Math.random();
 
   if (scenario < 0.40) {
-    const res = http.get(`${API}/ranking/general`);
+    const res = http.get(`${API}/ranking/general?season_id=${SEASON_ID}`);
     rankingLatency.add(res.timings.duration);
     errorRate.add(res.status !== 200);
     check(res, { "general ranking 200": (r) => r.status === 200 });
 
   } else if (scenario < 0.65) {
-    const res = http.get(`${API}/ranking/modality`);
+    const res = http.get(`${API}/ranking/modality?season_id=${SEASON_ID}`);
     rankingLatency.add(res.timings.duration);
     errorRate.add(res.status !== 200);
     check(res, { "modality ranking 200": (r) => r.status === 200 });

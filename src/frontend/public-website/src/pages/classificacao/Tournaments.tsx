@@ -9,21 +9,39 @@ function Tournaments() {
   const [tournaments, setTournaments] = useState<TournamentDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [modalityFilter, setModalityFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [seasons, setSeasons] = useState<SeasonDetail[]>([]);
-  const [seasonFilter, setSeasonFilter] = useState<number>(1);
+  const [seasonFilter, setSeasonFilter] = useState<number | null>(null);
 
   useEffect(() => {
     seasonsApi.getAll().then((data) => {
       setSeasons(data.items);
+      const active = data.items.find((s) => s.is_active);
+      const defaultSeason = active ?? data.items[0];
+      if (defaultSeason) setSeasonFilter(defaultSeason.season_id);
     }).catch((err) => {
       console.error('Error fetching seasons:', err);
     });
   }, []);
 
+  const uniqueModalities = Array.from(
+    new Map(
+      tournaments.map((t: TournamentDetail) => [t.modality_id, t.modality_name || t.modality_type_name])
+    ).entries()
+  ).map(([id, name]) => ({ id, name }));
+
+  const filteredTournaments = tournaments.filter((t: TournamentDetail) => {
+    const matchesSearch = t.tournament_name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesModality = modalityFilter === 'all' || t.modality_id === modalityFilter;
+    return matchesSearch && matchesModality;
+  });
+
   useEffect(() => {
+    if (seasonFilter === null) return;
+
     const fetchTournaments = async () => {
       try {
         setLoading(true);
@@ -31,9 +49,8 @@ function Tournaments() {
 
         const params = {
           page,
-          page_size: 20,
-          ...(statusFilter !== 'all' && { status: statusFilter }),
-          ...({ season_id: seasonFilter }),
+          page_size: 100,
+          ...(seasonFilter !== null && { season_id: seasonFilter }),
         };
 
         const data = await tournamentsApi.getAll(params);
@@ -48,7 +65,7 @@ function Tournaments() {
     };
 
     fetchTournaments();
-  }, [page, statusFilter, seasonFilter]);
+  }, [page, seasonFilter]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -101,25 +118,31 @@ function Tournaments() {
           </div>
 
           {/* Filters */}
-          <div className="mb-6 flex gap-4 flex-wrap">
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setPage(1);
-              }}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-            >
-              <option value="all">Todos os Estados</option>
-              <option value="draft">Rascunho</option>
-              <option value="active">Ativo</option>
-              <option value="finished">Finalizado</option>
-              <option value="cancelled">Cancelado</option>
-            </select>
+          <div className="mb-6 flex gap-4 flex-wrap items-center">
+            <input
+              type="text"
+              placeholder="Pesquisar torneio..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent w-full md:w-72"
+            />
+
+            {uniqueModalities.length > 0 && (
+              <select
+                value={modalityFilter}
+                onChange={(e) => setModalityFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              >
+                <option value="all">Todas as Modalidades</option>
+                {uniqueModalities.map((m) => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+              </select>
+            )}
 
             <select
               id="season-filter"
-              value={seasonFilter}
+              value={seasonFilter ?? ''}
               onChange={(e) => setSeasonFilter(parseInt(e.target.value))}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
             >
@@ -148,12 +171,12 @@ function Tournaments() {
             <>
               {/* Tournaments Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {tournaments.length === 0 ? (
+                {filteredTournaments.length === 0 ? (
                   <div className="col-span-full bg-white rounded-lg shadow p-8 text-center">
                     <p className="text-gray-500">Não há torneios disponíveis com os filtros selecionados.</p>
                   </div>
                 ) : (
-                  tournaments.map((tournament) => (
+                  filteredTournaments.map((tournament) => (
                     <Link
                       key={tournament.tournament_id}
                       to={`/torneios/${tournament.tournament_id}`}

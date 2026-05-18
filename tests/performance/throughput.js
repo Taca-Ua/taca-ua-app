@@ -1,9 +1,10 @@
 /**
- * THROUGHPUT TEST — Requests per Second (Slide 3)
+ * THROUGHPUT TEST — Maximum Sustainable RPS (Slide 3)
  *
- * Goal: Find the maximum stable throughput (RPS) the Public API can sustain
- *       before latency degrades. Gradually increases concurrency and records
- *       requests/sec at each step.
+ * Goal: Find the maximum throughput the Public API can sustain before errors
+ *       appear. Gradually ramps concurrency from low to high, holding at each
+ *       step to measure stable RPS. The point where error_rate exceeds the
+ *       threshold identifies the breaking point.
  *
  * Run:
  *   k6 run tests/performance/throughput.js
@@ -22,29 +23,37 @@ const reqDuration = new Trend("req_duration", true);
 
 export const options = {
   stages: [
-    { duration: "30s", target: 5 },
-    { duration: "1m", target: 5 },
-    { duration: "30s", target: 20 },
-    { duration: "1m", target: 20 },
-    { duration: "30s", target: 40 },
-    { duration: "1m", target: 40 },
-    { duration: "30s", target: 80 },
-    { duration: "1m", target: 80 },
+    { duration: "30s", target: 10 },
+    { duration: "1m", target: 10 },
+    { duration: "30s", target: 30 },
+    { duration: "1m", target: 30 },
+    { duration: "30s", target: 60 },
+    { duration: "1m", target: 60 },
+    { duration: "30s", target: 100 },
+    { duration: "1m", target: 100 },
+    { duration: "30s", target: 150 },
+    { duration: "1m", target: 150 },
+    { duration: "30s", target: 200 },
+    { duration: "1m", target: 200 },
+    { duration: "30s", target: 250 },
+    { duration: "1m", target: 250 },
     { duration: "30s", target: 0 },
   ],
   thresholds: {
-    error_rate: ["rate<0.05"],
+    // Test is considered broken when error rate exceeds 1%
+    error_rate: ["rate<0.01"],
   },
 };
 
 const BASE = __ENV.BASE_URL || "http://localhost";
 const API = `${BASE}/api/public`;
+const SEASON_ID = __ENV.SEASON_ID || "2";
 
 const ENDPOINTS = [
   `${API}/tournaments?page=1&page_size=20`,
   `${API}/matches?page=1&page_size=20`,
-  `${API}/ranking/general`,
-  `${API}/ranking/modality`,
+  `${API}/ranking/general?season_id=${SEASON_ID}`,
+  `${API}/ranking/modality?season_id=${SEASON_ID}`,
   `${API}/teams?page=1&page_size=20`,
   `${API}/nucleos`,
 ];

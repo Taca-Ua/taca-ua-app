@@ -414,12 +414,11 @@ def rebuild_tournament_standings(session: Session, tournament_id: UUID) -> None:
     if not competitors:
         return
 
-    # Get all completed matches for this tournament
+    # Get all non-deleted matches for this tournament that have results
     matches = (
         session.query(Match.match_id)
         .filter(
             Match.tournament_id == tournament_id,
-            Match.status.in_(["completed", "finished"]),
             Match.deleted_at.is_(None),
         )
         .all()
@@ -492,13 +491,14 @@ def _calculate_competitor_stats(
             "total_score": 0,
         }
 
-    # Get all match participations
-    # participant_id is now the competitor_id
+    # Get all match participations with results
+    # participant_id is the competitor_id; join must also match match_id to avoid cross-product
     participations = (
         session.query(MatchParticipant, MatchResult)
         .join(
             MatchResult,
-            MatchParticipant.participant_id == MatchResult.participant_id,
+            (MatchParticipant.participant_id == MatchResult.participant_id)
+            & (MatchParticipant.match_id == MatchResult.match_id),
         )
         .filter(
             MatchParticipant.participant_id == competitor_id,
@@ -518,15 +518,39 @@ def _calculate_competitor_stats(
         if result.score is not None:
             total_score += result.score
 
-        # Determine win/loss/draw based on position
-        # position == 1 is a win, position > 1 is a loss
-        # This is a simple heuristic - adjust based on your sport rules
+        # Determine win/loss/draw based on position if set
         if result.position == 1:
             wins += 1
         elif result.position is not None and result.position > 1:
-            # Check if it's a draw (same score as position 1)
-            # For now, treat position > 1 as loss
             losses += 1
+        elif result.position is None and result.score is not None:
+            # Position not set — infer from score: compare against other participants in same match
+            other_scores = (
+                session.query(MatchResult.score)
+                .join(
+                    MatchParticipant,
+                    (MatchResult.participant_id == MatchParticipant.participant_id)
+                    & (MatchResult.match_id == MatchParticipant.match_id),
+                )
+                .filter(
+                    MatchResult.match_id == participant.match_id,
+                    MatchParticipant.removed_at.is_(None),
+                    MatchResult.score.isnot(None),
+                )
+                .all()
+            )
+            scores = [s[0] for s in other_scores if s[0] is not None]
+            if len(scores) <= 1:
+                # Only this participant has a score — count as win
+                wins += 1
+            elif result.score == max(scores):
+                # Check for draw (multiple participants with same max score)
+                if scores.count(result.score) > 1:
+                    draws += 1
+                else:
+                    wins += 1
+            else:
+                losses += 1
 
     # Simple point system: 3 points for win, 1 for draw, 0 for loss
     points = (wins * 3) + (draws * 1)
@@ -724,6 +748,7 @@ def rebuild_season_projection(session: Session, season_id: int) -> None:
     projection = SeasonDetailView(
         season_id=season.season_id,
         name=season.name,
+        is_active=season.finished_at is None,
     )
 
     session.merge(projection)

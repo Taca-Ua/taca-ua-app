@@ -12,16 +12,17 @@ function Teams() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [seasons, setSeasons] = useState<SeasonDetail[]>([]);
-  const [seasonFilter, setSeasonFilter] = useState<number>(1); // Default season ID
+  const [seasonFilter, setSeasonFilter] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     seasonsApi
       .getAll()
       .then((data) => {
         setSeasons(data.items);
-        if (data.items.length > 0) {
-          setSeasonFilter(data.items[0].season_id); // Set default season filter to the first season
-        }
+        const active = data.items.find((s) => s.is_active);
+        const defaultSeason = active ?? data.items[0];
+        if (defaultSeason) setSeasonFilter(defaultSeason.season_id);
       })
       .catch((err) => {
         console.error('Error fetching seasons:', err);
@@ -29,7 +30,13 @@ function Teams() {
       });
   }, []);
 
+  const filteredTeams = teams.filter((t) =>
+    t.team_name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   useEffect(() => {
+    if (seasonFilter === null) return;
+
     const fetchTeams = async () => {
       try {
         setLoading(true);
@@ -38,7 +45,7 @@ function Teams() {
         const params = {
           page,
           page_size: 20,
-          season_id: seasonFilter, // Filter teams by selected season
+          season_id: seasonFilter,
         };
 
         const data = await teamsApi.getAll(params);
@@ -72,10 +79,17 @@ function Teams() {
           </div>
 
           <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <input
+              type="text"
+              placeholder="Pesquisar equipa..."
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent w-full md:w-72"
+            />
             <select
               id="season-filter"
-              value={seasonFilter}
-              onChange={(e) => setSeasonFilter(parseInt(e.target.value))}
+              value={seasonFilter ?? ''}
+              onChange={(e) => { setSeasonFilter(parseInt(e.target.value)); setPage(1); }}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
             >
               {seasons.map((season) => (
@@ -103,12 +117,12 @@ function Teams() {
             <>
               {/* Teams Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {teams.length === 0 ? (
+                {filteredTeams.length === 0 ? (
                   <div className="col-span-full bg-white rounded-lg shadow p-8 text-center">
                     <p className="text-gray-500">Não há equipas disponíveis.</p>
                   </div>
                 ) : (
-                  teams.map((team) => (
+                  filteredTeams.map((team) => (
                     <Link
                       key={team.team_id}
                       to={`/equipas/${team.team_id}`}

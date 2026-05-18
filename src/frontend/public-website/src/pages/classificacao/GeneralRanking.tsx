@@ -8,18 +8,15 @@ function GeneralRankingPage() {
   const [rankings, setRankings] = useState<GeneralRanking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [nucleoFilter, setNucleoFilter] = useState<string>('all');
-  const [seasonFilter, setSeasonFilter] = useState<number>(1);
+  const [seasonFilter, setSeasonFilter] = useState<number | null>(null);
   const [seasons, setSeasons] = useState<SeasonDetail[]>([]);
-
-  // Extract unique nucleos from rankings
-  const uniqueNucleos = Array.from(
-    new Set(rankings.map((r) => JSON.stringify({ id: r.nucleo_id, name: r.nucleo_name })))
-  ).map((str) => JSON.parse(str));
 
   useEffect(() => {
     seasonsApi.getAll().then((data) => {
       setSeasons(data.items);
+      const active = data.items.find((s) => s.is_active);
+      const defaultSeason = active ?? data.items[0];
+      if (defaultSeason) setSeasonFilter(defaultSeason.season_id);
     })
     .catch((err) => {
       console.error('Error fetching seasons:', err);
@@ -28,15 +25,15 @@ function GeneralRankingPage() {
   }, []);
 
   useEffect(() => {
+    if (seasonFilter === null) return;
+
     const fetchRankings = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const params = nucleoFilter !== 'all' ? { nucleo_id: nucleoFilter } : undefined;
         const data = await rankingApi.getGeneralRanking({
           season_id: seasonFilter,
-          nucleo_id: params?.nucleo_id,
         });
         setRankings(data.items);
       } catch (err) {
@@ -48,7 +45,7 @@ function GeneralRankingPage() {
     };
 
     fetchRankings();
-  }, [nucleoFilter, seasonFilter]);
+  }, [seasonFilter]);
 
   const getMedalIcon = (rank: number | null) => {
     if (rank === null) return null;
@@ -88,27 +85,6 @@ function GeneralRankingPage() {
 
           {/* Filters */}
           <div className="flex flex-col md:flex-row md:items-center md:gap-6 mb-6">
-          {uniqueNucleos.length > 0 && (
-            <div className="mb-6">
-              <label htmlFor="nucleo-filter" className="block text-sm font-medium text-gray-700 mb-2">
-                Filtrar por Núcleo
-              </label>
-              <select
-                id="nucleo-filter"
-                value={nucleoFilter}
-                onChange={(e) => setNucleoFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-              >
-                <option value="all">Todos os Núcleos</option>
-                {uniqueNucleos.map((nucleo: any) => (
-                  <option key={nucleo.id} value={nucleo.id}>
-                    {nucleo.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
           {/* Season Filter */}
           <div className="mb-6">
             <label htmlFor="season-filter" className="block text-sm font-medium text-gray-700 mb-2">
