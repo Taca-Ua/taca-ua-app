@@ -50,6 +50,8 @@ export interface MatchCreate {
   location: string;
   start_time: string;
   participants: string[];
+  journey?: number;
+  new_journey?: boolean;
 }
 
 export interface MatchUpdate {

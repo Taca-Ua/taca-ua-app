@@ -216,6 +216,7 @@ class MatchesService(BaseService):
         tournament_id: Optional[UUID] = None,
         participants: Optional[List[Dict[str, Any]]] = None,
         journey: Optional[int] = None,
+        new_journey: bool = False,
     ) -> MatchDTO:
         """
         Create a new match with participants.
@@ -230,7 +231,7 @@ class MatchesService(BaseService):
                 - team_id (UUID, optional): Team ID if participant_type is "team"
                 - athlete_id (UUID, optional): Athlete ID if participant_type is "athlete"
             journey: Journey number (optional)
-
+            new_journey: Whether to create a new journey (default: False)
         Returns:
             Created match data
         """
@@ -238,6 +239,7 @@ class MatchesService(BaseService):
             "location": location,
             "start_time": start_time,
             "created_by": str(created_by),
+            "new_journey": new_journey,
         }
         if tournament_id is not None:
             data["tournament_id"] = str(tournament_id)
@@ -573,6 +575,19 @@ class MatchesService(BaseService):
 
         summary_data = self.post("/matches/summary", data=data)
         return MatchesSummary(**summary_data)
+
+    def get_tournament_rounds(self, tournament_id: UUID) -> List[int]:
+        """
+        Get the list of rounds for a tournament.
+
+        Args:
+            tournament_id: Tournament UUID
+
+        Returns:
+            List of round numbers for the tournament
+        """
+        rounds_data = self.get(f"/matches/tournament-rounds/{tournament_id}")
+        return rounds_data.get("rounds", [])
 
 
 # Singleton instance

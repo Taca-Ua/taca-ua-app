@@ -42,6 +42,7 @@ class MatchCreate(BaseModel):
     journey: Optional[int] = (
         None  # way to group matches in a tournament (e.g., round number)
     )
+    new_journey: bool = False  # Whether to create a new journey for this match
 
 
 class MatchUpdate(BaseModel):

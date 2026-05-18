@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Dict, List, Optional
 
+from admin_api.clients.matches_service import matches_service_client
 from admin_api.clients.modalities_service import (
     ModalityDTO,
     StudentDTO,
@@ -481,6 +482,11 @@ class TournamentsService:
             tournament_dto,
             include_details=True,
         )
+
+    def get_tournament_rounds(self, tournament_id: str) -> List[int]:
+        """Get list of rounds for a tournament"""
+
+        return matches_service_client.get_tournament_rounds(tournament_id)
 
 
 tournaments_service = TournamentsService()

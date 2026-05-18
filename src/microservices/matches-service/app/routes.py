@@ -82,6 +82,30 @@ def list_matches(
     }
 
 
+@router.get("/matches/tournament-rounds/{tournament_id}")
+def list_tournament_rounds(
+    tournament_id: UUID,
+    db: Session = Depends(get_db_session),
+):
+    """List rounds for a specific tournament."""
+    logger.info(
+        "Listing tournament rounds",
+        extra={"tournament_id": str(tournament_id)},
+    )
+
+    query = (
+        db.query(Match.journey).filter(Match.tournament_id == tournament_id).distinct()
+    )
+    rounds = [round[0] for round in query]
+
+    logger.info(
+        "Tournament rounds listed successfully",
+        extra={"total": len(rounds), "rounds": rounds},
+    )
+
+    return {"rounds": rounds}
+
+
 @router.get("/matches/stream")
 def stream_matches(
     tournament_id: Optional[UUID] = Query(None),
@@ -140,6 +164,7 @@ def create_match(
             "created_by": str(match_data.created_by),
             "participant_count": len(match_data.participants),
             "journey": match_data.journey,
+            "new_journey": match_data.new_journey,
         },
     )
 
@@ -162,7 +187,9 @@ def create_match(
         start_time=match_data.start_time,
         created_by=match_data.created_by,
         status=MatchStatus.SCHEDULED,
-        journey=match_data.journey,
+        journey=(
+            match_data.journey + 1 if match_data.new_journey else match_data.journey
+        ),
     )
     db.add(match)
     db.flush()  # Get match.id before adding participants
