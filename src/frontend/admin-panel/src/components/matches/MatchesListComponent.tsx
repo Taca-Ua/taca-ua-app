@@ -116,6 +116,42 @@ const MatchesListItemComponent = ( { match, onDeleted } : { match: MatchListItem
     );
 }
 
+const MatchesListJourneyComponent = ( {
+  matches,
+  journeyNumber,
+  initialExpanded,
+  onMatchDeleted
+} : {
+  matches: MatchListItem[],
+  journeyNumber: string | number,
+  initialExpanded?: boolean
+  onMatchDeleted?: (matchId: string) => void
+} ) => {
+    const [expanded, setExpanded] = useState<boolean>( initialExpanded || false );
+
+    return (
+        <div>
+            <div
+                className="flex justify-between items-center cursor-pointer bg-gray-200 px-4 py-2 rounded-md"
+                onClick={() => setExpanded(!expanded)}
+            >
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-gray-700">Jornada {journeyNumber}</h3>
+                <p className="text-sm text-gray-500">{matches.length} jogo{matches.length !== 1 ? 's' : ''}</p>
+              </div>
+                <span className="text-gray-500">{expanded ? 'Ocultar' : 'Mostrar'}</span>
+            </div>
+            {expanded && (
+                <div className="mt-3 space-y-3">
+                    {matches.map(match => (
+                        <MatchesListItemComponent key={match.id} match={match} onDeleted={() => onMatchDeleted && onMatchDeleted(match.id)} />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
 const MatchesListComponent = ( {
     matchesState,
     tournamentId
@@ -152,6 +188,15 @@ const MatchesListComponent = ( {
         }
     );
 
+    const matchesByJourney: { [key: string]: MatchListItem[] } = {};
+    filteredMatches.forEach( match => {
+        const journeyKey = match.journey !== undefined && match.journey !== null ? `Jornada ${match.journey}` : 'Sem Jornada';
+        if ( !matchesByJourney[ journeyKey ] ) {
+            matchesByJourney[ journeyKey ] = [];
+        }
+        matchesByJourney[ journeyKey ].push( match );
+    } );
+
     if ( loading ) {
         return <div>Loading matches...</div>;
     }
@@ -179,8 +224,14 @@ const MatchesListComponent = ( {
 
         <div className="space-y-3">
           {filteredMatches.length > 0 ? (
-            filteredMatches.map((match) =>
-              <MatchesListItemComponent key={match.id} match={match} onDeleted={() => setMatches((prev) => prev.filter((m) => m.id !== match.id))} />)
+            Object.entries(matchesByJourney).map(([journey, matches]) => (
+              <MatchesListJourneyComponent
+                key={journey}
+                journeyNumber={journey}
+                matches={matches}
+                onMatchDeleted={(matchId) => setMatches((prev) => prev.filter((m) => m.id !== matchId))}
+              />
+            ))
           ) : (
             <p className="text-gray-500 text-center py-8">
               Nenhum jogo encontrado.

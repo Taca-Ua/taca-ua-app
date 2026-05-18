@@ -55,6 +55,7 @@ class MatchDTO:
     created_by: UUID
     created_at: str  # ISO format
     updated_at: str  # ISO format
+    journey: Optional[int] = None
     participants: List[MatchParticipantDTO] = field(default_factory=list)
     comments: List["CommentDTO"] = field(default_factory=list)
     lineups: List["MatchLineupDTO"] = field(default_factory=list)
@@ -214,6 +215,8 @@ class MatchesService(BaseService):
         created_by: UUID,
         tournament_id: Optional[UUID] = None,
         participants: Optional[List[Dict[str, Any]]] = None,
+        journey: Optional[int] = None,
+        new_journey: bool = False,
     ) -> MatchDTO:
         """
         Create a new match with participants.
@@ -227,7 +230,8 @@ class MatchesService(BaseService):
                 - participant_type (str): "team" or "athlete"
                 - team_id (UUID, optional): Team ID if participant_type is "team"
                 - athlete_id (UUID, optional): Athlete ID if participant_type is "athlete"
-
+            journey: Journey number (optional)
+            new_journey: Whether to create a new journey (default: False)
         Returns:
             Created match data
         """
@@ -235,11 +239,14 @@ class MatchesService(BaseService):
             "location": location,
             "start_time": start_time,
             "created_by": str(created_by),
+            "new_journey": new_journey,
         }
         if tournament_id is not None:
             data["tournament_id"] = str(tournament_id)
         if participants is not None:
             data["participants"] = participants
+        if journey is not None:
+            data["journey"] = journey
 
         match_data = self.post("/matches", data=data)
         return MatchDTO(**match_data)
@@ -568,6 +575,19 @@ class MatchesService(BaseService):
 
         summary_data = self.post("/matches/summary", data=data)
         return MatchesSummary(**summary_data)
+
+    def get_tournament_rounds(self, tournament_id: UUID) -> List[int]:
+        """
+        Get the list of rounds for a tournament.
+
+        Args:
+            tournament_id: Tournament UUID
+
+        Returns:
+            List of round numbers for the tournament
+        """
+        rounds_data = self.get(f"/matches/tournament-rounds/{tournament_id}")
+        return rounds_data.get("rounds", [])
 
 
 # Singleton instance

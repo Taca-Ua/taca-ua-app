@@ -9,7 +9,7 @@ from admin_api.utils.decorators import (
 )
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -132,6 +132,19 @@ class TournamentDetailView(RoleRequiredMixin, APIView):
 
 
 @extend_schema(
+    responses=serializers.ListSerializer(child=serializers.IntegerField()),
+    description="Get list of rounds for a tournament",
+    tags=["Tournament Management"],
+)
+@api_view(["GET"])
+@require_roles("general_admin")
+def tournament_rounds(request, tournament_id):
+    """Get list of rounds for a tournament"""
+    rounds = tournaments_service.get_tournament_rounds(tournament_id)
+    return Response(rounds, status=status.HTTP_200_OK)
+
+
+@extend_schema(
     request=TournamentFinishSerializer,
     responses={200: TournamentDetailSerializer},
     description="Finish a tournament",
@@ -227,6 +240,11 @@ urlpatterns = [
         "<uuid:tournament_id>/",
         TournamentDetailView.as_view(),
         name="tournament-detail",
+    ),
+    path(
+        "<uuid:tournament_id>/rounds/",
+        tournament_rounds,
+        name="tournament-rounds",
     ),
     path(
         "<uuid:tournament_id>/finish/",

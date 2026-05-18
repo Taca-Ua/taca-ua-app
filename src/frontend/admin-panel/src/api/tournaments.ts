@@ -37,6 +37,7 @@ export interface TournamentDetail extends TournamentListItem {
     position: number;
     competitor_id: string;
   }[];
+  rounds: number[];
 }
 
 // Input interfaces
@@ -108,5 +109,9 @@ export const tournamentsApi = {
 
   async removeCompetitors(id: string, competitors_ids: TournamentCompetitorsDelete): Promise<TournamentDetail> {
     return apiClient.put<TournamentDetail>(`/tournaments/${id}/competitors/remove/`, competitors_ids);
-  }
+  },
+
+  async getRounds(id: string): Promise<number[]> {
+    return apiClient.get<number[]>(`/tournaments/${id}/rounds/`);
+  },
 };

@@ -51,6 +51,7 @@ def populate_modalities_types(step_by_step=False, delete_existing=False) -> int:
             "description": "Modalidades coletivas que ocorrem de forma recorrente ao longo da época desportiva.",
             "tournament_competitor_type": "team",
             "is_playoff": False,
+            "mode": "modality",
             "escaloes": [
                 {
                     "escalao": "A",
@@ -89,6 +90,7 @@ def populate_modalities_types(step_by_step=False, delete_existing=False) -> int:
             "description": "Modalidades coletivas que ocorrem de forma pontual ao longo da época desportiva.",
             "tournament_competitor_type": "team",
             "is_playoff": False,
+            "mode": "modality",
             "escaloes": [
                 {
                     "escalao": "A",
@@ -121,6 +123,7 @@ def populate_modalities_types(step_by_step=False, delete_existing=False) -> int:
             "description": "Modalidades praticadas em duplas ou pares.",
             "tournament_competitor_type": "team",
             "is_playoff": False,
+            "mode": "modality",
             "escaloes": [
                 {
                     "escalao": "A",
@@ -153,6 +156,7 @@ def populate_modalities_types(step_by_step=False, delete_existing=False) -> int:
             "description": "Modalidades praticadas individualmente.",
             "tournament_competitor_type": "individual",
             "is_playoff": False,
+            "mode": "modality",
             "escaloes": [
                 {
                     "escalao": "A",
@@ -191,6 +195,7 @@ def populate_modalities_types(step_by_step=False, delete_existing=False) -> int:
             "description": "Troféus atribuídos a equipas coletivas com base no desempenho em várias competições.",
             "tournament_competitor_type": "team",
             "is_playoff": False,
+            "mode": "modality",
             "escaloes": [
                 {
                     "escalao": "A",
@@ -222,6 +227,7 @@ def populate_modalities_types(step_by_step=False, delete_existing=False) -> int:
             "name": "Apuramento para os Playoffs",
             "description": "Apuramento para os playoffs com base no desempenho em competições.",
             "is_playoff": True,
+            "mode": "points",
             "escaloes": [
                 {
                     "escalao": "-",
@@ -767,6 +773,7 @@ def populate_tournaments():
                     tournament_teams.get(match.team1),
                     tournament_teams.get(match.team2),
                 ],
+                "journey": match.jornada if match.jornada else None,
             }
             response = requests.post(
                 f"{API_URL}/matches/", json=payload, headers=HEADERS
