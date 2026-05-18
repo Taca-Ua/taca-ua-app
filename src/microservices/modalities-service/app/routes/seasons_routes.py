@@ -83,8 +83,8 @@ def create_season(season_payload: SeasonCreate, db: Session = Depends(get_db_ses
             new_modality_type = ModalityType(
                 name=modality_type.name,
                 description=modality_type.description,
+                mode=modality_type.mode,
                 escaloes=modality_type.escaloes,
-                is_playoff=modality_type.is_playoff,
                 tournament_competitor_type=modality_type.tournament_competitor_type,
                 season_id=new_season.id,
                 created_by=season_payload.admin_id,
@@ -100,6 +100,7 @@ def create_season(season_payload: SeasonCreate, db: Session = Depends(get_db_ses
                     modality_type_id=new_modality_type.id,
                     name=new_modality_type.name,
                     description=new_modality_type.description,
+                    mode=new_modality_type.mode,
                     escaloes=[
                         _EscalaoData(
                             min_participants=e["minParticipants"],
