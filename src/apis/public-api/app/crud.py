@@ -292,6 +292,9 @@ def get_tournaments(
         query = query.filter(TournamentDetailView.modality_id == modality_id)
     if status:
         query = query.filter(TournamentDetailView.status == status)
+    else:
+        # Never expose draft tournaments on the public API
+        query = query.filter(TournamentDetailView.status != "draft")
     if season_id:
         query = query.filter(TournamentDetailView.tournament_season_id == season_id)
 
