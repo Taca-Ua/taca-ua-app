@@ -8,6 +8,7 @@ import { useModal } from '../../contexts/ModalContext';
 import ChoseOneInput from '../utils/inputs/ChoseOneInput';
 import { useSeason } from '../../contexts/SeasonContext';
 import { modalityTypesApi } from '../../api/modality-types';
+import GeneralFormatMetaInput from './formats/GeneralFormatMetaInput'
 
 
 const TournamentCreateModal = ({
@@ -28,6 +29,8 @@ const TournamentCreateModal = ({
   const [name, setName] = useState(starterName || '');
   const [chosenModalityId, setChosenModalityId] = useState<string | null>(modalityId || null);
   const [chosenScoringFormat, setChosenScoringFormat] = useState<{ id: string, title: string } | null>(null);
+  const [chosenTournamentFormat, setChosenTournamentFormat] = useState<{ id: string, title: string } | null>(null);
+  const formatMetaData = {};
 
   const [modalityOptions, setModalityOptions] = useState<ModalityListItem[]>([]);
 
@@ -84,6 +87,9 @@ const TournamentCreateModal = ({
         modality_id: modalityIdToUse,
         season_id: loadedSeason?.id,
         scoring_format_id: chosenScoringFormat ? chosenScoringFormat.id : undefined,
+
+        format: chosenTournamentFormat ? chosenTournamentFormat.id : undefined,
+        format_data: formatMetaData,
       };
       console.log('Creating tournament with data:', newTournament);
       const createdTournament = await tournamentsApi.create(newTournament);
@@ -171,6 +177,24 @@ const TournamentCreateModal = ({
               elementState={[chosenScoringFormat, (ele) => setChosenScoringFormat(ele)]}
             />
           </div>
+
+          {/* Tournament Format */}
+          <div className="mb-4">
+            <label className="font-medium">
+              Formato do Torneio
+            </label>
+            <ChoseOneInput
+              allElementsLoader={() => Promise.resolve([
+                { id: 'free', title: 'Livre' },
+                { id: 'league', title: 'Liga' },
+              ])}
+              onSelect={(ele) => {
+                setChosenTournamentFormat(ele)
+              }}
+              initialElement={{ id: 'free', title: 'Livre' }}
+            />
+          </div>
+          <GeneralFormatMetaInput format={chosenTournamentFormat?.id || 'free'} data={formatMetaData} />
 
           <div className="flex justify-end space-x-2">
             <Button

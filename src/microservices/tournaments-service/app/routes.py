@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from typing import List
 from uuid import UUID
 
+from app.formats import FormatRegistry
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from taca_events.pydantic_schemas.tournaments import (
@@ -24,7 +25,7 @@ from taca_events.pydantic_schemas.tournaments import (
     TournamentUpdatedV1,
 )
 
-from .database import get_db_session
+from .database import get_db, get_db_session
 from .logger import logger
 from .models import (
     CompetitorType,
@@ -37,9 +38,11 @@ from .schemas import (
     CompetitorInput,
     TournamentCreate,
     TournamentFinish,
+    TournamentFormatMetaUpdate,
     TournamentResponse,
     TournamentSeasonSummary,
     TournamentSeasonSummaryRequest,
+    TournamentStandingsResponse,
     TournamentUpdate,
 )
 
@@ -102,6 +105,16 @@ def add_competitor(db: Session, tournament_id: UUID, competitor_input: Competito
     )
     db.add(tournament_competitor)
     db.flush()
+
+    # Update format-specific data if needed
+    engine = FormatRegistry.get_engine(tournament_competitor.tournament.format)
+    if not engine:
+        logger.warn(
+            f"No format engine found for format {tournament_competitor.tournament.format}, skipping format-specific competitor addition logic"
+        )
+    else:
+        engine.on_competitor_added(db, tournament_competitor)
+        db.flush()
 
     # Emit event for added competitor
     event = TournamentCompetitorAddedV1.create(
@@ -285,9 +298,7 @@ async def get_tournament(tournament_id: UUID, db: Session = Depends(get_db_sessi
     response_model=TournamentResponse,
     status_code=status.HTTP_201_CREATED,
 )
-async def create_tournament(
-    data: TournamentCreate, db: Session = Depends(get_db_session)
-):
+async def create_tournament(data: TournamentCreate, db: Session = Depends(get_db)):
     """Create a new tournament"""
     competitor_type_map = {
         "team": CompetitorType.TEAM,
@@ -300,56 +311,70 @@ async def create_tournament(
             detail=f"Invalid competitor_type: {data.competitor_type!r}",
         )
 
-    competitor_type = competitor_type_map[data.competitor_type]
-    try:
-        # Create tournament
-        tournament = Tournament(
-            modality_id=data.modality_id,
-            name=data.name,
-            start_date=data.start_date,
-            status="draft",
-            scoring_format_id=data.scoring_format_id,
-            competitor_type=competitor_type,
-            created_by="00000000-0000-0000-0000-000000000000",  # Placeholder, should be replaced with actual user ID from auth context
-            season_id=data.season_id,
-        )
-        db.add(tournament)
-        db.flush()  # Get the ID before committing
-
-        # Emit event for tournament creation
-        event = TournamentCreatedV1.create(
-            aggregate_id=tournament.id,
-            data=TournamentCreatedData(
-                tournament_id=tournament.id,
-                modality_id=tournament.modality_id,
-                name=tournament.name,
-                start_date=tournament.start_date.isoformat(),
-                status=tournament.status,
-                scoring_format_id=tournament.scoring_format_id,
-                season_id=tournament.season_id,
-            ),
-        )
-        outbox_publisher.emit_event(
-            db=db,
-            event_type=event.event_type(),
-            aggregate_type="tournament",
-            aggregate_id=str(tournament.id),
-            data=event.to_data_dict(),
-        )
-
-        db.commit()
-        db.refresh(tournament)
-
-        logger.info(f"Created tournament {tournament.id}: {tournament.name}")
-        return TournamentResponse(**tournament.to_dict(include_ranking=False))
-
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error creating tournament: {e}", exc_info=True)
+    print(
+        f"Creating tournament with format {data.format} and format_data {data.format_data}",
+        flush=True,
+    )
+    engine = FormatRegistry.get_engine(data.format)
+    if not engine:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error creating tournament: {str(e)}",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported format: {data.format!r}",
         )
+
+    competitor_type = competitor_type_map[data.competitor_type]
+    # Create tournament record using factory method (creates correct subclass based on format)
+    tournament = Tournament.create(
+        format=data.format,
+        modality_id=data.modality_id,
+        name=data.name,
+        start_date=data.start_date,
+        status="draft",
+        scoring_format_id=data.scoring_format_id,
+        competitor_type=competitor_type,
+        created_by="00000000-0000-0000-0000-000000000000",  # Placeholder, should be replaced with actual user ID from auth context
+        season_id=data.season_id,
+    )
+
+    try:
+        tournament = engine.complete_tournament(
+            tournament, format_data=data.format_data
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Error completing tournament: {str(e)}",
+        )
+
+    db.add(tournament)
+    db.flush()  # Get the ID before committing
+
+    # Emit event for tournament creation
+    event = TournamentCreatedV1.create(
+        aggregate_id=tournament.id,
+        data=TournamentCreatedData(
+            tournament_id=tournament.id,
+            modality_id=tournament.modality_id,
+            name=tournament.name,
+            start_date=tournament.start_date.isoformat(),
+            status=tournament.status,
+            scoring_format_id=tournament.scoring_format_id,
+            season_id=tournament.season_id,
+        ),
+    )
+    outbox_publisher.emit_event(
+        db=db,
+        event_type=event.event_type(),
+        aggregate_type="tournament",
+        aggregate_id=str(tournament.id),
+        data=event.to_data_dict(),
+    )
+
+    db.commit()
+    db.refresh(tournament)
+
+    logger.info(f"Created tournament {tournament.id}: {tournament.name}")
+    return TournamentResponse(**tournament.to_dict(include_ranking=False))
 
 
 @router.put("/tournaments/{tournament_id}", response_model=TournamentResponse)
@@ -566,7 +591,7 @@ async def add_competitors_to_tournament(
 async def remove_competitors_from_tournament(
     tournament_id: UUID,
     competitor_ids: List[UUID],
-    db: Session = Depends(get_db_session),
+    db: Session = Depends(get_db),
 ):
     """Remove competitors from a tournament"""
     tournament = db.query(Tournament).filter(Tournament.id == tournament_id).first()
@@ -575,41 +600,142 @@ async def remove_competitors_from_tournament(
             status_code=status.HTTP_404_NOT_FOUND, detail="Tournament not found"
         )
 
-    try:
-        for competitor_id in competitor_ids:
-            db.query(TournamentCompetitor).filter(
-                TournamentCompetitor.tournament_id == tournament_id,
-                TournamentCompetitor.id == competitor_id,
-            ).delete()
-            db.flush()
-
-            # Emit event for removed competitor
-            event = TournamentCompetitorDeletedV1.create(
-                aggregate_id=competitor_id,
-                data=TournamentCompetitorDeletedData(
-                    competitor_id=competitor_id,
-                    tournament_id=tournament_id,
-                ),
-            )
-            outbox_publisher.emit_event(
-                db=db,
-                event_type=event.event_type(),
-                aggregate_type="tournament_competitor",
-                aggregate_id=str(competitor_id),
-                data=event.to_data_dict(),
-            )
-
-        db.commit()
-        logger.info(f"Removed competitors from tournament {tournament_id}")
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error removing competitors: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error removing competitors: {str(e)}",
+    engine = FormatRegistry.get_engine(tournament.format)
+    if not engine:
+        logger.warning(
+            f"No format engine found for format {tournament.format}, skipping format-specific competitor removal logic"
         )
 
+    for competitor_id in competitor_ids:
+
+        stmt_tc = db.query(TournamentCompetitor).filter(
+            TournamentCompetitor.tournament_id == tournament_id,
+            TournamentCompetitor.id == competitor_id,
+        )
+        tc = stmt_tc.first()
+        if not tc:
+            logger.warning(
+                f"Competitor with ID {competitor_id} not found in tournament {tournament_id}, skipping"
+            )
+            continue
+
+        if engine:
+            engine.on_competitor_removed(db, tc)
+            db.flush()
+
+        # Now delete the competitor from the tournament
+        stmt_tc.delete()
+        db.flush()
+
+        # Emit event for removed competitor
+        event = TournamentCompetitorDeletedV1.create(
+            aggregate_id=competitor_id,
+            data=TournamentCompetitorDeletedData(
+                competitor_id=competitor_id,
+                tournament_id=tournament_id,
+            ),
+        )
+        outbox_publisher.emit_event(
+            db=db,
+            event_type=event.event_type(),
+            aggregate_type="tournament_competitor",
+            aggregate_id=str(competitor_id),
+            data=event.to_data_dict(),
+        )
+
+    db.commit()
+    logger.info(f"Removed competitors from tournament {tournament_id}")
+
     return TournamentResponse(**tournament.to_dict(include_ranking=False))
+
+
+@router.get(
+    "/tournaments/{tournament_id}/standings", response_model=TournamentStandingsResponse
+)
+async def get_tournament_standings(tournament_id: UUID, db: Session = Depends(get_db)):
+    """Get the current standings for a tournament in a format-agnostic way."""
+    tournament = db.query(Tournament).filter(Tournament.id == tournament_id).first()
+    if not tournament:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Tournament not found"
+        )
+
+    engine = FormatRegistry.get_engine(tournament.format)
+    if not engine:
+        logger.warning(
+            f"No format engine found for format {tournament.format}, cannot provide standings"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"No format engine found for format {tournament.format}, cannot provide standings",
+        )
+
+    # Build response
+    try:
+        standings = engine.get_standings(db, tournament_id)
+        return TournamentStandingsResponse(
+            standings=(
+                [
+                    TournamentStandingsResponse._TournamentStandingsEntry(
+                        competitor_id=entry.competitor_id,
+                        position=entry.position,
+                        format_meta=entry.format_meta,
+                    )
+                    for entry in standings
+                ]
+                if standings is not None
+                else None
+            )
+        )
+    except Exception as e:
+        logger.error(f"Error getting standings: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error getting standings: {str(e)}",
+        )
+
+
+@router.put(
+    "/tournaments/{tournament_id}/format-meta",
+    response_model=TournamentResponse,
+)
+async def update_tournament_format_meta(
+    tournament_id: UUID,
+    data: TournamentFormatMetaUpdate,
+    db: Session = Depends(get_db),
+):
+    """Update the format meta of a tournament"""
+    tournament = db.query(Tournament).filter(Tournament.id == tournament_id).first()
+    if not tournament:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Tournament not found"
+        )
+
+    engine = FormatRegistry.get_engine(tournament.format)
+    if not engine:
+        logger.warning(
+            f"No format engine found for format {tournament.format}, cannot update format meta"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"No format engine found for format {tournament.format}, cannot update format meta",
+        )
+
+    try:
+        engine.update_tournament(tournament, data.format_meta)
+        db.commit()
+        db.refresh(tournament)
+
+        logger.info(f"Updated format meta for tournament {tournament.id}")
+        return TournamentResponse(**tournament.to_dict(include_ranking=False))
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error updating format meta: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error updating format meta: {str(e)}",
+        )
 
 
 # ==================== Health Check ====================

@@ -4,6 +4,8 @@ import os
 from dataclasses import dataclass
 from typing import List, Tuple
 
+import numpy as np
+import pandas as pd
 import requests as httpx
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -82,6 +84,18 @@ def step1(year: str = "25_26") -> bool:
                 print(f"Erro ao baixar detalhe.csv para {mod}: {resp.status_code}")
                 return False
 
+        with open(f"{output_dir}/{mod}/classificacao.csv", "wb+") as f:
+            full_url = f"{base_url}output/elo_ratings/classificacao_{mod}_{year}.csv"
+            resp = httpx.get(full_url)
+            if resp.status_code == 200:
+                f.write(resp.content)
+                print(f"Arquivo classificacao.csv para {mod} baixado com sucesso!")
+            else:
+                print(
+                    f"Erro ao baixar classificacao.csv para {mod}: {resp.status_code}"
+                )
+                return False
+
     return True
 
 
@@ -151,6 +165,90 @@ def step2():
     return True
 
 
+def linear_system_solver(
+    header: List[str], data: List[List[str]]
+) -> Tuple[float, float, float]:
+
+    # Load dataframe
+    df = pd.DataFrame(data, columns=header)
+
+    # Build system:
+    # pontos = vitorias*x + empates*y + derrotas*z
+
+    A = df[["vitorias", "empates", "derrotas"]].to_numpy(dtype=float)
+    b = df["pontos"].to_numpy(dtype=float)
+
+    # Detect if there are any draw-related rows
+    has_draws = np.any(A[:, 1] != 0)
+
+    # CASE 1:
+    # No draws at all -> assume:
+    # y = (x + z) / 2
+    #
+    # Then:
+    # pontos = v*x + e*((x+z)/2) + d*z
+    #
+    # Rewrite into 2 unknowns:
+    # pontos = (v + e/2)*x + (d + e/2)*z
+
+    if not has_draws:
+
+        A_reduced = np.column_stack(
+            [
+                A[:, 0] + A[:, 1] / 2,  # coefficient for x
+                A[:, 2] + A[:, 1] / 2,  # coefficient for z
+            ]
+        )
+
+        rank_A = np.linalg.matrix_rank(A_reduced)
+        rank_augmented = np.linalg.matrix_rank(np.c_[A_reduced, b])
+
+        if rank_augmented > rank_A:
+            raise ValueError("Impossible mathematically: inconsistent equations.")
+
+        if rank_A < 2:
+            raise ValueError(
+                "Impossible mathematically: insufficient independent data."
+            )
+
+        solution, residuals, _, _ = np.linalg.lstsq(A_reduced, b, rcond=None)
+
+        x, z = solution
+        y = (x + z) / 2
+
+        reconstructed = A_reduced @ solution
+
+        if not np.allclose(reconstructed, b):
+            raise ValueError("No exact solution exists.")
+
+    # CASE 2:
+    # Normal 3-variable system
+
+    else:
+
+        rank_A = np.linalg.matrix_rank(A)
+        rank_augmented = np.linalg.matrix_rank(np.c_[A, b])
+
+        if rank_augmented > rank_A:
+            raise ValueError("Impossible mathematically: inconsistent equations.")
+
+        if rank_A < 3:
+            raise ValueError(
+                "Impossible mathematically: insufficient independent data."
+            )
+
+        solution, residuals, _, _ = np.linalg.lstsq(A, b, rcond=None)
+
+        x, y, z = solution
+
+        reconstructed = A @ solution
+
+        if not np.allclose(reconstructed, b):
+            raise ValueError("No exact solution exists.")
+
+    return tuple(map(round, (x, y, z)))
+
+
 def step3():
     """Process classificação.csv and detalhe.csv"""
     translator_path = os.path.join(
@@ -171,6 +269,10 @@ def step3():
             div_idx = header_encoded.index(b"Divis\xc3\x83\xc2\xa3o")
             division = row[div_idx]
             tournament_name += f" - Div {division}" if division else ""
+        elif b"Divisao" in header_encoded:
+            div_idx = header_encoded.index(b"Divisao")
+            division = row[div_idx]
+            tournament_name += f" - Div {division}" if division else ""
 
         if "Grupo" in header:
             group_idx = header.index("Grupo")
@@ -178,6 +280,41 @@ def step3():
             tournament_name += f" - Grupo {group}" if group else ""
 
         return tournament_name
+
+    def calculate_tournament_format(
+        mod: str, tournament_target: str
+    ) -> Tuple[str, dict]:
+        # Por enquanto, vamos assumir que todos os torneios são do tipo "league"
+        with open(
+            os.path.join(current_dir, f"data/step1-raw-data/{mod}/classificacao.csv"),
+            "r",
+        ) as f:
+            config_data = list(csv.reader(f))
+
+        d: dict[str, list] = {}
+        header = config_data[0]
+        for row in config_data[1:]:
+            tournament_name = get_tournament_name(mod, row, header)
+            if tournament_name not in d:
+                d[tournament_name] = []
+            d[tournament_name].append(row)
+
+        for tournament_name, rows in d.items():
+            if tournament_target and tournament_name != tournament_target:
+                continue
+            try:
+                x, y, z = linear_system_solver(header=header, data=rows)
+            except Exception as e:
+                print(f"Erro ao resolver sistema linear para {tournament_name}: {e}")
+                return 3, 1, 0  # fallback para formato clássico de pontos
+
+            print(
+                f"Formato deduzido para {tournament_name}: win={x} pts, draw={y} pts, loss={z} pts"
+            )
+            return x, y, z
+
+        print(f"Não foi possível deduzir formato para {tournament_target} em {mod}.")
+        return 3, 1, 0  # fallback para formato clássico de pontos
 
     def process_detalhe_csv(mod: str, detalhe_path: str, processed_data: dict):
         with open(detalhe_path, "r") as f:
@@ -217,6 +354,9 @@ def step3():
             )
 
         for tournament_name, matches in temp_data.items():
+            pw, pd, pl = calculate_tournament_format(
+                mod, tournament_target=tournament_name
+            )
             processed_data["tournaments"].append(
                 {
                     "name": tournament_name,
@@ -227,6 +367,12 @@ def step3():
                         )
                     ),
                     "matches": matches,
+                    "format": "league",
+                    "format_data": {
+                        "win_points": pw,
+                        "draw_points": pd,
+                        "loss_points": pl,
+                    },
                 }
             )
 

@@ -436,6 +436,7 @@ def delete_match(
         aggregate_id=match_id,
         data=MatchDeletedData(
             match_id=match_id,
+            tournament_id=match.tournament_id,
         ),
     )
     outbox_publisher.emit_event(
@@ -926,6 +927,7 @@ def update_match_results(
         aggregate_id=match_id,
         data=MatchResultUpdatedData(
             match_id=match_id,
+            tournament_id=match.tournament_id,
             results=[
                 MatchResultEntryData(
                     participant_id=r["participant_id"],

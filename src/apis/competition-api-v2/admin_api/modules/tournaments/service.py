@@ -17,6 +17,7 @@ from admin_api.clients.modalities_service import (
 from admin_api.clients.ranking_service import ranking_service_client
 from admin_api.clients.tournaments_service import (
     TournamentDTO,
+    TournamentStandingsDTO,
     tournaments_service_client,
 )
 
@@ -65,14 +66,28 @@ class Tournament:
     modality: Modality
     start_date: str
     competitor_type: str
+    format: str = "free"
 
     competitors: List[Competitor] = field(default_factory=list)
     scoring_format: ScoringFormat = None
     season: _Season = None
     standings: List[_StandingsEntry] = None
+    format_data: Optional[dict] = None
+
+
+@dataclass
+class TournamentStandingsEntry:
+    competitor_id: str
+    competitor_name: Optional[str]
+    position: int
+    format_meta: Optional[dict] = None
 
 
 class TeamDoesNotBelongToSeasonError(ValueError):
+    pass
+
+
+class NoStandingsAvailableError(ValueError):
     pass
 
 
@@ -234,6 +249,8 @@ class TournamentsService:
             modality=modality,
             start_date=tournament_dto.start_date,
             competitor_type=tournament_dto.competitor_type,
+            format=tournament_dto.format,
+            format_data=tournament_dto.format_data,
         )
 
         if include_details:
@@ -259,6 +276,37 @@ class TournamentsService:
                     )
 
         return tournament
+
+    def _build_standings_from_dto(
+        self, standings_dto: List[TournamentStandingsDTO], tournament: Tournament
+    ) -> List[TournamentStandingsEntry]:
+        """Helper method to build a list of tournament standings entries from a list of TournamentStandingsDTO objects
+
+        Args:
+            standings_dto (List[TournamentStandingsDTO]): A list of TournamentStandingsDTO objects received from the tournaments service
+            tournament (Tournament): The tournament domain object to which the standings belong.
+
+        Returns:
+            List[TournamentStandingsEntry]: A list of TournamentStandingsEntry domain objects constructed from the provided DTOs
+        """
+
+        competitors_name_map = {}
+        for competitor in tournament.competitors:
+            competitors_name_map[competitor.id] = competitor.name
+
+        standings = []
+        for entry in standings_dto:
+            standings.append(
+                TournamentStandingsEntry(
+                    competitor_id=entry.competitor_id,
+                    competitor_name=competitors_name_map.get(
+                        str(entry.competitor_id), None
+                    ),
+                    position=entry.position,
+                    format_meta=entry.format_meta,
+                )
+            )
+        return standings
 
     # Public methods for tournament management, which will be called by the API views/controllers
     def list_tournaments(
@@ -293,6 +341,8 @@ class TournamentsService:
         modality_id: uuid.UUID,
         season_id: int = None,
         scoring_format_id: uuid.UUID = None,
+        format: str = None,
+        format_data: dict = None,
     ) -> Tournament:
         """Create a new tournament"""
 
@@ -331,6 +381,8 @@ class TournamentsService:
             ),  # the tournaments service expects "athlete" instead of "individual"
             start_date=datetime.now().isoformat(),
             season_id=season_id,
+            format=format,
+            format_data=format_data,
         )
 
         return self._build_tournament_from_dto(
@@ -487,6 +539,37 @@ class TournamentsService:
         """Get list of rounds for a tournament"""
 
         return matches_service_client.get_tournament_rounds(tournament_id)
+
+    def get_tournament_standings(
+        self, tournament_id: str
+    ) -> List[TournamentStandingsEntry]:
+        """Get the standings of a tournament"""
+
+        standings_dto = tournaments_service_client.get_tournament_standings(
+            tournament_id
+        )
+        if standings_dto is None:
+            raise NoStandingsAvailableError(
+                f"Standings not found for tournament with ID {tournament_id}"
+            )
+
+        tournament = self.get_tournament(tournament_id)
+
+        return self._build_standings_from_dto(standings_dto, tournament)
+
+    def update_tournament_format_meta(
+        self, tournament_id: str, format_meta: dict
+    ) -> Tournament:
+        """Update the format meta of a tournament"""
+
+        tournament_dto = tournaments_service_client.update_tournament_format_meta(
+            tournament_id=tournament_id, format_meta=format_meta
+        )
+
+        return self._build_tournament_from_dto(
+            tournament_dto,
+            include_details=True,
+        )
 
 
 tournaments_service = TournamentsService()

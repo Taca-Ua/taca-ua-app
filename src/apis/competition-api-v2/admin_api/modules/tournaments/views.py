@@ -20,11 +20,17 @@ from .serializers import (
     TournamentCreateSerializer,
     TournamentDetailSerializer,
     TournamentFinishSerializer,
+    TournamentFormatMetaUpdateSerializer,
     TournamentListQuerySerializer,
     TournamentListSerializer,
+    TournamentStandingsSerializer,
     TournamentUpdateSerializer,
 )
-from .service import TeamDoesNotBelongToSeasonError, tournaments_service
+from .service import (
+    NoStandingsAvailableError,
+    TeamDoesNotBelongToSeasonError,
+    tournaments_service,
+)
 
 
 @extend_schema_view(
@@ -67,6 +73,8 @@ class TournamentListCreateView(RoleRequiredMixin, APIView):
             modality_id=serializer.validated_data["modality_id"],
             season_id=serializer.validated_data.get("season_id", None),
             scoring_format_id=serializer.validated_data.get("scoring_format_id", None),
+            format=serializer.validated_data.get("format", None),
+            format_data=serializer.validated_data.get("format_data", None),
         )
 
         serializer = TournamentListSerializer(tournament)
@@ -234,6 +242,46 @@ def tournament_remove_competitors(request, tournament_id):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    responses=TournamentDetailSerializer(many=True),
+    description="Get the standings of a tournament",
+    tags=["Tournament Management"],
+)
+@api_view(["GET"])
+@require_roles("general_admin")
+def tournament_standings(request, tournament_id):
+    """Get the standings of a tournament"""
+    try:
+        standings = tournaments_service.get_tournament_standings(tournament_id)
+    except NoStandingsAvailableError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = TournamentStandingsSerializer(standings, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    request=TournamentFormatMetaUpdateSerializer,
+    responses=TournamentDetailSerializer,
+    description="Update the format meta of a tournament",
+    tags=["Tournament Management"],
+)
+@api_view(["PUT"])
+@require_roles("general_admin")
+def tournament_update_format_meta(request, tournament_id):
+    """Update the format meta of a tournament"""
+    serializer = TournamentFormatMetaUpdateSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    tournament = tournaments_service.update_tournament_format_meta(
+        tournament_id=tournament_id,
+        format_meta=serializer.validated_data["format_meta"],
+    )
+
+    serializer = TournamentDetailSerializer(tournament)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 urlpatterns = [
     path("", TournamentListCreateView.as_view(), name="tournament-list"),
     path(
@@ -260,5 +308,15 @@ urlpatterns = [
         "<uuid:tournament_id>/competitors/remove/",
         tournament_remove_competitors,
         name="tournament-remove-competitors",
+    ),
+    path(
+        "<uuid:tournament_id>/standings/",
+        tournament_standings,
+        name="tournament-standings",
+    ),
+    path(
+        "<uuid:tournament_id>/format-meta/",
+        tournament_update_format_meta,
+        name="tournament-update-format-meta",
     ),
 ]

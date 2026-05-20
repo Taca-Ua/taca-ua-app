@@ -121,7 +121,6 @@ function UnassignedColumn({
 }
 
 const TournamentFinishModal = ({
-
   tournamentState,
   onSave,
 }: {
@@ -237,8 +236,32 @@ const TournamentFinishModal = ({
 
   useEffect(() => {
     // reset state when opening
-    setStandings({});
-    setUnassigned(tournament.competitors.map((c) => c.id));
+    if (!tournament) return;
+
+    if (tournament.format === 'free') {
+      setStandings({});
+      setUnassigned(tournament.competitors.map((c) => c.id));
+    } else {
+      tournamentsApi.getStandings(tournament.id).then((result) => {
+        const newStandings: { [id: string]: number } = {};
+
+        let all_positions: number[] = [];
+        for (const entry of result) {
+          if (!all_positions.includes(entry.position))
+            all_positions.push(entry.position);
+        }
+
+        for (const entry of result) {
+          newStandings[entry.competitor_id] = all_positions.indexOf(entry.position) + 1;
+        }
+        setStandings(newStandings);
+        setUnassigned(tournament.competitors.filter((c) => !newStandings[c.id]).map((c) => c.id));
+      }).catch((error) => {
+        console.error("Error fetching standings:", error);
+        notify("Erro ao carregar classificações do torneio.", "error");
+      });
+    }
+
   }, [tournament.competitors]);
 
   return (
