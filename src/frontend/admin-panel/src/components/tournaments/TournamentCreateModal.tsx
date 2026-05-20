@@ -187,7 +187,6 @@ const TournamentCreateModal = ({
               allElementsLoader={() => Promise.resolve([
                 { id: 'free', title: 'Livre' },
                 { id: 'league', title: 'Liga' },
-                { id: 'single_elimination', title: 'Eliminação Direta' },
               ])}
               onSelect={(ele) => {
                 setChosenTournamentFormat(ele)
