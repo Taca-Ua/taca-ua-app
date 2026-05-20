@@ -237,8 +237,25 @@ const TournamentFinishModal = ({
 
   useEffect(() => {
     // reset state when opening
-    setStandings({});
-    setUnassigned(tournament.competitors.map((c) => c.id));
+    if (!tournament) return;
+
+    if (tournament.format === 'free') {
+      setStandings({});
+      setUnassigned(tournament.competitors.map((c) => c.id));
+    } else {
+      tournamentsApi.getStandings(tournament.id).then((result) => {
+        const newStandings: { [id: string]: number } = {};
+        for (const entry of result) {
+          newStandings[entry.competitor_id] = entry.position;
+        }
+        setStandings(newStandings);
+        setUnassigned(tournament.competitors.filter((c) => !newStandings[c.id]).map((c) => c.id));
+      }).catch((error) => {
+        console.error("Error fetching standings:", error);
+        notify("Erro ao carregar classificações do torneio.", "error");
+      });
+    }
+
   }, [tournament.competitors]);
 
   return (
