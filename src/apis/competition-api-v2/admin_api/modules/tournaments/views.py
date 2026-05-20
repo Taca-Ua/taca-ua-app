@@ -20,6 +20,7 @@ from .serializers import (
     TournamentCreateSerializer,
     TournamentDetailSerializer,
     TournamentFinishSerializer,
+    TournamentFormatMetaUpdateSerializer,
     TournamentListQuerySerializer,
     TournamentListSerializer,
     TournamentStandingsSerializer,
@@ -259,6 +260,28 @@ def tournament_standings(request, tournament_id):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    request=TournamentFormatMetaUpdateSerializer,
+    responses=TournamentDetailSerializer,
+    description="Update the format meta of a tournament",
+    tags=["Tournament Management"],
+)
+@api_view(["PUT"])
+@require_roles("general_admin")
+def tournament_update_format_meta(request, tournament_id):
+    """Update the format meta of a tournament"""
+    serializer = TournamentFormatMetaUpdateSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    tournament = tournaments_service.update_tournament_format_meta(
+        tournament_id=tournament_id,
+        format_meta=serializer.validated_data["format_meta"],
+    )
+
+    serializer = TournamentDetailSerializer(tournament)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 urlpatterns = [
     path("", TournamentListCreateView.as_view(), name="tournament-list"),
     path(
@@ -290,5 +313,10 @@ urlpatterns = [
         "<uuid:tournament_id>/standings/",
         tournament_standings,
         name="tournament-standings",
+    ),
+    path(
+        "<uuid:tournament_id>/format-meta/",
+        tournament_update_format_meta,
+        name="tournament-update-format-meta",
     ),
 ]

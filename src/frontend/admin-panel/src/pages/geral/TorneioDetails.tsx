@@ -87,8 +87,7 @@ const TorneioDetails = () => {
           { tournament.format !== 'free' && (
             <div className="mt-6">
               <TornLeagueDisplayComponent
-                data={tournament.format_data as {points_win: number; points_draw: number; points_loss: number; current_round: number}}
-                tournamentId={tournament.id}
+                tournamentState={[tournament, setTournament]}
               />
             </div>
           )}

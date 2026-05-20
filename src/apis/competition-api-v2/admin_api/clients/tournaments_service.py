@@ -361,6 +361,26 @@ class TournamentsService(BaseService):
             for entry in standings_data
         ]
 
+    def update_tournament_format_meta(
+        self, tournament_id: UUID, format_meta: Dict[str, Any]
+    ) -> TournamentDTO:
+        """
+        Update the format meta of a tournament
+
+        Args:
+            tournament_id: Tournament ID
+            format_meta: New format meta dictionary
+
+        Returns:
+            Updated tournament dictionary
+        """
+        data = {"format_meta": format_meta}
+
+        tournament_data = self.put(
+            f"/tournaments/{tournament_id}/format-meta", data=data
+        )
+        return TournamentDTO(**tournament_data)
+
 
 # Singleton instance
 tournaments_service_client = TournamentsService()

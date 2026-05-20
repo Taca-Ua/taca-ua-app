@@ -121,7 +121,6 @@ function UnassignedColumn({
 }
 
 const TournamentFinishModal = ({
-
   tournamentState,
   onSave,
 }: {

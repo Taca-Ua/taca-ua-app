@@ -557,5 +557,19 @@ class TournamentsService:
 
         return self._build_standings_from_dto(standings_dto, tournament)
 
+    def update_tournament_format_meta(
+        self, tournament_id: str, format_meta: dict
+    ) -> Tournament:
+        """Update the format meta of a tournament"""
+
+        tournament_dto = tournaments_service_client.update_tournament_format_meta(
+            tournament_id=tournament_id, format_meta=format_meta
+        )
+
+        return self._build_tournament_from_dto(
+            tournament_dto,
+            include_details=True,
+        )
+
 
 tournaments_service = TournamentsService()

@@ -130,4 +130,8 @@ export const tournamentsApi = {
   async getStandings(id: string): Promise<TournamentStandingsEntry[]> {
     return apiClient.get<TournamentStandingsEntry[]>(`/tournaments/${id}/standings/`);
   },
+
+  async updateFormatMeta(id: string, format_meta: Record<string, any>): Promise<TournamentDetail> {
+    return apiClient.put<TournamentDetail>(`/tournaments/${id}/format-meta/`, { format_meta });
+  }
 };

@@ -156,6 +156,12 @@ class TournamentStandingsResponse(BaseModel):
         from_attributes = True
 
 
+class TournamentFormatMetaUpdate(BaseModel):
+    """Schema for updating tournament format meta"""
+
+    format_meta: dict  # Format-specific metadata to update
+
+
 # ==================== Outbox Schemas ====================
 
 

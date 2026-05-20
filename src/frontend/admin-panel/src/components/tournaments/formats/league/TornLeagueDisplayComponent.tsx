@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { type TournamentStandingsEntry, tournamentsApi } from "../../../../api/tournaments";
+import { type TournamentDetail, type TournamentStandingsEntry, tournamentsApi } from "../../../../api/tournaments";
+import Button from "../../../utils/Button";
+import { useModal } from "../../../../contexts/ModalContext";
+import TornLeagueMetaUpdateModal from "./TornLeagueMetaUpdateModal";
 
 interface LeagueFormatData {
     points_win: number;
@@ -8,12 +11,24 @@ interface LeagueFormatData {
     current_round: number;
 }
 
-const TornLeagueDisplayComponent = ({data, tournamentId} : {data: LeagueFormatData, tournamentId: string}) => {
+const TornLeagueDisplayComponent = ({
+    tournamentState,
+} : {
+    tournamentState: [TournamentDetail, React.Dispatch<React.SetStateAction<TournamentDetail | null>>],
+}) => {
+    const { pushModal } = useModal();
+
+    console.log("Rendering TornLeagueDisplayComponent with tournamentState:", tournamentState);
+    const [tournament, ] = tournamentState;
+
+    const data = tournament.format_data as LeagueFormatData;
+
     const [currentStandings, setCurrentStandings] = useState<TournamentStandingsEntry[]>([]);
     const [loadingStandings, setLoadingStandings] = useState(false);
 
-    useEffect(() => {
-        tournamentsApi.getStandings(tournamentId)
+    const loadStandings = () => {
+        setLoadingStandings(true);
+        tournamentsApi.getStandings(tournament.id)
           .then(setCurrentStandings)
           .catch(err => {
             console.error('Failed to fetch standings:', err);
@@ -24,6 +39,10 @@ const TornLeagueDisplayComponent = ({data, tournamentId} : {data: LeagueFormatDa
             }
           })
           .finally(() => setLoadingStandings(false));
+    };
+
+    useEffect(() => {
+        loadStandings();
     }, [data.current_round]);
 
     const renderStandings = () => {
@@ -65,12 +84,27 @@ const TornLeagueDisplayComponent = ({data, tournamentId} : {data: LeagueFormatDa
 
     return (
       <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-        <h3 className="font-semibold text-blue-900 mb-3">
-          Formato: Liga (Pontos: {data.points_win} vitória, {data.points_draw} empate, {data.points_loss} derrota)
-        </h3>
-        <p className="text-sm text-blue-800 mb-4">
-          Ronda atual: {data.current_round || 0}
-        </p>
+        <div className="flex items-center mb-4 justify-between">
+            <div className="flex flex-col">
+                <h3 className="font-semibold text-blue-900 mb-3">
+                Formato: Liga (Pontos: {data.points_win} vitória, {data.points_draw} empate, {data.points_loss} derrota)
+                </h3>
+                <p className="text-sm text-blue-800 mb-4">
+                Ronda atual: {data.current_round || 0}
+                </p>
+            </div>
+            <Button
+                onClick={() => {pushModal(
+                    <TornLeagueMetaUpdateModal
+                        tournamentState={tournamentState}
+                        onSave={() => loadStandings()}
+                    />
+                )}}
+                type="primary"
+            >
+                Atualizar Classificação
+            </Button>
+        </div>
 
         {renderStandings()}
       </div>

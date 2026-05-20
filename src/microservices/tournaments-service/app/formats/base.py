@@ -51,6 +51,14 @@ class FormatEngine(ABC):
         """
         pass
 
+    def update_tournament(
+        self, tournament: Tournament, format_data: Dict[str, Any]
+    ) -> None:
+        """
+        Update a tournament's format-specific data.
+        """
+        pass
+
     def on_competitor_added(
         self, db: Session, tournament_competitor: TournamentCompetitor
     ) -> None:

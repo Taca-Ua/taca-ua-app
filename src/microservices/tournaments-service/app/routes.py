@@ -38,6 +38,7 @@ from .schemas import (
     CompetitorInput,
     TournamentCreate,
     TournamentFinish,
+    TournamentFormatMetaUpdate,
     TournamentResponse,
     TournamentSeasonSummary,
     TournamentSeasonSummaryRequest,
@@ -691,6 +692,49 @@ async def get_tournament_standings(tournament_id: UUID, db: Session = Depends(ge
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error getting standings: {str(e)}",
+        )
+
+
+@router.put(
+    "/tournaments/{tournament_id}/format-meta",
+    response_model=TournamentResponse,
+)
+async def update_tournament_format_meta(
+    tournament_id: UUID,
+    data: TournamentFormatMetaUpdate,
+    db: Session = Depends(get_db),
+):
+    """Update the format meta of a tournament"""
+    tournament = db.query(Tournament).filter(Tournament.id == tournament_id).first()
+    if not tournament:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Tournament not found"
+        )
+
+    engine = FormatRegistry.get_engine(tournament.format)
+    if not engine:
+        logger.warning(
+            f"No format engine found for format {tournament.format}, cannot update format meta"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"No format engine found for format {tournament.format}, cannot update format meta",
+        )
+
+    try:
+        engine.update_tournament(tournament, data.format_meta)
+        db.commit()
+        db.refresh(tournament)
+
+        logger.info(f"Updated format meta for tournament {tournament.id}")
+        return TournamentResponse(**tournament.to_dict(include_ranking=False))
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error updating format meta: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error updating format meta: {str(e)}",
         )
 
 

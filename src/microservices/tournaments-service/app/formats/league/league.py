@@ -83,6 +83,48 @@ class LeagueFormatEngine(FormatEngine):
         tournament.current_round = 1
         return tournament
 
+    def update_tournament(
+        self, tournament: Tournament, format_data: Dict[str, Any]
+    ) -> None:
+        # allow updating scoring rules mid-tournament if needed
+        if not isinstance(format_data, dict):
+            raise ValueError(
+                f"format_data must be a dictionary for league format. Payload received: {format_data}"
+            )
+        if "win_points" not in format_data or not isinstance(
+            format_data["win_points"], int
+        ):
+            raise ValueError(
+                f"win_points must be an integer. Payload received: {format_data}"
+            )
+        if "draw_points" not in format_data or not isinstance(
+            format_data["draw_points"], int
+        ):
+            raise ValueError(
+                f"draw_points must be an integer. Payload received: {format_data}"
+            )
+        if "loss_points" not in format_data or not isinstance(
+            format_data["loss_points"], int
+        ):
+            raise ValueError(
+                f"loss_points must be an integer. Payload received: {format_data}"
+            )
+
+        # Update tournament scoring rules
+        tournament: LeagueTournament = tournament  # type cast for clarity
+        tournament.points_win = format_data.get("win_points", tournament.points_win)
+        tournament.points_draw = format_data.get("draw_points", tournament.points_draw)
+        tournament.points_loss = format_data.get("loss_points", tournament.points_loss)
+
+        # Recalculate standings for all competitors based on new scoring rules
+        for standing in tournament.league_standings:
+            # Recalculate points based on wins/draws/losses and new scoring rules
+            standing.points = (
+                standing.wins * tournament.points_win
+                + standing.draws * tournament.points_draw
+                + standing.losses * tournament.points_loss
+            )
+
     def on_competitor_added(
         self, db: Session, tournament_competitor: TournamentCompetitor
     ):
@@ -293,6 +335,4 @@ class LeagueFormatEngine(FormatEngine):
                 )
             )
 
-        print("Calculated standings with positions:")
-        print(*postition_standings, sep="\n", flush=True)
         return postition_standings

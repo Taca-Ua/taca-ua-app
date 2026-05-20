@@ -151,3 +151,9 @@ class TournamentCompetitorsDeleteSerializer(serializers.Serializer):
         child=serializers.UUIDField(),
         allow_empty=False,
     )
+
+
+class TournamentFormatMetaUpdateSerializer(serializers.Serializer):
+    """Serializer for updating tournament format meta"""
+
+    format_meta = serializers.DictField(required=True)
