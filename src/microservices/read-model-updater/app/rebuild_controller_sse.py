@@ -342,6 +342,7 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
                     {
                         "season_id": item.id,
                         "name": item.name,
+                        "finished_at": item.finished_at,
                     }
                     for item in map(
                         lambda x: modality_snapshots.SeasonSnapshotItem(**x), items

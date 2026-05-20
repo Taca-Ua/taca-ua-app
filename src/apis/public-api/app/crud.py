@@ -292,6 +292,9 @@ def get_tournaments(
         query = query.filter(TournamentDetailView.modality_id == modality_id)
     if status:
         query = query.filter(TournamentDetailView.status == status)
+    else:
+        # Never expose draft tournaments on the public API
+        query = query.filter(TournamentDetailView.status != "draft")
     if season_id:
         query = query.filter(TournamentDetailView.tournament_season_id == season_id)
 
@@ -678,7 +681,7 @@ def get_seasons(db: Session) -> Tuple[list[SeasonDetailView], int]:
         List of season details ordered by most recent first
     """
 
-    query = db.query(SeasonDetailView)
+    query = db.query(SeasonDetailView).order_by(SeasonDetailView.season_id.desc())
     total = query.count()
 
     return query.all(), total

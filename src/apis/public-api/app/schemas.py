@@ -354,6 +354,7 @@ class SeasonDetail(BaseModel):
 
     season_id: int = Field(..., description="Unique identifier for the season")
     name: str = Field(..., description="Season name")
+    is_active: bool = Field(..., description="Whether this is the current active season")
 
 
 class SeasonDetailList(BaseModel):

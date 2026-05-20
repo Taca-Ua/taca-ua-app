@@ -3,6 +3,7 @@ import { apiCall } from './client';
 export interface SeasonDetail {
   season_id: number;
   name: string;
+  is_active: boolean;
 }
 
 export interface SeasonList {

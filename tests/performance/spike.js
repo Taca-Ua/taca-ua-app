@@ -46,12 +46,13 @@ export const options = {
 
 const BASE = __ENV.BASE_URL || "http://localhost";
 const API = `${BASE}/api/public`;
+const SEASON_ID = __ENV.SEASON_ID || "2";
 
 export default function () {
   const scenario = Math.random();
 
   if (scenario < 0.50) {
-    const res = http.get(`${API}/ranking/general`, { timeout: "15s" });
+    const res = http.get(`${API}/ranking/general?season_id=${SEASON_ID}`, { timeout: "15s" });
     rankingLatency.add(res.timings.duration);
     errorRate.add(res.status !== 200);
     check(res, {
@@ -67,7 +68,7 @@ export default function () {
       "tournaments no crash": (r) => r.status < 500,
     });
   } else {
-    const res = http.get(`${API}/ranking/modality`, { timeout: "15s" });
+    const res = http.get(`${API}/ranking/modality?season_id=${SEASON_ID}`, { timeout: "15s" });
     rankingLatency.add(res.timings.duration);
     errorRate.add(res.status !== 200);
     check(res, {

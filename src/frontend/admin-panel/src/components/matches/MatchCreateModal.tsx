@@ -53,7 +53,7 @@ const MatchCreateModal = ( {
         tournament_id: tournament.id,
         participants: selectedParticipants,
         location,
-        start_time: startTime,
+        start_time: new Date(startTime).toISOString(),
         journey: selectedJourneyOption === "existing-journey" ? parseInt(selectedExistingJourney!) : undefined,
         new_journey: selectedJourneyOption === "new-journey" ? true : undefined
       } );

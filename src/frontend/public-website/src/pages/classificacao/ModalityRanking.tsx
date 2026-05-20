@@ -15,7 +15,7 @@ function ModalityRankingPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
-  const [seasonFilter, setSeasonFilter] = useState<number>(1);
+  const [seasonFilter, setSeasonFilter] = useState<number | null>(null);
   const [seasons, setSeasons] = useState<SeasonDetail[]>([]);
 
   const modalities: OptionItem[] = useMemo(
@@ -44,15 +44,17 @@ function ModalityRankingPage() {
   useEffect(() => {
     seasonsApi.getAll().then((data) => {
       setSeasons(data.items);
-      if (data.items.length > 0) {
-        setSeasonFilter(data.items[0].season_id);
-      }
+      const active = data.items.find((s) => s.is_active);
+      const defaultSeason = active ?? data.items[0];
+      if (defaultSeason) setSeasonFilter(defaultSeason.season_id);
     }).catch((err) => {
       console.error('Error fetching seasons:', err);
     });
   }, []);
 
   useEffect(() => {
+    if (seasonFilter === null) return;
+
     const fetchRankings = async () => {
       try {
         setLoading(true);

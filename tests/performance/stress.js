@@ -27,24 +27,34 @@ const reqDuration = new Trend("req_duration", true);
 
 export const options = {
   stages: [
-    { duration: "1m", target: 30 },
-    { duration: "1m", target: 80 },
-    { duration: "2m", target: 200 },
+    // Warm-up — quickly reach the known stable zone
+    { duration: "1m", target: 100 },
+    { duration: "1m", target: 250 },
+    // Push into the breaking zone
     { duration: "1m", target: 300 },
-    { duration: "2m", target: 0 },
+    { duration: "1m", target: 350 },
+    { duration: "1m", target: 400 },
+    // Hold at peak to characterise failure behaviour
+    { duration: "2m", target: 400 },
+    // Recovery — verify the system returns to normal
+    { duration: "1m", target: 100 },
+    { duration: "2m", target: 100 },
+    { duration: "30s", target: 0 },
   ],
   thresholds: {
-    http_req_duration: ["p(99)<2000"],
+    // Breaking point: p95 and p99 thresholds (expected to fail at peak)
+    http_req_duration: ["p(95)<2000", "p(99)<5000"],
     error_rate: ["rate<0.1"],
   },
 };
 
 const BASE = __ENV.BASE_URL || "http://localhost";
 const API = `${BASE}/api/public`;
+const SEASON_ID = __ENV.SEASON_ID || "2";
 
 const HEAVY_ENDPOINTS = [
-  `${API}/ranking/general`,
-  `${API}/ranking/modality`,
+  `${API}/ranking/general?season_id=${SEASON_ID}`,
+  `${API}/ranking/modality?season_id=${SEASON_ID}`,
   `${API}/tournaments?page=1&page_size=50`,
   `${API}/matches?page=1&page_size=50`,
   `${API}/teams?page=1&page_size=50`,

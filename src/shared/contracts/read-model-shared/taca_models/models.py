@@ -316,6 +316,7 @@ class SeasonDetailView(Base):
 
     season_id = Column(Integer, nullable=False, primary_key=True)
     name = Column(String, nullable=False)
+    is_active = Column(Boolean, nullable=False, default=False)
 
 
 # ==================== Shared Operational Tables ====================

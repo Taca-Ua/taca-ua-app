@@ -12,6 +12,8 @@ function Calendario() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('calendar');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [pageSize, setPageSize] = useState(20);
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [selectedDay, setSelectedDay] = useState<Date>(() => {
@@ -27,8 +29,8 @@ function Calendario() {
         setLoading(true);
         setError(null);
 
-        if (viewMode === 'calendar') {
-          // Fetch all pages (API max page_size is 100)
+        if (viewMode === 'calendar' || viewMode === 'list') {
+          // Fetch all pages so search/calendar work across full dataset
           const PAGE_SIZE = 100;
           const first = await matchesApi.getAll({ page: 1, page_size: PAGE_SIZE });
           const totalPages = Math.ceil(first.total / PAGE_SIZE);
@@ -42,13 +44,6 @@ function Calendario() {
             );
             setMatches([...first.items, ...rest.flatMap(r => r.items)]);
           }
-        } else {
-          const data = await matchesApi.getAll({
-            page,
-            page_size: 20,
-          });
-          setMatches(data.items);
-          setTotalPages(Math.ceil(data.total / data.page_size));
         }
       } catch (err) {
         console.error('Error fetching matches:', err);
@@ -59,7 +54,7 @@ function Calendario() {
     };
 
     fetchMatches();
-  }, [page, viewMode]);
+  }, [viewMode]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -165,6 +160,18 @@ function Calendario() {
     return participantNames.join(' vs ');
   };
 
+  const LIST_PAGE_SIZE = pageSize;
+
+  const filteredMatches = viewMode === 'list'
+    ? matches.filter((m) =>
+        getMatchTitle(m)?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (m.tournament_name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
+      )
+    : matches;
+
+  const listTotalPages = Math.max(1, Math.ceil(filteredMatches.length / LIST_PAGE_SIZE));
+  const pagedMatches = filteredMatches.slice((page - 1) * LIST_PAGE_SIZE, page * LIST_PAGE_SIZE);
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
@@ -207,6 +214,27 @@ function Calendario() {
               </button>
             </div>
 
+            {viewMode === 'list' && (
+              <input
+                type="text"
+                placeholder="Pesquisar jogo ou torneio..."
+                value={searchQuery}
+                onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent w-full md:w-72"
+              />
+            )}
+
+            {viewMode === 'list' && (
+              <select
+                value={pageSize}
+                onChange={(e) => { setPageSize(parseInt(e.target.value)); setPage(1); }}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              >
+                <option value={10}>10 por página</option>
+                <option value={20}>20 por página</option>
+                <option value={50}>50 por página</option>
+              </select>
+            )}
 
           </div>
 
@@ -230,12 +258,12 @@ function Calendario() {
                 <>
                   {/* Matches List */}
                   <div className="space-y-4">
-                    {matches.length === 0 ? (
-                      <div className="bg-white rounded-lg shadow p-8 text-center">
-                        <p className="text-gray-500">Não há jogos disponíveis com os filtros selecionados.</p>
-                      </div>
-                    ) : (
-                      matches.map((match) => (
+                  {filteredMatches.length === 0 ? (
+                    <div className="bg-white rounded-lg shadow p-8 text-center">
+                      <p className="text-gray-500">Não há jogos disponíveis com os filtros selecionados.</p>
+                    </div>
+                  ) : (
+                    pagedMatches.map((match) => (
                         <div
                           key={match.match_id}
                           className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-6"
@@ -315,7 +343,7 @@ function Calendario() {
                   </div>
 
                   {/* Pagination */}
-                  {totalPages > 1 && (
+                  {listTotalPages > 1 && (
                     <div className="mt-8 flex justify-center gap-2">
                       <button
                         onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -325,11 +353,11 @@ function Calendario() {
                         Anterior
                       </button>
                       <span className="px-4 py-2 text-gray-700">
-                        Página {page} de {totalPages}
+                        Página {page} de {listTotalPages}
                       </span>
                       <button
-                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                        disabled={page === totalPages}
+                        onClick={() => setPage((p) => Math.min(listTotalPages, p + 1))}
+                        disabled={page === listTotalPages}
                         className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Próxima
