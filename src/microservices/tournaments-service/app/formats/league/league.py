@@ -1,0 +1,253 @@
+"""
+League format tournament engine.
+
+Implements round-robin tournament progression where:
+- Each competitor plays against each other competitor once per round (if configured)
+- Standings are calculated based on win/draw/loss points
+- Scoring rules are configurable per tournament
+"""
+
+from typing import Any, Dict
+
+from app.logger import logger
+from app.models import Tournament, TournamentCompetitor
+from sqlalchemy.orm import Session
+from taca_events.pydantic_schemas.matches import (
+    MatchCreatedV1,
+    MatchDeletedV1,
+    MatchResultUpdatedV1,
+)
+
+from ..base import FormatEngine
+from .models import LeagueMatches, LeagueStandings, LeagueTournament
+
+
+class LeagueFormatEngine(FormatEngine):
+    """
+    Round-robin league format engine.
+
+    Configuration format (tournament.format_config):
+    {
+        "win_points": 3,
+        "draw_points": 1,
+        "loss_points": 0,
+        "matches_per_round": null  # null = all competitors play in round, or specify fixed number
+    }
+    """
+
+    def __init__(self, config: Dict[str, Any] = None):
+        """
+        Initialize league engine with scoring rules.
+
+        Args:
+            config: Optional dict with scoring configuration.
+                   Defaults: win=3, draw=1, loss=0
+        """
+        if config is None:
+            config = {}
+
+        self.win_points = config.get("win_points", 3)
+        self.draw_points = config.get("draw_points", 1)
+        self.loss_points = config.get("loss_points", 0)
+
+    @property
+    def format_name(self) -> str:
+        return "league"
+
+    def complete_tournament(
+        self, tournament: Tournament, format_data: Dict[str, Any]
+    ) -> None:
+        # validate format_data
+        print(f"Completing tournament with format_data: {format_data}", flush=True)
+        if not isinstance(format_data, dict):
+            raise ValueError("format_data must be a dictionary for league format")
+        if "win_points" not in format_data or not isinstance(
+            format_data["win_points"], int
+        ):
+            raise ValueError("win_points must be an integer")
+        if "draw_points" not in format_data or not isinstance(
+            format_data["draw_points"], int
+        ):
+            raise ValueError("draw_points must be an integer")
+        if "loss_points" not in format_data or not isinstance(
+            format_data["loss_points"], int
+        ):
+            raise ValueError("loss_points must be an integer")
+
+        # configure tournament with league-specific settings
+        tournament: LeagueTournament = tournament  # type cast for clarity
+        tournament.points_win = format_data.get("win_points", self.win_points)
+        tournament.points_draw = format_data.get("draw_points", self.draw_points)
+        tournament.points_loss = format_data.get("loss_points", self.loss_points)
+        tournament.current_round = 1
+        return tournament
+
+    def on_competitor_added(
+        self, db: Session, tournament_competitor: TournamentCompetitor
+    ):
+        """Handle logic when a competitor is added to a league tournament."""
+        new_standing = LeagueStandings(
+            tournament_id=tournament_competitor.tournament_id,
+            competitor_id=tournament_competitor.id,
+            points=0,
+            wins=0,
+            draws=0,
+            losses=0,
+        )
+        db.add(new_standing)
+        db.flush()
+
+    def on_competitor_removed(
+        self, db: Session, tournament_competitor: TournamentCompetitor
+    ):
+        """Handle logic when a competitor is removed from a league tournament."""
+        db.query(LeagueStandings).filter(
+            LeagueStandings.tournament_id == tournament_competitor.tournament_id,
+            LeagueStandings.competitor_id == tournament_competitor.id,
+        ).delete()
+        db.flush()
+
+    # Event handlers for match events to update league standings
+    def event_handle_match_created(self, db: Session, event_data: MatchCreatedV1):
+        """
+        Handle match created event for league format.
+
+        Initializes match config record for the new match.
+        """
+        tournament_id = event_data.data.tournament_id
+        match_id = event_data.data.match_id
+
+        # Create a new LeagueMatches record for this match
+        league_match = LeagueMatches(
+            tournament_id=tournament_id,
+            match_id=match_id,
+            results=None,  # No results yet
+        )
+        db.add(league_match)
+        db.flush()  # Flush to get ID if needed
+
+    def event_handle_match_deleted(self, db: Session, event: MatchDeletedV1):
+        """
+        Handle match deleted event for league format.
+
+        Cleans up any league-specific records related to the deleted match.
+        """
+        match_id = event.data.match_id
+
+        # Delete the LeagueMatches record associated with this match
+        match = (
+            db.query(LeagueMatches).filter(LeagueMatches.match_id == match_id).first()
+        )
+        if not match:
+            logger.warning(
+                f"No LeagueMatches record found for match_id {match_id}, skipping deletion"
+            )
+            return
+
+        db.query(LeagueMatches).filter(LeagueMatches.match_id == match_id).delete()
+        db.flush()
+
+    def event_handle_match_result_updated(
+        self, db: Session, event: MatchResultUpdatedV1
+    ):
+        """
+        Handle match result updated event for league format.
+
+        Updates the league standings based on the new match result.
+        """
+        match_id = event.data.match_id
+        results = event.data.results
+
+        # Update the LeagueMatches record with the new results
+        match = (
+            db.query(LeagueMatches).filter(LeagueMatches.match_id == match_id).first()
+        )
+        if not match:
+            logger.warning(
+                f"No LeagueMatches record found for match_id {match_id}, cannot update results"
+            )
+            return
+
+        participant_results_map = {}
+
+        # Determine match result for each competitor based on scores
+        if all(r.score is not None for r in results):
+            # score-based result calculation.
+            # Most points wins, ties if all competitors have same points
+
+            max_score = max(r.score for r in results)
+            winners = [r for r in results if r.score == max_score]
+            if len(winners) == 1:
+                # Clear winner
+                for r in results:
+                    if r == winners[0]:
+                        participant_results_map[r.participant_id] = "win"
+                    else:
+                        participant_results_map[r.participant_id] = "loss"
+            else:
+                # Tie between all competitors with biggest score, everyone else loses
+                for r in results:
+                    if r.score == max_score:
+                        participant_results_map[r.participant_id] = "draw"
+                    else:
+                        participant_results_map[r.participant_id] = "loss"
+
+        elif all(r.position is not None for r in results):
+            # position-based result calculation.
+            # First place wins, ties if multiple competitors share first place, everyone else loses
+
+            min_position = min(r.position for r in results)
+            winners = [r for r in results if r.position == min_position]
+            if len(winners) == 1:
+                # Clear winner
+                for r in results:
+                    if r == winners[0]:
+                        participant_results_map[r.participant_id] = "win"
+                    else:
+                        participant_results_map[r.participant_id] = "loss"
+            else:
+                # Tie between all competitors with best position, everyone else loses
+                for r in results:
+                    if r.position == min_position:
+                        participant_results_map[r.participant_id] = "draw"
+                    else:
+                        participant_results_map[r.participant_id] = "loss"
+
+        # Update the match record with the new results
+        match.results = {
+            str(r.participant_id): {
+                "score": r.score,
+                "position": r.position,
+                "result": participant_results_map[r.participant_id],
+            }
+            for r in results
+        }
+
+        for participant_id, result in participant_results_map.items():
+            # Update standings for each participant based on their result
+            standing = (
+                db.query(LeagueStandings)
+                .filter(
+                    LeagueStandings.tournament_id == match.tournament_id,
+                    LeagueStandings.competitor_id == participant_id,
+                )
+                .first()
+            )
+
+            if not standing:
+                logger.warning(
+                    f"No LeagueStandings record found for competitor_id {participant_id} in tournament_id {match.tournament_id}, skipping standings update"
+                )
+                continue
+
+            if result == "win":
+                standing.points += match.tournament.points_win
+                standing.wins += 1
+            elif result == "draw":
+                standing.points += match.tournament.points_draw
+                standing.draws += 1
+            elif result == "loss":
+                standing.points += match.tournament.points_loss
+                standing.losses += 1
+
+        db.flush()

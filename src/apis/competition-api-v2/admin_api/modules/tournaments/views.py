@@ -67,6 +67,8 @@ class TournamentListCreateView(RoleRequiredMixin, APIView):
             modality_id=serializer.validated_data["modality_id"],
             season_id=serializer.validated_data.get("season_id", None),
             scoring_format_id=serializer.validated_data.get("scoring_format_id", None),
+            format=serializer.validated_data.get("format", None),
+            format_data=serializer.validated_data.get("format_data", None),
         )
 
         serializer = TournamentListSerializer(tournament)

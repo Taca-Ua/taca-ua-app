@@ -38,6 +38,8 @@ export interface TournamentDetail extends TournamentListItem {
     competitor_id: string;
   }[];
   rounds: number[];
+  format: string;
+  format_data?: Record<string, any>;
 }
 
 // Input interfaces
@@ -53,6 +55,9 @@ export interface TournamentCreate {
   start_date?: string;
   season_id?: number;
   scoring_format_id?: string;
+
+  format?: string;
+  format_data?: Record<string, any>;
 };
 
 export interface TournamentUpdate {

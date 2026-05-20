@@ -11,6 +11,7 @@ import Button from '../../components/utils/Button';
 import { useModal } from '../../contexts/ModalContext';
 import { useAuth } from '../../hooks/useAuth';
 import { navigateBack } from '../../utils';
+import TornLeagueDisplayComponent from '../../components/tournaments/formats/league/TornLeagueDisplayComponent';
 
 // Main component
 const TorneioDetails = () => {
@@ -73,6 +74,7 @@ const TorneioDetails = () => {
             </Button>
           </div>
 
+          {/* Tournament Details */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <TournamentInfoComponent tournamentState={[tournament, setTournament]} onDelete={handleBack} />
 
@@ -81,6 +83,16 @@ const TorneioDetails = () => {
             </div>
           </div>
 
+          {/* Format Details */}
+          { tournament.format !== 'free' && (
+            <div className="mt-6">
+              <TornLeagueDisplayComponent
+                data={tournament.format_data as {points_win: number; points_draw: number; points_loss: number; current_round: number}}
+              />
+            </div>
+          )}
+
+          {/* Matches Section */}
           <div className="bg-white rounded-lg shadow-md p-6 mt-6 flex flex-col gap-6">
             <Button
               onClick={() => pushModal(

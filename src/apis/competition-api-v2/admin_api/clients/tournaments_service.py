@@ -41,6 +41,8 @@ class TournamentDTO:
     start_date: Optional[str] = None  # ISO formatted datetime string
     competitors: List[CompetitorDTO] = field(default_factory=list)
     ranking_positions: List[_TournamentRankingPositionDTO] = field(default_factory=list)
+    format: str = "free"
+    format_data: Optional[dict] = None  # Additional data for specific formats
 
     created_by: Optional[UUID] = None
     created_at: Optional[str] = None  # ISO formatted datetime string
@@ -149,6 +151,8 @@ class TournamentsService(BaseService):
         competitor_type: str,
         season_id: int = None,
         start_date: Optional[str] = None,
+        format: Optional[str] = None,
+        format_data: Optional[dict] = None,
     ) -> TournamentDTO:
         """
         Create a new tournament
@@ -160,6 +164,8 @@ class TournamentsService(BaseService):
             competitor_type: "team" or "athlete"
             season_id: Season ID
             start_date: Optional start date (ISO format)
+            format: Optional tournament format (e.g. "free", "round_robin", "single_elimination")
+            format_data: Optional additional data for specific formats (e.g. number of groups for round
 
         Returns:
             Created tournament dictionary
@@ -173,6 +179,10 @@ class TournamentsService(BaseService):
         }
         if start_date:
             data["start_date"] = start_date
+        if format:
+            data["format"] = format
+        if format_data:
+            data["format_data"] = format_data
 
         tournament_data = self.post("/tournaments", data=data)
         return TournamentDTO(**tournament_data)

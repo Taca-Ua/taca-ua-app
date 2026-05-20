@@ -49,6 +49,8 @@ class TournamentCreate(BaseModel):
     start_date: Optional[datetime]
     competitor_type: str  # "team" or "athlete"
     season_id: int
+    format: Optional[str] = "free"
+    format_data: Optional[dict] = None  # Additional data for specific formats
 
 
 class TournamentUpdate(BaseModel):
@@ -87,6 +89,8 @@ class TournamentResponse(BaseModel):
     competitors: List[CompetitorResponse]
     competitor_type: str
     season_id: int
+    format: str
+    format_data: Optional[dict] = None
 
     created_by: UUID
     created_at: datetime

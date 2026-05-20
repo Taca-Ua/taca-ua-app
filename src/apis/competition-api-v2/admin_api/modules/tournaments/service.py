@@ -65,11 +65,13 @@ class Tournament:
     modality: Modality
     start_date: str
     competitor_type: str
+    format: str = "free"
 
     competitors: List[Competitor] = field(default_factory=list)
     scoring_format: ScoringFormat = None
     season: _Season = None
     standings: List[_StandingsEntry] = None
+    format_data: Optional[dict] = None
 
 
 class TeamDoesNotBelongToSeasonError(ValueError):
@@ -234,6 +236,8 @@ class TournamentsService:
             modality=modality,
             start_date=tournament_dto.start_date,
             competitor_type=tournament_dto.competitor_type,
+            format=tournament_dto.format,
+            format_data=tournament_dto.format_data,
         )
 
         if include_details:
@@ -293,6 +297,8 @@ class TournamentsService:
         modality_id: uuid.UUID,
         season_id: int = None,
         scoring_format_id: uuid.UUID = None,
+        format: str = None,
+        format_data: dict = None,
     ) -> Tournament:
         """Create a new tournament"""
 
@@ -331,6 +337,8 @@ class TournamentsService:
             ),  # the tournaments service expects "athlete" instead of "individual"
             start_date=datetime.now().isoformat(),
             season_id=season_id,
+            format=format,
+            format_data=format_data,
         )
 
         return self._build_tournament_from_dto(

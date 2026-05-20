@@ -76,6 +76,8 @@ class TournamentDetailSerializer(TournamentListSerializer):
     scoring_format = ScoringFormatSummarySerializer()
     season = TournamentSeasonSummarySerializer()
     standings = TournamentRankingPositionSerializer(many=True, required=False)
+    format = serializers.CharField(required=False)
+    format_data = serializers.DictField(required=False, allow_null=True)
 
 
 # Request serializers
@@ -95,6 +97,9 @@ class TournamentCreateSerializer(serializers.Serializer):
     start_date = serializers.DateTimeField(required=False, allow_null=True)
     season_id = serializers.IntegerField(required=False)
     scoring_format_id = serializers.UUIDField(required=False)
+
+    format = serializers.CharField(required=False, default="free")
+    format_data = serializers.DictField(required=False, default={})
 
 
 class TournamentUpdateSerializer(serializers.Serializer):

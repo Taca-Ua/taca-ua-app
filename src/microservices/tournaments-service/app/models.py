@@ -55,7 +55,9 @@ class TournamentCompetitor(Base):
         default=lambda: datetime.now(timezone.utc),
     )
 
-    tournament = relationship("Tournament", back_populates="competitors")
+    tournament: Mapped["Tournament"] = relationship(
+        "Tournament", back_populates="competitors"
+    )
 
     def to_dict(self):
         resp = {
@@ -109,6 +111,8 @@ class Tournament(Base):
     )
     season_id = Column(sa.Integer(), nullable=False, index=True)
 
+    format = Column(String(50), nullable=False)  # For polymorphic identity
+
     # bulshit fields
     created_by = Column(UUID(as_uuid=True), nullable=False)
     created_at = Column(
@@ -119,6 +123,12 @@ class Tournament(Base):
     )
     finished_at = Column(DateTime(timezone=True), nullable=True)
     finished_by = Column(UUID(as_uuid=True), nullable=True)
+
+    # Polymorphic configuration
+    __mapper_args__ = {
+        "polymorphic_on": format,
+        "polymorphic_identity": "free",
+    }
 
     # Relationships
     ranking_positions: Mapped[List["TournamentRankingPosition"]] = relationship(
@@ -132,6 +142,31 @@ class Tournament(Base):
         cascade="all, delete-orphan",
     )
 
+    @classmethod
+    def create(cls, format: str = "free", **kwargs) -> "Tournament":
+        """Factory method to create the correct Tournament subclass based on format.
+
+        Args:
+            format: The tournament format (e.g., 'league', 'free'). Defaults to 'free'.
+            **kwargs: Additional fields to pass to the constructor.
+
+        Returns:
+            An instance of the appropriate Tournament subclass.
+
+        Example:
+            tournament = Tournament.create(format="league", name="League A", ...)
+        """
+        # Import here to avoid circular imports
+        from app.formats.league.models import LeagueTournament
+
+        format_to_class = {
+            "league": LeagueTournament,
+            "free": cls,
+        }
+
+        tournament_class = format_to_class.get(format, cls)
+        return tournament_class(format=format, **kwargs)
+
     def to_dict(self, include_teams=False, include_ranking=False):
         result = {
             "id": str(self.id),
@@ -144,6 +179,7 @@ class Tournament(Base):
             "competitor_type": self.competitor_type.value,
             "season_id": self.season_id,
             "start_date": self.start_date.isoformat() if self.start_date else None,
+            "format": self.format,
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
