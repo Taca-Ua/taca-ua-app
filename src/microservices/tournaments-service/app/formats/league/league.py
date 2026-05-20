@@ -7,10 +7,11 @@ Implements round-robin tournament progression where:
 - Scoring rules are configurable per tournament
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from app.logger import logger
 from app.models import Tournament, TournamentCompetitor
+from sqlalchemy import UUID
 from sqlalchemy.orm import Session
 from taca_events.pydantic_schemas.matches import (
     MatchCreatedV1,
@@ -18,7 +19,7 @@ from taca_events.pydantic_schemas.matches import (
     MatchResultUpdatedV1,
 )
 
-from ..base import FormatEngine
+from ..base import FormatEngine, FormatStandings
 from .models import LeagueMatches, LeagueStandings, LeagueTournament
 
 
@@ -251,3 +252,44 @@ class LeagueFormatEngine(FormatEngine):
                 standing.losses += 1
 
         db.flush()
+
+    # Utility methods
+    def get_standings(self, db: Session, tournament_id: UUID) -> List[FormatStandings]:
+        """
+        Get the current standings for a league tournament.
+
+        Returns a list of FormatStandings objects.
+        """
+        standings = (
+            db.query(LeagueStandings)
+            .filter(LeagueStandings.tournament_id == tournament_id)
+            .order_by(LeagueStandings.points.desc(), LeagueStandings.wins.desc())
+            .all()
+        )
+
+        # Calculate position
+        postition_standings: List[LeagueStandings] = []
+        current_position = 1
+        last_points = None
+        last_wins = None
+        for i, s in enumerate(standings, start=1):
+            postition_standings.append(
+                FormatStandings(
+                    competitor_id=str(s.competitor_id),
+                    position=current_position,
+                    format_meta={
+                        "points": s.points,
+                        "wins": s.wins,
+                        "draws": s.draws,
+                        "losses": s.losses,
+                    },
+                )
+            )
+            if last_points is not None and (
+                s.points < last_points or s.wins < last_wins
+            ):
+                current_position = i
+            last_points = s.points
+            last_wins = s.wins
+
+        return postition_standings

@@ -22,9 +22,14 @@ from .serializers import (
     TournamentFinishSerializer,
     TournamentListQuerySerializer,
     TournamentListSerializer,
+    TournamentStandingsSerializer,
     TournamentUpdateSerializer,
 )
-from .service import TeamDoesNotBelongToSeasonError, tournaments_service
+from .service import (
+    NoStandingsAvailableError,
+    TeamDoesNotBelongToSeasonError,
+    tournaments_service,
+)
 
 
 @extend_schema_view(
@@ -236,6 +241,24 @@ def tournament_remove_competitors(request, tournament_id):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    responses=TournamentDetailSerializer(many=True),
+    description="Get the standings of a tournament",
+    tags=["Tournament Management"],
+)
+@api_view(["GET"])
+@require_roles("general_admin")
+def tournament_standings(request, tournament_id):
+    """Get the standings of a tournament"""
+    try:
+        standings = tournaments_service.get_tournament_standings(tournament_id)
+    except NoStandingsAvailableError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = TournamentStandingsSerializer(standings, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 urlpatterns = [
     path("", TournamentListCreateView.as_view(), name="tournament-list"),
     path(
@@ -262,5 +285,10 @@ urlpatterns = [
         "<uuid:tournament_id>/competitors/remove/",
         tournament_remove_competitors,
         name="tournament-remove-competitors",
+    ),
+    path(
+        "<uuid:tournament_id>/standings/",
+        tournament_standings,
+        name="tournament-standings",
     ),
 ]

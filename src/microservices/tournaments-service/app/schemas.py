@@ -140,6 +140,22 @@ class TournamentSeasonSummary(BaseModel):
     competitors_distribution: Optional[List[_TournamentSeasonSummaryCompetitors]] = None
 
 
+class TournamentStandingsResponse(BaseModel):
+    """Schema for tournament standings response"""
+
+    class _TournamentStandingsEntry(BaseModel):
+        competitor_id: UUID
+        position: int
+        format_meta: Optional[dict] = (
+            None  # Format-specific metadata (e.g., points, wins, losses)
+        )
+
+    standings: Optional[List[_TournamentStandingsEntry]] = None
+
+    class Config:
+        from_attributes = True
+
+
 # ==================== Outbox Schemas ====================
 
 

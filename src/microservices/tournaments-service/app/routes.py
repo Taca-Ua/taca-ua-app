@@ -41,6 +41,7 @@ from .schemas import (
     TournamentResponse,
     TournamentSeasonSummary,
     TournamentSeasonSummaryRequest,
+    TournamentStandingsResponse,
     TournamentUpdate,
 )
 
@@ -645,6 +646,52 @@ async def remove_competitors_from_tournament(
     logger.info(f"Removed competitors from tournament {tournament_id}")
 
     return TournamentResponse(**tournament.to_dict(include_ranking=False))
+
+
+@router.get(
+    "/tournaments/{tournament_id}/standings", response_model=TournamentStandingsResponse
+)
+async def get_tournament_standings(tournament_id: UUID, db: Session = Depends(get_db)):
+    """Get the current standings for a tournament in a format-agnostic way."""
+    tournament = db.query(Tournament).filter(Tournament.id == tournament_id).first()
+    if not tournament:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Tournament not found"
+        )
+
+    engine = FormatRegistry.get_engine(tournament.format)
+    if not engine:
+        logger.warning(
+            f"No format engine found for format {tournament.format}, cannot provide standings"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"No format engine found for format {tournament.format}, cannot provide standings",
+        )
+
+    # Build response
+    try:
+        standings = engine.get_standings(db, tournament_id)
+        return TournamentStandingsResponse(
+            standings=(
+                [
+                    TournamentStandingsResponse._TournamentStandingsEntry(
+                        competitor_id=entry.competitor_id,
+                        position=entry.position,
+                        format_meta=entry.format_meta,
+                    )
+                    for entry in standings
+                ]
+                if standings is not None
+                else None
+            )
+        )
+    except Exception as e:
+        logger.error(f"Error getting standings: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error getting standings: {str(e)}",
+        )
 
 
 # ==================== Health Check ====================

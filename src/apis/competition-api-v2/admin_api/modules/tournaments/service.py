@@ -17,6 +17,7 @@ from admin_api.clients.modalities_service import (
 from admin_api.clients.ranking_service import ranking_service_client
 from admin_api.clients.tournaments_service import (
     TournamentDTO,
+    TournamentStandingsDTO,
     tournaments_service_client,
 )
 
@@ -74,7 +75,19 @@ class Tournament:
     format_data: Optional[dict] = None
 
 
+@dataclass
+class TournamentStandingsEntry:
+    competitor_id: str
+    competitor_name: Optional[str]
+    position: int
+    format_meta: Optional[dict] = None
+
+
 class TeamDoesNotBelongToSeasonError(ValueError):
+    pass
+
+
+class NoStandingsAvailableError(ValueError):
     pass
 
 
@@ -263,6 +276,37 @@ class TournamentsService:
                     )
 
         return tournament
+
+    def _build_standings_from_dto(
+        self, standings_dto: List[TournamentStandingsDTO], tournament: Tournament
+    ) -> List[TournamentStandingsEntry]:
+        """Helper method to build a list of tournament standings entries from a list of TournamentStandingsDTO objects
+
+        Args:
+            standings_dto (List[TournamentStandingsDTO]): A list of TournamentStandingsDTO objects received from the tournaments service
+            tournament (Tournament): The tournament domain object to which the standings belong.
+
+        Returns:
+            List[TournamentStandingsEntry]: A list of TournamentStandingsEntry domain objects constructed from the provided DTOs
+        """
+
+        competitors_name_map = {}
+        for competitor in tournament.competitors:
+            competitors_name_map[competitor.id] = competitor.name
+
+        standings = []
+        for entry in standings_dto:
+            standings.append(
+                TournamentStandingsEntry(
+                    competitor_id=entry.competitor_id,
+                    competitor_name=competitors_name_map.get(
+                        str(entry.competitor_id), None
+                    ),
+                    position=entry.position,
+                    format_meta=entry.format_meta,
+                )
+            )
+        return standings
 
     # Public methods for tournament management, which will be called by the API views/controllers
     def list_tournaments(
@@ -495,6 +539,23 @@ class TournamentsService:
         """Get list of rounds for a tournament"""
 
         return matches_service_client.get_tournament_rounds(tournament_id)
+
+    def get_tournament_standings(
+        self, tournament_id: str
+    ) -> List[TournamentStandingsEntry]:
+        """Get the standings of a tournament"""
+
+        standings_dto = tournaments_service_client.get_tournament_standings(
+            tournament_id
+        )
+        if standings_dto is None:
+            raise NoStandingsAvailableError(
+                f"Standings not found for tournament with ID {tournament_id}"
+            )
+
+        tournament = self.get_tournament(tournament_id)
+
+        return self._build_standings_from_dto(standings_dto, tournament)
 
 
 tournaments_service = TournamentsService()

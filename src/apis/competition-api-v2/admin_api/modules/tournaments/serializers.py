@@ -80,6 +80,15 @@ class TournamentDetailSerializer(TournamentListSerializer):
     format_data = serializers.DictField(required=False, allow_null=True)
 
 
+class TournamentStandingsSerializer(serializers.Serializer):
+    """Serializer for tournament standings"""
+
+    competitor_id = serializers.UUIDField()
+    competitor_name = serializers.CharField(required=False, allow_null=True)
+    position = serializers.IntegerField()
+    format_meta = serializers.DictField(required=False, allow_null=True)
+
+
 # Request serializers
 class TournamentListQuerySerializer(serializers.Serializer):
     """Serializer for tournament list query parameters"""

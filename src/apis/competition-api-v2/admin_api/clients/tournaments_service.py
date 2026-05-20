@@ -93,6 +93,13 @@ class TournamentSeasonSummary:
             ]
 
 
+@dataclass
+class TournamentStandingsDTO:
+    competitor_id: UUID
+    position: int
+    format_meta: Optional[dict] = None
+
+
 class TournamentsService(BaseService):
     """Service for managing tournaments via tournaments-service"""
 
@@ -325,6 +332,34 @@ class TournamentsService(BaseService):
             tournaments_ids=summary_data.get("tournaments_ids", []),
             competitors_distribution=summary_data.get("competitors_distribution", []),
         )
+
+    def get_tournament_standings(
+        self, tournament_id: UUID
+    ) -> List[TournamentStandingsDTO]:
+        """
+        Get the current standings of a tournament
+
+        Args:
+            tournament_id: Tournament ID
+
+        Returns:
+            List of tournament standings entries or None if standings are not available
+        """
+        standings_data = self.get(f"/tournaments/{tournament_id}/standings").get(
+            "standings", None
+        )
+
+        if standings_data is None:
+            return None
+
+        return [
+            TournamentStandingsDTO(
+                competitor_id=UUID(entry["competitor_id"]),
+                position=entry["position"],
+                format_meta=entry.get("format_meta", None),
+            )
+            for entry in standings_data
+        ]
 
 
 # Singleton instance
