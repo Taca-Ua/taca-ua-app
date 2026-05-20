@@ -273,6 +273,13 @@ class LeagueFormatEngine(FormatEngine):
         last_points = None
         last_wins = None
         for i, s in enumerate(standings, start=1):
+            if last_points is not None and (
+                s.points < last_points or s.wins < last_wins
+            ):
+                current_position = i
+            last_points = s.points
+            last_wins = s.wins
+
             postition_standings.append(
                 FormatStandings(
                     competitor_id=str(s.competitor_id),
@@ -285,11 +292,7 @@ class LeagueFormatEngine(FormatEngine):
                     },
                 )
             )
-            if last_points is not None and (
-                s.points < last_points or s.wins < last_wins
-            ):
-                current_position = i
-            last_points = s.points
-            last_wins = s.wins
 
+        print("Calculated standings with positions:")
+        print(*postition_standings, sep="\n", flush=True)
         return postition_standings
