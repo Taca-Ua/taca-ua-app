@@ -37,6 +37,16 @@ export interface TournamentDetail extends TournamentListItem {
     position: number;
     competitor_id: string;
   }[];
+  rounds: number[];
+  format: string;
+  format_data?: Record<string, any>;
+}
+
+export interface TournamentStandingsEntry {
+  competitor_id: string;
+  competitor_name: string;
+  position: number;
+  format_meta: Record<string, any>;
 }
 
 // Input interfaces
@@ -52,6 +62,9 @@ export interface TournamentCreate {
   start_date?: string;
   season_id?: number;
   scoring_format_id?: string;
+
+  format?: string;
+  format_data?: Record<string, any>;
 };
 
 export interface TournamentUpdate {
@@ -108,5 +121,17 @@ export const tournamentsApi = {
 
   async removeCompetitors(id: string, competitors_ids: TournamentCompetitorsDelete): Promise<TournamentDetail> {
     return apiClient.put<TournamentDetail>(`/tournaments/${id}/competitors/remove/`, competitors_ids);
+  },
+
+  async getRounds(id: string): Promise<number[]> {
+    return apiClient.get<number[]>(`/tournaments/${id}/rounds/`);
+  },
+
+  async getStandings(id: string): Promise<TournamentStandingsEntry[]> {
+    return apiClient.get<TournamentStandingsEntry[]>(`/tournaments/${id}/standings/`);
+  },
+
+  async updateFormatMeta(id: string, format_meta: Record<string, any>): Promise<TournamentDetail> {
+    return apiClient.put<TournamentDetail>(`/tournaments/${id}/format-meta/`, { format_meta });
   }
 };

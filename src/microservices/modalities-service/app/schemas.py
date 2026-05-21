@@ -90,9 +90,9 @@ class _Escalao(BaseModel):
 
 class ModalityTypeCreate(BaseModel):
     name: str
+    mode: str
     description: Optional[str] = None
     escaloes: Optional[List[_Escalao]] = None
-    is_playoff: bool = False
     tournament_competitor_type: Optional[str] = None
     season_id: Optional[int] = None
 
@@ -110,8 +110,8 @@ class ModalityTypeCreate(BaseModel):
 class ModalityTypeUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
+    mode: Optional[str] = None
     escaloes: Optional[List[_Escalao]] = None
-    is_playoff: Optional[bool] = None
     tournament_competitor_type: Optional[str] = None
 
     def escaloes_encoder(self):
@@ -128,9 +128,9 @@ class ModalityTypeUpdate(BaseModel):
 class ModalityTypeResponse(BaseModel):
     id: str
     name: str
+    mode: str
     description: Optional[str] = None
     escaloes: Optional[List[_Escalao]] = None
-    is_playoff: bool = False
     tournament_competitor_type: Optional[str] = None
     created_by: Optional[str] = None
     created_at: Optional[str] = None

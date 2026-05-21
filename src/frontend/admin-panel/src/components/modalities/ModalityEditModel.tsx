@@ -76,8 +76,8 @@ const ModalityEditModal = ( {
               <span className="text-red-500">*</span>
             </label>
             <ChoseOneInput
-              allElementsLoader={() => modalityTypesApi.getAll({
-                season_id: modalityData.belongs_to_season ? loadedSeason?.id : undefined,
+              allElementsLoader={() => modalityTypesApi.getAllMinimal({
+                season_id: modalityData.belongs_to_season ? loadedSeason?.id : undefined, mode: 'modality'
               }).then(types => types.map(type => ({ id: type.id, title: type.name })))}
               onSelect={(ele) => setEditedType(ele?.id || "")}
               initialElement={modalityData.modality_type ? { id: modalityData.modality_type.id, title: modalityData.modality_type.name } : undefined}

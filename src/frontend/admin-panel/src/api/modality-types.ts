@@ -16,6 +16,7 @@ export interface ModalityTypeMinimal {
 export interface ModalityTypeListItem {
   id: string;
   name: string;
+  mode: 'modality' | 'points';
   description?: string;
   is_playoff: boolean;
   tournament_competitor_type: 'individual' | 'team';
@@ -31,8 +32,9 @@ export interface ModalityTypeCreate {
   description?: string;
   escaloes: EscalaoRow[];
   is_playoff?: boolean;
-  tournament_competitor_type: 'individual' | 'team';
+  tournament_competitor_type?: 'individual' | 'team';
   season_id?: number;
+  mode: 'modality' | 'points';
 }
 
 export interface ModalityTypeUpdate {
@@ -45,6 +47,7 @@ export interface ModalityTypeUpdate {
 
 export interface ModalityTypeListParameters {
   season_id?: number;
+  mode?: 'modality' | 'points';
 }
 
 // API methods
@@ -57,8 +60,8 @@ export const modalityTypesApi = {
     return apiClient.post<ModalityTypeListItem>('/modality-types/', data);
   },
 
-  async getAllMinimal(): Promise<ModalityTypeMinimal[]> {
-    return apiClient.get<ModalityTypeMinimal[]>('/modality-types/minimal/');
+  async getAllMinimal(params?: ModalityTypeListParameters): Promise<ModalityTypeMinimal[]> {
+    return apiClient.get<ModalityTypeMinimal[]>('/modality-types/minimal/', params);
   },
 
   async getById(id: string): Promise<ModalityTypeDetail> {

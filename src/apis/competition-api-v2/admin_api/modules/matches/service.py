@@ -56,6 +56,7 @@ class Match:
     location: str
     start_time: str
     status: str
+    journey: int = None
     participants: List[Participant] = field(default_factory=list)
     comments: List[Comment] = field(default_factory=list)
     lineups: List[Lineup] = field(default_factory=list)
@@ -261,6 +262,7 @@ class MatchesService:
                 start_time=match_dto.start_time,
                 status=match_dto.status,
                 participants=participants,
+                journey=match_dto.journey,
                 comments=None,  # to be filled later if include_details is True
                 lineups=None,  # to be filled later if include_details is True
             )
@@ -298,6 +300,8 @@ class MatchesService:
         location: str,
         start_time: str,
         participants_ids: List[str],
+        journey: int = None,
+        new_journey: bool = False,
     ) -> Match:
         """Create a new match"""
         match_dto = matches_service_client.create_match(
@@ -305,6 +309,8 @@ class MatchesService:
             location=location,
             start_time=start_time,
             participants=participants_ids,
+            journey=journey,
+            new_journey=new_journey,
             created_by="00000000-0000-0000-0000-000000000000",  # Placeholder for created_by
         )
         return self._build_match_from_dto(match_dto)

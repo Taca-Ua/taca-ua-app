@@ -8,6 +8,7 @@ import { useModal } from '../../contexts/ModalContext';
 import ChoseOneInput from '../utils/inputs/ChoseOneInput';
 import { useSeason } from '../../contexts/SeasonContext';
 import { modalityTypesApi } from '../../api/modality-types';
+import GeneralFormatMetaInput from './formats/GeneralFormatMetaInput'
 
 
 const TournamentCreateModal = ({
@@ -28,8 +29,12 @@ const TournamentCreateModal = ({
   const [name, setName] = useState(starterName || '');
   const [chosenModalityId, setChosenModalityId] = useState<string | null>(modalityId || null);
   const [chosenScoringFormat, setChosenScoringFormat] = useState<{ id: string, title: string } | null>(null);
+  const [chosenTournamentFormat, setChosenTournamentFormat] = useState<{ id: string, title: string } | null>(null);
+  const formatMetaData = {};
 
   const [modalityOptions, setModalityOptions] = useState<ModalityListItem[]>([]);
+
+  const modalitySelected = modalityOptions.find(m => m.id === chosenModalityId);
 
   const fetchModalities = async () => {
     return (await modalitiesApi.getAll({ season_id: loadedSeason?.id })).filter(c => c.belongs_to_season);
@@ -82,6 +87,9 @@ const TournamentCreateModal = ({
         modality_id: modalityIdToUse,
         season_id: loadedSeason?.id,
         scoring_format_id: chosenScoringFormat ? chosenScoringFormat.id : undefined,
+
+        format: chosenTournamentFormat ? chosenTournamentFormat.id : undefined,
+        format_data: formatMetaData,
       };
       console.log('Creating tournament with data:', newTournament);
       const createdTournament = await tournamentsApi.create(newTournament);
@@ -102,7 +110,7 @@ const TournamentCreateModal = ({
   }
 
   return (
-      <div className="bg-white rounded-lg p-8 w-full max-w-md md:min-w-[500px]">
+      <div className="bg-white rounded-lg p-8 w-full max-w-md md:min-w-[700px]">
         <h2 className="text-2xl font-bold mb-4">Criar Torneio</h2>
 
         <div className="space-y-4">
@@ -158,7 +166,10 @@ const TournamentCreateModal = ({
             <ChoseOneInput
               allElementsLoader={() => modalityTypesApi.getAll({
                 season_id: loadedSeason?.id,
-              }).then(res => res.map(c => ({ id: c.id, title: c.name })))}
+              }).then(res => res.filter(c => (
+                // Show all points formats or only the one related to the selected modality
+                c.mode === 'points' || c.id === modalitySelected?.modality_type?.id
+              )).map(c => ({ id: c.id, title: c.name })))}
               onSelect={(ele) => {
                 if (!ele) return;
                 setChosenScoringFormat(ele);
@@ -166,6 +177,24 @@ const TournamentCreateModal = ({
               elementState={[chosenScoringFormat, (ele) => setChosenScoringFormat(ele)]}
             />
           </div>
+
+          {/* Tournament Format */}
+          <div className="mb-4">
+            <label className="font-medium">
+              Formato do Torneio
+            </label>
+            <ChoseOneInput
+              allElementsLoader={() => Promise.resolve([
+                { id: 'free', title: 'Livre' },
+                { id: 'league', title: 'Liga' },
+              ])}
+              onSelect={(ele) => {
+                setChosenTournamentFormat(ele)
+              }}
+              initialElement={{ id: 'free', title: 'Livre' }}
+            />
+          </div>
+          <GeneralFormatMetaInput format={chosenTournamentFormat?.id || 'free'} data={formatMetaData} />
 
           <div className="flex justify-end space-x-2">
             <Button

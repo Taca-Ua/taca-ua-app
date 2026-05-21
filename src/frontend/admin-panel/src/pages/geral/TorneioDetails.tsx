@@ -11,6 +11,7 @@ import Button from '../../components/utils/Button';
 import { useModal } from '../../contexts/ModalContext';
 import { useAuth } from '../../hooks/useAuth';
 import { navigateBack } from '../../utils';
+import TornLeagueDisplayComponent from '../../components/tournaments/formats/league/TornLeagueDisplayComponent';
 
 // Main component
 const TorneioDetails = () => {
@@ -63,7 +64,7 @@ const TorneioDetails = () => {
       <div className="flex-1 p-8">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8 flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-gray-800">Detalhes do Torneio</h1>
+            <h1 className="text-3xl font-bold text-gray-800">{tournament.name}</h1>
             <Button
               onClick={handleBack}
               type='secondary'
@@ -73,6 +74,7 @@ const TorneioDetails = () => {
             </Button>
           </div>
 
+          {/* Tournament Details */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <TournamentInfoComponent tournamentState={[tournament, setTournament]} onDelete={handleBack} />
 
@@ -81,6 +83,16 @@ const TorneioDetails = () => {
             </div>
           </div>
 
+          {/* Format Details */}
+          { tournament.format !== 'free' && (
+            <div className="mt-6">
+              <TornLeagueDisplayComponent
+                tournamentState={[tournament, setTournament]}
+              />
+            </div>
+          )}
+
+          {/* Matches Section */}
           <div className="bg-white rounded-lg shadow-md p-6 mt-6 flex flex-col gap-6">
             <Button
               onClick={() => pushModal(

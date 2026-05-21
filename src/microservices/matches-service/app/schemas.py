@@ -34,11 +34,15 @@ class MatchParticipantResponse(BaseModel):
 class MatchCreate(BaseModel):
     """Schema for creating a match."""
 
-    tournament_id: Optional[UUID] = None
+    tournament_id: UUID
     location: str
     start_time: datetime
     created_by: UUID
     participants: List[UUID] = Field(default_factory=list)
+    journey: Optional[int] = (
+        None  # way to group matches in a tournament (e.g., round number)
+    )
+    new_journey: bool = False  # Whether to create a new journey for this match
 
 
 class MatchUpdate(BaseModel):
@@ -57,6 +61,7 @@ class MatchResponse(BaseModel):
     location: str
     start_time: datetime
     status: str
+    journey: Optional[int] = None
     participants: List[MatchParticipantResponse] = Field(default_factory=list)
     comments: Optional[List["CommentResponse"]] = None
     lineups: Optional[List["LineupResponse"]] = None

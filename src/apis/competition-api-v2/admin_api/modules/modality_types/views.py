@@ -47,7 +47,8 @@ class ModalityTypeListCreateView(RoleRequiredMixin, APIView):
         serializer.is_valid(raise_exception=True)
 
         modality_types = modality_types_service.list_modality_types(
-            include_playoff=True, season_id=serializer.validated_data.get("season_id")
+            season_id=serializer.validated_data.get("season_id"),
+            mode=serializer.validated_data.get("mode"),
         )
 
         serializer = ModalityTypeListSerializer(modality_types, many=True)
@@ -62,7 +63,7 @@ class ModalityTypeListCreateView(RoleRequiredMixin, APIView):
             name=serializer.validated_data["name"],
             description=serializer.validated_data.get("description", ""),
             escaloes=serializer.validated_data["escaloes"],
-            is_playoff=serializer.validated_data.get("is_playoff", False),
+            mode=serializer.validated_data["mode"],
             tournament_competitor_type=serializer.validated_data.get(
                 "tournament_competitor_type"
             ),
@@ -126,6 +127,7 @@ class ModalityTypeDetailView(RoleRequiredMixin, APIView):
 
 
 @extend_schema(
+    parameters=[ModalityTypeListQuerySerializer],
     responses={200: ModalityTypeMinimalSerializer(many=True)},
     description="List all modality types with minimal information",
     tags=["Modality Ttype Management"],
@@ -133,7 +135,13 @@ class ModalityTypeDetailView(RoleRequiredMixin, APIView):
 @api_view(["GET"])
 @require_auth
 def list_modality_types(request: Request):
-    modality_types = modality_types_service.list_modality_types(include_playoff=False)
+    serializer = ModalityTypeListQuerySerializer(data=request.query_params)
+    serializer.is_valid(raise_exception=True)
+
+    modality_types = modality_types_service.list_modality_types(
+        season_id=serializer.validated_data.get("season_id"),
+        mode=serializer.validated_data.get("mode"),
+    )
     serializer = ModalityTypeMinimalSerializer(modality_types, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 

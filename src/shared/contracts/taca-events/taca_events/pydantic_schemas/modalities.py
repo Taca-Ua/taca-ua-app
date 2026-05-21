@@ -145,7 +145,8 @@ class ModalityTypeCreatedData(BaseModel):
     modality_type_id: UUID
     season_id: int
     name: str
-    description: str
+    description: Optional[str] = None
+    mode: str
     escaloes: list[_EscalaoData]
 
 

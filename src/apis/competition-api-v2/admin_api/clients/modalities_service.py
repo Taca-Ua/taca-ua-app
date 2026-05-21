@@ -4,7 +4,7 @@ Service for communicating with modalities-service microservice
 
 import os
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Dict, List, Literal, Optional
 from uuid import UUID
 
 from ..utils.base_service import BaseService
@@ -62,10 +62,10 @@ class _EscalaDTO:
 class ModalityTypeDTO:
     id: UUID
     name: str
+    mode: str
     description: str
     tournament_competitor_type: str
     escaloes: List[_EscalaDTO]
-    is_playoff: bool = False
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -75,6 +75,9 @@ class ModalityTypeDTO:
             escalao if isinstance(escalao, _EscalaDTO) else _EscalaDTO(**escalao)
             for escalao in self.escaloes
         ]
+
+        if isinstance(self.id, str):
+            self.id = UUID(self.id)
 
 
 @dataclass
@@ -473,18 +476,22 @@ class ModalityTypesModalitiesService(BaseService):
         super().__init__(base_url)
 
     def list_modality_types(
-        self, include_playoff: bool = True, season_id: str = None
+        self, season_id: str = None, mode: str = None
     ) -> List[ModalityTypeDTO]:
         """List all modality types
+
+        Args:
+            season_id (str, optional): ID of the season for which to list modality types. Defaults to None.
+            mode (str, optional): Mode of the modality types to list. Defaults to None.
 
         Returns:
             List[ModalityTypeDTO]: List of ModalityTypeDTO objects
         """
         params = {}
-        if not include_playoff:
-            params["exclude_playoff"] = True
         if season_id is not None:
             params["season_id"] = season_id
+        if mode is not None:
+            params["mode"] = mode
         modality_types_data = self.get("/modality-types", params=params)
         return [
             ModalityTypeDTO(**modality_type) for modality_type in modality_types_data
@@ -493,21 +500,22 @@ class ModalityTypesModalitiesService(BaseService):
     def create_modality_type(
         self,
         name: str,
+        mode: Literal["modality", "points"],
         description: str = "",
         escaloes: List[str] = None,
-        is_playoff: bool = False,
         tournament_competitor_type: str = None,
-        season_id: str = None,
+        season_id: int = None,
     ) -> ModalityTypeDTO:
         """Create a new modality type
 
         Args:
             name (str): Name of the modality type
+            mode (str): Mode of the modality type
             description (str, optional): Description of the modality type. Defaults to "".
             escaloes (List[str], optional): List of escaloes. Defaults to None.
             is_playoff (bool, optional): Whether this modality type is used for playoffs. Defaults to False.
             tournament_competitor_type (str, optional): Type of competitors in the tournament. Defaults to None.
-            season_id (str, optional): ID of the season to which the modality type belongs. Defaults to None.
+            season_id (int, optional): ID of the season to which the modality type belongs. Defaults to None.
 
         Returns:
             ModalityTypeDTO: Created ModalityTypeDTO object
@@ -517,12 +525,17 @@ class ModalityTypesModalitiesService(BaseService):
 
         data = {
             "name": name,
-            "description": description,
-            "escaloes": escaloes,
-            "is_playoff": is_playoff,
-            "tournament_competitor_type": tournament_competitor_type,
-            "season_id": season_id,
+            "mode": mode,
         }
+        if description:
+            data["description"] = description
+        if escaloes:
+            data["escaloes"] = escaloes
+        if tournament_competitor_type:
+            data["tournament_competitor_type"] = tournament_competitor_type
+        if season_id is not None:
+            data["season_id"] = season_id
+
         modality_type_data = self.post("/modality-types", data)
         return ModalityTypeDTO(**modality_type_data)
 

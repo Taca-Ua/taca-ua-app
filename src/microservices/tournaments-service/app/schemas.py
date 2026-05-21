@@ -49,6 +49,8 @@ class TournamentCreate(BaseModel):
     start_date: Optional[datetime]
     competitor_type: str  # "team" or "athlete"
     season_id: int
+    format: Optional[str] = "free"
+    format_data: Optional[dict] = None  # Additional data for specific formats
 
 
 class TournamentUpdate(BaseModel):
@@ -87,6 +89,8 @@ class TournamentResponse(BaseModel):
     competitors: List[CompetitorResponse]
     competitor_type: str
     season_id: int
+    format: str
+    format_data: Optional[dict] = None
 
     created_by: UUID
     created_at: datetime
@@ -134,6 +138,28 @@ class TournamentSeasonSummary(BaseModel):
     tournaments_ids: List[UUID]
 
     competitors_distribution: Optional[List[_TournamentSeasonSummaryCompetitors]] = None
+
+
+class TournamentStandingsResponse(BaseModel):
+    """Schema for tournament standings response"""
+
+    class _TournamentStandingsEntry(BaseModel):
+        competitor_id: UUID
+        position: int
+        format_meta: Optional[dict] = (
+            None  # Format-specific metadata (e.g., points, wins, losses)
+        )
+
+    standings: Optional[List[_TournamentStandingsEntry]] = None
+
+    class Config:
+        from_attributes = True
+
+
+class TournamentFormatMetaUpdate(BaseModel):
+    """Schema for updating tournament format meta"""
+
+    format_meta: dict  # Format-specific metadata to update
 
 
 # ==================== Outbox Schemas ====================

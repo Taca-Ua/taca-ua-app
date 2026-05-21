@@ -260,10 +260,8 @@ class ModalityType(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(Text, nullable=False)
     description = Column(Text, nullable=True)
+    mode = Column(Text, nullable=False)  # "modality" or "points"
     escaloes = Column(JSON, nullable=True)  # Array of escaloes stored as JSON
-    is_playoff = Column(
-        Boolean, default=False
-    )  # Indicates if this is the playoff modality type
     tournament_competitor_type = Column(
         Text, nullable=True
     )  # e.g. "individual", "team"
@@ -291,8 +289,8 @@ class ModalityType(Base):
             "id": str(self.id),
             "name": self.name,
             "description": self.description,
+            "mode": self.mode,
             "escaloes": self.escaloes,
-            "is_playoff": self.is_playoff,
             "tournament_competitor_type": self.tournament_competitor_type,
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat() if self.created_at else None,
@@ -314,6 +312,7 @@ class ModalityType(Base):
         return snapshot_models.ModalityTypeSnapshotItem(
             id=str(self.id),
             name=self.name,
+            mode=self.mode,
             description=self.description,
             escaloes=escaloes_list if escaloes_list else None,
             season_id=str(self.season_id) if self.season_id else None,

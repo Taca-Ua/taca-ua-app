@@ -2,10 +2,12 @@
 Tournaments management service
 """
 
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Dict, List, Optional
 
+from admin_api.clients.matches_service import matches_service_client
 from admin_api.clients.modalities_service import (
     ModalityDTO,
     StudentDTO,
@@ -15,6 +17,7 @@ from admin_api.clients.modalities_service import (
 from admin_api.clients.ranking_service import ranking_service_client
 from admin_api.clients.tournaments_service import (
     TournamentDTO,
+    TournamentStandingsDTO,
     tournaments_service_client,
 )
 
@@ -63,14 +66,28 @@ class Tournament:
     modality: Modality
     start_date: str
     competitor_type: str
+    format: str = "free"
 
     competitors: List[Competitor] = field(default_factory=list)
     scoring_format: ScoringFormat = None
     season: _Season = None
     standings: List[_StandingsEntry] = None
+    format_data: Optional[dict] = None
+
+
+@dataclass
+class TournamentStandingsEntry:
+    competitor_id: str
+    competitor_name: Optional[str]
+    position: int
+    format_meta: Optional[dict] = None
 
 
 class TeamDoesNotBelongToSeasonError(ValueError):
+    pass
+
+
+class NoStandingsAvailableError(ValueError):
     pass
 
 
@@ -82,7 +99,6 @@ class TournamentsService:
         self,
         tournament: Tournament,
         tournament_dto: TournamentDTO,
-        force_playoff_scoring_format: bool,
     ) -> None:
         """
         Populate the scoring format information for a tournament based on its modality and the number of competitors, by fetching the necessary data from the modalities and ranking services.
@@ -90,27 +106,20 @@ class TournamentsService:
         Args:
             tournament (Tournament): The tournament domain object to populate the scoring format for. This object will be modified in place.
             tournament_dto (TournamentDTO): The tournament data transfer object received from the tournaments service, which contains the raw data needed to determine the scoring format.
-            force_playoff_scoring_format (bool): Whether to force the use of playoff scoring format. Needed for cases when events may not have processed the update yet.
 
         Returns:
             None: This method modifies the provided tournament object in place and does not return anything.
         """
 
-        scoring_format_type = None
-        if force_playoff_scoring_format:
-            scoring_format_type = (
-                modalities_service_client.modality_types.get_playoff_modality_type()
+        scoring_format_type = (
+            modalities_service_client.modality_types.get_modality_type(
+                tournament_dto.scoring_format_id
             )
-        else:
-            scoring_format_type = (
-                modalities_service_client.modality_types.get_modality_type(
-                    tournament_dto.scoring_format_id
-                )
-            )
+        )
 
         scoring_format = ranking_service_client.calculate_tournament_tier(
             tournament_id=tournament.id,
-            modality_type_id=scoring_format_type.id,
+            modality_type_id=str(scoring_format_type.id),
             participant_count=len(tournament_dto.competitors),
         )
         tournament.scoring_format = ScoringFormat(
@@ -202,7 +211,6 @@ class TournamentsService:
         *,
         modalities_data: dict[str, ModalityDTO] = None,
         include_details: bool = False,
-        force_playoff_scoring_format: bool = False,
     ) -> Tournament:
         """Helper method to build a Tournament domain object from a TournamentDTO, fetching the modality data as needed
 
@@ -210,7 +218,6 @@ class TournamentsService:
             tournament_dto (TournamentDTO): The tournament data transfer object received from the tournaments service
             modalities_data (dict[str, ModalityDTO]): A dictionary of modality data that can be used to avoid fetching modality data multiple times (to prevent N+1 problem). The keys are modality IDs and the values are ModalityDTO objects.
             include_details (bool): Whether to include detailed information in the constructed Tournament object.
-            force_playoff_scoring_format (bool): Whether to force the use of playoff scoring format. Needed for cases when events may not have processed the update yet.
 
         Raises:
             ValueError: If the modality data cannot be found for the given tournament DTO
@@ -242,13 +249,13 @@ class TournamentsService:
             modality=modality,
             start_date=tournament_dto.start_date,
             competitor_type=tournament_dto.competitor_type,
+            format=tournament_dto.format,
+            format_data=tournament_dto.format_data,
         )
 
         if include_details:
             # Add scoring format of the tournament based on its modality and the number of competitors
-            self._populate_tournament_scoring_format(
-                tournament, tournament_dto, force_playoff_scoring_format
-            )
+            self._populate_tournament_scoring_format(tournament, tournament_dto)
 
             # Add competitors information to the tournament
             self._populate_tournament_competitors(tournament, tournament_dto)
@@ -269,6 +276,37 @@ class TournamentsService:
                     )
 
         return tournament
+
+    def _build_standings_from_dto(
+        self, standings_dto: List[TournamentStandingsDTO], tournament: Tournament
+    ) -> List[TournamentStandingsEntry]:
+        """Helper method to build a list of tournament standings entries from a list of TournamentStandingsDTO objects
+
+        Args:
+            standings_dto (List[TournamentStandingsDTO]): A list of TournamentStandingsDTO objects received from the tournaments service
+            tournament (Tournament): The tournament domain object to which the standings belong.
+
+        Returns:
+            List[TournamentStandingsEntry]: A list of TournamentStandingsEntry domain objects constructed from the provided DTOs
+        """
+
+        competitors_name_map = {}
+        for competitor in tournament.competitors:
+            competitors_name_map[competitor.id] = competitor.name
+
+        standings = []
+        for entry in standings_dto:
+            standings.append(
+                TournamentStandingsEntry(
+                    competitor_id=entry.competitor_id,
+                    competitor_name=competitors_name_map.get(
+                        str(entry.competitor_id), None
+                    ),
+                    position=entry.position,
+                    format_meta=entry.format_meta,
+                )
+            )
+        return standings
 
     # Public methods for tournament management, which will be called by the API views/controllers
     def list_tournaments(
@@ -300,9 +338,11 @@ class TournamentsService:
     def create_tournament(
         self,
         name: str,
-        modality_id: str,
+        modality_id: uuid.UUID,
         season_id: int = None,
-        scoring_format_id: str = None,
+        scoring_format_id: uuid.UUID = None,
+        format: str = None,
+        format_data: dict = None,
     ) -> Tournament:
         """Create a new tournament"""
 
@@ -310,10 +350,23 @@ class TournamentsService:
         modality = modalities_service_client.modalities.get_modality(modality_id)
 
         # infer the scoring format based on whether it's a playoff or not.
-        if scoring_format_id is None:
-            scoring_format_id = (
-                modality.modality_type.id
-            )  # default to the modality type's scoring format
+        if scoring_format_id is None or modality.modality_type.id == scoring_format_id:
+            # default to the modality type's scoring format
+            scoring_format_id = modality.modality_type.id
+        else:
+            # if a scoring format id is provided we need to check its type
+            scoring_format_modality_type = (
+                modalities_service_client.modality_types.get_modality_type(
+                    scoring_format_id
+                )
+            )
+
+            if scoring_format_modality_type.mode != "points":
+                raise ValueError(
+                    "Scoring format provided must be of mode 'points' or match the modality type's scoring format"
+                )
+
+            scoring_format_id = scoring_format_modality_type.id
 
         # get current season id if not provided
         if season_id is None:
@@ -328,6 +381,8 @@ class TournamentsService:
             ),  # the tournaments service expects "athlete" instead of "individual"
             start_date=datetime.now().isoformat(),
             season_id=season_id,
+            format=format,
+            format_data=format_data,
         )
 
         return self._build_tournament_from_dto(
@@ -353,7 +408,6 @@ class TournamentsService:
         name: str = None,
         start_date: str = None,
         status: str = None,
-        is_playoff: bool = None,
     ) -> Tournament:
         """Update tournament details"""
 
@@ -362,40 +416,17 @@ class TournamentsService:
             tournaments_service_client.get_tournament(tournament_id).modality_id
         )
 
-        # If the tournament is being updated to be a playoff, we need to fetch the playoff modality type to get its ID for the update request
-        scoring_format_id = None
-        if is_playoff is not None:
-            scoring_format_id = (
-                tournament_modality.modality_type.id
-            )  # default to the current modality type's scoring format if changing not playoff status
-
-            if is_playoff:
-                # If changing to playoff, we need to get the playoff modality type
-                playoff_modality_type = (
-                    modalities_service_client.modality_types.get_playoff_modality_type()
-                )
-                if not playoff_modality_type:
-                    raise ValueError(
-                        "No playoff modality type found, cannot update tournament to be a playoff"
-                    )
-                scoring_format_id = playoff_modality_type.id
-
         tournament_dto = tournaments_service_client.update_tournament(
             tournament_id=tournament_id,
             name=name,
             start_date=start_date,
             status=status,
-            scoring_format_id=scoring_format_id,
         )
 
         return self._build_tournament_from_dto(
             tournament_dto,
             modalities_data={tournament_modality.id: tournament_modality},
             include_details=True,
-            # if is_playoff is None, it means playoff status is not being changed, so we should not force playoff scoring format
-            force_playoff_scoring_format=(
-                is_playoff if is_playoff is not None else False
-            ),
         )
 
     def delete_tournament(self, tournament_id: str) -> None:
@@ -497,6 +528,42 @@ class TournamentsService:
 
         tournament_dto = tournaments_service_client.remove_competitors(
             tournament_id=tournament_id, competitors_ids=competitor_ids
+        )
+
+        return self._build_tournament_from_dto(
+            tournament_dto,
+            include_details=True,
+        )
+
+    def get_tournament_rounds(self, tournament_id: str) -> List[int]:
+        """Get list of rounds for a tournament"""
+
+        return matches_service_client.get_tournament_rounds(tournament_id)
+
+    def get_tournament_standings(
+        self, tournament_id: str
+    ) -> List[TournamentStandingsEntry]:
+        """Get the standings of a tournament"""
+
+        standings_dto = tournaments_service_client.get_tournament_standings(
+            tournament_id
+        )
+        if standings_dto is None:
+            raise NoStandingsAvailableError(
+                f"Standings not found for tournament with ID {tournament_id}"
+            )
+
+        tournament = self.get_tournament(tournament_id)
+
+        return self._build_standings_from_dto(standings_dto, tournament)
+
+    def update_tournament_format_meta(
+        self, tournament_id: str, format_meta: dict
+    ) -> Tournament:
+        """Update the format meta of a tournament"""
+
+        tournament_dto = tournaments_service_client.update_tournament_format_meta(
+            tournament_id=tournament_id, format_meta=format_meta
         )
 
         return self._build_tournament_from_dto(

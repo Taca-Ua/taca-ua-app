@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { matchesApi, type MatchListItem } from "../../api/matches"
-import { type TournamentDetail } from "../../api/tournaments";
+import { tournamentsApi, type TournamentDetail } from "../../api/tournaments";
 import HelpTooltip from "../HelpTooltip";
 import ChooseMultipleModal from "../utils/costum_menus/ChoseMultipleModal";
 import { useNotification } from "../../contexts/NotificationProvider";
 import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
+import ChoseOneInput from "../utils/inputs/ChoseOneInput";
+import DefinedStatesMenuComponent from "../utils/costum_menus/DefinedStatesMenuComponent";
 
 const MatchCreateModal = ( {
   tournament,
@@ -20,6 +22,10 @@ const MatchCreateModal = ( {
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
   const [location, setLocation] = useState<string>("");
   const [startTime, setStartTime] = useState<string>("");
+
+  const [selectedJourneyOption, setSelectedJourneyOption] = useState<"new-journey" | "existing-journey" | null>("existing-journey");
+  const [selectedExistingJourney, setSelectedExistingJourney] = useState<string | null>(null);
+
   const [loading, setLoading] = useState<boolean>( false );
 
   const handleCreateMatch = async () => {
@@ -36,13 +42,20 @@ const MatchCreateModal = ( {
       return;
     }
 
+    if (selectedJourneyOption === "existing-journey" && !selectedExistingJourney) {
+      notify("Por favor, selecione a jornada existente para o jogo.", "error");
+      return;
+    }
+
     setLoading( true );
     try {
       let newMatch = await matchesApi.create( {
         tournament_id: tournament.id,
         participants: selectedParticipants,
         location,
-        start_time: new Date(startTime).toISOString()
+        start_time: new Date(startTime).toISOString(),
+        journey: selectedJourneyOption === "existing-journey" ? parseInt(selectedExistingJourney!) : undefined,
+        new_journey: selectedJourneyOption === "new-journey" ? true : undefined
       } );
       notify("Jogo criado com sucesso!", "success");
       // Aqui você pode adicionar lógica para fechar o modal ou atualizar a lista de jogos
@@ -55,6 +68,21 @@ const MatchCreateModal = ( {
       setLoading( false );
     }
   };
+
+  const tournamentRounds = async () => {
+    try {
+      const rounds = await tournamentsApi.getRounds(tournament.id);
+      return rounds.map(round => ({
+        id: round.toString(),
+        title: `Jornada ${round}`,
+        subTitle: ""
+      })).sort((a, b) => parseInt(a.id) - parseInt(b.id));
+    } catch (error) {
+      console.error("Error fetching tournament rounds:", error);
+      notify("Ocorreu um erro ao carregar as jornadas do torneio. Por favor, tente novamente.", "error");
+      return [];
+    }
+  }
 
   return (
       <div className="bg-white rounded-lg p-8 w-full max-w-md md:min-w-[500px]">
@@ -142,6 +170,26 @@ const MatchCreateModal = ( {
               onChange={(e) => setStartTime(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 text-gray-700"
             />
+          </div>
+
+          <div>
+            <label className="block text-gray-700 font-medium mb-2">
+              Jornada
+            </label>
+            <DefinedStatesMenuComponent
+              states={[
+                { value: "new-journey", label: "Nova Jornada" },
+                { value: "existing-journey", label: "Jornada Existente" }
+              ]}
+              onSelect={(value) => setSelectedJourneyOption(value as "new-journey" | "existing-journey")}
+              initialValue={'existing-journey'}
+            />
+            { selectedJourneyOption === 'existing-journey' && (
+              <ChoseOneInput
+                allElementsLoader={tournamentRounds}
+                onSelect={(value) => setSelectedExistingJourney(value?.id || null)}
+              />
+            )}
           </div>
         </div>
 

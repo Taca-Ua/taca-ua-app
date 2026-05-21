@@ -42,6 +42,7 @@ class MatchUpdatedData(BaseModel):
 
 class MatchDeletedData(BaseModel):
     match_id: UUID
+    tournament_id: Optional[UUID] = None
 
 
 class MatchParticipantAddedData(BaseModel):
@@ -92,6 +93,7 @@ class MatchResultEntryData(BaseModel):
 
 class MatchResultUpdatedData(BaseModel):
     match_id: UUID
+    tournament_id: Optional[UUID] = None
     results: List[MatchResultEntryData] = []
 
 

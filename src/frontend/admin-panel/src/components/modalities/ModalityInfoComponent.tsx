@@ -95,8 +95,9 @@ const ModalityInfoComponent = ( {
               <ChoseOneModal
                 title={`Escolha formato de prova`}
                 allElementsLoader={() => modalityTypesApi
-                  .getAll({
+                  .getAllMinimal({
                     season_id: loadedSeason?.id,
+                    mode: 'modality'
                   })
                   .then((types) =>
                     types.map((type) => ({ id: type.id, title: type.name })),

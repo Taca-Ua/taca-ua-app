@@ -85,6 +85,8 @@ class MatchListCreateView(RoleRequiredMixin, APIView):
                 str(participant)
                 for participant in serializer.validated_data.get("participants", [])
             ],
+            journey=serializer.validated_data.get("journey"),
+            new_journey=serializer.validated_data.get("new_journey", False),
         )
 
         response_serializer = MatchListSerializer(match)

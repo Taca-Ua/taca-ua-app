@@ -31,6 +31,8 @@ class Tournament:
     name: str
     teams: List[str]
     matches: List[Match]
+    format: str
+    format_data: dict
 
     def __post_init__(self):
         self.matches = [
@@ -60,6 +62,8 @@ class Modality:
                 name=tournament["name"],
                 teams=tournament["teams"],
                 matches=tournament["matches"],
+                format=tournament["format"],
+                format_data=tournament["format_data"],
             )
             for tournament in self.tournaments
         ]

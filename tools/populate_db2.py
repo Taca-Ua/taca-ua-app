@@ -51,6 +51,7 @@ def populate_modalities_types(step_by_step=False, delete_existing=False) -> int:
             "description": "Modalidades coletivas que ocorrem de forma recorrente ao longo da época desportiva.",
             "tournament_competitor_type": "team",
             "is_playoff": False,
+            "mode": "modality",
             "escaloes": [
                 {
                     "escalao": "A",
@@ -89,6 +90,7 @@ def populate_modalities_types(step_by_step=False, delete_existing=False) -> int:
             "description": "Modalidades coletivas que ocorrem de forma pontual ao longo da época desportiva.",
             "tournament_competitor_type": "team",
             "is_playoff": False,
+            "mode": "modality",
             "escaloes": [
                 {
                     "escalao": "A",
@@ -121,6 +123,7 @@ def populate_modalities_types(step_by_step=False, delete_existing=False) -> int:
             "description": "Modalidades praticadas em duplas ou pares.",
             "tournament_competitor_type": "team",
             "is_playoff": False,
+            "mode": "modality",
             "escaloes": [
                 {
                     "escalao": "A",
@@ -153,6 +156,7 @@ def populate_modalities_types(step_by_step=False, delete_existing=False) -> int:
             "description": "Modalidades praticadas individualmente.",
             "tournament_competitor_type": "individual",
             "is_playoff": False,
+            "mode": "modality",
             "escaloes": [
                 {
                     "escalao": "A",
@@ -191,6 +195,7 @@ def populate_modalities_types(step_by_step=False, delete_existing=False) -> int:
             "description": "Troféus atribuídos a equipas coletivas com base no desempenho em várias competições.",
             "tournament_competitor_type": "team",
             "is_playoff": False,
+            "mode": "modality",
             "escaloes": [
                 {
                     "escalao": "A",
@@ -222,6 +227,7 @@ def populate_modalities_types(step_by_step=False, delete_existing=False) -> int:
             "name": "Apuramento para os Playoffs",
             "description": "Apuramento para os playoffs com base no desempenho em competições.",
             "is_playoff": True,
+            "mode": "points",
             "escaloes": [
                 {
                     "escalao": "-",
@@ -621,7 +627,9 @@ def populate_tournaments():
         )
         existing_tournaments = {}
 
-    def _create_tournament(tournament_name: str, modality_id: int) -> str:
+    def _create_tournament(
+        tournament_name: str, modality_id: int, format: str, format_data: dict
+    ) -> str:
         if tournament_name in existing_tournaments:
             print(f"Tournament already exists: {tournament_name}")
             return existing_tournaments[tournament_name]
@@ -630,6 +638,8 @@ def populate_tournaments():
             "name": tournament_name,
             "modality_id": modality_id,
             "is_playoff": False,
+            "format": format,
+            "format_data": format_data,
         }
         response = requests.post(
             f"{API_URL}/tournaments/", json=payload, headers=HEADERS
@@ -767,6 +777,7 @@ def populate_tournaments():
                     tournament_teams.get(match.team1),
                     tournament_teams.get(match.team2),
                 ],
+                "journey": match.jornada if match.jornada else None,
             }
             response = requests.post(
                 f"{API_URL}/matches/", json=payload, headers=HEADERS
@@ -921,7 +932,10 @@ def populate_tournaments():
         for tournament in modality.tournaments:
             # create tournament and get its ID for team association and match creation
             tournament_id = _create_tournament(
-                tournament.name, modality_name_to_id.get(modality.name)
+                tournament.name,
+                modality_name_to_id.get(modality.name),
+                tournament.format,
+                tournament.format_data,
             )
             if not tournament_id:
                 print(

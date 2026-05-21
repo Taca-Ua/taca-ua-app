@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Literal
 
 from admin_api.clients.modalities_service import (
     ModalityTypeDTO,
@@ -19,8 +19,8 @@ class _Escalao:
 class ModalityType:
     id: str
     name: str
+    mode: str
     description: str
-    is_playoff: bool
     num_escaloes: int
     escaloes: List[_Escalao]
     tournament_competitor_type: str
@@ -34,8 +34,8 @@ class ModalityTypesService:
         return ModalityType(
             id=modality.id,
             name=modality.name,
+            mode=modality.mode,
             description=modality.description,
-            is_playoff=modality.is_playoff,
             num_escaloes=len(modality.escaloes),
             escaloes=[
                 _Escalao(
@@ -49,17 +49,15 @@ class ModalityTypesService:
             tournament_competitor_type=modality.tournament_competitor_type,
         )
 
-    def list_modality_types(
-        self, include_playoff=False, season_id=None
-    ) -> List[ModalityType]:
+    def list_modality_types(self, season_id=None, mode=None) -> List[ModalityType]:
         """List all modality types, optionally including playoff type
 
         Args:
-            include_playoff (bool, optional): _description_. Defaults to False.
             season_id (str, optional): ID of the season for which to list modality types. Defaults to None.
+            mode (str, optional): Mode of the modality types to list. Defaults to None.
         """
         answer = modalities_service_client.modality_types.list_modality_types(
-            include_playoff=include_playoff, season_id=season_id
+            season_id=season_id, mode=mode
         )
         return [
             self._build_admin_from_modalities_answer(modality) for modality in answer
@@ -67,28 +65,28 @@ class ModalityTypesService:
 
     def create_modality_type(
         self,
-        name,
-        description="",
-        escaloes=None,
-        is_playoff=False,
-        tournament_competitor_type=None,
-        season_id=None,
+        name: str,
+        mode: Literal["modality", "points"],
+        description: str = "",
+        escaloes: list = None,
+        tournament_competitor_type: Literal["individual", "team"] = None,
+        season_id: int = None,
     ) -> List[ModalityType]:
         """Create a new modality type
 
         Args:
             name (str): Name of the modality type
+            mode (str): Mode of the modality type, either "modality" or "points"
             description (str, optional): Description of the modality type. Defaults to "".
             escaloes (list, optional): List of escaloes for the modality type. Defaults to None.
-            is_playoff (bool, optional): Whether the modality type is a playoff. Defaults to False.
-            tournament_competitor_type (str, optional): Type of competitors in the tournament. Defaults to None.
-            season_id (str, optional): ID of the season to which the modality type belongs. Defaults to None.
+            tournament_competitor_type (str, optional): Type of competitors in the tournament, either "individual" or "team".
+            season_id (int, optional): ID of the season to which the modality type belongs. Defaults to None.
         """
         answer = modalities_service_client.modality_types.create_modality_type(
             name=name,
             description=description,
             escaloes=escaloes or [],
-            is_playoff=is_playoff,
+            mode=mode,
             tournament_competitor_type=tournament_competitor_type,
             season_id=season_id,
         )
