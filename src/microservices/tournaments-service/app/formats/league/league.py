@@ -20,7 +20,12 @@ from taca_events.pydantic_schemas.matches import (
 )
 
 from ..base import FormatEngine, FormatStandings
-from .models import LeagueMatches, LeagueStandings, LeagueTournament
+from .models import (
+    LeagueMatches,
+    LeagueStandings,
+    LeagueTournament,
+    ScoreDifferenceTiebreakerPolicy,
+)
 
 
 class LeagueFormatEngine(FormatEngine):
@@ -74,6 +79,12 @@ class LeagueFormatEngine(FormatEngine):
             format_data["loss_points"], int
         ):
             raise ValueError("loss_points must be an integer")
+        if "points_diff_tiebreaker" in format_data:
+            ScoreDifferenceTiebreakerPolicy(
+                format_data["points_diff_tiebreaker"]
+            )  # validate tiebreaker value
+
+        print(f"Validated format_data: {format_data}", flush=True)
 
         # configure tournament with league-specific settings
         tournament: LeagueTournament = tournament  # type cast for clarity
@@ -81,6 +92,11 @@ class LeagueFormatEngine(FormatEngine):
         tournament.points_draw = format_data.get("draw_points", self.draw_points)
         tournament.points_loss = format_data.get("loss_points", self.loss_points)
         tournament.current_round = 1
+
+        # Set tiebreaker policy, defaulting to points difference if not specified
+        if format_data.get("points_diff_tiebreaker"):
+            tournament.points_diff_tiebreaker = format_data["points_diff_tiebreaker"]
+
         return tournament
 
     def update_tournament(
@@ -109,12 +125,18 @@ class LeagueFormatEngine(FormatEngine):
             raise ValueError(
                 f"loss_points must be an integer. Payload received: {format_data}"
             )
+        if "points_diff_tiebreaker" in format_data:
+            ScoreDifferenceTiebreakerPolicy(
+                format_data["points_diff_tiebreaker"]
+            )  # validate tiebreaker value
 
         # Update tournament scoring rules
         tournament: LeagueTournament = tournament  # type cast for clarity
         tournament.points_win = format_data.get("win_points", tournament.points_win)
         tournament.points_draw = format_data.get("draw_points", tournament.points_draw)
         tournament.points_loss = format_data.get("loss_points", tournament.points_loss)
+        if format_data.get("points_diff_tiebreaker"):
+            tournament.points_diff_tiebreaker = format_data["points_diff_tiebreaker"]
 
         # Recalculate standings for all competitors based on new scoring rules
         for standing in tournament.league_standings:
@@ -255,6 +277,11 @@ class LeagueFormatEngine(FormatEngine):
                         participant_results_map[r.participant_id] = "draw"
                     else:
                         participant_results_map[r.participant_id] = "loss"
+        else:
+            logger.warning(
+                f"Cannot determine match result for match_id {match_id} due to missing scores and positions. Results received: {results}"
+            )
+            return
 
         # Update the match record with the new results
         match.results = {
@@ -293,6 +320,15 @@ class LeagueFormatEngine(FormatEngine):
                 standing.points += match.tournament.points_loss
                 standing.losses += 1
 
+            # Update scored and conceded points if score information is available
+            scored_points = match.results[str(participant_id)]["score"] or 0
+            standing.scored_points += scored_points
+
+            conceded_points = sum(
+                r.score or 0 for r in results if r.participant_id != participant_id
+            )
+            standing.conceded_points += conceded_points
+
         db.flush()
 
     # Utility methods
@@ -302,25 +338,86 @@ class LeagueFormatEngine(FormatEngine):
 
         Returns a list of FormatStandings objects.
         """
-        standings = (
-            db.query(LeagueStandings)
-            .filter(LeagueStandings.tournament_id == tournament_id)
-            .order_by(LeagueStandings.points.desc(), LeagueStandings.wins.desc())
-            .all()
+        standings_stmt = db.query(LeagueStandings).filter(
+            LeagueStandings.tournament_id == tournament_id
         )
+
+        tourn = (
+            db.query(LeagueTournament)
+            .filter(LeagueTournament.id == tournament_id)
+            .first()
+        )
+        if not tourn:
+            logger.warning(
+                f"No standings found for tournament_id {tournament_id}, returning empty standings list"
+            )
+            return []
+
+        # Order standings based on points and tiebreaker policy
+        standings_stmt = standings_stmt.order_by(LeagueStandings.points.desc())
+        if (
+            tourn.points_diff_tiebreaker
+            == ScoreDifferenceTiebreakerPolicy.POINTS_DIFFERENCE
+        ):
+            standings_stmt = standings_stmt.order_by(
+                (
+                    LeagueStandings.scored_points - LeagueStandings.conceded_points
+                ).desc(),
+                LeagueStandings.scored_points.desc(),
+            )
+        elif (
+            tourn.points_diff_tiebreaker
+            == ScoreDifferenceTiebreakerPolicy.SCORED_POINTS
+        ):
+            standings_stmt = standings_stmt.order_by(
+                LeagueStandings.scored_points.desc(),
+            )
+        elif tourn.points_diff_tiebreaker == ScoreDifferenceTiebreakerPolicy.NONE:
+            pass  # no additional ordering, competitors with same points will share position
+
+        standings = standings_stmt.all()
 
         # Calculate position
         postition_standings: List[LeagueStandings] = []
         current_position = 1
         last_points = None
-        last_wins = None
+        last_scored_conceded_diff = None
+        last_scored = None
         for i, s in enumerate(standings, start=1):
-            if last_points is not None and (
-                s.points < last_points or s.wins < last_wins
-            ):
-                current_position = i
+            if last_points is not None and (s.points < last_points):
+                current_position = (
+                    i  # update position if points are lower than previous competitor
+                )
+            elif last_points is not None and s.points == last_points:
+
+                # If points are the same, check tiebreaker policy
+                if (
+                    s.tournament.points_diff_tiebreaker
+                    == ScoreDifferenceTiebreakerPolicy.NONE
+                ):
+                    pass  # no tiebreaker, competitors with same points share the same position
+
+                elif (
+                    s.tournament.points_diff_tiebreaker
+                    == ScoreDifferenceTiebreakerPolicy.POINTS_DIFFERENCE
+                ):
+                    scored_conceded_diff = s.scored_points - s.conceded_points
+                    if (
+                        last_scored_conceded_diff is not None
+                        and scored_conceded_diff < last_scored_conceded_diff
+                    ):
+                        current_position = i  # update position if points difference is lower than previous competitor
+
+                elif (
+                    s.tournament.points_diff_tiebreaker
+                    == ScoreDifferenceTiebreakerPolicy.SCORED_POINTS
+                ):
+                    if last_scored is not None and s.scored_points < last_scored:
+                        current_position = i  # update position if scored points is lower than previous competitor
+
             last_points = s.points
-            last_wins = s.wins
+            last_scored_conceded_diff = s.scored_points - s.conceded_points
+            last_scored = s.scored_points
 
             postition_standings.append(
                 FormatStandings(
@@ -331,6 +428,9 @@ class LeagueFormatEngine(FormatEngine):
                         "wins": s.wins,
                         "draws": s.draws,
                         "losses": s.losses,
+                        "scored_points": s.scored_points,
+                        "conceded_points": s.conceded_points,
+                        "differential": s.scored_points - s.conceded_points,
                     },
                 )
             )

@@ -110,7 +110,7 @@ const TournamentCreateModal = ({
   }
 
   return (
-      <div className="bg-white rounded-lg p-8 w-full max-w-md md:min-w-[500px]">
+      <div className="bg-white rounded-lg p-8 w-full max-w-md md:min-w-[700px]">
         <h2 className="text-2xl font-bold mb-4">Criar Torneio</h2>
 
         <div className="space-y-4">

@@ -64,6 +64,9 @@ const TornLeagueDisplayComponent = ({
                         <th className="border-b px-4 py-2">Vitórias</th>
                         <th className="border-b px-4 py-2">Empates</th>
                         <th className="border-b px-4 py-2">Derrotas</th>
+                        <th className="border-b px-4 py-2">PM</th>
+                        <th className="border-b px-4 py-2">PS</th>
+                        <th className="border-b px-4 py-2">Diff</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -75,6 +78,11 @@ const TornLeagueDisplayComponent = ({
                             <td className="border-b px-4 py-2">{entry.format_meta.wins}</td>
                             <td className="border-b px-4 py-2">{entry.format_meta.draws}</td>
                             <td className="border-b px-4 py-2">{entry.format_meta.losses}</td>
+                            <td className="border-b px-4 py-2">{entry.format_meta.scored_points}</td>
+                            <td className="border-b px-4 py-2">{entry.format_meta.conceded_points}</td>
+                            <td className={"border-b px-4 py-2" + (entry.format_meta.differential >= 0 ? " text-green-600" : " text-red-600")}>
+                                {entry.format_meta.differential >= 0 ? '+' : ''}{entry.format_meta.differential}
+                            </td>
                         </tr>
                     ))}
                 </tbody>

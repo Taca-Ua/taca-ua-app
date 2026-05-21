@@ -7,8 +7,19 @@ from typing import List
 
 import sqlalchemy as sa
 from app.models import Base, Tournament
-from sqlalchemy import JSON, UUID, Column, ForeignKey, Integer
+from sqlalchemy import JSON, UUID, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, relationship
+
+
+class ScoreDifferenceTiebreakerPolicy:
+    NONE = "none"
+    POINTS_DIFFERENCE = "points_difference"
+    SCORED_POINTS = "scored_points"
+
+    def __init__(self, value):
+        if value not in [self.NONE, self.POINTS_DIFFERENCE, self.SCORED_POINTS]:
+            raise ValueError(f"Invalid tiebreaker policy: {value}")
+        self.value = value
 
 
 class LeagueTournament(Tournament):
@@ -35,6 +46,9 @@ class LeagueTournament(Tournament):
 
     # Track the current round of the league for scheduling purposes
     current_round = Column(Integer, default=1)
+    points_diff_tiebreaker = Column(
+        String, default=ScoreDifferenceTiebreakerPolicy.POINTS_DIFFERENCE
+    )
 
     league_standings: Mapped[List["LeagueStandings"]] = relationship(
         "LeagueStandings", back_populates="tournament", cascade="all, delete-orphan"
@@ -51,6 +65,7 @@ class LeagueTournament(Tournament):
             "points_draw": self.points_draw,
             "points_loss": self.points_loss,
             "current_round": self.current_round,
+            "points_diff_tiebreaker": self.points_diff_tiebreaker,
         }
         base["format_data"] = league_data
         return base
@@ -89,6 +104,9 @@ class LeagueStandings(Base):
     losses = Column(Integer, default=0)
     draws = Column(Integer, default=0)
 
+    scored_points = Column(Integer, default=0)
+    conceded_points = Column(Integer, default=0)
+
     tournament: Mapped[LeagueTournament] = relationship(
         "LeagueTournament", back_populates="league_standings"
     )
@@ -113,7 +131,7 @@ class LeagueMatches(Base):
     )
     match_id = Column(UUID(as_uuid=True), nullable=False, primary_key=True)
 
-    # Store match results relevant to this config: {"competitorA_id": <Ascore>, "competitorB_id": <Bscore>}
+    # Store match results relevant to this config: {"competitorA_id": {"score": <score>, "position": <position>, "result": <result> }, "competitorB_id": {"score": <score>, "position": <position>, "result": <result>}}
     results = Column(JSON, nullable=True)
 
     tournament: Mapped[LeagueTournament] = relationship(
