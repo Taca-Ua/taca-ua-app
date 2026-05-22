@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import List
+from typing import Dict, List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -173,3 +173,10 @@ def delete_staff(staff_id: UUID, db: Session = Depends(get_db_session)):
     db.delete(staff)
     db.commit()
     logger.info(f"Deleted staff: {staff_id}")
+
+
+@router.post("/staff/batch-get", response_model=Dict[str, StaffResponse])
+def batch_get_staff(staff_ids: List[str], db: Session = Depends(get_db_session)):
+    """Get multiple staff members by their IDs"""
+    staff_members = db.query(Staff).filter(Staff.id.in_(staff_ids)).all()
+    return {(str(staff.id)): staff.to_dict() for staff in staff_members}

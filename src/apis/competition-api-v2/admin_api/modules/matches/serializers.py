@@ -42,6 +42,13 @@ class LineupDetailSerializer(serializers.Serializer):
     lineup = PlayerLineupSerializer(many=True)
 
 
+class StaffSummarySerializer(serializers.Serializer):
+    """Serializer for staff summary information"""
+
+    id = serializers.UUIDField()
+    name = serializers.CharField()
+
+
 # Response serializers
 class MatchListSerializer(serializers.Serializer):
     """Serializer for listing matches"""
@@ -60,6 +67,12 @@ class MatchDetailSerializer(MatchListSerializer):
 
     comments = CommentListSerializer(many=True, required=False, allow_null=True)
     lineups = LineupDetailSerializer(many=True, required=False, allow_null=True)
+    staff_assignments = serializers.DictField(
+        child=serializers.ListField(child=StaffSummarySerializer()),
+        required=False,
+        allow_null=True,
+        help_text="Dictionary mapping participant IDs to lists of assigned staff IDs",
+    )
 
 
 # Request serializers
@@ -180,3 +193,21 @@ class LineupUpdateSerializer(serializers.Serializer):
 
     participant = serializers.UUIDField(required=True)
     players = PlayerLineupUpdateSerializer(many=True, required=True)
+
+
+class LineupAssignStaffSerializer(serializers.Serializer):
+    """Serializer for assigning staff to a match participant"""
+
+    staff_ids = serializers.ListField(
+        child=serializers.UUIDField(),
+        required=True,
+        allow_empty=True,
+        help_text="List of staff IDs to assign to the match participant",
+    )
+
+    def validate_staff_ids(self, value):
+        # Ensure all staff IDs are unique
+        if len(value) != len(set(value)):
+            raise serializers.ValidationError("Staff IDs must be unique.")
+
+        return value
