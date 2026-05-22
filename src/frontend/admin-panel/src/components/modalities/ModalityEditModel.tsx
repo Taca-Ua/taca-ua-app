@@ -66,23 +66,25 @@ const ModalityEditModal = ( {
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
             />
           </div>
-          <div>
-            <label className="block text-gray-700 font-medium mb-2">
-              Tipo{" "}
-              <HelpTooltip
-                text="Classifica a modalidade como individual (atletas competem individualmente) ou coletiva (equipas competem entre si). Afeta as regras de inscrição e pontuação."
-                className="ml-1"
-              />{" "}
-              <span className="text-red-500">*</span>
-            </label>
-            <ChoseOneInput
-              allElementsLoader={() => modalityTypesApi.getAllMinimal({
-                season_id: modalityData.belongs_to_season ? loadedSeason?.id : undefined, mode: 'modality'
-              }).then(types => types.map(type => ({ id: type.id, title: type.name })))}
-              onSelect={(ele) => setEditedType(ele?.id || "")}
-              initialElement={modalityData.modality_type ? { id: modalityData.modality_type.id, title: modalityData.modality_type.name } : undefined}
-            />
-          </div>
+          {modalityData.belongs_to_season && (
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">
+                Tipo{" "}
+                <HelpTooltip
+                  text="Classifica a modalidade como individual (atletas competem individualmente) ou coletiva (equipas competem entre si). Afeta as regras de inscrição e pontuação."
+                  className="ml-1"
+                />{" "}
+                <span className="text-red-500">*</span>
+              </label>
+              <ChoseOneInput
+                allElementsLoader={() => modalityTypesApi.getAllMinimal({
+                  season_id: modalityData.belongs_to_season ? loadedSeason?.id : undefined, mode: 'modality'
+                }).then(types => types.map(type => ({ id: type.id, title: type.name })))}
+                onSelect={(ele) => setEditedType(ele?.id || "")}
+                initialElement={modalityData.modality_type ? { id: modalityData.modality_type.id, title: modalityData.modality_type.name } : undefined}
+              />
+            </div>
+          )}
         </div>
 
         <div className="flex gap-4 mt-6">
