@@ -9,6 +9,14 @@ class _ModalityTypeSummarySerializer(serializers.Serializer):
     name = serializers.CharField()
 
 
+class _ModalityRegulationSummarySerializer(serializers.Serializer):
+    """Serializer for modality regulation summary"""
+
+    id = serializers.UUIDField()
+    name = serializers.CharField()
+    link = serializers.URLField()
+
+
 # Response serializers
 class ModalityListSerializer(serializers.Serializer):
     """Serializer for listing modalities"""
@@ -25,6 +33,7 @@ class ModalitySerializer(ModalityListSerializer):
     relevant_season_ids = serializers.ListField(
         child=serializers.IntegerField(), required=True, allow_empty=True
     )
+    regulation = _ModalityRegulationSummarySerializer(required=False, allow_null=True)
 
 
 # Request serializers
@@ -59,3 +68,10 @@ class ModalityRemoveFromSeasonSerializer(serializers.Serializer):
     """Serializer for removing a modality from a season"""
 
     season_id = serializers.IntegerField(required=True)
+
+
+class ModalityUpdateRegulationSerializer(serializers.Serializer):
+    """Serializer for updating a modality's regulation"""
+
+    season_id = serializers.IntegerField(required=True)
+    regulation_id = serializers.UUIDField(required=True, allow_null=True)

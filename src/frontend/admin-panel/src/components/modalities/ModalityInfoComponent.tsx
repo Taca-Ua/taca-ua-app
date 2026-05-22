@@ -59,6 +59,29 @@ const ModalityInfoComponent = ( {
     });
   };
 
+  const handleDisableRegulation = () => {
+    if (!loadedSeason) {
+      notify('Temporada não carregada. Não foi possível desassociar o regulamento.', 'error');
+      return;
+    }
+
+    if (!modality.belongs_to_season) {
+      notify('Modalidade não pertence a nenhuma temporada. Não é possível desassociar o regulamento.', 'error');
+      return;
+    }
+
+    modalitiesApi.updateRegulation(modality.id, {
+      regulation_id: null,
+      season_id: loadedSeason.id,
+    }).then((updatedModality) => {
+      setModality(updatedModality);
+      notify('Regulamento desassociado com sucesso.', 'success');
+    }).catch((error) => {
+      notify('Falha ao desassociar regulamento.', 'error');
+      console.error('Error updating modality regulation:', error);
+    });
+  }
+
   return (
     <div className="bg-white rounded-lg shadow-md p-8 mb-6">
       <div className="space-y-6">
@@ -74,6 +97,27 @@ const ModalityInfoComponent = ( {
             {modality.modality_type?.name || "N/A"}
           </div>
         </div>
+        {modality.regulation && (
+          <div>
+            <label className="block text-teal-500 font-medium mb-2">Regulamento</label>
+            <div className="p-4 bg-blue-50 rounded-xl flex items-center justify-between border border-blue-100">
+                <a className="flex items-center gap-3 w-full" href={modality.regulation.link} target="_blank" rel="noopener noreferrer">
+                  <div className="text-gray-800 font-medium">
+                    {modality.regulation.name}
+                  </div>
+                </a>
+                <Button
+                  onClick={handleDisableRegulation}
+                  type="danger"
+                  active={isAdminGeneral}
+                  flexible={false}
+                  padding='px-3 py-1'
+                >
+                  Desassociar Regulamento
+                </Button>
+              </div>
+          </div>
+        )}
       </div>
 
       <div className="flex gap-4 mt-8">

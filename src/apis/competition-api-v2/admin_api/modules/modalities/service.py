@@ -15,6 +15,13 @@ class _ModalityType:
 
 
 @dataclass
+class _ModalityRegulation:
+    id: str
+    name: str
+    link: str
+
+
+@dataclass
 class Modality:
     id: str
     name: str
@@ -23,6 +30,7 @@ class Modality:
 
     # Detailed view only fields
     relevant_season_ids: Optional[list[int]] = None
+    regulation: Optional[_ModalityRegulation] = None
 
 
 class ModalitiesService:
@@ -42,6 +50,15 @@ class ModalitiesService:
             belongs_to_season=dto.belongs_to_season,
             modality_type=modality_type,
             relevant_season_ids=dto.relevant_season_ids,
+            regulation=(
+                _ModalityRegulation(
+                    id=dto.regulation.id,
+                    name=dto.regulation.title,
+                    link=dto.regulation.file_url,
+                )
+                if dto.regulation
+                else None
+            ),
         )
 
     def list_modalities(self, season_id: str = None):
@@ -82,6 +99,14 @@ class ModalitiesService:
 
     def delete_modality(self, modality_id: str):
         modalities_service_client.modalities.delete_modality(modality_id)
+
+    def update_modality_regulation(
+        self, modality_id: str, season_id: int, regulation_id: str = None
+    ):
+        answer = modalities_service_client.modalities.update_regulation(
+            modality_id, season_id, regulation_id
+        )
+        return self._build_modality_from_dto(answer)
 
 
 modalities_service = ModalitiesService()

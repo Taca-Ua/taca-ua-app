@@ -87,6 +87,7 @@ class ModalityDTO:
     belongs_to_season: bool
     modality_type: Optional[ModalityTypeDTO] = None
     relevant_season_ids: Optional[List[int]] = None
+    regulation: Optional["RegulationDTO"] = None
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -96,6 +97,11 @@ class ModalityDTO:
             self.modality_type, ModalityTypeDTO
         ):
             self.modality_type = ModalityTypeDTO(**self.modality_type)
+
+        if self.regulation is not None and not isinstance(
+            self.regulation, RegulationDTO
+        ):
+            self.regulation = RegulationDTO(**self.regulation)
 
 
 @dataclass
@@ -720,6 +726,33 @@ class ModalityModalitiesService(BaseService):
         """
         modalities_data = self.post("/modalities/batch-get", modality_ids)
         return [ModalityDTO(**modality) for modality in modalities_data]
+
+    def update_regulation(
+        self, modality_id: str, season_id: int, regulation_id: str = None
+    ) -> ModalityDTO:
+        """Update the regulation of a modality
+
+        Args:
+            modality_id (str): ID of the modality
+            season_id (int): ID of the season
+            regulation_id (str, optional): ID of the new regulation. If None, the regulation will be removed. Defaults to None.
+
+        Returns:
+            ModalityDTO: Updated ModalityDTO object
+        """
+        assert isinstance(modality_id, str), "modality_id must be a string"
+        assert isinstance(season_id, int), "season_id must be an integer"
+        assert (
+            isinstance(regulation_id, str) or regulation_id is None
+        ), "regulation_id must be a string or None"
+
+        data = {
+            "season_id": season_id,
+            "regulation_id": regulation_id,
+        }
+
+        modality_data = self.put(f"/modalities/{modality_id}/update-regulation", data)
+        return ModalityDTO(**modality_data)
 
 
 class StudentModalitiesService(BaseService):

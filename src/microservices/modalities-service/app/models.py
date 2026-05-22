@@ -80,6 +80,9 @@ class SeasonModality(Base):  # need to be a full model to link modality_type
     modality_type_id = Column(
         UUID(as_uuid=True), ForeignKey("modalities.modality_type.id"), nullable=False
     )
+    regulation_id = Column(
+        UUID(as_uuid=True), ForeignKey("modalities.regulation.id"), nullable=True
+    )
 
     # Relationships
     season: Mapped["Season"] = relationship(
@@ -90,6 +93,9 @@ class SeasonModality(Base):  # need to be a full model to link modality_type
     )
     modality_type: Mapped["ModalityType"] = relationship(
         "ModalityType", back_populates="season_modalities"
+    )
+    regulation: Mapped["Regulation"] = relationship(
+        "Regulation", back_populates="season_modalities"
     )
 
 
@@ -348,6 +354,7 @@ class Modality(Base):
         # Get modality_type from the first available season_modality
         modality_type_data = None
         season_modality = None
+        regulation_data = None
         if self.season_modalities and season_id is not None:
             season_modality = next(
                 (sm for sm in self.season_modalities if sm.season_id == season_id),
@@ -355,6 +362,9 @@ class Modality(Base):
             )
             if season_modality and season_modality.modality_type:
                 modality_type_data = season_modality.modality_type.to_dict()
+
+            if season_modality and season_modality.regulation:
+                regulation_data = season_modality.regulation.to_dict()
 
         return {
             "id": str(self.id),
@@ -368,6 +378,7 @@ class Modality(Base):
                 if self.season_modalities
                 else []
             ),
+            "regulation": regulation_data,
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
@@ -589,6 +600,11 @@ class Regulation(Base):
     )
     updated_at = Column(
         DateTime(timezone=True), onupdate=lambda: datetime.now(timezone.utc)
+    )
+
+    # Relationships
+    season_modalities: Mapped[list["SeasonModality"]] = relationship(
+        "SeasonModality", back_populates="regulation"
     )
 
     def to_dict(self):
