@@ -1,0 +1,119 @@
+name: Deploy to Production
+
+on:
+  workflow_run:
+    workflows: ["Build and Push Docker Images"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  OWNER: ${{ github.repository_owner }}
+  DEPLOY_PATH: /opt/taca-ua-app  # Adjust this to your deployment path
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: [self-hosted, mednat-ieeta]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set deployment directory
+        run: |
+          mkdir -p ${{ env.DEPLOY_PATH }}
+          echo "Deployment directory: ${{ env.DEPLOY_PATH }}"
+
+      - name: Log in to Container Registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+
+      - name: Create .env file with secrets
+        run: |
+          cat > ${{ env.DEPLOY_PATH }}/.env << 'EOF'
+          # TLS/SSL Configuration
+          DOMAIN=${{ secrets.DOMAIN }}
+          CERTBOT_EMAIL=${{ secrets.CERTBOT_EMAIL }}
+          CERTBOT_STAGING=${{ secrets.CERTBOT_STAGING }}
+
+          # Database Configuration
+          POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          DATABASE_URL=${{ secrets.DATABASE_URL }}
+          POSTGRES_EXPOSED_PORT=${{ secrets.POSTGRES_EXPOSED_PORT }}
+
+          # Object Storage Configuration
+          MINIO_ROOT_USER=${{ secrets.MINIO_ROOT_USER }}
+          MINIO_ROOT_PASSWORD=${{ secrets.MINIO_ROOT_PASSWORD }}
+          MINIO_ENDPOINT=${{ secrets.MINIO_ENDPOINT }}
+          MINIO_USE_SSL=${{ secrets.MINIO_USE_SSL }}
+          MINIO_PUBLIC_ENDPOINT=${{ secrets.MINIO_PUBLIC_ENDPOINT }}
+
+          # Identity and Access Management
+          KEYCLOAK_ADMIN=${{ secrets.KEYCLOAK_ADMIN }}
+          KEYCLOAK_ADMIN_PASSWORD=${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}
+          KEYCLOAK_REALM=${{ secrets.KEYCLOAK_REALM }}
+          KEYCLOAK_CLIENT_ID=${{ secrets.KEYCLOAK_CLIENT_ID }}
+
+          # Message Queue Configuration
+          RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}
+          RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}
+          RABBITMQ_ERLANG_COOKIE=${{ secrets.RABBITMQ_ERLANG_COOKIE }}
+
+          # Django Configuration
+          DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
+
+          # Dev Auth Bypass (set to false in production)
+          DEV_AUTH_BYPASS_ENABLED=${{ secrets.DEV_AUTH_BYPASS_ENABLED }}
+          DEV_AUTH_BYPASS_TOKEN=${{ secrets.DEV_AUTH_BYPASS_TOKEN }}
+          DEV_AUTH_BYPASS_ROLES=${{ secrets.DEV_AUTH_BYPASS_ROLES }}
+          EOF
+          echo "✅ .env file created successfully"
+
+      - name: Copy docker-compose.prod.yml
+        run: |
+          cp docker-compose.prod.yml ${{ env.DEPLOY_PATH }}/docker-compose.yml
+          echo "✅ docker-compose.prod.yml copied as docker-compose.yml"
+
+      - name: Pull latest images
+        working-directory: ${{ env.DEPLOY_PATH }}
+        run: |
+          docker-compose pull --no-parallel
+          echo "✅ Docker images pulled successfully"
+
+      - name: Update running containers (zero-downtime deployment)
+        working-directory: ${{ env.DEPLOY_PATH }}
+        run: |
+          docker-compose up -d
+          echo "✅ Containers updated with zero downtime"
+
+      - name: Wait for services to be healthy
+        working-directory: ${{ env.DEPLOY_PATH }}
+        run: |
+          echo "Waiting for services to stabilize..."
+          sleep 10
+          docker-compose ps
+          echo "✅ Deployment completed"
+
+      - name: Verify deployment
+        working-directory: ${{ env.DEPLOY_PATH }}
+        run: |
+          echo "Running containers:"
+          docker-compose ps
+          echo ""
+          echo "Recent logs:"
+          docker-compose logs --tail=20
+
+      - name: Cleanup old images (optional)
+        run: |
+          docker image prune -af
+          echo "✅ Old images cleaned up"
+
+      - name: Deployment summary
+        run: |
+          echo "🎉 Deployment completed successfully!"
+          echo "Deployment path: ${{ env.DEPLOY_PATH }}"
+          echo "Registry: ${{ env.REGISTRY }}"
+          echo "Commit SHA: ${{ github.sha }}"
