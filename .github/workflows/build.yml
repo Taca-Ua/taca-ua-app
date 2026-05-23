@@ -46,9 +46,11 @@ jobs:
           # Frontend
           - service: admin-panel
             context: src/frontend/admin-panel
+            dockerfile: src/frontend/admin-panel/Dockerfile
 
           - service: public-website
             context: src/frontend/public-website
+            dockerfile: src/frontend/public-website/Dockerfile
 
     steps:
       - name: Checkout code
@@ -71,7 +73,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ${{ matrix.context || '.' }}
-          file: ${{ matrix.dockerfile || './Dockerfile' }}
+          file: ${{ matrix.dockerfile }}
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.OWNER_LOWER }}/${{ matrix.service }}:latest
