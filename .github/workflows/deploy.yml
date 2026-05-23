@@ -15,7 +15,7 @@ env:
 jobs:
   deploy:
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
-    runs-on: [self-hosted, mednat-ieeta]
+    runs-on: [self-hosted, MacBookAlex]
     
     steps:
       - name: Checkout code
