@@ -1,5 +1,4 @@
 import { modalitiesApi, type ModalityDetail } from '../../api/modalities';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../utils/Button';
 import ModalityEditModal from './ModalityEditModel';
@@ -15,22 +14,12 @@ const ModalityInfoComponent = ( {
 } : {
   modalityState: [ModalityDetail, React.Dispatch<React.SetStateAction<ModalityDetail | null>>]
 }) => {
-  const navigate = useNavigate();
   const { isAdminGeneral } = useAuth();
   const { pushModal } = useModal();
   const { loadedSeason } = useSeason();
   const { notify } = useNotification();
 
   const [modality, setModality] = modalityState;
-
-  const handleDelete = async () => {
-    try {
-      await modalitiesApi.delete(modality.id);
-      navigate('/modalidades');
-    } catch (error) {
-      console.error('Error deleting modality:', error);
-    }
-  };
 
   const handleRemoveFromSeason = () => {
     if (!loadedSeason) return;

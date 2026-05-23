@@ -265,19 +265,18 @@ services:
   # Frontend Services
   admin-panel:
     build:
-      context: .
-      dockerfile: src/frontend/admin-panel/Dockerfile
+      context: src/frontend/admin-panel
+      dockerfile: Dockerfile
     volumes:
       - ./src/frontend/admin-panel:/app
       - /app/node_modules
 
   public-website:
     build:
-      context: .
-      dockerfile: src/frontend/public-website/Dockerfile
-    volumes:
-      - ./src/frontend/public-website:/app
-      - /app/node_modules
+      context: src/frontend/public-website
+      dockerfile: Dockerfile
+    expose:
+      - 80
 
 volumes:
   postgres_data:

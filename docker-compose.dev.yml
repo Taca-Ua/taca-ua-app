@@ -284,7 +284,7 @@ services:
   admin-panel:
     build:
       context: .
-      dockerfile: src/frontend/admin-panel/Dockerfile
+      dockerfile: src/frontend/admin-panel/Dockerfile.dev
     volumes:
       - ./src/frontend/admin-panel:/app
       - /app/node_modules
@@ -302,7 +302,7 @@ services:
   public-website:
     build:
       context: .
-      dockerfile: src/frontend/public-website/Dockerfile
+      dockerfile: src/frontend/public-website/Dockerfile.dev
     volumes:
       - ./src/frontend/public-website:/app
       - /app/node_modules
