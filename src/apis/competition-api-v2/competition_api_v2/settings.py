@@ -24,9 +24,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-h(dq0b&v@(glrtzh%4704m%-=dex0u-gf6i@r%+cu$g1_2+e=("
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "true").lower() == "true"
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "*",
+]
 
 
 # Application definition
@@ -169,6 +171,10 @@ KEYCLOAK_ADMIN_REALM = os.environ.get("KEYCLOAK_ADMIN_REALM", KEYCLOAK_REALM)
 KEYCLOAK_ADMIN_USER_REALM = os.environ.get("KEYCLOAK_ADMIN_USER_REALM", "master")
 KEYCLOAK_ADMIN_VERIFY_SSL = (
     os.environ.get("KEYCLOAK_ADMIN_VERIFY_SSL", "true").lower() == "true"
+)
+KEYCLOAK_VALIDATE_ISSUER = (
+    os.environ.get("DEV_MODE", "false").lower()
+    == "false"  # In dev mode, skip issuer validation to allow flexibility with Keycloak URLs
 )
 
 

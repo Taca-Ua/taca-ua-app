@@ -124,10 +124,12 @@ class KeycloakJWTMiddleware:
             "algorithms": getattr(settings, "KEYCLOAK_ALGORITHMS", ["RS256"]),
             "options": {
                 "verify_exp": True,
-                "verify_iss": True,
+                "verify_iss": settings.KEYCLOAK_VALIDATE_ISSUER,
             },
             "issuer": settings.KEYCLOAK_ISSUER,
         }
+        print(token, flush=True)
+        print("JWT Decode kwargs:", decode_kwargs, flush=True)
 
         audience = getattr(settings, "KEYCLOAK_AUDIENCE", None)
         if audience:
