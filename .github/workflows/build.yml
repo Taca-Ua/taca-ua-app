@@ -45,12 +45,12 @@ jobs:
 
           # Frontend
           - service: admin-panel
-            context: .
-            dockerfile: ./src/frontend/admin-panel/Dockerfile
+            context: src/frontend/admin-panel
+            dockerfile: Dockerfile
 
           - service: public-website
-            context: .
-            dockerfile: ./src/frontend/public-website/Dockerfile
+            context: src/frontend/public-website
+            dockerfile: Dockerfile
 
     steps:
       - name: Checkout code
