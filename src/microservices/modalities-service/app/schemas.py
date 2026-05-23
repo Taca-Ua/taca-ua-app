@@ -156,12 +156,18 @@ class ModalityRemoveFromSeason(BaseModel):
     season_id: int
 
 
+class ModalityUpdateRegulationSerializer(BaseModel):
+    season_id: int
+    regulation_id: Optional[UUID] = None
+
+
 class ModalityResponse(BaseModel):
     id: str
     name: str
     belongs_to_season: bool = False
     modality_type: Optional[ModalityTypeResponse]
     relevant_season_ids: Optional[List[int]] = None
+    regulation: Optional["RegulationResponse"] = None
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
