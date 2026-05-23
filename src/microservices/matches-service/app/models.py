@@ -78,6 +78,11 @@ class Match(Base):
         back_populates="match",
         cascade="all, delete-orphan",
     )
+    staff_assignments: Mapped[list["MatchLineupStaff"]] = relationship(
+        "MatchLineupStaff",
+        back_populates="match",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self) -> str:
         return f"<Match {self.id} status={self.status.value}>"
@@ -109,6 +114,22 @@ class Match(Base):
                     }
                 )
 
+            staff_assignments_per_participant = {
+                participant_id: []
+                for participant_id in {str(p.participant) for p in self.participants}
+            }
+            for assignment in self.staff_assignments:
+                if (
+                    str(assignment.participant_id)
+                    not in staff_assignments_per_participant
+                ):
+                    staff_assignments_per_participant[
+                        str(assignment.participant_id)
+                    ] = []
+                staff_assignments_per_participant[
+                    str(assignment.participant_id)
+                ].append(str(assignment.staff_id))
+
         return {
             "id": str(self.id),
             "tournament_id": str(self.tournament_id),
@@ -131,6 +152,9 @@ class Match(Base):
                 else []
             ),
             "lineups": lineups_response if include_details else [],
+            "staff_assignments": (
+                staff_assignments_per_participant if include_details else None
+            ),
             "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
@@ -271,6 +295,48 @@ class Lineup(Base):
             is_starter=self.is_starter,
             created_at=self.created_at,
         )
+
+
+class MatchLineupStaff(Base):
+    """
+    Stores staff assignments for team-based matches.
+    """
+
+    __tablename__ = "lineup_staff"
+    __table_args__ = {"schema": "matches"}
+
+    match_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("matches.match.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+        primary_key=True,
+    )
+
+    participant_id = Column(
+        UUID(as_uuid=True),
+        nullable=False,
+        index=True,
+        primary_key=True,
+    )
+
+    staff_id = Column(
+        UUID(as_uuid=True),
+        nullable=False,
+        index=True,
+        primary_key=True,
+    )
+
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    match: Mapped[Match] = relationship("Match", back_populates="staff_assignments")
+
+    def __repr__(self) -> str:
+        return f"<MatchLineupStaff match={self.match_id} participant={self.participant_id} staff={self.staff_id}>"
 
 
 class Comment(Base):

@@ -22,6 +22,7 @@ from .serializers import (
     ModalityListSerializer,
     ModalityRemoveFromSeasonSerializer,
     ModalitySerializer,
+    ModalityUpdateRegulationSerializer,
     ModalityUpdateSerializer,
 )
 from .service import modalities_service
@@ -148,6 +149,33 @@ def remove_modality_from_season(request, modality_id):
     return Response(response_serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    request=ModalityUpdateRegulationSerializer,
+    responses=ModalitySerializer,
+    description="Update a modality's regulation for a specific season",
+    tags=["Modality Management"],
+)
+@api_view(["PUT"])
+@require_roles("general_admin")
+def update_modality_regulation(request, modality_id):
+    # Serialize input data
+    serializer = ModalityUpdateRegulationSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    modality = modalities_service.update_modality_regulation(
+        modality_id=str(modality_id),
+        season_id=serializer.validated_data["season_id"],
+        regulation_id=(
+            str(serializer.validated_data["regulation_id"])
+            if serializer.validated_data.get("regulation_id")
+            else None
+        ),
+    )
+
+    response_serializer = ModalitySerializer(modality)
+    return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+
 # URL patterns
 urlpatterns = [
     path("", ModalityListCreateView.as_view(), name="modality-list-create"),
@@ -156,5 +184,10 @@ urlpatterns = [
         "<uuid:modality_id>/remove-from-season/",
         remove_modality_from_season,
         name="modality-remove-from-season",
+    ),
+    path(
+        "<uuid:modality_id>/update-regulation/",
+        update_modality_regulation,
+        name="modality-update-regulation",
     ),
 ]

@@ -34,7 +34,14 @@ from taca_events.pydantic_schemas.matches import (
 from . import schemas
 from .database import get_db_session
 from .logger import logger
-from .models import Comment, Lineup, Match, MatchParticipant, MatchStatus
+from .models import (
+    Comment,
+    Lineup,
+    Match,
+    MatchLineupStaff,
+    MatchParticipant,
+    MatchStatus,
+)
 from .outbox_publisher import outbox_publisher
 
 router = APIRouter()
@@ -713,6 +720,85 @@ def update_lineup(
             "updated_count": len(updated_lineups),
         },
     )
+    return match.to_dict(include_details=True)
+
+
+@router.post(
+    "/matches/{match_id}/participants/{participant_id}/staff",
+    response_model=schemas.MatchResponse,
+)
+def assign_staff_to_lineup(
+    match_id: UUID,
+    participant_id: UUID,
+    staff_data: schemas.LineupAssignStaff,
+    db: Session = Depends(get_db_session),
+):
+    """Assign staff to a match participant."""
+    logger.info(
+        "Assigning staff to lineup",
+        extra={
+            "match_id": str(match_id),
+            "participant_id": str(participant_id),
+            "staff_count": len(staff_data.staff_ids),
+        },
+    )
+    match = db.query(Match).filter(Match.id == match_id).first()
+
+    if not match:
+        logger.warning(
+            "Match not found for staff assignment",
+            extra={"match_id": str(match_id)},
+        )
+        raise HTTPException(status_code=404, detail="Match not found")
+
+    if match.status == MatchStatus.FINISHED:
+        logger.warning(
+            "Attempted to assign staff to finished match",
+            extra={"match_id": str(match_id)},
+        )
+        raise HTTPException(
+            status_code=409, detail="Cannot modify lineup for finished match"
+        )
+
+    # Verify participant is part of the match
+    participant = (
+        db.query(MatchParticipant)
+        .filter(
+            MatchParticipant.match_id == match_id,
+            MatchParticipant.participant == participant_id,
+        )
+        .first()
+    )
+    if not participant:
+        logger.warning(
+            "Participant not found in match for staff assignment",
+            extra={
+                "match_id": str(match_id),
+                "participant_id": str(participant_id),
+            },
+        )
+        raise HTTPException(
+            status_code=422, detail="Participant is not part of this match"
+        )
+
+    # Delete existing staff assignments for this participant
+    db.query(MatchLineupStaff).filter(
+        MatchLineupStaff.match_id == match_id,
+        MatchLineupStaff.participant_id == participant_id,
+    ).delete()
+
+    # Add new staff assignments
+    for staff_id in staff_data.staff_ids:
+        staff_assignment = MatchLineupStaff(
+            match_id=match_id,
+            participant_id=participant_id,
+            staff_id=staff_id,
+        )
+        db.add(staff_assignment)
+
+    db.commit()
+    db.refresh(match)
+
     return match.to_dict(include_details=True)
 
 

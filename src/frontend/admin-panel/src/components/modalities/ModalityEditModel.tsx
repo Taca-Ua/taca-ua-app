@@ -7,6 +7,7 @@ import { useNotification } from '../../contexts/NotificationProvider';
 import { useModal } from '../../contexts/ModalContext';
 import ChoseOneInput from '../utils/inputs/ChoseOneInput';
 import { useSeason } from '../../contexts/SeasonContext';
+import { regulationsApi } from '../../api/regulations';
 
 const ModalityEditModal = ( {
   modalityState,
@@ -23,6 +24,7 @@ const ModalityEditModal = ( {
 
   const [editedName, setEditedName] = useState(modalityData.name);
   const [editedType, setEditedType] = useState(modalityData.modality_type?.id);
+  const [editedRegulation, setEditedRegulation] = useState<string| null>(null);
 
   const onClose = () => {
     setEditedName(modalityData.name);
@@ -42,8 +44,25 @@ const ModalityEditModal = ( {
       notify('Modalidade atualizada com sucesso!', 'success');
     }).catch((error) => {
       console.error('Error updating modality:', error);
-      notify('Failed to update modality. Please try again.', 'error');
+      notify('Modalidade não atualizada. Tente novamente.', 'error');
     });
+
+    if (editedRegulation !== null) {
+      if (!loadedSeason) {
+        notify('Temporada não carregada. Não foi possível atualizar o regulamento.', 'error');
+        return;
+      }
+
+      modalitiesApi.updateRegulation(modalityData.id, {
+        regulation_id: editedRegulation,
+        season_id: loadedSeason.id
+      }).then(() => {
+        notify('Regulamento atualizado com sucesso!', 'success');
+      }).catch((error) => {
+        console.error('Error updating regulation:', error);
+        notify('Regulamento não atualizado. Tente novamente.', 'error');
+      });
+    }
   };
 
   return (
@@ -85,6 +104,24 @@ const ModalityEditModal = ( {
               />
             </div>
           )}
+          {modalityData.belongs_to_season && (<div>
+            <label className="block text-gray-700 font-medium mb-2">
+              Regulamento{" "}
+              <HelpTooltip
+                text="O regulamento define as regras específicas da modalidade, como critérios de desempate, pontuação e formato de competição. Ele é essencial para garantir que a modalidade seja conduzida de acordo com as diretrizes estabelecidas."
+                className="ml-1"
+              />
+            </label>
+            <ChoseOneInput
+              allElementsLoader={() => regulationsApi.getAll({
+                season_id: loadedSeason?.id,
+              }).then(regs => regs.map(reg => ({ id: reg.id, title: reg.title, subtitle: reg.file_url })))}
+              onSelect={(ele) => {
+                setEditedRegulation(ele?.id || null);
+              }}
+              initialElement={modalityData.regulation ? { id: modalityData.regulation.id, title: modalityData.regulation.name, subTitle: modalityData.regulation.link } : undefined}
+            />
+          </div>)}
         </div>
 
         <div className="flex gap-4 mt-6">

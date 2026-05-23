@@ -65,6 +65,9 @@ class MatchResponse(BaseModel):
     participants: List[MatchParticipantResponse] = Field(default_factory=list)
     comments: Optional[List["CommentResponse"]] = None
     lineups: Optional[List["LineupResponse"]] = None
+    staff_assignments: Optional[dict[str, List[UUID]]] = (
+        None  # participant_id -> list of staff_ids
+    )
 
     created_by: UUID
     created_at: datetime
@@ -106,6 +109,14 @@ class LineupBatchUpdate(BaseModel):
     players: List[LineupBatchUpdatePlayer] = Field(
         ...,
         description="List of players to update in the lineup with their new details",
+    )
+
+
+class LineupAssignStaff(BaseModel):
+    """Schema for assigning staff to a lineup."""
+
+    staff_ids: List[UUID] = Field(
+        ..., description="List of staff member IDs to assign to the lineup"
     )
 
 

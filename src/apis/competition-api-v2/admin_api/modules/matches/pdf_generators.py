@@ -270,6 +270,62 @@ class DocumentGenerationService:
             players_tbl.setStyle(TableStyle(ts))
             story.append(players_tbl)
             story.append(Spacer(1, 8))
+
+            # Staff assignments for this participant
+            if (
+                match.staff_assignments
+                and lineup.participant_id in match.staff_assignments
+            ):
+                staff_list = match.staff_assignments[lineup.participant_id]
+                if staff_list:
+                    staff_header_data = [
+                        [self._P(f"Equipa Técnica: {participant_name}", style_white_b)]
+                    ]
+                    staff_header_tbl = Table(staff_header_data, colWidths=[TABLE_W])
+                    staff_header_tbl.setStyle(
+                        TableStyle(
+                            [
+                                ("BACKGROUND", (0, 0), (-1, -1), HEADER_BG),
+                                ("TOPPADDING", (0, 0), (-1, -1), 5),
+                                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                                ("LEFTPADDING", (0, 0), (-1, -1), 6),
+                                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                                (
+                                    "GRID",
+                                    (0, 0),
+                                    (-1, -1),
+                                    0.5,
+                                    colors.HexColor("#BDC3C7"),
+                                ),
+                            ]
+                        )
+                    )
+                    story.append(staff_header_tbl)
+
+                    staff_col_w = [TABLE_W * 0.7, TABLE_W * 0.3]
+                    staff_header_row = [
+                        self._P("Nome", style_label),
+                        self._P("Função", style_label),
+                    ]
+                    staff_rows = [staff_header_row]
+                    for staff in staff_list:
+                        staff_rows.append(
+                            [
+                                self._P(staff.name, style_normal),
+                                self._P(
+                                    "", style_normal
+                                ),  # empty cell for role/function manually filled in by user
+                            ]
+                        )
+                    staff_tbl = Table(staff_rows, colWidths=staff_col_w)
+                    ts = self._base_ts() + [("BACKGROUND", (0, 0), (-1, 0), COL_LABEL)]
+                    for r in range(1, len(staff_rows)):
+                        if r % 2 == 0:
+                            ts.append(("BACKGROUND", (0, r), (-1, r), ROW_DARK))
+                    staff_tbl.setStyle(TableStyle(ts))
+                    story.append(staff_tbl)
+                    story.append(Spacer(1, 8))
         if match.lineups is None:
             # If no lineups, add a note about that
             no_lineup_tbl = Table(
@@ -487,6 +543,58 @@ class DocumentGenerationService:
                 lineup_tbl.setStyle(TableStyle(ts))
                 story.append(lineup_tbl)
                 story.append(Spacer(1, 10))
+
+                # Staff assignments for this participant
+                if (
+                    match.staff_assignments
+                    and participant_id in match.staff_assignments
+                ):
+                    staff_list = match.staff_assignments[participant_id]
+                    if staff_list:
+                        staff_section_header = [
+                            [self._P("Equipa Técnica", style_label)]
+                        ]
+                        staff_header_tbl = Table(
+                            staff_section_header, colWidths=[TABLE_W]
+                        )
+                        staff_header_tbl.setStyle(
+                            TableStyle(
+                                [
+                                    ("BACKGROUND", (0, 0), (-1, -1), HEADER_BG),
+                                    ("TOPPADDING", (0, 0), (-1, -1), 5),
+                                    ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                                    ("LEFTPADDING", (0, 0), (-1, -1), 6),
+                                    ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                                ]
+                            )
+                        )
+                        story.append(staff_header_tbl)
+
+                        staff_col_w = [TABLE_W * 0.7, TABLE_W * 0.3]
+                        staff_header_row = [
+                            self._P("Nome", style_label),
+                            self._P("Função", style_label),
+                        ]
+                        staff_rows = [staff_header_row]
+                        for staff in staff_list:
+                            staff_rows.append(
+                                [
+                                    self._P(staff.name, style_normal),
+                                    self._P(
+                                        "", style_normal
+                                    ),  # empty cell for role/function manually filled in by user
+                                ]
+                            )
+                        staff_tbl = Table(staff_rows, colWidths=staff_col_w)
+                        ts = self._base_ts() + [
+                            ("BACKGROUND", (0, 0), (-1, 0), COL_LABEL)
+                        ]
+                        for r in range(1, len(staff_rows)):
+                            if r % 2 == 0:
+                                ts.append(("BACKGROUND", (0, r), (-1, r), ROW_DARK))
+                        staff_tbl.setStyle(TableStyle(ts))
+                        story.append(staff_tbl)
+                        story.append(Spacer(1, 10))
 
         # ── BUILD PDF ─────────────────────────────────────────────────────────────
         doc = SimpleDocTemplate(

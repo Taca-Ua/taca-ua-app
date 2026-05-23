@@ -12,6 +12,11 @@ export interface ModalityListItem {
 
 export interface ModalityDetail extends ModalityListItem {
   relevant_season_ids: number[];  // List of season IDs where this modality is relevant (active)
+  regulation?: {
+    id: string;
+    name: string;
+    link: string;
+  };  // Optional regulation information, can be null if no regulation is associated
 };
 
 export interface ModalityCreate {
@@ -27,6 +32,11 @@ export interface ModalityUpdate {
 
 export interface ModalityTypeListParameters {
   season_id?: number;
+}
+
+export interface ModalityUpdateRegulation {
+  regulation_id?: string | null;
+  season_id: number;
 }
 
 export const modalitiesApi = {
@@ -52,5 +62,9 @@ export const modalitiesApi = {
 
   async delete(modalityId: string): Promise<void> {
     return apiClient.delete(`/modalities/${modalityId}/`);
+  },
+
+  async updateRegulation(modalityId: string, data: ModalityUpdateRegulation): Promise<ModalityDetail> {
+    return apiClient.put<ModalityDetail>(`/modalities/${modalityId}/update-regulation/`, data);
   },
 };

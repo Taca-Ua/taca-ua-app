@@ -17,13 +17,14 @@ from taca_events.pydantic_schemas.modalities import (
 
 from ..database import get_db_session
 from ..logger import logger
-from ..models import Modality, ModalityType, Season, SeasonModality, Team
+from ..models import Modality, ModalityType, Regulation, Season, SeasonModality, Team
 from ..outbox_publisher import outbox_publisher
 from ..schemas import (
     ModalityCreate,
     ModalityRemoveFromSeason,
     ModalityResponse,
     ModalityUpdate,
+    ModalityUpdateRegulationSerializer,
 )
 from ..utils import get_active_season
 
@@ -338,3 +339,61 @@ def get_modalities_by_ids(
     """Get multiple modalities by their IDs"""
     modalities = db.query(Modality).filter(Modality.id.in_(modality_ids)).all()
     return [modality.to_dict() for modality in modalities]
+
+
+@router.put(
+    "/modalities/{modality_id}/update-regulation", response_model=ModalityResponse
+)
+def update_modality_regulation(
+    modality_id: UUID,
+    modality_data: ModalityUpdateRegulationSerializer,
+    db: Session = Depends(get_db_session),
+):
+    """Update a modality's regulation for a specific season"""
+    season_id = modality_data.season_id
+    regulation_id = modality_data.regulation_id
+
+    # Validate modality exists
+    modality = db.query(Modality).filter(Modality.id == modality_id).first()
+    if not modality:
+        raise HTTPException(status_code=404, detail="Modality not found")
+
+    # Validate modality is associated with the season
+    season_modality = (
+        db.query(SeasonModality)
+        .filter(
+            SeasonModality.modality_id == modality_id,
+            SeasonModality.season_id == season_id,
+        )
+        .first()
+    )
+    if not season_modality:
+        raise HTTPException(
+            status_code=404,
+            detail="Modality is not associated with the specified season",
+        )
+
+    # Validate regulation exists for the season
+    if regulation_id is not None:
+        regulation = (
+            db.query(Regulation)
+            .filter(Regulation.id == regulation_id, Regulation.season_id == season_id)
+            .first()
+        )
+        if not regulation:
+            raise HTTPException(
+                status_code=404, detail="Regulation not found for the specified season"
+            )
+
+    # Update regulation association
+    season_modality.regulation_id = (
+        regulation_id  # if regulation_id is None, this will remove the association
+    )
+    modality.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(modality)
+
+    logger.info(
+        f"Updated regulation for modality {modality_id} in season {season_id} to regulation {regulation_id}"
+    )
+    return modality.to_dict(season_id=season_id)
