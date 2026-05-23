@@ -10,7 +10,7 @@ on:
 env:
   REGISTRY: ghcr.io
   OWNER: ${{ github.repository_owner }}
-  DEPLOY_PATH: /opt/taca-ua-app  # Adjust this to your deployment path
+  DEPLOY_PATH: ~/taca-ua-app  # Adjust this to your deployment path
 
 jobs:
   deploy:
