@@ -50,6 +50,12 @@ class Lineup:
 
 
 @dataclass
+class StaffEntry:
+    id: str
+    name: str
+
+
+@dataclass
 class Match:
     id: str
     tournament_id: str
@@ -60,6 +66,7 @@ class Match:
     participants: List[Participant] = field(default_factory=list)
     comments: List[Comment] = field(default_factory=list)
     lineups: List[Lineup] = field(default_factory=list)
+    staff_assignments: Dict[str, List[StaffEntry]] = field(default_factory=dict)
 
 
 class MatchesService:
@@ -167,6 +174,39 @@ class MatchesService:
                 for comment in match_dto.comments
             ]
 
+    def _fill_lineup_staff_assignments(
+        self,
+        matches_dto: List[MatchDTO],
+        matches_index: Dict[str, Match],
+        admin_id: str,
+    ) -> None:
+        relevant_staff_ids = set()
+        for match_dto in matches_dto:
+            if match_dto.staff_assignments:
+                for staff_ids in match_dto.staff_assignments.values():
+                    relevant_staff_ids.update(map(str, staff_ids))
+
+        staff_data = modalities_service_client.staff.get_staff_by_ids(
+            list(relevant_staff_ids)
+        )
+        for match_dto in matches_dto:
+            if not match_dto.staff_assignments:
+                continue
+            match_staff_assignments = {}
+            for participant_id, staff_ids in match_dto.staff_assignments.items():
+                participant_staff = []
+                for staff_id in staff_ids:
+                    staff_member = staff_data.get(str(staff_id))
+                    if staff_member:
+                        participant_staff.append(
+                            StaffEntry(
+                                id=staff_member.id,
+                                name=staff_member.full_name,
+                            )
+                        )
+                match_staff_assignments[str(participant_id)] = participant_staff
+            matches_index[match_dto.id].staff_assignments = match_staff_assignments
+
     def _build_multiple_matches_from_dtos(
         self,
         matches_dto: List[MatchDTO],
@@ -271,6 +311,7 @@ class MatchesService:
 
         if include_details:
             self._fill_lineup_players_info(matches_dto, matches_index, admin_id)
+            self._fill_lineup_staff_assignments(matches_dto, matches_index, admin_id)
             self._fill_comments_info(matches_dto, matches_index, admin_id)
         return resp
 
@@ -411,6 +452,23 @@ class MatchesService:
             # deleted_by="00000000-0000-0000-0000-000000000000",  # Placeholder for deleted_by
         )
         return
+
+    def assign_staff_to_lineup(
+        self,
+        match_id: str,
+        participant_id: str,
+        staff_ids: List[str],
+        admin_id: str = None,
+    ) -> Match:
+        """Assign staff to a match lineup"""
+        match_dto = matches_service_client.assign_staff_to_lineup(
+            match_id=match_id,
+            participant_id=participant_id,
+            staff_ids=staff_ids,
+        )
+        return self._build_match_from_dto(
+            match_dto, include_details=True, admin_id=admin_id
+        )
 
 
 matches_service = MatchesService()

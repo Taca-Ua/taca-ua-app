@@ -948,6 +948,18 @@ class StaffModalitiesService(BaseService):
         """
         self.delete(f"/staff/{staff_id}")
 
+    def get_staff_by_ids(self, staff_ids: List[str]) -> Dict[str, StaffDTO]:
+        """Get multiple staff members by their IDs
+
+        Args:
+            staff_ids (List[str]): List of staff member IDs
+
+        Returns:
+            Dict[str, StaffDTO]: Dictionary mapping staff member IDs to StaffDTO objects
+        """
+        staff_data = self.post("/staff/batch-get", staff_ids)
+        return {staff_id: StaffDTO(**staff) for staff_id, staff in staff_data.items()}
+
 
 class TeamModalitiesService(BaseService):
     """Service for managing teams via modalities-service"""

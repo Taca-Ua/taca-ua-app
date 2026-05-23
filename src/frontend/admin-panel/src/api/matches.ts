@@ -37,6 +37,7 @@ export interface MatchDetail extends MatchListItem {
     can_edit: boolean;
   }[];
   lineups: MatchLineup[];
+  staff_assignments: Record<string, { id: string; name: string }[]>; // participant_id -> list of staff members
 }
 
 // Request types
@@ -135,4 +136,8 @@ export const matchesApi = {
   async getMatchTeamSheet(matchId: string, participantId: string): Promise<Blob> {
     return apiClient.getBlob(`/matches/${matchId}/team-sheet/${participantId}/`);
   },
+
+  async assignStaff(matchId: string, participantId: string, staffIds: string[]): Promise<MatchDetail> {
+    return apiClient.post<MatchDetail>(`/matches/${matchId}/participants/${participantId}/staff/`, { staff_ids: staffIds });
+  }
 };

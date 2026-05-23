@@ -26,6 +26,7 @@ from .pdf_generators import (
 from .serializers import (
     CommentCreateSerializer,
     LineupAssignSerializer,
+    LineupAssignStaffSerializer,
     LineupUpdateSerializer,
     MatchCreateSerializer,
     MatchDetailSerializer,
@@ -251,6 +252,32 @@ class MatchLineupsView(RoleRequiredMixin, APIView):
         return Response(response_serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    request=LineupAssignStaffSerializer,
+    responses=MatchDetailSerializer,
+    description="Assign staff members to a team's lineup",
+    tags=["Match Management"],
+)
+@api_view(["POST"])
+@require_auth
+def add_staff_to_lineup(request, match_id, participant_id):
+    """Assign staff members to a team's lineup"""
+    serializer = LineupAssignStaffSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    match = matches_service.assign_staff_to_lineup(
+        match_id=match_id,
+        participant_id=str(participant_id),
+        staff_ids=[
+            str(staff_id) for staff_id in serializer.validated_data["staff_ids"]
+        ],
+        admin_id=(request.user_id if "nucleo_admin" in (request.roles or []) else None),
+    )
+
+    response_serializer = MatchDetailSerializer(match)
+    return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+
 # ============= Comment Management Views =============
 
 
@@ -361,6 +388,11 @@ urlpatterns = [
     ),
     # Lineup management
     path("<uuid:match_id>/lineups/", MatchLineupsView.as_view(), name="match-lineups"),
+    path(
+        "<uuid:match_id>/participants/<uuid:participant_id>/staff/",
+        add_staff_to_lineup,
+        name="match-lineup-assign-staff",
+    ),
     # Comment management
     path("<uuid:match_id>/comments/", add_comment, name="match-add-comment"),
     path(

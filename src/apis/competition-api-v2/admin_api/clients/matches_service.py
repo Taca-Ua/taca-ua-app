@@ -59,6 +59,9 @@ class MatchDTO:
     participants: List[MatchParticipantDTO] = field(default_factory=list)
     comments: List["CommentDTO"] = field(default_factory=list)
     lineups: List["MatchLineupDTO"] = field(default_factory=list)
+    staff_assignments: Optional[Dict[UUID, List[UUID]]] = (
+        None  # participant_id -> list of staff_ids
+    )
 
     def __post_init__(self):
         # Convert participants dicts to MatchParticipantDTO if necessary
@@ -76,6 +79,15 @@ class MatchDTO:
             MatchLineupDTO(**line) if not isinstance(line, MatchLineupDTO) else line
             for line in self.lineups
         ]
+
+        self.staff_assignments = (
+            {
+                UUID(participant_id): [UUID(s) for s in staff_ids]
+                for participant_id, staff_ids in self.staff_assignments.items()
+            }
+            if self.staff_assignments is not None
+            else None
+        )
 
 
 @dataclass
@@ -588,6 +600,26 @@ class MatchesService(BaseService):
         """
         rounds_data = self.get(f"/matches/tournament-rounds/{tournament_id}")
         return rounds_data.get("rounds", [])
+
+    def assign_staff_to_lineup(
+        self, match_id: UUID, participant_id: UUID, staff_ids: List[UUID]
+    ) -> MatchDTO:
+        """
+        Assign staff members to a match lineup.
+
+        Args:
+            match_id: Match UUID
+            participant_id: Participant UUID to which the staff will be assigned
+            staff_ids: List of staff member UUIDs to assign
+
+        Returns:
+            Updated match data with new lineup assignments
+        """
+        data = {"staff_ids": [str(staff_id) for staff_id in staff_ids]}
+        match_data = self.post(
+            f"/matches/{match_id}/participants/{participant_id}/staff", data=data
+        )
+        return MatchDTO(**match_data)
 
 
 # Singleton instance

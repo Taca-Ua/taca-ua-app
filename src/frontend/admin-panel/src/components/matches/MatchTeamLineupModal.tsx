@@ -3,6 +3,7 @@ import { useModal } from "../../contexts/ModalContext";
 import { matchesApi, type MatchDetail, type MatchLineup } from "../../api/matches";
 import ChooseMultipleModal from "../utils/costum_menus/ChoseMultipleModal";
 import { athletesApi } from "../../api/athletes";
+import { staffApi } from "../../api/staff";
 import Button from "../utils/Button";
 import { useNotification } from "../../contexts/NotificationProvider";
 
@@ -23,6 +24,8 @@ const MatchTeamLineupModal = ({
     const { notify } = useNotification();
 
     const [match, setMatch] = matchState;
+
+    const [staffAssignments, setStaffAssignments] = useState<{ id: string; name: string }[]>(match.staff_assignments[lineup.participant_id] || []);
 
     const [isEditMode, setIsEditMode] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -141,7 +144,8 @@ const MatchTeamLineupModal = ({
 
         {/* Top action buttons — hidden in edit mode */}
         {!isEditMode && (
-          <div className="flex space-x-3 mb-6">
+          <div className="mb-6 space-y-3">
+          <div className="flex space-x-3">
             <Button
               onClick={() => {
                 pushModal(
@@ -192,6 +196,51 @@ const MatchTeamLineupModal = ({
               +/- Escolher jogadores
             </Button>
 
+            <Button
+              onClick={() => {
+                pushModal(
+                  <ChooseMultipleModal
+                    allElementsLoader={() =>
+                      staffApi.getAll().then((res) =>
+                        res.map((staff) => ({
+                          id: staff.id,
+                          title: staff.full_name,
+                        })),
+                      )
+                    }
+                    initialChosenElementsIds={staffAssignments.map((s) => s.id)}
+                    onSave={(selectedIds) => {
+                      matchesApi
+                        .assignStaff(match.id,
+                          lineup.participant_id,
+                          selectedIds.map((staff) => staff.id),
+                        )
+                        .then((updatedMatch) =>{
+                          setMatch(updatedMatch);
+                          setStaffAssignments(updatedMatch.staff_assignments[lineup.participant_id] || []);
+                          notify(
+                            "Staff actualizado com sucesso",
+                            "success",
+                          )
+                        })
+                        .catch((error) => {
+                          notify(
+                            "Não foi possível actualizar o staff. Tente novamente.",
+                            "error",
+                          );
+                          console.error("Error updating staff:", error);
+                        });
+                      }
+                    }
+                  />
+                )
+              }}
+              flexible={true}
+            >
+              +/− Escolher staff
+            </Button>
+
+          </div>
             <Button
               onClick={() => handleDownloadTeamSheet(lineup.participant_id)}
               type="info"
@@ -347,6 +396,29 @@ const MatchTeamLineupModal = ({
             );
           })}
         </ul>
+
+        {/* Staff List */}
+        <div className="mt-6">
+          <h3 className="text-sm font-semibold text-gray-900 mb-2">Staff associado</h3>
+          <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200">
+            {staffAssignments.map((staff) => (
+              <li key={staff.id} className="flex items-center justify-between gap-4 p-3">
+                <div className="flex items-center gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">
+                      {staff.name}
+                    </p>
+                  </div>
+                </div>
+              </li>
+            ))}
+            {staffAssignments.length === 0 && (
+              <li className="text-center text-sm text-gray-400 p-3">
+                Nenhum staff associado a esta equipa.
+              </li>
+            )}
+          </ul>
+        </div>
 
         {/* Footer */}
         <div className="mt-6 flex justify-end gap-3">

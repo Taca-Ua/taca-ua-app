@@ -5,7 +5,7 @@ import { useModal } from "../../../contexts/ModalContext";
 export interface GenericElement {
     id: string;
     title: string;
-    subTitle: string;
+    subTitle?: string;
 }
 
 const EditSummary = ({
