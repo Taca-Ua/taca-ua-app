@@ -10,7 +10,7 @@ on:
 env:
   REGISTRY: ghcr.io
   OWNER: ${{ github.repository_owner }}
-  DEPLOY_PATH: $HOME/taca-ua-app  # Adjusted for macOS/Linux compatibility
+  DEPLOY_PATH: /Users/alxito_player/taca-ua-app
 
 jobs:
   deploy:
@@ -68,13 +68,13 @@ jobs:
       - name: Pull latest images
         working-directory: ${{ env.DEPLOY_PATH }}
         run: |
-          docker-compose pull --no-parallel
+          docker compose pull --no-parallel
           echo "✅ Docker images pulled successfully"
 
       - name: Update running containers (zero-downtime deployment)
         working-directory: ${{ env.DEPLOY_PATH }}
         run: |
-          docker-compose up -d
+          docker compose up -d
           echo "✅ Containers updated with zero downtime"
 
       - name: Wait for services to be healthy
@@ -82,17 +82,17 @@ jobs:
         run: |
           echo "Waiting for services to stabilize..."
           sleep 10
-          docker-compose ps
+          docker compose ps
           echo "✅ Deployment completed"
 
       - name: Verify deployment
         working-directory: ${{ env.DEPLOY_PATH }}
         run: |
           echo "Running containers:"
-          docker-compose ps
+          docker compose ps
           echo ""
           echo "Recent logs:"
-          docker-compose logs --tail=20
+          docker compose logs --tail=20
 
       - name: Cleanup old images (optional)
         run: |
