@@ -35,40 +35,28 @@ jobs:
           cat > ${{ env.DEPLOY_PATH }}/.env << 'EOF'
           # TLS/SSL Configuration
           DOMAIN=${{ secrets.DOMAIN }}
-          CERTBOT_EMAIL=${{ secrets.CERTBOT_EMAIL }}
-          CERTBOT_STAGING=${{ secrets.CERTBOT_STAGING }}
 
           # Database Configuration
           POSTGRES_USER=${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
           DATABASE_URL=${{ secrets.DATABASE_URL }}
-          POSTGRES_EXPOSED_PORT=${{ secrets.POSTGRES_EXPOSED_PORT }}
 
           # Object Storage Configuration
           MINIO_ROOT_USER=${{ secrets.MINIO_ROOT_USER }}
           MINIO_ROOT_PASSWORD=${{ secrets.MINIO_ROOT_PASSWORD }}
-          MINIO_ENDPOINT=${{ secrets.MINIO_ENDPOINT }}
-          MINIO_USE_SSL=${{ secrets.MINIO_USE_SSL }}
-          MINIO_PUBLIC_ENDPOINT=${{ secrets.MINIO_PUBLIC_ENDPOINT }}
 
           # Identity and Access Management
           KEYCLOAK_ADMIN=${{ secrets.KEYCLOAK_ADMIN }}
           KEYCLOAK_ADMIN_PASSWORD=${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}
           KEYCLOAK_REALM=${{ secrets.KEYCLOAK_REALM }}
-          KEYCLOAK_CLIENT_ID=${{ secrets.KEYCLOAK_CLIENT_ID }}
 
           # Message Queue Configuration
           RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}
           RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}
-          RABBITMQ_ERLANG_COOKIE=${{ secrets.RABBITMQ_ERLANG_COOKIE }}
 
           # Django Configuration
           DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
 
-          # Dev Auth Bypass (set to false in production)
-          DEV_AUTH_BYPASS_ENABLED=${{ secrets.DEV_AUTH_BYPASS_ENABLED }}
-          DEV_AUTH_BYPASS_TOKEN=${{ secrets.DEV_AUTH_BYPASS_TOKEN }}
-          DEV_AUTH_BYPASS_ROLES=${{ secrets.DEV_AUTH_BYPASS_ROLES }}
           EOF
           echo "✅ .env file created successfully"
 
