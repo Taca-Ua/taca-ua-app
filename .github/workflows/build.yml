@@ -64,6 +64,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Convert owner to lowercase
+        run: echo "OWNER_LOWER=$(echo ${{ env.OWNER }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
       - name: Build and push ${{ matrix.service }}
         uses: docker/build-push-action@v5
         with:
@@ -71,10 +74,10 @@ jobs:
           file: ${{ matrix.dockerfile }}
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.service }}:latest
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.service }}:${{ github.sha }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.service }}:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.service }}:buildcache,mode=max
+            ${{ env.REGISTRY }}/${{ env.OWNER_LOWER }}/${{ matrix.service }}:latest
+            ${{ env.REGISTRY }}/${{ env.OWNER_LOWER }}/${{ matrix.service }}:${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER_LOWER }}/${{ matrix.service }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER_LOWER }}/${{ matrix.service }}:buildcache,mode=max
 
   notify:
     needs: build-matrix
