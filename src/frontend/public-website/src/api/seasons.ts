@@ -1,19 +1,19 @@
 import { apiCall } from './client';
-import type { Season } from './types';
+
+export interface SeasonDetail {
+  season_id: number;
+  name: string;
+  is_active: boolean;
+}
+
+export interface SeasonList {
+    items: SeasonDetail[];
+    total: number;
+}
 
 export const seasonsApi = {
-  /**
-   * Get all seasons
-   */
-  getSeasons: async (): Promise<Season[]> => {
-    return apiCall<Season[]>('/seasons');
+  async getAll(): Promise<SeasonList> {
+    return apiCall<SeasonList>(`/seasons`);
   },
 
-  /**
-   * Get active season
-   */
-  getActiveSeason: async (): Promise<Season | null> => {
-    const seasons = await apiCall<Season[]>('/seasons');
-    return seasons.find(s => s.status === 'active') || null;
-  },
 };

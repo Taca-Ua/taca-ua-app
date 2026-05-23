@@ -9,6 +9,18 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/shared/taca-messaging /tmp/taca-messaging
 RUN pip install --no-cache-dir /tmp/taca-messaging && rm -rf /tmp/taca-messaging
 
+# Install outbox package
+COPY src/shared/taca-outbox /tmp/taca-outbox
+RUN pip install --no-cache-dir /tmp/taca-outbox && rm -rf /tmp/taca-outbox
+
+# Install snapshots package
+COPY src/shared/contracts/taca-snapshots /tmp/taca-snapshots
+RUN pip install --no-cache-dir /tmp/taca-snapshots && rm -rf /tmp/taca-snapshots
+
+# Install rebuild framework package
+COPY src/shared/platform/taca-rebuild /tmp/taca-rebuild
+RUN pip install --no-cache-dir /tmp/taca-rebuild && rm -rf /tmp/taca-rebuild
+
 COPY src/microservices/ranking-service .
 
 # Run migrations and start the service

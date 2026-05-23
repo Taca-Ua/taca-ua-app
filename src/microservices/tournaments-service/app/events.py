@@ -3,122 +3,113 @@ Event handling for Tournaments Service.
 Publishes and consumes events via RabbitMQ.
 """
 
-from datetime import datetime, timezone
-from typing import Any, Dict
-from uuid import UUID
-
-from taca_messaging import RabbitMQService
+from app.database import get_db_context
+from app.formats import FormatRegistry
+from app.models import Tournament
+from taca_events.pydantic_schemas.matches import (
+    MatchCreatedV1,
+    MatchDeletedV1,
+    MatchResultUpdatedV1,
+)
+from taca_messaging.rabbitmq_service import RabbitMQService
 
 from .logger import logger
-from .models import Tournament
 
-# This will be injected from main.py
-rabbitmq_service = RabbitMQService(service_name="tournaments-service")
+# Initialize RabbitMQ service for tournaments-service
+rabbitmq_service = RabbitMQService(service_name="tournaments-service", logger=logger)
 
 
-# Event Publishers
-async def publish_tournament_created(tournament: Tournament):
-    """Publish TournamentCreated event."""
-    if not rabbitmq_service:
-        logger.warning("RabbitMQ service not initialized")
+# ==================== Event Handlers ====================
+# These handlers respond to events from other services
+
+
+@rabbitmq_service.event_handler(MatchCreatedV1)
+async def handle_match_created(event: MatchCreatedV1):
+    """Handle match created event"""
+    logger.info(f"Match created event received: match_id={event.data.match_id}")
+    tournament_id = event.data.tournament_id
+
+    if not tournament_id:
+        logger.warning("Match created event missing tournament_id, cannot process")
         return
 
-    event_data = {
-        "tournament_id": str(tournament.id),
-        "modality_id": str(tournament.modality_id),
-        "season_id": str(tournament.season_id),
-        "name": tournament.name,
-        "created_at": tournament.created_at.isoformat(),
-    }
+    with get_db_context() as db:
+        tournament = db.query(Tournament).filter(Tournament.id == tournament_id).first()
 
-    await rabbitmq_service.publish_event("tournament.created", event_data)
-    logger.info(f"Published tournament.created event for tournament {tournament.id}")
+        if not tournament:
+            logger.warning(
+                f"Tournament with id {tournament_id} not found for match created event"
+            )
+            return
+
+        engine = FormatRegistry.get_engine(tournament.format)
+        if not engine:
+            logger.warning(
+                f"No format engine found for tournament format {tournament.format}, cannot process match created event"
+            )
+            return
+
+        # Route the event to the format engine for processing
+        engine.event_handle_match_created(db, event)
 
 
-async def publish_tournament_updated(tournament: Tournament, changes: Dict[str, Any]):
-    """Publish TournamentUpdated event."""
-    if not rabbitmq_service:
-        logger.warning("RabbitMQ service not initialized")
+@rabbitmq_service.event_handler(MatchDeletedV1)
+async def handle_match_deleted(event: MatchDeletedV1):
+    """Handle match deleted event"""
+    logger.info(f"Match deleted event received: match_id={event.data.match_id}")
+    tournament_id = event.data.tournament_id
+
+    if not tournament_id:
+        logger.warning("Match deleted event missing tournament_id, cannot process")
         return
 
-    event_data = {
-        "tournament_id": str(tournament.id),
-        "changes": changes,
-        "updated_at": (
-            tournament.updated_at.isoformat() if tournament.updated_at else None
-        ),
-    }
+    with get_db_context() as db:
+        tournament = db.query(Tournament).filter(Tournament.id == tournament_id).first()
 
-    await rabbitmq_service.publish_event("tournament.updated", event_data)
-    logger.info(f"Published tournament.updated event for tournament {tournament.id}")
+        if not tournament:
+            logger.warning(
+                f"Tournament with id {tournament_id} not found for match deleted event"
+            )
+            return
+
+        engine = FormatRegistry.get_engine(tournament.format)
+        if not engine:
+            logger.warning(
+                f"No format engine found for tournament format {tournament.format}, cannot process match deleted event"
+            )
+            return
+
+        # Route the event to the format engine for processing
+        engine.event_handle_match_deleted(db, event)
 
 
-async def publish_tournament_finished(tournament: Tournament):
-    """Publish TournamentFinished event."""
-    if not rabbitmq_service:
-        logger.warning("RabbitMQ service not initialized")
+@rabbitmq_service.event_handler(MatchResultUpdatedV1)
+async def handle_match_result_updated(event: MatchResultUpdatedV1):
+    """Handle match result updated event"""
+    logger.info(f"Match result updated event received: match_id={event.data.match_id}")
+    tournament_id = event.data.tournament_id
+
+    if not tournament_id:
+        logger.warning(
+            "Match result updated event missing tournament_id, cannot process"
+        )
         return
 
-    event_data = {
-        "tournament_id": str(tournament.id),
-        "modality_id": str(tournament.modality_id),
-        "season_id": str(tournament.season_id),
-        "finished_at": (
-            tournament.finished_at.isoformat() if tournament.finished_at else None
-        ),
-    }
+    with get_db_context() as db:
+        tournament = db.query(Tournament).filter(Tournament.id == tournament_id).first()
 
-    await rabbitmq_service.publish_event("tournament.finished", event_data)
-    logger.info(f"Published tournament.finished event for tournament {tournament.id}")
+        if not tournament:
+            logger.warning(
+                f"Tournament with id {tournament_id} not found for match result updated event"
+            )
+            return
 
+        engine = FormatRegistry.get_engine(tournament.format)
+        if not engine:
+            logger.warning(
+                f"No format engine found for tournament format {tournament.format}, cannot process match result updated event"
+            )
+            return
 
-async def publish_tournament_deleted(tournament_id: UUID):
-    """Publish TournamentDeleted event."""
-    if not rabbitmq_service:
-        logger.warning("RabbitMQ service not initialized")
-        return
-
-    event_data = {
-        "tournament_id": str(tournament_id),
-        "deleted_at": datetime.now(timezone.utc).isoformat(),
-    }
-
-    await rabbitmq_service.publish_event("tournament.deleted", event_data)
-    logger.info(f"Published tournament.deleted event for tournament {tournament_id}")
-
-
-# Event Consumers
-@rabbitmq_service.event_handler("modality.deleted")
-async def handle_modality_deleted(data: dict):
-    """
-    Consumes: modality.deleted
-
-    Handle ModalityDeleted event.
-    Marks all tournaments of this modality as invalid or cancels them.
-    """
-    modality_id = data.get("modality_id")
-    logger.info(f"Handling modality.deleted event for modality {modality_id}")
-
-    # Implementation to be added when database operations are needed
-    # - Find all tournaments with this modality_id
-    # - Mark them as cancelled or invalid
-    # - Publish events if needed
-    logger.warning("ModalityDeleted handler not fully implemented yet")
-
-
-@rabbitmq_service.event_handler("season.finished")
-async def handle_season_finished(data: dict):
-    """
-    Consumes: season.finished
-
-    Handle SeasonFinished event.
-    Finalizes automatically all open tournaments of this season.
-    """
-    season_id = data.get("season_id")
-    logger.info(f"Handling season.finished event for season {season_id}")
-
-    # Implementation to be added when database operations are needed
-    # - Find all tournaments with this season_id that are not finished
-    # - Mark them as finished
-    # - Publish tournament.finished events
-    logger.warning("SeasonFinished handler not fully implemented yet")
+        # Route the event to the format engine for processing
+        engine.event_handle_match_result_updated(db, event)

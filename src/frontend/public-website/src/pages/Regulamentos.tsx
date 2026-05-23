@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import RegulamentoCard from '../components/RegulamentoCard';
-import { api } from '../api';
-import type { Regulation } from '../api/types';
+import { getRegulations, type Regulation } from '../api/regulations';
+import { type SeasonDetail, seasonsApi } from '../api/seasons';
 
 function Regulamentos() {
   const [regulations, setRegulations] = useState<Regulation[]>([]);
@@ -12,6 +12,19 @@ function Regulamentos() {
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedRegulamento, setSelectedRegulamento] = useState<Regulation | null>(null);
+  const [seasonFilter, setSeasonFilter] = useState<number>(0);
+  const [seasons, setSeasons] = useState<SeasonDetail[]>([]);
+
+  useEffect(() => {
+    seasonsApi.getAll()
+      .then((data) => {
+        setSeasons(data.items);
+      })
+      .catch((err) => {
+        console.error('Failed to load seasons:', err);
+        setError('Erro ao carregar épocas');
+      });
+  }, []);
 
   // Fetch regulations on mount
   useEffect(() => {
@@ -20,7 +33,7 @@ function Regulamentos() {
       setError(null);
 
       try {
-        const data = await api.regulations.getRegulations();
+        const data = await getRegulations(undefined, seasonFilter);
         setRegulations(data);
       } catch (err) {
         console.error('Failed to load regulations:', err);
@@ -31,7 +44,7 @@ function Regulamentos() {
     };
 
     loadRegulations();
-  }, []);
+  }, [seasonFilter]);
 
   const filteredRegulamentos = regulations.filter((reg) => {
     const matchesSearch = reg.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -70,6 +83,19 @@ function Regulamentos() {
 
           {/* Filters */}
           <div className="mb-8">
+            <select
+              id="season-filter"
+              value={seasonFilter}
+              onChange={(e) => setSeasonFilter(parseInt(e.target.value))}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            >
+              {seasons.map((season) => (
+                <option key={season.season_id} value={season.season_id}>
+                  {season.name}
+                </option>
+              ))}
+            </select>
+
             {/* Search */}
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -121,7 +147,7 @@ function Regulamentos() {
                   <RegulamentoCard
                     key={regulamento.id}
                     title={regulamento.title}
-                    category={regulamento.category || 'Regulamento'}
+                    category="Regulamento"
                     epoca=""
                     onClick={() => handleCardClick(regulamento.id)}
                   />
@@ -151,7 +177,7 @@ function Regulamentos() {
                   {selectedRegulamento.title}
                 </h2>
                 <p className="text-sm text-gray-600">
-                  {selectedRegulamento.category || 'Regulamento'}
+                  {'Regulamento'}
                 </p>
               </div>
               <button

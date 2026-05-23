@@ -1,146 +1,339 @@
 """
-Pydantic schemas for Modalities Service API requests and responses.
+Pydantic schemas for Modalities Service API.
 """
 
-from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
-# Course Schemas
-class CourseCreate(BaseModel):
-    """Schema for creating a course."""
-
+# ==================== NUCLEO SCHEMAS ====================
+class NucleoCreate(BaseModel):
     name: str
     abbreviation: str
-    description: Optional[str] = None
     logo_url: Optional[str] = None
-    created_by: UUID
+
+
+class NucleoUpdate(BaseModel):
+    name: Optional[str] = None
+    abbreviation: Optional[str] = None
+    logo_url: Optional[str] = None
+
+
+class NucleoResponse(BaseModel):
+    id: str
+    name: str
+    abbreviation: str
+    logo_url: Optional[str] = None
+    admins_ids: List[str] = Field(default_factory=list)
+    courses: List["CourseResponse"] = Field(default_factory=list)
+    created_by: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+# ==================== COURSE SCHEMAS ====================
+class CourseCreate(BaseModel):
+    name: str
+    abbreviation: str
+    nucleo_id: UUID
 
 
 class CourseUpdate(BaseModel):
-    """Schema for updating a course."""
-
     name: Optional[str] = None
     abbreviation: Optional[str] = None
-    description: Optional[str] = None
-    logo_url: Optional[str] = None
-    updated_by: UUID
+    nucleo_id: Optional[UUID] = None
+
+
+class CourseAddToSeason(BaseModel):
+    season_id: int
+
+
+class CourseRemoveFromSeason(BaseModel):
+    season_id: int
 
 
 class CourseResponse(BaseModel):
-    """Schema for course response."""
-
-    id: UUID
+    id: str
     name: str
     abbreviation: str
-    description: Optional[str] = None
-    logo_url: Optional[str] = None
-    created_at: datetime
+    nucleo: Optional[NucleoResponse] = None
+    belongs_to_season: Optional[bool] = False
+    relevant_season_ids: Optional[List[int]] = None
+    created_by: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
 
     class Config:
         from_attributes = True
 
 
-# Modality Schemas
-class ModalityCreate(BaseModel):
-    """Schema for creating a modality."""
+# ==================== MODALITY TYPE SCHEMAS ====================
+class _Escalao(BaseModel):
+    escalao: str
+    minParticipants: Optional[int] = None
+    maxParticipants: Optional[int] = None
+    points: List[int]
 
+    def to_dict(self):
+        return {
+            "escalao": self.escalao,
+            "minParticipants": self.minParticipants,
+            "maxParticipants": self.maxParticipants,
+            "points": self.points,
+        }
+
+
+class ModalityTypeCreate(BaseModel):
     name: str
-    type: str  # "coletiva", "individual", "mista"
-    scoring_schema: Optional[dict] = None
-    created_by: UUID
+    mode: str
+    description: Optional[str] = None
+    escaloes: Optional[List[_Escalao]] = None
+    tournament_competitor_type: Optional[str] = None
+    season_id: Optional[int] = None
+
+    def escaloes_encoder(self):
+        if not self.escaloes:
+            return []
+
+        escaloes_list = []
+        for escalao in self.escaloes:
+            escaloes_list.append(escalao.to_dict())
+
+        return escaloes_list
+
+
+class ModalityTypeUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    mode: Optional[str] = None
+    escaloes: Optional[List[_Escalao]] = None
+    tournament_competitor_type: Optional[str] = None
+
+    def escaloes_encoder(self):
+        if not self.escaloes:
+            return []
+
+        escaloes_list = []
+        for escalao in self.escaloes:
+            escaloes_list.append(escalao.to_dict())
+
+        return escaloes_list
+
+
+class ModalityTypeResponse(BaseModel):
+    id: str
+    name: str
+    mode: str
+    description: Optional[str] = None
+    escaloes: Optional[List[_Escalao]] = None
+    tournament_competitor_type: Optional[str] = None
+    created_by: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+# ==================== MODALITY SCHEMAS ====================
+class ModalityCreate(BaseModel):
+    name: str
+    modality_type_id: UUID
 
 
 class ModalityUpdate(BaseModel):
-    """Schema for updating a modality."""
-
     name: Optional[str] = None
-    type: Optional[str] = None
-    scoring_schema: Optional[dict] = None
-    updated_by: UUID
+    modality_type_id: Optional[UUID] = None
+    season_id: Optional[int] = None
+
+
+class ModalityRemoveFromSeason(BaseModel):
+    season_id: int
+
+
+class ModalityUpdateRegulationSerializer(BaseModel):
+    season_id: int
+    regulation_id: Optional[UUID] = None
 
 
 class ModalityResponse(BaseModel):
-    """Schema for modality response."""
-
-    id: UUID
+    id: str
     name: str
-    type: str
-    scoring_schema: Optional[dict] = None
-    created_at: datetime
+    belongs_to_season: bool = False
+    modality_type: Optional[ModalityTypeResponse]
+    relevant_season_ids: Optional[List[int]] = None
+    regulation: Optional["RegulationResponse"] = None
+    created_by: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
 
     class Config:
         from_attributes = True
 
 
-# Team Schemas
-class TeamCreate(BaseModel):
-    """Schema for creating a team."""
-
-    modality_id: UUID
-    course_id: UUID
-    name: Optional[str] = None
-    players: Optional[List[UUID]] = None
-    created_by: UUID
-
-
-class TeamUpdate(BaseModel):
-    """Schema for updating a team."""
-
-    name: Optional[str] = None
-    players_add: Optional[List[UUID]] = None
-    players_remove: Optional[List[UUID]] = None
-    updated_by: UUID
-
-
-class TeamResponse(BaseModel):
-    """Schema for team response."""
-
-    id: UUID
-    modality_id: UUID
-    course_id: UUID
-    name: str
-    players: Optional[List[UUID]] = None
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
-
-
-# Student Schemas
+# ==================== STUDENT SCHEMAS ====================
 class StudentCreate(BaseModel):
-    """Schema for creating a student."""
-
-    course_id: UUID
     full_name: str
+    course_id: UUID
     student_number: str
-    email: Optional[str] = None
-    is_member: Optional[bool] = False
-    created_by: UUID
+    is_member: bool = False
 
 
 class StudentUpdate(BaseModel):
-    """Schema for updating a student."""
-
     full_name: Optional[str] = None
-    email: Optional[str] = None
+    course_id: Optional[UUID] = None
+    student_number: Optional[str] = None
     is_member: Optional[bool] = None
-    updated_by: UUID
 
 
 class StudentResponse(BaseModel):
-    """Schema for student response."""
-
-    id: UUID
-    course_id: UUID
+    id: str
     full_name: str
+    course: CourseResponse
     student_number: str
-    email: Optional[str] = None
     is_member: bool
-    created_at: datetime
+    created_by: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class StudentMembershipSyncRequest(BaseModel):
+    """NMEC values to mark as sócios after resetting everyone in scope to não-sócio."""
+
+    student_numbers: List[str] = Field(default_factory=list)
+
+
+class StudentMembershipSyncResponse(BaseModel):
+    participants_in_scope: int
+    reset_to_non_socio: int
+    set_as_socio: int
+    # NMECs no ficheiro que não correspondem a nenhum participante no âmbito
+    unmatched_numbers: List[str]
+
+
+# ==================== STAFF SCHEMAS ====================
+class StaffCreate(BaseModel):
+    full_name: str
+    staff_number: Optional[str] = None
+    contact: Optional[str] = None
+
+
+class StaffUpdate(BaseModel):
+    full_name: Optional[str] = None
+    staff_number: Optional[str] = None
+    contact: Optional[str] = None
+
+
+class StaffResponse(BaseModel):
+    id: str
+    full_name: str
+    staff_number: Optional[str] = None
+    contact: Optional[str] = None
+    created_by: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+# ==================== TEAM SCHEMAS ====================
+class TeamCreate(BaseModel):
+    name: str
+    modality_id: UUID
+    course_id: UUID
+    season_id: Optional[int] = None
+
+
+class TeamUpdate(BaseModel):
+    name: Optional[str] = None
+    players_add: Optional[List[UUID]] = None
+    players_remove: Optional[List[UUID]] = None
+
+
+class TeamResponse(BaseModel):
+    id: str
+    name: str
+    modality: ModalityResponse
+    course: CourseResponse
+    season: Optional["SeasonResponse"] = None
+    players: List[StudentResponse] = Field(default_factory=list)
+    created_by: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+# ==================== REGULATION SCHEMAS ====================
+
+
+class RegulationInternalCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    file_url: str
+    season_id: Optional[int] = None
+
+
+class RegulationInternalUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+
+
+class RegulationResponse(BaseModel):
+    id: UUID
+    title: str
+    description: Optional[str]
+    file_url: str
+
+    class Config:
+        from_attributes = True
+
+
+# ==================== SEASON SCHEMAS ====================
+
+
+class SeasonCreate(BaseModel):
+    name: str
+    admin_id: str = None
+
+
+class SeasonResponse(BaseModel):
+    id: int
+    name: str
+    created_by: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class SeasonSummaryResponse(BaseModel):
+    id: int
+    name: str
+
+    modality_types_count: int
+    active_modalities_count: int
+    active_courses_count: int
+    teams_count: int
+
+    athletes_count: int
+    staff_count: int
+
+    # Fields when passed admin_id for filtering
+    admin_courses_ids: Optional[List[int]] = None
+    admin_teams_ids: Optional[List[int]] = None
+    admin_athletes_ids: Optional[List[str]] = None
 
     class Config:
         from_attributes = True

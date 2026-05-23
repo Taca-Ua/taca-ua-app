@@ -1,11 +1,18 @@
 import { createBrowserRouter } from 'react-router-dom';
 import Home from '../pages/Home';
 import NotFound from '../pages/NotFound';
-import Geral from '../pages/classificacao/Geral';
-import Modalidade from '../pages/classificacao/Modalidade';
-import TorneioDetail from '../pages/classificacao/TorneioDetail';
 import Regulamentos from '../pages/Regulamentos';
 import Calendario from '../pages/Calendario';
+import MatchDetailPage from '../pages/MatchDetail';
+import TeamDetailPage from '../pages/TeamDetail';
+import Nucleos from '../pages/Nucleos';
+import NucleoDetailPage from '../pages/NucleoDetail';
+import Tournaments from '../pages/classificacao/Tournaments';
+import TournamentDetailPage from '../pages/classificacao/TournamentDetail';
+import GeneralRankingPage from '../pages/classificacao/GeneralRanking';
+import ModalityRankingPage from '../pages/classificacao/ModalityRanking';
+import Students from '../pages/Students';
+import Teams from '../pages/Teams';
 
 export const router = createBrowserRouter([
   {
@@ -13,20 +20,48 @@ export const router = createBrowserRouter([
     element: <Home />
   },
   {
-    path: '/classificacao/geral',
-    element: <Geral />
-  },
-  {
-    path: '/classificacao/modalidade',
-    element: <Modalidade />
-  },
-  {
-    path: '/classificacao/torneio/:id',
-    element: <TorneioDetail />
-  },
-  {
     path: '/calendario',
     element: <Calendario />
+  },
+  {
+    path: '/jogos/:id',
+    element: <MatchDetailPage />
+  },
+  {
+    path: '/torneios',
+    element: <Tournaments />
+  },
+  {
+    path: '/torneios/:id',
+    element: <TournamentDetailPage />
+  },
+  {
+    path: '/ranking',
+    element: <GeneralRankingPage />
+  },
+  {
+    path: '/ranking/modalidade',
+    element: <ModalityRankingPage />
+  },
+  {
+    path: '/estudantes',
+    element: <Students />
+  },
+  {
+    path: '/equipas',
+    element: <Teams />
+  },
+  {
+    path: '/equipas/:id',
+    element: <TeamDetailPage />
+  },
+  {
+    path: '/nucleos',
+    element: <Nucleos />
+  },
+  {
+    path: '/nucleos/:id',
+    element: <NucleoDetailPage />
   },
   {
     path: '/regulamentos',

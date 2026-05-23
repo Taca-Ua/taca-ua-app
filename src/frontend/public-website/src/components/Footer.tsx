@@ -12,7 +12,7 @@ function Footer() {
               Portal oficial dos desportos universitários da Universidade de Aveiro.
             </p>
             <p className="text-gray-400 text-sm">
-              © 2025 Taça UA. Todos os direitos reservados.
+              © 2026 Taça UA. Todos os direitos reservados.
             </p>
           </div>
 
@@ -21,13 +21,28 @@ function Footer() {
             <h4 className="text-lg font-semibold mb-4 text-teal-400">Links Rápidos</h4>
             <ul className="space-y-2">
               <li>
-                <Link to="/classificacao/geral" className="text-gray-300 hover:text-teal-400 transition-colors">
-                  Classificação Geral
+                <Link to="/ranking" className="text-gray-300 hover:text-teal-400 transition-colors">
+                  Ranking Geral
                 </Link>
               </li>
               <li>
-                <Link to="/classificacao/modalidade" className="text-gray-300 hover:text-teal-400 transition-colors">
-                  Classificação por Modalidade
+                <Link to="/torneios" className="text-gray-300 hover:text-teal-400 transition-colors">
+                  Torneios
+                </Link>
+              </li>
+              <li>
+                <Link to="/equipas" className="text-gray-300 hover:text-teal-400 transition-colors">
+                  Equipas
+                </Link>
+              </li>
+              <li>
+                <Link to="/nucleos" className="text-gray-300 hover:text-teal-400 transition-colors">
+                  Núcleos
+                </Link>
+              </li>
+              <li>
+                <Link to="/estudantes" className="text-gray-300 hover:text-teal-400 transition-colors">
+                  Estudantes
                 </Link>
               </li>
               <li>
@@ -39,11 +54,6 @@ function Footer() {
                 <Link to="/regulamentos" className="text-gray-300 hover:text-teal-400 transition-colors">
                   Regulamentos
                 </Link>
-              </li>
-              <li>
-                <a href="/admin/" className="text-gray-300 hover:text-teal-400 transition-colors">
-                  Admin Login
-                </a>
               </li>
             </ul>
           </div>

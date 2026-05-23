@@ -1,41 +1,45 @@
-import logging
 from contextlib import asynccontextmanager
 
-import logging_loki
 from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
-from taca_messaging.rabbitmq_service import RabbitMQService
+from taca_logging import StructlogMiddleware
 
-# Logging setup
-handler = logging_loki.LokiHandler(
-    url="http://loki:3100/loki/api/v1/push",
-    tags={"application": "read-model-updater", "job": "read-model-updater"},
-    version="1",
-)
-logger = logging.getLogger("read-model-updater")
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
-
-# Register event handlers
-rabbitmq_service = RabbitMQService(service_name="read-model-updater")
+from .events import rabbitmq_service
+from .logger import logger
+from .rebuild_controller_sse import router as rebuild_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Start RabbitMQ consumer
     await rabbitmq_service.start_consuming()
-    logger.info("Read Model Updater started")
+    logger.info("service_started", action="startup")
     yield
     # Shutdown: Disconnect RabbitMQ
     await rabbitmq_service.disconnect()
-    logger.info("Read Model Updater stopped")
+    logger.info("service_stopped", action="shutdown")
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    title="Read Model Updater Service",
+    description="Maintains materialized views for public read access",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+# Add structured logging middleware
+app.add_middleware(StructlogMiddleware)
+
+# Include SSE-based rebuild router for internal rebuild operations
+app.include_router(rebuild_router)
+
 Instrumentator().instrument(app).expose(app)  # Prometheus metrics endpoint
 
 
 @app.get("/")
 def read_root():
-    logger.info("Root endpoint accessed")
-    return {"Service": "Read Model Updater"}
+    return {
+        "service": "Read Model Updater",
+        "version": "1.0.0",
+        "description": "Maintains materialized views and provides read endpoints",
+    }

@@ -1,36 +1,47 @@
 import { apiCall, buildQueryString } from './client';
-import type { Match } from './types';
 
-export interface GetMatchesParams {
-  date?: string;
-  date_from?: string;
-  date_to?: string;
-  modality_id?: string;
-  course_id?: string;
-  team_id?: string;
+export interface MatchDetail {
+  match_id: string;
+  location: string;
+  status: string;
+  start_time: string;
+  tournament_id: string;
+  tournament_name: string;
+  modality_id: string;
+  modality_name: string | null;
+  participants: Array<Record<string, any>>;
+  results: Array<Record<string, any>> | null;
+  participant_count: number;
+  comment_count: number;
+}
+
+export interface MatchDetailList {
+  items: MatchDetail[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface MatchListParams {
+  page?: number;
+  page_size?: number;
+  tournament_id?: string;
   status?: string;
 }
 
 export const matchesApi = {
-  /**
-   * Get matches with optional filters
-   */
-  getMatches: async (params?: GetMatchesParams): Promise<Match[]> => {
-    const query = params ? buildQueryString(params as Record<string, string | undefined>) : '';
-    return apiCall<Match[]>(`/matches${query}`);
+  async getAll(params?: MatchListParams): Promise<MatchDetailList> {
+    const queryParams: Record<string, string | undefined> = {
+      page: params?.page?.toString(),
+      page_size: params?.page_size?.toString(),
+      tournament_id: params?.tournament_id,
+      status: params?.status,
+    };
+    const queryString = buildQueryString(queryParams);
+    return apiCall<MatchDetailList>(`/matches${queryString}`);
   },
 
-  /**
-   * Get matches for a specific date
-   */
-  getMatchesByDate: async (date: string): Promise<Match[]> => {
-    return apiCall<Match[]>(`/matches?date=${date}`);
-  },
-
-  /**
-   * Get matches for a date range
-   */
-  getMatchesByDateRange: async (dateFrom: string, dateTo: string): Promise<Match[]> => {
-    return apiCall<Match[]>(`/matches?date_from=${dateFrom}&date_to=${dateTo}`);
+  async getById(matchId: string): Promise<MatchDetail> {
+    return apiCall<MatchDetail>(`/matches/${matchId}`);
   },
 };
