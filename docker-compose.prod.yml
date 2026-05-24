@@ -1,7 +1,7 @@
 services:
 # Infrastructure Services
   nginx:
-    image: ghcr.io/${OWNER}/nginx:latest
+    image: ghcr.io/${OWNER_LOWER}/nginx:latest
     restart: always
     ports:
       - "80:80"
@@ -130,7 +130,7 @@ services:
 
 # APIs
   competition-api-v2:
-    image: ghcr.io/${OWNER}/competition-api-v2:latest
+    image: ghcr.io/${OWNER_LOWER}/competition-api-v2:latest
     restart: always
     environment:
       - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/auth
@@ -149,7 +149,7 @@ services:
         condition: service_started
 
   public-api:
-    image: ghcr.io/${OWNER}/public-api:latest
+    image: ghcr.io/${OWNER_LOWER}/public-api:latest
     restart: always
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -172,7 +172,7 @@ services:
 
 # Microservices
   matches-service:
-    image: ghcr.io/${OWNER}/matches-service:latest
+    image: ghcr.io/${OWNER_LOWER}/matches-service:latest
     restart: always
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -192,7 +192,7 @@ services:
         condition: service_healthy
 
   modalities-service:
-    image: ghcr.io/${OWNER}/modalities-service:latest
+    image: ghcr.io/${OWNER_LOWER}/modalities-service:latest
     restart: always
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -212,7 +212,7 @@ services:
         condition: service_healthy
 
   ranking-service:
-    image: ghcr.io/${OWNER}/ranking-service:latest
+    image: ghcr.io/${OWNER_LOWER}/ranking-service:latest
     restart: always
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -232,7 +232,7 @@ services:
         condition: service_healthy
 
   read-model-updater:
-    image: ghcr.io/${OWNER}/read-model-updater:latest
+    image: ghcr.io/${OWNER_LOWER}/read-model-updater:latest
     restart: always
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -252,7 +252,7 @@ services:
         condition: service_healthy
 
   tournaments-service:
-    image: ghcr.io/${OWNER}/tournaments-service:latest
+    image: ghcr.io/${OWNER_LOWER}/tournaments-service:latest
     restart: always
     environment:
       - RABBITMQ_HOST=rabbitmq
@@ -273,7 +273,7 @@ services:
 
 # Frontend Services
   admin-panel:
-    image: ghcr.io/${OWNER}/admin-panel:latest
+    image: ghcr.io/${OWNER_LOWER}/admin-panel:latest
     restart: always
     environment:
       - VITE_KEYCLOAK_URL=/auth
@@ -281,7 +281,7 @@ services:
       - VITE_KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-frontend-admin}
 
   public-website:
-    image: ghcr.io/${OWNER}/public-website:latest
+    image: ghcr.io/${OWNER_LOWER}/public-website:latest
     restart: always
 
 volumes:
