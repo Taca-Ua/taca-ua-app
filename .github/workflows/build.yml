@@ -1,9 +1,9 @@
 name: Build and Push Docker Images
 
 on:
-  push:
-    branches:
-      - main
+  # push:
+  #   branches:
+  #     - main
   workflow_dispatch:
 
 env:
@@ -20,28 +20,32 @@ jobs:
     strategy:
       matrix:
         include:
-          # APIs
-          # - service: competition-api-v2
-          #   dockerfile: ./src/apis/competition-api-v2/Dockerfile.dev
+          # Infrastructure
+          - service: nginx
+            dockerfile: ./src/infrastructure/nginx/Dockerfile
 
-          # - service: public-api
-          #   dockerfile: ./src/apis/public-api/Dockerfile.dev
+          # APIs
+          - service: competition-api-v2
+            dockerfile: ./src/apis/competition-api-v2/Dockerfile.dev
+
+          - service: public-api
+            dockerfile: ./src/apis/public-api/Dockerfile.dev
 
           # Microservices
-          # - service: matches-service
-          #   dockerfile: ./src/microservices/matches-service/Dockerfile.dev
+          - service: matches-service
+            dockerfile: ./src/microservices/matches-service/Dockerfile.dev
 
-          # - service: modalities-service
-          #   dockerfile: ./src/microservices/modalities-service/Dockerfile.dev
+          - service: modalities-service
+            dockerfile: ./src/microservices/modalities-service/Dockerfile.dev
 
-          # - service: ranking-service
-          #   dockerfile: ./src/microservices/ranking-service/Dockerfile.dev
+          - service: ranking-service
+            dockerfile: ./src/microservices/ranking-service/Dockerfile.dev
 
-          # - service: read-model-updater
-          #   dockerfile: ./src/microservices/read-model-updater/Dockerfile.dev
+          - service: read-model-updater
+            dockerfile: ./src/microservices/read-model-updater/Dockerfile.dev
 
-          # - service: tournaments-service
-          #   dockerfile: ./src/microservices/tournaments-service/Dockerfile.dev
+          - service: tournaments-service
+            dockerfile: ./src/microservices/tournaments-service/Dockerfile.dev
 
           # Frontend
           - service: admin-panel
