@@ -22,14 +22,14 @@ jobs:
         include:
           # Infrastructure
           - service: nginx
-            dockerfile: ./src/configs/nginx/Dockerfile
+            context: ./src/configs/nginx
 
           # APIs
           - service: competition-api-v2
-            dockerfile: ./src/apis/competition-api-v2/Dockerfile.dev
+            dockerfile: ./src/apis/competition-api-v2/Dockerfile
 
           - service: public-api
-            dockerfile: ./src/apis/public-api/Dockerfile.dev
+            dockerfile: ./src/apis/public-api/Dockerfile
 
           # Microservices
           - service: matches-service

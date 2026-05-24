@@ -36,6 +36,10 @@ jobs:
       - name: Create .env file with secrets
         run: |
           cat > ${{ env.DEPLOY_PATH }}/.env << 'EOF'
+          # Deployment Environment Variables
+          OWNER=${{ env.OWNER }}
+          OWNER_LOWER=${{ env.OWNER_LOWER }}
+
           # TLS/SSL Configuration
           DOMAIN=${{ secrets.DOMAIN }}
 

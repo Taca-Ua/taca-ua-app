@@ -25,9 +25,11 @@ SECRET_KEY = "django-insecure-h(dq0b&v@(glrtzh%4704m%-=dex0u-gf6i@r%+cu$g1_2+e=(
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "true").lower() == "true"
+DOMAIN = os.environ.get("DOMAIN", "localhost")
 
 ALLOWED_HOSTS = [
-    "*",
+    DOMAIN,
+    "*" if DEBUG else "",  # Allow all hosts in debug mode, but require explicit hostnames in production
 ]
 
 
@@ -160,7 +162,7 @@ KEYCLOAK_JWKS_URI = (
 )
 KEYCLOAK_ISSUER = os.environ.get(
     "KEYCLOAK_ISSUER",
-    f"{KEYCLOAK_INTERNAL_URL}/realms/{KEYCLOAK_REALM}",  # fallback for local dev without nginx
+    f"{DOMAIN}/realms/{KEYCLOAK_REALM}",  # fallback for local dev without nginx
 )
 KEYCLOAK_ADMIN_SERVER_URL = (
     os.environ.get("KEYCLOAK_ADMIN_SERVER_URL", KEYCLOAK_INTERNAL_URL).rstrip("/") + "/"

@@ -23,9 +23,6 @@ services:
     image: rabbitmq:3.12-management-alpine
     restart: always
     user: "root"
-    # ports:
-    #   - "5672:5672"
-    #   - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
@@ -47,8 +44,6 @@ services:
       POSTGRES_DB: taca_ua
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    # ports:
-    #   - "${POSTGRES_EXPOSED_PORT:-5432}:5432"
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-user}", "-d", "taca_ua"]
       interval: 10s
@@ -59,32 +54,30 @@ services:
   redis:
     image: redis:7-alpine
     restart: always
-    # ports:
-    #   - "6379:6379"
 
   minio:
     image: minio/minio
     restart: always
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
     volumes:
       - minio_data:/data
-    # ports:
-    #   - "9000:9000"
-    #   - "9001:9001"
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.3.2
     restart: always
     environment:
-      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
-      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+
       KC_PROXY_HEADERS: xforwarded
       KC_HTTP_ENABLED: "true"
+
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
+
       KC_HTTP_RELATIVE_PATH: "/auth"
     volumes:
       - ./src/configs/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
@@ -120,8 +113,6 @@ services:
       - ./src/configs/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./src/configs/grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana_data:/var/lib/grafana
-    # ports:
-    #   - "3002:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
     depends_on:
@@ -156,8 +147,7 @@ services:
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
-      - PYTHONUNBUFFERED=1
-      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_URL=${DATABASE_URL:-"postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua"}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_DB=0
@@ -180,9 +170,7 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
-      - DATABASE_URL=${DATABASE_URL}
-    # ports:
-    #   - "8001:8000"
+      - DATABASE_URL=${DATABASE_URL:-"postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua"}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -200,9 +188,7 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
-      - DATABASE_URL=${DATABASE_URL}
-    # ports:
-    #   - "8002:8000"
+      - DATABASE_URL=${DATABASE_URL:-"postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua"}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -220,9 +206,7 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
-      - DATABASE_URL=${DATABASE_URL}
-    # ports:
-    #   - "8003:8000"
+      - DATABASE_URL=${DATABASE_URL:-"postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua"}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -240,9 +224,7 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
-      - DATABASE_URL=${DATABASE_URL}
-    # ports:
-    #   - "8004:8000"
+      - DATABASE_URL=${DATABASE_URL:-"postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua"}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -260,9 +242,7 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
-      - DATABASE_URL=${DATABASE_URL}
-    # ports:
-    #   - "8005:8000"
+      - DATABASE_URL=${DATABASE_URL:-"postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua"}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -276,6 +256,7 @@ services:
     image: ghcr.io/${OWNER_LOWER}/admin-panel:latest
     restart: always
     environment:
+      - CHOKIDAR_USEPOLLING=true
       - VITE_KEYCLOAK_URL=/auth
       - VITE_KEYCLOAK_REALM=${KEYCLOAK_REALM:-taca-ua}
       - VITE_KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-frontend-admin}
@@ -283,6 +264,8 @@ services:
   public-website:
     image: ghcr.io/${OWNER_LOWER}/public-website:latest
     restart: always
+    environment:
+      - CHOKIDAR_USEPOLLING=true
 
 volumes:
   postgres_data:

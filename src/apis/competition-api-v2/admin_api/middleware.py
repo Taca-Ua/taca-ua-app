@@ -128,8 +128,6 @@ class KeycloakJWTMiddleware:
             },
             "issuer": settings.KEYCLOAK_ISSUER,
         }
-        print(token, flush=True)
-        print("JWT Decode kwargs:", decode_kwargs, flush=True)
 
         audience = getattr(settings, "KEYCLOAK_AUDIENCE", None)
         if audience:
