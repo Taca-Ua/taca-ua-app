@@ -33,19 +33,19 @@ jobs:
 
           # Microservices
           - service: matches-service
-            dockerfile: ./src/microservices/matches-service/Dockerfile.dev
+            dockerfile: ./src/microservices/matches-service/Dockerfile
 
           - service: modalities-service
-            dockerfile: ./src/microservices/modalities-service/Dockerfile.dev
+            dockerfile: ./src/microservices/modalities-service/Dockerfile
 
           - service: ranking-service
-            dockerfile: ./src/microservices/ranking-service/Dockerfile.dev
+            dockerfile: ./src/microservices/ranking-service/Dockerfile
 
           - service: read-model-updater
-            dockerfile: ./src/microservices/read-model-updater/Dockerfile.dev
+            dockerfile: ./src/microservices/read-model-updater/Dockerfile
 
           - service: tournaments-service
-            dockerfile: ./src/microservices/tournaments-service/Dockerfile.dev
+            dockerfile: ./src/microservices/tournaments-service/Dockerfile
 
           # Frontend
           - service: admin-panel
