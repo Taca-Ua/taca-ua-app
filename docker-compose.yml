@@ -58,6 +58,8 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "9001:9001" # Console
     volumes:
       - minio_data:/data
 
@@ -116,12 +118,13 @@ services:
     build: 
       context: .
       dockerfile: ./src/apis/competition-api-v2/Dockerfile
-    restart: always
     environment:
       - DOMAIN=${DOMAIN:-localhost}
       - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/auth
       - KEYCLOAK_REALM=${KEYCLOAK_REALM:-taca-ua}
       - KEYCLOAK_ISSUER=https://${DOMAIN:-localhost}/auth/realms/${KEYCLOAK_REALM:-taca-ua}
+      - MINIO_USER=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
       - DEV_AUTH_BYPASS_ENABLED=${DEV_AUTH_BYPASS_ENABLED:-false}
       - DEV_AUTH_BYPASS_ROLES=${DEV_AUTH_BYPASS_ROLES:-general_admin}
       - DEV_AUTH_BYPASS_TOKEN=${DEV_AUTH_BYPASS_TOKEN:-}
@@ -138,13 +141,12 @@ services:
     build: 
       context: .
       dockerfile: ./src/apis/public-api/Dockerfile
-    restart: always
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
-      - DATABASE_URL=${DATABASE_URL:-"postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua"}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_DB=0
@@ -162,14 +164,13 @@ services:
     build: 
       context: .
       dockerfile: ./src/microservices/matches-service/Dockerfile
-    restart: always
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
-      - DATABASE_URL=${DATABASE_URL:-"postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua"}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -182,14 +183,13 @@ services:
     build: 
       context: .
       dockerfile: ./src/microservices/modalities-service/Dockerfile
-    restart: always
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
-      - DATABASE_URL=${DATABASE_URL:-"postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua"}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -202,14 +202,13 @@ services:
     build: 
       context: .
       dockerfile: ./src/microservices/ranking-service/Dockerfile
-    restart: always
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
-      - DATABASE_URL=${DATABASE_URL:-"postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua"}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -222,14 +221,13 @@ services:
     build: 
       context: .
       dockerfile: ./src/microservices/read-model-updater/Dockerfile
-    restart: always
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
-      - DATABASE_URL=${DATABASE_URL:-"postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua"}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -242,14 +240,13 @@ services:
     build: 
       context: .
       dockerfile: ./src/microservices/tournaments-service/Dockerfile
-    restart: always
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
-      - DATABASE_URL=${DATABASE_URL:-"postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua"}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -262,7 +259,6 @@ services:
   admin-panel:
     build: 
       context: ./src/frontend/admin-panel
-    restart: always
     environment:
       - CHOKIDAR_USEPOLLING=true
       - VITE_KEYCLOAK_URL=/auth
@@ -272,7 +268,6 @@ services:
   public-website:
     build: 
       context: ./src/frontend/public-website
-    restart: always
     environment:
       - CHOKIDAR_USEPOLLING=true
 

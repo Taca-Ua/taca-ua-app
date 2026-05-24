@@ -16,8 +16,8 @@ class MinioService(BaseService):
 
         self.client = Minio(
             self.base_url,
-            access_key=os.environ.get("MINIO_ACCESS_KEY", "admin"),
-            secret_key=os.environ.get("MINIO_SECRET_KEY", "adminadmin"),
+            access_key=os.environ.get("MINIO_USER", "admin"),
+            secret_key=os.environ.get("MINIO_PASSWORD", "adminadmin"),
             secure=os.environ.get("MINIO_USE_SSL", "false").lower() == "true",
         )
         self._ensure_bucket()
