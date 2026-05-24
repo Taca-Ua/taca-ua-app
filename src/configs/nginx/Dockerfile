@@ -1,21 +1,17 @@
 FROM nginx:1.25-alpine
 
-# Install gettext for envsubst command
-RUN apk add --no-cache gettext
+# Install OpenSSL for certificate generation
+RUN apk add --no-cache openssl bash curl
 
-# Create templates directory
-RUN mkdir -p /etc/nginx/templates
+# Copy certificate generation script and entrypoint
+COPY generate_certs.sh /usr/local/bin/generate_certs.sh
+COPY docker-entrypoint.sh /docker-entrypoint.sh
 
-# Copy nginx configuration templates
-COPY src/configs/nginx/nginx.conf.http /etc/nginx/templates/nginx.conf.http
-COPY src/configs/nginx/nginx.conf.https /etc/nginx/templates/nginx.conf.https
-COPY src/configs/nginx/ssl-params.conf /etc/nginx/templates/ssl-params.conf
+RUN sed -i 's/\r$//' /usr/local/bin/generate_certs.sh
+RUN sed -i 's/\r$//' /docker-entrypoint.sh
 
-# Copy custom entrypoint script
-COPY src/configs/nginx/nginx-entrypoint.sh /docker-entrypoint.d/40-auto-ssl-config.sh
-RUN chmod +x /docker-entrypoint.d/40-auto-ssl-config.sh
+# Make scripts executable
+RUN chmod +x /usr/local/bin/generate_certs.sh && \
+    chmod +x /docker-entrypoint.sh
 
-# Remove default config (will be created by entrypoint)
-RUN rm -f /etc/nginx/conf.d/default.conf
-
-EXPOSE 80 443
+ENTRYPOINT ["/docker-entrypoint.sh"]
