@@ -109,7 +109,7 @@ services:
     image: grafana/loki:2.8.2
     restart: always
     volumes:
-      # - ./src/configs/loki/loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - ./src/configs/loki/loki-config.yaml:/etc/loki/local-config.yaml:ro
       - loki_data:/loki
     command: -config.file=/etc/loki/local-config.yaml
 
@@ -117,8 +117,8 @@ services:
     image: grafana/grafana:10.0.0
     restart: always
     volumes:
-      # - ./src/configs/grafana/provisioning:/etc/grafana/provisioning:ro
-      # - ./src/configs/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ./src/configs/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./src/configs/grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana_data:/var/lib/grafana
     # ports:
     #   - "3002:3000"

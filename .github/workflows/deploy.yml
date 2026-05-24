@@ -68,6 +68,13 @@ jobs:
           cp docker-compose.prod.yml ${{ env.DEPLOY_PATH }}/docker-compose.yml
           echo "✅ docker-compose.prod.yml copied as docker-compose.yml"
 
+      - name: Sync configuration files
+        run: |
+          mkdir -p ${{ env.DEPLOY_PATH }}/configs
+          rm -rf ${{ env.DEPLOY_PATH }}/src/configs/*
+          cp -r src/configs ${{ env.DEPLOY_PATH }}/src/
+          echo "✅ Configuration files synced successfully"
+
       - name: Pull latest images
         run: |
           cd ${{ env.DEPLOY_PATH }}
