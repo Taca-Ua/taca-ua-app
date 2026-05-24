@@ -71,7 +71,7 @@ jobs:
       - name: Pull latest images
         run: |
           cd ${{ env.DEPLOY_PATH }}
-          docker compose pull --no-parallel
+          docker compose pull
           echo "✅ Docker images pulled successfully"
 
       - name: Update running containers (zero-downtime deployment)
