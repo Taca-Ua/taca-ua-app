@@ -22,7 +22,7 @@ jobs:
         include:
           # Infrastructure
           - service: nginx
-            dockerfile: ./src/infrastructure/nginx/Dockerfile
+            dockerfile: ./src/configs/nginx/Dockerfile
 
           # APIs
           - service: competition-api-v2
