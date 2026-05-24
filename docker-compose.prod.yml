@@ -23,9 +23,9 @@ services:
     image: rabbitmq:3.12-management-alpine
     restart: always
     user: "root"
-    ports:
-      - "5672:5672"
-      - "15672:15672"
+    # ports:
+    #   - "5672:5672"
+    #   - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
@@ -47,8 +47,8 @@ services:
       POSTGRES_DB: taca_ua
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "${POSTGRES_EXPOSED_PORT:-5432}:5432"
+    # ports:
+    #   - "${POSTGRES_EXPOSED_PORT:-5432}:5432"
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-user}", "-d", "taca_ua"]
       interval: 10s
@@ -59,8 +59,8 @@ services:
   redis:
     image: redis:7-alpine
     restart: always
-    ports:
-      - "6379:6379"
+    # ports:
+    #   - "6379:6379"
 
   minio:
     image: minio/minio
@@ -71,9 +71,9 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     volumes:
       - minio_data:/data
-    ports:
-      - "9000:9000"
-      - "9001:9001"
+    # ports:
+    #   - "9000:9000"
+    #   - "9001:9001"
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.3.2
@@ -120,8 +120,8 @@ services:
       - ./src/configs/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./src/configs/grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana_data:/var/lib/grafana
-    ports:
-      - "3002:3000"
+    # ports:
+    #   - "3002:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
     depends_on:
@@ -181,8 +181,8 @@ services:
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
       - DATABASE_URL=${DATABASE_URL}
-    ports:
-      - "8001:8000"
+    # ports:
+    #   - "8001:8000"
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -201,8 +201,8 @@ services:
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
       - DATABASE_URL=${DATABASE_URL}
-    ports:
-      - "8002:8000"
+    # ports:
+    #   - "8002:8000"
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -221,8 +221,8 @@ services:
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
       - DATABASE_URL=${DATABASE_URL}
-    ports:
-      - "8003:8000"
+    # ports:
+    #   - "8003:8000"
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -241,8 +241,8 @@ services:
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
       - DATABASE_URL=${DATABASE_URL}
-    ports:
-      - "8004:8000"
+    # ports:
+    #   - "8004:8000"
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -261,8 +261,8 @@ services:
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
       - DATABASE_URL=${DATABASE_URL}
-    ports:
-      - "8005:8000"
+    # ports:
+    #   - "8005:8000"
     depends_on:
       rabbitmq:
         condition: service_healthy
