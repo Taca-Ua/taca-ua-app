@@ -10,7 +10,7 @@ on:
 env:
   REGISTRY: ghcr.io
   OWNER: ${{ github.repository_owner }}
-  DEPLOY_PATH: /Users/alxito_player/taca-ua-app
+  DEPLOY_PATH: ~/taca-ua-app
 
 jobs:
   deploy:
