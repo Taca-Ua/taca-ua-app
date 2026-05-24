@@ -66,28 +66,28 @@ jobs:
           echo "✅ docker-compose.prod.yml copied as docker-compose.yml"
 
       - name: Pull latest images
-        working-directory: ${{ env.DEPLOY_PATH }}
         run: |
+          cd ${{ env.DEPLOY_PATH }}
           docker compose pull --no-parallel
           echo "✅ Docker images pulled successfully"
 
       - name: Update running containers (zero-downtime deployment)
-        working-directory: ${{ env.DEPLOY_PATH }}
         run: |
+          cd ${{ env.DEPLOY_PATH }}          
           docker compose up -d
           echo "✅ Containers updated with zero downtime"
 
       - name: Wait for services to be healthy
-        working-directory: ${{ env.DEPLOY_PATH }}
         run: |
+          cd ${{ env.DEPLOY_PATH }}
           echo "Waiting for services to stabilize..."
           sleep 10
           docker compose ps
           echo "✅ Deployment completed"
 
       - name: Verify deployment
-        working-directory: ${{ env.DEPLOY_PATH }}
         run: |
+          cd ${{ env.DEPLOY_PATH }}
           echo "Running containers:"
           docker compose ps
           echo ""
