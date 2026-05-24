@@ -147,7 +147,7 @@ services:
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
-      - DATABASE_URL=${DATABASE_URL:-"postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua"}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_DB=0
@@ -170,7 +170,7 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
-      - DATABASE_URL=${DATABASE_URL:-"postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua"}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -188,7 +188,7 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
-      - DATABASE_URL=${DATABASE_URL:-"postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua"}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -206,7 +206,7 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
-      - DATABASE_URL=${DATABASE_URL:-"postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua"}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -224,7 +224,7 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
-      - DATABASE_URL=${DATABASE_URL:-"postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua"}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -242,7 +242,7 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
-      - DATABASE_URL=${DATABASE_URL:-"postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua"}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua}
     depends_on:
       rabbitmq:
         condition: service_healthy
