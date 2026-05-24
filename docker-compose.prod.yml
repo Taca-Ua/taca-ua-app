@@ -6,9 +6,9 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    volumes:
-      - ./src/configs/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./src/configs/nginx/certs:/etc/nginx/certs:ro
+    # volumes:
+    #   - ./src/configs/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    #   - ./src/configs/nginx/certs:/etc/nginx/certs:ro
     environment:
       - DOMAIN=${DOMAIN:-localhost}
     depends_on:
@@ -87,8 +87,8 @@ services:
       KC_HOSTNAME_STRICT_HTTPS: "false"
       KC_HTTP_RELATIVE_PATH: "/auth"
     volumes:
-      - ./src/configs/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
-      - ./src/configs/keycloak/themes:/opt/keycloak/themes:ro
+      # - ./src/configs/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+      # - ./src/configs/keycloak/themes:/opt/keycloak/themes:ro
     command: start --import-realm
     healthcheck:
       test: ["CMD-SHELL", "timeout 10s bash -c '</dev/tcp/localhost/8080' || exit 1"]
@@ -102,14 +102,14 @@ services:
     image: prom/prometheus:v2.45.0
     restart: always
     volumes:
-      - ./src/configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      # - ./src/configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
 
   loki:
     image: grafana/loki:2.8.2
     restart: always
     volumes:
-      - ./src/configs/loki/loki-config.yaml:/etc/loki/local-config.yaml:ro
+      # - ./src/configs/loki/loki-config.yaml:/etc/loki/local-config.yaml:ro
       - loki_data:/loki
     command: -config.file=/etc/loki/local-config.yaml
 
@@ -117,8 +117,8 @@ services:
     image: grafana/grafana:10.0.0
     restart: always
     volumes:
-      - ./src/configs/grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./src/configs/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      # - ./src/configs/grafana/provisioning:/etc/grafana/provisioning:ro
+      # - ./src/configs/grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana_data:/var/lib/grafana
     # ports:
     #   - "3002:3000"
