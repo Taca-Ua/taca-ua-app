@@ -20,9 +20,10 @@ export const options = {
     http_req_failed: ["rate==0"],
     http_req_duration: ["p(99)<1000"],
   },
+  insecureSkipTLSVerify: true,
 };
 
-const BASE = __ENV.BASE_URL || "http://localhost";
+const BASE = __ENV.BASE_URL || "https://192.168.1.70";
 const API = `${BASE}/api/public`;
 const SEASON_ID = __ENV.SEASON_ID || "2";
 

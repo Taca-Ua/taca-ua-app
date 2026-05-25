@@ -42,9 +42,10 @@ export const options = {
     latency_nucleos: ["p(95)<300", "p(99)<600"],
     error_rate: ["rate<0.01"],
   },
+  insecureSkipTLSVerify: true,
 };
 
-const BASE = __ENV.BASE_URL || "http://localhost";
+const BASE = __ENV.BASE_URL || "https://192.168.1.70";
 const API = `${BASE}/api/public`;
 const SEASON_ID = __ENV.SEASON_ID || "2";
 
