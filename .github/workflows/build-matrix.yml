@@ -86,7 +86,6 @@ jobs:
           context: ${{ matrix.context || '.' }}
           file: ${{ matrix.dockerfile }}
           push: ${{ inputs.push }}
-          platforms: linux/amd64,linux/arm64
           tags: |
             ${{ env.REGISTRY }}/${{ env.OWNER_LOWER }}/${{ matrix.service }}:latest
             ${{ env.REGISTRY }}/${{ env.OWNER_LOWER }}/${{ matrix.service }}:${{ github.sha }}
