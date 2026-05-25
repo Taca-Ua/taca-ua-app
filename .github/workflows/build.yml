@@ -12,6 +12,9 @@ env:
 
 jobs:
   build-matrix:
+    permissions:
+      contents: read
+      packages: write
     uses: ./.github/workflows/build-matrix.yml
     with:
       push: true
@@ -30,4 +33,3 @@ jobs:
             echo "❌ Build failed!"
             exit 1
           fi
-
