@@ -1,7 +1,7 @@
 services:
 # Infrastructure Services
   nginx:
-    build: 
+    build:
       context: ./src/configs/nginx
     ports:
       - "80:80"
@@ -18,6 +18,7 @@ services:
       - public-website
       - keycloak
       - minio
+      - grafana
 
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
@@ -58,6 +59,7 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BROWSER_REDIRECT_URL: https://${DOMAIN:-localhost}/system/minio/
     ports:
       - "9001:9001" # Console
     volumes:
@@ -93,6 +95,9 @@ services:
     volumes:
       - ./src/configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.route-prefix=/system/prometheus/'
 
   loki:
     image: grafana/loki:2.8.2
@@ -109,13 +114,16 @@ services:
       - grafana_data:/var/lib/grafana
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_SERVER_DOMAIN=${DOMAIN:-localhost}
+      - GF_SERVER_ROOT_URL=https://${DOMAIN:-localhost}/system/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
     depends_on:
       - prometheus
       - loki
 
 # APIs
   competition-api-v2:
-    build: 
+    build:
       context: .
       dockerfile: ./src/apis/competition-api-v2/Dockerfile
     environment:
@@ -138,7 +146,7 @@ services:
         condition: service_started
 
   public-api:
-    build: 
+    build:
       context: .
       dockerfile: ./src/apis/public-api/Dockerfile
     environment:
@@ -161,7 +169,7 @@ services:
 
 # Microservices
   matches-service:
-    build: 
+    build:
       context: .
       dockerfile: ./src/microservices/matches-service/Dockerfile
     environment:
@@ -180,7 +188,7 @@ services:
         condition: service_healthy
 
   modalities-service:
-    build: 
+    build:
       context: .
       dockerfile: ./src/microservices/modalities-service/Dockerfile
     environment:
@@ -199,7 +207,7 @@ services:
         condition: service_healthy
 
   ranking-service:
-    build: 
+    build:
       context: .
       dockerfile: ./src/microservices/ranking-service/Dockerfile
     environment:
@@ -218,7 +226,7 @@ services:
         condition: service_healthy
 
   read-model-updater:
-    build: 
+    build:
       context: .
       dockerfile: ./src/microservices/read-model-updater/Dockerfile
     environment:
@@ -237,7 +245,7 @@ services:
         condition: service_healthy
 
   tournaments-service:
-    build: 
+    build:
       context: .
       dockerfile: ./src/microservices/tournaments-service/Dockerfile
     environment:
@@ -257,7 +265,7 @@ services:
 
 # Frontend Services
   admin-panel:
-    build: 
+    build:
       context: ./src/frontend/admin-panel
     environment:
       - CHOKIDAR_USEPOLLING=true
@@ -266,7 +274,7 @@ services:
       - VITE_KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-frontend-admin}
 
   public-website:
-    build: 
+    build:
       context: ./src/frontend/public-website
     environment:
       - CHOKIDAR_USEPOLLING=true
