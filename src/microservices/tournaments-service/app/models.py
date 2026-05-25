@@ -6,26 +6,93 @@ Schema: tournaments
 import enum
 import uuid
 from datetime import datetime, timezone
+from typing import List
 
-from sqlalchemy import ARRAY, JSON, Column, DateTime, Enum, ForeignKey, Integer, Text
+import sqlalchemy as sa
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import Mapped, relationship
+from taca_outbox.models import create_outbox_model
+from taca_snapshots import tournaments as snapshot_models
 
 Base = declarative_base()
 
 
-class TournamentStatus(enum.Enum):
-    """Enum for tournament status"""
+class CompetitorType(enum.Enum):
+    TEAM = "team"
+    ATHLETE = "athlete"
 
-    DRAFT = "draft"
-    ACTIVE = "active"
-    FINISHED = "finished"
+
+class TournamentCompetitor(Base):
+    """
+    A competitor subscribed to a tournament.
+    Can be a team or an individual athlete.
+    """
+
+    __tablename__ = "tournament_competitor"
+    __table_args__ = {"schema": "tournaments"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tournament_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("tournaments.tournament.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    competitor_type = Column(
+        Enum(CompetitorType, name="competitor_type"),
+        nullable=False,
+    )
+
+    team_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+    athlete_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+    competitor_course_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    tournament: Mapped["Tournament"] = relationship(
+        "Tournament", back_populates="competitors"
+    )
+
+    def to_dict(self):
+        resp = {
+            "id": str(self.id),
+            "tournament_id": str(self.tournament_id),
+            "competitor_type": self.competitor_type.value,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "competitor_entity_id": (
+                str(self.team_id) if self.team_id else str(self.athlete_id)
+            ),
+        }
+
+        if self.competitor_type == CompetitorType.TEAM:
+            resp["competitor"] = {"team_id": str(self.team_id)}
+        else:
+            resp["competitor"] = {"athlete_id": str(self.athlete_id)}
+
+        return resp
+
+    def to_snapshot(self) -> snapshot_models.TournamentCompetitorSnapshotItem:
+        return snapshot_models.TournamentCompetitorSnapshotItem(
+            id=str(self.id),
+            tournament_id=str(self.tournament_id),
+            competitor_type=self.competitor_type.value,
+            team_id=str(self.team_id) if self.team_id else None,
+            athlete_id=str(self.athlete_id) if self.athlete_id else None,
+            created_at=self.created_at,
+            competitor_course_id=(
+                str(self.competitor_course_id) if self.competitor_course_id else None
+            ),
+        )
 
 
 class Tournament(Base):
-    """
-    Represents a tournament.
-    """
+    """Represents a tournament"""
 
     __tablename__ = "tournament"
     __table_args__ = {"schema": "tournaments"}
@@ -33,65 +100,166 @@ class Tournament(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     modality_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     name = Column(Text, nullable=False)
-    season_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     status = Column(
-        Enum(TournamentStatus), nullable=False, default=TournamentStatus.DRAFT
+        String(20), nullable=False, default="draft", index=True
+    )  # draft, active, finished
+    start_date = Column(DateTime(timezone=True), nullable=True)
+    scoring_format_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+    competitor_type = Column(
+        Enum(CompetitorType, name="competitor_type"),
+        nullable=False,
     )
-    rules = Column(JSON, nullable=True)
-    teams = Column(ARRAY(UUID(as_uuid=True)), nullable=True)
-    start_date = Column(DateTime, nullable=True)
+    season_id = Column(sa.Integer(), nullable=False, index=True)
+
+    format = Column(String(50), nullable=False)  # For polymorphic identity
+
+    # bulshit fields
     created_by = Column(UUID(as_uuid=True), nullable=False)
     created_at = Column(
-        DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
     updated_at = Column(
-        DateTime, nullable=True, onupdate=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True), onupdate=lambda: datetime.now(timezone.utc)
     )
-    finished_at = Column(DateTime, nullable=True)
+    finished_at = Column(DateTime(timezone=True), nullable=True)
     finished_by = Column(UUID(as_uuid=True), nullable=True)
 
-    def __repr__(self):
-        return f"<Tournament {self.id} - {self.name} ({self.status})>"
+    # Polymorphic configuration
+    __mapper_args__ = {
+        "polymorphic_on": format,
+        "polymorphic_identity": "free",
+    }
+
+    # Relationships
+    ranking_positions: Mapped[List["TournamentRankingPosition"]] = relationship(
+        "TournamentRankingPosition",
+        back_populates="tournament",
+        cascade="all, delete-orphan",
+    )
+    competitors: Mapped[List[TournamentCompetitor]] = relationship(
+        "TournamentCompetitor",
+        back_populates="tournament",
+        cascade="all, delete-orphan",
+    )
+
+    @classmethod
+    def create(cls, format: str = "free", **kwargs) -> "Tournament":
+        """Factory method to create the correct Tournament subclass based on format.
+
+        Args:
+            format: The tournament format (e.g., 'league', 'free'). Defaults to 'free'.
+            **kwargs: Additional fields to pass to the constructor.
+
+        Returns:
+            An instance of the appropriate Tournament subclass.
+
+        Example:
+            tournament = Tournament.create(format="league", name="League A", ...)
+        """
+        # Import here to avoid circular imports
+        from app.formats.league.models import LeagueTournament
+
+        format_to_class = {
+            "league": LeagueTournament,
+            "free": cls,
+        }
+
+        tournament_class = format_to_class.get(format, cls)
+        return tournament_class(format=format, **kwargs)
+
+    def to_dict(self, include_teams=False, include_ranking=False):
+        result = {
+            "id": str(self.id),
+            "modality_id": str(self.modality_id),
+            "name": self.name,
+            "status": self.status,
+            "scoring_format_id": (
+                str(self.scoring_format_id) if self.scoring_format_id else None
+            ),
+            "competitor_type": self.competitor_type.value,
+            "season_id": self.season_id,
+            "start_date": self.start_date.isoformat() if self.start_date else None,
+            "format": self.format,
+            "created_by": str(self.created_by),
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "finished_at": self.finished_at.isoformat() if self.finished_at else None,
+            "finished_by": str(self.finished_by) if self.finished_by else None,
+            "competitors": [comp.to_dict() for comp in self.competitors],
+        }
+
+        if self.status == "finished":
+            result["ranking_positions"] = [
+                rp.to_dict() for rp in self.ranking_positions
+            ]
+
+        return result
+
+    def to_snapshot(self) -> snapshot_models.TournamentSnapshotItem:
+        return snapshot_models.TournamentSnapshotItem(
+            id=str(self.id),
+            modality_id=str(self.modality_id),
+            name=self.name,
+            status=self.status,
+            season_id=self.season_id,
+            scoring_format_id=(
+                str(self.scoring_format_id) if self.scoring_format_id else None
+            ),
+            competitor_type=self.competitor_type.value,
+            start_date=self.start_date,
+            created_by=str(self.created_by),
+            created_at=self.created_at,
+            updated_at=self.updated_at,
+            finished_at=self.finished_at,
+            finished_by=str(self.finished_by) if self.finished_by else None,
+        )
 
 
-class Stage(Base):
-    """
-    Represents a stage within a tournament (e.g., group stage, playoffs).
-    """
+class TournamentRankingPosition(Base):
+    """Represents the ranking position of a competitor in a tournament"""
 
-    __tablename__ = "stage"
-    __table_args__ = {"schema": "tournaments"}
+    __tablename__ = "tournament_ranking_position"
+    __table_args__ = (
+        sa.UniqueConstraint(
+            "tournament_id", "competitor_id", name="uq_tournament_competitor"
+        ),
+        {"schema": "tournaments"},
+    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     tournament_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("tournaments.tournament.id"),
+        ForeignKey("tournaments.tournament.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
-    name = Column(Text, nullable=False)
-    order = Column(Integer, nullable=False)
-
-    def __repr__(self):
-        return f"<Stage {self.id} - {self.name} (Order: {self.order})>"
-
-
-class Journey(Base):
-    """
-    Represents a journey/round within a stage (e.g., matchday, round).
-    """
-
-    __tablename__ = "journey"
-    __table_args__ = {"schema": "tournaments"}
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    stage_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("tournaments.stage.id"),
-        nullable=False,
-        index=True,
+    competitor_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    position = Column(Integer, nullable=False)
+    created_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
-    number = Column(Integer, nullable=False)
 
-    def __repr__(self):
-        return f"<Journey {self.id} - Number {self.number}>"
+    # Relationships
+    tournament = relationship("Tournament", back_populates="ranking_positions")
+
+    def to_dict(self):
+        return {
+            # "id": str(self.id),
+            # "tournament_id": str(self.tournament_id),
+            "competitor_id": str(self.competitor_id),
+            "position": self.position,
+            # "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+    def to_snapshot(self) -> snapshot_models.TournamentRankingPositionSnapshotItem:
+        return snapshot_models.TournamentRankingPositionSnapshotItem(
+            id=str(self.id),
+            tournament_id=str(self.tournament_id),
+            competitor_id=str(self.competitor_id),
+            position=self.position,
+            created_at=self.created_at,
+        )
+
+
+# OutboxEvent model — schema-bound via shared factory
+OutboxEvent = create_outbox_model(Base, schema="tournaments")

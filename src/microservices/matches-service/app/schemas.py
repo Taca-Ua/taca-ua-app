@@ -9,16 +9,40 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 
+# Helper Schemas
+class MatchParticipantUpdate(BaseModel):
+    """Schema for updating a match participant."""
+
+    participant_id: UUID
+    score: Optional[int] = Field(None, ge=0)
+    position: Optional[int] = Field(None, ge=1)
+
+
+class MatchParticipantResponse(BaseModel):
+    """Schema for match participant response."""
+
+    participant: UUID
+    match_id: UUID
+    score: Optional[int] = None
+    position: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
+
 # Match Schemas
 class MatchCreate(BaseModel):
     """Schema for creating a match."""
 
     tournament_id: UUID
-    team_home_id: UUID
-    team_away_id: UUID
     location: str
     start_time: datetime
     created_by: UUID
+    participants: List[UUID] = Field(default_factory=list)
+    journey: Optional[int] = (
+        None  # way to group matches in a tournament (e.g., round number)
+    )
+    new_journey: bool = False  # Whether to create a new journey for this match
 
 
 class MatchUpdate(BaseModel):
@@ -26,83 +50,123 @@ class MatchUpdate(BaseModel):
 
     location: Optional[str] = None
     start_time: Optional[datetime] = None
-    team_home_id: Optional[UUID] = None
-    team_away_id: Optional[UUID] = None
-    updated_by: UUID
-
-
-class MatchResult(BaseModel):
-    """Schema for registering match result."""
-
-    home_score: int = Field(..., ge=0)
-    away_score: int = Field(..., ge=0)
-    registered_by: UUID
-    additional_details: Optional[dict] = None
-
-
-class PlayerLineup(BaseModel):
-    """Schema for a player in lineup."""
-
-    player_id: UUID
-    jersey_number: int
-    is_starter: Optional[bool] = True
-
-
-class MatchLineup(BaseModel):
-    """Schema for match lineup."""
-
-    team_id: UUID
-    players: List[PlayerLineup]
-
-
-class MatchComment(BaseModel):
-    """Schema for match comment."""
-
-    message: str
-    author_id: UUID
-    created_at: Optional[datetime] = None
+    status: Optional[str] = None  # "scheduled", "in_progress", "finished", "cancelled"
 
 
 class MatchResponse(BaseModel):
     """Schema for match response."""
 
     id: UUID
-    tournament_id: UUID
-    team_home_id: UUID
-    team_away_id: UUID
+    tournament_id: Optional[UUID] = None
     location: str
     start_time: datetime
     status: str
-    home_score: Optional[int] = None
-    away_score: Optional[int] = None
+    journey: Optional[int] = None
+    participants: List[MatchParticipantResponse] = Field(default_factory=list)
+    comments: Optional[List["CommentResponse"]] = None
+    lineups: Optional[List["LineupResponse"]] = None
+    staff_assignments: Optional[dict[str, List[UUID]]] = (
+        None  # participant_id -> list of staff_ids
+    )
+
+    created_by: UUID
     created_at: datetime
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
 
 
+# Lineup Schemas
 class LineupResponse(BaseModel):
     """Schema for lineup response."""
 
-    id: UUID
-    match_id: UUID
-    team_id: UUID
-    player_id: UUID
-    jersey_number: int
-    is_starter: bool
+    participant_id: UUID
+    lineup: List[dict] = Field(default_factory=list)
 
-    class Config:
-        from_attributes = True
+
+class LineupBatchCreate(BaseModel):
+    """Schema for creating multiple lineup entries at once."""
+
+    participant: UUID
+    players: List[UUID] = Field(
+        ..., description="List of players to assign to the lineup"
+    )
+
+
+class LineupBatchUpdatePlayer(BaseModel):
+    """Schema for updating a single player in the lineup."""
+
+    player_id: UUID
+    is_starter: Optional[bool]
+    jersey_number: Optional[int] = None
+
+
+class LineupBatchUpdate(BaseModel):
+    """Schema for updating multiple lineup entries at once."""
+
+    participant: UUID
+    players: List[LineupBatchUpdatePlayer] = Field(
+        ...,
+        description="List of players to update in the lineup with their new details",
+    )
+
+
+class LineupAssignStaff(BaseModel):
+    """Schema for assigning staff to a lineup."""
+
+    staff_ids: List[UUID] = Field(
+        ..., description="List of staff member IDs to assign to the lineup"
+    )
+
+
+# Comment Schemas
+class CommentCreate(BaseModel):
+    """Schema for creating a comment."""
+
+    message: str = Field(..., min_length=1)
+    created_by: UUID
 
 
 class CommentResponse(BaseModel):
     """Schema for comment response."""
 
     id: UUID
-    match_id: UUID
+    # match_id: UUID
     message: str
-    author_id: UUID
+    created_by: UUID
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+
+# Result Schemas
+class MatchResultUpdate(BaseModel):
+    """Schema for updating match results."""
+
+    participant_results: List[MatchParticipantUpdate] = Field(
+        ..., description="List of participant results with scores/positions"
+    )
+    status: Optional[str] = Field(
+        "finished", description="Match status after result update"
+    )
+
+
+# Summary Schemas
+class MatchesSummaryRequest(BaseModel):
+    """Schema for matches summary request."""
+
+    tournaments_ids: Optional[List[UUID]] = None
+    tournaments_distribution: Optional[dict[UUID, List[UUID]]] = (
+        None  # tournament_id -> list of competitor_ids
+    )
+
+
+class MatchSummaryResponse(BaseModel):
+    """Schema for match summary response."""
+
+    total_matches: int
+    finished: int
+    ongoing: int
+    scheduled: int

@@ -3,30 +3,44 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
 
-from .routes import router
-from .logger import logger
 from .events import rabbitmq_service
+from .internal_controller import router as internal_router
+from .logger import logger
+from .outbox_publisher import outbox_publisher
+from .rebuild_controller_sse import router as sse_rebuild_router
+from .routes import router as api_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Start RabbitMQ consumer
+    # Startup: Start RabbitMQ consumer and outbox publisher
     await rabbitmq_service.start_consuming()
-    logger.info("Ranking Service started")
+    await outbox_publisher.start()
+    logger.info("service_started", action="startup")
     yield
-    # Shutdown: Disconnect RabbitMQ
+    # Shutdown: Stop outbox publisher and disconnect RabbitMQ
+    await outbox_publisher.stop()
     await rabbitmq_service.disconnect()
-    logger.info("Ranking Service stopped")
+    logger.info("service_stopped", action="shutdown")
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    title="Ranking Service",
+    description="Maintains and calculates rankings",
+    lifespan=lifespan,
+)
+
+# Add structured logging middleware
+# app.add_middleware(StructlogMiddleware)
+
 Instrumentator().instrument(app).expose(app)  # Prometheus metrics endpoint
 
 # Include routers
-app.include_router(router)
+app.include_router(api_router)
+app.include_router(internal_router)
+app.include_router(sse_rebuild_router)
 
 
 @app.get("/")
 def read_root():
-    logger.info("Root endpoint accessed")
     return {"Service": "Ranking Service"}

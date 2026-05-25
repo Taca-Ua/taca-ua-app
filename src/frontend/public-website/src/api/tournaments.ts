@@ -1,37 +1,89 @@
 import { apiCall, buildQueryString } from './client';
-import type { TournamentPublicDetail, TournamentRankingEntry } from './types';
 
-export interface GetTournamentsParams {
-  modality_id?: number | string;
-  season_id?: number | string;
+export interface TournamentDetail {
+  tournament_id: string;
+  tournament_name: string;
+  start_date: string;
+  status: string;
+  modality_id: string;
+  modality_name: string | null;
+  modality_type_id: string;
+  modality_type_name: string;
+  competitor_count: number;
+  match_count: number;
+}
+
+export interface TournamentDetailList {
+  items: TournamentDetail[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface TournamentListParams {
+  page?: number;
+  page_size?: number;
+  modality_id?: string;
   status?: string;
+  season_id?: number;
+}
+
+export interface TournamentStanding {
+  id: number;
+  tournament_id: string;
+  competitor_type: string;
+  competitor_entity_id: string;
+  competitor_name: string;
+  matches_played: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  points: number;
+  total_score: number;
+  rank: number | null;
+  statistics_metadata: Record<string, any> | null;
+}
+
+export interface TournamentStandingsList {
+  items: TournamentStanding[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface StandingsParams {
+  page?: number;
+  page_size?: number;
 }
 
 export const tournamentsApi = {
-  /**
-   * Get all tournaments with optional filters
-   */
-  getTournaments: async (params?: GetTournamentsParams): Promise<TournamentPublicDetail[]> => {
-    const query = params ? buildQueryString({
-      modality_id: params.modality_id ? String(params.modality_id) : undefined,
-      season_id: params.season_id ? String(params.season_id) : undefined,
-      status: params.status,
-    }) : '';
-    return apiCall<TournamentPublicDetail[]>(`/tournaments${query}`);
+  async getAll(params?: TournamentListParams): Promise<TournamentDetailList> {
+    const queryParams: Record<string, string | undefined> = {
+      page: params?.page?.toString(),
+      page_size: params?.page_size?.toString(),
+      modality_id: params?.modality_id,
+      status: params?.status,
+      season_id: params?.season_id?.toString(),
+    };
+    const queryString = buildQueryString(queryParams);
+    return apiCall<TournamentDetailList>(`/tournaments${queryString}`);
   },
 
-  /**
-   * Get tournament details by ID
-   */
-  getTournamentDetail: async (tournamentId: number | string, includeRankings = false): Promise<TournamentPublicDetail> => {
-    const query = includeRankings ? '?include_rankings=true' : '';
-    return apiCall<TournamentPublicDetail>(`/tournaments/${tournamentId}${query}`);
+  async getById(tournamentId: string): Promise<TournamentDetail> {
+    return apiCall<TournamentDetail>(`/tournaments/${tournamentId}`);
   },
 
-  /**
-   * Get tournament rankings
-   */
-  getTournamentRankings: async (tournamentId: number | string): Promise<TournamentRankingEntry[]> => {
-    return apiCall<TournamentRankingEntry[]>(`/tournaments/${tournamentId}/rankings`);
+  async getStandings(
+    tournamentId: string,
+    params?: StandingsParams
+  ): Promise<TournamentStandingsList> {
+    const queryParams: Record<string, string | undefined> = {
+      page: params?.page?.toString(),
+      page_size: params?.page_size?.toString(),
+    };
+    const queryString = buildQueryString(queryParams);
+    return apiCall<TournamentStandingsList>(
+      `/tournaments/${tournamentId}/standings${queryString}`
+    );
   },
 };

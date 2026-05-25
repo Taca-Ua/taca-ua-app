@@ -1,0 +1,410 @@
+"""
+Match management views
+"""
+
+from uuid import UUID
+
+import structlog
+from admin_api.utils.decorators import (
+    RoleRequiredMixin,
+    require_auth,
+    require_roles,
+    require_roles_class_method,
+)
+from django.http import HttpResponse
+from django.urls import path
+from drf_spectacular.utils import extend_schema, extend_schema_view
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .pdf_generators import (
+    DocumentGenerationLackPermissitonError,
+    document_generation_service,
+)
+from .serializers import (
+    CommentCreateSerializer,
+    LineupAssignSerializer,
+    LineupAssignStaffSerializer,
+    LineupUpdateSerializer,
+    MatchCreateSerializer,
+    MatchDetailSerializer,
+    MatchListFilterSerializer,
+    MatchListSerializer,
+    MatchPublishResultsSerializer,
+    MatchUpdateSerializer,
+)
+from .service import matches_service
+
+logger = structlog.get_logger(__name__)
+
+
+@extend_schema_view(
+    get=extend_schema(
+        parameters=[MatchListFilterSerializer],
+        responses=MatchListSerializer(many=True),
+        description="List all matches with optional filters",
+        tags=["Match Management"],
+    ),
+    post=extend_schema(
+        request=MatchCreateSerializer,
+        responses=MatchListSerializer,
+        description="Create a new match with participants",
+        tags=["Match Management"],
+    ),
+)
+class MatchListCreateView(RoleRequiredMixin, APIView):
+    """List and create matches"""
+
+    def get(self, request):
+        """List matches with optional filters"""
+        # Extract query parameters for filtering
+        tournament_id = request.query_params.get("tournament_id")
+        status_filter = request.query_params.get("status")
+
+        matches = matches_service.list_matches(
+            tournament_id=UUID(tournament_id) if tournament_id else None,
+            status=status_filter if status_filter else None,
+        )
+
+        serializer = MatchListSerializer(matches, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @require_roles_class_method("general_admin")
+    def post(self, request):
+        """Create a new match"""
+        serializer = MatchCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Prepare participants if provided
+        match = matches_service.create_match(
+            tournament_id=serializer.validated_data.get("tournament_id"),
+            location=serializer.validated_data.get("location"),
+            start_time=serializer.validated_data.get("start_time").isoformat(),
+            participants_ids=[
+                str(participant)
+                for participant in serializer.validated_data.get("participants", [])
+            ],
+            journey=serializer.validated_data.get("journey"),
+            new_journey=serializer.validated_data.get("new_journey", False),
+        )
+
+        response_serializer = MatchListSerializer(match)
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema_view(
+    get=extend_schema(
+        responses=MatchDetailSerializer,
+        description="Get detailed information about a specific match",
+        tags=["Match Management"],
+    ),
+    put=extend_schema(
+        request=MatchUpdateSerializer,
+        responses=MatchDetailSerializer,
+        description="Update match metadata (location, start time, status)",
+        tags=["Match Management"],
+    ),
+    delete=extend_schema(
+        responses={204: None},
+        description="Delete a match",
+        tags=["Match Management"],
+    ),
+)
+class MatchDetailView(RoleRequiredMixin, APIView):
+    """Retrieve, update, or delete a match"""
+
+    def get(self, request, match_id):
+        """Get match details"""
+
+        match = matches_service.get_match(
+            match_id=match_id,
+            admin_id=(
+                request.user_id if "nucleo_admin" in (request.roles or []) else None
+            ),
+        )
+
+        serializer = MatchDetailSerializer(match)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @require_roles_class_method("general_admin")
+    def put(self, request, match_id):
+        """Update match metadata"""
+        serializer = MatchUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        match = matches_service.update_match(
+            match_id=match_id,
+            location=serializer.validated_data.get("location"),
+            start_time=(
+                serializer.validated_data.get("start_time").isoformat()
+                if serializer.validated_data.get("start_time")
+                else None
+            ),
+            status=serializer.validated_data.get("status"),
+        )
+
+        response_serializer = MatchDetailSerializer(match)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+    @require_roles_class_method("general_admin")
+    def delete(self, request, match_id):
+        """Delete a match"""
+
+        matches_service.delete_match(match_id=match_id)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema(
+    request=MatchPublishResultsSerializer,
+    responses=MatchDetailSerializer,
+    description="Publish match results for all participants (scores and/or positions)",
+    tags=["Match Management"],
+)
+@api_view(["POST"])
+@require_roles("general_admin")
+def publish_match_results(request, match_id):
+    """Publish match results"""
+    serializer = MatchPublishResultsSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    # Prepare participant results
+    participant_results = []
+    for result_data in serializer.validated_data["participant_results"]:
+        result = {"participant_id": str(result_data["participant_id"])}
+        if result_data.get("score") is not None:
+            result["score"] = result_data["score"]
+        if result_data.get("position") is not None:
+            result["position"] = result_data["position"]
+        participant_results.append(result)
+
+    match = matches_service.publish_match_results(
+        match_id=match_id,
+        participant_results=participant_results,
+        admin_id=request.user_id if "nucleo_admin" in (request.roles or []) else None,
+    )
+
+    response_serializer = MatchDetailSerializer(match)
+    return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+
+# ============= Lineup Management Views =============
+
+
+@extend_schema_view(
+    post=extend_schema(
+        request=LineupAssignSerializer,
+        responses=MatchDetailSerializer,
+        description="Assign lineup for a team in a match",
+        tags=["Match Management"],
+    ),
+    put=extend_schema(
+        request=LineupUpdateSerializer,
+        responses=MatchDetailSerializer,
+        description="Update lineup for a team in a match",
+        tags=["Match Management"],
+    ),
+)
+class MatchLineupsView(RoleRequiredMixin, APIView):
+    """View to retrieve lineups for a match"""
+
+    def post(self, request, match_id):
+        """Assign lineup for a team"""
+        serializer = LineupAssignSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        match = matches_service.assign_lineup(
+            match_id=match_id,
+            participant=str(serializer.validated_data["participant"]),
+            players=[str(player) for player in serializer.validated_data["players"]],
+            admin_id=(
+                request.user_id if "nucleo_admin" in (request.roles or []) else None
+            ),
+        )
+
+        response_serializer = MatchDetailSerializer(match)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+    @require_roles_class_method("general_admin")
+    def put(self, request, match_id):
+        """Update lineup for a team"""
+        serializer = LineupUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        match = matches_service.update_lineup(
+            match_id=match_id,
+            participant=str(serializer.validated_data["participant"]),
+            players=[
+                {
+                    "player_id": str(player["player_id"]),
+                    "is_starter": player["is_starter"],
+                    "jersey_number": player.get("jersey_number"),
+                }
+                for player in serializer.validated_data["players"]
+            ],
+            admin_id=(
+                request.user_id if "nucleo_admin" in (request.roles or []) else None
+            ),
+        )
+
+        response_serializer = MatchDetailSerializer(match)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    request=LineupAssignStaffSerializer,
+    responses=MatchDetailSerializer,
+    description="Assign staff members to a team's lineup",
+    tags=["Match Management"],
+)
+@api_view(["POST"])
+@require_auth
+def add_staff_to_lineup(request, match_id, participant_id):
+    """Assign staff members to a team's lineup"""
+    serializer = LineupAssignStaffSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    match = matches_service.assign_staff_to_lineup(
+        match_id=match_id,
+        participant_id=str(participant_id),
+        staff_ids=[
+            str(staff_id) for staff_id in serializer.validated_data["staff_ids"]
+        ],
+        admin_id=(request.user_id if "nucleo_admin" in (request.roles or []) else None),
+    )
+
+    response_serializer = MatchDetailSerializer(match)
+    return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+
+# ============= Comment Management Views =============
+
+
+@extend_schema(
+    request=CommentCreateSerializer,
+    responses=MatchDetailSerializer,
+    description="Add a comment to a match",
+    tags=["Match Management"],
+)
+@api_view(["POST"])
+@require_auth
+def add_comment(request, match_id):
+    """Add comment to match"""
+    serializer = CommentCreateSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    match = matches_service.add_comment(
+        match_id=match_id,
+        comment_text=serializer.validated_data["message"],
+        admin_id=request.user_id,
+    )
+
+    response_serializer = MatchDetailSerializer(match)
+    return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(
+    responses={204: None},
+    description="Delete a comment from a match",
+    tags=["Match Management"],
+)
+@api_view(["DELETE"])
+@require_auth
+def delete_comment(request, match_id, comment_id):
+    """Delete a comment"""
+    matches_service.delete_comment(
+        match_id=match_id,
+        comment_id=comment_id,
+        admin_id=request.user_id if "nucleo_admin" in (request.roles or []) else None,
+    )
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# ============= Additional Endpoints =============
+
+
+@extend_schema(
+    responses={200: {"type": "string", "format": "binary"}},
+    description="Generate match sheet PDF",
+    tags=["Match Management"],
+)
+@api_view(["GET"])
+@require_roles("general_admin")
+def match_sheet(request, match_id):
+    """Generate match sheet PDF"""
+
+    match = matches_service.get_match(match_id=match_id)
+
+    pdf_content = document_generation_service.generate_match_report(match)
+
+    response = HttpResponse(pdf_content, content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'attachment; filename="match_sheet_{match_id}.pdf"'
+    )
+    return response
+
+
+@extend_schema(
+    responses={200: {"type": "string", "format": "binary"}},
+    description="Generate match sheet PDF for a specific team",
+    tags=["Match Management"],
+)
+@api_view(["GET"])
+@require_auth
+def match_team_sheet(request, match_id, participant):
+    """
+    Generate match sheet PDF for a specific team in a match.
+    """
+
+    try:
+        pdf_content = document_generation_service.generate_match_team_report(
+            match_id,
+            participant_id=str(participant),
+            admin_id=(
+                request.user_id if "nucleo_admin" in (request.roles or []) else None
+            ),
+        )
+    except DocumentGenerationLackPermissitonError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
+
+    response = HttpResponse(pdf_content, content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'attachment; filename="match_team_sheet_{match_id}_{participant}.pdf"'
+    )
+    return response
+
+
+# ============= URL Patterns =============
+
+
+urlpatterns = [
+    # Match CRUD
+    path("", MatchListCreateView.as_view(), name="match-list-create"),
+    path("<uuid:match_id>/", MatchDetailView.as_view(), name="match-detail"),
+    # Match results
+    path(
+        "<uuid:match_id>/results/", publish_match_results, name="publish-match-results"
+    ),
+    # Lineup management
+    path("<uuid:match_id>/lineups/", MatchLineupsView.as_view(), name="match-lineups"),
+    path(
+        "<uuid:match_id>/participants/<uuid:participant_id>/staff/",
+        add_staff_to_lineup,
+        name="match-lineup-assign-staff",
+    ),
+    # Comment management
+    path("<uuid:match_id>/comments/", add_comment, name="match-add-comment"),
+    path(
+        "<uuid:match_id>/comments/<uuid:comment_id>/",
+        delete_comment,
+        name="match-delete-comment",
+    ),
+    # Additional features
+    path("<uuid:match_id>/match-sheet/", match_sheet, name="match-sheet"),
+    path(
+        "<uuid:match_id>/team-sheet/<uuid:participant>/",
+        match_team_sheet,
+        name="match-team-sheet",
+    ),
+]

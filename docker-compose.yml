@@ -1,60 +1,37 @@
 services:
-  # Infrastructure Services
+# Infrastructure Services
   nginx:
-    build:
-      context: .
-      dockerfile: src/configs/nginx/Dockerfile
+    build: 
+      context: ./src/configs/nginx
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - certbot-www:/var/www/certbot:ro
-      - certbot-certs:/etc/letsencrypt:ro
+      - ./src/configs/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./src/configs/nginx/certs:/etc/nginx/certs
     environment:
       - DOMAIN=${DOMAIN:-localhost}
     depends_on:
-      - competition-api
+      - competition-api-v2
       - public-api
       - admin-panel
       - public-website
-      - grafana
       - keycloak
       - minio
-      - prometheus
-      - loki
-    restart: unless-stopped
-    networks:
-      - default
-
-  certbot:
-    image: certbot/certbot:latest
-    volumes:
-      - certbot-www:/var/www/certbot
-      - certbot-certs:/etc/letsencrypt
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./src/configs/certbot/init-certbot.sh:/usr/local/bin/init-certbot.sh:ro
-    environment:
-      - DOMAIN=${DOMAIN}
-      - EMAIL=${CERTBOT_EMAIL}
-      - CERTBOT_STAGING=${CERTBOT_STAGING:-0}
-    entrypoint: ["/bin/sh", "/usr/local/bin/init-certbot.sh"]
-    depends_on:
-      - nginx
-    networks:
-      - default
 
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
-    ports:
-      - "5672:5672"
-      - "15672:15672"
+    user: "root"
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE:-secret_cookie_change_me}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
-      interval: 5s
-      timeout: 5s
+      interval: 10s
+      timeout: 10s
       retries: 10
 
   postgres:
@@ -66,7 +43,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-user}"]
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-user}", "-d", "taca_ua"]
       interval: 10s
       timeout: 30s
       retries: 5
@@ -79,97 +56,121 @@ services:
     image: minio/minio
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "9001:9001" # Console
     volumes:
       - minio_data:/data
 
   keycloak:
-    image: quay.io/keycloak/keycloak:22.0.0
-    command: start-dev
+    image: quay.io/keycloak/keycloak:26.3.2
     environment:
-      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
-      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
-      KC_HTTP_RELATIVE_PATH: /keycloak
-      KC_PROXY_HEADERS: xforwarded
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
 
-  # Observability
+      KC_PROXY_HEADERS: xforwarded
+      KC_HTTP_ENABLED: "true"
+
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+
+      KC_HTTP_RELATIVE_PATH: "/auth"
+    volumes:
+      - ./src/configs/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+      - ./src/configs/keycloak/themes:/opt/keycloak/themes:ro
+    command: start --import-realm
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 10s bash -c '</dev/tcp/localhost/8080' || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 60s
+
+# Observability
   prometheus:
     image: prom/prometheus:v2.45.0
     volumes:
-      - ./src/configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./src/configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
 
   loki:
     image: grafana/loki:2.8.2
     volumes:
-      - ./src/configs/loki/loki-config.yaml:/etc/loki/local-config.yaml
+      - ./src/configs/loki/loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
     command: -config.file=/etc/loki/local-config.yaml
 
   grafana:
     image: grafana/grafana:10.0.0
     volumes:
-      - ./src/configs/grafana/provisioning:/etc/grafana/provisioning
-      - ./src/configs/grafana/dashboards:/var/lib/grafana/dashboards
-    ports:
-      - "3002:3000"
+      - ./src/configs/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./src/configs/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
     depends_on:
       - prometheus
       - loki
 
-  # APIs
-  competition-api:
-    build:
+# APIs
+  competition-api-v2:
+    build: 
       context: .
-      dockerfile: src/apis/competiotion-api/Dockerfile
+      dockerfile: ./src/apis/competition-api-v2/Dockerfile
     environment:
-      - RABBITMQ_HOST=rabbitmq
-      - RABBITMQ_PORT=5672
-      - RABBITMQ_USER=${RABBITMQ_USER:-guest}
-      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
-      - DATABASE_URL=postgres://user:password@postgres:5432/taca_ua
-      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - DOMAIN=${DOMAIN:-localhost}
+      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/auth
+      - KEYCLOAK_REALM=${KEYCLOAK_REALM:-taca-ua}
+      - KEYCLOAK_ISSUER=https://${DOMAIN:-localhost}/auth/realms/${KEYCLOAK_REALM:-taca-ua}
+      - MINIO_USER=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
+      - DEV_AUTH_BYPASS_ENABLED=${DEV_AUTH_BYPASS_ENABLED:-false}
+      - DEV_AUTH_BYPASS_ROLES=${DEV_AUTH_BYPASS_ROLES:-general_admin}
+      - DEV_AUTH_BYPASS_TOKEN=${DEV_AUTH_BYPASS_TOKEN:-}
+      - DEV_MODE=false
     depends_on:
-      rabbitmq:
-        condition: service_healthy
       loki:
         condition: service_started
-      postgres:
-        condition: service_healthy
+      minio:
+        condition: service_started
+      keycloak:
+        condition: service_started
 
   public-api:
-    build:
+    build: 
       context: .
-      dockerfile: src/apis/public-api/Dockerfile
+      dockerfile: ./src/apis/public-api/Dockerfile
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
-      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - CACHE_ENABLED=true
     depends_on:
-      rabbitmq:
-        condition: service_healthy
       loki:
         condition: service_started
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_started
 
-  # Microservices
+# Microservices
   matches-service:
-    build:
+    build: 
       context: .
-      dockerfile: src/microservices/matches-service/Dockerfile
+      dockerfile: ./src/microservices/matches-service/Dockerfile
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
-      - DATABASE_URL=${DATABASE_URL}
+      - PYTHONUNBUFFERED=1
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -179,15 +180,16 @@ services:
         condition: service_healthy
 
   modalities-service:
-    build:
+    build: 
       context: .
-      dockerfile: src/microservices/modalities-service/Dockerfile
+      dockerfile: ./src/microservices/modalities-service/Dockerfile
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
-      - DATABASE_URL=${DATABASE_URL}
+      - PYTHONUNBUFFERED=1
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -197,15 +199,16 @@ services:
         condition: service_healthy
 
   ranking-service:
-    build:
+    build: 
       context: .
-      dockerfile: src/microservices/ranking-service/Dockerfile
+      dockerfile: ./src/microservices/ranking-service/Dockerfile
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
-      - DATABASE_URL=${DATABASE_URL}
+      - PYTHONUNBUFFERED=1
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -215,15 +218,16 @@ services:
         condition: service_healthy
 
   read-model-updater:
-    build:
+    build: 
       context: .
-      dockerfile: src/microservices/read-model-updater/Dockerfile
+      dockerfile: ./src/microservices/read-model-updater/Dockerfile
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
-      - DATABASE_URL=${DATABASE_URL}
+      - PYTHONUNBUFFERED=1
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -233,15 +237,16 @@ services:
         condition: service_healthy
 
   tournaments-service:
-    build:
+    build: 
       context: .
-      dockerfile: src/microservices/tournaments-service/Dockerfile
+      dockerfile: ./src/microservices/tournaments-service/Dockerfile
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
-      - DATABASE_URL=${DATABASE_URL}
+      - PYTHONUNBUFFERED=1
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -250,25 +255,26 @@ services:
       postgres:
         condition: service_healthy
 
-  # Frontend Services
+# Frontend Services
   admin-panel:
-    build:
-      context: .
-      dockerfile: src/frontend/admin-panel/Dockerfile
-    volumes:
-      - ./src/frontend/admin-panel:/app
-      - /app/node_modules
+    build: 
+      context: ./src/frontend/admin-panel
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - VITE_KEYCLOAK_URL=/auth
+      - VITE_KEYCLOAK_REALM=${KEYCLOAK_REALM:-taca-ua}
+      - VITE_KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-frontend-admin}
 
   public-website:
-    build:
-      context: .
-      dockerfile: src/frontend/public-website/Dockerfile
-    volumes:
-      - ./src/frontend/public-website:/app
-      - /app/node_modules
+    build: 
+      context: ./src/frontend/public-website
+    environment:
+      - CHOKIDAR_USEPOLLING=true
 
 volumes:
   postgres_data:
   minio_data:
-  certbot-www:
-  certbot-certs:
+  rabbitmq_data:
+  prometheus_data:
+  loki_data:
+  grafana_data:

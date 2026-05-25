@@ -1,19 +1,13 @@
 import { apiCall, buildQueryString } from './client';
-import type { Regulation } from './types';
 
-export const regulationsApi = {
-  /**
-   * Get all regulations
-   */
-  getRegulations: async (category?: string): Promise<Regulation[]> => {
-    const query = category ? buildQueryString({ category }) : '';
-    return apiCall<Regulation[]>(`/regulations${query}`);
-  },
+export interface Regulation {
+  id: string;
+  title: string;
+  description?: string;
+  file_url: string;
+}
 
-  /**
-   * Get a specific regulation by ID
-   */
-  getRegulation: async (regulationId: string): Promise<Regulation> => {
-    return apiCall<Regulation>(`/regulations/${regulationId}`);
-  },
-};
+export async function getRegulations(search?: string, season_id?: number): Promise<Regulation[]> {
+  const qs = buildQueryString({ search, season_id: season_id?.toString() });
+  return apiCall<Regulation[]>(`/regulations${qs}`);
+}

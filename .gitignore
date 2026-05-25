@@ -220,3 +220,6 @@ __marimo__/
 temp/
 temp_*
 *_temp.*
+.vscode/
+/tools/data/step*
+certs/

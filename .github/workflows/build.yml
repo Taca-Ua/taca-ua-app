@@ -1,0 +1,35 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  OWNER: ${{ github.repository_owner }}
+
+jobs:
+  build-matrix:
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/build-matrix.yml
+    with:
+      push: true
+
+  notify:
+    needs: build-matrix
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Notify deployment ready
+        run: |
+          if [ "${{ needs.build-matrix.result }}" == "success" ]; then
+            echo "✅ All Docker images built and pushed successfully!"
+            echo "Images are available at: ${{ env.REGISTRY }}/${{ env.OWNER }}/*:${{ github.sha }}"
+          else
+            echo "❌ Build failed!"
+            exit 1
+          fi

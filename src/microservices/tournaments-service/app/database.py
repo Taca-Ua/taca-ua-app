@@ -18,13 +18,28 @@ engine = create_engine(DATABASE_URL, pool_pre_ping=True, echo=False)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-@contextmanager
 def get_db():
     """
     Database session context manager.
+    """
+    db = SessionLocal()
+    try:
+        yield db
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+@contextmanager
+def get_db_context():
+    """
+    Database session context manager for use in non-FastAPI contexts.
 
     Usage:
-        with get_db() as db:
+        with get_db_context() as db:
             # use db session
             pass
     """

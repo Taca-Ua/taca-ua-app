@@ -5,26 +5,24 @@ function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      
-      {/* Hero Section with Background Image */}
-      <div 
+
+      <div
         className="relative flex items-center justify-center bg-cover bg-center"
-        style={{ 
+        style={{
           minHeight: 'calc(100vh - 4rem)',
           backgroundImage: 'url(/images/ab204667-c021-499c-b1f9-db300bfd877c.webp)',
         }}
       >
-        {/* Overlay for blur/darkness effect */}
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-        
-        {/* Content */}
+
         <div className="relative z-10 text-center text-white px-4">
-          <h1 className="text-5xl md:text-6xl font-bold mb-4">TACA UA</h1>
-          <p className="text-xl md:text-2xl">Bem-vindo ao portal dos desportos universitários</p>
+          <h1 className="text-5xl md:text-6xl font-bold mb-4">TAÇA UA</h1>
+          <h2 className="text-2xl md:text-3xl font-semibold mb-6">Glicínias Plaza</h2>
+          <p className="text-xl md:text-2xl">Bem-vindo ao portal do desporto universitário</p>
         </div>
       </div>
 
-      {/* Sobre Nós Section */}
+      {/* Sobre Nós Section (STILL WAITING FOR THE TEXT)*/}
       <section className="py-16 px-4 md:px-8 lg:px-16 bg-white">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-4xl md:text-5xl font-bold text-center mb-12 text-gray-800">
@@ -32,17 +30,12 @@ function Home() {
           </h2>
           <div className="text-xl md:text-2xl text-gray-700 leading-relaxed space-y-8">
             <p>
-              Somos uma plataforma dedicada a fornecer informações completas e atualizadas sobre o mundo dos desportos. 
-              Nossa missão é conectar fãs, atletas e organizadores através de dados precisos e de fácil acesso.
+              A Taça UA - Glicínias Plaza é hoje um dos símbolos mais fortes do espírito académico aveirense.
+              Ano após ano, mobiliza milhares de estudantes em torno da competição, da rivalidade saudável entre cursos e da paixão pelo desporto universitário.
+              Com mais de duas décadas de história, esta iniciativa afirma-se continuamente como um espaço de crescimento, convívio e identidade, onde cada modalidade reforça o sentimento de pertença e união da comunidade.
             </p>
             <p>
-              A Taça UA é o principal evento desportivo da Universidade de Aveiro, reunindo estudantes de diferentes 
-              cursos numa celebração do espírito competitivo e da camaradagem universitária.
-            </p>
-            <p>
-              Acompanhe as classificações em tempo real, consulte calendários de jogos, conheça as modalidades 
-              disponíveis e fique por dentro de todos os regulamentos. Aqui encontrará tudo o que precisa para 
-              acompanhar a emoção do desporto universitário.
+              Para além disso, a Taça UA destaca-se pela sua diversidade desportiva, englobando até 8 modalidades coletivas recorrentes, bem como até 16 modalidades pontuais, que incluem formatos coletivos, de pares e individuais, permitindo a participação alargada de estudantes, durante o ano inteiro, com diferentes interesses e aptidões.
             </p>
           </div>
         </div>
@@ -82,24 +75,32 @@ function Home() {
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center justify-items-center">
             {/* Glicínias Plaza */}
-            <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
-              <span className="text-gray-800 font-bold text-lg text-center">Glicínias Plaza</span>
-            </div>
-            
+            <a href="https://www.glicinias.pt/" target="_blank" rel="noopener noreferrer" className="w-full">
+              <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
+                <img src="/181_glicinias_plaza_1.png" alt="Glicínias Plaza" className="max-h-full max-w-full object-contain" />
+              </div>
+            </a>
+
             {/* Câmara Municipal de Aveiro */}
-            <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
-              <span className="text-gray-800 font-bold text-lg text-center">Câmara Municipal de Aveiro</span>
-            </div>
-            
+            <a href="https://www.cm-aveiro.pt/" target="_blank" rel="noopener noreferrer" className="w-full">
+              <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
+                <img src="/cmaveiro.png" alt="Câmara Municipal de Aveiro" className="max-h-full max-w-full object-contain" />
+              </div>
+            </a>
+
             {/* Universidade de Aveiro */}
-            <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
-              <span className="text-gray-800 font-bold text-lg text-center">Universidade de Aveiro</span>
-            </div>
-            
+            <a href="https://www.ua.pt/" target="_blank" rel="noopener noreferrer" className="w-full">
+              <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
+                <img src="/ua.png" alt="Universidade de Aveiro" className="max-h-full max-w-full object-contain" />
+              </div>
+            </a>
+
             {/* IPDJ */}
-            <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
-              <span className="text-gray-800 font-bold text-lg text-center">IPDJ</span>
-            </div>
+            <a href="https://ipdj.gov.pt/" target="_blank" rel="noopener noreferrer" className="w-full">
+              <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
+                <img src="/ipdj.png" alt="IPDJ" className="max-h-full max-w-full object-contain" />
+              </div>
+            </a>
           </div>
         </div>
       </section>

@@ -1,103 +1,143 @@
 import { apiClient } from './client';
 
-interface Lineup {
-	player_id: string;
-	jersey_number: number;
-	is_starter: boolean;
+// Helper types
+export interface MatchLineup {
+  participant_id: string;
+  lineup: {
+    player_id: string;
+    player_name: string;
+    player_course: string;
+    is_starter: boolean;
+    jersey_number?: number;
+  }[];
 }
 
-export interface Match {
+// Response types
+export interface MatchListItem {
   id: string;
   tournament_id: string;
-  team_home_name: string;
-  team_away_name: string;
-  team_home_id: string;
-  team_away_id: string;
-  team_home: { id: string; name: string; lineup: Lineup[] };
-  team_away: { id: string; name: string; lineup: Lineup[] };
   location: string;
   start_time: string;
-  status: 'scheduled' | 'in_progress' | 'finished' | 'cancelled';
-  home_score: number | null;
-  away_score: number | null;
+  status: string;
+  journey?: number;
+  participants: {
+    id: string;
+    entity_id: string;
+    name: string;
+    score?: number;
+    position?: number;
+  }[];
+};
+
+export interface MatchDetail extends MatchListItem {
+  comments: {
+    id: string;
+    message: string;
+    author_name: string;
+    can_edit: boolean;
+  }[];
+  lineups: MatchLineup[];
+  staff_assignments: Record<string, { id: string; name: string }[]>; // participant_id -> list of staff members
+}
+
+// Request types
+export interface MatchListFilter {
+  tournament_id?: string;
+  status?: string;
 }
 
 export interface MatchCreate {
   tournament_id: string;
-  team_home_id: string;
-  team_away_id: string;
   location: string;
   start_time: string;
+  participants: string[];
+  journey?: number;
+  new_journey?: boolean;
 }
 
 export interface MatchUpdate {
-  team_home_id?: string;
-  team_away_id?: string;
   location?: string;
   start_time?: string;
-  status?: 'scheduled' | 'in_progress' | 'finished' | 'cancelled';
-  home_score?: number | null;
-  away_score?: number | null;
+  status?: string;
 }
 
-export interface MatchResult {
-  home_score: number;
-  away_score: number;
+export interface MatchPublishResults {
+  participant_results: {
+    participant_id: string;
+    score?: number;
+    position?: number;
+  }[];
+  status?: 'in_progress' | 'finished';
 }
 
-export interface MatchLineup {
-  team_id: string;
-  players: Lineup[];
-}
-
-export interface MatchComment {
+export interface CommentCreate {
   message: string;
 }
 
+export interface LineupAssign {
+  participant: string;
+  players: string[];
+}
+
+export interface LineupUpdate {
+  participant: string;
+  players: {
+    player_id: string;
+    is_starter: boolean;
+    jersey_number?: number | null;
+  }[];
+}
+
 export const matchesApi = {
-  async getAll(): Promise<Match[]> {
-    return apiClient.get<Match[]>('/matches');
+  async getAll(params?: MatchListFilter): Promise<MatchListItem[]> {
+    return apiClient.get<MatchListItem[]>('/matches/', params );
   },
 
-  async getById(matchId: string): Promise<Match> {
-    return apiClient.get<Match>(`/matches/${matchId}`);
+  async create(data: MatchCreate): Promise<MatchListItem> {
+    return apiClient.post<MatchListItem>('/matches/', data);
   },
 
-  async create(data: MatchCreate): Promise<Match> {
-    return apiClient.post<Match>('/matches', data);
+  async getById(matchId: string): Promise<MatchDetail> {
+    return apiClient.get<MatchDetail>(`/matches/${matchId}/`);
   },
 
-  async update(matchId: string, data: MatchUpdate): Promise<Match> {
-    return apiClient.put<Match>(`/matches/${matchId}`, data);
+  async update(matchId: string, data: MatchUpdate): Promise<MatchDetail> {
+    return apiClient.put<MatchDetail>(`/matches/${matchId}/`, data);
   },
 
   async delete(matchId: string): Promise<void> {
-    return apiClient.delete(`/matches/${matchId}`);
+    return apiClient.delete(`/matches/${matchId}/`);
   },
 
-  async submitResult(matchId: string, data: MatchResult): Promise<Match> {
-    return apiClient.post<Match>(`/matches/${matchId}/result`, data);
+  async publishResults(matchId: string, data: MatchPublishResults): Promise<MatchDetail> {
+    return apiClient.post<MatchDetail>(`/matches/${matchId}/results/`, data);
   },
 
-  async submitLineup(matchId: string, data: MatchLineup): Promise<void> {
-    return apiClient.post<void>(`/matches/${matchId}/lineup`, data);
+  async assignLineup(matchId: string, data: LineupAssign): Promise<MatchDetail> {
+    return apiClient.post<MatchDetail>(`/matches/${matchId}/lineups/`, data);
   },
 
-  async addComment(matchId: string, data: MatchComment): Promise<void> {
-    return apiClient.post<void>(`/matches/${matchId}/comments`, data);
+  async updateLineup(matchId: string, data: LineupUpdate): Promise<MatchDetail> {
+    return apiClient.put<MatchDetail>(`/matches/${matchId}/lineups/`, data);
+  },
+
+  async addComment(matchId: string, data: CommentCreate): Promise<MatchDetail> {
+    return apiClient.post<MatchDetail>(`/matches/${matchId}/comments/`, data);
+  },
+
+  async deleteComment(matchId: string, commentId: string): Promise<void> {
+    return apiClient.delete(`/matches/${matchId}/comments/${commentId}/`);
   },
 
   async getMatchSheet(matchId: string): Promise<Blob> {
-    const response = await fetch(`/api/admin/matches/${matchId}/sheet`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to download match sheet');
-    }
-
-    return response.blob();
+    return apiClient.getBlob(`/matches/${matchId}/match-sheet/`);
   },
+
+  async getMatchTeamSheet(matchId: string, participantId: string): Promise<Blob> {
+    return apiClient.getBlob(`/matches/${matchId}/team-sheet/${participantId}/`);
+  },
+
+  async assignStaff(matchId: string, participantId: string, staffIds: string[]): Promise<MatchDetail> {
+    return apiClient.post<MatchDetail>(`/matches/${matchId}/participants/${participantId}/staff/`, { staff_ids: staffIds });
+  }
 };

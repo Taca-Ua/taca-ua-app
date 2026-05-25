@@ -1,70 +1,76 @@
 import { apiClient } from './client';
 
-export interface Regulation {
-  id: number;
+export interface RegulationListItem {
+  id: string;
   title: string;
-  description?: string;
-  modality_id?: number;
   file_url: string;
+  description?: string;
   created_at: string;
 }
 
+export interface RegulationDetail extends RegulationListItem {
+  // Additional fields can be added here if needed in the future
+}
+
 export interface RegulationCreate {
-  file: File;
   title: string;
-  modality_id?: number;
+  file: File;
   description?: string;
+  season_id?: number;
 }
 
 export interface RegulationUpdate {
   title?: string;
+  file?: File;
   description?: string;
-  modality_id?: number;
 }
 
 export const regulationsApi = {
-  async getAll(): Promise<Regulation[]> {
-    return apiClient.get<Regulation[]>('/regulations');
+  async getAll(params?: { season_id?: number }): Promise<RegulationListItem[]> {
+    return apiClient.get<RegulationListItem[]>('/regulations/', params);
   },
 
-  async getById(id: number): Promise<Regulation> {
-    return apiClient.get<Regulation>(`/regulations/${id}`);
-  },
-
-  async create(data: RegulationCreate): Promise<Regulation> {
+  async create(data: RegulationCreate): Promise<RegulationListItem> {
     const formData = new FormData();
     formData.append('file', data.file);
     formData.append('title', data.title);
-    if (data.modality_id) {
-      formData.append('modality_id', data.modality_id.toString());
-    }
+    formData.append('season_id', data.season_id?.toString() ?? '');
     if (data.description) {
       formData.append('description', data.description);
     }
 
-    // Use fetch directly for file upload
-    const token = localStorage.getItem('auth_token');
-    const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+    return apiClient.post<RegulationListItem>('/regulations/', formData);
+  },
 
-    const response = await fetch('/api/admin/regulations', {
-      method: 'POST',
-      headers,
-      body: formData,
+  async getById(id: string): Promise<RegulationDetail> {
+    return apiClient.get<RegulationDetail>(`/regulations/${id}/`);
+  },
+
+  async update(id: string, data: Partial<RegulationUpdate>): Promise<RegulationDetail> {
+    const formData = new FormData();
+    if (data.file) {
+      formData.append('file', data.file);
+    }
+    if (data.title) {
+      formData.append('title', data.title);
+    }
+    if (data.description) {
+      formData.append('description', data.description);
+    }
+    console.log('Updating regulation with ID:', id);
+    console.log('FormData entries:');
+    formData.forEach((value, key) => {
+      if (value instanceof File) {
+        console.log(`  ${key}: [File] ${value.name}`);
+      } else {
+        console.log(`  ${key}: ${value}`);
+      }
     });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Upload failed' }));
-      throw new Error(error.error || 'Failed to upload regulation');
-    }
-
-    return response.json();
+    return apiClient.put<RegulationDetail>(`/regulations/${id}/`, formData);
   },
 
-  async update(id: number, data: RegulationUpdate): Promise<Regulation> {
-    return apiClient.put<Regulation>(`/regulations/${id}`, data);
-  },
-
-  async delete(id: number): Promise<void> {
-    return apiClient.delete(`/regulations/${id}`);
-  },
+  async delete(id: string): Promise<void> {
+    return apiClient.delete(`/regulations/${id}/`);
+  }
 };

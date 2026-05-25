@@ -1,0 +1,293 @@
+from datetime import datetime, timezone
+from typing import List
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+from taca_events.pydantic_schemas.modalities import (
+    CourseCreatedData,
+    CourseCreatedV1,
+    CourseDeletedData,
+    CourseDeletedV1,
+    CourseUpdatedData,
+    CourseUpdatedV1,
+)
+
+from ..database import get_db_session
+from ..logger import logger
+from ..models import Course, Nucleo, Season, Team, season_courses
+from ..outbox_publisher import outbox_publisher
+from ..schemas import (
+    CourseAddToSeason,
+    CourseCreate,
+    CourseRemoveFromSeason,
+    CourseResponse,
+    CourseUpdate,
+)
+from ..utils import get_active_season
+
+router = APIRouter()
+
+# Default user ID for operations (replace with actual auth later)
+DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000"
+
+
+@router.get("/courses", response_model=List[CourseResponse])
+def list_courses(
+    admin_id: str = None, season_id: int = None, db: Session = Depends(get_db_session)
+):
+    """List all courses"""
+    query = db.query(Course)
+
+    relevant_season = None
+    if season_id is not None:
+        relevant_season = db.query(Season).filter(Season.id == season_id).first()
+        if not relevant_season:
+            raise HTTPException(status_code=404, detail="Season not found")
+    else:
+        relevant_season = get_active_season(db)
+
+    if admin_id is not None:
+        query = query.join(Course.nucleo).filter(Nucleo.admins_ids.any(admin_id))
+
+    courses = query.all()
+    return [course.to_dict(season_id=relevant_season.id) for course in courses]
+
+
+@router.post(
+    "/courses", response_model=CourseResponse, status_code=status.HTTP_201_CREATED
+)
+def create_course(course_data: CourseCreate, db: Session = Depends(get_db_session)):
+    """Create a new course"""
+    # Validate nucleo exists
+    nucleo = db.query(Nucleo).filter(Nucleo.id == course_data.nucleo_id).first()
+    if not nucleo:
+        raise HTTPException(status_code=404, detail="Nucleo not found")
+
+    season = get_active_season(db)
+
+    try:
+        course = Course(
+            name=course_data.name,
+            abbreviation=course_data.abbreviation,
+            nucleo_id=course_data.nucleo_id,
+            created_by=DEFAULT_USER_ID,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+        )
+        db.add(course)
+        db.flush()
+
+        # Associate course with active season
+        if season:
+            season.season_courses.append(course)
+
+        # Emit event via outbox
+        event = CourseCreatedV1.create(
+            aggregate_id=course.id,
+            data=CourseCreatedData(
+                course_id=course.id,
+                nucleo_id=course.nucleo_id,
+                name=course.name,
+                abbreviation=course.abbreviation,
+            ),
+        )
+        outbox_publisher.emit_event(
+            db=db,
+            event_type=event.event_type(),
+            aggregate_type="course",
+            aggregate_id=course.id,
+            data=event.to_data_dict(),
+        )
+
+        db.commit()
+        db.refresh(course)
+        logger.info(f"Created course: {course.id}")
+        return course.to_dict()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400, detail="Course with this abbreviation already exists"
+        )
+
+
+@router.get("/courses/{course_id}", response_model=CourseResponse)
+def get_course(
+    course_id: UUID, season_id: int = None, db: Session = Depends(get_db_session)
+):
+    """Get a course by ID"""
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    relevant_season = None
+    if season_id is not None:
+        relevant_season = db.query(Season).filter(Season.id == season_id).first()
+        if not relevant_season:
+            raise HTTPException(status_code=404, detail="Season not found")
+    else:
+        relevant_season = get_active_season(db)
+
+    return course.to_dict(season_id=relevant_season.id if relevant_season else None)
+
+
+@router.put("/courses/{course_id}", response_model=CourseResponse)
+def update_course(
+    course_id: UUID, course_data: CourseUpdate, db: Session = Depends(get_db_session)
+):
+    """Update a course"""
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    changes_made = {}
+    if course_data.name is not None:
+        course.name = course_data.name
+        changes_made["name"] = course_data.name
+    if course_data.abbreviation is not None:
+        course.abbreviation = course_data.abbreviation
+        changes_made["abbreviation"] = course_data.abbreviation
+    if course_data.nucleo_id is not None:
+        nucleo = db.query(Nucleo).filter(Nucleo.id == course_data.nucleo_id).first()
+        if not nucleo:
+            raise HTTPException(status_code=404, detail="Nucleo not found")
+        course.nucleo_id = course_data.nucleo_id
+        changes_made["nucleo_id"] = str(course_data.nucleo_id)
+    course.updated_at = datetime.now(timezone.utc)
+
+    try:
+        # Emit event via outbox
+        event = CourseUpdatedV1.create(
+            aggregate_id=course.id,
+            data=CourseUpdatedData(
+                course_id=course.id,
+                name=changes_made.get("name"),
+                abbreviation=changes_made.get("abbreviation"),
+                nucleo_id=changes_made.get("nucleo_id"),
+            ),
+        )
+        outbox_publisher.emit_event(
+            db=db,
+            event_type=event.event_type(),
+            aggregate_type="course",
+            aggregate_id=course.id,
+            data=event.to_data_dict(),
+        )
+
+        db.commit()
+        db.refresh(course)
+        logger.info(f"Updated course: {course.id}")
+        return course.to_dict()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400, detail="Course with this abbreviation already exists"
+        )
+
+
+@router.post("/courses/{course_id}/add_to_season", response_model=CourseResponse)
+def add_course_to_season(
+    course_id: UUID, data: CourseAddToSeason, db: Session = Depends(get_db_session)
+):
+    """Add a course to a season"""
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    season = db.query(Season).filter(Season.id == data.season_id).first()
+    if not season:
+        raise HTTPException(status_code=404, detail="Season not found")
+
+    if course in season.season_courses:
+        raise HTTPException(status_code=400, detail="Course already in season")
+
+    season.season_courses.append(course)
+    db.commit()
+    db.refresh(course)
+    logger.info(f"Added course {course_id} to season {data.season_id}")
+    return course.to_dict(season_id=data.season_id)
+
+
+@router.post("/courses/{course_id}/remove_from_season", response_model=CourseResponse)
+def remove_course_from_season(
+    course_id: UUID, data: CourseRemoveFromSeason, db: Session = Depends(get_db_session)
+):
+    """Remove a course from a season"""
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    season = db.query(Season).filter(Season.id == data.season_id).first()
+    if not season:
+        raise HTTPException(status_code=404, detail="Season not found")
+
+    if course not in season.season_courses:
+        raise HTTPException(status_code=400, detail="Course not in season")
+
+    # Check if the course has teams registered in the season before removing
+    season_course_teams = (
+        db.query(Team)
+        .filter(Team.course_id == course_id)
+        .filter(Team.season_id == data.season_id)
+    )
+    if season_course_teams.count() > 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot remove course from season with registered teams",
+        )
+
+    season.season_courses.remove(course)
+    db.commit()
+    db.refresh(course)
+    logger.info(f"Removed course {course_id} from season {data.season_id}")
+    return course.to_dict(season_id=data.season_id)
+
+
+@router.delete("/courses/{course_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_course(course_id: UUID, db: Session = Depends(get_db_session)):
+    """Delete a course"""
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    # Disassociate course from seasons before deletion
+    active_season = get_active_season(db)
+    if course in active_season.season_courses:
+        active_season.season_courses.remove(course)
+
+    # Emit event via outbox before deleting
+    event = CourseDeletedV1.create(
+        aggregate_id=course.id,
+        data=CourseDeletedData(
+            course_id=course.id,
+        ),
+    )
+    outbox_publisher.emit_event(
+        db=db,
+        event_type=event.event_type(),
+        aggregate_type="course",
+        aggregate_id=course.id,
+        data=event.to_data_dict(),
+    )
+
+    db.delete(course)
+    db.commit()
+    logger.info(f"Deleted course: {course_id}")
+
+
+@router.get("/courses/admin/{admin_id}", response_model=List[CourseResponse])
+def list_courses_by_admin(admin_id: str, db: Session = Depends(get_db_session)):
+    """List courses by admin ID"""
+    active_season = get_active_season(db)
+
+    courses = (
+        db.query(Course)
+        .join(season_courses)
+        .join(Season)
+        .filter(Season.id == active_season.id)
+        .join(Course.nucleo)
+        .filter(Nucleo.admins_ids.any(admin_id))
+        .all()
+    )
+    return [course.to_dict() for course in courses]
