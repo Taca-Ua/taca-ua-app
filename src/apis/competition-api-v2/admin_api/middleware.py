@@ -86,6 +86,16 @@ class KeycloakJWTMiddleware:
             )
             return self.get_response(request)
 
+        # if call comes from localhost we skip the auth
+        print("Request from:", request.META.get("REMOTE_ADDR"), flush=True)
+        print(request.META, flush=True)
+        if request.META.get("REMOTE_ADDR") in ("127.0.0.1", "localhost"):
+            request.user_id = (
+                "00000000-0000-0000-0000-000000000000"  # dummy UUID for localhost
+            )
+            request.roles = ["general_admin"]
+            return self.get_response(request)
+
         if not auth_header.startswith("Bearer "):
             # No token provided — unauthenticated request; views decide what to do.
             request.user_id = None

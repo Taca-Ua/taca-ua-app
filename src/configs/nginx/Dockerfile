@@ -1,4 +1,4 @@
-FROM nginx:1.25-alpine
+FROM nginx:1.31-alpine
 
 # Install OpenSSL for certificate generation
 RUN apk add --no-cache openssl bash curl
