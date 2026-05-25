@@ -74,7 +74,7 @@ jobs:
 
       - name: Sync configuration files
         run: |
-          mkdir -p ${{ env.DEPLOY_PATH }}/configs
+          mkdir -p ${{ env.DEPLOY_PATH }}/src/configs
           rm -rf ${{ env.DEPLOY_PATH }}/src/configs/*
           cp -r src/configs ${{ env.DEPLOY_PATH }}/src/
           echo "✅ Configuration files synced successfully"
