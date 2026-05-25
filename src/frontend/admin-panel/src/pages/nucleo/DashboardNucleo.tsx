@@ -362,7 +362,7 @@ function DashboardNucleo() {
 
             <button
               type="button"
-              onClick={() => navigate('/teams')}
+              onClick={() => navigate('/equipas')}
               className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <h2 className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">Equipas</h2>
