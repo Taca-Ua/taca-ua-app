@@ -1,0 +1,123 @@
+name: Deploy to Production
+
+on:
+  workflow_run:
+    workflows: ["Build and Push Docker Images"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  OWNER: ${{ github.repository_owner }}
+  DEPLOY_PATH: ~/taca-ua-app
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: self-hosted
+    
+    steps:
+      - name: Convert owner to lowercase
+        run: echo "OWNER_LOWER=$(echo ${{ env.OWNER }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set deployment directory
+        run: |
+          mkdir -p ${{ env.DEPLOY_PATH }}
+          echo "Deployment directory: ${{ env.DEPLOY_PATH }}"
+
+      - name: Log in to Container Registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+
+      - name: Create .env file with secrets
+        run: |
+          cat > ${{ env.DEPLOY_PATH }}/.env << 'EOF'
+          # Deployment Environment Variables
+          OWNER=${{ env.OWNER }}
+          OWNER_LOWER=${{ env.OWNER_LOWER }}
+          EXPOSED_HTTPS_PORT=${{ secrets.EXPOSED_HTTPS_PORT }}
+          EXPOSED_HTTP_PORT=${{ secrets.EXPOSED_HTTP_PORT }}
+
+          # TLS/SSL Configuration
+          DOMAIN=${{ secrets.DOMAIN }}
+
+          # Database Configuration
+          POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          DATABASE_URL=${{ secrets.DATABASE_URL }}
+
+          # Object Storage Configuration
+          MINIO_ROOT_USER=${{ secrets.MINIO_ROOT_USER }}
+          MINIO_ROOT_PASSWORD=${{ secrets.MINIO_ROOT_PASSWORD }}
+
+          # Identity and Access Management
+          KEYCLOAK_ADMIN=${{ secrets.KEYCLOAK_ADMIN }}
+          KEYCLOAK_ADMIN_PASSWORD=${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}
+          KEYCLOAK_REALM=${{ secrets.KEYCLOAK_REALM }}
+
+          # Message Queue Configuration
+          RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}
+          RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}
+
+          # Django Configuration
+          DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
+
+          EOF
+          echo "✅ .env file created successfully"
+
+      - name: Copy docker-compose.prod.yml
+        run: |
+          cp docker-compose.prod.yml ${{ env.DEPLOY_PATH }}/docker-compose.yml
+          echo "✅ docker-compose.prod.yml copied as docker-compose.yml"
+
+      - name: Sync configuration files
+        run: |
+          mkdir -p ${{ env.DEPLOY_PATH }}/src/configs
+          rm -rf ${{ env.DEPLOY_PATH }}/src/configs/*
+          cp -r src/configs ${{ env.DEPLOY_PATH }}/src/
+          echo "✅ Configuration files synced successfully"
+
+      - name: Pull latest images
+        run: |
+          cd ${{ env.DEPLOY_PATH }}
+          docker compose pull
+          echo "✅ Docker images pulled successfully"
+
+      - name: Update running containers (zero-downtime deployment)
+        run: |
+          cd ${{ env.DEPLOY_PATH }}          
+          docker compose up -d
+          echo "✅ Containers updated with zero downtime"
+
+      - name: Wait for services to be healthy
+        run: |
+          cd ${{ env.DEPLOY_PATH }}
+          echo "Waiting for services to stabilize..."
+          sleep 10
+          docker compose ps
+          echo "✅ Deployment completed"
+
+      - name: Verify deployment
+        run: |
+          cd ${{ env.DEPLOY_PATH }}
+          echo "Running containers:"
+          docker compose ps
+          echo ""
+          echo "Recent logs:"
+          docker compose logs --tail=20
+
+      - name: Cleanup old images (optional)
+        run: |
+          docker image prune -af
+          echo "✅ Old images cleaned up"
+
+      - name: Deployment summary
+        run: |
+          echo "🎉 Deployment completed successfully!"
+          echo "Deployment path: ${{ env.DEPLOY_PATH }}"
+          echo "Registry: ${{ env.REGISTRY }}"
+          echo "Commit SHA: ${{ github.sha }}"

@@ -26,12 +26,10 @@
       "publicClient": true,
       "protocol": "openid-connect",
       "redirectUris": [
-        "http://localhost/*",
-        "http://localhost:3000/*"
+        "/*"
       ],
       "webOrigins": [
-        "http://localhost",
-        "http://localhost:3000"
+        "/*"
       ],
       "attributes": {
         "pkce.code.challenge.method": "S256",

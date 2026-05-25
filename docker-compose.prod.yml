@@ -1,14 +1,14 @@
 services:
 # Infrastructure Services
   nginx:
-    build: 
-      context: ./src/configs/nginx
+    image: ghcr.io/${OWNER_LOWER}/nginx:latest
+    restart: always
     ports:
-      - "80:80"
-      - "443:443"
+      - "${EXPOSED_HTTP_PORT:-80}:80"
+      - "${EXPOSED_HTTPS_PORT:-443}:443"
     volumes:
       - ./src/configs/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./src/configs/nginx/certs:/etc/nginx/certs
+      - ./certs:/etc/nginx/certs
     environment:
       - DOMAIN=${DOMAIN:-localhost}
     depends_on:
@@ -21,6 +21,7 @@ services:
 
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
+    restart: always
     user: "root"
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
@@ -36,6 +37,7 @@ services:
 
   postgres:
     image: postgres:15-alpine
+    restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
@@ -51,20 +53,21 @@ services:
 
   redis:
     image: redis:7-alpine
+    restart: always
 
   minio:
     image: minio/minio
+    restart: always
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
-    ports:
-      - "9001:9001" # Console
     volumes:
       - minio_data:/data
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.3.2
+    restart: always
     environment:
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
@@ -90,12 +93,14 @@ services:
 # Observability
   prometheus:
     image: prom/prometheus:v2.45.0
+    restart: always
     volumes:
       - ./src/configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
 
   loki:
     image: grafana/loki:2.8.2
+    restart: always
     volumes:
       - ./src/configs/loki/loki-config.yaml:/etc/loki/local-config.yaml:ro
       - loki_data:/loki
@@ -103,6 +108,7 @@ services:
 
   grafana:
     image: grafana/grafana:10.0.0
+    restart: always
     volumes:
       - ./src/configs/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./src/configs/grafana/dashboards:/var/lib/grafana/dashboards:ro
@@ -115,11 +121,9 @@ services:
 
 # APIs
   competition-api-v2:
-    build: 
-      context: .
-      dockerfile: ./src/apis/competition-api-v2/Dockerfile
+    image: ghcr.io/${OWNER_LOWER}/competition-api-v2:latest
+    restart: always
     environment:
-      - DOMAIN=${DOMAIN:-localhost}
       - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/auth
       - KEYCLOAK_REALM=${KEYCLOAK_REALM:-taca-ua}
       - KEYCLOAK_ISSUER=https://${DOMAIN:-localhost}/auth/realms/${KEYCLOAK_REALM:-taca-ua}
@@ -138,9 +142,8 @@ services:
         condition: service_started
 
   public-api:
-    build: 
-      context: .
-      dockerfile: ./src/apis/public-api/Dockerfile
+    image: ghcr.io/${OWNER_LOWER}/public-api:latest
+    restart: always
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
@@ -161,9 +164,8 @@ services:
 
 # Microservices
   matches-service:
-    build: 
-      context: .
-      dockerfile: ./src/microservices/matches-service/Dockerfile
+    image: ghcr.io/${OWNER_LOWER}/matches-service:latest
+    restart: always
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
@@ -180,9 +182,8 @@ services:
         condition: service_healthy
 
   modalities-service:
-    build: 
-      context: .
-      dockerfile: ./src/microservices/modalities-service/Dockerfile
+    image: ghcr.io/${OWNER_LOWER}/modalities-service:latest
+    restart: always
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
@@ -199,9 +200,8 @@ services:
         condition: service_healthy
 
   ranking-service:
-    build: 
-      context: .
-      dockerfile: ./src/microservices/ranking-service/Dockerfile
+    image: ghcr.io/${OWNER_LOWER}/ranking-service:latest
+    restart: always
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
@@ -218,9 +218,8 @@ services:
         condition: service_healthy
 
   read-model-updater:
-    build: 
-      context: .
-      dockerfile: ./src/microservices/read-model-updater/Dockerfile
+    image: ghcr.io/${OWNER_LOWER}/read-model-updater:latest
+    restart: always
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
@@ -237,9 +236,8 @@ services:
         condition: service_healthy
 
   tournaments-service:
-    build: 
-      context: .
-      dockerfile: ./src/microservices/tournaments-service/Dockerfile
+    image: ghcr.io/${OWNER_LOWER}/tournaments-service:latest
+    restart: always
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
@@ -257,8 +255,8 @@ services:
 
 # Frontend Services
   admin-panel:
-    build: 
-      context: ./src/frontend/admin-panel
+    image: ghcr.io/${OWNER_LOWER}/admin-panel:latest
+    restart: always
     environment:
       - CHOKIDAR_USEPOLLING=true
       - VITE_KEYCLOAK_URL=/auth
@@ -266,8 +264,8 @@ services:
       - VITE_KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-frontend-admin}
 
   public-website:
-    build: 
-      context: ./src/frontend/public-website
+    image: ghcr.io/${OWNER_LOWER}/public-website:latest
+    restart: always
     environment:
       - CHOKIDAR_USEPOLLING=true
 

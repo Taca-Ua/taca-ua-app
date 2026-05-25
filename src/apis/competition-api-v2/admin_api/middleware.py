@@ -124,7 +124,7 @@ class KeycloakJWTMiddleware:
             "algorithms": getattr(settings, "KEYCLOAK_ALGORITHMS", ["RS256"]),
             "options": {
                 "verify_exp": True,
-                "verify_iss": True,
+                "verify_iss": settings.KEYCLOAK_VALIDATE_ISSUER,
             },
             "issuer": settings.KEYCLOAK_ISSUER,
         }

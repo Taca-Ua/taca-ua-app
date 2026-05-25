@@ -1,11 +1,15 @@
 from typing import List
 
 import requests
+import urllib3
 
-API_URL = "http://localhost/api2/admin"
+urllib3.disable_warnings()
+
+API_URL = "https://192.168.1.70/api2/admin"
 
 HEADERS = {
     "X-Dev-Auth-Token": "super-secret-dev-token",
+    "Authorization": "Bearer <super-secret-dev-token>",
 }
 
 STATS = {
@@ -19,6 +23,20 @@ STATS = {
     "matches": {"created": 0, "failed": 0, "skipped": 0},
     "match_results": {"created": 0, "failed": 0, "skipped": 0},
 }
+
+
+requests.get = lambda *args, **kwargs: requests.request(
+    "GET", *args, verify=False, **{i: j for i, j in kwargs.items() if i != "verify"}
+)
+requests.post = lambda *args, **kwargs: requests.request(
+    "POST", *args, verify=False, **{i: j for i, j in kwargs.items() if i != "verify"}
+)
+requests.put = lambda *args, **kwargs: requests.request(
+    "PUT", *args, verify=False, **{i: j for i, j in kwargs.items() if i != "verify"}
+)
+requests.delete = lambda *args, **kwargs: requests.request(
+    "DELETE", *args, verify=False, **{i: j for i, j in kwargs.items() if i != "verify"}
+)
 
 
 def populate_modalities_types(step_by_step=False, delete_existing=False) -> int:
