@@ -1,0 +1,15 @@
+# Ignorar pastas de dependências
+**/node_modules/
+node_modules/
+
+# Ignorar builds e pastas de cache
+**/dist/
+dist/
+.buildx-cache/
+.buildx-cache-new/
+
+# Ignorar lixo do sistema e do Git
+.git/
+.gitignore
+README.md
+.vscode/

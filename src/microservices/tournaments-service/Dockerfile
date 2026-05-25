@@ -4,7 +4,7 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Instalar dependências de sistema (necessário para psycopg2 e build de pacotes)
+# Instalar dependências de sistema para compilação e Postgres
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
@@ -12,18 +12,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# 1. PRE-STAGING: Criar a estrutura exata que o seu requirements.txt espera
-# O seu requirements usa /tmp/contracts e /tmp/platform
+# 1. PRE-STAGING: Satisfazer as dependências do requirements.txt
+# Copiamos as pastas inteiras para garantir que taca-events, taca-logging, etc.
 COPY src/shared/contracts /tmp/contracts
 COPY src/shared/platform /tmp/platform
 
-# 2. Instalar dependências
+# 2. Instalar dependências do Python
 COPY src/microservices/tournaments-service/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -U pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 # 3. Copiar o código do serviço
 COPY src/microservices/tournaments-service .
 
-# 4. Comando de inicialização
-# Nota: Alembic faz as migrações e o Uvicorn sobe o FastAPI
+# 4. Inicialização (Migrações + Uvicorn)
 CMD alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000
