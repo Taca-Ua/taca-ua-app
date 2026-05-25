@@ -39,6 +39,8 @@ jobs:
           # Deployment Environment Variables
           OWNER=${{ env.OWNER }}
           OWNER_LOWER=${{ env.OWNER_LOWER }}
+          EXPOSED_HTTPS_PORT={{ secrets.EXPOSED_HTTPS_PORT }}
+          EXPOSED_HTTP_PORT={{ secrets.EXPOSED_HTTP_PORT }}
 
           # TLS/SSL Configuration
           DOMAIN=${{ secrets.DOMAIN }}
