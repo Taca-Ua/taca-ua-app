@@ -9,11 +9,6 @@ on:
       push:
         required: true
         type: boolean
-
-    secrets:
-      GITHUB_TOKEN:
-        required: true
-
     outputs:
       matrix-result:
         description: "Result of the build matrix"

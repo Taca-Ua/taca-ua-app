@@ -28,8 +28,6 @@ jobs:
     uses: ./.github/workflows/build-matrix.yml
     with:
       push: false
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   all-checks-passed:
     name: All Checks Passed

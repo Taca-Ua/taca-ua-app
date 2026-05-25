@@ -15,8 +15,6 @@ jobs:
     uses: ./.github/workflows/build-matrix.yml
     with:
       push: true
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   notify:
     needs: build-matrix
@@ -33,18 +31,3 @@ jobs:
             exit 1
           fi
 
-  notify:
-    needs: build-matrix
-    runs-on: ubuntu-latest
-    if: always()
-
-    steps:
-      - name: Notify deployment ready
-        run: |
-          if [ "${{ needs.build-matrix.result }}" == "success" ]; then
-            echo "✅ All Docker images built and pushed successfully!"
-            echo "Images are available at: ${{ env.REGISTRY }}/${{ env.OWNER }}/*:${{ github.sha }}"
-          else
-            echo "❌ Build failed!"
-            exit 1
-          fi
