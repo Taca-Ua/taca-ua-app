@@ -5,7 +5,7 @@ import urllib3
 
 urllib3.disable_warnings()
 
-API_URL = "https://192.168.1.70/api2/admin"
+API_URL = "https://localhost/api2/admin"
 
 HEADERS = {
     "X-Dev-Auth-Token": "super-secret-dev-token",
