@@ -134,6 +134,8 @@ services:
       - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/auth
       - KEYCLOAK_REALM=${KEYCLOAK_REALM:-taca-ua}
       - KEYCLOAK_ISSUER=https://${DOMAIN:-localhost}/auth/realms/${KEYCLOAK_REALM:-taca-ua}
+      - MINIO_USER=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
       - DEV_AUTH_BYPASS_ENABLED=${DEV_AUTH_BYPASS_ENABLED:-false}
       - DEV_AUTH_BYPASS_ROLES=${DEV_AUTH_BYPASS_ROLES:-general_admin}
       - DEV_AUTH_BYPASS_TOKEN=${DEV_AUTH_BYPASS_TOKEN:-}
