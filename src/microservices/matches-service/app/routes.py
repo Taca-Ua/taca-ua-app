@@ -184,7 +184,7 @@ def create_match(
             .first()
         )
         match_data.journey = (
-            last_journey[0] if last_journey and last_journey[0] is not None else 1
+            last_journey[0] if last_journey and last_journey[0] is not None else 0
         )
 
     # Create match
