@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useNotification } from "../../contexts/NotificationProvider";
 import Button from "../utils/Button";
 import { useAuth } from "../../hooks/useAuth";
+import { normalizeText } from "../utils/utils";
 
 
 const MatchesListItemComponent = ( { match, onDeleted } : { match: MatchListItem; onDeleted: () => void } ) => {
@@ -120,28 +121,41 @@ const MatchesListJourneyComponent = ( {
   matches,
   journeyNumber,
   initialExpanded,
-  onMatchDeleted
+  onMatchDeleted,
+  expanded: externalExpanded,
+  onExpandedChange
 } : {
   matches: MatchListItem[],
   journeyNumber: string | number,
   initialExpanded?: boolean
   onMatchDeleted?: (matchId: string) => void
+  expanded?: boolean
+  onExpandedChange?: (expanded: boolean) => void
 } ) => {
     const [expanded, setExpanded] = useState<boolean>( initialExpanded || false );
+    const isExpanded = externalExpanded !== undefined ? externalExpanded : expanded;
+
+    const handleToggle = () => {
+      const newState = !isExpanded;
+      if (externalExpanded === undefined) {
+        setExpanded(newState);
+      }
+      onExpandedChange?.(newState);
+    };
 
     return (
         <div>
             <div
                 className="flex justify-between items-center cursor-pointer bg-gray-200 px-4 py-2 rounded-md"
-                onClick={() => setExpanded(!expanded)}
+                onClick={() => handleToggle()}
             >
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold text-gray-700">Jornada {journeyNumber}</h3>
+                <h3 className="text-lg font-semibold text-gray-700">{journeyNumber}</h3>
                 <p className="text-sm text-gray-500">{matches.length} jogo{matches.length !== 1 ? 's' : ''}</p>
               </div>
-                <span className="text-gray-500">{expanded ? 'Ocultar' : 'Mostrar'}</span>
+                <span className="text-gray-500">{isExpanded ? 'Ocultar' : 'Mostrar'}</span>
             </div>
-            {expanded && (
+            {isExpanded && (
                 <div className="mt-3 space-y-3">
                     {matches.map(match => (
                         <MatchesListItemComponent key={match.id} match={match} onDeleted={() => onMatchDeleted && onMatchDeleted(match.id)} />
@@ -161,8 +175,10 @@ const MatchesListComponent = ( {
 } ) => {
     const [matches, setMatches] = matchesState ? matchesState : useState<MatchListItem[]>([]);
     const [loading, setLoading] = useState<boolean>( true );
+    const [expandedJourneys, setExpandedJourneys] = useState<Set<string>>(new Set());
 
     const [matchStatusFilter, setMatchStatusFilter] = useState<string>( 'all' );
+    const [query, setQuery] = useState<string>( '' );
 
     useEffect( () => {
         const fetchMatches = async () => {
@@ -181,12 +197,16 @@ const MatchesListComponent = ( {
         fetchMatches();
     }, [ tournamentId ] );
 
-
     const filteredMatches = matches.filter( match => {
             if ( matchStatusFilter === 'all' ) return true;
             return match.status === matchStatusFilter;
         }
-    );
+    ).filter( match => {
+        const participantNames = match.participants.map( p => normalizeText( p.name ) ).join( ' ' ).toLowerCase();
+        const location = normalizeText( match.location );
+        const searchQuery = normalizeText( query ).toLowerCase();
+        return participantNames.includes( searchQuery ) || location.includes( searchQuery );
+    } );
 
     const matchesByJourney: { [key: string]: MatchListItem[] } = {};
     filteredMatches.forEach( match => {
@@ -196,6 +216,25 @@ const MatchesListComponent = ( {
         }
         matchesByJourney[ journeyKey ].push( match );
     } );
+
+    const handleExpandAll = () => {
+        const allJourneys = Object.keys(matchesByJourney);
+        setExpandedJourneys(new Set(allJourneys));
+    };
+
+    const handleCollapseAll = () => {
+        setExpandedJourneys(new Set());
+    };
+
+    const toggleJourneyExpanded = (journeyKey: string, expanded: boolean) => {
+        const newExpanded = new Set(expandedJourneys);
+        if (expanded) {
+            newExpanded.add(journeyKey);
+        } else {
+            newExpanded.delete(journeyKey);
+        }
+        setExpandedJourneys(newExpanded);
+    };
 
     if ( loading ) {
         return <div>Loading matches...</div>;
@@ -207,6 +246,19 @@ const MatchesListComponent = ( {
           <h2 className="text-xl font-bold text-gray-800">
             Jogos ({filteredMatches.length})
           </h2>
+          <div className="flex items-center gap-3">
+          <Button
+            onClick={handleExpandAll}
+            padding='px-4 py-2'
+          >
+            Expandir Todos
+          </Button>
+          <Button
+            onClick={handleCollapseAll}
+            padding='px-4 py-2'
+          >
+            Colapsar Todos
+          </Button>
           <div className="flex items-center gap-3">
             <select
               value={matchStatusFilter}
@@ -220,6 +272,17 @@ const MatchesListComponent = ( {
               <option value="cancelled">Cancelados</option>
             </select>
           </div>
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <input
+            type="text"
+            placeholder="Pesquisar por local ou participantes..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+          />
         </div>
 
         <div className="space-y-3">
@@ -229,6 +292,8 @@ const MatchesListComponent = ( {
                 key={journey}
                 journeyNumber={journey}
                 matches={matches}
+                expanded={expandedJourneys.has(journey)}
+                onExpandedChange={(expanded) => toggleJourneyExpanded(journey, expanded)}
                 onMatchDeleted={(matchId) => setMatches((prev) => prev.filter((m) => m.id !== matchId))}
               />
             ))
