@@ -1,17 +1,17 @@
 import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List
+from typing import List, Optional
 
 import requests
 import urllib3
 
 urllib3.disable_warnings()
 
-API_URL = "https://mednat.ieeta.pt:8971/api2/admin"
+API_URL = "http://localhost/api2/admin"
 
 HEADERS = {
     "X-Dev-Auth-Token": "super-secret-dev-token",
-    "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJDRjZCbjMzbDh1MVZVTVFaSTFTVE9adF8xU3RGSVhKemcxT3NuaVpZb04wIn0.eyJleHAiOjE3Nzk3ODU3MzcsImlhdCI6MTc3OTc4MjEzNywiYXV0aF90aW1lIjoxNzc5NzgyMTM3LCJqdGkiOiJvbnJ0YWM6ODM1NDM1OWUtOTRmOS1iN2IwLWY1N2EtYTIyOThjNDQ5OTM4IiwiaXNzIjoiaHR0cHM6Ly9tZWRuYXQuaWVldGEucHQ6ODk3MS9hdXRoL3JlYWxtcy90YWNhLXVhIiwic3ViIjoiMjVmMWUwMmYtZGU1Mi00ZTg4LTlmMWEtYmNiNGU0MDA3ZGNmIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoiZnJvbnRlbmQtYWRtaW4iLCJzaWQiOiI2ZjNhZjI1NS05MGRjLTRiMDEtYTcyZS0yZjg1OThjOGU3OWYiLCJhY3IiOiIwIiwiYWxsb3dlZC1vcmlnaW5zIjpbIi8qIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJnZW5lcmFsX2FkbWluIl19LCJzY29wZSI6Im9wZW5pZCBlbWFpbCBwcm9maWxlIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJCZXJ0cmFtIEdpbGZveWxlIiwicHJlZmVycmVkX3VzZXJuYW1lIjoiYWRtaW5fZ2VyYWwiLCJnaXZlbl9uYW1lIjoiQmVydHJhbSIsImZhbWlseV9uYW1lIjoiR2lsZm95bGUiLCJlbWFpbCI6ImFkbWluX2dlcmFsQHRhY2EtdWEucHQifQ.iWbZsfSqEY0NZrtfVMo_THraq70RPx-_cXTes8uWag-3nr7QM1PL0im_NBqSUQtTo6sAZkZogmHoIERLR2V4HZZj3gtnsmVb66Zki5fT3mom2K5YywQiuSUhbdserdcQ-K5LQpzdSqkDrQQQmS4h0eL7ZA_L4IQhwxvlKRWEdvQ51WJVBXs4xq2GCin3X3u7W49YnORaRuT4em6911b6jdPrGAVdKf9HrYezkat02CfwYLJp289a9HkdVjiP1yipDjCSFw9WMMpkDWXfH3uMNVagnmvoj4NVPDrK79BfWU_2mYItiZ4A0w3YdE8pKRrjDMeGPL2FcQx131C361CDmw",
+    # "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJfZjhPeHh3OTM5YVZLSjNnOGlFbW1HQkFoSVVBRDI2d3pnaTJoODBVQUFzIn0.eyJleHAiOjE3Nzk4ODQ1NjgsImlhdCI6MTc3OTg4MDk2OCwiYXV0aF90aW1lIjoxNzc5ODgwOTU4LCJqdGkiOiJvbnJ0YWM6ZTRjODZjNmQtNDAyYS1lNWEwLWEwNjAtYTk2YzE2ZmFiZDExIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdC9hdXRoL3JlYWxtcy90YWNhLXVhIiwic3ViIjoiZDA5ZDM5ZmUtNWFmNi00MGZjLTg2YWItMzkyNmUxOWNmNWIxIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoiZnJvbnRlbmQtYWRtaW4iLCJzaWQiOiIyMGU1N2Y2NC0yNzcwLTQxNGEtYTg2NS0xMzY4NTBkM2Q3NmEiLCJhY3IiOiIwIiwiYWxsb3dlZC1vcmlnaW5zIjpbIi8qIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJnZW5lcmFsX2FkbWluIl19LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJCZXJ0cmFtIEdpbGZveWxlIiwicHJlZmVycmVkX3VzZXJuYW1lIjoiYWRtaW5fZ2VyYWwiLCJnaXZlbl9uYW1lIjoiQmVydHJhbSIsImZhbWlseV9uYW1lIjoiR2lsZm95bGUiLCJlbWFpbCI6ImFkbWluX2dlcmFsQHRhY2EtdWEucHQifQ.eRejZHLddBEsj_SFAaPHVfLvLl9anCMGo750zHO67cVkks8BPuJBKSO3IQm3wVrvEYyJbwz-2V1Itk4CiNQ98xDNAy1i_fKVe0QmopiF-pVSoFZed0VOMNWsMpaFf2iI9pXF5El86y-fwxpgAyNB5IbzhaA8SWt-42DbyeyOBATS0GJh08sgXvSkMlpM6tnu3-ob0zs_DghIeVQ2eF_2ZCKCJZeZMnUXkSaPGqIuJLfpvXuWR1b-0MGh9xkcARm7YuktYUm-h-PnOlX9sTw4zsMxEKrqTKV0xo2Pql2gYLorn36pkvHdKTcNvocE4LDOpdVvJAFAVW62yz4zla5vww",
 }
 
 STATS = {
@@ -316,7 +316,7 @@ def populate_courses():
     else:
         existing_courses = {}
 
-    def _create_nucleo(name: str) -> str:
+    def _create_nucleo(name: str, logo_url: Optional[str] = None) -> str:
         """Helper function to create a núcleo if it doesn't exist and return its ID."""
 
         # Check if the núcleo already exists before attempting to create it
@@ -325,11 +325,27 @@ def populate_courses():
             STATS["nucleos"]["skipped"] = STATS["nucleos"]["skipped"] + 1
             return existing_nucleos[name]
 
+        if logo_url:
+            # Attempt to fetch the logo to ensure it's valid before creating the núcleo
+            logo_response = requests.get(
+                f"https://slicf.github.io/mmr_ta-aua/{logo_url}", headers=HEADERS
+            )
+            logo_data = None
+            if logo_response.status_code == 200:
+                print(f"Successfully fetched logo for núcleo: {name}")
+                logo_data = logo_response.content
+            else:
+                print(
+                    f"Failed to fetch logo for núcleo: {name}, Status Code: {logo_response.status_code}, Response: {logo_response.text}"
+                )
+                raise Exception(f"Failed to fetch logo for núcleo: {name}")
+
         # If the núcleo doesn't exist, create it
         response = requests.post(
             f"{API_URL}/nucleos/",
-            json={"name": name, "abbreviation": name},
+            data={"name": name, "abbreviation": name},
             headers=HEADERS,
+            files={"image": (f"{name}_logo.png", logo_data)} if logo_data else None,
         )
         if response.status_code == 201:
             print(f"Created núcleo: {name}")
@@ -338,6 +354,7 @@ def populate_courses():
             print(
                 f"Failed to create núcleo: {name}, Status Code: {response.status_code}, Response: {response.text}"
             )
+            raise Exception(f"Failed to create núcleo: {name}")
             STATS["nucleos"]["failed"] = STATS["nucleos"]["failed"] + 1
             return None
 
@@ -373,7 +390,11 @@ def populate_courses():
     nucleos_created = courses_created = 0
     for nucleo_name, courses in courses_data.items():
         # First, ensure the núcleo exists and get its ID
-        nucleo_id = _create_nucleo(nucleo_name)
+        logo_url_path = next(
+            course["emblem"] for course in courses if course.get("emblem") is not None
+        )
+
+        nucleo_id = _create_nucleo(nucleo_name, logo_url=logo_url_path)
         if not nucleo_id:
             print(
                 f"Skipping courses for núcleo: {nucleo_name} due to núcleo creation failure."
