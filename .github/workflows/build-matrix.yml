@@ -80,7 +80,7 @@ jobs:
       - name: Convert owner to lowercase
         run: echo "OWNER_LOWER=$(echo ${{ env.OWNER }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
-      - name: Build ${{ matrix.service }} (multi-arch)
+      - name: Build ${{ matrix.service }}
         uses: docker/build-push-action@v5
         with:
           context: ${{ matrix.context || '.' }}
