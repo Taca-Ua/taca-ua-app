@@ -23,7 +23,8 @@ export interface TeamDetail extends TeamListItem {
   season: {
     id: number;
     name: string;
-  }
+  };
+  logo_url?: string | null;
 }
 
 export interface TeamCreate {

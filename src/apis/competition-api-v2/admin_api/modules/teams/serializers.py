@@ -30,6 +30,7 @@ class TeamListSerializer(serializers.Serializer):
     name = serializers.CharField()
     modality = TeamModalitySummary()
     course = TeamCourseSummary()
+    logo_url = serializers.CharField(allow_null=True, required=False)
 
 
 class TeamDetailSerializer(TeamListSerializer):
