@@ -11,9 +11,13 @@ const CourseEntry = (course: CourseListItem) => {
       className={"w-full text-left px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-teal-500" + (course.belongs_to_season ? "" : " opacity-50")}
     >
       <div className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center border-2 border-teal-500 flex-shrink-0">
-          <span className="text-teal-600 font-bold text-xs">{course.abbreviation}</span>
-        </div>
+        {course.logo_url ? (
+          <img src={course.logo_url} alt={course.name} className="w-12 h-12 rounded-full object-cover" />
+        ) : (
+          <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center border-2 border-teal-500 flex-shrink-0">
+            <span className="text-teal-600 font-bold text-xs">{course.abbreviation}</span>
+          </div>
+        )}
         <div className="flex items-center gap-3">
           <span className="text-teal-600 font-bold text-lg">{course.abbreviation}</span>
           <span className="text-gray-400">|</span>

@@ -418,7 +418,7 @@ def step3():
 
 
 def main():
-    succes = step1(year="24_25")
+    succes = step1(year="25_26")
     if not succes:
         print("Erro ao processar config_cursos.json")
         return

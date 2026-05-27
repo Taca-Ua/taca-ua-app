@@ -53,13 +53,19 @@ const CourseInfoComponent = ( {
     <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
       <div>
         <label className="block text-teal-500 font-medium mb-2">Logo</label>
-        <div className="flex items-center gap-4">
-          <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-teal-500">
-            <span className="text-teal-600 font-bold text-2xl">
-              {course.abbreviation}
-            </span>
+        { course.logo_url ? (
+          <div className="flex items-center gap-4">
+            <img src={course.logo_url} alt={course.name} className="w-32 h-32 object-cover" />
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center gap-4">
+            <div className="w-32 h-32 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-teal-500">
+              <span className="text-teal-600 font-bold text-2xl">
+                {course.abbreviation}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       <div>

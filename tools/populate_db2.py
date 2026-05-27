@@ -1,3 +1,5 @@
+import random
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List
 
 import requests
@@ -5,11 +7,11 @@ import urllib3
 
 urllib3.disable_warnings()
 
-API_URL = "https://localhost/api2/admin"
+API_URL = "https://mednat.ieeta.pt:8971/api2/admin"
 
 HEADERS = {
     "X-Dev-Auth-Token": "super-secret-dev-token",
-    "Authorization": "Bearer <super-secret-dev-token>",
+    "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJDRjZCbjMzbDh1MVZVTVFaSTFTVE9adF8xU3RGSVhKemcxT3NuaVpZb04wIn0.eyJleHAiOjE3Nzk3ODU3MzcsImlhdCI6MTc3OTc4MjEzNywiYXV0aF90aW1lIjoxNzc5NzgyMTM3LCJqdGkiOiJvbnJ0YWM6ODM1NDM1OWUtOTRmOS1iN2IwLWY1N2EtYTIyOThjNDQ5OTM4IiwiaXNzIjoiaHR0cHM6Ly9tZWRuYXQuaWVldGEucHQ6ODk3MS9hdXRoL3JlYWxtcy90YWNhLXVhIiwic3ViIjoiMjVmMWUwMmYtZGU1Mi00ZTg4LTlmMWEtYmNiNGU0MDA3ZGNmIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoiZnJvbnRlbmQtYWRtaW4iLCJzaWQiOiI2ZjNhZjI1NS05MGRjLTRiMDEtYTcyZS0yZjg1OThjOGU3OWYiLCJhY3IiOiIwIiwiYWxsb3dlZC1vcmlnaW5zIjpbIi8qIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJnZW5lcmFsX2FkbWluIl19LCJzY29wZSI6Im9wZW5pZCBlbWFpbCBwcm9maWxlIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJCZXJ0cmFtIEdpbGZveWxlIiwicHJlZmVycmVkX3VzZXJuYW1lIjoiYWRtaW5fZ2VyYWwiLCJnaXZlbl9uYW1lIjoiQmVydHJhbSIsImZhbWlseV9uYW1lIjoiR2lsZm95bGUiLCJlbWFpbCI6ImFkbWluX2dlcmFsQHRhY2EtdWEucHQifQ.iWbZsfSqEY0NZrtfVMo_THraq70RPx-_cXTes8uWag-3nr7QM1PL0im_NBqSUQtTo6sAZkZogmHoIERLR2V4HZZj3gtnsmVb66Zki5fT3mom2K5YywQiuSUhbdserdcQ-K5LQpzdSqkDrQQQmS4h0eL7ZA_L4IQhwxvlKRWEdvQ51WJVBXs4xq2GCin3X3u7W49YnORaRuT4em6911b6jdPrGAVdKf9HrYezkat02CfwYLJp289a9HkdVjiP1yipDjCSFw9WMMpkDWXfH3uMNVagnmvoj4NVPDrK79BfWU_2mYItiZ4A0w3YdE8pKRrjDMeGPL2FcQx131C361CDmw",
 }
 
 STATS = {
@@ -928,85 +930,197 @@ def populate_tournaments():
                 )
                 STATS["match_results"]["failed"] = STATS["match_results"]["failed"] + 1
 
-    from data.processed_data import processed_data_typed
-
-    for modality in processed_data_typed:
-        if modality.name not in modality_name_to_id:
+    def _process_tournament(modality, tournament):
+        """Process a single tournament: create, associate teams, create matches, insert results, and activate."""
+        # Get modality ID
+        modality_id = modality_name_to_id.get(modality.name)
+        if not modality_id:
             print(
-                f"Modality not found for tournaments: {modality.name}. Skipping tournament creation for this modality."
+                f"Modality not found for tournaments: {modality.name}. Skipping tournament: {tournament.name}"
             )
-            continue
+            return
 
-        # get teams for the modality to associate them with the tournaments
+        # Get teams for the modality
         teams_response = requests.get(
-            f"{API_URL}/teams/?modality_id={modality_name_to_id.get(modality.name)}",
+            f"{API_URL}/teams/?modality_id={modality_id}",
             headers=HEADERS,
         )
         if teams_response.status_code != 200:
             print(f"Failed to fetch teams for modality: {modality.name}")
-            continue
+            return
         relevant_teams = {team["name"]: team["id"] for team in teams_response.json()}
 
-        for tournament in modality.tournaments:
-            # create tournament and get its ID for team association and match creation
-            tournament_id = _create_tournament(
-                tournament.name,
-                modality_name_to_id.get(modality.name),
-                tournament.format,
-                tournament.format_data,
+        # create tournament and get its ID for team association and match creation
+        tournament_id = _create_tournament(
+            tournament.name,
+            modality_id,
+            tournament.format,
+            tournament.format_data,
+        )
+        if not tournament_id:
+            print(
+                f"Skipping team association and match creation for tournament: {tournament.name} due to tournament creation failure."
             )
-            if not tournament_id:
+            return
+
+        # get teams for the tournament to avoid redundant associations
+        tournament_teams_response = requests.get(
+            f"{API_URL}/tournaments/{tournament_id}/", headers=HEADERS
+        )
+        if tournament_teams_response.status_code == 200:
+            tournament_teams = {
+                competitor["name"]: competitor["id"]
+                for competitor in tournament_teams_response.json()["competitors"]
+            }
+        else:
+            print(f"Failed to fetch teams for tournament: {tournament.name}")
+            tournament_teams = {}
+
+        for team in tournament.teams:
+            print(
+                "\t", flush=True, end=""
+            )  # Add indentation for tournament creation logs
+            if team in tournament_teams:
                 print(
-                    f"Skipping team association and match creation for tournament: {tournament.name} due to tournament creation failure."
+                    f"Team already associated with tournament: {team} in {tournament.name}"
                 )
                 continue
 
-            # get teams for the tournament to avoid redundant associations
-            tournament_teams_response = requests.get(
-                f"{API_URL}/tournaments/{tournament_id}/", headers=HEADERS
+            _associate_team_to_tournament(relevant_teams.get(team), tournament_id)
+
+        # create matches for the tournament
+        atleast_one_match = _create_matches_for_tournament(
+            tournament_id, tournament.matches
+        )
+
+        # insert matches results
+        _insert_matches_results(tournament_id, tournament.matches)
+
+        # activate tournament if at least one match was created and results were inserted
+        if atleast_one_match:
+            activate_response = requests.put(
+                f"{API_URL}/tournaments/{tournament_id}/",
+                json={"status": "active"},
+                headers=HEADERS,
             )
-            if tournament_teams_response.status_code == 200:
-                tournament_teams = {
-                    competitor["name"]: competitor["id"]
-                    for competitor in tournament_teams_response.json()["competitors"]
-                }
+            if activate_response.status_code == 200:
+                print(f"\tActivated tournament: {tournament.name}")
             else:
-                print(f"Failed to fetch teams for tournament: {tournament.name}")
-                tournament_teams = {}
-
-            for team in tournament.teams:
                 print(
-                    "\t", flush=True, end=""
-                )  # Add indentation for tournament creation logs
-                if team in tournament_teams:
-                    print(
-                        f"Team already associated with tournament: {team} in {tournament.name}"
-                    )
-                    continue
-
-                _associate_team_to_tournament(relevant_teams.get(team), tournament_id)
-
-            # create matches for the tournament
-            atleast_one_match = _create_matches_for_tournament(
-                tournament_id, tournament.matches
-            )
-
-            # insert matches results
-            _insert_matches_results(tournament_id, tournament.matches)
-
-            # activate tournament if at least one match was created and results were inserted
-            if atleast_one_match:
-                activate_response = requests.put(
-                    f"{API_URL}/tournaments/{tournament_id}/",
-                    json={"status": "active"},
-                    headers=HEADERS,
+                    f"\tFailed to activate tournament: {tournament.name}, Status Code: {activate_response.status_code}, Response: {activate_response.text}"
                 )
-                if activate_response.status_code == 200:
-                    print(f"\tActivated tournament: {tournament.name}")
-                else:
-                    print(
-                        f"\tFailed to activate tournament: {tournament.name}, Status Code: {activate_response.status_code}, Response: {activate_response.text}"
-                    )
+
+    from data.processed_data import processed_data_typed
+
+    # Create a flat list of all (modality, tournament) pairs
+    tournament_tasks = []
+    for modality in processed_data_typed:
+        for tournament in modality.tournaments:
+            tournament_tasks.append((modality, tournament))
+
+    # Process all tournaments in parallel
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        futures = {
+            executor.submit(
+                _process_tournament, modality, tournament
+            ): f"{modality.name} - {tournament.name}"
+            for modality, tournament in tournament_tasks
+        }
+
+        # Wait for all tournaments to complete
+        for future in as_completed(futures):
+            tournament_name = futures[future]
+            try:
+                future.result()
+            except Exception as e:
+                print(f"Error processing tournament {tournament_name}: {str(e)}")
+
+
+def populate_athletes():
+    """Populate the database with athletes."""
+    global STATS
+
+    response = requests.get(f"{API_URL}/athletes/", headers=HEADERS)
+    if response.status_code == 200 and len(response.json()) > 0:
+        print("Members already populated.")
+        return response.json()
+
+    courses = requests.get(f"{API_URL}/courses/", headers=HEADERS)
+    if courses.status_code != 200:
+        print(
+            f"Failed to fetch courses, Status Code: {courses.status_code}, Response: {courses.text}"
+        )
+        return []
+    courses_dict = {course["name"]: course["id"] for course in courses.json()}
+
+    def names_generator(n: int = 100):
+        surnames = [
+            "Pinto",
+            "Silva",
+            "Costa",
+            "Santos",
+            "Ferreira",
+            "Oliveira",
+            "Rodrigues",
+            "Martins",
+            "Gomes",
+            "Almeida",
+            "Lopes",
+            "Carvalho",
+            "Gonçalves",
+            "Ribeiro",
+            "Alves",
+            "Soares",
+        ]
+        first_names = [
+            "Ana",
+            "João",
+            "Maria",
+            "Pinto",
+            "Carlos",
+            "Sofia",
+            "Miguel",
+            "Beatriz",
+            "Rui",
+            "Inês",
+            "Pedro",
+            "Catarina",
+            "Tiago",
+            "Marta",
+            "Rafael",
+            "Leonor",
+            "Ricardo",
+            "Mariana",
+            "Bruno",
+            "Carla",
+        ]
+        for _ in range(n):
+            yield f"{random.choice(first_names)} {random.choice(surnames)} {random.choice(surnames)}"
+
+    cursos = ["Eng. Informática", "Química", "Biologia"]
+    participants = []
+    for i, full_name in enumerate(names_generator(100)):
+        participant = {
+            "full_name": full_name,
+            "course_id": courses_dict[random.choice(cursos)],
+            "student_number": f"{i}".zfill(6),
+            "is_member": True,
+        }
+        participants.append(participant)
+
+    participants_resp = []
+    for participant in participants:
+        response = requests.post(
+            f"{API_URL}/athletes/", json=participant, headers=HEADERS
+        )
+        if response.status_code == 201:
+            print(f"Created member: {participant['full_name']}")
+            participants_resp.append(response.json())
+        else:
+            print(
+                f"Failed to create member: {participant['full_name']}, Status Code: {response.status_code}, Response: {response.text}"
+            )
+            raise Exception("Failed to populate members.")
 
 
 def main():
@@ -1054,6 +1168,11 @@ def main():
     input("Press Enter to continue to populate tournaments...")
     print("Populating tournaments...")
     populate_tournaments()
+
+    print()
+    input("Press Enter to continue to populate athletes...")
+    print("Populating athletes...")
+    populate_athletes()
 
     print("\nPopulation completed. Summary of operations:")
     for category, stats in STATS.items():
