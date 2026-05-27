@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { type CourseListItem } from "../../api/courses"
 import { useNavigate } from "react-router"
+import { normalizeText } from "../utils/utils"
 
 const CourseEntry = (course: CourseListItem) => {
   const navigate = useNavigate();
@@ -40,7 +41,7 @@ const CoursesListComponent = ( {
   const [ nucleoFilter, setNucleoFilter ] = useState('')
 
   const filteredCourses = courses?.filter(c =>
-    (c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.abbreviation.toLowerCase().includes(searchQuery.toLowerCase())) &&
+    (normalizeText(c.name).includes(normalizeText(searchQuery)) || normalizeText(c.abbreviation).includes(normalizeText(searchQuery))) &&
     (nucleoFilter === '' || c.nucleo.id === nucleoFilter)
   ) || []
   const sortedCourses = filteredCourses.sort((a, b) => a.name.localeCompare(b.name)).sort((a) => a.belongs_to_season? -1 : 1)
