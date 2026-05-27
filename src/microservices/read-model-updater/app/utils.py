@@ -93,6 +93,7 @@ def rebuild_team_projection(session: Session, team_id: UUID) -> None:
         nucleo_id=nucleo.nucleo_id if nucleo else None,
         nucleo_name=nucleo.name if nucleo else "",
         nucleo_abbreviation=nucleo.abbreviation if nucleo else "",
+        nucleo_logo_url=nucleo.logo_url if nucleo else None,
         modality_id=modality.modality_id if modality else None,
         modality_name=modality.name if modality else None,
         modality_type_id=modality_type.modality_type_id if modality_type else None,

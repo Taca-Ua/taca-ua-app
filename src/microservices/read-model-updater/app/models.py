@@ -123,7 +123,7 @@ class ModalityType(Base):
 
     modality_type_id = Column(UUID(as_uuid=True), primary_key=True)
     name = Column(String, nullable=False)
-    description = Column(Text, nullable=False)
+    description = Column(Text, nullable=True)
     escaloes = Column(JSON, nullable=False)  # Array of escalao definitions
     deleted_at = Column(DateTime, nullable=True)
 

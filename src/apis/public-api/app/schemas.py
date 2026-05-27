@@ -31,6 +31,7 @@ class TeamDetail(BaseModel):
     nucleo_id: UUID = Field(..., description="Nucleo identifier")
     nucleo_name: str = Field(..., description="Full name of the nucleo")
     nucleo_abbreviation: str = Field(..., description="Nucleo abbreviation")
+    nucleo_logo_url: Optional[str] = Field(None, description="Nucleo logo URL")
 
     # Modality info
     modality_id: UUID = Field(..., description="Modality identifier")
@@ -354,7 +355,9 @@ class SeasonDetail(BaseModel):
 
     season_id: int = Field(..., description="Unique identifier for the season")
     name: str = Field(..., description="Season name")
-    is_active: bool = Field(..., description="Whether this is the current active season")
+    is_active: bool = Field(
+        ..., description="Whether this is the current active season"
+    )
 
 
 class SeasonDetailList(BaseModel):

@@ -55,6 +55,7 @@ class TeamDetailView(Base):
     nucleo_id = Column(UUID(as_uuid=True), nullable=False)
     nucleo_name = Column(String, nullable=False)
     nucleo_abbreviation = Column(String, nullable=False)
+    nucleo_logo_url = Column(String(500), nullable=True)
 
     # Modality info
     modality_id = Column(UUID(as_uuid=True), nullable=False)

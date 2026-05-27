@@ -9,6 +9,7 @@ export interface TeamDetail {
   nucleo_id: string;
   nucleo_name: string;
   nucleo_abbreviation: string;
+  nucleo_logo_url: string | null;
   modality_id: string;
   modality_name: string | null;
   modality_type_id: string;
