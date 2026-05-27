@@ -128,16 +128,22 @@ function Teams() {
                       to={`/equipas/${team.team_id}`}
                       className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-6 flex flex-col text-inherit"
                     >
-                      <div className="mb-4">
-                        <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                          {team.team_name}
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          {team.modality_name || team.modality_type_name}
-                        </p>
+                      <div className="flex items-center mb-4">
+                        {team.nucleo_logo_url ? (
+                          <img
+                            src={team.nucleo_logo_url}
+                            alt={team.nucleo_name}
+                            className="w-32 h-32 object-contain mr-8 rounded"
+                          />
+                        ) : null}
+                        <div className="mb-4">
+                          <h3 className="text-xl font-semibold text-gray-800">
+                            {team.team_name}
+                          </h3>
+                        </div>
                       </div>
 
-                      <div className="space-y-3 mb-4">
+                      <div className="flex items-center justify-between mb-4">
                         <div>
                           <p className="text-sm text-gray-500">Curso</p>
                           <p className="font-medium text-gray-700">{team.course_name}</p>
@@ -148,6 +154,12 @@ function Teams() {
                           <p className="text-sm text-gray-500">Núcleo</p>
                           <p className="font-medium text-gray-700">{team.nucleo_name}</p>
                           <p className="text-xs text-gray-500">{team.nucleo_abbreviation}</p>
+                        </div>
+
+                        <div>
+                          <p className="text-sm text-gray-500">Modalidade</p>
+                          <p className="font-medium text-gray-700">{team.modality_name}</p>
+                          <p className="text-xs text-gray-500">{team.modality_type_name}</p>
                         </div>
                       </div>
 

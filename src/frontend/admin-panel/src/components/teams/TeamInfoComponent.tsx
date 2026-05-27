@@ -82,17 +82,26 @@ const TeamInfoComponent = ({
       {/* Detalhes da Equipa */}
       <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
         {/* Imagem da Equipa */}
-        <div className="flex justify-center mb-8">
-          <div className="w-48 h-48 bg-indigo-100 rounded-full flex items-center justify-center shadow-lg">
-            <svg
-              className="w-24 h-24 text-gray-700"
-              fill="currentColor"
-              viewBox="0 0 24 24"
+        { team.logo_url ? (
+          <div className="flex justify-center mb-8">
+            <img
+              src={team.logo_url}
+              alt="Logo da Equipa"
+              className="w-48 h-48 object-cover rounded-full"
+            />
+          </div>
+        ) : (
+          <div className="flex justify-center mb-8">
+            <div className="w-48 h-48 bg-indigo-100 rounded-full flex items-center justify-center shadow-lg">
+              <svg
+                className="w-24 h-24 text-gray-700"
+                fill="currentColor"
+                viewBox="0 0 24 24"
             >
               <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
             </svg>
           </div>
-        </div>
+        </div>)}
 
         {/* Nome da Equipa */}
         <div>

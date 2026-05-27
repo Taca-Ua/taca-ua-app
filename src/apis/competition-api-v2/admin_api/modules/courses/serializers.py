@@ -21,6 +21,7 @@ class CourseListSerializer(serializers.Serializer):
     abbreviation = serializers.CharField()
     nucleo = _NucleoSummarySerializer()
     belongs_to_season = serializers.BooleanField()
+    logo_url = serializers.CharField(allow_null=True)
 
 
 class CourseDetailSerializer(CourseListSerializer):

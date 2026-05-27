@@ -37,6 +37,7 @@ class TeamDTO:
     name: str
     modality: _ModalityDTO
     course: _CourseDTO
+    logo_url: Optional[str] = None
 
     # Optional fields for detailed view
     players: Optional[List[_PlayerDTO]] = field(default_factory=list)
@@ -52,6 +53,9 @@ class TeamsService:
         obj = TeamDTO(
             id=team_data.id,
             name=team_data.name,
+            logo_url=(
+                team_data.course.nucleo.logo_url if team_data.course.nucleo else None
+            ),
             modality=_ModalityDTO(
                 id=team_data.modality.id,
                 name=team_data.modality.name,
