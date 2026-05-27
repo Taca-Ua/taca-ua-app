@@ -51,59 +51,68 @@ const CourseInfoComponent = ( {
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
-      <div>
-        <label className="block text-teal-500 font-medium mb-2">Logo</label>
-        { course.logo_url ? (
-          <div className="flex items-center gap-4">
-            <img src={course.logo_url} alt={course.name} className="w-32 h-32 object-cover" />
-          </div>
-        ) : (
-          <div className="flex items-center gap-4">
-            <div className="w-32 h-32 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-teal-500">
-              <span className="text-teal-600 font-bold text-2xl">
-                {course.abbreviation}
-              </span>
+      <div className="flex items-center gap-6">
+        <div>
+          {course.logo_url ? (
+            <div className="flex items-center gap-4">
+              <img
+                src={course.logo_url}
+                alt={course.name}
+                className="w-64 h-64 object-cover"
+              />
+            </div>
+          ) : (
+            <div className="flex items-center gap-4">
+              <div className="w-64 h-64 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-teal-500">
+                <span className="text-teal-600 font-bold text-4xl">
+                  {course.abbreviation}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="ml-8 flex-1 space-y-4">
+          <div>
+            <label className="block text-teal-500 font-medium mb-2">Nome</label>
+            <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
+              {course.name}
             </div>
           </div>
-        )}
-      </div>
+          <div>
+            <label className="block text-teal-500 font-medium mb-2">
+              Abreviatura{" "}
+              <HelpTooltip
+                text="Código curto do curso, ex: MECT, LEI, LECI. Utilizado como identificador visual no sistema."
+                className="ml-1"
+              />
+            </label>
+            <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
+              {course.abbreviation}
+            </div>
+          </div>
 
-      <div>
-        <label className="block text-teal-500 font-medium mb-2">Nome</label>
-        <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
-          {course.name}
+          <div>
+            <label className="block text-teal-500 font-medium mb-2">
+              Núcleo{" "}
+              <HelpTooltip
+                text="Associação académica (núcleo) a que este curso pertence."
+                className="ml-1"
+              />
+            </label>
+            <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
+              {course.nucleo.name}
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div>
-        <label className="block text-teal-500 font-medium mb-2">
-          Abreviatura{" "}
-          <HelpTooltip
-            text="Código curto do curso, ex: MECT, LEI, LECI. Utilizado como identificador visual no sistema."
-            className="ml-1"
-          />
-        </label>
-        <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
-          {course.abbreviation}
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-teal-500 font-medium mb-2">
-          Núcleo{" "}
-          <HelpTooltip
-            text="Associação académica (núcleo) a que este curso pertence."
-            className="ml-1"
-          />
-        </label>
-        <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
-          {course.nucleo.name}
-        </div>
       </div>
 
       <div className="flex gap-4 pt-4">
         <Button
-          onClick={() => pushModal(<CourseEditModal courseState={[course, setCourse]} />)}
+          onClick={() =>
+            pushModal(<CourseEditModal courseState={[course, setCourse]} />)
+          }
           type="primary"
           active={isAdminGeneral}
           flexible={true}

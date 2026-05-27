@@ -5,27 +5,27 @@ import { useNavigate } from "react-router"
 const CourseEntry = (course: CourseListItem) => {
   const navigate = useNavigate();
   return (
-    <button
-      type="button"
+    <div
       onClick={() => navigate(`/cursos/${course.id}`)}
-      className={"w-full text-left px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-teal-500" + (course.belongs_to_season ? "" : " opacity-50")}
+      className={"cursor-pointer bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 p-6 flex flex-col gap-4" + (course.belongs_to_season ? "" : " opacity-50")}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between text-center gap-3">
         {course.logo_url ? (
-          <img src={course.logo_url} alt={course.name} className="w-12 h-12 rounded-full object-cover" />
+          <img src={course.logo_url} alt={course.name} className="w-16 h-16 rounded-full object-cover" />
         ) : (
-          <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center border-2 border-teal-500 flex-shrink-0">
-            <span className="text-teal-600 font-bold text-xs">{course.abbreviation}</span>
+          <div className="w-16 h-16 rounded-full bg-teal-50 flex items-center justify-center border-2 border-teal-500">
+            <span className="text-teal-600 font-bold text-sm">{course.abbreviation}</span>
           </div>
         )}
-        <div className="flex items-center gap-3">
-          <span className="text-teal-600 font-bold text-lg">{course.abbreviation}</span>
-          <span className="text-gray-400">|</span>
-          <span className="text-gray-800 font-medium">{course.name}</span>
+        <div>
+          <span className="text-teal-600 font-bold text-lg block">{course.abbreviation}</span>
+          <span className="text-gray-800 font-medium text-sm block">{course.name}</span>
         </div>
       </div>
-      <span className="text-gray-500 text-sm">{course.nucleo.name}</span>
-    </button>
+      <div className="pt-2 border-t border-gray-100">
+        <span className="text-gray-500 text-xs uppercase tracking-wider">{course.nucleo.name}</span>
+      </div>
+    </div>
   )
 };
 
@@ -76,14 +76,14 @@ const CoursesListComponent = ( {
         </select>
       </div>
 
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {sortedCourses.length > 0 ? (
           sortedCourses
             .map((course) => (
               <CourseEntry key={course.id} {...course} />
             ))
         ) : (
-          <p className="text-gray-500 text-center py-8">
+          <p className="text-gray-500 text-center py-8 col-span-full">
             Nenhum curso encontrado.
           </p>
         )}
