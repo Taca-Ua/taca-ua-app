@@ -390,6 +390,9 @@ class Modality(Base):
         if self.season_modalities and self.season_modalities[0].modality_type_id:
             modality_type_id = str(self.season_modalities[0].modality_type_id)
 
+        if not modality_type_id:
+            return None
+
         return snapshot_models.ModalitySnapshotItem(
             id=str(self.id),
             name=self.name,

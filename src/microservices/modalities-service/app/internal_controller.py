@@ -240,7 +240,9 @@ async def stream_snapshot(
 
             # Stream modalities
             for m in db.query(Modality).all():
-                batch.append(m.to_snapshot().to_dict())
+                snapshot = m.to_snapshot()
+                if snapshot:
+                    batch.append(snapshot.to_dict())
                 if len(batch) >= batch_size:
                     yield f"data: {json.dumps({'type': 'batch', 'items': batch, 'category': 'modalities'})}\n\n"
                     records_emitted += len(batch)

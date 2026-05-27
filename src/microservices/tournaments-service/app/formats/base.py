@@ -27,6 +27,13 @@ class FormatStandings:
         UUID, Any
     ]  # Format-specific metadata (e.g., points, wins, losses)
 
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "competitor_id": self.competitor_id,
+            "position": self.position,
+            "format_meta": self.format_meta,
+        }
+
 
 class FormatEngine(ABC):
     """
@@ -45,7 +52,7 @@ class FormatEngine(ABC):
 
     def complete_tournament(
         self, tournament: Tournament, format_data: Dict[str, Any]
-    ) -> None:
+    ) -> Tournament:
         """
         Create a tournament with the given format and format-specific data.
         """

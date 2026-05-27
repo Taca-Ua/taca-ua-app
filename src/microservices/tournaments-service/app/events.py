@@ -3,7 +3,8 @@ Event handling for Tournaments Service.
 Publishes and consumes events via RabbitMQ.
 """
 
-from app.database import get_db_context
+from app.configs.database import get_db_context
+from app.configs.logger import logger
 from app.formats import FormatRegistry
 from app.models import Tournament
 from taca_events.pydantic_schemas.matches import (
@@ -12,8 +13,6 @@ from taca_events.pydantic_schemas.matches import (
     MatchResultUpdatedV1,
 )
 from taca_messaging.rabbitmq_service import RabbitMQService
-
-from .logger import logger
 
 # Initialize RabbitMQ service for tournaments-service
 rabbitmq_service = RabbitMQService(service_name="tournaments-service", logger=logger)

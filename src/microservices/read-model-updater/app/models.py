@@ -282,6 +282,12 @@ class Tournament(Base):
     name = Column(String, nullable=False)
     start_date = Column(Date, nullable=False)
     status = Column(String, nullable=False)
+
+    format_type = Column(String, nullable=False)
+    standings_metadata = Column(
+        JSON, nullable=True
+    )  # For storing format-specific standings info
+
     deleted_at = Column(DateTime, nullable=True)
     finished_at = Column(DateTime, nullable=True)
 

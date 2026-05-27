@@ -5,12 +5,16 @@ Wires the shared OutboxPublisher from taca_outbox to this service’s specific
 dependencies (ORM model, session factory, RabbitMQ service, logger).
 """
 
+from app.models import OutboxEvent
+from taca_messaging import RabbitMQService
 from taca_outbox import OutboxPublisher
 
 from .database import SessionLocal
-from .events import rabbitmq_service
 from .logger import logger
-from .models import OutboxEvent
+
+# Initialize RabbitMQ service for tournaments-service
+rabbitmq_service = RabbitMQService(service_name="tournaments-service", logger=logger)
+
 
 # Singleton instance used by main.py (lifespan) and event_helpers.py
 outbox_publisher = OutboxPublisher(

@@ -22,6 +22,7 @@ class TournamentCreatedData(BaseModel):
     status: str
     scoring_format_id: UUID
     season_id: int
+    format_type: str
 
 
 class TournamentUpdatedData(BaseModel):
@@ -60,6 +61,12 @@ class TournamentCompetitorDeletedData(BaseModel):
     competitor_id: Optional[UUID] = None
     tournament_id: UUID
     competitor_entity_id: Optional[UUID] = None
+
+
+class TournamentStandingsUpdatedData(BaseModel):
+    tournament_id: UUID
+    format_type: str
+    standings: list
 
 
 # ================================================================== #
@@ -133,6 +140,18 @@ class TournamentCompetitorDeletedV1(EventSchema):
     @classmethod
     def event_type(cls) -> str:
         return "tournament.competitor.deleted.v1"
+
+    @classmethod
+    def aggregate_type(cls) -> str:
+        return "tournament"
+
+
+class TournamentStandingsUpdatedV1(EventSchema):
+    data: TournamentStandingsUpdatedData
+
+    @classmethod
+    def event_type(cls) -> str:
+        return "tournament.standings.updated.v1"
 
     @classmethod
     def aggregate_type(cls) -> str:

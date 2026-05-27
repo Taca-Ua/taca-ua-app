@@ -4,10 +4,10 @@ from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
 from taca_logging import StructlogMiddleware
 
+from .configs.logger import logger
+from .configs.outbox_publisher import outbox_publisher
 from .events import rabbitmq_service
 from .internal_controller import router as internal_router
-from .logger import logger
-from .outbox_publisher import outbox_publisher
 from .routes import router
 
 
