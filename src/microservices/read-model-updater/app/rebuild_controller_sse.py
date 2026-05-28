@@ -491,7 +491,6 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
         count = 0
 
         if category == "general_rankings":
-            print("General Rankings:", items, flush=True)
             self.db.bulk_insert_mappings(
                 GeneralRankings,
                 [

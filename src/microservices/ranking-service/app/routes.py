@@ -92,10 +92,6 @@ def calculate_tournament_tier(
     )
 
     escalao = _find_escalao(escaloes, calc_data.participant_count)
-    print(
-        f"Calculating tier for modality type {calc_data.modality_type_id} with {calc_data.participant_count} participants: found escalao {escalao.name if escalao else 'None'}",
-        flush=True,
-    )
     if not escalao:
         logger.warning(
             f"No matching escalao found for modality type {calc_data.modality_type_id} with {calc_data.participant_count} participants"

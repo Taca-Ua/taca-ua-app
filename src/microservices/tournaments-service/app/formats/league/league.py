@@ -69,7 +69,6 @@ class LeagueFormatEngine(FormatEngine):
         self, tournament: Tournament, format_data: Dict[str, Any]
     ) -> None:
         # validate format_data
-        print(f"Completing tournament with format_data: {format_data}", flush=True)
         if not isinstance(format_data, dict):
             raise ValueError("format_data must be a dictionary for league format")
         if "win_points" not in format_data or not isinstance(
@@ -88,8 +87,6 @@ class LeagueFormatEngine(FormatEngine):
             ScoreDifferenceTiebreakerPolicy(
                 format_data["points_diff_tiebreaker"]
             )  # validate tiebreaker value
-
-        print(f"Validated format_data: {format_data}", flush=True)
 
         # configure tournament with league-specific settings
         tournament: LeagueTournament = tournament  # type cast for clarity

@@ -311,10 +311,6 @@ async def create_tournament(data: TournamentCreate, db: Session = Depends(get_db
             detail=f"Invalid competitor_type: {data.competitor_type!r}",
         )
 
-    print(
-        f"Creating tournament with format {data.format} and format_data {data.format_data}",
-        flush=True,
-    )
     engine = FormatRegistry.get_engine(data.format)
     if not engine:
         raise HTTPException(
