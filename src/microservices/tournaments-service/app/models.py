@@ -196,6 +196,16 @@ class Tournament(Base):
         return result
 
     def to_snapshot(self) -> snapshot_models.TournamentSnapshotItem:
+        standings_metadata = None
+        if self.status == "finished":
+            standings_metadata = [
+                {
+                    "competitor_id": str(rp.competitor_id),
+                    "position": rp.position,
+                }
+                for rp in self.ranking_positions
+            ]
+
         return snapshot_models.TournamentSnapshotItem(
             id=str(self.id),
             modality_id=str(self.modality_id),
@@ -207,6 +217,8 @@ class Tournament(Base):
             ),
             competitor_type=self.competitor_type.value,
             start_date=self.start_date,
+            format=self.format,
+            standings_metadata=standings_metadata,
             created_by=str(self.created_by),
             created_at=self.created_at,
             updated_at=self.updated_at,

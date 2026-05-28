@@ -9,7 +9,8 @@ Implements round-robin tournament progression where:
 
 from typing import Any, Dict, List
 
-from app.logger import logger
+from app.configs.logger import logger
+from app.configs.outbox_publisher import outbox_publisher
 from app.models import Tournament, TournamentCompetitor
 from sqlalchemy import UUID
 from sqlalchemy.orm import Session
@@ -17,6 +18,10 @@ from taca_events.pydantic_schemas.matches import (
     MatchCreatedV1,
     MatchDeletedV1,
     MatchResultUpdatedV1,
+)
+from taca_events.pydantic_schemas.tournaments import (
+    TournamentStandingsUpdatedData,
+    TournamentStandingsUpdatedV1,
 )
 
 from ..base import FormatEngine, FormatStandings
@@ -146,6 +151,11 @@ class LeagueFormatEngine(FormatEngine):
                 + standing.draws * tournament.points_draw
                 + standing.losses * tournament.points_loss
             )
+
+        # Emit tournament standings updated event after scoring rule update
+        self.emit_standings_updated_event(
+            db=Session.object_session(tournament), tournament=tournament
+        )
 
     def on_competitor_added(
         self, db: Session, tournament_competitor: TournamentCompetitor
@@ -331,6 +341,9 @@ class LeagueFormatEngine(FormatEngine):
 
         db.flush()
 
+        # Emit tournament standings updated event after processing match result update
+        self.emit_standings_updated_event(db, match.tournament)
+
     # Utility methods
     def get_standings(self, db: Session, tournament_id: UUID) -> List[FormatStandings]:
         """
@@ -436,3 +449,28 @@ class LeagueFormatEngine(FormatEngine):
             )
 
         return postition_standings
+
+    # Helper method to emit standings updated event after match result update
+    def emit_standings_updated_event(self, db: Session, tournament: LeagueTournament):
+        # Emit tournament standings updated event after processing match result update
+        standings = self.get_standings(db, tournament.id)
+        event = TournamentStandingsUpdatedV1.create(
+            aggregate_id=tournament.id,
+            data=TournamentStandingsUpdatedData(
+                tournament_id=tournament.id,
+                format_type="league",
+                standings=[s.to_dict() for s in standings],
+                # standings={str(k): v for k, v in match.results.items()}
+            ),
+        )
+        outbox_publisher.emit_event(
+            db=db,
+            event_type=event.event_type(),
+            aggregate_type=event.aggregate_type(),
+            aggregate_id=tournament.id,
+            data=event.to_data_dict(),
+        )
+        db.flush()
+
+
+LeagueTournament.get_standings_function = LeagueFormatEngine().get_standings

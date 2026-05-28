@@ -178,7 +178,6 @@ class TournamentStandingsView(Base):
     __tablename__ = "mv_tournament_standings"
     __table_args__ = (
         Index("ix_mv_tournament_standings_tournament_id", "tournament_id"),
-        Index("ix_mv_tournament_standings_rank", "tournament_id", "rank"),
         UniqueConstraint(
             "tournament_id", "competitor_entity_id", name="uq_tournament_standings"
         ),
@@ -190,15 +189,7 @@ class TournamentStandingsView(Base):
     competitor_type = Column(String, nullable=False)
     competitor_entity_id = Column(UUID(as_uuid=True), nullable=False)
     competitor_name = Column(String, nullable=False)
-
-    # Statistics
-    matches_played = Column(Integer, nullable=False, default=0)
-    wins = Column(Integer, nullable=False, default=0)
-    losses = Column(Integer, nullable=False, default=0)
-    draws = Column(Integer, nullable=False, default=0)
-    points = Column(Integer, nullable=False, default=0)
-    total_score = Column(Integer, nullable=False, default=0)
-    rank = Column(Integer, nullable=True)
+    position = Column(Integer, nullable=True)
 
     # Additional metadata
     statistics_metadata = Column(JSON, nullable=True)

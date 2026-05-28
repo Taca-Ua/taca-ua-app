@@ -370,6 +370,8 @@ class ReadModelSSERebuildService(BaseSSERebuildService):
                         "created_at": item.created_at,
                         "updated_at": item.updated_at,
                         "finished_at": item.finished_at,
+                        "format_type": item.format,
+                        "standings_metadata": item.standings_metadata,
                     }
                     for item in map(
                         lambda x: tournament_snapshots.TournamentSnapshotItem(**x),

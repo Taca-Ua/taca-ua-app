@@ -8,7 +8,10 @@ from typing import List
 import sqlalchemy as sa
 from app.models import Base, Tournament
 from sqlalchemy import JSON, UUID, Column, ForeignKey, Integer, String
-from sqlalchemy.orm import Mapped, relationship
+from sqlalchemy.orm import Mapped, Session, relationship
+from taca_snapshots import tournaments as snapshot_models
+
+from ..base import FormatStandings
 
 
 class ScoreDifferenceTiebreakerPolicy:
@@ -23,6 +26,9 @@ class ScoreDifferenceTiebreakerPolicy:
 
 
 class LeagueTournament(Tournament):
+
+    get_standings_function = None
+
     __tablename__ = "league_tournaments"
     __table_args__ = (
         sa.PrimaryKeyConstraint("id"),
@@ -69,6 +75,57 @@ class LeagueTournament(Tournament):
         }
         base["format_data"] = league_data
         return base
+
+    def to_snapshot(self) -> snapshot_models.TournamentSnapshotItem:
+        standings_metadata: list[FormatStandings] = (
+            self.get_standings_function(Session.object_session(self), self.id)
+            if self.get_standings_function
+            else None
+        )
+
+        if self.status == "finished":
+            # We use the ranking positions
+            mid_standings_metadata_dict = {
+                standing.competitor_id: standing.format_meta
+                for standing in standings_metadata
+            }
+
+            standings_metadata = [
+                {
+                    "competitor_id": str(rp.competitor_id),
+                    "position": rp.position,
+                    "format_meta": mid_standings_metadata_dict.get(
+                        str(rp.competitor_id)
+                    ),
+                }
+                for rp in self.ranking_positions
+            ]
+        else:
+            standings_metadata = (
+                [s.to_dict() for s in standings_metadata]
+                if standings_metadata
+                else None
+            )
+
+        return snapshot_models.TournamentSnapshotItem(
+            id=str(self.id),
+            modality_id=str(self.modality_id),
+            name=self.name,
+            status=self.status,
+            season_id=self.season_id,
+            scoring_format_id=(
+                str(self.scoring_format_id) if self.scoring_format_id else None
+            ),
+            competitor_type=self.competitor_type.value,
+            start_date=self.start_date,
+            format=self.format,
+            standings_metadata=standings_metadata,
+            created_by=str(self.created_by),
+            created_at=self.created_at,
+            updated_at=self.updated_at,
+            finished_at=self.finished_at,
+            finished_by=str(self.finished_by) if self.finished_by else None,
+        )
 
 
 class LeagueStandings(Base):

@@ -445,7 +445,7 @@ def get_tournament_standings(
 
     # Apply pagination and order by rank
     standings = (
-        query.order_by(TournamentStandingsView.rank.asc())
+        query.order_by(TournamentStandingsView.position.asc().nullslast())
         .offset(skip)
         .limit(limit)
         .all()

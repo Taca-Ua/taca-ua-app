@@ -186,15 +186,7 @@ class TournamentStanding(BaseModel):
     competitor_type: str = Field(..., description="Type of competitor (team/athlete)")
     competitor_entity_id: UUID = Field(..., description="Competitor entity ID")
     competitor_name: str = Field(..., description="Name of the competitor")
-
-    # Statistics
-    matches_played: int = Field(..., ge=0, description="Number of matches played")
-    wins: int = Field(..., ge=0, description="Number of wins")
-    losses: int = Field(..., ge=0, description="Number of losses")
-    draws: int = Field(..., ge=0, description="Number of draws")
-    points: int = Field(..., ge=0, description="Total points")
-    total_score: int = Field(..., ge=0, description="Total score")
-    rank: Optional[int] = Field(None, description="Rank in the tournament")
+    position: Optional[int] = Field(None, ge=1, description="Position in the standings")
 
     # Additional metadata
     statistics_metadata: Optional[dict[str, Any]] = Field(
