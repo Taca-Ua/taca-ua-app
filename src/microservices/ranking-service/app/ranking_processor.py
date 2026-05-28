@@ -49,15 +49,7 @@ def _find_escalao(
     escaloes: List[ModalityTypeEscalao], participant_count: int
 ) -> Optional[ModalityTypeEscalao]:
     """Return the escalao whose participant range covers *participant_count*."""
-    print(
-        f"Finding escalao for participant count {participant_count} among {len(escaloes)} candidates",
-        flush=True,
-    )
     for escalao in escaloes:
-        print(
-            f"Checking escalao with range [{escalao.min_participants}, {escalao.max_participants}] against participant count {participant_count}",
-            flush=True,
-        )
         if (
             escalao.min_participants is not None
             and participant_count < escalao.min_participants
@@ -187,11 +179,6 @@ def compute_all_rankings(db: Session, season_id: int) -> int:
                 )
                 continue
 
-            print(
-                f"Tournament {tid} has {participant_count} participants, using escalao with points {escalao.points}"
-            )
-            print(f"Processing {len(results)} results for tournament {tid}")
-
             # Group results by position to handle ties
             results_by_position: Dict[int, List[TournamentResult]] = defaultdict(list)
             for result in results:
@@ -253,10 +240,6 @@ def compute_all_rankings(db: Session, season_id: int) -> int:
         )
         db.add(GeneralRanking(course_id=course_id, season_id=season_id, points=total))
         count += 2  # one CourseRanking + one GeneralRanking per course
-        print(
-            f"Course {course_id} has total {total} points with breakdown {breakdown}",
-            flush=True,
-        )
 
     db.flush()
 

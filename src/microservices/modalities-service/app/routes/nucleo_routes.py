@@ -192,7 +192,6 @@ def list_nucleos_by_admin(admin_id: UUID, db: Session = Depends(get_db_session))
     """List all nucleos associated with a specific admin user ID"""
     str_admin_id = str(admin_id)
     nucleos = db.query(Nucleo).filter(Nucleo.admins_ids.contains([str_admin_id])).all()
-    print(f"Found {len(nucleos)} nucleos for admin {admin_id}")
     return [nucleo.to_dict() for nucleo in nucleos]
 
 

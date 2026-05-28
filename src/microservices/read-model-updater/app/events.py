@@ -858,10 +858,6 @@ def handle_match_created(event: MatchCreatedV1):
         db.flush()
 
         for participant_data in match_participants:
-            print(
-                f"Adding participant {participant_data.participant_id} to match {match_id}",
-                flush=True,
-            )
             participant = MatchParticipant(
                 match_id=match_id,
                 participant_id=participant_data.participant_id,
