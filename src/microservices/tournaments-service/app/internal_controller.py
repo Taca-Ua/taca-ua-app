@@ -12,19 +12,17 @@ These endpoints should NOT be exposed via API Gateway.
 import json
 from typing import AsyncGenerator
 
+from app.configs.database import get_db_session
+from app.configs.logger import logger
+from app.models import Tournament, TournamentCompetitor, TournamentRankingPosition
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from taca_snapshots.tournaments import (
     TournamentCompetitorSnapshotItem,
     TournamentRankingPositionSnapshotItem,
-    TournamentSnapshotItem,
     TournamentsSnapshotResponse,
 )
-
-from .database import get_db_session
-from .logger import logger
-from .models import Tournament, TournamentCompetitor, TournamentRankingPosition
 
 router = APIRouter(prefix="/internal", tags=["internal"])
 
@@ -67,24 +65,7 @@ def get_snapshot(
         )
 
         # Build typed DTOs
-        tournament_dtos = [
-            TournamentSnapshotItem(
-                id=str(t.id),
-                modality_id=str(t.modality_id),
-                name=t.name,
-                scoring_format_id=(
-                    str(t.scoring_format_id) if t.scoring_format_id else None
-                ),
-                status=t.status,
-                start_date=t.start_date,
-                created_by=str(t.created_by),
-                created_at=t.created_at,
-                updated_at=t.updated_at,
-                finished_at=t.finished_at,
-                finished_by=str(t.finished_by) if t.finished_by else None,
-            )
-            for t in tournaments
-        ]
+        tournament_dtos = [t.to_snapshot() for t in tournaments]
 
         competitor_dtos = [
             TournamentCompetitorSnapshotItem(

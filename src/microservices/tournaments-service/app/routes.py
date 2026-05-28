@@ -25,15 +25,15 @@ from taca_events.pydantic_schemas.tournaments import (
     TournamentUpdatedV1,
 )
 
-from .database import get_db, get_db_session
-from .logger import logger
+from .configs.database import get_db, get_db_session
+from .configs.logger import logger
+from .configs.outbox_publisher import outbox_publisher
 from .models import (
     CompetitorType,
     Tournament,
     TournamentCompetitor,
     TournamentRankingPosition,
 )
-from .outbox_publisher import outbox_publisher
 from .schemas import (
     CompetitorInput,
     TournamentCreate,
@@ -311,10 +311,6 @@ async def create_tournament(data: TournamentCreate, db: Session = Depends(get_db
             detail=f"Invalid competitor_type: {data.competitor_type!r}",
         )
 
-    print(
-        f"Creating tournament with format {data.format} and format_data {data.format_data}",
-        flush=True,
-    )
     engine = FormatRegistry.get_engine(data.format)
     if not engine:
         raise HTTPException(
@@ -360,6 +356,7 @@ async def create_tournament(data: TournamentCreate, db: Session = Depends(get_db
             status=tournament.status,
             scoring_format_id=tournament.scoring_format_id,
             season_id=tournament.season_id,
+            format_type=tournament.format,
         ),
     )
     outbox_publisher.emit_event(

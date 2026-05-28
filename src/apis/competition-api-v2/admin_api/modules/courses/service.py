@@ -21,6 +21,7 @@ class Course:
     abbreviation: str
     nucleo: _NucleoSummary
     belongs_to_season: bool
+    logo_url: str | None
 
     # detail fields
     relevant_season_ids: list[int]
@@ -39,6 +40,7 @@ class CourseService:
                 abbreviation=data.nucleo.abbreviation,
             ),
             belongs_to_season=data.belongs_to_season,
+            logo_url=data.nucleo.logo_url,
             relevant_season_ids=data.relevant_season_ids,
         )
 

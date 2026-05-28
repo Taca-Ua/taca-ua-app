@@ -4,6 +4,111 @@ import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { tournamentsApi, matchesApi, type TournamentDetail as TournamentDetailType, type TournamentStanding, type MatchDetail } from '../../api';
 
+const StandingsTableEntry = ({ standing }: { standing: TournamentStanding }) => {
+  const stats = standing.statistics_metadata || {} as {
+    points: number;
+    wins: number;
+    draws: number;
+    losses: number;
+    scored_points: number;
+    conceded_points: number;
+    differential: number;
+  };
+
+  return (
+    <tr className="hover:bg-gray-50">
+      <td className="px-6 py-4">
+        <span className="font-semibold text-gray-700">
+          {standing.position || '-'}º
+        </span>
+      </td>
+      <td className="px-6 py-4">
+        <Link
+          to={
+            standing.competitor_type === 'team'
+              ? `/equipas/${standing.competitor_entity_id}`
+              : `/estudantes/${standing.competitor_entity_id}`
+          }
+          className="text-teal-600 hover:text-teal-700 font-medium"
+        >
+          {standing.competitor_name}
+        </Link>
+        <p className="text-xs text-gray-500 capitalize">
+          {standing.competitor_type === 'team' ? 'Equipa' : 'Atleta'}
+        </p>
+      </td>
+      <td className="px-6 py-4 text-right">
+        <span className="font-bold text-lg text-teal-600">
+          {stats.points ?? '-'}
+        </span>
+      </td>
+      <td className="px-6 py-4 text-center text-green-600 font-medium">
+        {stats.wins ?? '-'}
+      </td>
+      <td className="px-6 py-4 text-center text-gray-600">
+        {stats.draws ?? '-'}
+      </td>
+      <td className="px-6 py-4 text-center text-red-600 font-medium">
+        {stats.losses ?? '-'}
+      </td>
+    </tr>
+  );
+}
+
+const StandingsTable = ({ standings }: { standings: TournamentStanding[] }) => {
+  return (
+    <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                Posição
+              </th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                Competidor
+              </th>
+              <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
+                Pontos
+              </th>
+              <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
+                V
+              </th>
+              <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
+                E
+              </th>
+              <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
+                D
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {standings.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                  Ainda não há classificação para este torneio.
+                </td>
+              </tr>
+            ) : (
+              [...standings]
+                .sort((a, b) => {
+                  const rankA = a.position ?? Infinity;
+                  const rankB = b.position ?? Infinity;
+                  if (rankA !== rankB) return rankA - rankB;
+                  return (b.position ?? 0) - (a.position ?? 0);
+                })
+                .map((standing, index) => (
+                  <StandingsTableEntry key={index} standing={standing} />
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+
 function TournamentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [tournament, setTournament] = useState<TournamentDetailType | null>(null);
@@ -167,95 +272,13 @@ function TournamentDetailPage() {
 
               {/* Standings Tab */}
               {activeTab === 'standings' && (
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-gray-100">
-                        <tr>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                            Posição
-                          </th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                            Competidor
-                          </th>
-                          <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
-                            Jogos
-                          </th>
-                          <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
-                            V
-                          </th>
-                          <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
-                            E
-                          </th>
-                          <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
-                            D
-                          </th>
-                          <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
-                            Pontos
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {standings.length === 0 ? (
-                          <tr>
-                            <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
-                              Ainda não há classificação para este torneio.
-                            </td>
-                          </tr>
-                        ) : (
-                          [...standings]
-                            .sort((a, b) => {
-                              const rankA = a.rank ?? Infinity;
-                              const rankB = b.rank ?? Infinity;
-                              if (rankA !== rankB) return rankA - rankB;
-                              return (b.points ?? 0) - (a.points ?? 0);
-                            })
-                            .map((standing, index) => (
-                            <tr key={standing.id} className="hover:bg-gray-50">
-                              <td className="px-6 py-4">
-                                <span className="font-semibold text-gray-700">
-                                  {standing.rank || index + 1}º
-                                </span>
-                              </td>
-                              <td className="px-6 py-4">
-                                <Link
-                                  to={
-                                    standing.competitor_type === 'team'
-                                      ? `/equipas/${standing.competitor_entity_id}`
-                                      : `/estudantes/${standing.competitor_entity_id}`
-                                  }
-                                  className="text-teal-600 hover:text-teal-700 font-medium"
-                                >
-                                  {standing.competitor_name}
-                                </Link>
-                                <p className="text-xs text-gray-500 capitalize">
-                                  {standing.competitor_type === 'team' ? 'Equipa' : 'Atleta'}
-                                </p>
-                              </td>
-                              <td className="px-6 py-4 text-center text-gray-700">
-                                {standing.matches_played}
-                              </td>
-                              <td className="px-6 py-4 text-center text-green-600 font-medium">
-                                {standing.wins}
-                              </td>
-                              <td className="px-6 py-4 text-center text-gray-600">
-                                {standing.draws}
-                              </td>
-                              <td className="px-6 py-4 text-center text-red-600 font-medium">
-                                {standing.losses}
-                              </td>
-                              <td className="px-6 py-4 text-right">
-                                <span className="font-bold text-lg text-teal-600">
-                                  {standing.points}
-                                </span>
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
+                standings.length === 0 ? (
+                  <div className="bg-white rounded-lg shadow p-8 text-center">
+                    <p className="text-gray-500">Ainda não há classificação para este torneio.</p>
                   </div>
-                </div>
+                ) : (
+                  <StandingsTable standings={standings} />
+                )
               )}
 
               {/* Matches Tab */}

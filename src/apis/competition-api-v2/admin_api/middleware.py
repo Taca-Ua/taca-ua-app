@@ -72,17 +72,13 @@ class KeycloakJWTMiddleware:
         #               DEV_AUTH_BYPASS_TOKEN=<any-secret-string>
         #               DEV_AUTH_BYPASS_ROLES=general_admin,nucleo_admin  (optional)
         # Then pass the header:  X-Dev-Auth-Token: <secret-string>
-        # -------------------------------------------------------------------
+        # -------------------------------------------------------------------)
         if not auth_header and getattr(settings, "DEV_AUTH_BYPASS_ENABLED", False):
             request.user_id = (
                 "00000000-0000-0000-0000-000000000000"  # dummy UUID for dev bypass
             )
             request.roles = getattr(
                 settings, "DEV_AUTH_BYPASS_ROLES", ["general_admin"]
-            )
-            logger.warning(
-                "DEV AUTH BYPASS active for path %s — do NOT use in production",
-                request.path,
             )
             return self.get_response(request)
 

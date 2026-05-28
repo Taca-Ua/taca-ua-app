@@ -34,13 +34,7 @@ export interface TournamentStanding {
   competitor_type: string;
   competitor_entity_id: string;
   competitor_name: string;
-  matches_played: number;
-  wins: number;
-  losses: number;
-  draws: number;
-  points: number;
-  total_score: number;
-  rank: number | null;
+  position: number;
   statistics_metadata: Record<string, any> | null;
 }
 

@@ -51,6 +51,7 @@ from taca_events.pydantic_schemas.modalities import (
     RegulationUpdatedV1,
     SeasonCreatedV1,
 )
+from taca_events.pydantic_schemas.tournaments import TournamentStandingsUpdatedV1
 from taca_messaging.rabbitmq_service import PausableRabbitMQService
 from taca_models.models import Regulation
 
@@ -614,6 +615,7 @@ def handle_tournament_created(event: TournamentCreatedV1):
             start_date=_parse_date(event.data.start_date),
             status=event.data.status,
             season_id=event.data.season_id,
+            format_type=event.data.format_type,
         )
         db.add(tournament)
         db.flush()
@@ -712,7 +714,20 @@ def handle_tournament_finished(event: TournamentFinishedV1):
         tournament.finished_at = now
         db.flush()
 
+        standings_metadata = []
+        for entry in ranking_entries:
+            standings_metadata.append(
+                {
+                    "competitor_id": str(entry.competitor_id),
+                    "position": entry.position,
+                    "ranking_metadata": {},
+                }
+            )
+        tournament.standings_metadata = standings_metadata
+        db.flush()
+
         rebuild_tournament_projection(db, tournament_id)
+        rebuild_tournament_standings(db, tournament_id)
 
         logger.info(
             "tournament_finished",
@@ -782,6 +797,36 @@ def handle_tournament_competitor_deleted(event: TournamentCompetitorDeletedV1):
         rebuild_tournament_standings(db, tournament_id)
 
 
+@rabbitmq_service.event_handler(TournamentStandingsUpdatedV1)
+def handle_tournament_standings_updated(event: TournamentStandingsUpdatedV1):
+    """Handle tournament standings updated event."""
+    tournament_id = event.data.tournament_id
+    tournament_format_type = event.data.format_type
+    logger.info(
+        "event_received",
+        event_type="tournament.standings_updated",
+        tournament_id=str(tournament_id),
+        format_type=tournament_format_type,
+    )
+
+    with get_db() as db:
+        tournament = (
+            db.query(Tournament)
+            .filter(Tournament.tournament_id == tournament_id)
+            .filter(Tournament.format_type == tournament_format_type)
+            .first()
+        )
+        if not tournament:
+            logger.warning("tournament_not_found", tournament_id=str(tournament_id))
+            return
+
+        tournament.standings_metadata = event.data.standings
+        db.flush()
+
+        rebuild_tournament_projection(db, tournament_id)
+        rebuild_tournament_standings(db, tournament_id)
+
+
 # ==================== Match Events ====================
 
 
@@ -813,10 +858,6 @@ def handle_match_created(event: MatchCreatedV1):
         db.flush()
 
         for participant_data in match_participants:
-            print(
-                f"Adding participant {participant_data.participant_id} to match {match_id}",
-                flush=True,
-            )
             participant = MatchParticipant(
                 match_id=match_id,
                 participant_id=participant_data.participant_id,

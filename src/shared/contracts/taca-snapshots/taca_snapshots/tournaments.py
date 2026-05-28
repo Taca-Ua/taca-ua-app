@@ -28,6 +28,9 @@ class TournamentSnapshotItem(SnapshotBase):
     scoring_format_id: Optional[str] = None
     status: Optional[str] = None
     start_date: Optional[datetime] = None
+    format: Optional[str] = None
+    standings_metadata: Optional[list] = None
+
     created_by: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -42,6 +45,8 @@ class TournamentSnapshotItem(SnapshotBase):
             "season_id": self.season_id,
             "scoring_format_id": self.scoring_format_id,
             "status": self.status,
+            "format": self.format,
+            "standings_metadata": self.standings_metadata,
             "start_date": self.start_date.isoformat() if self.start_date else None,
             "created_by": self.created_by,
             "created_at": self.created_at.isoformat() if self.created_at else None,

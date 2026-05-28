@@ -93,6 +93,7 @@ def rebuild_team_projection(session: Session, team_id: UUID) -> None:
         nucleo_id=nucleo.nucleo_id if nucleo else None,
         nucleo_name=nucleo.name if nucleo else "",
         nucleo_abbreviation=nucleo.abbreviation if nucleo else "",
+        nucleo_logo_url=nucleo.logo_url if nucleo else None,
         modality_id=modality.modality_id if modality else None,
         modality_name=modality.name if modality else None,
         modality_type_id=modality_type.modality_type_id if modality_type else None,
@@ -401,6 +402,15 @@ def rebuild_tournament_standings(session: Session, tournament_id: UUID) -> None:
         TournamentStandingsView.tournament_id == tournament_id
     ).delete()
 
+    # Get tournament format and metadata for potential use in standings calculations
+    tournament = (
+        session.query(Tournament)
+        .filter(Tournament.tournament_id == tournament_id)
+        .first()
+    )
+    if not tournament:
+        return
+
     # Get all active competitors in the tournament
     competitors = (
         session.query(TournamentCompetitor)
@@ -414,22 +424,17 @@ def rebuild_tournament_standings(session: Session, tournament_id: UUID) -> None:
     if not competitors:
         return
 
-    # Get all non-deleted matches for this tournament that have results
-    matches = (
-        session.query(Match.match_id)
-        .filter(
-            Match.tournament_id == tournament_id,
-            Match.deleted_at.is_(None),
-        )
-        .all()
-    )
-    match_ids = [m[0] for m in matches]
+    competitors_map = {c.competitor_id: c for c in competitors}
 
-    for competitor in competitors:
-        competitor_entity_id = competitor.competitor_entity_id
-        competitor_type = competitor.competitor_type.value
+    for standing in tournament.standings_metadata or []:
+        competitor_id = UUID(standing["competitor_id"])
 
-        # Get competitor name
+        if competitor_id not in competitors_map:
+            continue  # Skip standings entries for competitors that no longer exist
+
+        competitor_entity_id = competitors_map.get(competitor_id).competitor_entity_id
+        competitor_type = competitors_map.get(competitor_id).competitor_type.value
+
         if competitor_type == "team":
             entity = (
                 session.query(Team).filter(Team.team_id == competitor_entity_id).first()
@@ -443,146 +448,17 @@ def rebuild_tournament_standings(session: Session, tournament_id: UUID) -> None:
             )
             competitor_name = entity.full_name if entity else "Unknown Athlete"
 
-        # Calculate statistics
-        # Pass competitor_id which is now the participant_id in match participants
-        stats = _calculate_competitor_stats(
-            session, competitor.competitor_id, match_ids
-        )
-
-        # Build projection row
         projection = TournamentStandingsView(
             tournament_id=tournament_id,
             competitor_type=competitor_type,
             competitor_entity_id=competitor_entity_id,
             competitor_name=competitor_name,
-            matches_played=stats["matches_played"],
-            wins=stats["wins"],
-            losses=stats["losses"],
-            draws=stats["draws"],
-            points=stats["points"],
-            total_score=stats["total_score"],
-            rank=None,  # Will be calculated after all competitors are inserted
-            statistics_metadata=stats.get("metadata"),
+            position=standing.get("position"),
+            statistics_metadata=standing.get("format_meta"),
         )
 
         # UPSERT (merge = deterministic projection rebuild)
         session.merge(projection)
-
-    # After all competitors are updated, calculate ranks
-    _update_tournament_ranks(session, tournament_id)
-
-
-def _calculate_competitor_stats(
-    session: Session, competitor_id: UUID, match_ids: List[UUID]
-) -> dict:
-    """
-    Calculate statistics for a competitor based on completed matches.
-
-    competitor_id is the competitor_id from TournamentCompetitor which
-    is also the participant_id in MatchParticipant.
-    """
-    if not match_ids:
-        return {
-            "matches_played": 0,
-            "wins": 0,
-            "losses": 0,
-            "draws": 0,
-            "points": 0,
-            "total_score": 0,
-        }
-
-    # Get all match participations with results
-    # participant_id is the competitor_id; join must also match match_id to avoid cross-product
-    participations = (
-        session.query(MatchParticipant, MatchResult)
-        .join(
-            MatchResult,
-            (MatchParticipant.participant_id == MatchResult.participant_id)
-            & (MatchParticipant.match_id == MatchResult.match_id),
-        )
-        .filter(
-            MatchParticipant.participant_id == competitor_id,
-            MatchParticipant.match_id.in_(match_ids),
-            MatchParticipant.removed_at.is_(None),
-        )
-        .all()
-    )
-
-    matches_played = len(participations)
-    wins = 0
-    losses = 0
-    draws = 0
-    total_score = 0
-
-    for participant, result in participations:
-        if result.score is not None:
-            total_score += result.score
-
-        # Determine win/loss/draw based on position if set
-        if result.position == 1:
-            wins += 1
-        elif result.position is not None and result.position > 1:
-            losses += 1
-        elif result.position is None and result.score is not None:
-            # Position not set — infer from score: compare against other participants in same match
-            other_scores = (
-                session.query(MatchResult.score)
-                .join(
-                    MatchParticipant,
-                    (MatchResult.participant_id == MatchParticipant.participant_id)
-                    & (MatchResult.match_id == MatchParticipant.match_id),
-                )
-                .filter(
-                    MatchResult.match_id == participant.match_id,
-                    MatchParticipant.removed_at.is_(None),
-                    MatchResult.score.isnot(None),
-                )
-                .all()
-            )
-            scores = [s[0] for s in other_scores if s[0] is not None]
-            if len(scores) <= 1:
-                # Only this participant has a score — count as win
-                wins += 1
-            elif result.score == max(scores):
-                # Check for draw (multiple participants with same max score)
-                if scores.count(result.score) > 1:
-                    draws += 1
-                else:
-                    wins += 1
-            else:
-                losses += 1
-
-    # Simple point system: 3 points for win, 1 for draw, 0 for loss
-    points = (wins * 3) + (draws * 1)
-
-    return {
-        "matches_played": matches_played,
-        "wins": wins,
-        "losses": losses,
-        "draws": draws,
-        "points": points,
-        "total_score": total_score,
-    }
-
-
-def _update_tournament_ranks(session: Session, tournament_id: UUID) -> None:
-    """
-    Update ranks for all competitors in a tournament based on points and total_score.
-    """
-    # Get all standings ordered by points (desc) and total_score (desc)
-    standings = (
-        session.query(TournamentStandingsView)
-        .filter(TournamentStandingsView.tournament_id == tournament_id)
-        .order_by(
-            TournamentStandingsView.points.desc(),
-            TournamentStandingsView.total_score.desc(),
-        )
-        .all()
-    )
-
-    # Assign ranks
-    for rank, standing in enumerate(standings, start=1):
-        standing.rank = rank
 
 
 # ==================== Ranking Views ====================

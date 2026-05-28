@@ -123,7 +123,7 @@ class ModalityType(Base):
 
     modality_type_id = Column(UUID(as_uuid=True), primary_key=True)
     name = Column(String, nullable=False)
-    description = Column(Text, nullable=False)
+    description = Column(Text, nullable=True)
     escaloes = Column(JSON, nullable=False)  # Array of escalao definitions
     deleted_at = Column(DateTime, nullable=True)
 
@@ -282,6 +282,12 @@ class Tournament(Base):
     name = Column(String, nullable=False)
     start_date = Column(Date, nullable=False)
     status = Column(String, nullable=False)
+
+    format_type = Column(String, nullable=False)
+    standings_metadata = Column(
+        JSON, nullable=True
+    )  # For storing format-specific standings info
+
     deleted_at = Column(DateTime, nullable=True)
     finished_at = Column(DateTime, nullable=True)
 

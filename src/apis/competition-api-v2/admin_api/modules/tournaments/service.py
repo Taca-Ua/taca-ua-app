@@ -265,7 +265,6 @@ class TournamentsService:
 
             # Add standings information to the tournament if it's finished
             if tournament.status == "finished":
-                print("Populating tournament standings...", flush=True)
                 tournament.standings = []
                 for entry in tournament_dto.ranking_positions:
                     tournament.standings.append(

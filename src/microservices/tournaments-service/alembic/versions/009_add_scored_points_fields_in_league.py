@@ -75,11 +75,7 @@ def upgrade() -> None:
                 ),
             }
 
-    print(f"Processed {len(tourn_comp_map)} tournaments")
     for tournament_id in tourn_comp_map:
-        print(
-            f"Updating tournament_id {tournament_id} with {len(tourn_comp_map[tournament_id])} competitors"
-        )
         for competitor_id, points in tourn_comp_map[tournament_id].items():
             connection.execute(
                 sa.text(
