@@ -226,9 +226,10 @@ class CacheKeyGenerator:
         limit: int = 50,
         tournament_id: Optional[UUID] = None,
         status: Optional[str] = None,
+        date: Optional[str] = None,
     ) -> str:
         """Cache key for match list with filters."""
-        filters = f"tournament={tournament_id}:status={status}"
+        filters = f"tournament={tournament_id}:status={status}:date={date}"
         return f"match:list:{skip}:{limit}:{filters}"
 
     @staticmethod

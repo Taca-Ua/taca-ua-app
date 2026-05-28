@@ -5,6 +5,7 @@ This module provides read-only operations on the materialized views
 in the public_read schema. All read operations include caching via Redis.
 """
 
+import datetime
 from typing import Optional, Tuple
 from uuid import UUID
 
@@ -343,8 +344,8 @@ def get_tournament_by_id(
 @cached(
     cache_key="",
     ttl=CACHE_TTL["match_list"],
-    key_builder=lambda db, skip=0, limit=100, tournament_id=None, status=None: CacheKeyGenerator.match_list(
-        skip, limit, tournament_id, status
+    key_builder=lambda db, skip=0, limit=100, tournament_id=None, status=None, date=None: CacheKeyGenerator.match_list(
+        skip, limit, tournament_id, status, date
     ),
 )
 def get_matches(
@@ -353,6 +354,7 @@ def get_matches(
     limit: int = 100,
     tournament_id: Optional[UUID] = None,
     status: Optional[str] = None,
+    date: Optional[str] = None,
 ) -> tuple[list[MatchDetailView], int]:
     """
     Get list of matches with pagination and optional filters.
@@ -363,7 +365,7 @@ def get_matches(
         limit: Maximum number of records to return
         tournament_id: Filter by tournament ID
         status: Filter by match status
-
+        date: Filter by scheduled date (YYYY-MM)
     Returns:
         Tuple of (list of matches, total count)
     """
@@ -374,6 +376,16 @@ def get_matches(
         query = query.filter(MatchDetailView.tournament_id == tournament_id)
     if status:
         query = query.filter(MatchDetailView.status == status)
+    if date:
+        try:
+            date_obj = datetime.datetime.strptime(date, "%Y-%m")
+            query = query.filter(
+                MatchDetailView.start_time >= date_obj,
+                MatchDetailView.start_time < (date_obj + datetime.timedelta(days=31)),
+            )
+        except ValueError:
+            # Invalid date format, ignore the filter
+            pass
 
     # Get total count
     total = query.count()
