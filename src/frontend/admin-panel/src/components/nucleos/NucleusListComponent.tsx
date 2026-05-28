@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { nucleosApi, type NucleoListItem } from "../../api/nucleos";
+import LazyImage from "../utils/LazyImage";
 
 const ListNucleosComponent = ({
     nucleosState,
@@ -47,7 +48,7 @@ const ListNucleosComponent = ({
 
                     {n.logo_url ? (
                         <div className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden border-2 border-teal-500 flex-shrink-0">
-                            <img src={n.logo_url} alt={n.abbreviation} className="w-full h-full object-cover" />
+                            <LazyImage src={n.logo_url} alt={n.abbreviation} className="w-full h-full object-cover" />
                         </div>
                     ) : (
                         <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-teal-500 flex-shrink-0">
