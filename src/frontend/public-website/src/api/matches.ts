@@ -27,6 +27,7 @@ export interface MatchListParams {
   page_size?: number;
   tournament_id?: string;
   status?: string;
+  date?: string;  // New date filter in YYYY-MM format
 }
 
 export const matchesApi = {
@@ -36,6 +37,7 @@ export const matchesApi = {
       page_size: params?.page_size?.toString(),
       tournament_id: params?.tournament_id,
       status: params?.status,
+      date: params?.date, // Add date filter
     };
     const queryString = buildQueryString(queryParams);
     return apiCall<MatchDetailList>(`/matches${queryString}`);

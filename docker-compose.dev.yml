@@ -165,7 +165,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_DB=0
-      - CACHE_ENABLED=false
+      - CACHE_ENABLED=true
     depends_on:
       loki:
         condition: service_started

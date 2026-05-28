@@ -7,7 +7,6 @@ import { matchesApi, type MatchDetail } from '../api';
 function Calendario() {
   const today = new Date();
   const [matches, setMatches] = useState<MatchDetail[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('calendar');
@@ -21,24 +20,44 @@ function Calendario() {
     return d;
   });
   const [dayPage, setDayPage] = useState(1);
+  const [listTotalPages, setListTotalPages] = useState(1);
 
   useEffect(() => {
     const fetchMatches = async () => {
       try {
-        setLoading(true);
+        // setLoading(true);
         setError(null);
 
-        if (viewMode === 'calendar' || viewMode === 'list') {
+        if (viewMode === 'list') {
+          const response = await matchesApi.getAll({
+            page,
+            page_size: pageSize,
+          });
+          setMatches(response.items);
+          setListTotalPages(Math.max(1, Math.ceil(response.total / pageSize)));
+        };
+
+        if (viewMode === 'calendar') {
           // Fetch all pages so search/calendar work across full dataset
           const PAGE_SIZE = 100;
-          const first = await matchesApi.getAll({ page: 1, page_size: PAGE_SIZE });
+          let date = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}`;
+          const first = await matchesApi.getAll({
+            page: 1,
+            page_size: PAGE_SIZE,
+            date: date, // Filter by current month for calendar view
+          });
+
           const totalPages = Math.ceil(first.total / PAGE_SIZE);
           if (totalPages <= 1) {
             setMatches(first.items);
           } else {
             const rest = await Promise.all(
               Array.from({ length: totalPages - 1 }, (_, i) =>
-                matchesApi.getAll({ page: i + 2, page_size: PAGE_SIZE })
+                matchesApi.getAll({
+                  page: i + 2,
+                  page_size: PAGE_SIZE,
+                  date: date
+                })
               )
             );
             setMatches([...first.items, ...rest.flatMap(r => r.items)]);
@@ -48,11 +67,16 @@ function Calendario() {
         console.error('Error fetching matches:', err);
         setError('Erro ao carregar jogos. Por favor, tente novamente.');
       } finally {
-        setLoading(false);
+        // setLoading(false);
       }
     };
 
     fetchMatches();
+  }, [viewMode, currentMonth, currentYear, pageSize, page]);
+
+  useEffect(() => {
+    // Reset to first page when view mode changes
+    setPage(1);
   }, [viewMode]);
 
   const formatDate = (dateString: string) => {
@@ -159,17 +183,12 @@ function Calendario() {
     return participantNames.join(' vs ');
   };
 
-  const LIST_PAGE_SIZE = pageSize;
-
   const filteredMatches = viewMode === 'list'
     ? matches.filter((m) =>
         getMatchTitle(m)?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (m.tournament_name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
       )
     : matches;
-
-  const listTotalPages = Math.max(1, Math.ceil(filteredMatches.length / LIST_PAGE_SIZE));
-  const pagedMatches = filteredMatches.slice((page - 1) * LIST_PAGE_SIZE, page * LIST_PAGE_SIZE);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -245,12 +264,7 @@ function Calendario() {
           )}
 
           {/* Loading State */}
-          {loading ? (
-            <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
-              <p className="mt-4 text-gray-600">A carregar jogos...</p>
-            </div>
-          ) : (
+          {
             <>
               {/* List View */}
               {viewMode === 'list' && (
@@ -262,7 +276,7 @@ function Calendario() {
                       <p className="text-gray-500">Não há jogos disponíveis com os filtros selecionados.</p>
                     </div>
                   ) : (
-                    pagedMatches.map((match) => (
+                    filteredMatches.map((match) => (
                         <div
                           key={match.match_id}
                           className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-6"
@@ -525,7 +539,7 @@ function Calendario() {
                 </div>
               )}
             </>
-          )}
+          }
         </div>
       </main>
 
