@@ -3,7 +3,7 @@ Matches management service
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from admin_api.clients.keycloak_service import keycloak_service_client
 from admin_api.clients.matches_service import MatchDTO, matches_service_client
@@ -77,6 +77,12 @@ class Match:
     comments: List[Comment] = field(default_factory=list)
     lineups: List[Lineup] = field(default_factory=list)
     staff_assignments: Dict[str, List[StaffEntry]] = field(default_factory=dict)
+
+
+@dataclass
+class _MatchPaginationResult:
+    matches: List[Match]
+    total: int
 
 
 class MatchesService:
@@ -348,7 +354,9 @@ class MatchesService:
         date_from: str = None,
         date_to: str = None,
         status: str = None,
-    ) -> List[Match]:
+        page: int = None,
+        limit: int = None,
+    ) -> Dict[str, Any]:
         """List matches, optionally filtered by tournament"""
         assert tournament_id is None or isinstance(
             tournament_id, str
@@ -364,6 +372,12 @@ class MatchesService:
         ), "date_from must be a string"
         assert date_to is None or isinstance(date_to, str), "date_to must be a string"
         assert status is None or isinstance(status, str), "status must be a string"
+        assert (
+            page is None or isinstance(page, int) and page > 0
+        ), "page must be a positive integer"
+        assert (
+            limit is None or isinstance(limit, int) and 0 < limit <= 100
+        ), "limit must be an integer between 1 and 100"
 
         tournament_ids = None
         if modality_id:
@@ -377,15 +391,28 @@ class MatchesService:
         if tournament_id and tournament_ids and tournament_id not in tournament_ids:
             # The requested tournament_id does not match the modality/course filters, so we can return an empty list right away
             return []
+        elif tournament_id:
+            tournament_ids = [tournament_id]
 
         matches_data = matches_service_client.list_matches_lazy(
             tournament_ids=tournament_ids if tournament_ids else None,
             date_from=date_from,
             date_to=date_to,
             status=status,
+            page=page,
+            limit=limit,
         )
 
-        return self._build_multiple_matches_from_dtos(matches_data)
+        total = matches_service_client.count_matches(
+            tournament_ids=tournament_ids if tournament_ids else None,
+            date_from=date_from,
+            date_to=date_to,
+            status=status,
+        )
+
+        return _MatchPaginationResult(
+            matches=self._build_multiple_matches_from_dtos(matches_data), total=total
+        )
 
     def create_match(
         self,

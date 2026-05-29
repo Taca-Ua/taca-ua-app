@@ -83,6 +83,13 @@ class MatchDetailSerializer(MatchListSerializer):
     )
 
 
+class MatchPaginatedListSerializer(serializers.Serializer):
+    """Serializer for paginated match list response"""
+
+    matches = MatchListSerializer(many=True)
+    total = serializers.IntegerField()
+
+
 # Request serializers
 class MatchListFilterSerializer(serializers.Serializer):
     """Serializer for match list filters"""
@@ -96,6 +103,26 @@ class MatchListFilterSerializer(serializers.Serializer):
         choices=["scheduled", "in_progress", "finished", "cancelled"],
         required=False,
     )
+
+    page = serializers.IntegerField(required=False)
+    limit = serializers.IntegerField(required=False)
+
+    def validate(self, data):
+        if (
+            data.get("date_from")
+            and data.get("date_to")
+            and data["date_from"] > data["date_to"]
+        ):
+            raise serializers.ValidationError("date_from must be before date_to.")
+
+        if (data.get("page") is not None and data.get("limit") is None) or (
+            data.get("page") is None and data.get("limit") is not None
+        ):
+            raise serializers.ValidationError(
+                "Both page and limit must be provided together for pagination."
+            )
+
+        return data
 
 
 class MatchCreateSerializer(serializers.Serializer):

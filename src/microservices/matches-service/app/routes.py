@@ -119,11 +119,81 @@ def stream_matches(
     status: Optional[str] = Query(None),
     date_from: Optional[str] = Query(None),
     date_to: Optional[str] = Query(None),
+    page: Optional[int] = Query(None),
+    limit: Optional[int] = Query(None),
     db: Session = Depends(get_db_session),
 ):
     """Stream matches with optional filters."""
     logger.info(
         "Streaming matches",
+        extra={
+            "tournament_ids": (
+                [str(t_id) for t_id in tournament_ids] if tournament_ids else None
+            ),
+            "status": status,
+            "page": page,
+            "limit": limit,
+        },
+    )
+
+    query = db.query(Match)
+
+    if tournament_ids is not None:
+        query = query.filter(Match.tournament_id.in_(tournament_ids))
+
+    if status:
+        try:
+            status_enum = MatchStatus(status)
+            query = query.filter(Match.status == status_enum)
+        except ValueError:
+            logger.warning("Invalid status", extra={"status": status})
+            raise HTTPException(status_code=400, detail=f"Invalid status: {status}")
+
+    if date_from:
+        query = query.filter(Match.start_time >= date_from)
+
+    if date_to:
+        query = query.filter(Match.start_time <= date_to)
+
+    # Apply pagination
+    if page is not None and limit is not None:
+        query = query.offset((page - 1) * limit).limit(limit)
+    elif (page is not None) != (limit is not None):
+        logger.warning(
+            "Pagination parameters incomplete",
+            extra={"page": page, "limit": limit},
+        )
+        raise HTTPException(
+            status_code=400,
+            detail="Both page and limit must be provided together for pagination.",
+        )
+
+    def match_generator():
+        for match in query.yield_per(100):
+            try:
+                json_data = json.dumps(match.to_dict(include_details=False))
+            except Exception as e:
+                logger.error(
+                    "Error serializing match",
+                    extra={"match_id": str(match.id), "error": str(e)},
+                )
+                break
+            yield f"data: {json_data}\n\n"
+
+    return StreamingResponse(match_generator(), media_type="application/json")
+
+
+@router.get("/matches/count")
+def count_matches(
+    tournament_ids: Optional[List[UUID]] = Query(None),
+    status: Optional[str] = Query(None),
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
+    db: Session = Depends(get_db_session),
+):
+    """Count matches with optional filters."""
+    logger.info(
+        "Counting matches",
         extra={
             "tournament_ids": (
                 [str(t_id) for t_id in tournament_ids] if tournament_ids else None
@@ -151,19 +221,14 @@ def stream_matches(
     if date_to:
         query = query.filter(Match.start_time <= date_to)
 
-    def match_generator():
-        for match in query.yield_per(100):
-            try:
-                json_data = json.dumps(match.to_dict(include_details=False))
-            except Exception as e:
-                logger.error(
-                    "Error serializing match",
-                    extra={"match_id": str(match.id), "error": str(e)},
-                )
-                break
-            yield f"data: {json_data}\n\n"
+    total = query.count()
 
-    return StreamingResponse(match_generator(), media_type="application/json")
+    logger.info(
+        "Matches counted successfully",
+        extra={"total": total},
+    )
+
+    return {"count": total}
 
 
 @router.post("/matches", response_model=schemas.MatchResponse, status_code=201)

@@ -30,6 +30,7 @@ from .serializers import (
     MatchDetailSerializer,
     MatchListFilterSerializer,
     MatchListSerializer,
+    MatchPaginatedListSerializer,
     MatchPublishResultsSerializer,
     MatchUpdateSerializer,
 )
@@ -41,7 +42,7 @@ logger = structlog.get_logger(__name__)
 @extend_schema_view(
     get=extend_schema(
         parameters=[MatchListFilterSerializer],
-        responses=MatchListSerializer(many=True),
+        responses=MatchPaginatedListSerializer,
         description="List all matches with optional filters",
         tags=["Match Management"],
     ),
@@ -58,12 +59,20 @@ class MatchListCreateView(RoleRequiredMixin, APIView):
     def get(self, request):
         """List matches with optional filters"""
         # Extract query parameters for filtering
+        serializer = MatchListFilterSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+
         tournament_id = request.query_params.get("tournament_id")
         modality_id = request.query_params.get("modality_id")
         course_id = request.query_params.get("course_id")
         date_from = request.query_params.get("date_from")
         date_to = request.query_params.get("date_to")
         status_filter = request.query_params.get("status")
+        page = request.query_params.get("page")
+        limit = request.query_params.get("limit")
+
+        page = int(page) if page is not None else None
+        limit = int(limit) if limit is not None else None
 
         matches = matches_service.list_matches(
             tournament_id=str(tournament_id) if tournament_id else None,
@@ -72,9 +81,11 @@ class MatchListCreateView(RoleRequiredMixin, APIView):
             date_from=date_from,
             date_to=date_to,
             status=status_filter,
+            page=page,
+            limit=limit,
         )
 
-        serializer = MatchListSerializer(matches, many=True)
+        serializer = MatchPaginatedListSerializer(matches)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @require_roles_class_method("general_admin")

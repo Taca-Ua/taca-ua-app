@@ -28,7 +28,7 @@ const MatchesCalendarComponent = ({
             course_id: courseId,
             modality_id: modalityId,
         }).then((data) => {
-            setMatches(data);
+            setMatches(data.matches);
         }).catch((err) => {
             console.error("Erro ao carregar jogos:", err);
         }).finally(() => {
