@@ -13,6 +13,7 @@ import { useModal } from '../../contexts/ModalContext';
 import MatchTeamLineupModal from '../../components/matches/MatchTeamLineupModal';
 import { useAuth } from '../../hooks/useAuth';
 import { navigateBack } from '../../utils';
+import LazyImage from '../../components/utils/LazyImage';
 
 // ==================== Private Components ====================
 
@@ -57,6 +58,14 @@ const MatchHeader = ({ match }: { match: MatchDetail }) => {
             <h2 className="text-2xl font-bold">{getName(participants[0])}</h2>
           </div>
 
+          {participants[0].logo_url ? (
+            <LazyImage
+              src={participants[0].logo_url}
+              alt={getName(participants[0])}
+              className="w-24 h-24 object-cover rounded-full mx-auto mb-2"
+            />
+          ) : null}
+
           <div className="flex-shrink-0 text-center">
             {hasScores ? (
               <div className="text-5xl font-bold">
@@ -66,6 +75,14 @@ const MatchHeader = ({ match }: { match: MatchDetail }) => {
               <div className="text-3xl font-bold opacity-75">VS</div>
             )}
           </div>
+
+          {participants[1].logo_url ? (
+            <LazyImage
+              src={participants[1].logo_url}
+              alt={getName(participants[1])}
+              className="w-24 h-24 object-cover rounded-full mx-auto mb-2"
+            />
+          ) : null}
 
           <div className="flex-1">
             <h2 className="text-2xl font-bold">{getName(participants[1])}</h2>
@@ -87,6 +104,13 @@ const MatchHeader = ({ match }: { match: MatchDetail }) => {
         <div className={`grid gap-4 ${participants.length === 3 ? 'grid-cols-3' : participants.length === 4 ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}`}>
           {participants.map((participant, index) => (
             <div key={index} className="text-center p-4 bg-white bg-opacity-10 rounded-lg">
+              { participant.logo_url ? (
+                <LazyImage
+                  src={participant.logo_url}
+                  alt={getName(participant)}
+                  className="w-16 h-16 object-cover mx-auto mb-2"
+                />
+              ) : null }
               <div className="text-lg font-bold mb-2">{getName(participant)}</div>
               {hasScores && (
                 <div className="text-3xl font-bold">{getScore(participant) ?? '-'}</div>
@@ -302,7 +326,7 @@ const JogoDetails = () => {
   const navigate  = useNavigate();
 
   const handleBack = () => {
-    navigateBack(navigate, `/torneios/${match?.tournament_id || ''}`);
+    navigateBack(navigate, `/torneios/${match?.tournament.id || ''}`);
   };
 
   const fetchMatch = async () => {
@@ -381,11 +405,11 @@ const JogoDetails = () => {
   return (
       <div className="flex-1 p-8 max-w-6xl mx-auto">
         <div className="mb-8 flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-800">Detalhes do Jogo</h1>
+          <h1 className="text-3xl font-bold text-gray-800">{match.tournament.name}</h1>
 
           <div className='flex gap-4'>
           <Button
-            onClick={() => navigate(`/torneios/${match.tournament_id}`)}
+            onClick={() => navigate(`/torneios/${match.tournament.id}`)}
             type='secondary'
             padding='px-6 py-3'
           >

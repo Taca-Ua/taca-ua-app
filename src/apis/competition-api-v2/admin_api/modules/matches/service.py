@@ -12,7 +12,10 @@ from admin_api.clients.modalities_service import (
     TeamDTO,
     modalities_service_client,
 )
-from admin_api.clients.tournaments_service import tournaments_service_client
+from admin_api.clients.tournaments_service import (
+    TournamentDTO,
+    tournaments_service_client,
+)
 
 
 @dataclass
@@ -22,6 +25,7 @@ class Participant:
     name: str
     score: int
     position: int
+    logo_url: str = None
 
 
 @dataclass
@@ -56,9 +60,15 @@ class StaffEntry:
 
 
 @dataclass
+class TournamentSummary:
+    id: str
+    name: str
+
+
+@dataclass
 class Match:
     id: str
-    tournament_id: str
+    tournament: TournamentSummary
     location: str
     start_time: str
     status: str
@@ -219,8 +229,10 @@ class MatchesService:
         tournament_competitors_info: Dict[str, Dict[str, str]] = (
             {}
         )  # tournament -> competitor_id -> (competitor_type, competitor_entity_id)
+        tournaments_data_map: Dict[str, TournamentDTO] = {}
         for tournament_id in tournament_ids:
             tournament_data = tournaments_service_client.get_tournament(tournament_id)
+            tournaments_data_map[tournament_id] = tournament_data
 
             tournament_competitors_info[tournament_id] = {}
             for competitor in tournament_data.competitors:
@@ -291,13 +303,17 @@ class MatchesService:
                         ),
                         score=participant.score,
                         position=participant.position,
+                        logo_url=entity_data.course.nucleo.logo_url,
                     )
                 )
 
             # build match
             resp_match = Match(
                 id=match_dto.id,
-                tournament_id=match_dto.tournament_id,
+                tournament=TournamentSummary(
+                    id=match_dto.tournament_id,
+                    name=tournaments_data_map[match_dto.tournament_id].name,
+                ),
                 location=match_dto.location,
                 start_time=match_dto.start_time,
                 status=match_dto.status,

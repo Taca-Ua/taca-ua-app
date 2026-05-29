@@ -15,7 +15,10 @@ export interface MatchLineup {
 // Response types
 export interface MatchListItem {
   id: string;
-  tournament_id: string;
+  tournament: {
+    id: string;
+    name: string;
+  };
   location: string;
   start_time: string;
   status: string;
@@ -26,6 +29,7 @@ export interface MatchListItem {
     name: string;
     score?: number;
     position?: number;
+    logo_url?: string;
   }[];
 };
 
