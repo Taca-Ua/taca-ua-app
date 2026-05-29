@@ -88,6 +88,10 @@ class MatchListFilterSerializer(serializers.Serializer):
     """Serializer for match list filters"""
 
     tournament_id = serializers.UUIDField(required=False)
+    modality_id = serializers.UUIDField(required=False)
+    course_id = serializers.UUIDField(required=False)
+    date_from = serializers.DateField(required=False)
+    date_to = serializers.DateField(required=False)
     status = serializers.ChoiceField(
         choices=["scheduled", "in_progress", "finished", "cancelled"],
         required=False,

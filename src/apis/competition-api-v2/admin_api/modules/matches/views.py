@@ -2,8 +2,6 @@
 Match management views
 """
 
-from uuid import UUID
-
 import structlog
 from admin_api.utils.decorators import (
     RoleRequiredMixin,
@@ -61,11 +59,19 @@ class MatchListCreateView(RoleRequiredMixin, APIView):
         """List matches with optional filters"""
         # Extract query parameters for filtering
         tournament_id = request.query_params.get("tournament_id")
+        modality_id = request.query_params.get("modality_id")
+        course_id = request.query_params.get("course_id")
+        date_from = request.query_params.get("date_from")
+        date_to = request.query_params.get("date_to")
         status_filter = request.query_params.get("status")
 
         matches = matches_service.list_matches(
-            tournament_id=UUID(tournament_id) if tournament_id else None,
-            status=status_filter if status_filter else None,
+            tournament_id=str(tournament_id) if tournament_id else None,
+            modality_id=str(modality_id) if modality_id else None,
+            course_id=str(course_id) if course_id else None,
+            date_from=date_from,
+            date_to=date_to,
+            status=status_filter,
         )
 
         serializer = MatchListSerializer(matches, many=True)

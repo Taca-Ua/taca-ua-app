@@ -341,12 +341,48 @@ class MatchesService:
         return matches[0] if matches else None
 
     def list_matches(
-        self, tournament_id: str = None, status: str = None
+        self,
+        tournament_id: str = None,
+        modality_id: str = None,
+        course_id: str = None,
+        date_from: str = None,
+        date_to: str = None,
+        status: str = None,
     ) -> List[Match]:
         """List matches, optionally filtered by tournament"""
+        assert tournament_id is None or isinstance(
+            tournament_id, str
+        ), "tournament_id must be a string"
+        assert modality_id is None or isinstance(
+            modality_id, str
+        ), "modality_id must be a string"
+        assert course_id is None or isinstance(
+            course_id, str
+        ), "course_id must be a string"
+        assert date_from is None or isinstance(
+            date_from, str
+        ), "date_from must be a string"
+        assert date_to is None or isinstance(date_to, str), "date_to must be a string"
+        assert status is None or isinstance(status, str), "status must be a string"
+
+        tournament_ids = None
+        if modality_id:
+            # If filtering by modality or course, we need to first get the tournaments that match those filters
+            tournaments = tournaments_service_client.list_tournaments(
+                modality_id=modality_id,
+                course_id=course_id,
+            )
+            tournament_ids = [str(tournament.id) for tournament in tournaments]
+
+        if tournament_id and tournament_ids and tournament_id not in tournament_ids:
+            # The requested tournament_id does not match the modality/course filters, so we can return an empty list right away
+            return []
 
         matches_data = matches_service_client.list_matches_lazy(
-            tournament_id=tournament_id, status=status
+            tournament_ids=tournament_ids if tournament_ids else None,
+            date_from=date_from,
+            date_to=date_to,
+            status=status,
         )
 
         return self._build_multiple_matches_from_dtos(matches_data)

@@ -4,7 +4,7 @@ API routes for Matches Service.
 
 import json
 from datetime import datetime, timezone
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -115,23 +115,27 @@ def list_tournament_rounds(
 
 @router.get("/matches/stream")
 def stream_matches(
-    tournament_id: Optional[UUID] = Query(None),
+    tournament_ids: Optional[List[UUID]] = Query(None),
     status: Optional[str] = Query(None),
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
     db: Session = Depends(get_db_session),
 ):
     """Stream matches with optional filters."""
     logger.info(
         "Streaming matches",
         extra={
-            "tournament_id": str(tournament_id) if tournament_id else None,
+            "tournament_ids": (
+                [str(t_id) for t_id in tournament_ids] if tournament_ids else None
+            ),
             "status": status,
         },
     )
 
     query = db.query(Match)
 
-    if tournament_id:
-        query = query.filter(Match.tournament_id == tournament_id)
+    if tournament_ids is not None:
+        query = query.filter(Match.tournament_id.in_(tournament_ids))
 
     if status:
         try:
@@ -140,6 +144,12 @@ def stream_matches(
         except ValueError:
             logger.warning("Invalid status", extra={"status": status})
             raise HTTPException(status_code=400, detail=f"Invalid status: {status}")
+
+    if date_from:
+        query = query.filter(Match.start_time >= date_from)
+
+    if date_to:
+        query = query.filter(Match.start_time <= date_to)
 
     def match_generator():
         for match in query.yield_per(100):

@@ -166,7 +166,7 @@ class MatchesService(BaseService):
 
     def list_matches_stream(
         self,
-        tournament_id: Optional[UUID] = None,
+        tournament_ids: Optional[List[UUID]] = None,
         team_id: Optional[UUID] = None,
         athlete_id: Optional[UUID] = None,
         date: Optional[str] = None,
@@ -190,15 +190,21 @@ class MatchesService(BaseService):
             MatchDTO objects one by one as they are received from the stream
         """
         params = {}
-        if tournament_id is not None:
-            params["tournament_id"] = str(tournament_id)
+        if tournament_ids is not None:
+            params["tournament_ids"] = [str(t_id) for t_id in tournament_ids]
+        if date_from is not None:
+            params["date_from"] = date_from
+        if date_to is not None:
+            params["date_to"] = date_to
+        if status is not None:
+            params["status"] = status
 
         for match_data in self.stream_sse("/matches/stream", params=params):
             yield MatchDTO(**match_data)
 
     def list_matches_lazy(
         self,
-        tournament_id: Optional[UUID] = None,
+        tournament_ids: Optional[List[UUID]] = None,
         team_id: Optional[UUID] = None,
         athlete_id: Optional[UUID] = None,
         date: Optional[str] = None,
@@ -208,7 +214,9 @@ class MatchesService(BaseService):
     ) -> List[MatchDTO]:
         matches = []
         for match in self.list_matches_stream(
-            tournament_id=tournament_id,
+            tournament_ids=(
+                [t_id for t_id in tournament_ids] if tournament_ids else None
+            ),
             team_id=team_id,
             athlete_id=athlete_id,
             date=date,

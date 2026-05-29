@@ -172,6 +172,8 @@ class BaseService:
                             line = line[5:].strip()
                             yield json.loads(line)
 
+                print(response.url, flush=True)
+
         except requests.exceptions.Timeout:
             logger.error(f"Timeout calling {url}")
             raise ValidationError({"detail": "Microservice SSE request timed out"})
