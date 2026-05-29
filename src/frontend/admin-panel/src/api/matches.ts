@@ -26,6 +26,7 @@ export interface MatchListItem {
     name: string;
     score?: number;
     position?: number;
+    logo_url?: string;
   }[];
 };
 

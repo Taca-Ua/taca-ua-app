@@ -22,6 +22,7 @@ class Participant:
     name: str
     score: int
     position: int
+    logo_url: str = None
 
 
 @dataclass
@@ -291,6 +292,7 @@ class MatchesService:
                         ),
                         score=participant.score,
                         position=participant.position,
+                        logo_url=entity_data.course.nucleo.logo_url,
                     )
                 )
 

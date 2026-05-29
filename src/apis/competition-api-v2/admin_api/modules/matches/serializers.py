@@ -14,6 +14,7 @@ class ParticipantsListSerializer(serializers.Serializer):
     name = serializers.CharField()
     score = serializers.IntegerField(required=False, allow_null=True)
     position = serializers.IntegerField(required=False, allow_null=True)
+    logo_url = serializers.CharField(required=False, allow_null=True)
 
 
 class CommentListSerializer(serializers.Serializer):
