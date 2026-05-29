@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { matchesApi, type MatchListItem } from '../../api/matches';
 import { useAuth } from '../../hooks/useAuth';
 import { seasonsApi, type SeasonSummary } from '../../api/seasons';
 import { useSeason } from '../../contexts/SeasonContext';

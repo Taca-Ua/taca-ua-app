@@ -6,8 +6,6 @@ import { coursesApi, type CourseDetail } from '../../api/courses';
 import { useEffect, useState } from 'react';
 import { useSeason } from '../../contexts/SeasonContext';
 import SeasonSelector from '../../components/seasons/SeasonSelector';
-import TabSystem from '../../components/TabSystem';
-import MatchesCalendarComponent from '../../components/matches/MatchesCalendarComponent';
 
 const CursoDetail = () => {
   const courseId = useParams<{ id: string }>().id;
