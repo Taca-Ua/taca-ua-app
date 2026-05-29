@@ -347,6 +347,7 @@ def list_matches(
     page_size: int = Query(50, ge=1, le=100, description="Items per page"),
     tournament_id: Optional[UUID] = Query(None, description="Filter by tournament ID"),
     status: Optional[str] = Query(None, description="Filter by match status"),
+    date: Optional[str] = Query(None, description="Filter by scheduled date (YYYY-MM)"),
     db: Session = Depends(get_db),
 ):
     """
@@ -364,6 +365,7 @@ def list_matches(
         limit=page_size,
         tournament_id=tournament_id,
         status=status,
+        date=date,
     )
 
     logger.info(
@@ -374,6 +376,7 @@ def list_matches(
         filters={
             "tournament_id": str(tournament_id) if tournament_id else None,
             "status": status,
+            "date": date,
         },
     )
 

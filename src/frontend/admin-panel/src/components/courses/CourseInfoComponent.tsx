@@ -6,6 +6,7 @@ import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
 import { useSeason } from "../../contexts/SeasonContext";
 import { useNotification } from "../../contexts/NotificationProvider";
+import LazyImage from "../utils/LazyImage";
 
 const CourseInfoComponent = ( {
   courseState,
@@ -55,7 +56,7 @@ const CourseInfoComponent = ( {
         <div>
           {course.logo_url ? (
             <div className="flex items-center gap-4">
-              <img
+              <LazyImage
                 src={course.logo_url}
                 alt={course.name}
                 className="w-64 h-64 object-cover"

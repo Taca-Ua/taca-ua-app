@@ -10,6 +10,7 @@ import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
 import { useNotification } from "../../contexts/NotificationProvider";
 import { useNavigate } from "react-router-dom";
+import LazyImage from "../utils/LazyImage";
 
 const TeamInfoComponent = ({
   teamState
@@ -84,7 +85,7 @@ const TeamInfoComponent = ({
         {/* Imagem da Equipa */}
         { team.logo_url ? (
           <div className="flex justify-center mb-8">
-            <img
+            <LazyImage
               src={team.logo_url}
               alt="Logo da Equipa"
               className="w-48 h-48 object-cover rounded-full"
