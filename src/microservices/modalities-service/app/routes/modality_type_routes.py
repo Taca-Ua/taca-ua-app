@@ -18,7 +18,7 @@ from taca_events.pydantic_schemas.modalities import (
 
 from ..database import get_db_session
 from ..logger import logger
-from ..models import ModalityType, Season
+from ..models import ModalityType, Season, SeasonModality
 from ..outbox_publisher import outbox_publisher
 from ..schemas import ModalityTypeCreate, ModalityTypeResponse, ModalityTypeUpdate
 from ..utils import get_active_season
@@ -247,6 +247,21 @@ def delete_modality_type(modality_type_id: UUID, db: Session = Depends(get_db_se
     if not modality_type:
         raise HTTPException(
             status_code=404, detail="Modality type not found for active season"
+        )
+
+    # Check if modality type is associated with any modality in the season
+    modalities = (
+        db.query(SeasonModality)
+        .filter(SeasonModality.season_id == modality_type.season_id)
+        .filter(SeasonModality.modality_type_id == modality_type_id)
+        .all()
+    )
+
+    if modalities:
+        print(modalities, flush=True)
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot delete modality type associated with existing modalities in the season",
         )
 
     # Emit modality type deleted event
