@@ -7,6 +7,7 @@ import NucleusEditModal from "./NucleusEditModal";
 import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
 import { useAuth } from "../../hooks/useAuth";
+import LazyImage from "../utils/LazyImage";
 
 const NucleusDetailComponent = ( { nucleusId } : { nucleusId: string }) => {
   const { notify } = useNotification();
@@ -65,7 +66,7 @@ const NucleusDetailComponent = ( { nucleusId } : { nucleusId: string }) => {
         <label className="block text-teal-500 font-medium mb-2">Logo</label>
         { logoUrl ? (
           <div className="w-24 h-24 rounded-full flex items-center justify-center overflow-hidden border-2 border-teal-500">
-            <img src={logoUrl} alt={`${nucleus?.name} logo`} className="w-full h-full object-cover" />
+            <LazyImage src={logoUrl} alt={`${nucleus?.name} logo`} className="w-full h-full object-cover" />
           </div>
         ) : (
           <div className="flex items-center gap-4">

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { useModal } from "../contexts/ModalContext";
 import { useSeason } from "../contexts/SeasonContext";
+import LazyImage from "./utils/LazyImage";
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -65,7 +66,7 @@ export default function Sidebar() {
                     className="flex items-center gap-2 min-w-0 text-lg font-bold text-teal-600 hover:text-teal-700"
                     onClick={handlePageChange}
                   >
-                    <img
+                    <LazyImage
                       src="/logo.png"
                       alt="TaçaUA"
                       className="h-8 w-8 object-contain flex-shrink-0"

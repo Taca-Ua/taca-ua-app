@@ -2,6 +2,7 @@ import { useState } from "react"
 import { type CourseListItem } from "../../api/courses"
 import { useNavigate } from "react-router"
 import { normalizeText } from "../utils/utils"
+import LazyImage from "../utils/LazyImage"
 
 const CourseEntry = (course: CourseListItem) => {
   const navigate = useNavigate();
@@ -12,9 +13,9 @@ const CourseEntry = (course: CourseListItem) => {
     >
       <div className="flex items-center justify-between text-center gap-3">
         {course.logo_url ? (
-          <img src={course.logo_url} alt={course.name} className="w-16 h-16 rounded-full object-cover" />
+          <LazyImage src={course.logo_url} alt={course.name} className="h-24 object-cover" />
         ) : (
-          <div className="w-16 h-16 rounded-full bg-teal-50 flex items-center justify-center border-2 border-teal-500">
+          <div className="w-24 h-24 rounded-full bg-teal-50 flex items-center justify-center border-2 border-teal-500">
             <span className="text-teal-600 font-bold text-sm">{course.abbreviation}</span>
           </div>
         )}
