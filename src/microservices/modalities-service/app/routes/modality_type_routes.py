@@ -258,7 +258,6 @@ def delete_modality_type(modality_type_id: UUID, db: Session = Depends(get_db_se
     )
 
     if modalities:
-        print(modalities, flush=True)
         raise HTTPException(
             status_code=400,
             detail="Cannot delete modality type associated with existing modalities in the season",
