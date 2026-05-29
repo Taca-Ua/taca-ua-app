@@ -19,6 +19,7 @@ export interface MatchListItem {
     id: string;
     name: string;
   };
+  modality: string;
   location: string;
   start_time: string;
   status: string;
@@ -48,6 +49,10 @@ export interface MatchDetail extends MatchListItem {
 export interface MatchListFilter {
   tournament_id?: string;
   status?: string;
+  modality_id?: string;
+  course_id?: string;
+  date_from?: string; // ISO date string
+  date_to?: string;   // ISO date string
 }
 
 export interface MatchCreate {

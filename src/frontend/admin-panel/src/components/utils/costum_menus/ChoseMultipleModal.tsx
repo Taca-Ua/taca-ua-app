@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import Button from "../Button";
 import { useModal } from "../../../contexts/ModalContext";
 
@@ -82,11 +82,14 @@ const ChooseMultipleModal = ({
 
     const [searchQuery, setSearchQuery] = useState("");
     const [isMobileSummaryOpen, setIsMobileSummaryOpen] = useState(false);
-
+    const searchInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         allElementsLoader().then(setAllElements);
         setChosenElements(initialChosenElementsIds);
+        if (searchInputRef.current) {
+          searchInputRef.current.focus();
+        }
     }, []);
 
 
@@ -175,6 +178,7 @@ const ChooseMultipleModal = ({
             <div className="min-h-0 flex flex-col">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
                 <input
+                  ref={searchInputRef}
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -220,7 +224,16 @@ const ChooseMultipleModal = ({
                       <div
                         key={element.id}
                         onClick={() => toggleElement(element)}
-                        className={`flex items-center justify-between px-4 py-3 rounded-md cursor-pointer transition-colors ${
+                        tabIndex={0}
+                        role="button"
+                        aria-pressed={isSelected}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            toggleElement(element);
+                          }
+                        }}
+                        className={`flex items-center justify-between px-4 py-3 rounded-md cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-teal-500 ${
                           isSelected
                             ? "bg-teal-50 border border-teal-300 hover:bg-teal-100"
                             : "bg-gray-50 hover:bg-gray-100"

@@ -14,6 +14,7 @@ import { useNotification } from '../../contexts/NotificationProvider';
 import { teamsApi, type TeamListItem } from '../../api/teams';
 import { useSeason } from '../../contexts/SeasonContext';
 import SeasonSelector from '../../components/seasons/SeasonSelector';
+import MatchesCalendarComponent from '../../components/matches/MatchesCalendarComponent';
 
 
 const TournamentsTab = ({
@@ -170,7 +171,6 @@ function ModalidadeDetail() {
 
         {/* Modality Information - Always visible at top */}
         <ModalityInfoComponent modalityState={[modality, setModality]} />
-
       </div>
       { modality.belongs_to_season && (
         <div className="flex-1 max-w-7xl mx-auto">
@@ -178,6 +178,7 @@ function ModalidadeDetail() {
             elements={[
               { id: 'tournaments', label: 'Torneios', content: <TournamentsTab modality={modality} tournamentsState={[tournaments, setTournaments]} /> },
               { id: 'teams', label: 'Equipas', content: <TeamsTab modality={modality} teamsState={[teams, setTeams]} /> },
+              { id: 'matches', label: 'Jogos', content: <MatchesCalendarComponent modalityId={modality.id} /> },
             ]}
           />
         </div>
