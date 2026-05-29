@@ -144,6 +144,7 @@ async def list_tournaments(
     status_filter: str = None,
     modality_id: UUID = None,
     season_id: int = None,
+    course_id: UUID = None,
     db: Session = Depends(get_db_session),
 ):
     """List all tournaments with optional filters"""
@@ -155,6 +156,12 @@ async def list_tournaments(
         query = query.filter(Tournament.modality_id == modality_id)
     if season_id:
         query = query.filter(Tournament.season_id == season_id)
+    if course_id:
+        query = query.filter(
+            Tournament.competitors.any(
+                TournamentCompetitor.competitor_course_id == course_id
+            )
+        )
 
     tournaments = query.all()
     return [TournamentResponse(**t.to_dict(include_ranking=False)) for t in tournaments]

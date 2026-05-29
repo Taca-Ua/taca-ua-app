@@ -187,7 +187,7 @@ const MatchesListComponent = ( {
                 const response = await matchesApi.getAll( {
                     tournament_id: tournamentId
                 } );
-                setMatches( response );
+                setMatches( response.matches );
             } catch ( error ) {
                 console.error( "Error fetching matches:", error );
             } finally {
@@ -287,7 +287,22 @@ const MatchesListComponent = ( {
 
         <div className="space-y-3">
           {filteredMatches.length > 0 ? (
-            Object.entries(matchesByJourney).map(([journey, matches]) => (
+            Object.entries(matchesByJourney)
+              .sort((a, b) => {
+                const aKey = a[0];
+                const bKey = b[0];
+
+                // "Sem Jornada" goes last
+                if (aKey === 'Sem Jornada') return 1;
+                if (bKey === 'Sem Jornada') return -1;
+
+                // Extract numbers from "Jornada X" and sort numerically
+                const aNum = parseInt(aKey.match(/\d+/)?.[0] || '0');
+                const bNum = parseInt(bKey.match(/\d+/)?.[0] || '0');
+
+                return aNum - bNum;
+              })
+              .map(([journey, matches]) => (
               <MatchesListJourneyComponent
                 key={journey}
                 journeyNumber={journey}

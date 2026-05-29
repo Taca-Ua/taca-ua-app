@@ -108,13 +108,7 @@ const MatchInfoComponent = ( {
             <select
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent"
               value={editedStatus}
-              onChange={() => setEditedStatus((prev) => {
-                if (prev === "scheduled") return "in_progress";
-                if (prev === "in_progress") return "finished";
-                if (prev === "finished") return "cancelled";
-                return "scheduled";
-              }
-            )}
+              onChange={(e) => setEditedStatus(e.target.value)}
             >
               <option value="scheduled">Agendado</option>
               <option value="in_progress">Em Curso</option>
