@@ -50,12 +50,19 @@ class StaffSummarySerializer(serializers.Serializer):
     name = serializers.CharField()
 
 
+class TournamentSummarySerializer(serializers.Serializer):
+    """Serializer for tournament summary information"""
+
+    id = serializers.UUIDField()
+    name = serializers.CharField()
+
+
 # Response serializers
 class MatchListSerializer(serializers.Serializer):
     """Serializer for listing matches"""
 
     id = serializers.UUIDField()
-    tournament_id = serializers.UUIDField(required=False, allow_null=True)
+    tournament = TournamentSummarySerializer()
     location = serializers.CharField()
     start_time = serializers.DateTimeField()
     status = serializers.CharField()

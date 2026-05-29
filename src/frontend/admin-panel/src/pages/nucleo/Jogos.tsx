@@ -171,7 +171,7 @@ const Jogos = () => {
                       return filteredMatches.length > 0 ? (
                         filteredMatches.map((match) => {
                           const { date, time } = formatDateTime(match.start_time);
-                          const tournament = tournamentMap[match.tournament_id];
+                          const tournament = tournamentMap[match.tournament.id];
                           return (
                             <button
                               key={match.id}
@@ -366,7 +366,7 @@ const Jogos = () => {
                             <div className="space-y-2">
                               {paginated.map((match) => {
                                 const { time } = formatDateTime(match.start_time);
-                                const tournament = tournamentMap[match.tournament_id];
+                                const tournament = tournamentMap[match.tournament.id];
                                 return (
                                   <button
                                     key={match.id}

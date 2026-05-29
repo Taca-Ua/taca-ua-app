@@ -326,7 +326,7 @@ const JogoDetails = () => {
   const navigate  = useNavigate();
 
   const handleBack = () => {
-    navigateBack(navigate, `/torneios/${match?.tournament_id || ''}`);
+    navigateBack(navigate, `/torneios/${match?.tournament.id || ''}`);
   };
 
   const fetchMatch = async () => {
@@ -405,11 +405,11 @@ const JogoDetails = () => {
   return (
       <div className="flex-1 p-8 max-w-6xl mx-auto">
         <div className="mb-8 flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-800">Detalhes do Jogo</h1>
+          <h1 className="text-3xl font-bold text-gray-800">{match.tournament.name}</h1>
 
           <div className='flex gap-4'>
           <Button
-            onClick={() => navigate(`/torneios/${match.tournament_id}`)}
+            onClick={() => navigate(`/torneios/${match.tournament.id}`)}
             type='secondary'
             padding='px-6 py-3'
           >
