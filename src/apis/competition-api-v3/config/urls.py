@@ -24,22 +24,23 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+from .settings import API_ENDPOINT_PREFIX
+
 urlpatterns = [
     path("", include("django_prometheus.urls")),
     path("admin/", admin.site.urls),
-    path("api3/admin/schema/", SpectacularAPIView.as_view(), name="schema"),
+    # Health check endpoint
+    path(f"{API_ENDPOINT_PREFIX}/health/", HealthView.as_view(), name="health"),
+    # API schema and documentation endpoints
+    path(f"{API_ENDPOINT_PREFIX}/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
-        "api3/admin/schema/swagger-ui/",
+        f"{API_ENDPOINT_PREFIX}/schema/swagger-ui/",
         SpectacularSwaggerView.as_view(url_name="schema"),
         name="swagger-ui",
     ),
     path(
-        "api3/admin/schema/redoc/",
+        f"{API_ENDPOINT_PREFIX}/schema/redoc/",
         SpectacularRedocView.as_view(url_name="schema"),
         name="redoc",
     ),
-]
-
-urlpatterns += [
-    path("api3/admin/health/", HealthView.as_view(), name="health"),
 ]

@@ -184,3 +184,9 @@ LOGGING = {
         "level": LOG_LEVEL,
     },
 }
+
+
+# System settings
+API_ENDPOINT_PREFIX = (
+    os.getenv("API_ENDPOINT_PREFIX", "/api/v1").rstrip("/").lstrip("/")
+)

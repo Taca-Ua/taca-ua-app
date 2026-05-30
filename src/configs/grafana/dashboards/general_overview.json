@@ -24,7 +24,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "Loki"
+        "uid": "P8E80F9AEF21F6940"
       },
       "gridPos": {
         "h": 9,
@@ -36,7 +36,7 @@
       "options": {
         "dedupStrategy": "none",
         "enableLogDetails": true,
-        "prettifyLogMessage": false,
+        "prettifyLogMessage": true,
         "showCommonLabels": false,
         "showLabels": false,
         "showTime": true,
@@ -50,7 +50,7 @@
             "uid": "Loki"
           },
           "editorMode": "code",
-          "expr": "{job=~\".+\"} | json | __error__ = \"\" | action !~ \".*_metrics\"",
+          "expr": "{application=~\".+\"} | json | __error__ = \"\" | action !~ \".*_metrics\" | logger != \"django.utils.autoreload\"",
           "queryType": "range",
           "refId": "A"
         }
