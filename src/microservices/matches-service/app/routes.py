@@ -431,14 +431,24 @@ def update_match(
         logger.warning("Match not found for update", extra={"match_id": str(match_id)})
         raise HTTPException(status_code=404, detail="Match not found")
 
-    if match.status == MatchStatus.FINISHED:
-        logger.warning(
-            "Attempted to update finished match", extra={"match_id": str(match_id)}
-        )
-        raise HTTPException(
-            status_code=409,
-            detail="Cannot update a finished match",
-        )
+    # Prevent updates to finished or cancelled matches that would revert them back to scheduled or in_progress
+    if match.status == MatchStatus.FINISHED or match.status == MatchStatus.CANCELLED:
+        if (
+            match_data.status == MatchStatus.SCHEDULED.value
+            or match_data.status == MatchStatus.IN_PROGRESS.value
+        ):
+            logger.warning(
+                "Attempted to update match to invalid status",
+                extra={
+                    "match_id": str(match_id),
+                    "current_status": match.status.value,
+                    "attempted_status": match_data.status,
+                },
+            )
+            raise HTTPException(
+                status_code=409,
+                detail=f"Cannot change status from {match.status.value} to {match_data.status}",
+            )
 
     changes_made = {}
     if match_data.location is not None:
