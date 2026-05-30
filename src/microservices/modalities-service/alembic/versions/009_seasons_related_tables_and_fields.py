@@ -6,6 +6,7 @@ Create Date: 2026-04-29 15:22:25.415990
 
 """
 
+import os
 from typing import Sequence, Union
 
 import sqlalchemy as sa
@@ -34,9 +35,10 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         schema="modalities",
     )
+    default_season_name = os.getenv("DEFAULT_SEASON_NAME", "Default Season")
     op.execute(  # Insert default season
         sa.text(
-            "INSERT INTO modalities.season (id, name, created_by) VALUES (1, 'Default Season', '00000000-0000-0000-0000-000000000000')"
+            f"INSERT INTO modalities.season (name, created_by) VALUES ('{default_season_name}', '00000000-0000-0000-0000-000000000000')"
         )
     )
 

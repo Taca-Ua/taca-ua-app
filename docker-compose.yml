@@ -198,6 +198,7 @@ services:
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
       - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua}
+      - DEFAULT_SEASON_NAME=${DEFAULT_SEASON_NAME:-Default Season}
     depends_on:
       rabbitmq:
         condition: service_healthy
