@@ -213,6 +213,7 @@ services:
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
       - DATABASE_URL=${DATABASE_URL:-postgresql://user:password@postgres:5432/taca_ua}
+      - DEFAULT_SEASON_NAME=${DEFAULT_SEASON_NAME:-Default Season}
     ports:
       - "8002:8000"
     depends_on:
