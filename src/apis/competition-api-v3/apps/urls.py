@@ -6,10 +6,12 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+from .modality_types.api.views import urlpatterns as modality_types_urlpatterns
 from .seasons.api.views import urlpatterns as seasons_urlpatterns
 
 urlpatterns = [
     path("seasons/", include(seasons_urlpatterns)),
+    path("modality-types/", include(modality_types_urlpatterns)),
 ]
 
 # Basic URL patterns for the API, including health check and documentation endpoints
