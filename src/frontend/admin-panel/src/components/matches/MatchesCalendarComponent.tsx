@@ -23,8 +23,8 @@ const MatchesCalendarComponent = ({
     useEffect(() => {
         setLoading(true);
         matchesApi.getAll({
-            date_from: new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString(),
-            date_to: new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).toISOString(),
+            date_from: new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString().split("T")[0],
+            date_to: new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).toISOString().split("T")[0],
             course_id: courseId,
             modality_id: modalityId,
         }).then((data) => {
