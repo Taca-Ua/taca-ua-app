@@ -143,6 +143,15 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "Competition API",
     "DESCRIPTION": "API for managing Taca UA competition",
     "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SWAGGER_UI_SETTINGS": {
+        "deepLinking": True,
+        "persistAuthorization": True,
+    },
+    "AUTHENTICATION_WHITELIST": [
+        "rest_framework.authentication.SessionAuthentication",
+        # "rest_framework.authentication.BasicAuthentication",
+    ],
 }
 
 
