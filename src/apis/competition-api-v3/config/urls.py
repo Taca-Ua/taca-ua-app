@@ -15,32 +15,14 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-from apps.views import HealthView
+from apps import urls as apps_urls
 from django.contrib import admin
 from django.urls import include, path
-from drf_spectacular.views import (
-    SpectacularAPIView,
-    SpectacularRedocView,
-    SpectacularSwaggerView,
-)
 
 from .settings import API_ENDPOINT_PREFIX
 
 urlpatterns = [
     path("", include("django_prometheus.urls")),
     path("admin/", admin.site.urls),
-    # Health check endpoint
-    path(f"{API_ENDPOINT_PREFIX}/health/", HealthView.as_view(), name="health"),
-    # API schema and documentation endpoints
-    path(f"{API_ENDPOINT_PREFIX}/schema/", SpectacularAPIView.as_view(), name="schema"),
-    path(
-        f"{API_ENDPOINT_PREFIX}/schema/swagger-ui/",
-        SpectacularSwaggerView.as_view(url_name="schema"),
-        name="swagger-ui",
-    ),
-    path(
-        f"{API_ENDPOINT_PREFIX}/schema/redoc/",
-        SpectacularRedocView.as_view(url_name="schema"),
-        name="redoc",
-    ),
+    path(f"{API_ENDPOINT_PREFIX}/", include(apps_urls)),
 ]

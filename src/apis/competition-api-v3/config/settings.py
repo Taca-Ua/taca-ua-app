@@ -156,6 +156,7 @@ SPECTACULAR_SETTINGS = {
 
 
 # Loki Logging settings
+
 LOKI_LOGGING_URL = os.getenv(
     "LOKI_LOGGING_URL", "http://localhost:3100/loki/api/v1/push"
 )
@@ -196,6 +197,8 @@ LOGGING = {
 
 
 # System settings
+
 API_ENDPOINT_PREFIX = (
     os.getenv("API_ENDPOINT_PREFIX", "/api/v1").rstrip("/").lstrip("/")
 )
+DEFAULT_SEASON_NAME = os.getenv("DEFAULT_SEASON_NAME", "Default Season")
