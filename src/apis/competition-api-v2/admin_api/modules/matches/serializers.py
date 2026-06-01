@@ -14,6 +14,7 @@ class ParticipantsListSerializer(serializers.Serializer):
     name = serializers.CharField()
     score = serializers.IntegerField(required=False, allow_null=True)
     position = serializers.IntegerField(required=False, allow_null=True)
+    logo_url = serializers.CharField(required=False, allow_null=True)
 
 
 class CommentListSerializer(serializers.Serializer):
@@ -49,12 +50,19 @@ class StaffSummarySerializer(serializers.Serializer):
     name = serializers.CharField()
 
 
+class TournamentSummarySerializer(serializers.Serializer):
+    """Serializer for tournament summary information"""
+
+    id = serializers.UUIDField()
+    name = serializers.CharField()
+
+
 # Response serializers
 class MatchListSerializer(serializers.Serializer):
     """Serializer for listing matches"""
 
     id = serializers.UUIDField()
-    tournament_id = serializers.UUIDField(required=False, allow_null=True)
+    tournament = TournamentSummarySerializer()
     location = serializers.CharField()
     start_time = serializers.DateTimeField()
     status = serializers.CharField()
@@ -75,15 +83,46 @@ class MatchDetailSerializer(MatchListSerializer):
     )
 
 
+class MatchPaginatedListSerializer(serializers.Serializer):
+    """Serializer for paginated match list response"""
+
+    matches = MatchListSerializer(many=True)
+    total = serializers.IntegerField()
+
+
 # Request serializers
 class MatchListFilterSerializer(serializers.Serializer):
     """Serializer for match list filters"""
 
     tournament_id = serializers.UUIDField(required=False)
+    modality_id = serializers.UUIDField(required=False)
+    course_id = serializers.UUIDField(required=False)
+    date_from = serializers.DateField(required=False)
+    date_to = serializers.DateField(required=False)
     status = serializers.ChoiceField(
         choices=["scheduled", "in_progress", "finished", "cancelled"],
         required=False,
     )
+
+    page = serializers.IntegerField(required=False)
+    limit = serializers.IntegerField(required=False)
+
+    def validate(self, data):
+        if (
+            data.get("date_from")
+            and data.get("date_to")
+            and data["date_from"] > data["date_to"]
+        ):
+            raise serializers.ValidationError("date_from must be before date_to.")
+
+        if (data.get("page") is not None and data.get("limit") is None) or (
+            data.get("page") is None and data.get("limit") is not None
+        ):
+            raise serializers.ValidationError(
+                "Both page and limit must be provided together for pagination."
+            )
+
+        return data
 
 
 class MatchCreateSerializer(serializers.Serializer):

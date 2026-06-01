@@ -4,7 +4,7 @@ API routes for Matches Service.
 
 import json
 from datetime import datetime, timezone
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -115,23 +115,31 @@ def list_tournament_rounds(
 
 @router.get("/matches/stream")
 def stream_matches(
-    tournament_id: Optional[UUID] = Query(None),
+    tournament_ids: Optional[List[UUID]] = Query(None),
     status: Optional[str] = Query(None),
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
+    page: Optional[int] = Query(None),
+    limit: Optional[int] = Query(None),
     db: Session = Depends(get_db_session),
 ):
     """Stream matches with optional filters."""
     logger.info(
         "Streaming matches",
         extra={
-            "tournament_id": str(tournament_id) if tournament_id else None,
+            "tournament_ids": (
+                [str(t_id) for t_id in tournament_ids] if tournament_ids else None
+            ),
             "status": status,
+            "page": page,
+            "limit": limit,
         },
     )
 
     query = db.query(Match)
 
-    if tournament_id:
-        query = query.filter(Match.tournament_id == tournament_id)
+    if tournament_ids is not None:
+        query = query.filter(Match.tournament_id.in_(tournament_ids))
 
     if status:
         try:
@@ -140,6 +148,25 @@ def stream_matches(
         except ValueError:
             logger.warning("Invalid status", extra={"status": status})
             raise HTTPException(status_code=400, detail=f"Invalid status: {status}")
+
+    if date_from:
+        query = query.filter(Match.start_time >= date_from)
+
+    if date_to:
+        query = query.filter(Match.start_time <= date_to)
+
+    # Apply pagination
+    if page is not None and limit is not None:
+        query = query.offset((page - 1) * limit).limit(limit)
+    elif (page is not None) != (limit is not None):
+        logger.warning(
+            "Pagination parameters incomplete",
+            extra={"page": page, "limit": limit},
+        )
+        raise HTTPException(
+            status_code=400,
+            detail="Both page and limit must be provided together for pagination.",
+        )
 
     def match_generator():
         for match in query.yield_per(100):
@@ -154,6 +181,54 @@ def stream_matches(
             yield f"data: {json_data}\n\n"
 
     return StreamingResponse(match_generator(), media_type="application/json")
+
+
+@router.get("/matches/count")
+def count_matches(
+    tournament_ids: Optional[List[UUID]] = Query(None),
+    status: Optional[str] = Query(None),
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
+    db: Session = Depends(get_db_session),
+):
+    """Count matches with optional filters."""
+    logger.info(
+        "Counting matches",
+        extra={
+            "tournament_ids": (
+                [str(t_id) for t_id in tournament_ids] if tournament_ids else None
+            ),
+            "status": status,
+        },
+    )
+
+    query = db.query(Match)
+
+    if tournament_ids is not None:
+        query = query.filter(Match.tournament_id.in_(tournament_ids))
+
+    if status:
+        try:
+            status_enum = MatchStatus(status)
+            query = query.filter(Match.status == status_enum)
+        except ValueError:
+            logger.warning("Invalid status", extra={"status": status})
+            raise HTTPException(status_code=400, detail=f"Invalid status: {status}")
+
+    if date_from:
+        query = query.filter(Match.start_time >= date_from)
+
+    if date_to:
+        query = query.filter(Match.start_time <= date_to)
+
+    total = query.count()
+
+    logger.info(
+        "Matches counted successfully",
+        extra={"total": total},
+    )
+
+    return {"count": total}
 
 
 @router.post("/matches", response_model=schemas.MatchResponse, status_code=201)
@@ -356,14 +431,24 @@ def update_match(
         logger.warning("Match not found for update", extra={"match_id": str(match_id)})
         raise HTTPException(status_code=404, detail="Match not found")
 
-    if match.status == MatchStatus.FINISHED:
-        logger.warning(
-            "Attempted to update finished match", extra={"match_id": str(match_id)}
-        )
-        raise HTTPException(
-            status_code=409,
-            detail="Cannot update a finished match",
-        )
+    # Prevent updates to finished or cancelled matches that would revert them back to scheduled or in_progress
+    if match.status == MatchStatus.FINISHED or match.status == MatchStatus.CANCELLED:
+        if (
+            match_data.status == MatchStatus.SCHEDULED.value
+            or match_data.status == MatchStatus.IN_PROGRESS.value
+        ):
+            logger.warning(
+                "Attempted to update match to invalid status",
+                extra={
+                    "match_id": str(match_id),
+                    "current_status": match.status.value,
+                    "attempted_status": match_data.status,
+                },
+            )
+            raise HTTPException(
+                status_code=409,
+                detail=f"Cannot change status from {match.status.value} to {match_data.status}",
+            )
 
     changes_made = {}
     if match_data.location is not None:

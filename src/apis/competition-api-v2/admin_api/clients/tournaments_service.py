@@ -114,6 +114,7 @@ class TournamentsService(BaseService):
         status_filter: Optional[str] = None,
         modality_id: Optional[UUID] = None,
         season_id: Optional[int] = None,
+        course_id: Optional[UUID] = None,
     ) -> List[TournamentDTO]:
         """
         List all tournaments with optional filters
@@ -122,6 +123,7 @@ class TournamentsService(BaseService):
             status_filter: Filter by status (draft, active, finished)
             modality_id: Filter by modality ID
             season_id: Filter by season ID
+            course_id: Filter by course ID
 
         Returns:
             List of tournament dictionaries
@@ -133,6 +135,8 @@ class TournamentsService(BaseService):
             params["modality_id"] = str(modality_id)
         if season_id:
             params["season_id"] = season_id
+        if course_id:
+            params["course_id"] = str(course_id)
 
         tournaments_data = self.get("/tournaments", params=params)
         return [TournamentDTO(**tournament) for tournament in tournaments_data]

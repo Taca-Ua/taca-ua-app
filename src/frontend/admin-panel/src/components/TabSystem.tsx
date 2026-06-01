@@ -12,6 +12,7 @@ const TabSystem = ( {
 } : {
     elements: TabSystemElement[];
     onTabChange?: (tabId: string) => void;
+    saveState?: boolean;
 } ) => {
 
     const [activeTab, setActiveTab] = useState<string>(elements[0]?.id ?? "");

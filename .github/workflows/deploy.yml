@@ -16,7 +16,7 @@ jobs:
   deploy:
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: self-hosted
-    
+
     steps:
       - name: Convert owner to lowercase
         run: echo "OWNER_LOWER=$(echo ${{ env.OWNER }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
@@ -66,6 +66,9 @@ jobs:
           # Django Configuration
           DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
 
+          # System Configuration
+          DEFAULT_SEASON_NAME=Época 2026/2027
+
           EOF
           echo "✅ .env file created successfully"
 
@@ -89,7 +92,7 @@ jobs:
 
       - name: Update running containers (zero-downtime deployment)
         run: |
-          cd ${{ env.DEPLOY_PATH }}          
+          cd ${{ env.DEPLOY_PATH }}
           docker compose up -d
           echo "✅ Containers updated with zero downtime"
 

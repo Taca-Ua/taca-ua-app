@@ -166,13 +166,15 @@ class MatchesService(BaseService):
 
     def list_matches_stream(
         self,
-        tournament_id: Optional[UUID] = None,
+        tournament_ids: Optional[List[UUID]] = None,
         team_id: Optional[UUID] = None,
         athlete_id: Optional[UUID] = None,
         date: Optional[str] = None,
         date_from: Optional[str] = None,
         date_to: Optional[str] = None,
         status: Optional[str] = None,
+        page: Optional[int] = None,
+        limit: Optional[int] = None,
     ) -> Generator[MatchDTO, None, None]:
         """
         Stream matches with optional filters.
@@ -190,31 +192,47 @@ class MatchesService(BaseService):
             MatchDTO objects one by one as they are received from the stream
         """
         params = {}
-        if tournament_id is not None:
-            params["tournament_id"] = str(tournament_id)
+        if tournament_ids is not None:
+            params["tournament_ids"] = [str(t_id) for t_id in tournament_ids]
+        if date_from is not None:
+            params["date_from"] = date_from
+        if date_to is not None:
+            params["date_to"] = date_to
+        if status is not None:
+            params["status"] = status
+        if page is not None:
+            params["page"] = page
+        if limit is not None:
+            params["limit"] = limit
 
         for match_data in self.stream_sse("/matches/stream", params=params):
             yield MatchDTO(**match_data)
 
     def list_matches_lazy(
         self,
-        tournament_id: Optional[UUID] = None,
+        tournament_ids: Optional[List[UUID]] = None,
         team_id: Optional[UUID] = None,
         athlete_id: Optional[UUID] = None,
         date: Optional[str] = None,
         date_from: Optional[str] = None,
         date_to: Optional[str] = None,
         status: Optional[str] = None,
+        page: Optional[int] = None,
+        limit: Optional[int] = None,
     ) -> List[MatchDTO]:
         matches = []
         for match in self.list_matches_stream(
-            tournament_id=tournament_id,
+            tournament_ids=(
+                [t_id for t_id in tournament_ids] if tournament_ids else None
+            ),
             team_id=team_id,
             athlete_id=athlete_id,
             date=date,
             date_from=date_from,
             date_to=date_to,
             status=status,
+            page=page,
+            limit=limit,
         ):
             matches.append(match)
 
@@ -620,6 +638,38 @@ class MatchesService(BaseService):
             f"/matches/{match_id}/participants/{participant_id}/staff", data=data
         )
         return MatchDTO(**match_data)
+
+    def count_matches(
+        self,
+        tournament_ids: Optional[List[UUID]] = None,
+        date_from: Optional[str] = None,
+        date_to: Optional[str] = None,
+        status: Optional[str] = None,
+    ) -> int:
+        """
+        Count matches with optional filters.
+
+        Args:
+            tournament_ids: List of tournament UUIDs to filter by (optional)
+            date_from: Filter by start date (ISO format, optional)
+            date_to: Filter by end date (ISO format, optional)
+            status: Filter by status (scheduled, in_progress, finished, cancelled)
+
+        Returns:
+            Total count of matches matching the filters
+        """
+        params = {}
+        if tournament_ids is not None:
+            params["tournament_ids"] = [str(t_id) for t_id in tournament_ids]
+        if date_from is not None:
+            params["date_from"] = date_from
+        if date_to is not None:
+            params["date_to"] = date_to
+        if status is not None:
+            params["status"] = status
+
+        count_data = self.get("/matches/count", params=params)
+        return count_data.get("count", 0)
 
 
 # Singleton instance

@@ -44,21 +44,19 @@ const CursoDetail = () => {
   return (
     <>
       <SeasonSelector relevantSeasonIds={course.relevant_season_ids || []} />
-      <div className="flex-1 p-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-8 flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-gray-800">
-              Detalhes do Curso
-            </h1>
-            <div>
-              <Button onClick={handleBack} type="secondary" padding="px-6 py-3">
-                Voltar
-              </Button>
-            </div>
+      <div className="flex-1 p-8 max-w-5xl mx-auto">
+        <div className="mb-8 flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-gray-800">
+            Detalhes do Curso
+          </h1>
+          <div>
+            <Button onClick={handleBack} type="secondary" padding="px-6 py-3">
+              Voltar
+            </Button>
           </div>
-
-          <CourseInfoComponent courseState={[course, setCourse]} />
         </div>
+
+        <CourseInfoComponent courseState={[course, setCourse]} />
       </div>
     </>
   );

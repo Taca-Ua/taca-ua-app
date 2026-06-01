@@ -15,7 +15,11 @@ export interface MatchLineup {
 // Response types
 export interface MatchListItem {
   id: string;
-  tournament_id: string;
+  tournament: {
+    id: string;
+    name: string;
+  };
+  modality: string;
   location: string;
   start_time: string;
   status: string;
@@ -26,6 +30,7 @@ export interface MatchListItem {
     name: string;
     score?: number;
     position?: number;
+    logo_url?: string;
   }[];
 };
 
@@ -40,10 +45,22 @@ export interface MatchDetail extends MatchListItem {
   staff_assignments: Record<string, { id: string; name: string }[]>; // participant_id -> list of staff members
 }
 
+export interface MatchPaginatedResponse {
+  matches: MatchListItem[];
+  total: number;
+}
+
 // Request types
 export interface MatchListFilter {
   tournament_id?: string;
   status?: string;
+  modality_id?: string;
+  course_id?: string;
+  date_from?: string; // ISO date string
+  date_to?: string;   // ISO date string
+
+  page?: number;
+  limit?: number;
 }
 
 export interface MatchCreate {
@@ -89,8 +106,8 @@ export interface LineupUpdate {
 }
 
 export const matchesApi = {
-  async getAll(params?: MatchListFilter): Promise<MatchListItem[]> {
-    return apiClient.get<MatchListItem[]>('/matches/', params );
+  async getAll(params?: MatchListFilter): Promise<MatchPaginatedResponse> {
+    return apiClient.get<MatchPaginatedResponse>('/matches/', params );
   },
 
   async create(data: MatchCreate): Promise<MatchListItem> {

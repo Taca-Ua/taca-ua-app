@@ -84,7 +84,7 @@ const TorneioDetails = () => {
           </div>
 
           {/* Format Details */}
-          { tournament.format !== 'free' && (
+          { (isAdminGeneral && tournament.format !== 'free') && (
             <div className="mt-6">
               <TornLeagueDisplayComponent
                 tournamentState={[tournament, setTournament]}

@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import Button from "../components/utils/Button";
 import { useModal } from "../contexts/ModalContext";
+import MatchesCalendarComponent from "../components/matches/MatchesCalendarComponent";
 
 const Example = () => {
   const { popModal, pushModal } = useModal();
@@ -27,8 +28,9 @@ const Example = () => {
 
 const TestPage = () => {
   return (
-    // <></>
-    <Example />
+    <div className="w-2/3">
+      <MatchesCalendarComponent />
+    </div>
   );
 };
 
