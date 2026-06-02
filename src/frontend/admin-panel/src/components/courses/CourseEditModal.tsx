@@ -7,6 +7,7 @@ import Button from "../utils/Button";
 import ChoseOneInput from "../utils/inputs/ChoseOneInput";
 import { useModal } from "../../contexts/ModalContext";
 import { useAuth } from "../../hooks/useAuth";
+import { useSeason } from "../../contexts/SeasonContext";
 
 const CourseEditModal = ({
   courseState,
@@ -19,23 +20,24 @@ const CourseEditModal = ({
   const { notify } = useNotification();
   const { popModal } = useModal();
   const { isAdminGeneral } = useAuth();
+  const { loadedSeason } = useSeason();
 
   const [courseData, setCourseData] = courseState;
   const [editedName, setEditedName] = useState(courseData.name);
   const [editedAbbreviation, setEditedAbbreviation] = useState(courseData.abbreviation);
-  const [editedNucleoId, setEditedNucleoId] = useState(courseData.nucleo.id);
+  const [editedNucleoId, setEditedNucleoId] = useState(courseData.nucleus.id);
 
   useEffect(() => {
     setEditedName(courseData.name);
     setEditedAbbreviation(courseData.abbreviation);
-    setEditedNucleoId(courseData.nucleo.id);
+    setEditedNucleoId(courseData.nucleus.id);
   }, [courseData]);
 
   const onClose = () => {
 
     setEditedName(courseData.name);
     setEditedAbbreviation(courseData.abbreviation);
-    setEditedNucleoId(courseData.nucleo.id);
+    setEditedNucleoId(courseData.nucleus.id);
     popModal();
   }
 
@@ -57,7 +59,7 @@ const CourseEditModal = ({
       name: editedName,
       abbreviation: editedAbbreviation,
       nucleo_id: editedNucleoId,
-    }).then(updatedCourse => {
+    }, loadedSeason?.id).then(updatedCourse => {
       setCourseData(updatedCourse);
       if (onSave) onSave(updatedCourse);
       popModal();
@@ -120,7 +122,7 @@ const CourseEditModal = ({
             <ChoseOneInput
               allElementsLoader={() => nucleosApi.getAll().then(nucleos => nucleos.map(n => ({ id: n.id, title: n.abbreviation, subTitle: n.name })))}
               onSelect={(elem) => setEditedNucleoId(elem?.id || "")}
-              initialElement={{ id: courseData.nucleo.id, title: courseData.nucleo.abbreviation }}
+              initialElement={{ id: courseData.nucleus.id, title: courseData.nucleus.abbreviation }}
             />
           </div>
         </div>

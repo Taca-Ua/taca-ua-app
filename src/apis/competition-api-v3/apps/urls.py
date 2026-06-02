@@ -6,12 +6,14 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+from .courses.api.views import urlpatterns as courses_urlpatterns
 from .modalities.api.views import urlpatterns as modalities_urlpatterns
 from .modality_types.api.views import urlpatterns as modality_types_urlpatterns
 from .nucleus.api.views import urlpatterns as nucleus_urlpatterns
 from .seasons.api.views import urlpatterns as seasons_urlpatterns
 
 urlpatterns = [
+    path("courses/", include(courses_urlpatterns)),
     path("modalities/", include(modalities_urlpatterns)),
     path("nucleos/", include(nucleus_urlpatterns)),
     path("modality-types/", include(modality_types_urlpatterns)),
