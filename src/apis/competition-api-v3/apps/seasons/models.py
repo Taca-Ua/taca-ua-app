@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 from django.db import models
 
 if TYPE_CHECKING:
+    from apps.courses.models import Course
     from apps.modalities.models import SeasonModality
     from apps.modality_types.models import ModalityType
     from django.db.models.manager import RelatedManager
@@ -23,6 +24,7 @@ class Season(models.Model):
     if TYPE_CHECKING:
         modality_types: RelatedManager[ModalityType]
         season_modalities: RelatedManager[SeasonModality]
+        courses: RelatedManager[Course]
 
     def __str__(self):
         return self.name
