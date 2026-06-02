@@ -12,6 +12,7 @@ from .modalities.api.views import urlpatterns as modalities_urlpatterns
 from .modality_types.api.views import urlpatterns as modality_types_urlpatterns
 from .nucleus.api.views import urlpatterns as nucleus_urlpatterns
 from .seasons.api.views import urlpatterns as seasons_urlpatterns
+from .staff.api.views import urlpatterns as staff_urlpatterns
 
 urlpatterns = [
     path("athletes/", include(athletes_urlpatterns)),
@@ -20,6 +21,7 @@ urlpatterns = [
     path("nucleos/", include(nucleus_urlpatterns)),
     path("modality-types/", include(modality_types_urlpatterns)),
     path("seasons/", include(seasons_urlpatterns)),
+    path("staff/", include(staff_urlpatterns)),
 ]
 
 # Basic URL patterns for the API, including health check and documentation endpoints
