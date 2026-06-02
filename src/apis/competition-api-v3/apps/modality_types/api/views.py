@@ -7,10 +7,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from shared.auth.utils import get_user
 
+from .. import queries as modality_type_queries
 from .. import service as modality_type_service
+from .filters import ModalityTypeFilterSerializer
+from .renders import render_modality_type, render_modality_types
 from .serializers import (
     ModalityTypeCreateSerializer,
     ModalityTypeDetailSerializer,
+    ModalityTypeListMinimalSerializer,
     ModalityTypeListSerializer,
 )
 
@@ -20,6 +24,7 @@ logger = logging.getLogger(__name__)
 @extend_schema_view(
     get=extend_schema(
         responses=ModalityTypeListSerializer(many=True),
+        parameters=[ModalityTypeFilterSerializer],
         summary="List modality types",
         description="Retrieve a list of all modality types.",
         tags=["Modality Types"],
@@ -35,9 +40,16 @@ logger = logging.getLogger(__name__)
 class ModalityTypeListCreateView(APIView):
 
     def get(self, request):
-        modality_types = modality_type_service.list_modality_types()
+        serializer = ModalityTypeFilterSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
 
-        serializer = ModalityTypeListSerializer(modality_types, many=True)
+        modality_types = modality_type_queries.list_modality_types(
+            season_id=serializer.validated_data.get("season_id")
+        )
+
+        serializer = ModalityTypeListSerializer(
+            render_modality_types(modality_types), many=True
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
@@ -99,7 +111,9 @@ class ModalityTypeDetailView(APIView):
                 {"error": "Modality type not found"}, status=status.HTTP_404_NOT_FOUND
             )
 
-        serializer = ModalityTypeDetailSerializer(modality_type)
+        serializer = ModalityTypeDetailSerializer(
+            render_modality_type(modality_type).get()
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, modality_type_id):
@@ -141,8 +155,33 @@ class ModalityTypeDetailView(APIView):
         )
 
 
+@extend_schema_view(
+    get=extend_schema(
+        responses=ModalityTypeListMinimalSerializer(many=True),
+        parameters=[ModalityTypeFilterSerializer],
+        summary="List modality types (minimal)",
+        description="Retrieve a list of all modality types with minimal details.",
+        tags=["Modality Types"],
+    ),
+)
+class ModalityTypeListView(APIView):
+
+    def get(self, request):
+        serializer = ModalityTypeFilterSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+
+        modality_types = modality_type_queries.list_modality_types(
+            season_id=serializer.validated_data.get("season_id"),
+            mode=serializer.validated_data.get("mode"),
+        )
+
+        serializer = ModalityTypeListMinimalSerializer(modality_types, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 urlpatterns = [
     path("", ModalityTypeListCreateView.as_view(), name="modality-type-list-create"),
+    path("minimal/", ModalityTypeListView.as_view(), name="modality-type-list-minimal"),
     path(
         "<uuid:modality_type_id>/",
         ModalityTypeDetailView.as_view(),

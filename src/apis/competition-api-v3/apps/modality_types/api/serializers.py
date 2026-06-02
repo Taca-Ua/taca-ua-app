@@ -1,9 +1,4 @@
-from typing import TYPE_CHECKING
-
 from rest_framework import serializers
-
-if TYPE_CHECKING:
-    from apps.modality_types.models import ModalityType
 
 
 # Helper serializers
@@ -15,9 +10,12 @@ class ModalityTypeEscalaoSerializer(serializers.Serializer):
 
 
 # Response serializers
-class ModalityTypeListSerializer(serializers.Serializer):
+class ModalityTypeListMinimalSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     name = serializers.CharField(max_length=255)
+
+
+class ModalityTypeListSerializer(ModalityTypeListMinimalSerializer):
     description = serializers.CharField(allow_blank=True, allow_null=True)
     mode = serializers.CharField(max_length=20)
     tournament_competitor_type = serializers.CharField(max_length=20)
@@ -26,9 +24,9 @@ class ModalityTypeListSerializer(serializers.Serializer):
 class ModalityTypeDetailSerializer(ModalityTypeListSerializer):
     escaloes = ModalityTypeEscalaoSerializer(many=True)
 
-    def get_escaloes(self, obj: "ModalityType"):
-        escaloes = obj.escaloes.all()
-        return ModalityTypeEscalaoSerializer(escaloes, many=True).data
+    # def get_escaloes(self, obj: "ModalityType"):
+    #     escaloes = obj.escaloes.all()
+    #     return ModalityTypeEscalaoSerializer(escaloes, many=True).data
 
 
 # Request serializers

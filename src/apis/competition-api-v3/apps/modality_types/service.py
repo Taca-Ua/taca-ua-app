@@ -5,12 +5,7 @@ from apps.seasons.service import get_current_season
 from django.db import transaction
 
 from .models import ModalityType
-
-
-def list_modality_types():
-    """Retrieve a list of all modality types."""
-
-    return ModalityType.objects.order_by("name").all()
+from .queries import get_modality_type
 
 
 @transaction.atomic
@@ -66,18 +61,7 @@ def create_modality_type(
     return modality_type
 
 
-def get_modality_type(modality_type_id: UUID) -> Optional[ModalityType]:
-    """Retrieve a modality type by its ID.
-
-    Args:
-        modality_type_id (UUID): The ID of the modality type.
-
-    Returns:
-        Optional[ModalityType]: The modality type if found, otherwise None.
-    """
-    return ModalityType.objects.filter(id=modality_type_id).first()
-
-
+@transaction.atomic
 def update_modality_type(
     modality_type_id: UUID,
     name: Optional[str] = None,
