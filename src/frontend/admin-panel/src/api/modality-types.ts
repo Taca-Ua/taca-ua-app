@@ -2,7 +2,7 @@ import { apiClient } from './client';
 
 // Types
 export interface EscalaoRow {
-  escalao: string;
+  name: string;
   minParticipants: number | null;
   maxParticipants: number | null;
   points: number[];

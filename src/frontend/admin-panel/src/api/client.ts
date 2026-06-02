@@ -1,6 +1,6 @@
 import keycloak from '../lib/keycloak';
 
-const API_BASE_URL = '/api2/admin';
+const API_BASE_URL = '/api/admin';
 
 interface ApiError {
   error: string;

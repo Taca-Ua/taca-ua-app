@@ -35,11 +35,9 @@ const ModalityInfoComponent = ( {
 
   const handleAddToSeason = (modalityTypeId: string | undefined) => {
     if (!modalityTypeId) return; // Should not happen, but just in case
+    if (!loadedSeason) return; // Should not happen, but just in case
 
-    modalitiesApi.update(modality.id, {
-      season_id: loadedSeason?.id,
-      modality_type_id: modalityTypeId,
-    }).then((updatedModality) => {
+    modalitiesApi.addToSeason(modality.id, loadedSeason.id, modalityTypeId).then((updatedModality) => {
       setModality(updatedModality);
       notify('Modalidade adicionada à temporada com sucesso.', 'success');
     }).catch((error) => {

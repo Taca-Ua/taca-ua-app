@@ -3,7 +3,7 @@ import { apiClient } from './client';
 export interface ModalityListItem {
   id: string;
   name: string;
-  belongs_to_season: boolean;
+  belongs_to_season?: boolean;
   modality_type?: {
     id: string;
     name: string;
@@ -56,12 +56,12 @@ export const modalitiesApi = {
     return apiClient.put<ModalityDetail>(`/modalities/${modalityId}/`, data);
   },
 
-  async removeFromSeason(modalityId: string, seasonId: number): Promise<ModalityDetail> {
-    return apiClient.put<ModalityDetail>(`/modalities/${modalityId}/remove-from-season/`, { season_id: seasonId });
+  async addToSeason(modalityId: string, seasonId: number, modalityTypeId: string): Promise<ModalityDetail> {
+    return apiClient.post<ModalityDetail>(`/modalities/${modalityId}/season/${seasonId}/`, { modality_type_id: modalityTypeId });
   },
 
-  async delete(modalityId: string): Promise<void> {
-    return apiClient.delete(`/modalities/${modalityId}/`);
+  async removeFromSeason(modalityId: string, seasonId: number): Promise<ModalityDetail> {
+    return apiClient.put<ModalityDetail>(`/modalities/${modalityId}/season/${seasonId}/`, { });
   },
 
   async updateRegulation(modalityId: string, data: ModalityUpdateRegulation): Promise<ModalityDetail> {
