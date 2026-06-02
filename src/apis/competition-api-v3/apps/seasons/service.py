@@ -26,9 +26,5 @@ def create_season(name: str, admin_id: UUID) -> Season:
     return season
 
 
-def list_seasons():
-    return Season.objects.order_by("-created_at").all()
-
-
 def get_current_season() -> Season | None:
     return Season.objects.filter(is_current=True).first()

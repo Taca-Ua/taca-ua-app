@@ -36,5 +36,7 @@ def get_modality(modality_id) -> QuerySet[Modality]:
     """
 
     queryset = Modality.objects.filter(id=modality_id)
+    if not queryset.exists():
+        raise Modality.DoesNotExist(f"Modality with id {modality_id} does not exist.")
 
     return queryset

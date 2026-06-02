@@ -15,6 +15,6 @@ def get_nucleus(nucleus_id: str) -> QuerySet[Nucleus]:
 
     # check if the queryset is empty and raise an error if it is
     if not queryset.exists():
-        raise ValueError(f"Nucleus with ID {nucleus_id} does not exist.")
+        raise Nucleus.DoesNotExist(f"Nucleus with id {nucleus_id} does not exist.")
 
     return queryset

@@ -6,8 +6,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .. import queries as modality_queries
 from .. import service as modality_service
+from ..queries import get_modality, list_modalities
 from .filters import ModalityQuerySerializer
 from .renders import render_modalities, render_modality
 from .serializers import (
@@ -44,7 +44,7 @@ class ModalityListCreateView(APIView):
         serializer.is_valid(raise_exception=True)
 
         season_id = serializer.validated_data.get("season_id")
-        modalities = modality_queries.list_modalities()
+        modalities = list_modalities()
 
         serializer = ModalityListSerializer(
             render_modalities(modalities, season_id=season_id), many=True
@@ -99,7 +99,7 @@ class ModalityDetailView(APIView):
 
         season_id = serializer.validated_data.get("season_id")
 
-        modality = modality_queries.get_modality(modality_id=modality_id)
+        modality = get_modality(modality_id=modality_id)
 
         serializer = ModalityDetailSerializer(
             render_modality(modality, season_id=season_id).get()

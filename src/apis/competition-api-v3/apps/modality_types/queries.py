@@ -44,4 +44,9 @@ def get_modality_type(modality_type_id: UUID) -> QuerySet[ModalityType]:
     Returns:
         QuerySet[ModalityType]: A queryset containing the modality type if found, otherwise an empty queryset.
     """
-    return ModalityType.objects.filter(id=modality_type_id)
+    modality_type = ModalityType.objects.filter(id=modality_type_id)
+
+    if not modality_type.exists():
+        raise ValueError(f"Modality type with ID {modality_type_id} does not exist.")
+
+    return modality_type

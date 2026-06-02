@@ -8,7 +8,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from shared.auth.utils import get_user
 
-from ..service import create_season, get_current_season, list_seasons
+from ..queries import list_seasons
+from ..service import create_season, get_current_season
 from .serializers import SeasonCreateSerializer, SeasonListSerializer
 
 logger = logging.getLogger(__name__)

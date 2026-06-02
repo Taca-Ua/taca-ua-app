@@ -5,7 +5,6 @@ from apps.seasons.service import get_current_season
 from django.db import transaction
 
 from .models import ModalityType
-from .queries import get_modality_type
 
 
 @transaction.atomic
@@ -81,11 +80,9 @@ def update_modality_type(
     Returns:
         Optional[ModalityType]: The updated modality type if found, otherwise None.
     """
-    assert isinstance(modality_type_id, UUID), "Modality type ID must be a valid UUID"
-
-    modality_type = get_modality_type(modality_type_id)
+    modality_type = ModalityType.objects.get(id=modality_type_id)
     if not modality_type:
-        return None
+        raise ValueError(f"Modality type with ID {modality_type_id} does not exist.")
 
     if name is not None:
         modality_type.name = name
@@ -110,9 +107,8 @@ def delete_modality_type(modality_type_id: UUID) -> bool:
     Returns:
         bool: True if the modality type was deleted, False if it was not found.
     """
-    assert isinstance(modality_type_id, UUID), "Modality type ID must be a valid UUID"
 
-    modality_type = get_modality_type(modality_type_id)
+    modality_type = ModalityType.objects.get(id=modality_type_id)
     if not modality_type:
         return False
 

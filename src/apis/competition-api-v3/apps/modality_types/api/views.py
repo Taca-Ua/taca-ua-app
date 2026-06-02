@@ -7,8 +7,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from shared.auth.utils import get_user
 
-from .. import queries as modality_type_queries
 from .. import service as modality_type_service
+from ..queries import get_modality_type, list_modality_types
 from .filters import ModalityTypeFilterSerializer
 from .renders import render_modality_type, render_modality_types
 from .serializers import (
@@ -43,7 +43,7 @@ class ModalityTypeListCreateView(APIView):
         serializer = ModalityTypeFilterSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
-        modality_types = modality_type_queries.list_modality_types(
+        modality_types = list_modality_types(
             season_id=serializer.validated_data.get("season_id")
         )
 
@@ -105,11 +105,7 @@ class ModalityTypeListCreateView(APIView):
 class ModalityTypeDetailView(APIView):
     def get(self, request, modality_type_id):
 
-        modality_type = modality_type_service.get_modality_type(modality_type_id)
-        if modality_type is None:
-            return Response(
-                {"error": "Modality type not found"}, status=status.HTTP_404_NOT_FOUND
-            )
+        modality_type = get_modality_type(modality_type_id)
 
         serializer = ModalityTypeDetailSerializer(
             render_modality_type(modality_type).get()
@@ -129,12 +125,6 @@ class ModalityTypeDetailView(APIView):
                 "tournament_competitor_type"
             ),
         )
-
-        if modality_type is None:
-            return Response(
-                {"error": "Failed to update modality type"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
 
         logger.info(f"Updated modality type {modality_type_id}")
         serializer = ModalityTypeDetailSerializer(modality_type)
@@ -170,7 +160,7 @@ class ModalityTypeListView(APIView):
         serializer = ModalityTypeFilterSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
-        modality_types = modality_type_queries.list_modality_types(
+        modality_types = list_modality_types(
             season_id=serializer.validated_data.get("season_id"),
             mode=serializer.validated_data.get("mode"),
         )
