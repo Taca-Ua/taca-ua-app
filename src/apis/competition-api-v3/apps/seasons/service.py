@@ -21,7 +21,7 @@ def create_season(name: str, admin_id: UUID) -> Season:
         current_season.finished_by = str(admin_id)
         current_season.save()
 
-    season = Season.objects.create(name=name)
+    season = Season.objects.create(name=name, is_current=True)
 
     return season
 
