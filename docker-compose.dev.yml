@@ -138,12 +138,15 @@ services:
       - API_ENDPOINT_PREFIX=${API_ENDPOINT_PREFIX:-api/admin}
       - DEFAULT_SEASON_NAME=${DEFAULT_SEASON_NAME:-Default Season}
 
-
       - POSTGRES_DB=${POSTGRES_DB:-taca_ua}
       - POSTGRES_USER=${POSTGRES_USER:-user}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
+
+      - MINIO_SERVICE_URL=minio:9000
+      - MINIO_USER=${MINIO_ROOT_USER}
+      - MINIO_PASSWORD=${MINIO_ROOT_PASSWORD}
     ports:
       - "8000:8000"
     depends_on:
@@ -153,6 +156,8 @@ services:
         condition: service_started
       postgres:
         condition: service_healthy
+      minio:
+        condition: service_started
 
   public-api:
     build:

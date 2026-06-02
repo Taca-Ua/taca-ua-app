@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.postgres",
     "rest_framework",
     "drf_spectacular",
     "apps",
@@ -194,6 +195,13 @@ LOGGING = {
         "level": LOG_LEVEL,
     },
 }
+
+
+# Minio settings
+MINIO_SERVICE_URL = os.getenv("MINIO_SERVICE_URL", "localhost:9000")
+MINIO_USER = os.getenv("MINIO_USER", "minioadmin")
+MINIO_PASSWORD = os.getenv("MINIO_PASSWORD", "minioadmin")
+MINIO_USE_SSL = os.getenv("MINIO_USE_SSL", "false").lower() == "true"
 
 
 # System settings
