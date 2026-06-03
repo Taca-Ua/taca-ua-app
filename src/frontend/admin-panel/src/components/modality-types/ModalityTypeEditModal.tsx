@@ -28,11 +28,11 @@ const ModalityTypeEditModal = ( {
     const [formatDescription, setFormatDescription] = useState(modalityType.description || "");
     const [isPlayoff, setIsPlayoff] = useState(modalityType.is_playoff);
     const [tournamentCompetitorType, setTournamentCompetitorType] = useState(modalityType.tournament_competitor_type);
-    const [escaloes, setEscaloes] = useState<{ escalao: string; minParticipants: number | null; maxParticipants: number | null; points: string }[]>(
+    const [escaloes, setEscaloes] = useState<{ name: string; min_participants: number | null; max_participants: number | null; points: string }[]>(
         modalityType.escaloes.map(e => ({
-            escalao: e.escalao,
-            minParticipants: e.minParticipants,
-            maxParticipants: e.maxParticipants,
+            name: e.name,
+            min_participants: e.min_participants,
+            max_participants: e.max_participants,
             points: e.points.join(" "),
         }))
     );
@@ -44,9 +44,9 @@ const ModalityTypeEditModal = ( {
         setIsPlayoff(modalityType.is_playoff);
         setTournamentCompetitorType(modalityType.tournament_competitor_type);
         setEscaloes(modalityType.escaloes.map(e => ({
-            escalao: e.escalao,
-            minParticipants: e.minParticipants,
-            maxParticipants: e.maxParticipants,
+            name: e.name,
+            min_participants: e.min_participants,
+            max_participants: e.max_participants,
             points: e.points.join(" "),
         })));
     };
@@ -64,7 +64,7 @@ const ModalityTypeEditModal = ( {
 
         // Validate escaloes
         for (const esc of escaloes) {
-          if (!esc.escalao.trim()) {
+          if (!esc.name.trim()) {
             notify('Todos os escalões devem ter um nome.', 'error');
             return;
           }
@@ -112,7 +112,7 @@ const ModalityTypeEditModal = ( {
         const nextLetter = letters[escaloes.length] || '';
         setEscaloes([
             ...escaloes,
-            { escalao: nextLetter, minParticipants: null, maxParticipants: null, points: '' }
+            { name: nextLetter, min_participants: null, max_participants: null, points: '' }
         ]);
     };
 
@@ -230,7 +230,7 @@ const ModalityTypeEditModal = ( {
                   >
                     <div className="flex justify-between items-start mb-3">
                       <h3 className="font-medium text-lg">
-                        Escalão {esc.escalao}
+                        Escalão {esc.name}
                       </h3>
                       {escaloes.length > 1 && (
                         <button
@@ -267,11 +267,11 @@ const ModalityTypeEditModal = ( {
                           type="text"
                           className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
                           placeholder="A, B, C..."
-                          value={esc.escalao}
+                          value={esc.name}
                           onChange={(e) =>
                             handleEscalaoChange(
                               index,
-                              "escalao",
+                              "name",
                               e.target.value,
                             )
                           }
@@ -290,11 +290,11 @@ const ModalityTypeEditModal = ( {
                           type="number"
                           className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
                           placeholder="Ex: 32"
-                          value={esc.minParticipants ?? ""}
+                          value={esc.min_participants ?? ""}
                           onChange={(e) =>
                             handleEscalaoChange(
                               index,
-                              "minParticipants",
+                              "min_participants",
                               e.target.value ? parseInt(e.target.value) : null,
                             )
                           }
@@ -313,11 +313,11 @@ const ModalityTypeEditModal = ( {
                           type="number"
                           className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
                           placeholder="Ex: 40"
-                          value={esc.maxParticipants ?? ""}
+                          value={esc.max_participants ?? ""}
                           onChange={(e) =>
                             handleEscalaoChange(
                               index,
-                              "maxParticipants",
+                              "max_participants",
                               e.target.value ? parseInt(e.target.value) : null,
                             )
                           }

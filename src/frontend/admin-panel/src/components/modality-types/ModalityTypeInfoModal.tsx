@@ -158,12 +158,12 @@ const ModalityTypeInfoModal = ( {
                   {modalityType.escaloes.map((esc, idx) => (
                     <tr key={idx} className="hover:bg-gray-50">
                       <td className="border border-gray-300 px-4 py-2 font-medium">
-                        {esc.escalao}
+                        {esc.name}
                       </td>
                       <td className="border border-gray-300 px-4 py-2">
                         {getParticipantsText(
-                          esc.minParticipants,
-                          esc.maxParticipants,
+                          esc.min_participants,
+                          esc.max_participants,
                         )}
                       </td>
                       {[...Array(12)].map((_, i) => (

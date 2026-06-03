@@ -24,7 +24,4 @@ def render_nucleus_detail(nucleo: QuerySet[Nucleus] | Nucleus) -> QuerySet[Nucle
     # current implementation is simple as there are no complex relationships to render
     # but this function can be expanded in the future if needed
 
-    # temp fix
-    nucleo = nucleo.annotate(courses=models.Value([], output_field=models.JSONField()))
-
     return nucleo

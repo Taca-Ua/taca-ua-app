@@ -65,11 +65,11 @@ class ModalityListCreateView(APIView):
 
         logger.info(
             "Created modality",
-            extra={"modality_id": modality.id, "name": modality.name},
+            extra={"modality_id": modality.id, "modality_name": modality.name},
         )
         serializer = ModalityListSerializer(
             render_modalities(
-                [modality], season_id=params_serializer.validated_data.get("season_id")
+                modality, season_id=params_serializer.validated_data.get("season_id")
             ).first(),
         )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -126,7 +126,7 @@ class ModalityDetailView(APIView):
         # Render the updated modality and return the response
         logger.info(
             "Updated modality",
-            extra={"modality_id": modality.id, "name": modality.name},
+            extra={"modality_id": modality.id, "modality_name": modality.name},
         )
         serializer = ModalityDetailSerializer(
             render_modalities(modality, season_id=season_id)

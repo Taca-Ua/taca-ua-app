@@ -1,4 +1,5 @@
 from django.contrib.postgres.aggregates import ArrayAgg
+from django.db import models
 from django.db.models import Exists, OuterRef, QuerySet
 
 from ..models import Course
@@ -21,6 +22,10 @@ def render_courses(
                 )
             )
         )
+
+    courses = courses.annotate(
+        logo_url=models.F("nucleus__logo_url"),
+    )
 
     return courses
 
