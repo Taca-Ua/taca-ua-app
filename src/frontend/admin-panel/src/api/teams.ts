@@ -15,9 +15,9 @@ export interface TeamListItem {
 }
 
 export interface TeamDetail extends TeamListItem {
-  players: {
+  athletes: {
     id: string;
-    full_name: string;
+    name: string;
     student_number: string;
   }[];
   season: {
@@ -36,8 +36,6 @@ export interface TeamCreate {
 
 export interface TeamUpdate {
   name?: string;
-  players_add?: string[];  // IDs of players to add
-  players_remove?: string[];  // IDs of players to remove
 }
 
 // Params interfaces
@@ -67,4 +65,12 @@ export const teamsApi = {
   async delete(teamId: string): Promise<void> {
     return apiClient.delete(`/teams/${teamId}/`);
   },
+
+  async addAthletes(teamId: string, athleteIds: string[]): Promise<TeamDetail> {
+    return apiClient.put<TeamDetail>(`/teams/${teamId}/add-athletes/`, { athlete_ids: athleteIds });
+  },
+
+  async removeAthletes(teamId: string, athleteIds: string[]): Promise<TeamDetail> {
+    return apiClient.put<TeamDetail>(`/teams/${teamId}/remove-athletes/`, { athlete_ids: athleteIds });
+  }
 };

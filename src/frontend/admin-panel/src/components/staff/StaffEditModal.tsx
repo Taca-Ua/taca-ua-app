@@ -16,7 +16,7 @@ const StaffEditModal = ( {
     const { notify } = useNotification();
 
     const [staff, setStaff] = staffState;
-    const [editedName, setEditedName] = useState(staff.full_name);
+    const [editedName, setEditedName] = useState(staff.name);
 
     const onClose = () => {
         popModal();
@@ -28,7 +28,7 @@ const StaffEditModal = ( {
             return;
         }
 
-        staffApi.update(staff.id, { full_name: editedName })
+        staffApi.update(staff.id, { name: editedName })
             .then((updatedStaff) => {
                 setStaff(updatedStaff);
                 if (onSave) onSave(updatedStaff);

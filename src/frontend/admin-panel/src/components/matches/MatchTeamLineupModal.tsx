@@ -156,7 +156,7 @@ const MatchTeamLineupModal = ({
                       }).then((res) =>
                         res.map((athlete) => ({
                           id: athlete.id,
-                          title: athlete.full_name,
+                          title: athlete.name,
                           subTitle: `Curso: ${athlete.course.abbreviation}`,
                         })),
                       )
@@ -204,7 +204,7 @@ const MatchTeamLineupModal = ({
                       staffApi.getAll().then((res) =>
                         res.map((staff) => ({
                           id: staff.id,
-                          title: staff.full_name,
+                          title: staff.name,
                         })),
                       )
                     }

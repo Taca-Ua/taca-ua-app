@@ -26,7 +26,7 @@ const AthletesListBanner = ({
             is_member: !athlete.is_member,
         }).then(updated => {
             setAthlete(prev => prev ? { ...prev, is_member: updated.is_member } : prev);
-            notify(`Sócio ${updated.is_member ? "ativado" : "desativado"} para ${updated.full_name}.`);
+            notify(`Sócio ${updated.is_member ? "ativado" : "desativado"} para ${updated.name}.`);
         }).catch(err => {
             console.error("Failed to update athlete:", err);
             notify("Erro ao atualizar sócio. Tente novamente.");
@@ -52,7 +52,7 @@ const AthletesListBanner = ({
             />
           )}
         >
-          <p className="font-medium text-teal-700">{athlete.full_name}</p>
+          <p className="font-medium text-teal-700">{athlete.name}</p>
 
           <div className="text-sm text-gray-600 mt-0.5">
             NMEC {athlete.student_number}
@@ -140,7 +140,7 @@ const AthletesListComponent = ( {
     return (
       <ul className="divide-y divide-gray-100 max-h-[640px] overflow-y-auto">
         {athletes
-          .sort((a, b) => a.full_name.localeCompare(b.full_name))
+          .sort((a, b) => a.name.localeCompare(b.name))
           .map((athlete) => (
             <AthletesListBanner
               key={athlete.id}

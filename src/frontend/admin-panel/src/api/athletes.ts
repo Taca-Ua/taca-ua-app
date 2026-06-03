@@ -2,7 +2,7 @@ import { apiClient } from './client';
 
 export interface AthleteListItem {
     id: string;
-    full_name: string;
+    name: string;
 
     course: {
         id: string;
@@ -23,14 +23,14 @@ export interface AthleteListParams {
 };
 
 export interface AthleteCreate {
-    full_name: string;
+    name: string;
     course_id: string;
     student_number: string;
     is_member?: boolean;
 }
 
 export interface AthleteUpdate {
-    full_name?: string;
+    name?: string;
     course_id?: string;
     student_number?: string;
     is_member?: boolean;

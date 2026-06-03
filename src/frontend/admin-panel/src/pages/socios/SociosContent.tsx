@@ -95,14 +95,14 @@ export default function SociosContent() {
 
   const filteredAthletes = athletes ? athletes.filter((athlete) => {
     const query = searchQuery.toLowerCase();
-    return (athlete.full_name.toLowerCase().includes(query) ||
+    return (athlete.name.toLowerCase().includes(query) ||
         athlete.student_number.toString().includes(query) ||
         athlete.course?.name.toLowerCase().includes(query));
   }) : null;
 
   const filteredStaff = staff ? staff.filter((member) => {
     const query = searchQuery.toLowerCase();
-    return (member.full_name.toLowerCase().includes(query) ||
+    return (member.name.toLowerCase().includes(query) ||
         member.staff_number?.toString().includes(query) ||
         member.contact?.toLowerCase().includes(query));
   }) : null;

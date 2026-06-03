@@ -73,7 +73,7 @@ const AthleteInfoModal = ( {
                 Participante
               </span>
               <h2 className="text-2xl font-bold text-gray-800">
-                {athlete.full_name}
+                {athlete.name}
               </h2>
             </div>
 

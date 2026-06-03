@@ -125,7 +125,7 @@ const TournamentCompetitorsComponent = ({
       const athletes = await athletesApi.getAll({});
       return athletes.map((athlete) => ({
         id: athlete.id,
-        title: athlete.full_name,
+        title: athlete.name,
         subTitle: athlete.course.name,
       }));
     } catch (error) {
