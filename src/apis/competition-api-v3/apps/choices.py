@@ -7,11 +7,11 @@ class ModalityTypeModes(models.TextChoices):
 
 
 class TournamentStatus(models.TextChoices):
-    DRAFT = "DRAFT", "Draft"
-    ACTIVE = "ACTIVE", "Active"
-    FINISHED = "FINISHED", "Finished"
+    DRAFT = "draft", "Draft"
+    ACTIVE = "active", "Active"
+    FINISHED = "finished", "Finished"
 
 
 class TournamentCompetitorType(models.TextChoices):
-    INDIVIDUAL = "INDIVIDUAL", "Individual"
-    TEAM = "TEAM", "Team"
+    INDIVIDUAL = "individual", "Individual"
+    TEAM = "team", "Team"
