@@ -6,6 +6,7 @@ from django.db import models
 
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
+    from apps.modalities.models import SeasonModality
 
 
 class ModalityTypeModes(models.TextChoices):
@@ -35,6 +36,7 @@ class ModalityType(models.Model):
     # Related field type hints for IDEs and type checkers
     if TYPE_CHECKING:
         escaloes: RelatedManager["Escalao"]
+        season_modalities: RelatedManager["SeasonModality"]
 
     def __str__(self):
         return self.name

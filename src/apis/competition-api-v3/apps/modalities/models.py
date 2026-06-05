@@ -16,7 +16,7 @@ class Modality(models.Model):
     name = models.CharField(max_length=255)
 
     if TYPE_CHECKING:
-        modality_seasons: models.QuerySet[SeasonModality]
+        modality_seasons: RelatedManager[SeasonModality]
         regulation: RelatedManager[Regulation]
 
     def __str__(self):
@@ -35,7 +35,7 @@ class SeasonModality(models.Model):
         Modality, on_delete=models.CASCADE, related_name="modality_seasons"
     )
     modality_type = models.ForeignKey(
-        ModalityType, on_delete=models.CASCADE, related_name="season_modality_types"
+        ModalityType, on_delete=models.CASCADE, related_name="season_modalities"
     )
 
     class Meta:
