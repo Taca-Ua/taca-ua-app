@@ -7,6 +7,9 @@ from apps.modality_types.models import ModalityType
 from apps.seasons.models import Season
 from django.db import models
 
+if TYPE_CHECKING:
+    from django.db.models.manager import RelatedManager
+    from apps.regulations.models import Regulation
 
 class Modality(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -14,6 +17,7 @@ class Modality(models.Model):
 
     if TYPE_CHECKING:
         modality_seasons: models.QuerySet[SeasonModality]
+        regulation: RelatedManager[Regulation]
 
     def __str__(self):
         return self.name
