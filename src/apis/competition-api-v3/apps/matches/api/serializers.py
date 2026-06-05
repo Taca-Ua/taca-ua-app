@@ -17,10 +17,10 @@ class CommentListSerializer(serializers.Serializer):
     """Serializer for listing comments on a match"""
 
     id = serializers.UUIDField()
-    message = serializers.CharField()
-    author_name = serializers.CharField()
-    can_edit = serializers.BooleanField(default=False)
-    created_at = serializers.DateTimeField()
+    message = serializers.CharField(source="content")
+    author_name = serializers.CharField(source="author")
+    can_edit = serializers.BooleanField(default=True)
+    created_at = serializers.DateTimeField(source="timestamp")
 
 
 class LineupDetailSerializer(serializers.Serializer):

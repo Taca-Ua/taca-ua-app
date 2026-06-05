@@ -3,12 +3,21 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from shared.auth.utils import get_user
 
 from ..queries import get_match_by_id, list_matches
-from ..service import create_match, delete_match, publish_match_results, update_match
+from ..service import (
+    create_match,
+    delete_match,
+    match_add_comment,
+    match_delete_comment,
+    publish_match_results,
+    update_match,
+)
 from .filters import MatchListFilterSerializer
 from .renders import render_match_detail, render_match_list
 from .serializers import (
+    CommentCreateSerializer,
     MatchCreateSerializer,
     MatchDetailSerializer,
     MatchListSerializer,
@@ -137,6 +146,48 @@ def publish_match_results_view(request, match_id):
     return Response(serializer.data)
 
 
+# ============= Comment Management Views =============
+
+
+@extend_schema(
+    request=CommentCreateSerializer,
+    responses=MatchDetailSerializer,
+    description="Add a comment to a match",
+    tags=["Match Management"],
+)
+@api_view(["POST"])
+def add_comment(request, match_id):
+    """Add comment to match"""
+    serializer = CommentCreateSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    user = get_user(request)
+
+    match = match_add_comment(
+        match_id=match_id,
+        comment_text=serializer.validated_data["message"],
+        admin_id=user.user_id,
+    )
+
+    response_serializer = MatchDetailSerializer(match)
+    return Response(response_serializer.data, status=201)
+
+
+@extend_schema(
+    responses={204: None},
+    description="Delete a comment from a match",
+    tags=["Match Management"],
+)
+@api_view(["DELETE"])
+def delete_comment(request, match_id, comment_id):
+    """Delete a comment"""
+    match_delete_comment(
+        match_id=match_id,
+        comment_id=comment_id,
+    )
+    return Response(status=204)
+
+
 urlpatterns = [
     path("", MatchListCreateView.as_view(), name="match-list-create"),
     path("<uuid:match_id>/", MatchDetailView.as_view(), name="match-detail"),
@@ -144,5 +195,15 @@ urlpatterns = [
         "<uuid:match_id>/results/",
         publish_match_results_view,
         name="match-publish-results",
+    ),
+    path(
+        "<uuid:match_id>/comments/",
+        add_comment,
+        name="match-add-comment",
+    ),
+    path(
+        "<uuid:match_id>/comments/<uuid:comment_id>/",
+        delete_comment,
+        name="match-delete-comment",
     ),
 ]
