@@ -84,13 +84,13 @@ const TorneioDetails = () => {
           </div>
 
           {/* Format Details */}
-          { (isAdminGeneral && tournament.format !== 'free') && (
+          {/* { (isAdminGeneral && tournament.format !== 'free') && (
             <div className="mt-6">
               <TornLeagueDisplayComponent
                 tournamentState={[tournament, setTournament]}
               />
             </div>
-          )}
+          )} */}
 
           {/* Matches Section */}
           <div className="bg-white rounded-lg shadow-md p-6 mt-6 flex flex-col gap-6">

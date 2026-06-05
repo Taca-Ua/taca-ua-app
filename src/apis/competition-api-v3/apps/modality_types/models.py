@@ -1,21 +1,13 @@
 import uuid
 from typing import TYPE_CHECKING
 
+from apps.choices import ModalityTypeModes, TournamentCompetitorType
 from apps.seasons.models import Season
 from django.db import models
 
 if TYPE_CHECKING:
+    from apps.modalities.models import SeasonModality
     from django.db.models.manager import RelatedManager
-
-
-class ModalityTypeModes(models.TextChoices):
-    MODALITY = "modality", "Modality"
-    POINTS = "points", "Points"
-
-
-class ModalityTypeTournamentCompetitorTypes(models.TextChoices):
-    TEAM = "team", "Team"
-    INDIVIDUAL = "individual", "Individual"
 
 
 class ModalityType(models.Model):
@@ -25,7 +17,7 @@ class ModalityType(models.Model):
     description = models.TextField(blank=True, null=True)
     mode = models.CharField(max_length=20, choices=ModalityTypeModes.choices)
     tournament_competitor_type = models.CharField(
-        max_length=20, choices=ModalityTypeTournamentCompetitorTypes.choices
+        max_length=20, choices=TournamentCompetitorType.choices
     )
 
     season = models.ForeignKey(
@@ -35,6 +27,7 @@ class ModalityType(models.Model):
     # Related field type hints for IDEs and type checkers
     if TYPE_CHECKING:
         escaloes: RelatedManager["Escalao"]
+        season_modality_types: RelatedManager["SeasonModality"]
 
     def __str__(self):
         return self.name

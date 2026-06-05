@@ -7,7 +7,7 @@ import { useAuth } from "../../hooks/useAuth";
 
 // Helper functions to get status text and badge color
 const getStatusBadgeColor = (status: string) => {
-  switch (status) {
+  switch (status.toLowerCase()) {
     case 'active': return 'bg-green-100 text-green-800';
     case 'draft': return 'bg-yellow-100 text-yellow-800';
     case 'finished': return 'bg-gray-100 text-gray-800';
@@ -16,7 +16,7 @@ const getStatusBadgeColor = (status: string) => {
 };
 
 const getStatusText = (status: string) => {
-  switch (status) {
+  switch (status.toLowerCase()) {
     case 'active': return 'Ativo';
     case 'draft': return 'Rascunho';
     case 'finished': return 'Finalizado';
@@ -108,7 +108,7 @@ const TournamentInfoComponent = ({
           {/* circle with rank */}
           <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800 flex items-center gap-2">
             <span className="w-6 h-6 rounded-full bg-teal-500 text-white flex items-center justify-center text-xs font-medium">
-              {tournament.scoring_format.rank}
+              {tournament.rank}
             </span>
             {tournament.scoring_format.name}
           </div>

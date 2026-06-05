@@ -25,9 +25,8 @@ export interface TournamentDetail extends TournamentListItem {
     course_name: string;
   }[];
   scoring_format: {
+    id: string;
     name: string;
-    rank: string;
-    points: number[];
   };
   season: {
     id: number;
@@ -39,6 +38,7 @@ export interface TournamentDetail extends TournamentListItem {
   }[];
   rounds: number[];
   format: string;
+  rank: string;
   format_data?: Record<string, any>;
 }
 
@@ -115,12 +115,12 @@ export const tournamentsApi = {
     return apiClient.post<TournamentDetail>(`/tournaments/${id}/finish/`, data);
   },
 
-  async addCompetitors(id: string, competitors: TournamentCompetitorsAddEntry[]): Promise<TournamentDetail> {
-    return apiClient.put<TournamentDetail>(`/tournaments/${id}/competitors/add/`, competitors );
+  async addCompetitors(id: string, entity_ids: string[]): Promise<TournamentDetail> {
+    return apiClient.put<TournamentDetail>(`/tournaments/${id}/add-competitors/`, {entity_ids} );
   },
 
-  async removeCompetitors(id: string, competitors_ids: TournamentCompetitorsDelete): Promise<TournamentDetail> {
-    return apiClient.put<TournamentDetail>(`/tournaments/${id}/competitors/remove/`, competitors_ids);
+  async removeCompetitors(id: string, competitor_ids: string[]): Promise<TournamentDetail> {
+    return apiClient.put<TournamentDetail>(`/tournaments/${id}/remove-competitors/`, {competitor_ids});
   },
 
   async getRounds(id: string): Promise<number[]> {

@@ -14,6 +14,7 @@ from .nucleus.api.views import urlpatterns as nucleus_urlpatterns
 from .seasons.api.views import urlpatterns as seasons_urlpatterns
 from .staff.api.views import urlpatterns as staff_urlpatterns
 from .teams.api.views import urlpatterns as teams_urlpatterns
+from .tournaments.api.views import urlpatterns as tournaments_urlpatterns
 
 urlpatterns = [
     path("athletes/", include(athletes_urlpatterns)),
@@ -24,6 +25,7 @@ urlpatterns = [
     path("seasons/", include(seasons_urlpatterns)),
     path("staff/", include(staff_urlpatterns)),
     path("teams/", include(teams_urlpatterns)),
+    path("tournaments/", include(tournaments_urlpatterns)),
 ]
 
 # Basic URL patterns for the API, including health check and documentation endpoints

@@ -1,3 +1,4 @@
+from apps.choices import TournamentCompetitorType
 from rest_framework import serializers
 
 
@@ -24,10 +25,6 @@ class ModalityTypeListSerializer(ModalityTypeListMinimalSerializer):
 class ModalityTypeDetailSerializer(ModalityTypeListSerializer):
     escaloes = ModalityTypeEscalaoSerializer(many=True)
 
-    # def get_escaloes(self, obj: "ModalityType"):
-    #     escaloes = obj.escaloes.all()
-    #     return ModalityTypeEscalaoSerializer(escaloes, many=True).data
-
 
 # Request serializers
 class ModalityTypeCreateSerializer(serializers.Serializer):
@@ -35,7 +32,9 @@ class ModalityTypeCreateSerializer(serializers.Serializer):
     description = serializers.CharField(allow_blank=True, allow_null=True)
     escaloes = ModalityTypeEscalaoSerializer(many=True)
     mode = serializers.ChoiceField(choices=["modality", "points"])
-    tournament_competitor_type = serializers.ChoiceField(choices=["team", "individual"])
+    tournament_competitor_type = serializers.ChoiceField(
+        choices=TournamentCompetitorType.choices
+    )
 
     season_id = serializers.IntegerField(required=False)
 

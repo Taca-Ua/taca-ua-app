@@ -72,10 +72,8 @@ const TournamentCompetitorsComponent = ({
       let updatedTournament: TournamentDetail | null = null;
 
       if (addedCompetitors.length > 0) {
-        await tournamentsApi.addCompetitors(tournament.id, addedCompetitors.map((c) => ({
-          competitor_type: tournament.competitor_type,
-          entity_id: c.id,
-        }))).then((updated) => {
+        await tournamentsApi.addCompetitors(tournament.id, addedCompetitors.map((c) => c.id))
+        .then((updated) => {
           updatedTournament = updated;
         }).catch((error) => {
           console.error("Error adding competitors:", error);
@@ -85,9 +83,8 @@ const TournamentCompetitorsComponent = ({
 
       // Remove old competitors
       if (removedCompetitors.length > 0) {
-        await tournamentsApi.removeCompetitors(tournament.id, {
-          competitors_ids: removedCompetitors.map((c) => c.id)
-        }).then((updated) => {
+        await tournamentsApi.removeCompetitors(tournament.id, removedCompetitors.map((c) => c.id))
+        .then((updated) => {
           updatedTournament = updated;
         }).catch((error) => {
           console.error("Error removing competitors:", error);
@@ -143,7 +140,7 @@ const TournamentCompetitorsComponent = ({
         <Button
           onClick={() => pushModal(
             <ChooseMultipleModal
-              allElementsLoader={() => tournament.competitor_type === "team" ? loadTeamsForModal() : loadAthletesForModal()}
+              allElementsLoader={() => tournament.competitor_type.toLocaleLowerCase() === "team" ? loadTeamsForModal() : loadAthletesForModal()}
               initialChosenElementsIds={tournament.competitors.map(
                 (c) => c.entity_id,
               )}
