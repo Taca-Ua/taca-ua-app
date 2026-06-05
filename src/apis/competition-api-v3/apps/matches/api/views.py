@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ..queries import get_match_by_id, list_matches
-from ..service import create_match, delete_match
+from ..service import create_match, delete_match, update_match
 from .filters import MatchListFilterSerializer
 from .renders import render_match_detail, render_match_list
 from .serializers import (
@@ -12,6 +12,7 @@ from .serializers import (
     MatchDetailSerializer,
     MatchListSerializer,
     MatchPaginatedListSerializer,
+    MatchUpdateSerializer,
 )
 
 
@@ -68,7 +69,7 @@ class MatchListCreateView(APIView):
         )
 
         serializer = MatchListSerializer(render_match_list(match).first())
-        return Response({"message": "Match created"}, status=201)
+        return Response(serializer.data, status=201)
 
 
 @extend_schema_view(
@@ -79,6 +80,8 @@ class MatchListCreateView(APIView):
     put=extend_schema(
         summary="Update a match",
         description="Update the details of an existing match.",
+        request=MatchUpdateSerializer,
+        responses={200: MatchDetailSerializer},
     ),
     delete=extend_schema(
         summary="Delete a match",
@@ -94,8 +97,18 @@ class MatchDetailView(APIView):
         return Response(serializer.data)
 
     def put(self, request, match_id):
-        # Logic to update match details
-        return Response({"message": f"Match {match_id} updated"})
+        serializer = MatchUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        match = update_match(
+            match_id=match_id,
+            location=serializer.validated_data.get("location"),
+            start_time=serializer.validated_data.get("start_time"),
+            status=serializer.validated_data.get("status"),
+        )
+
+        serializer = MatchDetailSerializer(render_match_detail(match).first())
+        return Response(serializer.data)
 
     def delete(self, request, match_id):
         delete_match(match_id)
