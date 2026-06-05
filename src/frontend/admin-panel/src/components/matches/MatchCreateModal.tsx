@@ -20,8 +20,8 @@ const MatchCreateModal = ( {
   const { popModal, pushModal } = useModal();
 
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
-  const [location, setLocation] = useState<string>("");
-  const [startTime, setStartTime] = useState<string>("");
+  const [location, setLocation] = useState<string | null>(null);
+  const [startTime, setStartTime] = useState<string | null>(null);
 
   const [selectedJourneyOption, setSelectedJourneyOption] = useState<"new-journey" | "existing-journey" | null>("existing-journey");
   const [selectedExistingJourney, setSelectedExistingJourney] = useState<string | null>(null);
@@ -33,14 +33,14 @@ const MatchCreateModal = ( {
       notify("Por favor, selecione pelo menos 2 participantes para o jogo.", "error");
       return;
     }
-    if (!location.trim()) {
-      notify("Por favor, insira o local do jogo.", "error");
-      return;
-    }
-    if (!startTime) {
-      notify("Por favor, selecione a data e hora do jogo.", "error");
-      return;
-    }
+    // if (!location.trim()) {
+    //   notify("Por favor, insira o local do jogo.", "error");
+    //   return;
+    // }
+    // if (!startTime) {
+    //   notify("Por favor, selecione a data e hora do jogo.", "error");
+    //   return;
+    // }
 
     if (selectedJourneyOption === "existing-journey" && !selectedExistingJourney) {
       notify("Por favor, selecione a jornada existente para o jogo.", "error");
@@ -52,8 +52,8 @@ const MatchCreateModal = ( {
       let newMatch = await matchesApi.create( {
         tournament_id: tournament.id,
         participants: selectedParticipants,
-        location,
-        start_time: new Date(startTime).toISOString(),
+        location: location ? location : undefined,
+        start_time: startTime ? new Date(startTime).toISOString() : undefined,
         journey: selectedJourneyOption === "existing-journey" ? parseInt(selectedExistingJourney!) : undefined,
         new_journey: selectedJourneyOption === "new-journey" ? true : undefined
       } );
@@ -153,7 +153,7 @@ const MatchCreateModal = ( {
             </label>
             <input
               type="text"
-              value={location}
+              value={location || ""}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="Ex: Campo Municipal"
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 text-gray-700"
@@ -166,7 +166,7 @@ const MatchCreateModal = ( {
             </label>
             <input
               type="datetime-local"
-              value={startTime}
+              value={startTime ? startTime : ""}
               onChange={(e) => setStartTime(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 text-gray-700"
             />

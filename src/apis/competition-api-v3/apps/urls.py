@@ -8,6 +8,7 @@ from drf_spectacular.views import (
 
 from .athletes.api.views import urlpatterns as athletes_urlpatterns
 from .courses.api.views import urlpatterns as courses_urlpatterns
+from .matches.api.views import urlpatterns as matches_urlpatterns
 from .modalities.api.views import urlpatterns as modalities_urlpatterns
 from .modality_types.api.views import urlpatterns as modality_types_urlpatterns
 from .nucleus.api.views import urlpatterns as nucleus_urlpatterns
@@ -28,6 +29,7 @@ urlpatterns = [
     path("staff/", include(staff_urlpatterns)),
     path("teams/", include(teams_urlpatterns)),
     path("tournaments/", include(tournaments_urlpatterns)),
+    path("matches/", include(matches_urlpatterns)),
 ]
 
 # Basic URL patterns for the API, including health check and documentation endpoints

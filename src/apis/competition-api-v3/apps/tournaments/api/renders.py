@@ -1,7 +1,5 @@
-from apps.athletes.models import Athlete
-from apps.teams.models import Team
 from django.contrib.postgres.aggregates import ArrayAgg
-from django.db.models import F, OuterRef, Q, QuerySet, Subquery
+from django.db.models import F, Q, QuerySet
 from django.db.models.functions import JSONObject
 
 from ..models import Tournament, TournamentCompetitorType
@@ -17,11 +15,11 @@ def competitor_data_annotation(
         "competitor_type"
     ]
 
-    relevant_model = None
+    field_name = None
     if tournament_competitor_type == TournamentCompetitorType.INDIVIDUAL:
-        relevant_model = Athlete
+        field_name = "athlete"
     elif tournament_competitor_type == TournamentCompetitorType.TEAM:
-        relevant_model = Team
+        field_name = "team"
     else:
         raise ValueError(
             f"Invalid tournament competitor type: '{tournament_competitor_type}'"
@@ -32,17 +30,9 @@ def competitor_data_annotation(
         competitors_data=ArrayAgg(
             JSONObject(
                 id=F("competitors__id"),
-                entity_id=F("competitors__competitor_id"),
-                name=Subquery(
-                    relevant_model.objects.filter(
-                        id=OuterRef("competitors__competitor_id")
-                    ).values("name")[:1]
-                ),
-                course_name=Subquery(
-                    relevant_model.objects.filter(
-                        id=OuterRef("competitors__competitor_id")
-                    ).values("course__name")[:1]
-                ),
+                entity_id=F(f"competitors__{field_name}__id"),
+                name=F(f"competitors__{field_name}__name"),
+                course_name=F(f"competitors__{field_name}__course__name"),
             ),
             distinct=True,
             filter=Q(competitors__isnull=False),

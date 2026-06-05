@@ -6,7 +6,12 @@ from apps.seasons.service import get_current_season
 from django.db import transaction
 
 from .formats import FormatRegistry
-from .models import Tournament, TournamentCompetitor, TournamentStatus
+from .models import (
+    Tournament,
+    TournamentCompetitor,
+    TournamentCompetitorType,
+    TournamentStatus,
+)
 
 
 @transaction.atomic
@@ -107,7 +112,17 @@ def add_competitors_to_tournament(
 
     for competitor_id in competitor_ids:
         TournamentCompetitor.objects.create(
-            tournament=tournament, competitor_id=competitor_id
+            tournament=tournament,
+            team_id=(
+                competitor_id
+                if tournament.competitor_type == TournamentCompetitorType.TEAM
+                else None
+            ),
+            athlete_id=(
+                competitor_id
+                if tournament.competitor_type == TournamentCompetitorType.INDIVIDUAL
+                else None
+            ),
         )
 
     return tournament

@@ -1,5 +1,5 @@
 import uuid
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 from apps.athletes.models import Athlete
 from apps.choices import TournamentCompetitorType, TournamentFormat, TournamentStatus
@@ -10,6 +10,8 @@ from apps.teams.models import Team
 from django.db import models
 
 if TYPE_CHECKING:
+    from apps.matches.models import Match, MatchParticipant
+    from apps.tournaments.models import TournamentCompetitor
     from django.db.models.manager import RelatedManager
 
 
@@ -55,7 +57,8 @@ class Tournament(models.Model):
         return "Unranked"
 
     if TYPE_CHECKING:
-        competitors: "RelatedManager[TournamentCompetitor]"
+        competitors: RelatedManager[TournamentCompetitor]
+        matches: RelatedManager[Match]
 
 
 class TournamentCompetitor(models.Model):
@@ -65,18 +68,17 @@ class TournamentCompetitor(models.Model):
         Tournament, on_delete=models.CASCADE, related_name="competitors"
     )
 
-    # This can reference either an individual or a team based on the tournament's competitor_type
-    competitor_id = models.UUIDField()
+    # This can reference either an individual or a team based on the tournament's competitor_type()
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, null=True, blank=True)
+    athlete = models.ForeignKey(
+        Athlete, on_delete=models.CASCADE, null=True, blank=True
+    )
+
+    if TYPE_CHECKING:
+        match_participations: "RelatedManager['MatchParticipant']"
 
     class Meta:
-        unique_together = ("tournament", "competitor_id")
-
-    @property
-    def competitor(self) -> Union[Athlete, Team]:
-        if self.tournament.competitor_type == TournamentCompetitorType.INDIVIDUAL:
-            return Athlete.objects.get(id=self.competitor_id)
-        else:
-            return Team.objects.get(id=self.competitor_id)
+        unique_together = ("tournament", "team", "athlete")
 
 
 class TournamentResult(models.Model):

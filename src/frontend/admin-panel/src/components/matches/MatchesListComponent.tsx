@@ -203,7 +203,7 @@ const MatchesListComponent = ( {
         }
     ).filter( match => {
         const participantNames = match.participants.map( p => normalizeText( p.name ) ).join( ' ' ).toLowerCase();
-        const location = normalizeText( match.location );
+        const location = match.location ? normalizeText( match.location ) : '';
         const searchQuery = normalizeText( query ).toLowerCase();
         return participantNames.includes( searchQuery ) || location.includes( searchQuery );
     } );

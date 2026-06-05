@@ -20,7 +20,7 @@ export interface MatchListItem {
     name: string;
   };
   modality: string;
-  location: string;
+  location?: string;
   start_time: string;
   status: string;
   journey?: number;
@@ -65,8 +65,8 @@ export interface MatchListFilter {
 
 export interface MatchCreate {
   tournament_id: string;
-  location: string;
-  start_time: string;
+  location?: string;
+  start_time?: string;
   participants: string[];
   journey?: number;
   new_journey?: boolean;

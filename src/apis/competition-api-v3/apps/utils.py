@@ -14,9 +14,9 @@ def count_queries(func):
             print(
                 f"Number of queries executed: {final_query_count - initial_query_count}"
             )
-            # print("Executed queries:")
-            # for query in connection.queries[initial_query_count:final_query_count]:
-            #     print(query['sql'])
+            print("Executed queries:")
+            for query in connection.queries[initial_query_count:final_query_count]:
+                print(query["sql"])
         return result
 
     return wrapper
