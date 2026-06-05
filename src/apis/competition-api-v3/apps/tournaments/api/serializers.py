@@ -61,7 +61,7 @@ class TournamentDetailSerializer(TournamentListSerializer):
     """Serializer for tournament details"""
 
     competitor_type = serializers.ChoiceField(choices=TournamentCompetitorType.choices)
-    competitors = TournamentCompetitorSerializer(many=True, source="competitors_data")
+    competitors = TournamentCompetitorSerializer(many=True)
     scoring_format = ScoringFormatSummarySerializer()
     season = TournamentSeasonSummarySerializer()
     # standings = TournamentRankingPositionSerializer(many=True, required=False)

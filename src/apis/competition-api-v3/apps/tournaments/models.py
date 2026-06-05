@@ -77,6 +77,38 @@ class TournamentCompetitor(models.Model):
     if TYPE_CHECKING:
         match_participations: "RelatedManager['MatchParticipant']"
 
+    @property
+    def name(self):
+        if self.tournament.competitor_type == TournamentCompetitorType.INDIVIDUAL:
+            return self.athlete.name if self.athlete else "Unknown Athlete"
+        elif self.tournament.competitor_type == TournamentCompetitorType.TEAM:
+            return self.team.name if self.team else "Unknown Team"
+        return "Unknown Competitor"
+
+    @property
+    def course_name(self):
+        if self.tournament.competitor_type == TournamentCompetitorType.INDIVIDUAL:
+            return (
+                self.athlete.course.name
+                if self.athlete and self.athlete.course
+                else "Unknown Course"
+            )
+        elif self.tournament.competitor_type == TournamentCompetitorType.TEAM:
+            return (
+                self.team.course.name
+                if self.team and self.team.course
+                else "Unknown Course"
+            )
+        return "Unknown Course"
+
+    @property
+    def entity_id(self):
+        if self.tournament.competitor_type == TournamentCompetitorType.INDIVIDUAL:
+            return self.athlete.id if self.athlete else None
+        elif self.tournament.competitor_type == TournamentCompetitorType.TEAM:
+            return self.team.id if self.team else None
+        return None
+
     class Meta:
         unique_together = ("tournament", "team", "athlete")
 
