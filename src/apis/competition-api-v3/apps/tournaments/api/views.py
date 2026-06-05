@@ -2,15 +2,17 @@ from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.serializers import DictField
 from rest_framework.views import APIView
 
-from ..queries import get_tournament, list_tournaments
+from ..queries import get_tournament, get_tournament_format_details, list_tournaments
 from ..service import (
     add_competitors_to_tournament,
     create_tournament,
     delete_tournament,
     remove_competitors_from_tournament,
     update_tournament,
+    update_tournament_format,
 )
 from .filters import TournamentListQuerySerializer
 from .renders import render_tournament_detail, render_tournaments
@@ -64,6 +66,8 @@ class TournamentListCreateView(APIView):
             start_date=serializer.validated_data.get("start_date"),
             season_id=serializer.validated_data.get("season_id"),
             scoring_format_id=serializer.validated_data.get("scoring_format_id"),
+            format=serializer.validated_data.get("format"),
+            format_data=serializer.validated_data.get("format_data"),
         )
 
         serializer = TournamentListSerializer(
@@ -164,6 +168,34 @@ def remove_competitor_from_tournament(request, tournament_id):
     return Response(serializer.data)
 
 
+@extend_schema_view(
+    get=extend_schema(
+        summary="Retrieve tournament format details",
+        description="Get detailed information about a tournament's format and its current state.",
+        responses={200: DictField},
+    ),
+    put=extend_schema(
+        summary="Update tournament format",
+        description="Update the format of an existing tournament.",
+        request=DictField,
+        responses={200: DictField},
+    ),
+)
+class TournamentFormatDetailView(APIView):
+    def get(self, request, tournament_id):
+        format_details = get_tournament_format_details(tournament_id)
+        return Response(format_details, status=200)
+
+    def put(self, request, tournament_id):
+
+        format_details = update_tournament_format(
+            tournament_id=tournament_id,
+            format_data=request.data,
+        )
+
+        return Response(format_details, status=200)
+
+
 urlpatterns = [
     path("", TournamentListCreateView.as_view(), name="tournament-list-create"),
     path(
@@ -180,5 +212,10 @@ urlpatterns = [
         "<uuid:tournament_id>/remove-competitors/",
         remove_competitor_from_tournament,
         name="tournament-remove-competitors",
+    ),
+    path(
+        "<uuid:tournament_id>/format/",
+        TournamentFormatDetailView.as_view(),
+        name="tournament-format-detail",
     ),
 ]

@@ -4,10 +4,11 @@ import Button from "../../../utils/Button";
 import { useModal } from "../../../../contexts/ModalContext";
 import TornLeagueMetaUpdateModal from "./TornLeagueMetaUpdateModal";
 
-interface LeagueFormatData {
-    points_win: number;
-    points_draw: number;
-    points_loss: number;
+export interface LeagueFormatData {
+    win_points: number;
+    draw_points: number;
+    loss_points: number;
+    draw_rule: string | null;
     current_round: number;
 }
 
@@ -18,10 +19,8 @@ const TornLeagueDisplayComponent = ({
 }) => {
     const { pushModal } = useModal();
 
-    console.log("Rendering TornLeagueDisplayComponent with tournamentState:", tournamentState);
     const [tournament, ] = tournamentState;
-
-    const data = tournament.format_data as LeagueFormatData;
+    const [formatData, setFormatData] = useState<LeagueFormatData | null>(null);
 
     const [currentStandings, setCurrentStandings] = useState<TournamentStandingsEntry[]>([]);
     const [loadingStandings, setLoadingStandings] = useState(false);
@@ -42,8 +41,18 @@ const TornLeagueDisplayComponent = ({
     };
 
     useEffect(() => {
+        tournamentsApi.getFormatDetails(tournament.id)
+          .then(formatDetails => {
+            console.log('Fetched format details:', formatDetails);
+            // If there are specific details you want to extract and use, you can do it here
+            setFormatData(formatDetails as LeagueFormatData);
+          })
+          .catch(err => {
+            console.error('Failed to fetch format details:', err);
+          });
+
         loadStandings();
-    }, [data.current_round]);
+    }, []);
 
     const renderStandings = () => {
         if (loadingStandings) {
@@ -78,7 +87,7 @@ const TornLeagueDisplayComponent = ({
                             <td className="border-b px-4 py-2">{entry.format_meta.wins}</td>
                             <td className="border-b px-4 py-2">{entry.format_meta.draws}</td>
                             <td className="border-b px-4 py-2">{entry.format_meta.losses}</td>
-                            <td className="border-b px-4 py-2">{entry.format_meta.scored_points}</td>
+                            <td className="border-b px-4 py-2">{entry.format_meta.points_scored}</td>
                             <td className="border-b px-4 py-2">{entry.format_meta.conceded_points}</td>
                             <td className={"border-b px-4 py-2" + (entry.format_meta.differential >= 0 ? " text-green-600" : " text-red-600")}>
                                 {entry.format_meta.differential >= 0 ? '+' : ''}{entry.format_meta.differential}
@@ -90,21 +99,26 @@ const TornLeagueDisplayComponent = ({
         );
     }
 
+    if (!formatData) {
+        return null;
+    }
+
     return (
       <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
         <div className="flex items-center mb-4 justify-between">
             <div className="flex flex-col">
                 <h3 className="font-semibold text-blue-900 mb-3">
-                Formato: Liga (Pontos: {data.points_win} vitória, {data.points_draw} empate, {data.points_loss} derrota)
+                Formato: Liga (Pontos: {formatData.win_points} vitória, {formatData.draw_points} empate, {formatData.loss_points} derrota)
                 </h3>
                 <p className="text-sm text-blue-800 mb-4">
-                Ronda atual: {data.current_round || 0}
+                Ronda atual: {formatData.current_round || 0}
                 </p>
             </div>
             <Button
                 onClick={() => {pushModal(
                     <TornLeagueMetaUpdateModal
-                        tournamentState={tournamentState}
+                        formatDataState={[formatData, setFormatData]}
+                        tournamentId={tournament.id}
                         onSave={() => loadStandings()}
                     />
                 )}}

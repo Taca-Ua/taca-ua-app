@@ -1,0 +1,16 @@
+from ..base import BaseFormat
+
+
+class FreeFormat(BaseFormat):
+
+    def create(self, format_data: dict):
+        # No specific settings for free format, so we just return an empty details
+        return self.get_details()
+
+    def update(self, format_data: dict):
+        # No specific settings to update for free format, so we just return the current details
+        return self.get_details()
+
+    def get_details(self) -> dict:
+        # Free format has no specific settings, so we return an empty dictionary
+        return None

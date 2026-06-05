@@ -2,6 +2,7 @@ from uuid import UUID
 
 from django.db.models import QuerySet
 
+from .formats import FormatRegistry
 from .models import Tournament
 
 
@@ -32,3 +33,9 @@ def get_tournament(tournament_id: UUID) -> QuerySet[Tournament]:
         )
 
     return tournament.first()
+
+
+def get_tournament_format_details(tournament_id: UUID) -> dict:
+    tournament = get_tournament(tournament_id)
+    format_engine = FormatRegistry.get_format(tournament)
+    return format_engine.get_details()

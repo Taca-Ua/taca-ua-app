@@ -131,7 +131,11 @@ export const tournamentsApi = {
     return apiClient.get<TournamentStandingsEntry[]>(`/tournaments/${id}/standings/`);
   },
 
-  async updateFormatMeta(id: string, format_meta: Record<string, any>): Promise<TournamentDetail> {
-    return apiClient.put<TournamentDetail>(`/tournaments/${id}/format-meta/`, { format_meta });
+  async getFormatDetails(id: string): Promise<Record<string, any>> {
+    return apiClient.get<Record<string, any>>(`/tournaments/${id}/format/`);
+  },
+
+  async updateFormatMeta(id: string, format_meta: Record<string, any>): Promise<Record<string, any>> {
+    return apiClient.put<Record<string, any>>(`/tournaments/${id}/format/`, format_meta);
   }
 };

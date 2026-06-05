@@ -15,3 +15,8 @@ class TournamentStatus(models.TextChoices):
 class TournamentCompetitorType(models.TextChoices):
     INDIVIDUAL = "individual", "Individual"
     TEAM = "team", "Team"
+
+
+class TournamentFormat(models.TextChoices):
+    FREE = "free", "Free"
+    LEAGUE = "league", "League"

@@ -5,6 +5,7 @@ from apps.modality_types.models import ModalityType, ModalityTypeModes
 from apps.seasons.service import get_current_season
 from django.db import transaction
 
+from .formats import FormatRegistry
 from .models import Tournament, TournamentCompetitor, TournamentStatus
 
 
@@ -15,18 +16,21 @@ def create_tournament(
     start_date: datetime = None,
     season_id: int = None,
     scoring_format_id: UUID = None,
+    format: str = None,
+    format_data: dict = None,
 ) -> Tournament:
 
     # if season_id is not provided, use the current season
     if season_id is None:
         season_id = get_current_season().id
 
+    # if start_date is not provided, use the current date
     if start_date is None:
         start_date = datetime.now()
 
     # inherit competitor type from modality's modality type for the given season
     inherited_modality_type = ModalityType.objects.get(
-        season_id=season_id, season_modality_types__modality_id=modality_id
+        season_id=season_id, season_modalities__modality_id=modality_id
     )
 
     if scoring_format_id is None or scoring_format_id == inherited_modality_type.id:
@@ -52,7 +56,16 @@ def create_tournament(
         modality_id=modality_id,
         scoring_format_id=scoring_format_id,
         season_id=season_id,
+        tournament_format=format,
     )
+
+    # initialize the tournament format engine
+    format_engine = FormatRegistry.get_format(tournament)
+    if format_engine is None:
+        raise ValueError(
+            f"Unsupported tournament format: {tournament.tournament_format}"
+        )
+    format_engine.create(format_data or {})
 
     return tournament
 
@@ -116,3 +129,21 @@ def remove_competitors_from_tournament(
 @transaction.atomic
 def record_tournament_result() -> Tournament:
     pass
+
+
+@transaction.atomic
+def update_tournament_format(tournament_id: UUID, format_data: dict) -> dict:
+    tournament = Tournament.objects.get(id=tournament_id)
+    if tournament is None:
+        raise ValueError(f"Tournament with id {tournament_id} does not exist.")
+
+    # re-initialize the tournament format engine with the new format and data
+    format_engine = FormatRegistry.get_format(tournament)
+    if format_engine is None:
+        raise ValueError(
+            f"Unsupported tournament format: {tournament.tournament_format}"
+        )
+
+    details = format_engine.update(format_data)
+
+    return details

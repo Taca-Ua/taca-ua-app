@@ -4,8 +4,8 @@ from ...models import Tournament, TournamentCompetitor
 
 
 class DrawRule(models.TextChoices):
-    GOAL_DIFFERENCE = "goal_difference", "Goal Difference"
-    GOALS_SCORED = "goals_scored", "Goals Scored"
+    POINTS_DIFFERENCE = "points_difference", "Points Difference"
+    POINTS_SCORED = "points_scored", "Points Scored"
 
 
 class LeagueSettings(models.Model):

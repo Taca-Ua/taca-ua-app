@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from ..models import TournamentCompetitorType, TournamentStatus
+from ..models import TournamentCompetitorType, TournamentFormat, TournamentStatus
 
 
 # Helper serializers
@@ -54,7 +54,7 @@ class TournamentListSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=TournamentStatus.choices)
     modality = ModalitySummarySerializer()
     start_date = serializers.DateField(required=False, allow_null=True)
-    mode = serializers.CharField(required=False, allow_null=True)
+    mode = serializers.ChoiceField(choices=TournamentFormat.choices, required=False)
 
 
 class TournamentDetailSerializer(TournamentListSerializer):
@@ -110,3 +110,9 @@ class TournamentRemoveCompetitorsSerializer(serializers.Serializer):
     """Serializer for removing a competitors from a tournament"""
 
     competitor_ids = serializers.ListField(child=serializers.UUIDField(), required=True)
+
+
+class TournamentFormatMetaUpdateSerializer(serializers.Serializer):
+    """Serializer for updating tournament format meta"""
+
+    format_meta = serializers.DictField(required=True)

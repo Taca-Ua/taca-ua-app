@@ -2,7 +2,7 @@ import uuid
 from typing import TYPE_CHECKING, Union
 
 from apps.athletes.models import Athlete
-from apps.choices import TournamentCompetitorType, TournamentStatus
+from apps.choices import TournamentCompetitorType, TournamentFormat, TournamentStatus
 from apps.modalities.models import Modality
 from apps.modality_types.models import ModalityType
 from apps.seasons.models import Season
@@ -23,6 +23,9 @@ class Tournament(models.Model):
     start_date = models.DateField()
     competitor_type = models.CharField(
         max_length=20, choices=TournamentCompetitorType.choices
+    )
+    tournament_format = models.CharField(
+        max_length=20, choices=TournamentFormat.choices, default=TournamentFormat.FREE
     )
 
     modality = models.ForeignKey(Modality, on_delete=models.CASCADE)
