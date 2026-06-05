@@ -27,7 +27,7 @@ class ModalityType(models.Model):
     # Related field type hints for IDEs and type checkers
     if TYPE_CHECKING:
         escaloes: RelatedManager["Escalao"]
-        season_modality_types: RelatedManager["SeasonModality"]
+        season_modalities: RelatedManager["SeasonModality"]
 
     def __str__(self):
         return self.name

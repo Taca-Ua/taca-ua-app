@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from apps.courses.models import Course
     from apps.modalities.models import SeasonModality
     from apps.modality_types.models import ModalityType
+    from apps.regulations.models import Regulation
     from django.db.models.manager import RelatedManager
 
 
@@ -25,6 +26,7 @@ class Season(models.Model):
         modality_types: RelatedManager[ModalityType]
         season_modalities: RelatedManager[SeasonModality]
         courses: RelatedManager[Course]
+        regulations: RelatedManager[Regulation]
 
     def __str__(self):
         return self.name

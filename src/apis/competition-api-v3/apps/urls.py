@@ -11,6 +11,7 @@ from .courses.api.views import urlpatterns as courses_urlpatterns
 from .modalities.api.views import urlpatterns as modalities_urlpatterns
 from .modality_types.api.views import urlpatterns as modality_types_urlpatterns
 from .nucleus.api.views import urlpatterns as nucleus_urlpatterns
+from .regulations.api.views import urlpatterns as regulations_urlpatterns
 from .seasons.api.views import urlpatterns as seasons_urlpatterns
 from .staff.api.views import urlpatterns as staff_urlpatterns
 from .teams.api.views import urlpatterns as teams_urlpatterns
@@ -22,6 +23,7 @@ urlpatterns = [
     path("modalities/", include(modalities_urlpatterns)),
     path("nucleos/", include(nucleus_urlpatterns)),
     path("modality-types/", include(modality_types_urlpatterns)),
+    path("regulations/", include(regulations_urlpatterns)),
     path("seasons/", include(seasons_urlpatterns)),
     path("staff/", include(staff_urlpatterns)),
     path("teams/", include(teams_urlpatterns)),
