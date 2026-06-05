@@ -156,6 +156,23 @@ class MatchPublishResultsSerializer(serializers.Serializer):
         default="finished",
     )
 
+    def validate_participant_results(self, value):
+        participant_ids = [pr["participant_id"] for pr in value]
+        if len(participant_ids) != len(set(participant_ids)):
+            raise serializers.ValidationError(
+                "Participant IDs in results must be unique."
+            )
+
+        # all must be score or all must be position
+        all_score = all(pr.get("score") is not None for pr in value)
+        all_position = all(pr.get("position") is not None for pr in value)
+        if not (all_score or all_position):
+            raise serializers.ValidationError(
+                "All participant results must include either score or position, but not a mix of both."
+            )
+
+        return value
+
 
 class CommentCreateSerializer(serializers.Serializer):
     """Serializer for creating a comment"""

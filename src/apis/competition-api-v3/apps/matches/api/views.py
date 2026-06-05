@@ -1,10 +1,11 @@
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ..queries import get_match_by_id, list_matches
-from ..service import create_match, delete_match, update_match
+from ..service import create_match, delete_match, publish_match_results, update_match
 from .filters import MatchListFilterSerializer
 from .renders import render_match_detail, render_match_list
 from .serializers import (
@@ -12,6 +13,7 @@ from .serializers import (
     MatchDetailSerializer,
     MatchListSerializer,
     MatchPaginatedListSerializer,
+    MatchPublishResultsSerializer,
     MatchUpdateSerializer,
 )
 
@@ -115,7 +117,32 @@ class MatchDetailView(APIView):
         return Response(status=204)
 
 
+@extend_schema(
+    summary="Publish match results",
+    description="Publish the results of a match, making them visible to users.",
+    request=MatchPublishResultsSerializer,
+    responses={200: MatchDetailSerializer},
+)
+@api_view(["POST"])
+def publish_match_results_view(request, match_id):
+    serializer = MatchPublishResultsSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    match = publish_match_results(
+        match_id=match_id,
+        participant_results=serializer.validated_data["participant_results"],
+    )
+
+    serializer = MatchDetailSerializer(render_match_detail(match).first())
+    return Response(serializer.data)
+
+
 urlpatterns = [
     path("", MatchListCreateView.as_view(), name="match-list-create"),
     path("<uuid:match_id>/", MatchDetailView.as_view(), name="match-detail"),
+    path(
+        "<uuid:match_id>/results/",
+        publish_match_results_view,
+        name="match-publish-results",
+    ),
 ]

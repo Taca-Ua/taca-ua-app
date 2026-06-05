@@ -59,3 +59,22 @@ def update_match(
 @transaction.atomic
 def delete_match(match_id: UUID) -> None:
     Match.objects.filter(id=match_id).delete()
+
+
+@transaction.atomic
+def publish_match_results(match_id: UUID, participant_results: list[dict]) -> Match:
+    match = Match.objects.get(id=match_id)
+
+    participant_results_dict = {
+        result["participant_id"]: result for result in participant_results
+    }
+
+    for participant in match.participants.all():
+        result = participant_results_dict.get(participant.id)
+        if result:
+            participant.score = result.get("score")
+            participant.position = result.get("position")
+            # participant.winner =
+        participant.save()
+
+    return match

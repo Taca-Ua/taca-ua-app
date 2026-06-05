@@ -40,6 +40,7 @@ class Match(models.Model):
 class MatchParticipant(models.Model):
     """Represents a competitor participating in a match."""
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     match = models.ForeignKey(
         Match, on_delete=models.CASCADE, related_name="participants"
     )
@@ -121,6 +122,8 @@ class MatchParticipantAthleteLineup(models.Model):
 
 class MatchComment(models.Model):
     """Represents a comment made on a match."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name="comments")
 
