@@ -161,11 +161,11 @@ export const matchesApi = {
 
   // Match sheets
   async getMatchSheet(matchId: string): Promise<Blob> {
-    return apiClient.getBlob(`/matches/${matchId}/match-sheet/`);
+    return apiClient.getBlob(`/matches/${matchId}/sheet/`);
   },
 
   async getMatchTeamSheet(matchId: string, participantId: string): Promise<Blob> {
-    return apiClient.getBlob(`/matches/${matchId}/team-sheet/${participantId}/`);
+    return apiClient.getBlob(`/matches/${matchId}/participants/${participantId}/sheet/`);
   },
 
 };

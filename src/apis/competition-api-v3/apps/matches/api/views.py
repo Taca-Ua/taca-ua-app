@@ -1,3 +1,4 @@
+from django.http import HttpResponse
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework.decorators import api_view
@@ -18,6 +19,10 @@ from ..service import (
     update_match,
 )
 from .filters import MatchListFilterSerializer
+from .pdf_generators import (
+    DocumentGenerationLackPermissionError,
+    document_generation_service,
+)
 from .renders import render_match_detail, render_match_list
 from .serializers import (
     CommentCreateSerializer,
@@ -283,6 +288,56 @@ def add_staff_to_lineup(request, match_id, participant_id):
     return Response(response_serializer.data, status=200)
 
 
+# ============= Document Generation Views =============
+
+
+@extend_schema(
+    responses={200: {"type": "string", "format": "binary"}},
+    description="Generate match sheet PDF",
+    tags=["Match Management"],
+)
+@api_view(["GET"])
+def match_sheet(request, match_id):
+    """Generate match sheet PDF"""
+
+    match = get_match_by_id(match_id).get()
+
+    pdf_content = document_generation_service.generate_match_report(match)
+
+    response = HttpResponse(pdf_content, content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'attachment; filename="match_sheet_{match_id}.pdf"'
+    )
+    return response
+
+
+@extend_schema(
+    responses={200: {"type": "string", "format": "binary"}},
+    description="Generate match sheet PDF for a specific team",
+    tags=["Match Management"],
+)
+@api_view(["GET"])
+def match_team_sheet(request, match_id, participant_id):
+    """
+    Generate match sheet PDF for a specific team in a match.
+    """
+
+    match_participant = get_match_participant_by_id(match_id, participant_id).get()
+
+    try:
+        pdf_content = document_generation_service.generate_match_team_report(
+            match_participant
+        )
+    except DocumentGenerationLackPermissionError as e:
+        return Response({"detail": str(e)}, status=403)
+
+    response = HttpResponse(pdf_content, content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'attachment; filename="match_team_sheet_{match_id}_{participant_id}.pdf"'
+    )
+    return response
+
+
 urlpatterns = [
     path("", MatchListCreateView.as_view(), name="match-list-create"),
     path("<uuid:match_id>/", MatchDetailView.as_view(), name="match-detail"),
@@ -295,6 +350,11 @@ urlpatterns = [
         "<uuid:match_id>/comments/",
         add_comment,
         name="match-add-comment",
+    ),
+    path(
+        "<uuid:match_id>/sheet/",
+        match_sheet,
+        name="match-sheet",
     ),
     path(
         "<uuid:match_id>/comments/<uuid:comment_id>/",
@@ -310,5 +370,10 @@ urlpatterns = [
         "<uuid:match_id>/participants/<uuid:participant_id>/staff/",
         add_staff_to_lineup,
         name="match-assign-staff-lineup",
+    ),
+    path(
+        "<uuid:match_id>/participants/<uuid:participant_id>/sheet/",
+        match_team_sheet,
+        name="match-team-sheet",
     ),
 ]
