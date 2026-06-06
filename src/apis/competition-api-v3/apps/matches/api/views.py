@@ -23,7 +23,7 @@ from .pdf_generators import (
     DocumentGenerationLackPermissionError,
     document_generation_service,
 )
-from .renders import render_match_detail, render_match_list
+from .renders import render_match_detail, render_match_list, render_match_participant
 from .serializers import (
     CommentCreateSerializer,
     LineupAssignSerializer,
@@ -187,7 +187,7 @@ def add_comment(request, match_id):
         admin_id=user.user_id,
     )
 
-    response_serializer = MatchDetailSerializer(match)
+    response_serializer = MatchDetailSerializer(render_match_detail(match).first())
     return Response(response_serializer.data, status=201)
 
 
@@ -234,7 +234,9 @@ class MatchLineupsView(APIView):
     def get(self, request, match_id, participant_id):
         """Retrieve lineups for a match"""
         participant = get_match_participant_by_id(match_id, participant_id).first()
-        serializer = MatchParticipantLineupSerializer(participant)
+        serializer = MatchParticipantLineupSerializer(
+            render_match_participant(participant).first()
+        )
         return Response(serializer.data)
 
     def post(self, request, match_id, participant_id):
@@ -242,13 +244,15 @@ class MatchLineupsView(APIView):
         serializer = LineupAssignSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        match = assign_lineup(
+        participant = assign_lineup(
             match_id=match_id,
             participant_id=participant_id,
             players=serializer.validated_data["players"],
         )
 
-        response_serializer = MatchParticipantLineupSerializer(match)
+        response_serializer = MatchParticipantLineupSerializer(
+            render_match_participant(participant).first()
+        )
         return Response(response_serializer.data, status=200)
 
     def put(self, request, match_id, participant_id):
@@ -256,13 +260,15 @@ class MatchLineupsView(APIView):
         serializer = LineupUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        match = update_lineup(
+        participant = update_lineup(
             match_id=match_id,
             participant_id=participant_id,
             players=serializer.validated_data["players"],
         )
 
-        response_serializer = MatchParticipantLineupSerializer(match)
+        response_serializer = MatchParticipantLineupSerializer(
+            render_match_participant(participant).first()
+        )
         return Response(response_serializer.data, status=200)
 
 
@@ -278,13 +284,15 @@ def add_staff_to_lineup(request, match_id, participant_id):
     serializer = LineupAssignStaffSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
 
-    match = assign_staff_to_lineup(
+    participant = assign_staff_to_lineup(
         match_id=match_id,
         participant_id=participant_id,
         staff_ids=serializer.validated_data["staff_ids"],
     )
 
-    response_serializer = MatchParticipantLineupSerializer(match)
+    response_serializer = MatchParticipantLineupSerializer(
+        render_match_participant(participant).first()
+    )
     return Response(response_serializer.data, status=200)
 
 
@@ -302,7 +310,9 @@ def match_sheet(request, match_id):
 
     match = get_match_by_id(match_id).get()
 
-    pdf_content = document_generation_service.generate_match_report(match)
+    pdf_content = document_generation_service.generate_match_report(
+        render_match_detail(match, include_lineups=True).first()
+    )
 
     response = HttpResponse(pdf_content, content_type="application/pdf")
     response["Content-Disposition"] = (
@@ -326,7 +336,7 @@ def match_team_sheet(request, match_id, participant_id):
 
     try:
         pdf_content = document_generation_service.generate_match_team_report(
-            match_participant
+            render_match_participant(match_participant).first()
         )
     except DocumentGenerationLackPermissionError as e:
         return Response({"detail": str(e)}, status=403)
