@@ -92,3 +92,48 @@ def match_delete_comment(match_id: UUID, comment_id: UUID) -> Match:
     match = Match.objects.get(id=match_id)
     match.comments.filter(id=comment_id).delete()
     return match
+
+
+@transaction.atomic
+def assign_lineup(
+    match_id: UUID, participant_id: UUID, players: list[UUID], admin_id: UUID = None
+) -> MatchParticipant:
+    match = Match.objects.get(id=match_id)
+    participant = match.participants.get(id=participant_id)
+
+    # Clear existing lineup
+    participant.lineup.all().delete()
+
+    # Create new lineup
+    for player in players:
+        participant.lineup.create(athlete_id=player)
+
+    return participant
+
+
+@transaction.atomic
+def update_lineup(
+    match_id: UUID, participant_id: UUID, players: list[dict], admin_id: UUID = None
+) -> MatchParticipant:
+    match = Match.objects.get(id=match_id)
+    participant = match.participants.get(id=participant_id)
+
+    # Update lineup based on provided player data
+    for player_data in players:
+        player_id = player_data.get("player_id")
+        jersey_number = player_data.get("jersey_number")
+        is_starter = player_data.get("is_starter")
+
+        player_lineup = participant.lineup.get(athlete_id=player_id)
+
+        if jersey_number is not None:
+            player_lineup.jersey_number = jersey_number
+        if is_starter is not None:
+            player_lineup.is_starter = is_starter
+        player_lineup.save()
+
+    return participant
+
+
+@transaction.atomic
+def assign_staff_to_lineup(match_id: UUID): ...

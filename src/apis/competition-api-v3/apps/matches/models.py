@@ -62,7 +62,7 @@ class MatchParticipant(models.Model):
     )  # Indicates if this participant is the winner of the match (useful for binary outcomes)
 
     if TYPE_CHECKING:
-        lineups: RelatedManager["MatchParticipantAthleteLineup"]
+        lineup: RelatedManager["MatchParticipantAthleteLineup"]
 
     class Meta:
         unique_together = ("match", "competitor")
@@ -99,7 +99,7 @@ class MatchParticipantAthleteLineup(models.Model):
     """Represents a lineup of competitors for a match participant (e.g., team members)."""
 
     match_participant = models.ForeignKey(
-        MatchParticipant, on_delete=models.CASCADE, related_name="lineups"
+        MatchParticipant, on_delete=models.CASCADE, related_name="lineup"
     )
     athlete = models.ForeignKey(
         Athlete, on_delete=models.CASCADE, related_name="match_lineups"
@@ -113,8 +113,16 @@ class MatchParticipantAthleteLineup(models.Model):
     )  # Indicates if the athlete is a starter in the lineup
 
     @property
-    def name(self):
+    def player_name(self):
         return self.athlete.name
+
+    @property
+    def player_id(self):
+        return self.athlete.id
+
+    @property
+    def player_course(self):
+        return self.athlete.course.name
 
     class Meta:
         unique_together = ("match_participant", "athlete")

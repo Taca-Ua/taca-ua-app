@@ -2,28 +2,7 @@ from rest_framework import serializers
 
 
 # Helper serializers
-class ParticipantsListSerializer(serializers.Serializer):
-    """Serializer for listing match participants"""
-
-    id = serializers.UUIDField()
-    entity_id = serializers.UUIDField()
-    name = serializers.CharField()
-    score = serializers.IntegerField(required=False, allow_null=True)
-    position = serializers.IntegerField(required=False, allow_null=True)
-    logo_url = serializers.CharField(required=False, allow_null=True)
-
-
-class CommentListSerializer(serializers.Serializer):
-    """Serializer for listing comments on a match"""
-
-    id = serializers.UUIDField()
-    message = serializers.CharField(source="content")
-    author_name = serializers.CharField(source="author")
-    can_edit = serializers.BooleanField(default=True)
-    created_at = serializers.DateTimeField(source="timestamp")
-
-
-class LineupDetailSerializer(serializers.Serializer):
+class MatchParticipantLineupSerializer(serializers.Serializer):
     """Serializer for lineup details"""
 
     class PlayerLineupSerializer(serializers.Serializer):
@@ -35,27 +14,37 @@ class LineupDetailSerializer(serializers.Serializer):
         is_starter = serializers.BooleanField(required=False, default=None)
         jersey_number = serializers.IntegerField(required=False, allow_null=True)
 
-    participant_id = serializers.UUIDField()
+    class StaffAssignmentSerializer(serializers.Serializer):
+        """Serializer for staff assigned to a match participant"""
+
+        id = serializers.UUIDField()
+        name = serializers.CharField()
+
+    id = serializers.UUIDField()
+    name = serializers.CharField()
+    team_id = serializers.UUIDField(required=False, allow_null=True, source="entity_id")
     lineup = PlayerLineupSerializer(many=True)
-
-
-class StaffSummarySerializer(serializers.Serializer):
-    """Serializer for staff summary information"""
-
-    id = serializers.UUIDField()
-    name = serializers.CharField()
-
-
-class TournamentSummarySerializer(serializers.Serializer):
-    """Serializer for tournament summary information"""
-
-    id = serializers.UUIDField()
-    name = serializers.CharField()
+    staff = StaffAssignmentSerializer(many=True, required=False)
 
 
 # Response serializers
 class MatchListSerializer(serializers.Serializer):
     """Serializer for listing matches"""
+
+    class ParticipantsListSerializer(serializers.Serializer):
+        """Serializer for listing match participants"""
+
+        id = serializers.UUIDField()
+        name = serializers.CharField()
+        score = serializers.IntegerField(required=False, allow_null=True)
+        position = serializers.IntegerField(required=False, allow_null=True)
+        logo_url = serializers.CharField(required=False, allow_null=True)
+
+    class TournamentSummarySerializer(serializers.Serializer):
+        """Serializer for tournament summary information"""
+
+        id = serializers.UUIDField()
+        name = serializers.CharField()
 
     id = serializers.UUIDField()
     tournament = TournamentSummarySerializer()
@@ -69,14 +58,23 @@ class MatchListSerializer(serializers.Serializer):
 class MatchDetailSerializer(MatchListSerializer):
     """Serializer for detailed match view"""
 
+    class CommentListSerializer(serializers.Serializer):
+        """Serializer for listing comments on a match"""
+
+        id = serializers.UUIDField()
+        message = serializers.CharField(source="content")
+        author_name = serializers.CharField(source="author")
+        can_edit = serializers.BooleanField(default=True)
+        created_at = serializers.DateTimeField(source="timestamp")
+
     comments = CommentListSerializer(many=True, required=False, allow_null=True)
-    lineups = LineupDetailSerializer(many=True, required=False, allow_null=True)
-    staff_assignments = serializers.DictField(
-        child=serializers.ListField(child=StaffSummarySerializer()),
-        required=False,
-        allow_null=True,
-        help_text="Dictionary mapping participant IDs to lists of assigned staff IDs",
-    )
+    # lineups = LineupDetailSerializer(many=True, required=False)
+    # staff_assignments = serializers.DictField(
+    #     child=serializers.ListField(child=StaffSummarySerializer()),
+    #     required=False,
+    #     allow_null=True,
+    #     help_text="Dictionary mapping participant IDs to lists of assigned staff IDs",
+    # )
 
 
 class MatchPaginatedListSerializer(serializers.Serializer):
@@ -183,7 +181,6 @@ class CommentCreateSerializer(serializers.Serializer):
 class LineupAssignSerializer(serializers.Serializer):
     """Serializer for assigning lineup to a team"""
 
-    participant = serializers.UUIDField(required=True)
     players = serializers.ListField(
         child=serializers.UUIDField(),
         required=True,
@@ -209,7 +206,6 @@ class LineupUpdateSerializer(serializers.Serializer):
         is_starter = serializers.BooleanField(required=False, default=None)
         jersey_number = serializers.IntegerField(required=False, allow_null=True)
 
-    participant = serializers.UUIDField(required=True)
     players = PlayerLineupUpdateSerializer(many=True, required=True)
 
 

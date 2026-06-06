@@ -1,6 +1,6 @@
 from django.db.models import Q, QuerySet
 
-from .models import Match
+from .models import Match, MatchParticipant
 
 
 def list_matches(
@@ -45,6 +45,14 @@ def list_matches(
 
 def get_match_by_id(match_id) -> QuerySet[Match]:
     queryset = Match.objects.filter(id=match_id)
+    if not queryset.exists():
+        return None
+
+    return queryset
+
+
+def get_match_participant_by_id(match_id, participant_id) -> QuerySet[MatchParticipant]:
+    queryset = MatchParticipant.objects.filter(match_id=match_id, id=participant_id)
     if not queryset.exists():
         return None
 

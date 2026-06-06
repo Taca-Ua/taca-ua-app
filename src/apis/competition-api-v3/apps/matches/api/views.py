@@ -5,23 +5,30 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from shared.auth.utils import get_user
 
-from ..queries import get_match_by_id, list_matches
+from ..queries import get_match_by_id, get_match_participant_by_id, list_matches
 from ..service import (
+    assign_lineup,
+    assign_staff_to_lineup,
     create_match,
     delete_match,
     match_add_comment,
     match_delete_comment,
     publish_match_results,
+    update_lineup,
     update_match,
 )
 from .filters import MatchListFilterSerializer
 from .renders import render_match_detail, render_match_list
 from .serializers import (
     CommentCreateSerializer,
+    LineupAssignSerializer,
+    LineupAssignStaffSerializer,
+    LineupUpdateSerializer,
     MatchCreateSerializer,
     MatchDetailSerializer,
     MatchListSerializer,
     MatchPaginatedListSerializer,
+    MatchParticipantLineupSerializer,
     MatchPublishResultsSerializer,
     MatchUpdateSerializer,
 )
@@ -31,12 +38,14 @@ from .serializers import (
     get=extend_schema(
         summary="List matches",
         description="Retrieve a list of matches with optional filtering and pagination.",
+        tags=["Match Management"],
         parameters=[MatchListFilterSerializer],
         responses={200: MatchPaginatedListSerializer},
     ),
     post=extend_schema(
         summary="Create a match",
         description="Create a new match with the provided details.",
+        tags=["Match Management"],
         request=MatchCreateSerializer,
         responses={201: MatchListSerializer},
     ),
@@ -87,16 +96,19 @@ class MatchListCreateView(APIView):
     get=extend_schema(
         summary="Retrieve match details",
         description="Get detailed information about a specific match, including participants and comments.",
+        tags=["Match Management"],
     ),
     put=extend_schema(
         summary="Update a match",
         description="Update the details of an existing match.",
+        tags=["Match Management"],
         request=MatchUpdateSerializer,
         responses={200: MatchDetailSerializer},
     ),
     delete=extend_schema(
         summary="Delete a match",
         description="Remove a match from the system.",
+        tags=["Match Management"],
         responses={204: "No Content"},
     ),
 )
@@ -129,6 +141,7 @@ class MatchDetailView(APIView):
 @extend_schema(
     summary="Publish match results",
     description="Publish the results of a match, making them visible to users.",
+    tags=["Match Management"],
     request=MatchPublishResultsSerializer,
     responses={200: MatchDetailSerializer},
 )
@@ -188,6 +201,88 @@ def delete_comment(request, match_id, comment_id):
     return Response(status=204)
 
 
+# ============= Lineup Management Views =============
+
+
+@extend_schema_view(
+    get=extend_schema(
+        responses=MatchParticipantLineupSerializer,
+        description="Retrieve lineups for a match",
+        tags=["Match Management"],
+    ),
+    post=extend_schema(
+        request=LineupAssignSerializer,
+        responses=MatchParticipantLineupSerializer,
+        description="Assign lineup for a team in a match",
+        tags=["Match Management"],
+    ),
+    put=extend_schema(
+        request=LineupUpdateSerializer,
+        responses=MatchParticipantLineupSerializer,
+        description="Update lineup for a team in a match",
+        tags=["Match Management"],
+    ),
+)
+class MatchLineupsView(APIView):
+    """View to retrieve lineups for a match"""
+
+    def get(self, request, match_id, participant_id):
+        """Retrieve lineups for a match"""
+        participant = get_match_participant_by_id(match_id, participant_id).first()
+        serializer = MatchParticipantLineupSerializer(participant)
+        return Response(serializer.data)
+
+    def post(self, request, match_id, participant_id):
+        """Assign lineup for a team"""
+        serializer = LineupAssignSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        match = assign_lineup(
+            match_id=match_id,
+            participant_id=participant_id,
+            players=serializer.validated_data["players"],
+        )
+
+        response_serializer = MatchParticipantLineupSerializer(match)
+        return Response(response_serializer.data, status=200)
+
+    def put(self, request, match_id, participant_id):
+        """Update lineup for a team"""
+        serializer = LineupUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        match = update_lineup(
+            match_id=match_id,
+            participant_id=participant_id,
+            players=serializer.validated_data["players"],
+        )
+
+        response_serializer = MatchParticipantLineupSerializer(match)
+        return Response(response_serializer.data, status=200)
+
+
+@extend_schema(
+    request=LineupAssignStaffSerializer,
+    responses=MatchParticipantLineupSerializer,
+    description="Assign staff members to a team's lineup",
+    tags=["Match Management"],
+)
+@api_view(["POST"])
+def add_staff_to_lineup(request, match_id, participant_id):
+    """Assign staff members to a team's lineup"""
+    serializer = LineupAssignStaffSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    match = assign_staff_to_lineup(
+        match_id=match_id,
+        participant_id=participant_id,
+        staff_ids=serializer.validated_data["staff_ids"],
+    )
+
+    response_serializer = MatchParticipantLineupSerializer(match)
+    return Response(response_serializer.data, status=200)
+
+
 urlpatterns = [
     path("", MatchListCreateView.as_view(), name="match-list-create"),
     path("<uuid:match_id>/", MatchDetailView.as_view(), name="match-detail"),
@@ -205,5 +300,15 @@ urlpatterns = [
         "<uuid:match_id>/comments/<uuid:comment_id>/",
         delete_comment,
         name="match-delete-comment",
+    ),
+    path(
+        "<uuid:match_id>/lineups/<uuid:participant_id>/",
+        MatchLineupsView.as_view(),
+        name="match-lineups",
+    ),
+    path(
+        "<uuid:match_id>/participants/<uuid:participant_id>/staff/",
+        add_staff_to_lineup,
+        name="match-assign-staff-lineup",
     ),
 ]
