@@ -136,4 +136,15 @@ def update_lineup(
 
 
 @transaction.atomic
-def assign_staff_to_lineup(match_id: UUID): ...
+def assign_staff_to_lineup(match_id: UUID, participant_id: UUID, staff_ids: list[UUID]):
+    match = Match.objects.get(id=match_id)
+    participant = match.participants.get(id=participant_id)
+
+    # Clear existing staff assignments
+    participant.staff.all().delete()
+
+    # Create new staff assignments
+    for staff_id in staff_ids:
+        participant.staff.create(staff_id=staff_id)
+
+    return participant

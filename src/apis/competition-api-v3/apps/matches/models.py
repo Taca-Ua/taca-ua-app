@@ -2,6 +2,7 @@ import uuid
 from typing import TYPE_CHECKING
 
 from apps.athletes.models import Athlete
+from apps.staff.models import Staff
 from apps.tournaments.models import Tournament, TournamentCompetitor
 from django.db import models
 
@@ -63,6 +64,7 @@ class MatchParticipant(models.Model):
 
     if TYPE_CHECKING:
         lineup: RelatedManager["MatchParticipantAthleteLineup"]
+        staff: RelatedManager["MatchParticipantStaffAssignment"]
 
     class Meta:
         unique_together = ("match", "competitor")
@@ -126,6 +128,26 @@ class MatchParticipantAthleteLineup(models.Model):
 
     class Meta:
         unique_together = ("match_participant", "athlete")
+
+
+class MatchParticipantStaffAssignment(models.Model):
+    """Represents staff assigned to a match participant (e.g., coaches, medical staff)."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    match_participant = models.ForeignKey(
+        MatchParticipant, on_delete=models.CASCADE, related_name="staff"
+    )
+    staff = models.ForeignKey(
+        Staff, on_delete=models.CASCADE, related_name="match_assignments"
+    )
+
+    @property
+    def name(self):
+        return self.staff.name
+
+    class Meta:
+        unique_together = ("match_participant", "staff")
 
 
 class MatchComment(models.Model):

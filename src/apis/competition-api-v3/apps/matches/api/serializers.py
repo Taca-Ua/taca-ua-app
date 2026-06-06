@@ -18,6 +18,7 @@ class MatchParticipantLineupSerializer(serializers.Serializer):
         """Serializer for staff assigned to a match participant"""
 
         id = serializers.UUIDField()
+        staff_id = serializers.UUIDField()
         name = serializers.CharField()
 
     id = serializers.UUIDField()

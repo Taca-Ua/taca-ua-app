@@ -14,6 +14,7 @@ export interface MatchParticipantLineup {
     }[];
     staff?: {
         id: string;
+        staff_id: string;
         name: string;
     }[];
 }
