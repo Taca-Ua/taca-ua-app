@@ -16,7 +16,7 @@ class AdminListSerializer(serializers.Serializer):
         help_text="Admin role assigned to the user",
     )
     enabled = serializers.BooleanField(
-        read_only=True, help_text="Whether the account is enabled"
+        read_only=True, help_text="Whether the account is enabled", source="active"
     )
 
 

@@ -45,8 +45,8 @@ export interface AdminPasswordChange {
 
 
 export const administratorsApi = {
-  async getAll(): Promise<AdminListItem[]> {
-    return apiClient.get<AdminListItem[]>('/admins/');
+  async getAll(include_inactive: boolean): Promise<AdminListItem[]> {
+    return apiClient.get<AdminListItem[]>('/admins/', { include_inactive });
   },
 
   async create(data: AdminCreate): Promise<AdminListItem> {

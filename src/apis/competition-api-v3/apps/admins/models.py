@@ -14,6 +14,7 @@ class Admin(models.Model):
     name = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
     role = models.CharField(max_length=255, choices=AdminRole.choices)
+    active = models.BooleanField(default=True)
 
     nucleos = models.ManyToManyField(Nucleus, related_name="admins", blank=True)
 

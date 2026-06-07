@@ -41,14 +41,6 @@ class KeycloakService:
             verify=settings.KEYCLOAK_ADMIN_VERIFY_SSL,
         )
 
-        # Verify connection to Keycloak server
-        try:
-            self.keycloak_admin.get_server_info()
-            logger.info("Successfully connected to Keycloak server")
-        except KeycloakError as e:
-            logger.error(f"Failed to connect to Keycloak server: {str(e)}")
-            raise Exception(f"Failed to connect to Keycloak server: {str(e)}")
-
     def _assign_role_to_user(self, user_id: str, role_name: str) -> None:
         """
         Assign a realm role to a user.

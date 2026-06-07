@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 
 from ..queries import get_admin_by_id, list_admins
 from ..service import change_admin_password, create_admin, delete_admin, update_admin
+from .filters import AdminListFilter
 from .renders import render_admin_detail, render_admin_list
 from .serializers import (
     AdminCreateSerializer,
@@ -21,6 +22,7 @@ from .serializers import (
         responses=AdminListSerializer(many=True),
         description="List all admin users with 'general_admin' or 'admin_nucleo' roles",
         tags=["Admin Management"],
+        parameters=[AdminListFilter],
     ),
     post=extend_schema(
         request=AdminCreateSerializer,
@@ -31,8 +33,10 @@ from .serializers import (
 )
 class AdminListCreateView(APIView):
     def get(self, request):
+        serializer = AdminListFilter(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
 
-        admins = list_admins()
+        admins = list_admins(include=serializer.validated_data.get("include_inactive"))
 
         serializer = AdminListSerializer(render_admin_list(admins), many=True)
         return Response(serializer.data)
@@ -101,7 +105,7 @@ class AdminDetailView(APIView):
     def delete(self, request, user_id):
         """Delete an admin user."""
         delete_admin(user_id=user_id)
-        pass
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema(

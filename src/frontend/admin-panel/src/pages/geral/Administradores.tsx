@@ -11,30 +11,27 @@ import { useModal } from '../../contexts/ModalContext';
 
 function Administradores() {
   const navigate = useNavigate();
-  const [members, setMembers] = useState<AdminListItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
   const { notify } = useNotification();
   const { isAdminGeneral } = useAuth();
   const { pushModal } = useModal();
 
+  const [members, setMembers] = useState<AdminListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showInactive, setShowInactive] = useState(false);
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [adminsData] = await Promise.all([
-          administratorsApi.getAll(),
-        ]);
-        setMembers(adminsData);
-      } catch (err) {
-        console.error('Failed to fetch data:', err);
-        notify('Não foi possível carregar a lista de administradores. Tente recarregar a página.', 'error');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+    setLoading(true);
+    administratorsApi.getAll(showInactive).then(adminsData => {
+      setMembers(adminsData);
+      setLoading(false);
+    }).catch(err => {
+      console.error('Failed to fetch data:', err);
+      notify('Não foi possível carregar a lista de administradores. Tente recarregar a página.', 'error');
+      setLoading(false);
+    });
+
+  }, [showInactive]);
 
   const filteredMembers = members.filter(m => {
     const matchesSearch =
@@ -50,6 +47,24 @@ function Administradores() {
     .filter(m => m.role === 'nucleo_admin')
     .sort((a, b) => a.username.localeCompare(b.username));
 
+
+  const renderAdminRow = (admin: AdminListItem) => (
+    <button
+      key={admin.id}
+        type="button"
+        onClick={() => navigate(`/administradores/${admin.id}`)}
+        className={admin.enabled ?
+            "w-full text-left bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500" :
+            "w-full text-left bg-gray-100 p-4 rounded-md opacity-50"
+        }
+      >
+        <div className="flex justify-between items-center">
+          <span className="text-gray-800 font-medium">{admin.name}</span>
+          <span className="text-gray-600 text-sm">{admin.username} - {admin.email}</span>
+        </div>
+      </button>
+  );
+
   if (loading) {
     return (
       <div className="flex-1 flex justify-center items-center py-12">
@@ -63,7 +78,7 @@ function Administradores() {
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold text-gray-800">Administradores</h1>
-            <div>
+            <div className="flex gap-3">
               <Button
                 onClick={() => pushModal(
                   <AdminCreateModal
@@ -77,6 +92,13 @@ function Administradores() {
                 active={isAdminGeneral} // Only general admins can add new admins
               >
                 + Adicionar Administrador
+              </Button>
+              <Button
+                onClick={() => setShowInactive(prev => !prev)}
+                type={showInactive ? 'secondary' : 'info'}
+                active={isAdminGeneral} // Only general admins can manage invites
+              >
+                {showInactive ? 'Esconder Inativos' : 'Mostrar Inativos'}
               </Button>
             </div>
           </div>
@@ -94,38 +116,14 @@ function Administradores() {
           <div className="bg-white rounded-lg shadow-md p-6 mb-8">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Administradores Gerais</h2>
             <div className="space-y-3 max-h-96 overflow-y-auto">
-              {AdminG.map((admin) => (
-                <button
-                  key={admin.id}
-                  type="button"
-                  onClick={() => navigate(`/administradores/${admin.id}`)}
-                  className="w-full text-left bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-800 font-medium">{admin.name}</span>
-                    <span className="text-gray-600 text-sm">{admin.username} - {admin.email}</span>
-                  </div>
-                </button>
-              ))}
+              {AdminG.map((admin) => renderAdminRow(admin))}
             </div>
           </div>
 
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Administradores Núcleo</h2>
             <div className="space-y-3 max-h-96 overflow-y-auto">
-              {AdminN.map((admin) => (
-                <button
-                  key={admin.id}
-                  type="button"
-                  onClick={() => navigate(`/administradores/${admin.id}`)}
-                  className="w-full text-left bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-800 font-medium">{admin.name}</span>
-                    <span className="text-gray-600 text-sm">{admin.username} - {admin.email}</span>
-                  </div>
-                </button>
-              ))}
+              {AdminN.map((admin) => renderAdminRow(admin))}
             </div>
           </div>
         </div>

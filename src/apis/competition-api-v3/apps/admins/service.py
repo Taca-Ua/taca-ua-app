@@ -79,8 +79,23 @@ def update_admin(
 
 
 @transaction.atomic
-def delete_admin(): ...
+def delete_admin(user_id: UUID):
+    """Delete an admin user from Keycloak and the local database."""
+    # Deactivate user in Keycloak instead of deleting to preserve audit trails
+    keycloak_service_client.update_admin(user_id=str(user_id), enabled=False)
+
+    # Delete corresponding Admin record from the local database
+    admin = Admin.objects.get(id=user_id)
+    admin.active = False
+
+    admin.nucleos.clear()  # Clear associations with nucleos
+    admin.save()
 
 
 @transaction.atomic
-def change_admin_password(): ...
+def change_admin_password(user_id: UUID, new_password: str):
+    """Change an admin user's password in Keycloak."""
+
+    keycloak_service_client.change_password(
+        user_id=str(user_id), new_password=new_password
+    )

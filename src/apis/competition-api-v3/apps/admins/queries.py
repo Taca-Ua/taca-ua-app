@@ -3,8 +3,12 @@ from django.db.models import QuerySet
 from .models import Admin
 
 
-def list_admins() -> QuerySet[Admin]:
+def list_admins(include: bool = False) -> QuerySet[Admin]:
     queryset = Admin.objects.all()
+
+    if not include:
+        queryset = queryset.filter(active=True)
+
     return queryset
 
 
