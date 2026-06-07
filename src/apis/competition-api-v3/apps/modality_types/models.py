@@ -17,7 +17,7 @@ class ModalityType(models.Model):
     description = models.TextField(blank=True, null=True)
     mode = models.CharField(max_length=20, choices=ModalityTypeModes.choices)
     tournament_competitor_type = models.CharField(
-        max_length=20, choices=TournamentCompetitorType.choices
+        max_length=20, choices=TournamentCompetitorType.choices, null=True
     )
 
     season = models.ForeignKey(

@@ -16,6 +16,7 @@ from .serializers import (
     ModalityTypeDetailSerializer,
     ModalityTypeListMinimalSerializer,
     ModalityTypeListSerializer,
+    ModalityTypeUpdateSerializer,
 )
 
 logger = logging.getLogger(__name__)
@@ -90,7 +91,7 @@ class ModalityTypeListCreateView(APIView):
         tags=["Modality Types"],
     ),
     put=extend_schema(
-        request=ModalityTypeCreateSerializer,
+        request=ModalityTypeUpdateSerializer,
         responses=ModalityTypeDetailSerializer,
         summary="Update a modality type",
         description="Update the details of a specific modality type by its ID.",
@@ -113,17 +114,14 @@ class ModalityTypeDetailView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, modality_type_id):
-        serializer = ModalityTypeCreateSerializer(data=request.data)
+        serializer = ModalityTypeUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         modality_type = modality_type_service.update_modality_type(
             modality_type_id=modality_type_id,
             name=serializer.validated_data.get("name"),
             description=serializer.validated_data.get("description"),
-            mode=serializer.validated_data.get("mode"),
-            tournament_competitor_type=serializer.validated_data.get(
-                "tournament_competitor_type"
-            ),
+            escaloes_data=serializer.validated_data.get("escaloes"),
         )
 
         logger.info(f"Updated modality type {modality_type_id}")

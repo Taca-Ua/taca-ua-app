@@ -8,7 +8,7 @@ from ..models import Modality, SeasonModality
 
 
 def render_modalities(
-    modalities: QuerySet[Modality], season_id=None
+    modalities: QuerySet[Modality] | Modality, season_id=None
 ) -> QuerySet[Modality]:
     """Render the queryset of modalities to the API response format.
 
@@ -19,6 +19,9 @@ def render_modalities(
     Returns:
         list: A list of dictionaries representing the modalities in the API response format.
     """
+
+    if isinstance(modalities, Modality):
+        modalities = Modality.objects.filter(pk=modalities.pk)
 
     if season_id:
         modalities = modalities.annotate(

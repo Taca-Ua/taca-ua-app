@@ -1,10 +1,21 @@
+from uuid import UUID
+
+from apps.seasons.service import get_current_season
 from django.db import transaction
 
 from .models import Team
 
 
 @transaction.atomic
-def create_team(name, modality_id, course_id, season_id) -> Team:
+def create_team(
+    name: str, modality_id: UUID, course_id: UUID, season_id: int = None
+) -> Team:
+
+    if season_id is None:
+        season = get_current_season()
+        if season is None:
+            raise ValueError("No active season found. Please specify a season_id.")
+        season_id = season.id
 
     team = Team.objects.create(
         name=name, modality_id=modality_id, course_id=course_id, season_id=season_id

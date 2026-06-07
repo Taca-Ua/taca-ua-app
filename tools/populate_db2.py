@@ -7,7 +7,7 @@ import urllib3
 
 urllib3.disable_warnings()
 
-API_URL = "http://localhost/api2/admin"
+API_URL = "http://localhost/api/admin"
 
 HEADERS = {
     "X-Dev-Auth-Token": "super-secret-dev-token",
@@ -46,6 +46,7 @@ def populate_modalities_types(step_by_step=False, delete_existing=False) -> int:
 
     check = requests.get(f"{API_URL}/modality-types", headers=HEADERS)
     if delete_existing and check.status_code == 200:
+        print(check.content)
         for modality_type in check.json():
             del_response = requests.delete(
                 f"{API_URL}/modality-types/{modality_type['id']}/", headers=HEADERS
@@ -704,12 +705,11 @@ def populate_tournaments():
             return None
 
         payload = {
-            "competitor_type": "team",
-            "entity_id": team_id,
+            "entity_ids": [team_id],
         }
         response = requests.put(
-            f"{API_URL}/tournaments/{tournament_id}/competitors/add/",
-            json=[payload],
+            f"{API_URL}/tournaments/{tournament_id}/add-competitors/",
+            json=payload,
             headers=HEADERS,
         )
 
@@ -764,7 +764,7 @@ def populate_tournaments():
                         match["location"],
                     ]
                 ): match["id"]
-                for match in existing_matches_response.json()
+                for match in existing_matches_response.json()["matches"]
             }
         else:
             print(
@@ -777,7 +777,9 @@ def populate_tournaments():
             # create match
             print("\t\t", flush=True, end="")  # Add indentation for match creation logs
             if match.day == "":
-                iso_time = "2026-01-01T00:00:00+00:00"  # Default to midnight if no day is provided
+                iso_time = (
+                    "2026-01-01T00:00:00Z"  # Default to midnight if no day is provided
+                )
             else:
                 hour_formatted = match.hour.lower().split("h")[0].zfill(2)
                 minute_formatted = (
@@ -788,7 +790,7 @@ def populate_tournaments():
                 iso_time = (
                     f"{match.day.split()[0]}T"
                     + f"{hour_formatted}:{minute_formatted}"
-                    + ":00+00:00"
+                    + ":00Z"
                 )
             local = match.local if match.local else "TBD"
 
@@ -857,7 +859,7 @@ def populate_tournaments():
                         match["location"],
                     ]
                 ): match
-                for match in matches_response.json()
+                for match in matches_response.json()["matches"]
             }
         else:
             print(
@@ -879,11 +881,11 @@ def populate_tournaments():
                 continue
 
             if match.day == "":
-                iso_time = "2026-01-01T00:00:00+00:00"  # Default to midnight if no day is provided
-            else:
                 iso_time = (
-                    f"{match.day.split()[0]}T{match.hour.replace('h', ':')}:00+00:00"
+                    "2026-01-01T00:00:00Z"  # Default to midnight if no day is provided
                 )
+            else:
+                iso_time = f"{match.day.split()[0]}T{match.hour.replace('h', ':')}:00Z"
             local = match.local if match.local else "TBD"
 
             if (
@@ -1190,10 +1192,10 @@ def main():
     print("Populating tournaments...")
     populate_tournaments()
 
-    print()
-    input("Press Enter to continue to populate athletes...")
-    print("Populating athletes...")
-    populate_athletes()
+    # print()
+    # input("Press Enter to continue to populate athletes...")
+    # print("Populating athletes...")
+    # populate_athletes()
 
     print("\nPopulation completed. Summary of operations:")
     for category, stats in STATS.items():

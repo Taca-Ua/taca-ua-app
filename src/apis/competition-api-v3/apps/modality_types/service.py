@@ -65,8 +65,7 @@ def update_modality_type(
     modality_type_id: UUID,
     name: Optional[str] = None,
     description: Optional[str] = None,
-    mode: Optional[str] = None,
-    tournament_competitor_type: Optional[str] = None,
+    escaloes_data: Optional[list[dict]] = None,
 ) -> Optional[ModalityType]:
     """Update an existing modality type.
 
@@ -88,10 +87,15 @@ def update_modality_type(
         modality_type.name = name
     if description is not None:
         modality_type.description = description
-    if mode is not None:
-        modality_type.mode = mode
-    if tournament_competitor_type is not None:
-        modality_type.tournament_competitor_type = tournament_competitor_type
+    if escaloes_data is not None:
+        modality_type.escaloes.all().delete()
+        for escaloes_item in escaloes_data:
+            modality_type.escaloes.create(
+                name=escaloes_item["name"],
+                min_participants=escaloes_item["min_participants"],
+                max_participants=escaloes_item["max_participants"],
+                points=escaloes_item.get("points", []),
+            )
 
     modality_type.save()
     return modality_type

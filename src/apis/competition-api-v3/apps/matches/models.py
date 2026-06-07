@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 class MatchStatus(models.TextChoices):
     SCHEDULED = "scheduled", "Scheduled"
     IN_PROGRESS = "in_progress", "In Progress"
-    COMPLETED = "finished", "Finished"
+    FINISHED = "finished", "Finished"
     CANCELED = "canceled", "Canceled"
 
 

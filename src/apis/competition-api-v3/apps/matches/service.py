@@ -3,7 +3,7 @@ from uuid import UUID
 
 from django.db import transaction
 
-from .models import Match, MatchParticipant
+from .models import Match, MatchParticipant, MatchStatus
 
 
 @transaction.atomic
@@ -76,6 +76,9 @@ def publish_match_results(match_id: UUID, participant_results: list[dict]) -> Ma
             participant.position = result.get("position")
             # participant.winner =
         participant.save()
+
+    match.status = MatchStatus.FINISHED
+    match.save()
 
     return match
 
