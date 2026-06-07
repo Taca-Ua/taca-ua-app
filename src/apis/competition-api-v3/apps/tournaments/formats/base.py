@@ -1,8 +1,12 @@
 from abc import ABC, abstractmethod
 
+from apps.matches.models import Match
+
+from ..models import Tournament
+
 
 class BaseFormat(ABC):
-    def __init__(self, tournament):
+    def __init__(self, tournament: Tournament):
         self.tournament = tournament
 
     @abstractmethod
@@ -15,4 +19,8 @@ class BaseFormat(ABC):
 
     @abstractmethod
     def get_details(self) -> dict:
+        pass
+
+    @abstractmethod
+    def record_result(self, match: Match) -> dict:
         pass

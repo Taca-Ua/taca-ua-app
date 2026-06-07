@@ -14,3 +14,7 @@ class FreeFormat(BaseFormat):
     def get_details(self) -> dict:
         # Free format has no specific settings, so we return an empty dictionary
         return None
+
+    def record_result(self, match) -> dict:
+        # Free format does not have specific result recording logic, so we just return an empty details
+        return None

@@ -12,7 +12,10 @@ class LeagueSettings(models.Model):
     """Settings specific to league format tournaments."""
 
     tournament = models.OneToOneField(
-        Tournament, on_delete=models.CASCADE, primary_key=True
+        Tournament,
+        on_delete=models.CASCADE,
+        primary_key=True,
+        related_name="league_settings",
     )
 
     win_points = models.PositiveIntegerField(default=3)
@@ -27,9 +30,11 @@ class LeagueSettings(models.Model):
 class LeagueStanding(models.Model):
     """Materialized view to represent the current standings in a league tournament."""
 
-    tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE)
-    competitor = models.ForeignKey(TournamentCompetitor, on_delete=models.CASCADE)
+    competitor = models.OneToOneField(
+        TournamentCompetitor, on_delete=models.CASCADE, primary_key=True
+    )
 
+    points = models.PositiveIntegerField(default=0)
     played = models.PositiveIntegerField(default=0)
     wins = models.PositiveIntegerField(default=0)
     draws = models.PositiveIntegerField(default=0)
@@ -39,6 +44,3 @@ class LeagueStanding(models.Model):
     points_against = models.PositiveIntegerField(default=0)
 
     league_points = models.PositiveIntegerField(default=0)
-
-    class Meta:
-        unique_together = ("tournament", "competitor")

@@ -1,6 +1,7 @@
 import datetime
 from uuid import UUID
 
+from apps.tournaments.service import tournament_format_match_result
 from django.db import transaction
 
 from .models import Match, MatchParticipant, MatchStatus
@@ -79,6 +80,8 @@ def publish_match_results(match_id: UUID, participant_results: list[dict]) -> Ma
 
     match.status = MatchStatus.FINISHED
     match.save()
+
+    tournament_format_match_result(match)
 
     return match
 

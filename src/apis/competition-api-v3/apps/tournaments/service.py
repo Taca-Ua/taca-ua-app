@@ -1,6 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
+from apps.matches.models import Match
 from apps.modality_types.models import ModalityType, ModalityTypeModes
 from apps.seasons.service import get_current_season
 from django.db import transaction
@@ -162,3 +163,15 @@ def update_tournament_format(tournament_id: UUID, format_data: dict) -> dict:
     details = format_engine.update(format_data)
 
     return details
+
+
+@transaction.atomic
+def tournament_format_match_result(match: Match) -> None:
+
+    format_engine = FormatRegistry.get_format(match.tournament)
+    if format_engine is None:
+        raise ValueError(
+            f"Unsupported tournament format: {match.tournament.tournament_format}"
+        )
+
+    format_engine.record_result(match)

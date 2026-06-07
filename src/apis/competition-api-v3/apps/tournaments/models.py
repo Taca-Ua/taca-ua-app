@@ -14,6 +14,8 @@ if TYPE_CHECKING:
     from apps.tournaments.models import TournamentCompetitor
     from django.db.models.manager import RelatedManager
 
+    from .formats.league.models import LeagueSettings
+
 
 class Tournament(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -59,6 +61,7 @@ class Tournament(models.Model):
     if TYPE_CHECKING:
         competitors: RelatedManager[TournamentCompetitor]
         matches: RelatedManager[Match]
+        league_settings: LeagueSettings
 
 
 class TournamentCompetitor(models.Model):
