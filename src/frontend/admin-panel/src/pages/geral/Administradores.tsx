@@ -39,8 +39,7 @@ function Administradores() {
   const filteredMembers = members.filter(m => {
     const matchesSearch =
       m.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       m.email.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch;
   });
@@ -68,7 +67,10 @@ function Administradores() {
               <Button
                 onClick={() => pushModal(
                   <AdminCreateModal
-                    onCreated={admin => setMembers(prev => [...prev, admin])}
+                    onCreated={admin => {
+                        console.log('Admin criado:', admin);
+                        setMembers(prev => [...prev, admin])
+                    }}
                   />
                 )}
                 type='primary'
@@ -100,8 +102,8 @@ function Administradores() {
                   className="w-full text-left bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-800 font-medium">{admin.username}</span>
-                    <span className="text-gray-600 text-sm">{admin.first_name} {admin.last_name} - {admin.email}</span>
+                    <span className="text-gray-800 font-medium">{admin.name}</span>
+                    <span className="text-gray-600 text-sm">{admin.username} - {admin.email}</span>
                   </div>
                 </button>
               ))}
@@ -119,8 +121,8 @@ function Administradores() {
                   className="w-full text-left bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-800 font-medium">{admin.username}</span>
-                    <span className="text-gray-600 text-sm">{admin.first_name} {admin.last_name} - {admin.email}</span>
+                    <span className="text-gray-800 font-medium">{admin.name}</span>
+                    <span className="text-gray-600 text-sm">{admin.username} - {admin.email}</span>
                   </div>
                 </button>
               ))}

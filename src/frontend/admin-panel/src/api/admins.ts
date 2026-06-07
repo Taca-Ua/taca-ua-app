@@ -4,8 +4,7 @@ export interface AdminListItem {
   id: string;
   username: string;
   email: string;
-  first_name: string;
-  last_name: string;
+  name: string;
   role: string;
   enabled: boolean;
 }
@@ -27,16 +26,14 @@ export interface AdminCreate {
   username: string;
   email: string;
   password: string;
-  first_name: string;
-  last_name: string;
+  name: string;
   role: string;
   nucleos: string[]; // Array of Nucleo IDs
 }
 
 export interface AdminUpdate {
   email?: string;
-  first_name?: string;
-  last_name?: string;
+  name?: string;
   enabled?: boolean;
   nucleos?: string[]; // Array of Nucleo IDs
 }

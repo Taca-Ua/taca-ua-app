@@ -204,8 +204,26 @@ MINIO_PASSWORD = os.getenv("MINIO_PASSWORD", "minioadmin")
 MINIO_USE_SSL = os.getenv("MINIO_USE_SSL", "false").lower() == "true"
 
 
-# System settings
+# Keycloak settings
+KEYCLOAK_REALM = os.getenv("KEYCLOAK_REALM", "taca-ua")
+KEYCLOAK_ADMIN_SERVER_URL = os.getenv(
+    "KEYCLOAK_ADMIN_SERVER_URL", "http://localhost:8080/auth/"
+)
+KEYCLOAK_ADMIN_USERNAME = os.getenv("KEYCLOAK_ADMIN_USERNAME", "admin")
+KEYCLOAK_ADMIN_PASSWORD = os.getenv("KEYCLOAK_ADMIN_PASSWORD", "admin")
+KEYCLOAK_ADMIN_REALM = os.getenv("KEYCLOAK_ADMIN_REALM", KEYCLOAK_REALM)
+KEYCLOAK_ADMIN_USER_REALM = os.getenv("KEYCLOAK_ADMIN_USER_REALM", "master")
+KEYCLOAK_ADMIN_VERIFY_SSL = (
+    os.getenv("KEYCLOAK_ADMIN_VERIFY_SSL", "false").lower() == "true"
+)
+KEYCLOAK_ISSUER_URL = os.getenv(
+    "KEYCLOAK_ISSUER_URL", f"http://localhost:8080/auth/realms/{KEYCLOAK_REALM}"
+)
+KEYCLOAK_VALIDATE_ISSUER = (
+    os.getenv("KEYCLOAK_VALIDATE_ISSUER", "false").lower() == "true"
+)
 
+# System settings
 API_ENDPOINT_PREFIX = (
     os.getenv("API_ENDPOINT_PREFIX", "/api/v1").rstrip("/").lstrip("/")
 )

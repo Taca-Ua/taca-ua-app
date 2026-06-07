@@ -6,6 +6,7 @@ from django.contrib.postgres.indexes import GinIndex
 from django.db import models
 
 if TYPE_CHECKING:
+    from apps.admins.models import Admin
     from apps.courses.models import Course
     from django.db.models.manager import RelatedManager
 
@@ -21,6 +22,7 @@ class Nucleus(models.Model):
 
     if TYPE_CHECKING:
         courses: RelatedManager["Course"]
+        admins: RelatedManager["Admin"]
 
     class Meta:
         indexes = [

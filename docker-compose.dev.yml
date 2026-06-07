@@ -147,6 +147,10 @@ services:
       - MINIO_SERVICE_URL=minio:9000
       - MINIO_USER=${MINIO_ROOT_USER}
       - MINIO_PASSWORD=${MINIO_ROOT_PASSWORD}
+
+      - KEYCLOAK_ADMIN_SERVER_URL=http://keycloak:8080/auth
+      - KEYCLOAK_REALM=${KEYCLOAK_REALM:-taca-ua}
+      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-admin-api}
     ports:
       - "8000:8000"
     depends_on:
@@ -158,6 +162,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_started
+      keycloak:
+        condition: service_healthy
 
   public-api:
     build:

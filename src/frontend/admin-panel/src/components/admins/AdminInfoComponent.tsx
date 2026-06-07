@@ -46,7 +46,7 @@ const AdminInfoComponent = ( {
           <div>
             <label className="block text-teal-500 font-medium mb-2">Nome</label>
             <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800">
-              {admin.first_name} {admin.last_name}
+              {admin.name}
             </div>
           </div>
           <div>

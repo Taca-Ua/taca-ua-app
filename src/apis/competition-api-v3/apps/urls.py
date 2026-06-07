@@ -6,6 +6,7 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+from .admins.api.views import urlpatterns as admins_urlpatterns
 from .athletes.api.views import urlpatterns as athletes_urlpatterns
 from .courses.api.views import urlpatterns as courses_urlpatterns
 from .matches.api.views import urlpatterns as matches_urlpatterns
@@ -19,6 +20,7 @@ from .teams.api.views import urlpatterns as teams_urlpatterns
 from .tournaments.api.views import urlpatterns as tournaments_urlpatterns
 
 urlpatterns = [
+    path("admins/", include(admins_urlpatterns)),
     path("athletes/", include(athletes_urlpatterns)),
     path("courses/", include(courses_urlpatterns)),
     path("modalities/", include(modalities_urlpatterns)),
