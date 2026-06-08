@@ -23,10 +23,10 @@ def list_matches(
         queryset = queryset.filter(tournament__modality_id=modality_id)
 
     if date_from is not None:
-        queryset = queryset.filter(start_time__gte=date_from)
+        queryset = queryset.filter(scheduled_time__gte=date_from)
 
     if date_to is not None:
-        queryset = queryset.filter(start_time__lte=date_to)
+        queryset = queryset.filter(scheduled_time__lte=date_to)
 
     if tournament_id is not None:
         queryset = queryset.filter(tournament_id=tournament_id)
@@ -36,9 +36,6 @@ def list_matches(
             Q(participants__competitor__athlete__course_id=course_id)
             | Q(participants__competitor__team__course_id=course_id)
         ).distinct()
-
-    if page_size is not None and offset is not None:
-        return queryset[offset : offset + page_size]
 
     return queryset
 

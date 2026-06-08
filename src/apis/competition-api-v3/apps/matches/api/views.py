@@ -67,17 +67,22 @@ class MatchListCreateView(APIView):
             tournament_id=serializer.validated_data.get("tournament_id"),
             date_from=serializer.validated_data.get("date_from"),
             date_to=serializer.validated_data.get("date_to"),
-            page_size=serializer.validated_data.get("limit"),
-            offset=(
-                (serializer.validated_data.get("page") - 1)
-                * serializer.validated_data.get("limit")
-                if serializer.validated_data.get("page")
-                and serializer.validated_data.get("limit")
-                else None
-            ),
         )
 
-        rm = render_match_list(matches).all()
+        # apply pagination
+        limit = serializer.validated_data.get("limit")
+        offset = (
+            (serializer.validated_data.get("page") - 1) * limit
+            if serializer.validated_data.get("page") and limit
+            else None
+        )
+        pag_matches = (
+            matches[offset : offset + limit]
+            if offset is not None and limit is not None
+            else matches
+        )
+
+        rm = render_match_list(pag_matches).all()
 
         response_serializer = MatchPaginatedListSerializer(
             {"matches": rm, "total": matches.count()}
