@@ -45,18 +45,20 @@ def create_admin(
 def update_admin(
     user_id: UUID,
     email: Optional[str] = None,
-    first_name: Optional[str] = None,
-    last_name: Optional[str] = None,
+    name: Optional[str] = None,
     enabled: Optional[bool] = None,
     nucleos: Optional[list[UUID]] = None,
 ):
     """Update an existing admin user's information in Keycloak and the local database."""
+
+    name = name.title() if name else None  # Ensure the name is properly capitalized
+
     # Update user in Keycloak
     keycloak_service_client.update_admin(
         user_id=str(user_id),
         email=email,
-        first_name=first_name,
-        last_name=last_name,
+        first_name=name.split()[0] if name else None,
+        last_name=" ".join(name.split()[1:]) if name else None,
         enabled=enabled,
     )
 
@@ -65,12 +67,8 @@ def update_admin(
     if email is not None:
         admin.email = email
 
-    if first_name is not None and last_name is not None:
-        admin.name = f"{first_name} {last_name}".title()
-    elif (first_name, last_name) != (None, None):
-        raise ValueError(
-            "Both first_name and last_name must be provided together for name update."
-        )
+    if name is not None:
+        admin.name = name.title()
 
     if nucleos is not None:
         admin.nucleos.set(nucleos)

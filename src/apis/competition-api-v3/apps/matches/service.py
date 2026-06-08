@@ -107,6 +107,15 @@ def assign_lineup(
     match = Match.objects.get(id=match_id)
     participant = match.participants.get(id=participant_id)
 
+    if admin_id:
+        admins_responsible = participant.competitor.entity.course.nucleus.admins.filter(
+            id=admin_id
+        ).exists()
+        if not admins_responsible:
+            raise PermissionError(
+                "Admin does not have permission to edit this participant's lineup"
+            )
+
     # Clear existing lineup
     participant.lineup.all().delete()
 
@@ -123,6 +132,15 @@ def update_lineup(
 ) -> MatchParticipant:
     match = Match.objects.get(id=match_id)
     participant = match.participants.get(id=participant_id)
+
+    if admin_id:
+        admins_responsible = participant.competitor.entity.course.nucleus.admins.filter(
+            id=admin_id
+        ).exists()
+        if not admins_responsible:
+            raise PermissionError(
+                "Admin does not have permission to edit this participant's lineup"
+            )
 
     # Update lineup based on provided player data
     for player_data in players:
@@ -142,9 +160,20 @@ def update_lineup(
 
 
 @transaction.atomic
-def assign_staff_to_lineup(match_id: UUID, participant_id: UUID, staff_ids: list[UUID]):
+def assign_staff_to_lineup(
+    match_id: UUID, participant_id: UUID, staff_ids: list[UUID], admin_id: UUID = None
+) -> MatchParticipant:
     match = Match.objects.get(id=match_id)
     participant = match.participants.get(id=participant_id)
+
+    if admin_id:
+        admins_responsible = participant.competitor.entity.course.nucleus.admins.filter(
+            id=admin_id
+        ).exists()
+        if not admins_responsible:
+            raise PermissionError(
+                "Admin does not have permission to edit this participant's lineup"
+            )
 
     # Clear existing staff assignments
     participant.staff.all().delete()

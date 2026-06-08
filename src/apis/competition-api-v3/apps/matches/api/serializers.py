@@ -40,6 +40,7 @@ class MatchListSerializer(serializers.Serializer):
         score = serializers.IntegerField(required=False, allow_null=True)
         position = serializers.IntegerField(required=False, allow_null=True)
         logo_url = serializers.CharField(required=False, allow_null=True)
+        can_edit = serializers.BooleanField(default=True)
 
     class TournamentSummarySerializer(serializers.Serializer):
         """Serializer for tournament summary information"""

@@ -135,9 +135,18 @@ class MatchListCreateView(RoleRequiredMixin, APIView):
 )
 class MatchDetailView(RoleRequiredMixin, APIView):
     def get(self, request, match_id):
+        # extract admin_id from request
+        user = get_user(request)
+        admin_id = (
+            user.user_id if user and RolesEnum.GENERAL_ADMIN not in user.roles else None
+        )
+
         match = get_match_by_id(match_id)
 
-        serializer = MatchDetailSerializer(render_match_detail(match).first())
+        # with count_queries_context():
+        serializer = MatchDetailSerializer(
+            render_match_detail(match, admin_id=admin_id).first()
+        )
         return Response(serializer.data)
 
     @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
@@ -152,7 +161,15 @@ class MatchDetailView(RoleRequiredMixin, APIView):
             status=serializer.validated_data.get("status"),
         )
 
-        serializer = MatchDetailSerializer(render_match_detail(match).first())
+        # extract admin_id from request
+        user = get_user(request)
+        admin_id = (
+            user.user_id if user and RolesEnum.GENERAL_ADMIN not in user.roles else None
+        )
+
+        serializer = MatchDetailSerializer(
+            render_match_detail(match, admin_id=admin_id).first()
+        )
         return Response(serializer.data)
 
     @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
@@ -179,7 +196,13 @@ def publish_match_results_view(request, match_id):
         participant_results=serializer.validated_data["participant_results"],
     )
 
-    serializer = MatchDetailSerializer(render_match_detail(match).first())
+    # extract admin_id from request
+    user = get_user(request)
+    admin_id = user.user_id if user else None
+
+    serializer = MatchDetailSerializer(
+        render_match_detail(match, admin_id=admin_id).first()
+    )
     return Response(serializer.data)
 
 
@@ -207,7 +230,13 @@ def add_comment(request, match_id):
         admin_id=user.user_id,
     )
 
-    response_serializer = MatchDetailSerializer(render_match_detail(match).first())
+    # Pass admin_id to render function
+    admin_id = (
+        user.user_id if user and RolesEnum.GENERAL_ADMIN not in user.roles else None
+    )
+    response_serializer = MatchDetailSerializer(
+        render_match_detail(match, admin_id=admin_id).first()
+    )
     return Response(response_serializer.data, status=201)
 
 
@@ -254,7 +283,14 @@ class MatchLineupsView(RoleRequiredMixin, APIView):
 
     def get(self, request, match_id, participant_id):
         """Retrieve lineups for a match"""
-        participant = get_match_participant_by_id(match_id, participant_id).first()
+        user = get_user(request)
+        admin_id = (
+            user.user_id if user and RolesEnum.GENERAL_ADMIN not in user.roles else None
+        )
+
+        participant = get_match_participant_by_id(
+            match_id, participant_id, admin_id=admin_id
+        ).first()
         serializer = MatchParticipantLineupSerializer(
             render_match_participant(participant).first()
         )

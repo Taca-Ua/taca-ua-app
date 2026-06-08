@@ -96,11 +96,10 @@ class AdminDetailView(RoleRequiredMixin, APIView):
 
         admin = update_admin(
             user_id=user_id,
-            email=serializer.validated_data["email"],
-            first_name=serializer.validated_data["first_name"],
-            last_name=serializer.validated_data["last_name"],
-            enabled=serializer.validated_data["enabled"],
-            nucleos=serializer.validated_data["nucleos"],
+            email=serializer.validated_data.get("email"),
+            name=serializer.validated_data.get("name"),
+            enabled=serializer.validated_data.get("enabled"),
+            nucleos=serializer.validated_data.get("nucleos"),
         )
 
         serializer = AdminDetailSerializer(render_admin_detail(admin).first())

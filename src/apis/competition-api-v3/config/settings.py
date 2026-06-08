@@ -232,3 +232,6 @@ API_ENDPOINT_PREFIX = (
     os.getenv("API_ENDPOINT_PREFIX", "/api/v1").rstrip("/").lstrip("/")
 )
 DEFAULT_SEASON_NAME = os.getenv("DEFAULT_SEASON_NAME", "Default Season")
+DEV_AUTH_BYPASS_ENABLED = (
+    os.getenv("DEV_AUTH_BYPASS_ENABLED", "false").lower() == "true"
+)

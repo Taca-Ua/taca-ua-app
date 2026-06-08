@@ -1,4 +1,7 @@
-from django.db.models import Prefetch, QuerySet
+from uuid import UUID
+
+from apps.admins.models import Admin
+from django.db.models import Exists, OuterRef, Prefetch, QuerySet
 
 from ..models import (
     Match,
@@ -9,9 +12,17 @@ from ..models import (
 
 
 def render_match_list(
-    matches: QuerySet[Match] | Match, include_lineups: bool = False
+    matches: QuerySet[Match] | Match,
+    include_lineups: bool = False,
+    admin_id: UUID | None = None,
 ) -> QuerySet[Match]:
-    """Render a list of matches with summary information"""
+    """Render a list of matches with summary information
+
+    Args:
+        matches: Match queryset or single Match instance
+        include_lineups: Whether to include lineup data for participants
+        admin_id: Optional admin ID to annotate can_edit field based on nucleus management
+    """
     if isinstance(matches, Match):
         matches = Match.objects.filter(id=matches.id)
 
@@ -36,26 +47,51 @@ def render_match_list(
             )
         )
 
-    matches = matches.prefetch_related(
-        Prefetch(
-            "participants",
-            queryset=MatchParticipant.objects.select_related(
-                "competitor__athlete__course__nucleus",
-                "competitor__team__course__nucleus",
-            ).prefetch_related(*lineups_prefetches),
+    # Build participant queryset with optional can_edit annotation
+    participant_queryset = MatchParticipant.objects.select_related(
+        "competitor__athlete__course__nucleus",
+        "competitor__team__course__nucleus",
+    ).prefetch_related(*lineups_prefetches)
+
+    # Annotate can_edit based on admin managing the participant's nucleus
+    if admin_id:
+        can_edit_annotation = Exists(
+            Admin.objects.filter(
+                id=admin_id,
+                nucleos__in=OuterRef("competitor__athlete__course__nucleus_id"),
+            )
+        ) | Exists(
+            Admin.objects.filter(
+                id=admin_id,
+                nucleos__in=OuterRef("competitor__team__course__nucleus_id"),
+            )
         )
+        participant_queryset = participant_queryset.annotate(
+            can_edit=can_edit_annotation
+        )
+
+    matches = matches.prefetch_related(
+        Prefetch("participants", queryset=participant_queryset)
     )
     return matches
 
 
 def render_match_detail(
-    match: QuerySet[Match] | Match, include_lineups: bool = False
+    match: QuerySet[Match] | Match,
+    include_lineups: bool = False,
+    admin_id: UUID | None = None,
 ) -> QuerySet[Match]:
+    """Render detailed match view with comments
 
+    Args:
+        match: Match queryset or single Match instance
+        include_lineups: Whether to include lineup data for participants
+        admin_id: Optional admin ID to annotate can_edit field based on nucleus management
+    """
     if isinstance(match, Match):
         match = Match.objects.filter(id=match.id)
 
-    match = render_match_list(match, include_lineups=include_lineups)
+    match = render_match_list(match, include_lineups=include_lineups, admin_id=admin_id)
 
     match = match.prefetch_related("comments")
 

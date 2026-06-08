@@ -112,6 +112,14 @@ class TournamentCompetitor(models.Model):
             return self.team.id if self.team else None
         return None
 
+    @property
+    def entity(self) -> Athlete | Team | None:
+        if self.tournament.competitor_type == TournamentCompetitorType.INDIVIDUAL:
+            return self.athlete
+        elif self.tournament.competitor_type == TournamentCompetitorType.TEAM:
+            return self.team
+        return None
+
     class Meta:
         unique_together = ("tournament", "team", "athlete")
 

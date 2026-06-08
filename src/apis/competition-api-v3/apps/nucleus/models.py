@@ -18,7 +18,7 @@ class Nucleus(models.Model):
     abbreviation = models.CharField(max_length=100)
     logo_url = models.URLField(blank=True, null=True)
 
-    admins_ids = ArrayField(models.UUIDField(), default=list, blank=True)
+    admins_ids = ArrayField(models.UUIDField(), default=list, blank=True)  # deprecated
 
     if TYPE_CHECKING:
         courses: RelatedManager["Course"]

@@ -48,9 +48,21 @@ def get_match_by_id(match_id) -> QuerySet[Match]:
     return queryset
 
 
-def get_match_participant_by_id(match_id, participant_id) -> QuerySet[MatchParticipant]:
+def get_match_participant_by_id(
+    match_id, participant_id, admin_id: str = None
+) -> QuerySet[MatchParticipant]:
     queryset = MatchParticipant.objects.filter(match_id=match_id, id=participant_id)
     if not queryset.exists():
         return None
+
+    if admin_id:
+        participant = queryset.first()
+        admins_responsible = participant.competitor.entity.course.nucleus.admins.filter(
+            id=admin_id
+        ).exists()
+        if not admins_responsible:
+            raise PermissionError(
+                "Admin does not have permission to view this participant's lineup"
+            )
 
     return queryset

@@ -36,6 +36,7 @@ export interface MatchListItem {
     score?: number;
     position?: number;
     logo_url?: string;
+    can_edit: boolean;
   }[];
 };
 
