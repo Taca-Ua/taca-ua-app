@@ -1,15 +1,31 @@
 import { useEffect, useState } from "react";
-import { type TournamentDetail, type TournamentStandingsEntry, tournamentsApi } from "../../../../api/tournaments";
+import { type TournamentDetail, tournamentsApi } from "../../../../api/tournaments";
 import Button from "../../../utils/Button";
 import { useModal } from "../../../../contexts/ModalContext";
 import TornLeagueMetaUpdateModal from "./TornLeagueMetaUpdateModal";
 
 export interface LeagueFormatData {
-    win_points: number;
-    draw_points: number;
-    loss_points: number;
-    draw_rule: string | null;
-    current_round: number;
+    settings: {
+        win_points: number;
+        draw_points: number;
+        loss_points: number;
+        draw_rule: string | null;
+        current_round?: number | null;
+    },
+    standings: {
+        competitor_id: string;
+        position: number;
+        format_meta: {
+            played: number;
+            points: number;
+            wins: number;
+            draws: number;
+            losses: number;
+            points_for: number;
+            points_against: number;
+            differential: number;
+        };
+    }[];
 }
 
 const TornLeagueDisplayComponent = ({
@@ -22,25 +38,10 @@ const TornLeagueDisplayComponent = ({
     const [tournament, ] = tournamentState;
     const [formatData, setFormatData] = useState<LeagueFormatData | null>(null);
 
-    const [currentStandings, setCurrentStandings] = useState<TournamentStandingsEntry[]>([]);
-    const [loadingStandings, setLoadingStandings] = useState(false);
-
-    const loadStandings = () => {
-        setLoadingStandings(true);
-        tournamentsApi.getStandings(tournament.id)
-          .then(setCurrentStandings)
-          .catch(err => {
-            console.error('Failed to fetch standings:', err);
-
-            if (err.response && err.response.status === 404) {
-              // Standings not found, likely because the tournament hasn't started yet
-              setCurrentStandings([]);
-            }
-          })
-          .finally(() => setLoadingStandings(false));
-    };
+    const [loadingFormatData, setLoadingFormatData] = useState(false);
 
     useEffect(() => {
+        setLoadingFormatData(true);
         tournamentsApi.getFormatDetails(tournament.id)
           .then(formatDetails => {
             console.log('Fetched format details:', formatDetails);
@@ -49,17 +50,25 @@ const TornLeagueDisplayComponent = ({
           })
           .catch(err => {
             console.error('Failed to fetch format details:', err);
-          });
-
-        loadStandings();
+          })
+          .finally(() => setLoadingFormatData(false));
     }, []);
 
+    const getCompetitorName = (competitorId: string) => {
+        const competitor = tournament.competitors.find(c => c.id === competitorId);
+        return competitor ? competitor.name : "Competidor Desconecido";
+    }
+
     const renderStandings = () => {
-        if (loadingStandings) {
+        if (loadingFormatData) {
             return <p>Carregando classificação...</p>;
         }
 
-        if (currentStandings.length === 0) {
+        if (!formatData) {
+            return <p>Detalhes do formato não disponíveis.</p>;
+        }
+
+        if (formatData.standings.length === 0) {
             return <p>Classificação ainda não disponível.</p>;
         }
 
@@ -79,16 +88,16 @@ const TornLeagueDisplayComponent = ({
                     </tr>
                 </thead>
                 <tbody>
-                    {currentStandings.map(entry => (
+                    {formatData.standings.map(entry => (
                         <tr key={entry.competitor_id}>
                             <td className="border-b px-4 py-2">{entry.position}</td>
-                            <td className="border-b px-4 py-2">{entry.competitor_name}</td>
+                            <td className="border-b px-4 py-2">{getCompetitorName(entry.competitor_id)}</td>
                             <td className="border-b px-4 py-2">{entry.format_meta.points}</td>
                             <td className="border-b px-4 py-2">{entry.format_meta.wins}</td>
                             <td className="border-b px-4 py-2">{entry.format_meta.draws}</td>
                             <td className="border-b px-4 py-2">{entry.format_meta.losses}</td>
-                            <td className="border-b px-4 py-2">{entry.format_meta.points_scored}</td>
-                            <td className="border-b px-4 py-2">{entry.format_meta.conceded_points}</td>
+                            <td className="border-b px-4 py-2">{entry.format_meta.points_for}</td>
+                            <td className="border-b px-4 py-2">{entry.format_meta.points_against}</td>
                             <td className={"border-b px-4 py-2" + (entry.format_meta.differential >= 0 ? " text-green-600" : " text-red-600")}>
                                 {entry.format_meta.differential >= 0 ? '+' : ''}{entry.format_meta.differential}
                             </td>
@@ -108,10 +117,10 @@ const TornLeagueDisplayComponent = ({
         <div className="flex items-center mb-4 justify-between">
             <div className="flex flex-col">
                 <h3 className="font-semibold text-blue-900 mb-3">
-                Formato: Liga (Pontos: {formatData.win_points} vitória, {formatData.draw_points} empate, {formatData.loss_points} derrota)
+                Formato: Liga (Pontos: {formatData.settings.win_points} vitória, {formatData.settings.draw_points} empate, {formatData.settings.loss_points} derrota)
                 </h3>
                 <p className="text-sm text-blue-800 mb-4">
-                Ronda atual: {formatData.current_round || 0}
+                Ronda atual: {formatData.settings.current_round || 0}
                 </p>
             </div>
             <Button
@@ -119,7 +128,6 @@ const TornLeagueDisplayComponent = ({
                     <TornLeagueMetaUpdateModal
                         formatDataState={[formatData, setFormatData]}
                         tournamentId={tournament.id}
-                        onSave={() => loadStandings()}
                     />
                 )}}
                 type="primary"

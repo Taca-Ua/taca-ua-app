@@ -21,10 +21,10 @@ const TornLeagueMetaUpdateModal = ({
     const [formatData, setFormatData] = formatDataState;
     const [loading, setLoading] = useState(false);
 
-    const [pointsWin, setPointsWin] = useState(formatData?.win_points);
-    const [pointsDraw, setPointsDraw] = useState(formatData?.draw_points);
-    const [pointsLoss, setPointsLoss] = useState(formatData?.loss_points);
-    const [tiebreaker, setTiebreaker] = useState(formatData?.draw_rule || "none");
+    const [pointsWin, setPointsWin] = useState(formatData?.settings.win_points);
+    const [pointsDraw, setPointsDraw] = useState(formatData?.settings.draw_points);
+    const [pointsLoss, setPointsLoss] = useState(formatData?.settings.loss_points);
+    const [tiebreaker, setTiebreaker] = useState(formatData?.settings.draw_rule || "none");
 
     useEffect(() => {
         if (!formatData){
@@ -32,10 +32,10 @@ const TornLeagueMetaUpdateModal = ({
             return;
         }
 
-        setPointsWin(formatData.win_points);
-        setPointsDraw(formatData.draw_points);
-        setPointsLoss(formatData.loss_points);
-        setTiebreaker(formatData.draw_rule || "none");
+        setPointsWin(formatData.settings.win_points);
+        setPointsDraw(formatData.settings.draw_points);
+        setPointsLoss(formatData.settings.loss_points);
+        setTiebreaker(formatData.settings.draw_rule || "none");
     }, []);
 
     const onClose = () => {
