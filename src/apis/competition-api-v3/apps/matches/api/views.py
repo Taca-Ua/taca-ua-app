@@ -4,7 +4,13 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from shared.auth.utils import get_user
+from shared.auth.decorators import (
+    RoleRequiredMixin,
+    require_auth,
+    require_roles,
+    require_roles_class_method,
+)
+from shared.auth.utils import RolesEnum, get_user
 
 from ..queries import get_match_by_id, get_match_participant_by_id, list_matches
 from ..service import (
@@ -55,7 +61,7 @@ from .serializers import (
         responses={201: MatchListSerializer},
     ),
 )
-class MatchListCreateView(APIView):
+class MatchListCreateView(RoleRequiredMixin, APIView):
     def get(self, request):
         serializer = MatchListFilterSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
@@ -89,6 +95,7 @@ class MatchListCreateView(APIView):
         )
         return Response(response_serializer.data)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def post(self, request):
         serializer = MatchCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -126,13 +133,14 @@ class MatchListCreateView(APIView):
         responses={204: "No Content"},
     ),
 )
-class MatchDetailView(APIView):
+class MatchDetailView(RoleRequiredMixin, APIView):
     def get(self, request, match_id):
         match = get_match_by_id(match_id)
 
         serializer = MatchDetailSerializer(render_match_detail(match).first())
         return Response(serializer.data)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def put(self, request, match_id):
         serializer = MatchUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -147,6 +155,7 @@ class MatchDetailView(APIView):
         serializer = MatchDetailSerializer(render_match_detail(match).first())
         return Response(serializer.data)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def delete(self, request, match_id):
         delete_match(match_id)
         return Response(status=204)
@@ -160,6 +169,7 @@ class MatchDetailView(APIView):
     responses={200: MatchDetailSerializer},
 )
 @api_view(["POST"])
+@require_roles(RolesEnum.GENERAL_ADMIN)
 def publish_match_results_view(request, match_id):
     serializer = MatchPublishResultsSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -183,6 +193,7 @@ def publish_match_results_view(request, match_id):
     tags=["Match Management"],
 )
 @api_view(["POST"])
+@require_auth
 def add_comment(request, match_id):
     """Add comment to match"""
     serializer = CommentCreateSerializer(data=request.data)
@@ -206,6 +217,7 @@ def add_comment(request, match_id):
     tags=["Match Management"],
 )
 @api_view(["DELETE"])
+@require_auth
 def delete_comment(request, match_id, comment_id):
     """Delete a comment"""
     match_delete_comment(
@@ -237,7 +249,7 @@ def delete_comment(request, match_id, comment_id):
         tags=["Match Management"],
     ),
 )
-class MatchLineupsView(APIView):
+class MatchLineupsView(RoleRequiredMixin, APIView):
     """View to retrieve lineups for a match"""
 
     def get(self, request, match_id, participant_id):
@@ -288,6 +300,7 @@ class MatchLineupsView(APIView):
     tags=["Match Management"],
 )
 @api_view(["POST"])
+@require_auth
 def add_staff_to_lineup(request, match_id, participant_id):
     """Assign staff members to a team's lineup"""
     serializer = LineupAssignStaffSerializer(data=request.data)
@@ -314,6 +327,7 @@ def add_staff_to_lineup(request, match_id, participant_id):
     tags=["Match Management"],
 )
 @api_view(["GET"])
+@require_roles(RolesEnum.GENERAL_ADMIN)
 def match_sheet(request, match_id):
     """Generate match sheet PDF"""
 
@@ -336,6 +350,7 @@ def match_sheet(request, match_id):
     tags=["Match Management"],
 )
 @api_view(["GET"])
+@require_auth
 def match_team_sheet(request, match_id, participant_id):
     """
     Generate match sheet PDF for a specific team in a match.

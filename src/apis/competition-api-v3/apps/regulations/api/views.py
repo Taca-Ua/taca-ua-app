@@ -4,6 +4,8 @@ from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from shared.auth.decorators import require_roles_class_method
+from shared.auth.utils import RolesEnum
 
 from ..queries import get_all_regulations, get_regulation_by_id
 from ..service import create_regulation, delete_regulation, update_regulation
@@ -40,6 +42,7 @@ class RegulationListCreateView(APIView):
         )
         return Response(serializer.data)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def post(self, request: Request) -> Response:
         req_serializer = RegulationCreateSerializer(data=request.data)
         req_serializer.is_valid(raise_exception=True)
@@ -85,6 +88,7 @@ class RegulationDetailView(APIView):
         )
         return Response(serializer.data)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def put(self, request: Request, regulation_id: str) -> Response:
         serializer = RegulationUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -97,6 +101,7 @@ class RegulationDetailView(APIView):
         )
         return Response(RegulationDetailSerializer(regulation).data)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def delete(self, request: Request, regulation_id: str) -> Response:
         delete_regulation(regulation_id)
         return Response(status=status.HTTP_204_NO_CONTENT)

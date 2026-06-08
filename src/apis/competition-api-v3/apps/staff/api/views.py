@@ -2,6 +2,7 @@ from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from shared.auth.decorators import RoleRequiredMixin
 
 from ..queries import get_staff, list_staff
 from ..service import create_staff, delete_staff, update_staff
@@ -29,7 +30,7 @@ from .serializers import (
         responses={201: StaffDetailSerializer},
     ),
 )
-class StaffListCreateView(APIView):
+class StaffListCreateView(RoleRequiredMixin, APIView):
 
     def get(self, request):
         staff_members = list_staff()
@@ -74,7 +75,7 @@ class StaffListCreateView(APIView):
         responses={204: None},
     ),
 )
-class StaffDetailView(APIView):
+class StaffDetailView(RoleRequiredMixin, APIView):
 
     def get(self, request, staff_id):
         staff = get_staff(staff_id)

@@ -4,6 +4,12 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.serializers import DictField
 from rest_framework.views import APIView
+from shared.auth.decorators import (
+    RoleRequiredMixin,
+    require_auth,
+    require_roles_class_method,
+)
+from shared.auth.utils import RolesEnum
 
 from ..queries import get_tournament, get_tournament_format_details, list_tournaments
 from ..service import (
@@ -40,7 +46,7 @@ from .serializers import (
         responses={201: TournamentListSerializer},
     ),
 )
-class TournamentListCreateView(APIView):
+class TournamentListCreateView(RoleRequiredMixin, APIView):
     def get(self, request):
         serializer = TournamentListQuerySerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
@@ -56,6 +62,7 @@ class TournamentListCreateView(APIView):
         )
         return Response(serializer.data)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def post(self, request):
         serializer = TournamentCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -103,6 +110,7 @@ class TournamentDetailView(APIView):
         )
         return Response(serializer.data)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def put(self, request, tournament_id):
         serializer = TournamentUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -119,6 +127,7 @@ class TournamentDetailView(APIView):
         )
         return Response(serializer.data)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def delete(self, request, tournament_id):
         delete_tournament(tournament_id)
         return Response(status=204)
@@ -131,6 +140,7 @@ class TournamentDetailView(APIView):
     responses={200: TournamentDetailSerializer},
 )
 @api_view(["PUT"])
+@require_auth
 def add_competitor_to_tournament(request, tournament_id):
     serializer = TournamentAddCompetitorsSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -153,6 +163,7 @@ def add_competitor_to_tournament(request, tournament_id):
     responses={200: TournamentDetailSerializer},
 )
 @api_view(["PUT"])
+@require_auth
 def remove_competitor_from_tournament(request, tournament_id):
     serializer = TournamentRemoveCompetitorsSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -181,11 +192,12 @@ def remove_competitor_from_tournament(request, tournament_id):
         responses={200: DictField},
     ),
 )
-class TournamentFormatDetailView(APIView):
+class TournamentFormatDetailView(RoleRequiredMixin, APIView):
     def get(self, request, tournament_id):
         format_details = get_tournament_format_details(tournament_id)
         return Response(format_details, status=200)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def put(self, request, tournament_id):
 
         format_details = update_tournament_format(

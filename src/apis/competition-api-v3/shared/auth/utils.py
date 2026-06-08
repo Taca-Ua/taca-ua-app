@@ -1,6 +1,11 @@
 from uuid import UUID
 
 
+class RolesEnum:
+    GENERAL_ADMIN = "general_admin"
+    NUCLEO_ADMIN = "nucleo_admin"
+
+
 class User:
     def __init__(self, user_id: UUID, roles: list[str]):
         self.user_id = user_id
@@ -9,6 +14,8 @@ class User:
 
 def get_user(request) -> User | None:
     # Placeholder for user retrieval logic
-    return User(
-        user_id=UUID("12345678-1234-5678-1234-567812345678"), roles=["general_admin"]
-    )
+    if not getattr(request, "user_id", None):
+        return None
+
+    u = User(user_id=UUID(request.user_id), roles=getattr(request, "roles", []))
+    return u

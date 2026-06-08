@@ -53,6 +53,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "shared.auth.middleware.KeycloakJWTMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -221,6 +222,9 @@ KEYCLOAK_ISSUER_URL = os.getenv(
 )
 KEYCLOAK_VALIDATE_ISSUER = (
     os.getenv("KEYCLOAK_VALIDATE_ISSUER", "false").lower() == "true"
+)
+KEYCLOAK_JWKS_URI = (
+    f"{KEYCLOAK_ADMIN_SERVER_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/certs"
 )
 
 # System settings

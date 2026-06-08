@@ -4,6 +4,8 @@ from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from shared.auth.decorators import RoleRequiredMixin, require_roles_class_method
+from shared.auth.utils import RolesEnum
 
 from ..queries import get_nucleus, list_nucleus
 from ..service import create_nucleo, delete_nucleo, update_nucleo
@@ -29,7 +31,7 @@ from .serializers import (
         tags=["Nucleo Management"],
     ),
 )
-class NucleoListCreateView(APIView):
+class NucleoListCreateView(RoleRequiredMixin, APIView):
     def get(self, request: Request):
 
         nucleos = list_nucleus()
@@ -39,6 +41,7 @@ class NucleoListCreateView(APIView):
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def post(self, request: Request):
         serializer = NucleosCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -71,13 +74,14 @@ class NucleoListCreateView(APIView):
         tags=["Nucleo Management"],
     ),
 )
-class NucleoDetailView(APIView):
+class NucleoDetailView(RoleRequiredMixin, APIView):
     def get(self, request, nucleo_id):
         nucleo = get_nucleus(nucleo_id)
 
         serializer = NucleosDetailSerializer(render_nucleus_detail(nucleo).first())
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def put(self, request, nucleo_id):
         serializer = NucleosUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -92,6 +96,7 @@ class NucleoDetailView(APIView):
         serializer = NucleosDetailSerializer(render_nucleus_detail(nucleo).first())
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def delete(self, request, nucleo_id):
         delete_nucleo(nucleo_id)
         return Response(status=status.HTTP_204_NO_CONTENT)

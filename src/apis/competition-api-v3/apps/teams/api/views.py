@@ -3,6 +3,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from shared.auth.decorators import RoleRequiredMixin, require_auth
 
 from ..queries import get_team, list_teams
 from ..service import (
@@ -39,7 +40,7 @@ from .serializers import (
         responses={201: TeamListSerializer},
     ),
 )
-class TeamListCreateView(APIView):
+class TeamListCreateView(RoleRequiredMixin, APIView):
     def get(self, request):
         serializer = TeamListRequestSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
@@ -89,7 +90,7 @@ class TeamListCreateView(APIView):
         responses={204: None},
     ),
 )
-class TeamDetailView(APIView):
+class TeamDetailView(RoleRequiredMixin, APIView):
     def get(self, request, team_id):
         team = get_team(team_id)
 
@@ -123,6 +124,7 @@ extend_schema(
 
 
 @api_view(["PUT"])
+@require_auth
 def add_athlete(request, team_id):
     serializer = TeamAthleteUpdateSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -146,6 +148,7 @@ extend_schema(
 
 
 @api_view(["PUT"])
+@require_auth
 def remove_athlete(request, team_id):
     serializer = TeamAthleteUpdateSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)

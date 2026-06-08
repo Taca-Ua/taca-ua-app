@@ -2,6 +2,8 @@ from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from shared.auth.decorators import RoleRequiredMixin, require_roles_class_method
+from shared.auth.utils import RolesEnum
 
 from ..queries import get_athlete, list_athletes
 from ..service import (
@@ -37,7 +39,7 @@ from .serializers import (
         responses={201: AthleteDetailSerializer},
     ),
 )
-class AthleteListCreateAPIView(APIView):
+class AthleteListCreateAPIView(RoleRequiredMixin, APIView):
     def get(self, request):
         serializer = AthleteListRequestSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
@@ -47,6 +49,7 @@ class AthleteListCreateAPIView(APIView):
         serializer = AthleteListSerializer(render_athletes(athletes).all(), many=True)
         return Response(serializer.data, status=200)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def post(self, request):
         serializer = AthleteCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -82,7 +85,7 @@ class AthleteListCreateAPIView(APIView):
         responses={204: None},
     ),
 )
-class AthleteRetrieveUpdateDeleteAPIView(APIView):
+class AthleteRetrieveUpdateDeleteAPIView(RoleRequiredMixin, APIView):
     def get(self, request, athlete_id):
 
         athlete = get_athlete(athlete_id)
@@ -90,6 +93,7 @@ class AthleteRetrieveUpdateDeleteAPIView(APIView):
         serializer = AthleteDetailSerializer(render_athlete(athlete).first())
         return Response(serializer.data, status=200)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def put(self, request, athlete_id):
         serializer = AthleteUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -105,6 +109,7 @@ class AthleteRetrieveUpdateDeleteAPIView(APIView):
         serializer = AthleteDetailSerializer(render_athlete(athlete).first())
         return Response(serializer.data, status=200)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def delete(self, request, athlete_id):
         # Implementation for deleting an athlete
         delete_athlete(athlete_id)
@@ -118,7 +123,8 @@ class AthleteRetrieveUpdateDeleteAPIView(APIView):
     request=AthleteMembershipSyncSerializer,
     responses={200: None},
 )
-class AthleteMembershipSyncAPIView(APIView):
+class AthleteMembershipSyncAPIView(RoleRequiredMixin, APIView):
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def post(self, request):
         serializer = AthleteMembershipSyncSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

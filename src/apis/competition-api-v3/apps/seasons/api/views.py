@@ -6,7 +6,12 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from shared.auth.utils import get_user
+from shared.auth.decorators import (
+    RoleRequiredMixin,
+    require_auth,
+    require_roles_class_method,
+)
+from shared.auth.utils import RolesEnum, get_user
 
 from ..queries import list_seasons
 from ..service import create_season, get_current_season
@@ -28,13 +33,14 @@ logger = logging.getLogger(__name__)
         tags=["Season Management"],
     ),
 )
-class SeasonListCreateView(APIView):
+class SeasonListCreateView(RoleRequiredMixin, APIView):
     def get(self, request):
         seasons = list_seasons()
 
         serializer = SeasonListSerializer(seasons, many=True)
         return Response(serializer.data)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def post(self, request):
         serializer = SeasonCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -63,6 +69,7 @@ class SeasonListCreateView(APIView):
     tags=["Season Management"],
 )
 @api_view(["GET"])
+@require_auth
 def get_current_season_view(request):
     season = get_current_season()
 

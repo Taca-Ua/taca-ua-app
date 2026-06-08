@@ -5,7 +5,12 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from shared.auth.utils import get_user
+from shared.auth.decorators import (
+    RoleRequiredMixin,
+    require_auth,
+    require_roles_class_method,
+)
+from shared.auth.utils import RolesEnum, get_user
 
 from .. import service as modality_type_service
 from ..queries import get_modality_type, list_modality_types
@@ -38,7 +43,7 @@ logger = logging.getLogger(__name__)
         tags=["Modality Types"],
     ),
 )
-class ModalityTypeListCreateView(APIView):
+class ModalityTypeListCreateView(RoleRequiredMixin, APIView):
 
     def get(self, request):
         serializer = ModalityTypeFilterSerializer(data=request.query_params)
@@ -53,6 +58,7 @@ class ModalityTypeListCreateView(APIView):
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def post(self, request):
         serializer = ModalityTypeCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -103,7 +109,7 @@ class ModalityTypeListCreateView(APIView):
         tags=["Modality Types"],
     ),
 )
-class ModalityTypeDetailView(APIView):
+class ModalityTypeDetailView(RoleRequiredMixin, APIView):
     def get(self, request, modality_type_id):
 
         modality_type = get_modality_type(modality_type_id)
@@ -113,6 +119,7 @@ class ModalityTypeDetailView(APIView):
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def put(self, request, modality_type_id):
         serializer = ModalityTypeUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -128,6 +135,7 @@ class ModalityTypeDetailView(APIView):
         serializer = ModalityTypeDetailSerializer(modality_type)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def delete(self, request, modality_type_id):
         success = modality_type_service.delete_modality_type(modality_type_id)
         if not success:
@@ -152,8 +160,9 @@ class ModalityTypeDetailView(APIView):
         tags=["Modality Types"],
     ),
 )
-class ModalityTypeListView(APIView):
+class ModalityTypeListView(RoleRequiredMixin, APIView):
 
+    @require_auth
     def get(self, request):
         serializer = ModalityTypeFilterSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)

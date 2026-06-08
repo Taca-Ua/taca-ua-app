@@ -5,6 +5,8 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from shared.auth.decorators import RoleRequiredMixin, require_roles_class_method
+from shared.auth.utils import RolesEnum
 
 from .. import service as modality_service
 from ..queries import get_modality, list_modalities
@@ -38,7 +40,7 @@ logger = logging.getLogger(__name__)
         responses={201: ModalityListSerializer},
     ),
 )
-class ModalityListCreateView(APIView):
+class ModalityListCreateView(RoleRequiredMixin, APIView):
     def get(self, request):
         serializer = ModalityQuerySerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
@@ -51,6 +53,7 @@ class ModalityListCreateView(APIView):
         )
         return Response(serializer.data)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def post(self, request):
         request_serializer = ModalityCreateSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
@@ -92,7 +95,7 @@ class ModalityListCreateView(APIView):
         parameters=[ModalityQuerySerializer],
     ),
 )
-class ModalityDetailView(APIView):
+class ModalityDetailView(RoleRequiredMixin, APIView):
     def get(self, request, modality_id):
         serializer = ModalityQuerySerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
@@ -106,6 +109,7 @@ class ModalityDetailView(APIView):
         )
         return Response(serializer.data)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def put(self, request, modality_id):
         # Validate request body
         req_serializer = ModalityUpdateSerializer(data=request.data)
@@ -149,7 +153,8 @@ class ModalityDetailView(APIView):
         responses={200: ModalityDetailSerializer},
     ),
 )
-class ModalityEditFromSeasonView(APIView):
+class ModalityEditFromSeasonView(RoleRequiredMixin, APIView):
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def post(self, request, modality_id, season_id):
         req_serializer = ModalityAddToSeasonSerializer(data=request.data)
         req_serializer.is_valid(raise_exception=True)
@@ -165,6 +170,7 @@ class ModalityEditFromSeasonView(APIView):
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def put(self, request, modality_id, season_id):
         modality = modality_service.remove_modality_from_season(
             modality_id=modality_id, season_id=season_id

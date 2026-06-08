@@ -3,6 +3,12 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from shared.auth.decorators import (
+    RoleRequiredMixin,
+    require_roles,
+    require_roles_class_method,
+)
+from shared.auth.utils import RolesEnum
 
 from ..queries import get_course, list_courses
 from ..service import add_course_to_season as service_add_course_to_season
@@ -36,7 +42,7 @@ from .serializers import (
         responses={201: CourseListSerializer},
     ),
 )
-class CourseListCreateView(APIView):
+class CourseListCreateView(RoleRequiredMixin, APIView):
     def get(self, request):
         serializer = CourseSeasonParamSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
@@ -49,6 +55,7 @@ class CourseListCreateView(APIView):
         )
         return Response(serializer.data, status=200)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def post(self, request):
         req_serializer = CourseCreateSerializer(data=request.data)
         req_serializer.is_valid(raise_exception=True)
@@ -103,6 +110,7 @@ class CourseDetailView(APIView):
         )
         return Response(serializer.data, status=200)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def put(self, request, course_id):
         req_serializer = CourseUpdateSerializer(data=request.data)
         req_serializer.is_valid(raise_exception=True)
@@ -125,6 +133,7 @@ class CourseDetailView(APIView):
         )
         return Response(serializer.data, status=200)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def delete(self, request, course_id):
         delete_course(course_id=course_id)
         return Response(status=204)
@@ -138,6 +147,7 @@ class CourseDetailView(APIView):
     responses={200: CourseDetailSerializer},
 )
 @api_view(["PUT"])
+@require_roles(RolesEnum.GENERAL_ADMIN)
 def remove_course_from_season(request, course_id, season_id):
     serializer = CourseSeasonParamSerializer(data=request.query_params)
     serializer.is_valid(raise_exception=True)
@@ -160,6 +170,7 @@ def remove_course_from_season(request, course_id, season_id):
     responses={200: CourseDetailSerializer},
 )
 @api_view(["PUT"])
+@require_roles(RolesEnum.GENERAL_ADMIN)
 def add_course_to_season(request, course_id, season_id):
     serializer = CourseSeasonParamSerializer(data=request.query_params)
     serializer.is_valid(raise_exception=True)

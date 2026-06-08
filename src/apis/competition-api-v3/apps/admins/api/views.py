@@ -3,6 +3,8 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from shared.auth.decorators import RoleRequiredMixin, require_roles_class_method
+from shared.auth.utils import RolesEnum
 
 from ..queries import get_admin_by_id, list_admins
 from ..service import change_admin_password, create_admin, delete_admin, update_admin
@@ -31,7 +33,7 @@ from .serializers import (
         tags=["Admin Management"],
     ),
 )
-class AdminListCreateView(APIView):
+class AdminListCreateView(RoleRequiredMixin, APIView):
     def get(self, request):
         serializer = AdminListFilter(data=request.query_params)
         serializer.is_valid(raise_exception=True)
@@ -41,6 +43,7 @@ class AdminListCreateView(APIView):
         serializer = AdminListSerializer(render_admin_list(admins), many=True)
         return Response(serializer.data)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def post(self, request):
         serializer = AdminCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -76,7 +79,7 @@ class AdminListCreateView(APIView):
         tags=["Admin Management"],
     ),
 )
-class AdminDetailView(APIView):
+class AdminDetailView(RoleRequiredMixin, APIView):
 
     def get(self, request, user_id):
         """Retrieve an admin user by ID."""
@@ -85,6 +88,7 @@ class AdminDetailView(APIView):
         serializer = AdminDetailSerializer(render_admin_detail(admin).first())
         return Response(serializer.data)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def put(self, request, user_id):
         """Update an admin user."""
         serializer = AdminUpdateSerializer(data=request.data)
@@ -102,6 +106,7 @@ class AdminDetailView(APIView):
         serializer = AdminDetailSerializer(render_admin_detail(admin).first())
         return Response(serializer.data)
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def delete(self, request, user_id):
         """Delete an admin user."""
         delete_admin(user_id=user_id)
@@ -114,8 +119,9 @@ class AdminDetailView(APIView):
     description="Change an admin user's password",
     tags=["Admin Management"],
 )
-class AdminPasswordChangeView(APIView):
+class AdminPasswordChangeView(RoleRequiredMixin, APIView):
 
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def post(self, request, user_id):
         """Change an admin user's password."""
         serializer = AdminPasswordChangeSerializer(data=request.data)
