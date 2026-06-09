@@ -177,7 +177,7 @@ const AdminInfoComponent = ( {
           <Button
             onClick={handleDelete}
             type="danger"
-            active={isAdminGeneral}
+            active={isAdminGeneral && admin.enabled}
             confirmation={{
               title: "Confirmar Eliminação",
               message: `Tem a certeza que deseja eliminar o administrador "${admin.username}"? Esta ação não pode ser desfeita.`,

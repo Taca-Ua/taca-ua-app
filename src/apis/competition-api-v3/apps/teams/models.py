@@ -16,3 +16,7 @@ class Team(models.Model):
     season = models.ForeignKey(Season, on_delete=models.CASCADE)
 
     athletes = models.ManyToManyField(Athlete, related_name="teams")
+
+    @property
+    def logo_url(self):
+        return self.course.nucleus.logo_url

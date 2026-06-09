@@ -10,13 +10,12 @@ from shared.auth.decorators import (
 )
 from shared.auth.utils import RolesEnum
 
-from ..queries import get_course, list_courses
+from ..selectors import get_course_by_id, get_courses_table
 from ..service import add_course_to_season as service_add_course_to_season
 from ..service import create_course, delete_course
 from ..service import remove_course_from_season as service_remove_course_from_season
 from ..service import update_course
 from .filters import CourseSeasonParamSerializer
-from .renders import render_course, render_courses
 from .serializers import (
     CourseCreateSerializer,
     CourseDetailSerializer,
@@ -47,10 +46,12 @@ class CourseListCreateView(RoleRequiredMixin, APIView):
         serializer = CourseSeasonParamSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
-        courses = list_courses()
+        courses = get_courses_table(
+            season_id=serializer.validated_data.get("season_id")
+        )
 
         serializer = CourseListSerializer(
-            render_courses(courses, serializer.validated_data.get("season_id")).all(),
+            courses,
             many=True,
         )
         return Response(serializer.data, status=200)
@@ -69,7 +70,12 @@ class CourseListCreateView(RoleRequiredMixin, APIView):
             nucleo_id=req_serializer.validated_data["nucleo_id"],
         )
 
-        serializer = CourseListSerializer(render_course(course).first())
+        serializer = CourseListSerializer(
+            get_course_by_id(
+                course_id=course.id,
+                season_id=param_serializer.validated_data.get("season_id"),
+            )
+        )
         return Response(serializer.data, status=201)
 
 
@@ -101,13 +107,11 @@ class CourseDetailView(APIView):
         serializer = CourseSeasonParamSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
-        course = get_course(course_id=course_id)
-
-        serializer = CourseDetailSerializer(
-            render_course(
-                course=course, season_id=serializer.validated_data.get("season_id")
-            ).first()
+        course = get_course_by_id(
+            course_id=course_id, season_id=serializer.validated_data.get("season_id")
         )
+
+        serializer = CourseDetailSerializer(course)
         return Response(serializer.data, status=200)
 
     @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
@@ -126,10 +130,10 @@ class CourseDetailView(APIView):
         )
 
         serializer = CourseDetailSerializer(
-            render_course(
-                course=updated_course,
+            get_course_by_id(
+                course_id=updated_course.id,
                 season_id=param_serializer.validated_data.get("season_id"),
-            ).first()
+            )
         )
         return Response(serializer.data, status=200)
 
@@ -155,9 +159,9 @@ def remove_course_from_season(request, course_id, season_id):
     course = service_remove_course_from_season(course_id=course_id, season_id=season_id)
 
     serializer = CourseDetailSerializer(
-        render_course(
-            course=course, season_id=serializer.validated_data.get("season_id")
-        ).first()
+        get_course_by_id(
+            course_id=course.id, season_id=serializer.validated_data.get("season_id")
+        )
     )
     return Response(serializer.data, status=200)
 
@@ -178,9 +182,9 @@ def add_course_to_season(request, course_id, season_id):
     course = service_add_course_to_season(course_id=course_id, season_id=season_id)
 
     serializer = CourseDetailSerializer(
-        render_course(
-            course=course, season_id=serializer.validated_data.get("season_id")
-        ).first()
+        get_course_by_id(
+            course_id=course.id, season_id=serializer.validated_data.get("season_id")
+        )
     )
     return Response(serializer.data, status=200)
 

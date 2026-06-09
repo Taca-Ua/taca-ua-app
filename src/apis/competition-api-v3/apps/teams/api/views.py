@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from shared.auth.decorators import RoleRequiredMixin, require_auth
 
-from ..queries import get_team, list_teams
+from ..selectors import get_team_by_id, get_teams_table
 from ..service import (
     add_athletes_to_team,
     create_team,
@@ -14,7 +14,6 @@ from ..service import (
     update_team,
 )
 from .filters import TeamListRequestSerializer
-from .renders import render_team_detail, render_team_list
 from .serializers import (
     TeamAthleteUpdateSerializer,
     TeamCreateSerializer,
@@ -45,13 +44,13 @@ class TeamListCreateView(RoleRequiredMixin, APIView):
         serializer = TeamListRequestSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
-        teams = list_teams(
+        teams = get_teams_table(
             season_id=serializer.validated_data.get("season_id"),
             modality_id=serializer.validated_data.get("modality_id"),
             course_id=serializer.validated_data.get("course_id"),
         )
 
-        serialized = TeamListSerializer(render_team_list(teams).all(), many=True)
+        serialized = TeamListSerializer(teams, many=True)
         return Response(serialized.data)
 
     def post(self, request):
@@ -65,7 +64,7 @@ class TeamListCreateView(RoleRequiredMixin, APIView):
             season_id=serializer.validated_data.get("season_id"),
         )
 
-        serialized_team = TeamListSerializer(render_team_detail(team).first())
+        serialized_team = TeamListSerializer(get_team_by_id(team.id))
         return Response(serialized_team.data, status=201)
 
 
@@ -92,9 +91,9 @@ class TeamListCreateView(RoleRequiredMixin, APIView):
 )
 class TeamDetailView(RoleRequiredMixin, APIView):
     def get(self, request, team_id):
-        team = get_team(team_id)
+        team = get_team_by_id(team_id)
 
-        serialized_team = TeamDetailSerializer(render_team_detail(team).first())
+        serialized_team = TeamDetailSerializer(team)
         return Response(serialized_team.data, status=200)
 
     def put(self, request, team_id):
@@ -106,7 +105,7 @@ class TeamDetailView(RoleRequiredMixin, APIView):
             name=serializer.validated_data.get("name"),
         )
 
-        serialized_team = TeamDetailSerializer(render_team_detail(team).first())
+        serialized_team = TeamDetailSerializer(team)
         return Response(serialized_team.data, status=200)
 
     def delete(self, request, team_id):
@@ -114,15 +113,13 @@ class TeamDetailView(RoleRequiredMixin, APIView):
         return Response(status=204)
 
 
-extend_schema(
+@extend_schema(
     summary="Add Athlete to Team",
     description="Add an athlete to a team by providing the team ID and athlete ID.",
     tags=["Teams"],
     request=TeamAthleteUpdateSerializer,
     responses={200: TeamDetailSerializer},
 )
-
-
 @api_view(["PUT"])
 @require_auth
 def add_athlete(request, team_id):
@@ -134,19 +131,17 @@ def add_athlete(request, team_id):
         athlete_ids=serializer.validated_data["athlete_ids"],
     )
 
-    serialized_team = TeamDetailSerializer(render_team_detail(team).first())
+    serialized_team = TeamDetailSerializer(get_team_by_id(team.id))
     return Response(serialized_team.data, status=200)
 
 
-extend_schema(
+@extend_schema(
     summary="Remove Athlete from Team",
     description="Remove an athlete from a team by providing the team ID and athlete ID.",
     tags=["Teams"],
     request=TeamAthleteUpdateSerializer,
     responses={200: TeamDetailSerializer},
 )
-
-
 @api_view(["PUT"])
 @require_auth
 def remove_athlete(request, team_id):
@@ -158,7 +153,7 @@ def remove_athlete(request, team_id):
         athlete_ids=serializer.validated_data["athlete_ids"],
     )
 
-    serialized_team = TeamDetailSerializer(render_team_detail(team).first())
+    serialized_team = TeamDetailSerializer(get_team_by_id(team.id))
     return Response(serialized_team.data, status=200)
 
 

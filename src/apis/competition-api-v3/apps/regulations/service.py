@@ -1,16 +1,18 @@
-from django.db import transaction
+from apps.seasons.selectors import get_current_season
 from django.core.files.uploadedfile import UploadedFile
-from .models import Regulation
-
-from apps.seasons.service import get_current_season
-
+from django.db import transaction
 from shared.file_storage.minio_service import MinioService
+
+from .models import Regulation
 
 # init the MinioService for handling file storage related to regulations
 file_storage_service = MinioService("regulations")
 
+
 @transaction.atomic
-def create_regulation(file: UploadedFile, title: str, description: str = None, season_id: int = None) -> Regulation:
+def create_regulation(
+    file: UploadedFile, title: str, description: str = None, season_id: int = None
+) -> Regulation:
     """
     Create a new regulation.
 
@@ -28,15 +30,18 @@ def create_regulation(file: UploadedFile, title: str, description: str = None, s
     file_url = file_storage_service.upload_file(file)
 
     regulation = Regulation.objects.create(
-        file_url=file_url,
-        title=title,
-        description=description,
-        season_id=season_id
+        file_url=file_url, title=title, description=description, season_id=season_id
     )
     return regulation
 
+
 @transaction.atomic
-def update_regulation(regulation_id: str, file: UploadedFile = None, title: str = None, description: str = None) -> Regulation:
+def update_regulation(
+    regulation_id: str,
+    file: UploadedFile = None,
+    title: str = None,
+    description: str = None,
+) -> Regulation:
     """
     Update an existing regulation.
 
@@ -55,7 +60,9 @@ def update_regulation(regulation_id: str, file: UploadedFile = None, title: str 
     regulation = get_regulation(regulation_id)
 
     if file is not None:
-        regulation.file_url = file_storage_service.update_file(regulation.file_url, file)
+        regulation.file_url = file_storage_service.update_file(
+            regulation.file_url, file
+        )
     if title is not None:
         regulation.title = title
     if description is not None:
@@ -63,6 +70,7 @@ def update_regulation(regulation_id: str, file: UploadedFile = None, title: str 
 
     regulation.save()
     return regulation
+
 
 @transaction.atomic
 def delete_regulation(regulation_id: str) -> None:
@@ -80,6 +88,7 @@ def delete_regulation(regulation_id: str) -> None:
     file_storage_service.delete_file(regulation.file_url)
     regulation.delete()
 
+
 def get_regulation(regulation_id: str) -> Regulation:
     """
     Retrieve a regulation by its ID.
@@ -96,4 +105,6 @@ def get_regulation(regulation_id: str) -> Regulation:
     try:
         return Regulation.objects.get(id=regulation_id)
     except Regulation.DoesNotExist:
-        raise Regulation.DoesNotExist(f"Regulation with id {regulation_id} does not exist.")
+        raise Regulation.DoesNotExist(
+            f"Regulation with id {regulation_id} does not exist."
+        )

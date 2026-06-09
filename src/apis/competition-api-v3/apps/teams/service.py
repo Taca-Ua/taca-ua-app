@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from apps.seasons.service import get_current_season
+from apps.seasons.selectors import get_current_season
 from django.db import transaction
 
 from .models import Team

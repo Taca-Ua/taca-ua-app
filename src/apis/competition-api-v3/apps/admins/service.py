@@ -46,7 +46,6 @@ def update_admin(
     user_id: UUID,
     email: Optional[str] = None,
     name: Optional[str] = None,
-    enabled: Optional[bool] = None,
     nucleos: Optional[list[UUID]] = None,
 ):
     """Update an existing admin user's information in Keycloak and the local database."""
@@ -59,7 +58,6 @@ def update_admin(
         email=email,
         first_name=name.split()[0] if name else None,
         last_name=" ".join(name.split()[1:]) if name else None,
-        enabled=enabled,
     )
 
     # Update corresponding Admin record in the local database

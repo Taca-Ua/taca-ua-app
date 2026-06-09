@@ -19,7 +19,7 @@ class Admin(models.Model):
     nucleos = models.ManyToManyField(Nucleus, related_name="admins", blank=True)
 
     @property
-    def courses(self):
+    def courses(self) -> list:
         """Return a list of courses associated with the admin's nucleos."""
         if self.role != AdminRole.NUCLEO_ADMIN:
             return None

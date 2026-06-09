@@ -3,7 +3,7 @@ from uuid import UUID
 
 from apps.matches.models import Match
 from apps.modality_types.models import ModalityType, ModalityTypeModes
-from apps.seasons.service import get_current_season
+from apps.seasons.selectors import get_current_season
 from django.db import transaction
 
 from .formats import FormatRegistry

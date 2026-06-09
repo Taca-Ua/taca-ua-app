@@ -34,7 +34,6 @@ export interface AdminCreate {
 export interface AdminUpdate {
   email?: string;
   name?: string;
-  enabled?: boolean;
   nucleos?: string[]; // Array of Nucleo IDs
 }
 

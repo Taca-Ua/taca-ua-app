@@ -6,10 +6,10 @@ from .formats import FormatRegistry
 from .models import Tournament
 
 
-def list_tournaments(
+def get_tournaments_table(
     status=None, modality_id=None, season_id=None
 ) -> QuerySet[Tournament]:
-    """Retrieve a list of all tournaments."""
+
     queryset = Tournament.objects.all()
 
     if status is not None:
@@ -21,21 +21,22 @@ def list_tournaments(
     if season_id is not None:
         queryset = queryset.filter(season_id=season_id)
 
+    queryset = queryset.select_related("modality", "season", "scoring_format")
+
     return queryset
 
 
-def get_tournament(tournament_id: UUID) -> QuerySet[Tournament]:
-    """Retrieve a tournament by its ID."""
-    tournament = Tournament.objects.filter(id=tournament_id)
-    if not tournament.exists():
-        raise Tournament.DoesNotExist(
-            f"Tournament with id {tournament_id} does not exist."
-        )
+def get_tournament_by_id(tournament_id: UUID) -> Tournament:
+    tournament_qs = get_tournaments_table().filter(id=tournament_id)
 
-    return tournament.first()
+    tournament_qs = tournament_qs.prefetch_related(
+        "competitors__athlete__course",
+        "competitors__team__course",
+    )
+    return tournament_qs.get()
 
 
 def get_tournament_format_details(tournament_id: UUID) -> dict:
-    tournament = get_tournament(tournament_id)
+    tournament = get_tournament_by_id(tournament_id)
     format_engine = FormatRegistry.get_format(tournament)
     return format_engine.get_details()

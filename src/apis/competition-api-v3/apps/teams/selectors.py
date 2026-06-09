@@ -3,7 +3,7 @@ from django.db.models import QuerySet
 from .models import Team
 
 
-def list_teams(season_id=None, modality_id=None, course_id=None) -> QuerySet[Team]:
+def get_teams_table(season_id=None, modality_id=None, course_id=None) -> QuerySet[Team]:
     queryset = Team.objects.all()
 
     if season_id is not None:
@@ -15,13 +15,14 @@ def list_teams(season_id=None, modality_id=None, course_id=None) -> QuerySet[Tea
     if course_id is not None:
         queryset = queryset.filter(course_id=course_id)
 
-    return queryset
-
-
-def get_team(team_id) -> QuerySet[Team]:
-
-    queryset = Team.objects.filter(id=team_id)
-    if not queryset.exists():
-        raise Team.DoesNotExist(f"Team with id {team_id} does not exist.")
+    queryset = queryset.select_related("modality", "course__nucleus")
 
     return queryset
+
+
+def get_team_by_id(team_id) -> Team:
+    team_qs = get_teams_table().filter(id=team_id)
+
+    team_qs = team_qs.select_related("season").prefetch_related("athletes")
+
+    return team_qs.get()

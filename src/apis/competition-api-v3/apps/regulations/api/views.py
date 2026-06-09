@@ -7,10 +7,9 @@ from rest_framework.views import APIView
 from shared.auth.decorators import require_roles_class_method
 from shared.auth.utils import RolesEnum
 
-from ..queries import get_all_regulations, get_regulation_by_id
+from ..selectors import get_regulation_by_id, get_regulations_table
 from ..service import create_regulation, delete_regulation, update_regulation
 from .filters import RegulationQueryListSerializer
-from .renders import render_regulation, render_regulations
 from .serializers import (
     RegulationCreateSerializer,
     RegulationDetailSerializer,
@@ -35,11 +34,9 @@ from .serializers import (
 )
 class RegulationListCreateView(APIView):
     def get(self, request: Request) -> Response:
-        regulations = get_all_regulations()
+        regulations = get_regulations_table()
 
-        serializer = RegulationListSerializer(
-            render_regulations(regulations).all(), many=True
-        )
+        serializer = RegulationListSerializer(regulations, many=True)
         return Response(serializer.data)
 
     @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
@@ -56,9 +53,11 @@ class RegulationListCreateView(APIView):
             description=req_serializer.validated_data.get("description"),
             season_id=params_serializer.validated_data.get("season_id"),
         )
-        return Response(
-            RegulationListSerializer(regulation).data, status=status.HTTP_201_CREATED
+
+        serializer = RegulationListSerializer(
+            get_regulation_by_id(regulation.id),
         )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
@@ -83,9 +82,7 @@ class RegulationDetailView(APIView):
     def get(self, request: Request, regulation_id: str) -> Response:
         regulation = get_regulation_by_id(regulation_id)
 
-        serializer = RegulationDetailSerializer(
-            render_regulation(regulation).first(),
-        )
+        serializer = RegulationDetailSerializer(regulation)
         return Response(serializer.data)
 
     @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
@@ -99,7 +96,11 @@ class RegulationDetailView(APIView):
             title=serializer.validated_data.get("title"),
             description=serializer.validated_data.get("description"),
         )
-        return Response(RegulationDetailSerializer(regulation).data)
+
+        serializer = RegulationDetailSerializer(
+            get_regulation_by_id(regulation.id),
+        )
+        return Response(serializer.data)
 
     @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def delete(self, request: Request, regulation_id: str) -> Response:

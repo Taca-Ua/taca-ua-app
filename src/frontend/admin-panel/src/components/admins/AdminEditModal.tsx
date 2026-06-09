@@ -3,7 +3,6 @@ import HelpTooltip from '../HelpTooltip';
 import { nucleosApi } from '../../api/nucleos';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { type AdminDetail, administratorsApi } from '../../api/admins';
-import DefinedStatesMenuComponent from '../utils/costum_menus/DefinedStatesMenuComponent';
 import ChooseMultipleModal from '../utils/costum_menus/ChoseMultipleModal';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../utils/Button';
@@ -31,7 +30,6 @@ const AdminEditModal = ({
 
   const [editedName, setEditedName] = useState(admin.name);
   const [editedEmail, setEditedEmail] = useState(admin.email);
-  const [editedEnabled, setEditedEnabled] = useState(admin.enabled);
 
   const [allNucleos, setAllNucleos] = useState<Nucleo[]>([]);
   const [selectedNucleos, setSelectedNucleos] = useState<string[]>(admin.nucleos.map(n => n.id));
@@ -40,7 +38,6 @@ const AdminEditModal = ({
   useEffect(() => {
     setEditedName(admin.name);
     setEditedEmail(admin.email);
-    setEditedEnabled(admin.enabled);
     setSelectedNucleos(admin.nucleos.map(n => n.id));
     if (admin.role === 'nucleo_admin') {
       nucleosApi.getAll().then(setAllNucleos).catch(() => setAllNucleos([]));
@@ -62,7 +59,6 @@ const AdminEditModal = ({
       await administratorsApi.update(String(admin.id), {
         email: editedEmail,
         name: editedName,
-        enabled: editedEnabled,
         nucleos: admin.role === 'nucleo_admin' ? selectedNucleos : undefined,
       }).then(updatedAdmin => {
         setAdmin(updatedAdmin);
@@ -83,7 +79,6 @@ const AdminEditModal = ({
     popModal();
     setEditedName(admin.name);
     setEditedEmail(admin.email);
-    setEditedEnabled(admin.enabled);
     setSelectedNucleos(admin.nucleos.map(n => n.id));
   }
 
@@ -136,23 +131,6 @@ const AdminEditModal = ({
               placeholder="Digite o nome completo"
               required
               className="w-full text-gray-700 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
-            />
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-gray-700 font-medium mb-2">
-              Estado{" "}
-              <HelpTooltip
-                text="Ativo: o administrador pode aceder ao sistema. Inativo: acesso bloqueado sem eliminar a conta."
-                className="ml-1"
-              />
-            </label>
-            <DefinedStatesMenuComponent
-              states={[
-                { value: "true", label: "Ativo" },
-                { value: "false", label: "Inativo" },
-              ]}
-              onSelect={(value) => setEditedEnabled(value === "true")}
-              initialValue={editedEnabled ? "true" : "false"}
             />
           </div>
         </div>

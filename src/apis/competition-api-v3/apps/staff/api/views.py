@@ -4,9 +4,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from shared.auth.decorators import RoleRequiredMixin
 
-from ..queries import get_staff, list_staff
+from ..selectors import get_staff_by_id, get_staff_table
 from ..service import create_staff, delete_staff, update_staff
-from .renders import render_staff_detail, render_staff_list
 from .serializers import (
     StaffCreateSerializer,
     StaffDetailSerializer,
@@ -33,11 +32,9 @@ from .serializers import (
 class StaffListCreateView(RoleRequiredMixin, APIView):
 
     def get(self, request):
-        staff_members = list_staff()
+        staff_members = get_staff_table()
 
-        serializer = StaffListSerializer(
-            render_staff_list(staff_members).all(), many=True
-        )
+        serializer = StaffListSerializer(staff_members, many=True)
         return Response(serializer.data)
 
     def post(self, request):
@@ -50,7 +47,7 @@ class StaffListCreateView(RoleRequiredMixin, APIView):
             contact=serializer.validated_data.get("contact"),
         )
 
-        serializer = StaffDetailSerializer(render_staff_detail(staff).first())
+        serializer = StaffDetailSerializer(get_staff_by_id(staff.id))
         return Response(serializer.data, status=201)
 
 
@@ -78,9 +75,9 @@ class StaffListCreateView(RoleRequiredMixin, APIView):
 class StaffDetailView(RoleRequiredMixin, APIView):
 
     def get(self, request, staff_id):
-        staff = get_staff(staff_id)
+        staff = get_staff_by_id(staff_id)
 
-        serializer = StaffDetailSerializer(render_staff_detail(staff).first())
+        serializer = StaffDetailSerializer(staff)
         return Response(serializer.data)
 
     def put(self, request, staff_id):
@@ -94,7 +91,7 @@ class StaffDetailView(RoleRequiredMixin, APIView):
             contact=serializer.validated_data.get("contact"),
         )
 
-        serializer = StaffDetailSerializer(render_staff_detail(staff).first())
+        serializer = StaffDetailSerializer(get_staff_by_id(staff.id))
         return Response(serializer.data)
 
     def delete(self, request, staff_id):

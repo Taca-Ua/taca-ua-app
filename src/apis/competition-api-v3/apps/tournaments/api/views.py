@@ -11,7 +11,11 @@ from shared.auth.decorators import (
 )
 from shared.auth.utils import RolesEnum
 
-from ..queries import get_tournament, get_tournament_format_details, list_tournaments
+from ..selectors import (
+    get_tournament_by_id,
+    get_tournament_format_details,
+    get_tournaments_table,
+)
 from ..service import (
     add_competitors_to_tournament,
     create_tournament,
@@ -21,7 +25,6 @@ from ..service import (
     update_tournament_format,
 )
 from .filters import TournamentListQuerySerializer
-from .renders import render_tournament_detail, render_tournaments
 from .serializers import (
     TournamentAddCompetitorsSerializer,
     TournamentCreateSerializer,
@@ -51,15 +54,13 @@ class TournamentListCreateView(RoleRequiredMixin, APIView):
         serializer = TournamentListQuerySerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
-        tournaments = list_tournaments(
+        tournaments = get_tournaments_table(
             status=serializer.validated_data.get("status"),
             modality_id=serializer.validated_data.get("modality_id"),
             season_id=serializer.validated_data.get("season_id"),
         )
 
-        serializer = TournamentListSerializer(
-            render_tournaments(tournaments).all(), many=True
-        )
+        serializer = TournamentListSerializer(tournaments, many=True)
         return Response(serializer.data)
 
     @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
@@ -78,7 +79,7 @@ class TournamentListCreateView(RoleRequiredMixin, APIView):
         )
 
         serializer = TournamentListSerializer(
-            render_tournament_detail(tournament).first()
+            get_tournament_by_id(tournament.id), many=True
         )
         return Response(serializer.data, status=201)
 
@@ -103,11 +104,9 @@ class TournamentListCreateView(RoleRequiredMixin, APIView):
 )
 class TournamentDetailView(APIView):
     def get(self, request, tournament_id):
-        tournament = get_tournament(tournament_id)
+        tournament = get_tournament_by_id(tournament_id)
 
-        serializer = TournamentDetailSerializer(
-            render_tournament_detail(tournament).first()
-        )
+        serializer = TournamentDetailSerializer(tournament)
         return Response(serializer.data)
 
     @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
@@ -122,9 +121,7 @@ class TournamentDetailView(APIView):
             status=serializer.validated_data.get("status"),
         )
 
-        serializer = TournamentDetailSerializer(
-            render_tournament_detail(tournament).first()
-        )
+        serializer = TournamentDetailSerializer(get_tournament_by_id(tournament.id))
         return Response(serializer.data)
 
     @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
@@ -150,9 +147,7 @@ def add_competitor_to_tournament(request, tournament_id):
         competitor_ids=serializer.validated_data["entity_ids"],
     )
 
-    serializer = TournamentDetailSerializer(
-        render_tournament_detail(tournament).first()
-    )
+    serializer = TournamentDetailSerializer(get_tournament_by_id(tournament.id))
     return Response(serializer.data)
 
 
@@ -173,9 +168,7 @@ def remove_competitor_from_tournament(request, tournament_id):
         competitor_ids=serializer.validated_data["competitor_ids"],
     )
 
-    serializer = TournamentDetailSerializer(
-        render_tournament_detail(tournament).first()
-    )
+    serializer = TournamentDetailSerializer(get_tournament_by_id(tournament.id))
     return Response(serializer.data)
 
 

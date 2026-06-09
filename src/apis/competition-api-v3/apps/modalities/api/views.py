@@ -1,5 +1,6 @@
 import logging
 
+from apps.utils import count_queries
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
@@ -9,9 +10,8 @@ from shared.auth.decorators import RoleRequiredMixin, require_roles_class_method
 from shared.auth.utils import RolesEnum
 
 from .. import service as modality_service
-from ..queries import get_modality, list_modalities
+from ..selectors import get_modalities_table, get_modality_by_id
 from .filters import ModalityQuerySerializer
-from .renders import render_modalities, render_modality
 from .serializers import (
     ModalityAddToSeasonSerializer,
     ModalityCreateSerializer,
@@ -41,16 +41,16 @@ logger = logging.getLogger(__name__)
     ),
 )
 class ModalityListCreateView(RoleRequiredMixin, APIView):
+    @count_queries
     def get(self, request):
         serializer = ModalityQuerySerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
-        season_id = serializer.validated_data.get("season_id")
-        modalities = list_modalities()
-
-        serializer = ModalityListSerializer(
-            render_modalities(modalities, season_id=season_id), many=True
+        modalities = get_modalities_table(
+            season_id=serializer.validated_data.get("season_id")
         )
+
+        serializer = ModalityListSerializer(modalities, many=True)
         return Response(serializer.data)
 
     @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
@@ -71,9 +71,10 @@ class ModalityListCreateView(RoleRequiredMixin, APIView):
             extra={"modality_id": modality.id, "modality_name": modality.name},
         )
         serializer = ModalityListSerializer(
-            render_modalities(
-                modality, season_id=params_serializer.validated_data.get("season_id")
-            ).first(),
+            get_modality_by_id(
+                modality_id=modality.id,
+                season_id=params_serializer.validated_data.get("season_id"),
+            )
         )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -96,17 +97,17 @@ class ModalityListCreateView(RoleRequiredMixin, APIView):
     ),
 )
 class ModalityDetailView(RoleRequiredMixin, APIView):
+    @count_queries
     def get(self, request, modality_id):
         serializer = ModalityQuerySerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
-        season_id = serializer.validated_data.get("season_id")
-
-        modality = get_modality(modality_id=modality_id)
-
-        serializer = ModalityDetailSerializer(
-            render_modality(modality, season_id=season_id).get()
+        modality = get_modality_by_id(
+            modality_id=modality_id,
+            season_id=serializer.validated_data.get("season_id"),
         )
+
+        serializer = ModalityDetailSerializer(modality)
         return Response(serializer.data)
 
     @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
@@ -133,7 +134,7 @@ class ModalityDetailView(RoleRequiredMixin, APIView):
             extra={"modality_id": modality.id, "modality_name": modality.name},
         )
         serializer = ModalityDetailSerializer(
-            render_modalities(modality, season_id=season_id)
+            get_modality_by_id(modality_id=modality.id, season_id=season_id)
         )
         return Response(serializer.data)
 
@@ -166,7 +167,7 @@ class ModalityEditFromSeasonView(RoleRequiredMixin, APIView):
         )
 
         serializer = ModalityDetailSerializer(
-            render_modality(modality, season_id=season_id).get()
+            get_modality_by_id(modality_id=modality.id, season_id=season_id)
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -177,7 +178,7 @@ class ModalityEditFromSeasonView(RoleRequiredMixin, APIView):
         )
 
         serializer = ModalityDetailSerializer(
-            render_modality(modality, season_id=season_id).get()
+            get_modality_by_id(modality_id=modality.id, season_id=season_id)
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
 

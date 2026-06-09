@@ -72,6 +72,8 @@ class DocumentGenerationService:
         Returns:
             bytes: PDF file content
         """
+        match_participants = match.participants.all()  # fetch participants
+
         # Create a BytesIO buffer to hold the PDF
         buffer = BytesIO()
 
@@ -154,7 +156,8 @@ class DocumentGenerationService:
             self._P(
                 (
                     "Pontuação"
-                    if match.participants.first().score is not None
+                    if len(match_participants) > 0
+                    and match_participants[0].score is not None
                     else "Posição"
                 ),
                 style_label,
@@ -166,7 +169,7 @@ class DocumentGenerationService:
         #     )  # empty header for presence column if no lineups
 
         participant_rows = [participant_header]
-        for participant in match.participants.all():
+        for participant in match_participants:
             participant_rows.append(
                 [
                     self._P(participant.name, style_normal),
@@ -212,7 +215,7 @@ class DocumentGenerationService:
             TABLE_W * 0.17,
             TABLE_W * 0.05,
         ]
-        for participant in match.participants.all():
+        for participant in match_participants:
             # Find participant name for header
             participant_name = participant.name if participant else "Participante"
             # Header row

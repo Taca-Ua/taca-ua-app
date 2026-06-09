@@ -24,5 +24,9 @@ class Course(models.Model):
     if TYPE_CHECKING:
         athletes: RelatedManager["Athlete"]
 
+    @property
+    def logo_url(self) -> str | None:
+        return self.nucleus.logo_url if self.nucleus else None
+
     def __str__(self):
         return f"<Course: {self.name} ({self.abbreviation})>"

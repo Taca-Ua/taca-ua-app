@@ -6,10 +6,9 @@ from rest_framework.views import APIView
 from shared.auth.decorators import RoleRequiredMixin, require_roles_class_method
 from shared.auth.utils import RolesEnum
 
-from ..queries import get_admin_by_id, list_admins
+from ..selectors import get_admin_by_id, get_admin_table
 from ..service import change_admin_password, create_admin, delete_admin, update_admin
 from .filters import AdminListFilter
-from .renders import render_admin_detail, render_admin_list
 from .serializers import (
     AdminCreateSerializer,
     AdminDetailSerializer,
@@ -38,9 +37,11 @@ class AdminListCreateView(RoleRequiredMixin, APIView):
         serializer = AdminListFilter(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
-        admins = list_admins(include=serializer.validated_data.get("include_inactive"))
+        admins = get_admin_table(
+            include_inactive=serializer.validated_data.get("include_inactive")
+        )
 
-        serializer = AdminListSerializer(render_admin_list(admins), many=True)
+        serializer = AdminListSerializer(admins, many=True)
         return Response(serializer.data)
 
     @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
@@ -57,7 +58,7 @@ class AdminListCreateView(RoleRequiredMixin, APIView):
             nucleos=serializer.validated_data.get("nucleos"),
         )
 
-        serializer = AdminListSerializer(render_admin_list(admin).get())
+        serializer = AdminListSerializer(get_admin_by_id(admin.id))
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
@@ -83,9 +84,9 @@ class AdminDetailView(RoleRequiredMixin, APIView):
 
     def get(self, request, user_id):
         """Retrieve an admin user by ID."""
-        admin = get_admin_by_id(user_id=user_id).get()
+        admin = get_admin_by_id(user_id)
 
-        serializer = AdminDetailSerializer(render_admin_detail(admin).first())
+        serializer = AdminDetailSerializer(admin)
         return Response(serializer.data)
 
     @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
@@ -98,11 +99,10 @@ class AdminDetailView(RoleRequiredMixin, APIView):
             user_id=user_id,
             email=serializer.validated_data.get("email"),
             name=serializer.validated_data.get("name"),
-            enabled=serializer.validated_data.get("enabled"),
             nucleos=serializer.validated_data.get("nucleos"),
         )
 
-        serializer = AdminDetailSerializer(render_admin_detail(admin).first())
+        serializer = AdminDetailSerializer(get_admin_by_id(admin.id))
         return Response(serializer.data)
 
     @require_roles_class_method(RolesEnum.GENERAL_ADMIN)

@@ -94,10 +94,6 @@ class AdminUpdateSerializer(serializers.Serializer):
         max_length=255,
         help_text="New full name",
     )
-    enabled = serializers.BooleanField(
-        required=False,
-        help_text="Enable or disable the account",
-    )
     nucleos = serializers.ListField(
         child=serializers.UUIDField(),
         required=False,

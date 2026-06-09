@@ -1,5 +1,3 @@
-import logging
-
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
@@ -10,12 +8,11 @@ from shared.auth.decorators import (
     require_auth,
     require_roles_class_method,
 )
-from shared.auth.utils import RolesEnum, get_user
+from shared.auth.utils import RolesEnum
 
 from .. import service as modality_type_service
-from ..queries import get_modality_type, list_modality_types
+from ..selectors import get_modality_type_by_id, get_modality_types_table
 from .filters import ModalityTypeFilterSerializer
-from .renders import render_modality_type, render_modality_types
 from .serializers import (
     ModalityTypeCreateSerializer,
     ModalityTypeDetailSerializer,
@@ -23,8 +20,6 @@ from .serializers import (
     ModalityTypeListSerializer,
     ModalityTypeUpdateSerializer,
 )
-
-logger = logging.getLogger(__name__)
 
 
 @extend_schema_view(
@@ -49,13 +44,11 @@ class ModalityTypeListCreateView(RoleRequiredMixin, APIView):
         serializer = ModalityTypeFilterSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
-        modality_types = list_modality_types(
+        modality_types = get_modality_types_table(
             season_id=serializer.validated_data.get("season_id")
         )
 
-        serializer = ModalityTypeListSerializer(
-            render_modality_types(modality_types), many=True
-        )
+        serializer = ModalityTypeListSerializer(modality_types, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
@@ -74,18 +67,9 @@ class ModalityTypeListCreateView(RoleRequiredMixin, APIView):
             escaloes_data=serializer.validated_data.get("escaloes", []),
         )
 
-        if modality_type is None:
-            return Response(
-                {"error": "Failed to create modality type"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-        user = get_user(request)
-        logger.info(
-            "Created modality type",
-            extra={"modality_type_id": modality_type.id, "user_id": user.user_id},
+        serializer = ModalityTypeListSerializer(
+            get_modality_type_by_id(modality_type.id)
         )
-        serializer = ModalityTypeListSerializer(modality_type)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
@@ -112,11 +96,9 @@ class ModalityTypeListCreateView(RoleRequiredMixin, APIView):
 class ModalityTypeDetailView(RoleRequiredMixin, APIView):
     def get(self, request, modality_type_id):
 
-        modality_type = get_modality_type(modality_type_id)
+        modality_type = get_modality_type_by_id(modality_type_id)
 
-        serializer = ModalityTypeDetailSerializer(
-            render_modality_type(modality_type).get()
-        )
+        serializer = ModalityTypeDetailSerializer(modality_type)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
@@ -131,22 +113,17 @@ class ModalityTypeDetailView(RoleRequiredMixin, APIView):
             escaloes_data=serializer.validated_data.get("escaloes"),
         )
 
-        logger.info(f"Updated modality type {modality_type_id}")
-        serializer = ModalityTypeDetailSerializer(modality_type)
+        serializer = ModalityTypeDetailSerializer(
+            get_modality_type_by_id(modality_type.id)
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def delete(self, request, modality_type_id):
-        success = modality_type_service.delete_modality_type(modality_type_id)
-        if not success:
-            return Response(
-                {"error": "Failed to delete modality type"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+        modality_type_service.delete_modality_type(modality_type_id)
 
-        logger.info(f"Deleted modality type {modality_type_id}")
         return Response(
-            {"message": f"Modality type {modality_type_id} deleted"},
+            {"message": "Modality type deleted"},
             status=status.HTTP_204_NO_CONTENT,
         )
 
@@ -167,7 +144,7 @@ class ModalityTypeListView(RoleRequiredMixin, APIView):
         serializer = ModalityTypeFilterSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
-        modality_types = list_modality_types(
+        modality_types = get_modality_types_table(
             season_id=serializer.validated_data.get("season_id"),
             mode=serializer.validated_data.get("mode"),
         )

@@ -12,7 +12,7 @@ from shared.auth.decorators import (
 )
 from shared.auth.utils import RolesEnum, get_user
 
-from ..queries import get_match_by_id, get_match_participant_by_id, list_matches
+from ..selectors import get_match_by_id, get_match_participant_by_id, get_matches_table
 from ..service import (
     assign_lineup,
     assign_staff_to_lineup,
@@ -29,7 +29,6 @@ from .pdf_generators import (
     DocumentGenerationLackPermissionError,
     document_generation_service,
 )
-from .renders import render_match_detail, render_match_list, render_match_participant
 from .serializers import (
     CommentCreateSerializer,
     LineupAssignSerializer,
@@ -66,7 +65,7 @@ class MatchListCreateView(RoleRequiredMixin, APIView):
         serializer = MatchListFilterSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
-        matches = list_matches(
+        matches = get_matches_table(
             status=serializer.validated_data.get("status"),
             modality_id=serializer.validated_data.get("modality_id"),
             course_id=serializer.validated_data.get("course_id"),
@@ -88,10 +87,8 @@ class MatchListCreateView(RoleRequiredMixin, APIView):
             else matches
         )
 
-        rm = render_match_list(pag_matches).all()
-
         response_serializer = MatchPaginatedListSerializer(
-            {"matches": rm, "total": matches.count()}
+            {"matches": pag_matches, "total": matches.count()}
         )
         return Response(response_serializer.data)
 
@@ -109,7 +106,7 @@ class MatchListCreateView(RoleRequiredMixin, APIView):
             new_journey=serializer.validated_data.get("new_journey", False),
         )
 
-        serializer = MatchListSerializer(render_match_list(match).first())
+        serializer = MatchListSerializer(get_match_by_id(match.id))
         return Response(serializer.data, status=201)
 
 
@@ -141,12 +138,8 @@ class MatchDetailView(RoleRequiredMixin, APIView):
             user.user_id if user and RolesEnum.GENERAL_ADMIN not in user.roles else None
         )
 
-        match = get_match_by_id(match_id)
-
-        # with count_queries_context():
-        serializer = MatchDetailSerializer(
-            render_match_detail(match, admin_id=admin_id).first()
-        )
+        match = get_match_by_id(match_id, admin_id=admin_id)
+        serializer = MatchDetailSerializer(match)
         return Response(serializer.data)
 
     @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
@@ -167,9 +160,7 @@ class MatchDetailView(RoleRequiredMixin, APIView):
             user.user_id if user and RolesEnum.GENERAL_ADMIN not in user.roles else None
         )
 
-        serializer = MatchDetailSerializer(
-            render_match_detail(match, admin_id=admin_id).first()
-        )
+        serializer = MatchDetailSerializer(get_match_by_id(match.id, admin_id=admin_id))
         return Response(serializer.data)
 
     @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
@@ -200,9 +191,7 @@ def publish_match_results_view(request, match_id):
     user = get_user(request)
     admin_id = user.user_id if user else None
 
-    serializer = MatchDetailSerializer(
-        render_match_detail(match, admin_id=admin_id).first()
-    )
+    serializer = MatchDetailSerializer(get_match_by_id(match.id, admin_id=admin_id))
     return Response(serializer.data)
 
 
@@ -235,7 +224,7 @@ def add_comment(request, match_id):
         user.user_id if user and RolesEnum.GENERAL_ADMIN not in user.roles else None
     )
     response_serializer = MatchDetailSerializer(
-        render_match_detail(match, admin_id=admin_id).first()
+        get_match_by_id(match.id, admin_id=admin_id)
     )
     return Response(response_serializer.data, status=201)
 
@@ -289,11 +278,10 @@ class MatchLineupsView(RoleRequiredMixin, APIView):
         )
 
         participant = get_match_participant_by_id(
-            match_id, participant_id, admin_id=admin_id
-        ).first()
-        serializer = MatchParticipantLineupSerializer(
-            render_match_participant(participant).first()
+            match_id=match_id, participant_id=participant_id, admin_id=admin_id
         )
+
+        serializer = MatchParticipantLineupSerializer(participant)
         return Response(serializer.data)
 
     def post(self, request, match_id, participant_id):
@@ -308,7 +296,9 @@ class MatchLineupsView(RoleRequiredMixin, APIView):
         )
 
         response_serializer = MatchParticipantLineupSerializer(
-            render_match_participant(participant).first()
+            get_match_participant_by_id(
+                match_id=match_id, participant_id=participant.id
+            )
         )
         return Response(response_serializer.data, status=200)
 
@@ -324,7 +314,9 @@ class MatchLineupsView(RoleRequiredMixin, APIView):
         )
 
         response_serializer = MatchParticipantLineupSerializer(
-            render_match_participant(participant).first()
+            get_match_participant_by_id(
+                match_id=match_id, participant_id=participant.id
+            )
         )
         return Response(response_serializer.data, status=200)
 
@@ -349,7 +341,7 @@ def add_staff_to_lineup(request, match_id, participant_id):
     )
 
     response_serializer = MatchParticipantLineupSerializer(
-        render_match_participant(participant).first()
+        get_match_participant_by_id(match_id=match_id, participant_id=participant.id)
     )
     return Response(response_serializer.data, status=200)
 
@@ -367,11 +359,9 @@ def add_staff_to_lineup(request, match_id, participant_id):
 def match_sheet(request, match_id):
     """Generate match sheet PDF"""
 
-    match = get_match_by_id(match_id).get()
+    match = get_match_by_id(match_id, include_lineups=True)
 
-    pdf_content = document_generation_service.generate_match_report(
-        render_match_detail(match, include_lineups=True).first()
-    )
+    pdf_content = document_generation_service.generate_match_report(match)
 
     response = HttpResponse(pdf_content, content_type="application/pdf")
     response["Content-Disposition"] = (
@@ -392,11 +382,11 @@ def match_team_sheet(request, match_id, participant_id):
     Generate match sheet PDF for a specific team in a match.
     """
 
-    match_participant = get_match_participant_by_id(match_id, participant_id).get()
+    match_participant = get_match_participant_by_id(match_id, participant_id)
 
     try:
         pdf_content = document_generation_service.generate_match_team_report(
-            render_match_participant(match_participant).first()
+            match_participant
         )
     except DocumentGenerationLackPermissionError as e:
         return Response({"detail": str(e)}, status=403)

@@ -1,13 +1,13 @@
 from typing import Optional
 from uuid import UUID
 
-from apps.seasons.service import get_current_season
+from apps.seasons.selectors import get_current_season
 from django.db.models import QuerySet
 
 from .models import ModalityType
 
 
-def list_modality_types(
+def get_modality_types_table(
     season_id: Optional[int] = None, mode: Optional[str] = None
 ) -> QuerySet[ModalityType]:
     """Retrieve a list of all modality types.
@@ -20,12 +20,13 @@ def list_modality_types(
         QuerySet[ModalityType]: A queryset of modality types matching the criteria.
     """
 
-    # If season_id is not provided, try to get the current season and use its ID
+    # if season_id is not provided, try to get the current season and use its ID
     if season_id is None:
         season = get_current_season()
         season_id = season.id if season else None
 
     queryset = ModalityType.objects.all()
+
     if season_id is not None:
         queryset = queryset.filter(season_id=season_id)
 
@@ -35,18 +36,15 @@ def list_modality_types(
     return queryset.order_by("name")
 
 
-def get_modality_type(modality_type_id: UUID) -> QuerySet[ModalityType]:
+def get_modality_type_by_id(modality_type_id: UUID) -> ModalityType:
     """Retrieve a modality type by its ID.
 
     Args:
         modality_type_id (UUID): The ID of the modality type.
 
     Returns:
-        QuerySet[ModalityType]: A queryset containing the modality type if found, otherwise an empty queryset.
+        ModalityType: The modality type if found, otherwise an empty queryset.
     """
-    modality_type = ModalityType.objects.filter(id=modality_type_id)
+    modality_type_qs = get_modality_types_table()
 
-    if not modality_type.exists():
-        raise ValueError(f"Modality type with ID {modality_type_id} does not exist.")
-
-    return modality_type
+    return modality_type_qs.get(id=modality_type_id)
