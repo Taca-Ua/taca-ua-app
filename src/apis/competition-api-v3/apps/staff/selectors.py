@@ -10,5 +10,5 @@ def get_staff_table() -> QuerySet[Staff]:
 
 
 def get_staff_by_id(staff_id: UUID) -> Staff:
-    staff_qs = get_staff_table()
-    return staff_qs.get(id=staff_id)
+    staff_qs = get_staff_table().filter(id=staff_id)
+    return staff_qs.get()

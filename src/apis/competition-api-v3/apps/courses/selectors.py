@@ -23,7 +23,8 @@ def get_courses_table(*, season_id: int = None) -> QuerySet[Course]:
 
 def get_course_by_id(course_id: str, *, season_id: int = None) -> Course:
 
-    course = get_courses_table(season_id=season_id)
+    course = get_courses_table(season_id=season_id).filter(id=course_id)
+
     course = course.annotate(relevant_season_ids=ArrayAgg("seasons__id", distinct=True))
 
-    return course.get(id=course_id)
+    return course.get()

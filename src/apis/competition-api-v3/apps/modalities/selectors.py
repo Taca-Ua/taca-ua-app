@@ -33,11 +33,11 @@ def get_modalities_table(season_id: int = None) -> QuerySet[Modality]:
 
 
 def get_modality_by_id(modality_id: int, *, season_id: int = None) -> Modality:
-    modality_qs = get_modalities_table(season_id=season_id)
+    modality_qs = get_modalities_table(season_id=season_id).filter(id=modality_id)
 
     if season_id:
         modality_qs = modality_qs.annotate(
             relevant_seasons_ids=ArrayAgg("modality_seasons__season_id", distinct=True)
         )
 
-    return modality_qs.get(id=modality_id)
+    return modality_qs.get()

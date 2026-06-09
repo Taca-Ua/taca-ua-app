@@ -96,8 +96,12 @@ def get_matches_table(
 def get_match_by_id(
     match_id: UUID, *, admin_id: UUID = None, include_lineups: bool = False
 ) -> Match:
-    match_qs = get_matches_table(admin_id=admin_id, include_lineups=include_lineups)
-    return match_qs.get(id=match_id)
+
+    match_qs = get_matches_table(
+        admin_id=admin_id, include_lineups=include_lineups
+    ).filter(id=match_id)
+
+    return match_qs.get()
 
 
 def get_match_participant_by_id(

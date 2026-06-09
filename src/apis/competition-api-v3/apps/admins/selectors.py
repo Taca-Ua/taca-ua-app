@@ -16,5 +16,6 @@ def get_admin_table(include_inactive: bool = False) -> QuerySet[Admin]:
 
 def get_admin_by_id(admin_id: str) -> Admin:
     """Get a single admin by ID with related nucleus information"""
+    admin_qs = get_admin_table(include_inactive=True).filter(id=admin_id)
 
-    return get_admin_table(include_inactive=True).get(id=admin_id)
+    return admin_qs.get()

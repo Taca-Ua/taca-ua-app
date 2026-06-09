@@ -45,6 +45,6 @@ def get_modality_type_by_id(modality_type_id: UUID) -> ModalityType:
     Returns:
         ModalityType: The modality type if found, otherwise an empty queryset.
     """
-    modality_type_qs = get_modality_types_table()
+    modality_type_qs = get_modality_types_table().filter(id=modality_type_id)
 
-    return modality_type_qs.get(id=modality_type_id)
+    return modality_type_qs.get()

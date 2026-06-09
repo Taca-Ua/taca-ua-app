@@ -8,8 +8,8 @@ def get_seasons_table() -> QuerySet[Season]:
 
 
 def get_season_by_id(season_id: int) -> Season:
-    season_qs = get_seasons_table()
-    return season_qs.get(id=season_id)
+    season_qs = get_seasons_table().filter(id=season_id)
+    return season_qs.get()
 
 
 def get_current_season() -> Season:

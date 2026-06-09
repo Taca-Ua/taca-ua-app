@@ -12,5 +12,5 @@ def get_nucleus_table() -> QuerySet[Nucleus]:
 
 def get_nucleus_by_id(nucleus_id: UUID) -> Nucleus:
     """Returns the Nucleus instance with the given ID."""
-    nucleus_qs = get_nucleus_table()
-    return nucleus_qs.get(id=nucleus_id)
+    nucleus_qs = get_nucleus_table().filter(id=nucleus_id)
+    return nucleus_qs.get()

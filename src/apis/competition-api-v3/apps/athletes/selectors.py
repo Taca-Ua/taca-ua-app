@@ -11,6 +11,6 @@ def get_athletes_table() -> QuerySet[Athlete]:
 
 def get_athlete_by_id(athlete_id: UUID) -> Athlete:
 
-    athlete = get_athletes_table().get(id=athlete_id)
+    athlete_qs = get_athletes_table().filter(id=athlete_id)
 
-    return athlete
+    return athlete_qs.get()
