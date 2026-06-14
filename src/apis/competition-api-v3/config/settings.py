@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "drf_spectacular",
     "apps",
+    "infra.events",
 ]
 
 MIDDLEWARE = [
@@ -168,9 +169,7 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-        },
+        "console": {"class": "logging.StreamHandler", "formatter": "verbose"},
         "loki": {
             "class": "logging_loki.LokiHandler",
             "url": LOKI_LOGGING_URL,
@@ -186,6 +185,9 @@ LOGGING = {
         "json": {
             "()": jsonlogger.JsonFormatter,
             "fmt": "%(asctime)s %(levelname)s %(name)s %(message)s",
+        },
+        "verbose": {
+            "format": "[%(asctime)s] [%(levelname)s] %(name)s: %(message)s",
         },
     },
     "root": {
@@ -226,6 +228,16 @@ KEYCLOAK_VALIDATE_ISSUER = (
 KEYCLOAK_JWKS_URI = (
     f"{KEYCLOAK_ADMIN_SERVER_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/certs"
 )
+
+
+# RabbitMQ settings
+RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
+RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", "5672"))
+
+RABBITMQ_USER = os.getenv("RABBITMQ_USER", "guest")
+RABBITMQ_PASSWORD = os.getenv("RABBITMQ_PASSWORD", "guest")
+
+RABBITMQ_EXCHANGE = os.getenv("RABBITMQ_EXCHANGE", "events")
 
 # System settings
 API_ENDPOINT_PREFIX = (
