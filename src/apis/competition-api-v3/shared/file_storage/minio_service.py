@@ -13,14 +13,19 @@ class MinioService:
         self.base_url = settings.MINIO_SERVICE_URL
         self.bucket = bucket
 
-        self.client = Minio(
-            self.base_url,
-            access_key=settings.MINIO_USER,
-            secret_key=settings.MINIO_PASSWORD,
-            secure=settings.MINIO_USE_SSL,
-        )
-        self._ensure_bucket()
-        super().__init__()
+        self._client = None
+
+    @property
+    def client(self) -> Minio:
+        if self._client is None:
+            self._client = Minio(
+                self.base_url,
+                access_key=settings.MINIO_USER,
+                secret_key=settings.MINIO_PASSWORD,
+                secure=settings.MINIO_USE_SSL,
+            )
+            self._ensure_bucket()
+        return self._client
 
     def _ensure_bucket(self) -> None:
         if not self.client.bucket_exists(self.bucket):
