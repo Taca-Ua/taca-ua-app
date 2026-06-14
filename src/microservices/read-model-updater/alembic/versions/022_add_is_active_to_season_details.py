@@ -30,24 +30,6 @@ def upgrade() -> None:
         sa.Column("is_active", sa.Boolean(), nullable=False, server_default="false"),
         schema="public_read",
     )
-    # Seed finished_at in seasons from modalities.season
-    op.execute(
-        """
-        UPDATE public_read.seasons s
-        SET finished_at = ms.finished_at
-        FROM modalities.season ms
-        WHERE s.season_id = ms.id;
-        """
-    )
-    # Seed is_active in mv_season_details from modalities.season
-    op.execute(
-        """
-        UPDATE public_read.mv_season_details mv
-        SET is_active = (ms.finished_at IS NULL)
-        FROM modalities.season ms
-        WHERE mv.season_id = ms.id;
-        """
-    )
 
 
 def downgrade() -> None:
