@@ -3,11 +3,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from shared.auth.decorators import (
-    RoleRequiredMixin,
-    require_auth,
-    require_roles_class_method,
-)
+from shared.auth.decorators import RoleRequiredMixin, require_roles_class_method
 from shared.auth.utils import RolesEnum
 
 from .. import service as modality_type_service
@@ -139,7 +135,6 @@ class ModalityTypeDetailView(RoleRequiredMixin, APIView):
 )
 class ModalityTypeListView(RoleRequiredMixin, APIView):
 
-    @require_auth
     def get(self, request):
         serializer = ModalityTypeFilterSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)

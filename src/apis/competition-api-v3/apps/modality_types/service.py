@@ -3,6 +3,18 @@ from uuid import UUID
 
 from apps.seasons.selectors import get_current_season
 from django.db import transaction
+from infra.events.utils import emit_schema_event
+from taca_events.pydantic_schemas import (
+    ModalityTypeCreatedV1,
+    ModalityTypeDeletedV1,
+    ModalityTypeUpdatedV1,
+)
+from taca_events.pydantic_schemas.modality_types import (
+    ModalityTypeCreatedData,
+    ModalityTypeDeletedData,
+    ModalityTypeUpdatedData,
+    _EscalaoData,
+)
 
 from .models import ModalityType
 
@@ -57,6 +69,29 @@ def create_modality_type(
             )
     modality_type.save()
 
+    # emit event to OutboxTable
+    emit_schema_event(
+        event=ModalityTypeCreatedV1(
+            data=ModalityTypeCreatedData(
+                modality_type_id=modality_type.id,
+                season_id=season_id,
+                name=name,
+                description=description,
+                mode=mode,
+                escaloes=[
+                    _EscalaoData(
+                        name=escaloes_item["name"],
+                        min_participants=escaloes_item["min_participants"],
+                        max_participants=escaloes_item["max_participants"],
+                        points=escaloes_item.get("points", []),
+                    )
+                    for escaloes_item in escaloes_data or []
+                ],
+            ),
+        ),
+        aggregate_id=modality_type.id,
+    )
+
     return modality_type
 
 
@@ -98,6 +133,29 @@ def update_modality_type(
             )
 
     modality_type.save()
+
+    # emit event to OutboxTable
+    emit_schema_event(
+        schema=ModalityTypeUpdatedV1,
+        data=ModalityTypeUpdatedData(
+            modality_type_id=modality_type.id,
+            season_id=modality_type.season_id,
+            name=modality_type.name,
+            description=modality_type.description,
+            mode=modality_type.mode,
+            tournament_competitor_type=modality_type.tournament_competitor_type,
+            escaloes=[
+                _EscalaoData(
+                    name=escaloes_item.name,
+                    min_participants=escaloes_item.min_participants,
+                    max_participants=escaloes_item.max_participants,
+                    points=escaloes_item.points,
+                )
+                for escaloes_item in modality_type.escaloes.all()
+            ],
+        ),
+    )
+
     return modality_type
 
 
@@ -115,6 +173,16 @@ def delete_modality_type(modality_type_id: UUID) -> bool:
     modality_type = ModalityType.objects.get(id=modality_type_id)
     if not modality_type:
         return False
+
+    # emit event to OutboxTable
+    emit_schema_event(
+        event=ModalityTypeDeletedV1(
+            data=ModalityTypeDeletedData(
+                modality_type_id=modality_type_id,
+            ),
+        ),
+        aggregate_id=modality_type_id,
+    )
 
     modality_type.delete()
     return True

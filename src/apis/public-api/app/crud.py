@@ -369,7 +369,10 @@ def get_matches(
     Returns:
         Tuple of (list of matches, total count)
     """
-    query = db.query(MatchDetailView)
+    query = db.query(MatchDetailView).filter(
+        MatchDetailView.status != "draft",
+        MatchDetailView.start_time != None,  # noqa: E711
+    )
 
     # Apply filters
     if tournament_id:

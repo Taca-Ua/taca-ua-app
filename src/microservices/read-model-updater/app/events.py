@@ -9,9 +9,6 @@ from datetime import date, datetime, timezone
 from typing import Any
 
 from taca_events.pydantic_schemas import (  # Nucleo; Course; Modality Type; Modality; Student; Team; Tournament; Match; Ranking
-    CourseCreatedV1,
-    CourseDeletedV1,
-    CourseUpdatedV1,
     MatchCommentAddedV1,
     MatchCommentDeletedV1,
     MatchCreatedV1,
@@ -26,9 +23,6 @@ from taca_events.pydantic_schemas import (  # Nucleo; Course; Modality Type; Mod
     ModalityTypeDeletedV1,
     ModalityTypeUpdatedV1,
     ModalityUpdatedV1,
-    NucleoCreatedV1,
-    NucleoDeletedV1,
-    NucleoUpdatedV1,
     RankingComputedV1,
     StudentCreatedV1,
     StudentDeletedV1,
@@ -45,13 +39,23 @@ from taca_events.pydantic_schemas import (  # Nucleo; Course; Modality Type; Mod
     TournamentFinishedV1,
     TournamentUpdatedV1,
 )
-from taca_events.pydantic_schemas.modalities import (
+from taca_events.pydantic_schemas.courses import (
+    CourseCreatedV1,
+    CourseDeletedV1,
+    CourseUpdatedV1,
+)
+from taca_events.pydantic_schemas.nucleos import (
+    NucleoCreatedV1,
+    NucleoDeletedV1,
+    NucleoUpdatedV1,
+)
+from taca_events.pydantic_schemas.regulations import (
     RegulationCreatedV1,
     RegulationDeletedV1,
     RegulationUpdatedV1,
-    SeasonCreatedV1,
 )
-from taca_events.pydantic_schemas.tournaments import TournamentStandingsUpdatedV1
+from taca_events.pydantic_schemas.seasons import SeasonCreatedV1
+from taca_events.pydantic_schemas.tournaments import TournamentLeagueStandingsUpdatedV1
 from taca_messaging.rabbitmq_service import PausableRabbitMQService
 from taca_models.models import Regulation
 
@@ -104,6 +108,8 @@ rabbitmq_service = PausableRabbitMQService(
 
 def _parse_dt(value: Any) -> datetime:
     """Parse an ISO 8601 datetime string to a naive UTC datetime."""
+    if value is None:
+        return None
     if isinstance(value, datetime):
         if value.tzinfo is not None:
             return value.astimezone(timezone.utc).replace(tzinfo=None)
@@ -744,6 +750,8 @@ def handle_tournament_competitor_added(event: TournamentCompetitorAddedV1):
         "event_received",
         event_type="tournament.competitor.added",
         tournament_id=str(tournament_id),
+        competitor_id=str(event.data.competitor_id),
+        competitor_entity_id=str(event.data.competitor_entity_id),
     )
 
     with get_db() as db:
@@ -768,6 +776,7 @@ def handle_tournament_competitor_deleted(event: TournamentCompetitorDeletedV1):
         "event_received",
         event_type="tournament.competitor.deleted",
         tournament_id=str(tournament_id),
+        competitor_id=str(event.data.competitor_id),
     )
 
     with get_db() as db:
@@ -790,30 +799,28 @@ def handle_tournament_competitor_deleted(event: TournamentCompetitorDeletedV1):
                 "tournament_competitor_not_found", tournament_id=str(tournament_id)
             )
             return
-        competitor.deleted_at = datetime.utcnow()
+        db.delete(competitor)
         db.flush()
         # Rebuild tournament projection and standings
         rebuild_tournament_projection(db, tournament_id)
         rebuild_tournament_standings(db, tournament_id)
 
 
-@rabbitmq_service.event_handler(TournamentStandingsUpdatedV1)
-def handle_tournament_standings_updated(event: TournamentStandingsUpdatedV1):
+@rabbitmq_service.event_handler(TournamentLeagueStandingsUpdatedV1)
+def handle_tournament_standings_updated(event: TournamentLeagueStandingsUpdatedV1):
     """Handle tournament standings updated event."""
     tournament_id = event.data.tournament_id
-    tournament_format_type = event.data.format_type
     logger.info(
         "event_received",
         event_type="tournament.standings_updated",
         tournament_id=str(tournament_id),
-        format_type=tournament_format_type,
     )
 
     with get_db() as db:
         tournament = (
             db.query(Tournament)
             .filter(Tournament.tournament_id == tournament_id)
-            .filter(Tournament.format_type == tournament_format_type)
+            .filter(Tournament.format_type == "league")
             .first()
         )
         if not tournament:

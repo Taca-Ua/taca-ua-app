@@ -2,6 +2,11 @@ import uuid
 from typing import Literal
 
 from django.db.models import F
+from infra.events.utils import emit_schema_event
+from taca_events.pydantic_schemas.tournaments import (
+    TournamentLeagueStandingsUpdatedData,
+    TournamentLeagueStandingsUpdatedV1,
+)
 
 from ..base import BaseFormat, Match
 from .models import DrawRule, LeagueSettings, LeagueStanding
@@ -9,16 +14,34 @@ from .models import DrawRule, LeagueSettings, LeagueStanding
 
 class LeagueFormat(BaseFormat):
 
-    def create(self, format_data: dict):
-        LeagueSettings.objects.create(
-            tournament=self.tournament,
-            win_points=format_data.get("win_points", 3),
-            draw_points=format_data.get("draw_points", 1),
-            loss_points=format_data.get("loss_points", 0),
-            draw_rule=format_data.get("draw_rule"),
-        )
+    # helper methods
+    def _emit_standings_updated_event(self):
+        # emit event to OutboxTable
+        standings = LeagueStanding.objects.filter(
+            competitor__tournament=self.tournament
+        ).all()
 
-        return self.get_details()
+        emit_schema_event(
+            event=TournamentLeagueStandingsUpdatedV1(
+                data=TournamentLeagueStandingsUpdatedData(
+                    tournament_id=self.tournament.id,
+                    standings=[
+                        TournamentLeagueStandingsUpdatedData.Entry(
+                            competitor_id=s.competitor.id,
+                            points=s.points,
+                            played=s.played,
+                            wins=s.wins,
+                            draws=s.draws,
+                            losses=s.losses,
+                            points_for=s.points_for,
+                            points_against=s.points_against,
+                        )
+                        for s in standings.all()
+                    ],
+                )
+            ),
+            aggregate_id=self.tournament.id,
+        )
 
     def _recalculate_standings_league_points(self):
         """Recalculate points for all standings based on current league settings. This should be called after any change in league settings to ensure standings are up to date."""
@@ -32,6 +55,89 @@ class LeagueFormat(BaseFormat):
                 + standing.losses * self.tournament.league_settings.loss_points
             )
             standing.save()
+
+        self._emit_standings_updated_event()
+        return
+
+    def _calculate_match_result(
+        self, match: Match
+    ) -> dict[uuid.UUID, Literal["winner", "loser", "draw"]]:
+        results = {}
+        for participant in match.participants.all():
+            competitor = participant.competitor
+            if participant.score is None and participant.position is None:
+                return None
+
+            results[competitor.id] = {
+                "score": participant.score,
+                "position": participant.position,
+            }
+
+        participant_results_map: dict[uuid.UUID, Literal["winner", "loser", "draw"]] = (
+            {}
+        )
+        if all(score is not None for score in [p["score"] for p in results.values()]):
+            # score-based result calculation.
+            # Most points wins, ties if all competitors have same points
+            max_score = max(p["score"] for p in results.values())
+            winners = [
+                comp_id for comp_id, res in results.items() if res["score"] == max_score
+            ]
+
+            if len(winners) == 1:
+                participant_results_map[winners[0]] = "winner"
+                for comp_id in results.keys():
+                    if comp_id != winners[0]:
+                        participant_results_map[comp_id] = "loser"
+            else:
+                for comp_id in winners:
+                    participant_results_map[comp_id] = "draw"
+                for comp_id in results.keys():
+                    if comp_id not in winners:
+                        participant_results_map[comp_id] = "loser"
+
+        elif all(
+            position is not None
+            for position in [p["position"] for p in results.values()]
+        ):
+            # position-based result calculation.
+            # 1st place is winner, 2nd place is loser, ties if multiple competitors have same position
+            min_position = min(p["position"] for p in results.values())
+            winners = [
+                comp_id
+                for comp_id, res in results.items()
+                if res["position"] == min_position
+            ]
+
+            if len(winners) == 1:
+                participant_results_map[winners[0]] = "winner"
+                for comp_id in results.keys():
+                    if comp_id != winners[0]:
+                        participant_results_map[comp_id] = "loser"
+            else:
+                for comp_id in winners:
+                    participant_results_map[comp_id] = "draw"
+                for comp_id in results.keys():
+                    if comp_id not in winners:
+                        participant_results_map[comp_id] = "loser"
+        else:
+            raise ValueError(
+                "All participants must have either scores or positions to determine the match outcome."
+            )
+
+        return participant_results_map
+
+    # public methods
+    def create(self, format_data: dict):
+        LeagueSettings.objects.create(
+            tournament=self.tournament,
+            win_points=format_data.get("win_points", 3),
+            draw_points=format_data.get("draw_points", 1),
+            loss_points=format_data.get("loss_points", 0),
+            draw_rule=format_data.get("draw_rule"),
+        )
+
+        return self.get_details()
 
     def update(self, format_data: dict):
         settings = LeagueSettings.objects.get(tournament=self.tournament)
@@ -135,74 +241,6 @@ class LeagueFormat(BaseFormat):
             "standings": standing_list,
         }
 
-    def _calculate_match_result(
-        self, match: Match
-    ) -> dict[uuid.UUID, Literal["winner", "loser", "draw"]]:
-        results = {}
-        for participant in match.participants.all():
-            competitor = participant.competitor
-            if participant.score is None and participant.position is None:
-                return None
-
-            results[competitor.id] = {
-                "score": participant.score,
-                "position": participant.position,
-            }
-
-        participant_results_map: dict[uuid.UUID, Literal["winner", "loser", "draw"]] = (
-            {}
-        )
-        if all(score is not None for score in [p["score"] for p in results.values()]):
-            # score-based result calculation.
-            # Most points wins, ties if all competitors have same points
-            max_score = max(p["score"] for p in results.values())
-            winners = [
-                comp_id for comp_id, res in results.items() if res["score"] == max_score
-            ]
-
-            if len(winners) == 1:
-                participant_results_map[winners[0]] = "winner"
-                for comp_id in results.keys():
-                    if comp_id != winners[0]:
-                        participant_results_map[comp_id] = "loser"
-            else:
-                for comp_id in winners:
-                    participant_results_map[comp_id] = "draw"
-                for comp_id in results.keys():
-                    if comp_id not in winners:
-                        participant_results_map[comp_id] = "loser"
-
-        elif all(
-            position is not None
-            for position in [p["position"] for p in results.values()]
-        ):
-            # position-based result calculation.
-            # 1st place is winner, 2nd place is loser, ties if multiple competitors have same position
-            min_position = min(p["position"] for p in results.values())
-            winners = [
-                comp_id
-                for comp_id, res in results.items()
-                if res["position"] == min_position
-            ]
-
-            if len(winners) == 1:
-                participant_results_map[winners[0]] = "winner"
-                for comp_id in results.keys():
-                    if comp_id != winners[0]:
-                        participant_results_map[comp_id] = "loser"
-            else:
-                for comp_id in winners:
-                    participant_results_map[comp_id] = "draw"
-                for comp_id in results.keys():
-                    if comp_id not in winners:
-                        participant_results_map[comp_id] = "loser"
-        else:
-            raise ValueError(
-                "All participants must have either scores or positions to determine the match outcome."
-            )
-
-        return participant_results_map
-
     def record_result(self, match: Match) -> dict:
 
         results_map = self._calculate_match_result(match)
@@ -249,4 +287,5 @@ class LeagueFormat(BaseFormat):
             )
             standing.save()
 
+        self._emit_standings_updated_event()
         return self.get_details()

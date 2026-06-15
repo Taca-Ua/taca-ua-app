@@ -20,6 +20,7 @@ from ..service import (
     add_competitors_to_tournament,
     create_tournament,
     delete_tournament,
+    record_tournament_result,
     remove_competitors_from_tournament,
     update_tournament,
     update_tournament_format,
@@ -29,6 +30,7 @@ from .serializers import (
     TournamentAddCompetitorsSerializer,
     TournamentCreateSerializer,
     TournamentDetailSerializer,
+    TournamentFinishSerializer,
     TournamentListSerializer,
     TournamentRemoveCompetitorsSerializer,
     TournamentUpdateSerializer,
@@ -78,9 +80,7 @@ class TournamentListCreateView(RoleRequiredMixin, APIView):
             format_data=serializer.validated_data.get("format_data"),
         )
 
-        serializer = TournamentListSerializer(
-            get_tournament_by_id(tournament.id), many=True
-        )
+        serializer = TournamentListSerializer(get_tournament_by_id(tournament.id))
         return Response(serializer.data, status=201)
 
 
@@ -172,6 +172,27 @@ def remove_competitor_from_tournament(request, tournament_id):
     return Response(serializer.data)
 
 
+@extend_schema(
+    summary="Record tournament result",
+    description="Record the result of a tournament.",
+    request=TournamentFinishSerializer,
+    responses={200: TournamentDetailSerializer},
+)
+@api_view(["POST"])
+@require_auth
+def record_tournament_result_view(request, tournament_id):
+    serializer = TournamentFinishSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    tournament = record_tournament_result(
+        tournament_id=tournament_id,
+        ranking_entries=serializer.validated_data["ranking_entries"],
+    )
+
+    serializer = TournamentDetailSerializer(get_tournament_by_id(tournament.id))
+    return Response(serializer.data)
+
+
 @extend_schema_view(
     get=extend_schema(
         summary="Retrieve tournament format details",
@@ -217,6 +238,11 @@ urlpatterns = [
         "<uuid:tournament_id>/remove-competitors/",
         remove_competitor_from_tournament,
         name="tournament-remove-competitors",
+    ),
+    path(
+        "<uuid:tournament_id>/record-result/",
+        record_tournament_result_view,
+        name="tournament-record-result",
     ),
     path(
         "<uuid:tournament_id>/format/",

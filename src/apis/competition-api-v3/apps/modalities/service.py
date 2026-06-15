@@ -4,6 +4,12 @@ from uuid import UUID
 from apps.modality_types.models import ModalityType
 from apps.seasons.selectors import get_current_season
 from django.db import transaction
+from infra.events.utils import emit_schema_event
+from taca_events.pydantic_schemas import ModalityCreatedV1, ModalityUpdatedV1
+from taca_events.pydantic_schemas.modalities import (
+    ModalityCreatedData,
+    ModalityUpdatedData,
+)
 
 from .models import Modality, SeasonModality
 
@@ -15,6 +21,18 @@ def create_modality(name: str, modality_type_id: UUID) -> Modality:
     season = get_current_season()
     modality.modality_seasons.create(
         modality_type_id=modality_type_id, season_id=season.id
+    )
+
+    # emit event to OutboxTable
+    emit_schema_event(
+        event=ModalityCreatedV1(
+            data=ModalityCreatedData(
+                modality_id=modality.id,
+                modality_type_id=modality_type_id,
+                name=modality.name,
+            ),
+        ),
+        aggregate_id=modality.id,
     )
 
     return modality
@@ -43,6 +61,18 @@ def update_modality(
         if not created:
             season_modality.modality_type_id = modality_type_id
             season_modality.save()
+
+    # emit event to OutboxTable
+    emit_schema_event(
+        event=ModalityUpdatedV1(
+            data=ModalityUpdatedData(
+                modality_id=modality.id,
+                name=modality.name,
+                modality_type_id=modality_type_id,
+            ),
+        ),
+        aggregate_id=modality.id,
+    )
 
     return modality
 

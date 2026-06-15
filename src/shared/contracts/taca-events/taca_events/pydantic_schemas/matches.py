@@ -11,25 +11,20 @@ from pydantic import BaseModel
 
 from .base import EventSchema
 
-# ================================================================== #
-# Data payload models
-# ================================================================== #
 
-
+# data models for Match events
 class MatchParticipantData(BaseModel):
     """Participant entry embedded in MatchCreatedData."""
 
     participant_id: UUID
-    # participant_type: Optional[str]  # "team" | "athlete"
-    # participant_entity_id: Optional[UUID]
 
 
 class MatchCreatedData(BaseModel):
     match_id: UUID
     tournament_id: Optional[UUID] = None
-    location: str
+    location: Optional[str] = "TBD"
     status: str
-    start_time: str  # ISO 8601
+    start_time: Optional[str] = None  # ISO 8601
     participants: List[MatchParticipantData] = []
 
 
@@ -97,11 +92,7 @@ class MatchResultUpdatedData(BaseModel):
     results: List[MatchResultEntryData] = []
 
 
-# ================================================================== #
-# EventSchema subclasses
-# ================================================================== #
-
-
+# event schemas for Match events
 class MatchCreatedV1(EventSchema):
     data: MatchCreatedData
 

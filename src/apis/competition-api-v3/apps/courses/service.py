@@ -2,6 +2,17 @@ from apps.nucleus.models import Nucleus
 from apps.seasons.models import Season
 from apps.seasons.selectors import get_current_season
 from django.db import transaction
+from infra.events.utils import emit_schema_event
+from taca_events.pydantic_schemas import (
+    CourseCreatedV1,
+    CourseDeletedV1,
+    CourseUpdatedV1,
+)
+from taca_events.pydantic_schemas.courses import (
+    CourseCreatedData,
+    CourseDeletedData,
+    CourseUpdatedData,
+)
 
 from .models import Course
 
@@ -27,6 +38,21 @@ def create_course(name, abbreviation, nucleo_id) -> Course:
         nucleus=nucleus,
     )
     course.seasons.add(season)
+
+    # emit event to OutboxTable
+    emit_schema_event(
+        event=CourseCreatedV1.create(
+            aggregate_id=course.id,
+            data=CourseCreatedData(
+                course_id=course.id,
+                nucleo_id=course.nucleus.id,
+                name=course.name,
+                abbreviation=course.abbreviation,
+            ),
+        ),
+        aggregate_id=course.id,
+    )
+
     return course
 
 
@@ -57,6 +83,21 @@ def update_course(course_id, name=None, abbreviation=None, nucleo_id=None) -> Co
         course.nucleus = nucleus
 
     course.save()
+
+    # emit event to OutboxTable
+    emit_schema_event(
+        event=CourseUpdatedV1.create(
+            aggregate_id=course.id,
+            data=CourseUpdatedData(
+                course_id=course.id,
+                nucleo_id=course.nucleus.id,
+                name=course.name,
+                abbreviation=course.abbreviation,
+            ),
+        ),
+        aggregate_id=course.id,
+    )
+
     return course
 
 
@@ -67,6 +108,17 @@ def delete_course(course_id) -> None:
         raise ValueError(
             f"Course with id {course_id} not found. Cannot delete non-existent course."
         )
+
+    # emit event to OutboxTable
+    emit_schema_event(
+        event=CourseDeletedV1.create(
+            aggregate_id=course.id,
+            data=CourseDeletedData(
+                course_id=course.id,
+            ),
+        ),
+        aggregate_id=course.id,
+    )
 
     course.delete()
 

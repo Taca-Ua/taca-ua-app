@@ -112,6 +112,14 @@ class TournamentRemoveCompetitorsSerializer(serializers.Serializer):
     competitor_ids = serializers.ListField(child=serializers.UUIDField(), required=True)
 
 
+class TournamentFinishSerializer(serializers.Serializer):
+    class _TournamentFinishEntrySerializer(serializers.Serializer):
+        position = serializers.IntegerField(required=True)
+        competitor_id = serializers.UUIDField(required=True)
+
+    ranking_entries = _TournamentFinishEntrySerializer(many=True)
+
+
 class TournamentFormatMetaUpdateSerializer(serializers.Serializer):
     """Serializer for updating tournament format meta"""
 

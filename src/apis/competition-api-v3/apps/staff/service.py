@@ -1,4 +1,11 @@
 from django.db import transaction
+from infra.events.utils import emit_schema_event
+from taca_events.pydantic_schemas import StaffCreatedV1, StaffDeletedV1, StaffUpdatedV1
+from taca_events.pydantic_schemas.staff import (
+    StaffCreatedData,
+    StaffDeletedData,
+    StaffUpdatedData,
+)
 
 from .models import Staff
 
@@ -9,6 +16,19 @@ def create_staff(name: str, staff_number: str = None, contact: str = None) -> St
     staff = Staff(name=name, staff_number=staff_number, contact=contact)
     staff.full_clean()  # validate the model fields
     staff.save()
+
+    # emit event to OutboxTable
+    emit_schema_event(
+        event=StaffCreatedV1(
+            data=StaffCreatedData(
+                staff_id=staff.id,
+                full_name=staff.name,
+                staff_number=staff.staff_number,
+                contact=staff.contact,
+            )
+        ),
+        aggregate_id=staff.id,
+    )
     return staff
 
 
@@ -28,6 +48,20 @@ def update_staff(
 
     staff.full_clean()  # validate the model fields
     staff.save()
+
+    # emit event to OutboxTable
+    emit_schema_event(
+        event=StaffUpdatedV1(
+            data=StaffUpdatedData(
+                staff_id=staff.id,
+                full_name=staff.name,
+                staff_number=staff.staff_number,
+                contact=staff.contact,
+            )
+        ),
+        aggregate_id=staff.id,
+    )
+
     return staff
 
 
@@ -35,4 +69,15 @@ def update_staff(
 def delete_staff(staff_id: str) -> None:
     """Service to delete a staff member."""
     staff = Staff.objects.get(id=staff_id)
+
+    # emit event to OutboxTable
+    emit_schema_event(
+        event=StaffDeletedV1(
+            data=StaffDeletedData(
+                staff_id=staff.id,
+            )
+        ),
+        aggregate_id=staff.id,
+    )
+
     staff.delete()

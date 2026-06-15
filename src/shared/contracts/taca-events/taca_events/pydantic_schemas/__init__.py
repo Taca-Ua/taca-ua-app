@@ -13,97 +13,49 @@ by routing key.
 """
 
 from .base import EventSchema
+from .courses import CourseCreatedV1, CourseDeletedV1, CourseUpdatedV1
 from .matches import (  # Data models; Schema classes
-    LineupPlayerData,
-    MatchCommentAddedData,
     MatchCommentAddedV1,
-    MatchCommentDeletedData,
     MatchCommentDeletedV1,
-    MatchCreatedData,
     MatchCreatedV1,
-    MatchDeletedData,
     MatchDeletedV1,
-    MatchLineupAssignedData,
     MatchLineupAssignedV1,
-    MatchParticipantAddedData,
     MatchParticipantAddedV1,
-    MatchParticipantData,
-    MatchParticipantRemovedData,
     MatchParticipantRemovedV1,
-    MatchResultEntryData,
-    MatchResultUpdatedData,
     MatchResultUpdatedV1,
-    MatchUpdatedData,
     MatchUpdatedV1,
 )
 from .modalities import (  # Nucleo; Course; ModalityType; Modality; Student; Staff; Team
-    CourseCreatedData,
-    CourseCreatedV1,
-    CourseDeletedData,
-    CourseDeletedV1,
-    CourseUpdatedData,
-    CourseUpdatedV1,
-    ModalityCreatedData,
     ModalityCreatedV1,
-    ModalityDeletedData,
     ModalityDeletedV1,
-    ModalityTypeCreatedData,
-    ModalityTypeCreatedV1,
-    ModalityTypeDeletedData,
-    ModalityTypeDeletedV1,
-    ModalityTypeUpdatedData,
-    ModalityTypeUpdatedV1,
-    ModalityUpdatedData,
     ModalityUpdatedV1,
-    NucleoCreatedData,
-    NucleoCreatedV1,
-    NucleoDeletedData,
-    NucleoDeletedV1,
-    NucleoUpdatedData,
-    NucleoUpdatedV1,
-    StaffCreatedData,
-    StaffCreatedV1,
-    StaffDeletedData,
-    StaffDeletedV1,
-    StaffUpdatedData,
-    StaffUpdatedV1,
-    StudentCreatedData,
-    StudentCreatedV1,
-    StudentDeletedData,
-    StudentDeletedV1,
-    StudentUpdatedData,
-    StudentUpdatedV1,
-    TeamCreatedData,
+)
+from .modality_types import (
+    ModalityTypeCreatedV1,
+    ModalityTypeDeletedV1,
+    ModalityTypeUpdatedV1,
+)
+from .nucleos import NucleoCreatedV1, NucleoDeletedV1, NucleoUpdatedV1
+from .ranking import RankingComputedV1
+from .registry import EventRegistry
+from .regulations import RegulationCreatedV1, RegulationDeletedV1, RegulationUpdatedV1
+from .seasons import SeasonCreatedV1
+from .staff import StaffCreatedV1, StaffDeletedV1, StaffUpdatedV1
+from .students import StudentCreatedV1, StudentDeletedV1, StudentUpdatedV1
+from .teams import (
     TeamCreatedV1,
-    TeamDeletedData,
     TeamDeletedV1,
-    TeamPlayerAddedData,
     TeamPlayerAddedV1,
-    TeamPlayerRemovedData,
     TeamPlayerRemovedV1,
-    TeamUpdatedData,
     TeamUpdatedV1,
 )
-from .ranking import (
-    GeneralRankingEntryData,
-    ModalityRankingEntryData,
-    RankingComputedData,
-    RankingComputedV1,
-)
-from .registry import EventRegistry
 from .tournaments import (
-    RankingEntryData,
-    TournamentCompetitorAddedData,
     TournamentCompetitorAddedV1,
-    TournamentCompetitorDeletedData,
     TournamentCompetitorDeletedV1,
-    TournamentCreatedData,
     TournamentCreatedV1,
-    TournamentDeletedData,
     TournamentDeletedV1,
-    TournamentFinishedData,
     TournamentFinishedV1,
-    TournamentUpdatedData,
+    TournamentLeagueStandingsUpdatedV1,
     TournamentUpdatedV1,
 )
 
@@ -202,10 +154,17 @@ __all__ = [
     "TournamentFinishedV1",
     "TournamentCompetitorAddedV1",
     "TournamentCompetitorDeletedV1",
+    "TournamentLeagueStandingsUpdatedV1",
     # Ranking data
     "GeneralRankingEntryData",
     "ModalityRankingEntryData",
     "RankingComputedData",
     # Ranking schemas
     "RankingComputedV1",
+    # Regulations schemas
+    "RegulationCreatedV1",
+    "RegulationUpdatedV1",
+    "RegulationDeletedV1",
+    # Season schemas
+    "SeasonCreatedV1",
 ]

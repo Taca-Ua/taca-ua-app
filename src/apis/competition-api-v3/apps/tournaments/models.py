@@ -59,6 +59,12 @@ class Tournament(models.Model):
         return "Unranked"
 
     if TYPE_CHECKING:
+        # basic fields
+        modality_id: uuid.UUID
+        scoring_format_id: uuid.UUID
+        season_id: int
+
+        # outside relations
         competitors: RelatedManager[TournamentCompetitor]
         matches: RelatedManager[Match]
         league_settings: LeagueSettings

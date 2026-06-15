@@ -191,12 +191,8 @@ services:
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
     command: python manage.py publish_outbox --settings=config.settings_events
     depends_on:
-      rabbitmq:
-        condition: service_healthy
-      loki:
+      competition-api-v3:
         condition: service_started
-      postgres:
-        condition: service_healthy
 
   public-api:
     build:

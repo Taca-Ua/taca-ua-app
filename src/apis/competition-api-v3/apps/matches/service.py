@@ -3,6 +3,28 @@ from uuid import UUID
 
 from apps.tournaments.service import tournament_format_match_result
 from django.db import transaction
+from infra.events.utils import emit_schema_event
+from taca_events.pydantic_schemas import (
+    MatchCommentAddedV1,
+    MatchCommentDeletedV1,
+    MatchCreatedV1,
+    MatchDeletedV1,
+    MatchLineupAssignedV1,
+    MatchResultUpdatedV1,
+    MatchUpdatedV1,
+)
+from taca_events.pydantic_schemas.matches import (
+    LineupPlayerData,
+    MatchCommentAddedData,
+    MatchCommentDeletedData,
+    MatchCreatedData,
+    MatchDeletedData,
+    MatchLineupAssignedData,
+    MatchParticipantData,
+    MatchResultEntryData,
+    MatchResultUpdatedData,
+    MatchUpdatedData,
+)
 
 from .models import Match, MatchParticipant, MatchStatus
 
@@ -32,6 +54,28 @@ def create_match(
             competitor_id=competitor_id,
         )
 
+    # emit event to OutboxTable
+    emit_schema_event(
+        event=MatchCreatedV1.create(
+            aggregate_id=match.id,
+            data=MatchCreatedData(
+                match_id=match.id,
+                tournament_id=match.tournament.id,
+                location=match.location,
+                status=match.status,
+                start_time=(
+                    match.scheduled_time.isoformat() if match.scheduled_time else None
+                ),
+                journey=match.journey,
+                participants=[
+                    MatchParticipantData(participant_id=participant.id)
+                    for participant in match.participants.all()
+                ],
+            ),
+        ),
+        aggregate_id=match.id,
+    )
+
     return match
 
 
@@ -54,12 +98,43 @@ def update_match(
         match.status = status
 
     match.save()
+
+    # emit event to OutboxTable
+    emit_schema_event(
+        event=MatchUpdatedV1.create(
+            aggregate_id=match.id,
+            data=MatchUpdatedData(
+                match_id=match.id,
+                location=match.location,
+                start_time=(
+                    match.scheduled_time.isoformat() if match.scheduled_time else None
+                ),
+                status=match.status,
+            ),
+        ),
+        aggregate_id=match.id,
+    )
+
     return match
 
 
 @transaction.atomic
 def delete_match(match_id: UUID) -> None:
-    Match.objects.filter(id=match_id).delete()
+    match = Match.objects.get(id=match_id)
+
+    # emit event to OutboxTable
+    emit_schema_event(
+        event=MatchDeletedV1.create(
+            aggregate_id=match.id,
+            data=MatchDeletedData(
+                match_id=match.id,
+                tournament_id=match.tournament.id,
+            ),
+        ),
+        aggregate_id=match.id,
+    )
+
+    match.delete()
 
 
 @transaction.atomic
@@ -81,7 +156,28 @@ def publish_match_results(match_id: UUID, participant_results: list[dict]) -> Ma
     match.status = MatchStatus.FINISHED
     match.save()
 
+    # call tournament engine to handle match result
     tournament_format_match_result(match)
+
+    # emit event to OutboxTable
+    emit_schema_event(
+        event=MatchResultUpdatedV1.create(
+            aggregate_id=match.id,
+            data=MatchResultUpdatedData(
+                match_id=match.id,
+                tournament_id=match.tournament.id,
+                results=[
+                    MatchResultEntryData(
+                        participant_id=participant.id,
+                        score=participant.score,
+                        position=participant.position,
+                    )
+                    for participant in match.participants.all()
+                ],
+            ),
+        ),
+        aggregate_id=match.id,
+    )
 
     return match
 
@@ -90,12 +186,38 @@ def publish_match_results(match_id: UUID, participant_results: list[dict]) -> Ma
 def match_add_comment(match_id: UUID, comment_text: str, admin_id: UUID) -> Match:
     match = Match.objects.get(id=match_id)
     match.comments.create(content=comment_text, author_id=admin_id)
+
+    # emit event to OutboxTable
+    emit_schema_event(
+        event=MatchCommentAddedV1.create(
+            aggregate_id=match.id,
+            data=MatchCommentAddedData(
+                comment_id=match.comments.last().id,
+                match_id=match.id,
+                message=comment_text,
+            ),
+        ),
+        aggregate_id=match.id,
+    )
     return match
 
 
 @transaction.atomic
 def match_delete_comment(match_id: UUID, comment_id: UUID) -> Match:
     match = Match.objects.get(id=match_id)
+
+    # emit event to OutboxTable
+    emit_schema_event(
+        event=MatchCommentDeletedV1.create(
+            aggregate_id=match.id,
+            data=MatchCommentDeletedData(
+                comment_id=comment_id,
+                match_id=match.id,
+            ),
+        ),
+        aggregate_id=match.id,
+    )
+
     match.comments.filter(id=comment_id).delete()
     return match
 
@@ -122,6 +244,22 @@ def assign_lineup(
     # Create new lineup
     for player in players:
         participant.lineup.create(athlete_id=player)
+
+    # emit event to OutboxTable
+    emit_schema_event(
+        event=MatchLineupAssignedV1.create(
+            aggregate_id=participant.id,
+            data=MatchLineupAssignedData(
+                match_id=match.id,
+                team_id=participant.competitor.id,
+                lineup=[
+                    LineupPlayerData(player_id=player.match_participant.id)
+                    for player in participant.lineup.all()
+                ],
+            ),
+        ),
+        aggregate_id=participant.id,
+    )
 
     return participant
 

@@ -1,5 +1,16 @@
 from django.db import transaction
+from infra.events.utils import emit_schema_event
 from shared.file_storage.minio_service import MinioService
+from taca_events.pydantic_schemas import (
+    NucleoCreatedV1,
+    NucleoDeletedV1,
+    NucleoUpdatedV1,
+)
+from taca_events.pydantic_schemas.nucleos import (
+    NucleoCreatedData,
+    NucleoDeletedData,
+    NucleoUpdatedData,
+)
 
 from .models import Nucleus
 
@@ -14,6 +25,19 @@ def create_nucleo(name: str, abbreviation: str, image: bytes = None) -> Nucleus:
 
     nucleo = Nucleus.objects.create(
         name=name, abbreviation=abbreviation, logo_url=image_url
+    )
+
+    # emit event to OutboxTable
+    emit_schema_event(
+        event=NucleoCreatedV1(
+            data=NucleoCreatedData(
+                nucleo_id=nucleo.id,
+                name=nucleo.name,
+                abbreviation=nucleo.abbreviation,
+                logo_url=nucleo.logo_url,
+            )
+        ),
+        aggregate_id=nucleo.id,
     )
 
     return nucleo
@@ -45,6 +69,20 @@ def update_nucleo(
             nucleo.logo_url = image_url
 
     nucleo.save()
+
+    # emit event to OutboxTable
+    emit_schema_event(
+        event=NucleoUpdatedV1(
+            data=NucleoUpdatedData(
+                nucleo_id=nucleo.id,
+                name=nucleo.name,
+                abbreviation=nucleo.abbreviation,
+                logo_url=nucleo.logo_url,
+            )
+        ),
+        aggregate_id=nucleo.id,
+    )
+
     return nucleo
 
 
@@ -55,6 +93,16 @@ def delete_nucleo(nucleo_id: str) -> None:
     nucleo = Nucleus.objects.get(id=nucleo_id)
     if nucleo is None:
         raise ValueError("Nucleo not found")
+
+    # emit event to OutboxTable
+    emit_schema_event(
+        event=NucleoDeletedV1(
+            data=NucleoDeletedData(
+                nucleo_id=nucleo_id,
+            )
+        ),
+        aggregate_id=nucleo_id,
+    )
 
     logo_url = nucleo.logo_url
     nucleo.delete()

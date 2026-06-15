@@ -9,11 +9,8 @@ from pydantic import BaseModel
 
 from .base import EventSchema
 
-# ================================================================== #
-# Data payload models
-# ================================================================== #
 
-
+# data models for Tournament events
 class TournamentCreatedData(BaseModel):
     tournament_id: UUID
     modality_id: UUID
@@ -63,17 +60,22 @@ class TournamentCompetitorDeletedData(BaseModel):
     competitor_entity_id: Optional[UUID] = None
 
 
-class TournamentStandingsUpdatedData(BaseModel):
+class TournamentLeagueStandingsUpdatedData(BaseModel):
+    class Entry(BaseModel):
+        competitor_id: UUID
+        points: int
+        played: int
+        wins: int
+        draws: int
+        losses: int
+        points_for: int
+        points_against: int
+
     tournament_id: UUID
-    format_type: str
-    standings: list
+    standings: List[Entry]
 
 
-# ================================================================== #
-# EventSchema subclasses
-# ================================================================== #
-
-
+# event schemas for Tournament events
 class TournamentCreatedV1(EventSchema):
     data: TournamentCreatedData
 
@@ -146,12 +148,12 @@ class TournamentCompetitorDeletedV1(EventSchema):
         return "tournament"
 
 
-class TournamentStandingsUpdatedV1(EventSchema):
-    data: TournamentStandingsUpdatedData
+class TournamentLeagueStandingsUpdatedV1(EventSchema):
+    data: TournamentLeagueStandingsUpdatedData
 
     @classmethod
     def event_type(cls) -> str:
-        return "tournament.standings.updated.v1"
+        return "tournament.league.standings.updated.v1"
 
     @classmethod
     def aggregate_type(cls) -> str:

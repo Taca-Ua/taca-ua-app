@@ -9,11 +9,8 @@ from pydantic import BaseModel
 
 from .base import EventSchema
 
-# ================================================================== #
-# Data payload models
-# ================================================================== #
 
-
+# data models for Ranking events
 class GeneralRankingEntryData(BaseModel):
     """Points earned by a single course across all modalities."""
 
@@ -40,11 +37,7 @@ class RankingComputedData(BaseModel):
     modality_rankings: List[ModalityRankingEntryData] = []
 
 
-# ================================================================== #
-# EventSchema subclasses
-# ================================================================== #
-
-
+# event schemas for Ranking events
 class RankingComputedV1(EventSchema):
     data: RankingComputedData
 

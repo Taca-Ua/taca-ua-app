@@ -1,4 +1,5 @@
 import uuid
+from typing import TYPE_CHECKING
 
 from apps.athletes.models import Athlete
 from apps.courses.models import Course
@@ -20,3 +21,8 @@ class Team(models.Model):
     @property
     def logo_url(self):
         return self.course.nucleus.logo_url
+
+    if TYPE_CHECKING:
+        modality_id: uuid.UUID
+        course_id: uuid.UUID
+        season_id: int

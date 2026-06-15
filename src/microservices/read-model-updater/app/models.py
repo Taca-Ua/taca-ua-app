@@ -357,7 +357,7 @@ class Match(Base):
     tournament_id = Column(UUID(as_uuid=True), nullable=False)
     location = Column(String, nullable=False)
     status = Column(SQLEnum(MatchStatus), nullable=False)
-    start_time = Column(DateTime, nullable=False)
+    start_time = Column(DateTime, nullable=True)
     deleted_at = Column(DateTime, nullable=True)
 
     # Relationships

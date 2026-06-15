@@ -148,7 +148,7 @@ class MatchDetailView(Base):
     match_id = Column(UUID(as_uuid=True), primary_key=True)
     location = Column(String, nullable=False)
     status = Column(String, nullable=False)
-    start_time = Column(DateTime, nullable=False)
+    start_time = Column(DateTime, nullable=True)  # ISO 8601
 
     # Tournament info
     tournament_id = Column(UUID(as_uuid=True), nullable=False)
