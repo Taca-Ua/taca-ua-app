@@ -6,7 +6,7 @@ from rest_framework.serializers import DictField
 from rest_framework.views import APIView
 from shared.auth.decorators import (
     RoleRequiredMixin,
-    require_auth,
+    require_roles,
     require_roles_class_method,
 )
 from shared.auth.utils import RolesEnum
@@ -20,7 +20,7 @@ from ..service import (
     add_competitors_to_tournament,
     create_tournament,
     delete_tournament,
-    record_tournament_result,
+    finish_tournament,
     remove_competitors_from_tournament,
     update_tournament,
     update_tournament_format,
@@ -137,7 +137,7 @@ class TournamentDetailView(APIView):
     responses={200: TournamentDetailSerializer},
 )
 @api_view(["PUT"])
-@require_auth
+@require_roles(RolesEnum.GENERAL_ADMIN)
 def add_competitor_to_tournament(request, tournament_id):
     serializer = TournamentAddCompetitorsSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -158,7 +158,7 @@ def add_competitor_to_tournament(request, tournament_id):
     responses={200: TournamentDetailSerializer},
 )
 @api_view(["PUT"])
-@require_auth
+@require_roles(RolesEnum.GENERAL_ADMIN)
 def remove_competitor_from_tournament(request, tournament_id):
     serializer = TournamentRemoveCompetitorsSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -179,12 +179,12 @@ def remove_competitor_from_tournament(request, tournament_id):
     responses={200: TournamentDetailSerializer},
 )
 @api_view(["POST"])
-@require_auth
-def record_tournament_result_view(request, tournament_id):
+@require_roles(RolesEnum.GENERAL_ADMIN)
+def finish_tournament_view(request, tournament_id):
     serializer = TournamentFinishSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
 
-    tournament = record_tournament_result(
+    tournament = finish_tournament(
         tournament_id=tournament_id,
         ranking_entries=serializer.validated_data["ranking_entries"],
     )
@@ -240,9 +240,9 @@ urlpatterns = [
         name="tournament-remove-competitors",
     ),
     path(
-        "<uuid:tournament_id>/record-result/",
-        record_tournament_result_view,
-        name="tournament-record-result",
+        "<uuid:tournament_id>/finish/",
+        finish_tournament_view,
+        name="tournament-finish",
     ),
     path(
         "<uuid:tournament_id>/format/",

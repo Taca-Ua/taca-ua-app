@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from apps.athletes.models import Athlete
 from apps.choices import TournamentCompetitorType, TournamentFormat, TournamentStatus
 from apps.modalities.models import Modality
-from apps.modality_types.models import ModalityType
+from apps.modality_types.models import Escalao, ModalityType
 from apps.seasons.models import Season
 from apps.teams.models import Team
 from django.db import models
@@ -37,26 +37,39 @@ class Tournament(models.Model):
     season = models.ForeignKey(Season, on_delete=models.CASCADE)
 
     @property
-    def rank(self):
+    def rank(self) -> Escalao:
         """Determine the tournament's rank based on the number of competitors and the scoring format's escaloes."""
         number_of_competitors = self.competitors.count()
         escaloes = self.scoring_format.escaloes.order_by("min_participants")
-        for escaloes in escaloes:
+        for escalao in escaloes:
             lower_bound = (
-                escaloes.min_participants
-                if escaloes.min_participants is not None
-                else 0
+                escalao.min_participants if escalao.min_participants is not None else 0
             )
             upper_bound = (
-                escaloes.max_participants
-                if escaloes.max_participants is not None
+                escalao.max_participants
+                if escalao.max_participants is not None
                 else float("inf")
             )
 
             if lower_bound <= number_of_competitors <= upper_bound:
-                return escaloes.name
+                return escalao
 
-        return "Unranked"
+        return None
+
+    @property
+    def standings(self):
+        """Return the current standings of the tournament based on the positions of the competitors."""
+        current_results = TournamentResult.objects.filter(competitor__tournament=self)
+        if not current_results.exists():
+            return None
+
+        return [
+            {
+                "competitor_id": result.competitor_id,
+                "position": result.position,
+            }
+            for result in current_results
+        ]
 
     if TYPE_CHECKING:
         # basic fields
@@ -135,3 +148,6 @@ class TournamentResult(models.Model):
         TournamentCompetitor, on_delete=models.CASCADE, related_name="result"
     )
     position = models.PositiveIntegerField()
+
+    if TYPE_CHECKING:
+        competitor_id: uuid.UUID

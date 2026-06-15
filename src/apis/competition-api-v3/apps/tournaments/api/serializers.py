@@ -45,6 +45,13 @@ class TournamentRankingPositionSerializer(serializers.Serializer):
     position = serializers.IntegerField()
 
 
+class TournamentRankSummarySerializer(serializers.Serializer):
+    """Serializer for tournament rank summary"""
+
+    name = serializers.CharField()
+    points = serializers.ListField(child=serializers.IntegerField())
+
+
 # Response serializers
 class TournamentListSerializer(serializers.Serializer):
     """Serializer for listing tournaments"""
@@ -64,9 +71,9 @@ class TournamentDetailSerializer(TournamentListSerializer):
     competitors = TournamentCompetitorSerializer(many=True)
     scoring_format = ScoringFormatSummarySerializer()
     season = TournamentSeasonSummarySerializer()
-    # standings = TournamentRankingPositionSerializer(many=True, required=False)
-    rank = serializers.CharField(required=False)
-    format = serializers.CharField(required=False)
+    standings = TournamentRankingPositionSerializer(many=True, required=False)
+    rank = TournamentRankSummarySerializer(required=False)
+    format = serializers.CharField(required=False, source="tournament_format")
     format_data = serializers.DictField(required=False, allow_null=True)
 
     def to_representation(self, instance):

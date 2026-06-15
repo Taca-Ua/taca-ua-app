@@ -37,8 +37,11 @@ export interface TournamentDetail extends TournamentListItem {
     competitor_id: string;
   }[];
   rounds: number[];
-  format: string;
-  rank: string;
+  format?: string;
+  rank?: {
+    name: string;
+    points: number[];
+  };
   format_data?: Record<string, any>;
 }
 

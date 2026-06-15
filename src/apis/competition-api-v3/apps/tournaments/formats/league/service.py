@@ -181,6 +181,8 @@ class LeagueFormat(BaseFormat):
             ).order_by("-points", "-points_difference")
         elif settings.draw_rule == DrawRule.POINTS_SCORED:
             standings = standings.order_by("-points", "-points_for")
+        else:
+            standings = standings.order_by("-points")
 
         # Calculate position
         standing_list = []

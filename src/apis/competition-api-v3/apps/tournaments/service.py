@@ -175,6 +175,9 @@ def add_competitors_to_tournament(
 
     tournament = Tournament.objects.get(id=tournament_id)
 
+    if tournament.status == TournamentStatus.FINISHED:
+        raise ValueError("Cannot add competitors to a finished tournament.")
+
     for competitor_id in competitor_ids:
         tourn_competitor = TournamentCompetitor.objects.create(
             tournament=tournament,
@@ -217,6 +220,9 @@ def remove_competitors_from_tournament(
 ) -> Tournament:
     tournament = Tournament.objects.get(id=tournament_id)
 
+    if tournament.status == TournamentStatus.FINISHED:
+        raise ValueError("Cannot remove competitors from a finished tournament.")
+
     competitors_to_remove = TournamentCompetitor.objects.filter(
         tournament=tournament, id__in=competitor_ids
     )
@@ -239,7 +245,7 @@ def remove_competitors_from_tournament(
 
 
 @transaction.atomic
-def record_tournament_result(tournament_id: UUID, ranking_entries: list) -> Tournament:
+def finish_tournament(tournament_id: UUID, ranking_entries: list) -> Tournament:
     tournament = Tournament.objects.get(id=tournament_id)
 
     # clear existing results
@@ -253,6 +259,9 @@ def record_tournament_result(tournament_id: UUID, ranking_entries: list) -> Tour
             position=entry["position"],
         )
         results.append(comp_result)
+
+    tournament.status = TournamentStatus.FINISHED
+    tournament.save()
 
     # emit event to OutboxTable
     emit_schema_event(
