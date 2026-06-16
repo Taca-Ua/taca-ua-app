@@ -34,7 +34,9 @@ class Tournament(models.Model):
 
     modality = models.ForeignKey(Modality, on_delete=models.CASCADE)
     scoring_format = models.ForeignKey(ModalityType, on_delete=models.CASCADE)
-    season = models.ForeignKey(Season, on_delete=models.CASCADE)
+    season = models.ForeignKey(
+        Season, on_delete=models.CASCADE, related_name="tournaments"
+    )
 
     @property
     def rank(self) -> Escalao:

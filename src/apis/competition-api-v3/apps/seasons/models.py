@@ -7,6 +7,8 @@ if TYPE_CHECKING:
     from apps.modalities.models import SeasonModality
     from apps.modality_types.models import ModalityType
     from apps.regulations.models import Regulation
+    from apps.teams.models import Team
+    from apps.tournaments.models import Tournament
     from django.db.models.manager import RelatedManager
 
 
@@ -27,6 +29,8 @@ class Season(models.Model):
         season_modalities: RelatedManager[SeasonModality]
         courses: RelatedManager[Course]
         regulations: RelatedManager[Regulation]
+        teams: RelatedManager[Team]
+        tournaments: RelatedManager[Tournament]
 
     def __str__(self):
         return self.name

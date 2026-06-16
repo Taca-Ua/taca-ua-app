@@ -11,9 +11,18 @@ from shared.auth.decorators import (
 )
 from shared.auth.utils import RolesEnum, get_user
 
-from ..selectors import get_current_season, get_season_by_id, get_seasons_table
+from ..selectors import (
+    get_current_season,
+    get_season_by_id,
+    get_season_summary_by_id,
+    get_seasons_table,
+)
 from ..service import create_season
-from .serializers import SeasonCreateSerializer, SeasonListSerializer
+from .serializers import (
+    SeasonCreateSerializer,
+    SeasonListSerializer,
+    SeasonSummarySerializer,
+)
 
 
 @extend_schema_view(
@@ -70,7 +79,22 @@ def get_current_season_view(request):
     return Response(serializer.data)
 
 
+@extend_schema(
+    responses=SeasonSummarySerializer,
+    description="Get season summary",
+    tags=["Season Management"],
+)
+@api_view(["GET"])
+@require_auth
+def get_season_summary_view(request, season_id):
+    season = get_season_summary_by_id(season_id)
+
+    serializer = SeasonSummarySerializer(season)
+    return Response(serializer.data)
+
+
 urlpatterns = [
     path("", SeasonListCreateView.as_view(), name="season-list-create"),
     path("current/", get_current_season_view, name="current-season"),
+    path("<int:season_id>/summary/", get_season_summary_view, name="season-summary"),
 ]
