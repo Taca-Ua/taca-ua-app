@@ -136,24 +136,26 @@ def update_modality_type(
 
     # emit event to OutboxTable
     emit_schema_event(
-        schema=ModalityTypeUpdatedV1,
-        data=ModalityTypeUpdatedData(
-            modality_type_id=modality_type.id,
-            season_id=modality_type.season_id,
-            name=modality_type.name,
-            description=modality_type.description,
-            mode=modality_type.mode,
-            tournament_competitor_type=modality_type.tournament_competitor_type,
-            escaloes=[
-                _EscalaoData(
-                    name=escaloes_item.name,
-                    min_participants=escaloes_item.min_participants,
-                    max_participants=escaloes_item.max_participants,
-                    points=escaloes_item.points,
-                )
-                for escaloes_item in modality_type.escaloes.all()
-            ],
+        event=ModalityTypeUpdatedV1(
+            data=ModalityTypeUpdatedData(
+                modality_type_id=modality_type.id,
+                season_id=modality_type.season_id,
+                name=modality_type.name,
+                description=modality_type.description,
+                mode=modality_type.mode,
+                tournament_competitor_type=modality_type.tournament_competitor_type,
+                escaloes=[
+                    _EscalaoData(
+                        name=escaloes_item.name,
+                        min_participants=escaloes_item.min_participants,
+                        max_participants=escaloes_item.max_participants,
+                        points=escaloes_item.points,
+                    )
+                    for escaloes_item in modality_type.escaloes.all()
+                ],
+            ),
         ),
+        aggregate_id=modality_type.id,
     )
 
     return modality_type

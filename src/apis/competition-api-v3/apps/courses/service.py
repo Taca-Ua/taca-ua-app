@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from apps.nucleus.models import Nucleus
 from apps.seasons.models import Season
 from apps.seasons.selectors import get_current_season
@@ -124,7 +126,7 @@ def delete_course(course_id) -> None:
 
 
 @transaction.atomic
-def add_course_to_season(course_id, season_id) -> Course:
+def add_course_to_season(course_id: UUID, season_id: int) -> Course:
     season = Season.objects.get(id=season_id)
     if not season:
         raise ValueError(
