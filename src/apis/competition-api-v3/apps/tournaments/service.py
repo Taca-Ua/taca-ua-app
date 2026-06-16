@@ -4,6 +4,7 @@ from uuid import UUID
 
 from apps.matches.models import Match
 from apps.modality_types.models import ModalityType, ModalityTypeModes
+from apps.ranking.service import submit_tournament_results
 from apps.seasons.selectors import get_current_season
 from django.db import transaction
 from infra.events.utils import emit_schema_event
@@ -279,6 +280,9 @@ def finish_tournament(tournament_id: UUID, ranking_entries: list) -> Tournament:
         ),
         aggregate_id=tournament.id,
     )
+
+    # submit tournament results to ranking service
+    submit_tournament_results(tournament)
 
     return tournament
 

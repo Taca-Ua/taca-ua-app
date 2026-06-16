@@ -1,6 +1,5 @@
 import logging
 
-from apps.utils import count_queries
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
@@ -41,7 +40,6 @@ logger = logging.getLogger(__name__)
     ),
 )
 class ModalityListCreateView(RoleRequiredMixin, APIView):
-    @count_queries
     def get(self, request):
         serializer = ModalityQuerySerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
@@ -53,7 +51,6 @@ class ModalityListCreateView(RoleRequiredMixin, APIView):
         serializer = ModalityListSerializer(modalities, many=True)
         return Response(serializer.data)
 
-    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def post(self, request):
         request_serializer = ModalityCreateSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
@@ -97,7 +94,6 @@ class ModalityListCreateView(RoleRequiredMixin, APIView):
     ),
 )
 class ModalityDetailView(RoleRequiredMixin, APIView):
-    @count_queries
     def get(self, request, modality_id):
         serializer = ModalityQuerySerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)

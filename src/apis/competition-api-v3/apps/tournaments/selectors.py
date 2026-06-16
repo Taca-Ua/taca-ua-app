@@ -3,7 +3,7 @@ from uuid import UUID
 from django.db.models import Q, QuerySet
 
 from .formats import FormatRegistry
-from .models import Tournament
+from .models import Tournament, TournamentResult
 
 
 def get_tournaments_table(
@@ -46,3 +46,16 @@ def get_tournament_format_details(tournament_id: UUID) -> dict:
     tournament = get_tournament_by_id(tournament_id)
     format_engine = FormatRegistry.get_format(tournament)
     return format_engine.get_details()
+
+
+def get_tournament_results(tournament_id: UUID) -> QuerySet[TournamentResult]:
+
+    results_qs = TournamentResult.objects.filter(
+        competitor__tournament_id=tournament_id
+    ).select_related(
+        "competitor__athlete__course",
+        "competitor__team__course",
+    )
+    results_qs = results_qs.order_by("position")
+
+    return results_qs
