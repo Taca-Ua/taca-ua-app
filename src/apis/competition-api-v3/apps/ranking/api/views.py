@@ -6,13 +6,15 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.request import Request
 from rest_framework.response import Response
-from shared.auth.decorators import require_auth
+from shared.auth.decorators import require_auth, require_roles
+from shared.auth.utils import RolesEnum
 
 from ..selectors import (
     get_general_ranking,
     get_modality_ranking,
     get_modality_ranking_breakdown,
 )
+from ..service import recompute_rankings
 from .filters import RankingSeasonFilterSerializer
 from .serializers import (
     CourseRankingBreakdownEntrySerializer,
@@ -84,7 +86,28 @@ def course_ranking(request: Request, course_id: UUID):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    summary="Recompute Rankings",
+    description="Recompute the rankings for all tournaments in a specific season",
+    tags=["Ranking"],
+    parameters=[RankingSeasonFilterSerializer],
+    responses={200: "Rankings recomputed."},
+)
+@api_view(["POST"])
+@require_roles(RolesEnum.GENERAL_ADMIN)
+def recompute_rankings_view(request: Request):
+    serializer = RankingSeasonFilterSerializer(data=request.query_params)
+    serializer.is_valid(raise_exception=True)
+
+    season_id = serializer.validated_data.get("season_id")
+
+    recompute_rankings(season_id=season_id)
+
+    return Response({"message": "Rankings recomputed."}, status=status.HTTP_200_OK)
+
+
 urlpatterns = [
+    path("recompute/", recompute_rankings_view, name="recompute-rankings"),
     path("general/", general_ranking, name="general-ranking"),
     path("modality/<uuid:modality_id>/", modality_ranking, name="modality-ranking"),
     path("course/<uuid:course_id>/", course_ranking, name="course-ranking"),

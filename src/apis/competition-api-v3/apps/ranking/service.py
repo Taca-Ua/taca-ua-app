@@ -61,7 +61,9 @@ def emit_updated_rankings_event(season_id: int):
 
 
 @transaction.atomic
-def submit_tournament_results(tournament: Tournament):
+def submit_tournament_results(
+    tournament: Tournament, *, emit_computed_event: bool = True
+):
 
     results = get_tournament_results(tournament.id)
 
@@ -80,8 +82,8 @@ def submit_tournament_results(tournament: Tournament):
             )
 
         points_to_award = (
-            escalao.points[result.position]
-            if result.position < len(escalao.points)
+            escalao.points[result.position - 1]
+            if result.position <= len(escalao.points) and result.position > 0
             else 0
         )
 
@@ -110,6 +112,48 @@ def submit_tournament_results(tournament: Tournament):
             )
             changes_made = True
 
-    if changes_made:
+    if emit_computed_event and changes_made:
         # emit event with updated rankings after processing the tournament results
         emit_updated_rankings_event(tournament.season_id)
+
+
+@transaction.atomic
+def recompute_rankings(
+    season_id: int = None,
+    modality_id: int = None,
+    course_id: int = None,
+    tournament_id: int = None,
+):
+    """Recomputes the rankings for all tournaments in the given season and emits an event with the updated rankings."""
+
+    logger.info(
+        f"Recomputing rankings for season_id={season_id}, modality_id={modality_id}, course_id={course_id}, tournament_id={tournament_id}"
+    )
+
+    # Get all CourseTournamentPosition entries that match the given filters (season, modality, course)
+    relevant_entries = CourseTournamentPosition.objects.all()
+
+    if season_id is not None:
+        relevant_entries = relevant_entries.filter(season_id=season_id)
+
+    if modality_id is not None:
+        relevant_entries = relevant_entries.filter(modality_id=modality_id)
+
+    if course_id is not None:
+        relevant_entries = relevant_entries.filter(course_id=course_id)
+
+    if tournament_id is not None:
+        relevant_entries = relevant_entries.filter(tournament_id=tournament_id)
+
+    # Get the distinct tournament IDs from the relevant entries
+    relevant_tournaments_ids = relevant_entries.values_list(
+        "tournament_id", flat=True
+    ).distinct()
+    relevant_tournaments = Tournament.objects.filter(id__in=relevant_tournaments_ids)
+    for tournament in relevant_tournaments:
+        submit_tournament_results(tournament, emit_computed_event=False)
+
+    # After recomputing the rankings for all relevant tournaments, emit an event for each affected season
+    season_ids = relevant_entries.values_list("season_id", flat=True).distinct()
+    for season_id in season_ids:
+        emit_updated_rankings_event(season_id)
