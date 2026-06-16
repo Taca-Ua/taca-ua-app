@@ -47,7 +47,7 @@ class CourseListCreateView(RoleRequiredMixin, APIView):
         serializer.is_valid(raise_exception=True)
 
         courses = get_courses_table(
-            season_id=serializer.validated_data.get("season_id")
+            context_season_id=serializer.validated_data.get("season_id")
         )
 
         serializer = CourseListSerializer(
@@ -73,7 +73,7 @@ class CourseListCreateView(RoleRequiredMixin, APIView):
         serializer = CourseListSerializer(
             get_course_by_id(
                 course_id=course.id,
-                season_id=param_serializer.validated_data.get("season_id"),
+                context_season_id=param_serializer.validated_data.get("season_id"),
             )
         )
         return Response(serializer.data, status=201)
@@ -108,7 +108,8 @@ class CourseDetailView(APIView):
         serializer.is_valid(raise_exception=True)
 
         course = get_course_by_id(
-            course_id=course_id, season_id=serializer.validated_data.get("season_id")
+            course_id=course_id,
+            context_season_id=serializer.validated_data.get("season_id"),
         )
 
         serializer = CourseDetailSerializer(course)
@@ -132,7 +133,7 @@ class CourseDetailView(APIView):
         serializer = CourseDetailSerializer(
             get_course_by_id(
                 course_id=updated_course.id,
-                season_id=param_serializer.validated_data.get("season_id"),
+                context_season_id=param_serializer.validated_data.get("season_id"),
             )
         )
         return Response(serializer.data, status=200)
@@ -160,7 +161,8 @@ def remove_course_from_season(request, course_id, season_id):
 
     serializer = CourseDetailSerializer(
         get_course_by_id(
-            course_id=course.id, season_id=serializer.validated_data.get("season_id")
+            course_id=course.id,
+            context_season_id=serializer.validated_data.get("season_id"),
         )
     )
     return Response(serializer.data, status=200)
@@ -183,7 +185,8 @@ def add_course_to_season(request, course_id, season_id):
 
     serializer = CourseDetailSerializer(
         get_course_by_id(
-            course_id=course.id, season_id=serializer.validated_data.get("season_id")
+            course_id=course.id,
+            context_season_id=serializer.validated_data.get("season_id"),
         )
     )
     return Response(serializer.data, status=200)

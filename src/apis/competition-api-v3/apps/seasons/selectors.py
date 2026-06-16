@@ -1,9 +1,14 @@
 from dataclasses import dataclass
+from uuid import UUID
 
-from apps.athletes.models import Athlete
-from apps.matches.models import Match, MatchStatus
-from apps.staff.models import Staff
-from apps.tournaments.models import Tournament, TournamentStatus
+from apps.athletes.selectors import get_athletes_table
+from apps.courses.selectors import get_courses_table
+from apps.matches.models import MatchStatus
+from apps.matches.selectors import get_matches_table
+from apps.staff.selectors import get_staff_table
+from apps.teams.selectors import get_teams_table
+from apps.tournaments.models import TournamentStatus
+from apps.tournaments.selectors import get_tournaments_table
 from django.db.models import Count, Q, QuerySet
 
 from .models import Season
@@ -44,38 +49,45 @@ def get_current_season() -> Season:
     return current_season.get()
 
 
-def get_season_summary_by_id(season_id: int) -> SeasonSummaryDTO:
+def get_season_summary_by_id(season_id: int, admin_id: UUID) -> SeasonSummaryDTO:
     season = get_season_by_id(season_id)
 
-    modality_types_count = season.modality_types.distinct().count()
-    active_modalities_count = season.season_modalities.distinct().count()
-    active_courses_count = season.courses.distinct().count()
-    teams_count = season.teams.distinct().count()
+    modality_types_qs = season.modality_types
 
-    tournaments_summary = Tournament.objects.filter(season_id=season_id).aggregate(
-        finished=Count("id", filter=Q(status=TournamentStatus.FINISHED)),
-        ongoing=Count("id", filter=Q(status=TournamentStatus.ACTIVE)),
-        scheduled=Count("id", filter=Q(status=TournamentStatus.DRAFT)),
+    active_modalities_qs = season.season_modalities
+
+    active_courses_qs = get_courses_table(season_id=season_id, admin_id=admin_id)
+
+    teams_qs = get_teams_table(season_id=season_id, admin_id=admin_id)
+
+    tournaments_summary = get_tournaments_table(
+        season_id=season_id, admin_id=admin_id
+    ).aggregate(
+        finished=Count("id", filter=Q(status=TournamentStatus.FINISHED), distinct=True),
+        ongoing=Count("id", filter=Q(status=TournamentStatus.ACTIVE), distinct=True),
+        scheduled=Count("id", filter=Q(status=TournamentStatus.DRAFT), distinct=True),
     )
 
-    matches_summary = Match.objects.filter(tournament__season_id=season_id).aggregate(
-        finished=Count("id", filter=Q(status=MatchStatus.FINISHED)),
-        ongoing=Count("id", filter=Q(status=MatchStatus.IN_PROGRESS)),
-        scheduled=Count("id", filter=Q(status=MatchStatus.SCHEDULED)),
+    matches_summary = get_matches_table(
+        season_id=season_id, admin_id=admin_id
+    ).aggregate(
+        finished=Count("id", filter=Q(status=MatchStatus.FINISHED), distinct=True),
+        ongoing=Count("id", filter=Q(status=MatchStatus.IN_PROGRESS), distinct=True),
+        scheduled=Count("id", filter=Q(status=MatchStatus.SCHEDULED), distinct=True),
     )
 
     members_summary = {
-        "athletes": Athlete.objects.count(),
-        "staff": Staff.objects.count(),
+        "athletes": get_athletes_table(admin_id=admin_id).count(),
+        "staff": get_staff_table().count(),
     }
 
     return SeasonSummaryDTO(
         id=season.id,
         name=season.name,
-        modality_types_count=modality_types_count,
-        active_modalities_count=active_modalities_count,
-        active_courses_count=active_courses_count,
-        teams_count=teams_count,
+        modality_types_count=modality_types_qs.distinct().count(),
+        active_modalities_count=active_modalities_qs.distinct().count(),
+        active_courses_count=active_courses_qs.distinct().count(),
+        teams_count=teams_qs.distinct().count(),
         tournaments_summary=tournaments_summary,
         matches_summary=matches_summary,
         members_summary=members_summary,

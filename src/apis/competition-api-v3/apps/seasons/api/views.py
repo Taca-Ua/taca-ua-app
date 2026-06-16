@@ -87,7 +87,12 @@ def get_current_season_view(request):
 @api_view(["GET"])
 @require_auth
 def get_season_summary_view(request, season_id):
-    season = get_season_summary_by_id(season_id)
+    user = get_user(request)
+
+    season = get_season_summary_by_id(
+        season_id,
+        admin_id=user.user_id if RolesEnum.NUCLEO_ADMIN in user.roles else None,
+    )
 
     serializer = SeasonSummarySerializer(season)
     return Response(serializer.data)

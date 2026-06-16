@@ -3,7 +3,9 @@ from django.db.models import QuerySet
 from .models import Team
 
 
-def get_teams_table(season_id=None, modality_id=None, course_id=None) -> QuerySet[Team]:
+def get_teams_table(
+    season_id=None, modality_id=None, course_id=None, admin_id=None
+) -> QuerySet[Team]:
     queryset = Team.objects.all()
 
     if season_id is not None:
@@ -14,6 +16,9 @@ def get_teams_table(season_id=None, modality_id=None, course_id=None) -> QuerySe
 
     if course_id is not None:
         queryset = queryset.filter(course_id=course_id)
+
+    if admin_id is not None:
+        queryset = queryset.filter(course__nucleus__admins__id=admin_id).distinct()
 
     queryset = queryset.select_related("modality", "course__nucleus")
 

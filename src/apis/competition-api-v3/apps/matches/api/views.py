@@ -138,7 +138,7 @@ class MatchDetailView(RoleRequiredMixin, APIView):
             user.user_id if user and RolesEnum.GENERAL_ADMIN not in user.roles else None
         )
 
-        match = get_match_by_id(match_id, admin_id=admin_id)
+        match = get_match_by_id(match_id, context_admin_id=admin_id)
         serializer = MatchDetailSerializer(match)
         return Response(serializer.data)
 
@@ -160,7 +160,9 @@ class MatchDetailView(RoleRequiredMixin, APIView):
             user.user_id if user and RolesEnum.GENERAL_ADMIN not in user.roles else None
         )
 
-        serializer = MatchDetailSerializer(get_match_by_id(match.id, admin_id=admin_id))
+        serializer = MatchDetailSerializer(
+            get_match_by_id(match.id, context_admin_id=admin_id)
+        )
         return Response(serializer.data)
 
     @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
@@ -191,7 +193,9 @@ def publish_match_results_view(request, match_id):
     user = get_user(request)
     admin_id = user.user_id if user else None
 
-    serializer = MatchDetailSerializer(get_match_by_id(match.id, admin_id=admin_id))
+    serializer = MatchDetailSerializer(
+        get_match_by_id(match.id, context_admin_id=admin_id)
+    )
     return Response(serializer.data)
 
 
@@ -224,7 +228,7 @@ def add_comment(request, match_id):
         user.user_id if user and RolesEnum.GENERAL_ADMIN not in user.roles else None
     )
     response_serializer = MatchDetailSerializer(
-        get_match_by_id(match.id, admin_id=admin_id)
+        get_match_by_id(match.id, context_admin_id=admin_id)
     )
     return Response(response_serializer.data, status=201)
 

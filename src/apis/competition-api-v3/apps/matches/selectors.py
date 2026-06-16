@@ -8,7 +8,7 @@ from .models import Match, MatchParticipant
 
 def get_participants_for_match(
     match_id: UUID = None,
-    admin_id: UUID = None,
+    context_admin_id: UUID = None,
     include_lineup: bool = False,
 ) -> QuerySet[MatchParticipant]:
 
@@ -26,17 +26,17 @@ def get_participants_for_match(
             "staff__staff",
         )
 
-    if admin_id:
+    if context_admin_id:
         participants_qs = participants_qs.annotate(
             can_edit=Exists(
                 Admin.objects.filter(
-                    id=admin_id,
+                    id=context_admin_id,
                     nucleos__in=OuterRef("competitor__athlete__course__nucleus_id"),
                 )
             )
             | Exists(
                 Admin.objects.filter(
-                    id=admin_id,
+                    id=context_admin_id,
                     nucleos__in=OuterRef("competitor__team__course__nucleus_id"),
                 )
             )
@@ -50,10 +50,12 @@ def get_matches_table(
     modality_id: str = None,
     course_id: str = None,
     tournament_id: str = None,
+    season_id: str = None,
+    admin_id: UUID = None,
     date_from: str = None,
     date_to: str = None,
     *,
-    admin_id: UUID = None,
+    context_admin_id: UUID = None,
     include_lineups: bool = False,
 ) -> QuerySet[Match]:
 
@@ -75,17 +77,26 @@ def get_matches_table(
     if tournament_id is not None:
         queryset = queryset.filter(tournament_id=tournament_id)
 
+    if season_id is not None:
+        queryset = queryset.filter(tournament__season_id=season_id)
+
     if course_id is not None:
         queryset = queryset.filter(
             Q(participants__competitor__athlete__course_id=course_id)
             | Q(participants__competitor__team__course_id=course_id)
         ).distinct()
 
+    if admin_id is not None:
+        queryset = queryset.filter(
+            Q(participants__competitor__athlete__course__nucleus__admins__id=admin_id)
+            | Q(participants__competitor__team__course__nucleus__admins__id=admin_id)
+        ).distinct()
+
     queryset = queryset.select_related("tournament").prefetch_related(
         Prefetch(
             "participants",
             queryset=get_participants_for_match(
-                admin_id=admin_id, include_lineup=include_lineups
+                context_admin_id=context_admin_id, include_lineup=include_lineups
             ),
         )
     )
@@ -94,27 +105,27 @@ def get_matches_table(
 
 
 def get_match_by_id(
-    match_id: UUID, *, admin_id: UUID = None, include_lineups: bool = False
+    match_id: UUID, *, context_admin_id: UUID = None, include_lineups: bool = False
 ) -> Match:
 
     match_qs = get_matches_table(
-        admin_id=admin_id, include_lineups=include_lineups
+        context_admin_id=context_admin_id, include_lineups=include_lineups
     ).filter(id=match_id)
 
     return match_qs.get()
 
 
 def get_match_participant_by_id(
-    match_id: UUID, participant_id: UUID, admin_id: UUID = None
+    match_id: UUID, participant_id: UUID, context_admin_id: UUID = None
 ) -> MatchParticipant:
     participant = get_participants_for_match(
         match_id=match_id, include_lineup=True
     ).get(id=participant_id)
 
     if (
-        admin_id
+        context_admin_id
         and not participant.competitor.entity.course.nucleus.admins.filter(
-            id=admin_id
+            id=context_admin_id
         ).exists()
     ):
         raise ValueError("Admin does not have access to this participant")

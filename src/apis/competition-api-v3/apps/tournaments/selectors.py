@@ -1,13 +1,13 @@
 from uuid import UUID
 
-from django.db.models import QuerySet
+from django.db.models import Q, QuerySet
 
 from .formats import FormatRegistry
 from .models import Tournament
 
 
 def get_tournaments_table(
-    status=None, modality_id=None, season_id=None
+    status=None, modality_id=None, season_id=None, admin_id: UUID = None
 ) -> QuerySet[Tournament]:
 
     queryset = Tournament.objects.all()
@@ -20,6 +20,12 @@ def get_tournaments_table(
 
     if season_id is not None:
         queryset = queryset.filter(season_id=season_id)
+
+    if admin_id is not None:
+        queryset = queryset.filter(
+            Q(competitors__athlete__course__nucleus__admins__id=admin_id)
+            | Q(competitors__team__course__nucleus__admins__id=admin_id)
+        ).distinct()
 
     queryset = queryset.select_related("modality", "season", "scoring_format")
 

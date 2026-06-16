@@ -4,16 +4,30 @@ from django.db.models import Exists, OuterRef, QuerySet
 from .models import Course
 
 
-def get_courses_table(*, season_id: int = None) -> QuerySet[Course]:
-    queryset = Course.objects.select_related("nucleus")
+def get_courses_table(
+    season_id: int = None,
+    admin_id: str = None,
+    *,
+    context_season_id: int = None,
+    context_admin_id: str = None
+) -> QuerySet[Course]:
+    queryset = Course.objects.all()
 
-    # if season_id is provided, annotate courses with whether they belong to that season
     if season_id is not None:
+        queryset = queryset.filter(seasons__id=season_id)
+
+    if admin_id is not None:
+        queryset = queryset.filter(nucleus__admins__id=admin_id).distinct()
+
+    queryset = queryset.select_related("nucleus")
+
+    if context_season_id is not None:
+        # if context_season_id is provided, annotate courses with whether they belong to that season
         queryset = queryset.annotate(
             belongs_to_season=Exists(
                 Course.seasons.through.objects.filter(
                     course_id=OuterRef("pk"),
-                    season_id=season_id,
+                    season_id=context_season_id,
                 )
             )
         )
@@ -21,9 +35,9 @@ def get_courses_table(*, season_id: int = None) -> QuerySet[Course]:
     return queryset
 
 
-def get_course_by_id(course_id: str, *, season_id: int = None) -> Course:
+def get_course_by_id(course_id: str, *, context_season_id: int = None) -> Course:
 
-    course = get_courses_table(season_id=season_id).filter(id=course_id)
+    course = get_courses_table(context_season_id=context_season_id).filter(id=course_id)
 
     course = course.annotate(relevant_season_ids=ArrayAgg("seasons__id", distinct=True))
 
