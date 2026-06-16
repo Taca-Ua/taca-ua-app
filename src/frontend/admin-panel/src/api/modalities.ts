@@ -11,7 +11,7 @@ export interface ModalityListItem {
 };
 
 export interface ModalityDetail extends ModalityListItem {
-  relevant_season_ids: number[];  // List of season IDs where this modality is relevant (active)
+  relevant_seasons_ids: number[];  // List of season IDs where this modality is relevant (active)
   regulation?: {
     id: string;
     name: string;
