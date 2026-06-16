@@ -16,13 +16,12 @@ Including another URLconf
 """
 
 from apps import urls as apps_urls
+from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
-
-from .settings import API_ENDPOINT_PREFIX
 
 urlpatterns = [
     path("", include("django_prometheus.urls")),
     path("admin/", admin.site.urls),
-    path(f"{API_ENDPOINT_PREFIX}/", include(apps_urls)),
+    path(f"{settings.API_ENDPOINT_PREFIX}/", include(apps_urls)),
 ]

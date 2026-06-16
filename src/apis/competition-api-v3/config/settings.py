@@ -168,8 +168,20 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "filters": {
+        "ignore_health_metrics": {
+            "()": "config.logging_filters.IgnoreHealthMetricsFilter"
+        },
+        "ignore_health_metrics_access": {
+            "()": "config.logging_filters.IgnoreHealthMetricsAccessFilter"
+        },
+    },
     "handlers": {
-        "console": {"class": "logging.StreamHandler", "formatter": "verbose"},
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+            "filters": ["ignore_health_metrics"],
+        },
         "loki": {
             "class": "logging_loki.LokiHandler",
             "url": LOKI_LOGGING_URL,
@@ -179,6 +191,12 @@ LOGGING = {
             },
             "version": "1",
             "formatter": "json",
+            "filters": ["ignore_health_metrics", "ignore_health_metrics_access"],
+        },
+        "uvicorn_access": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+            "filters": ["ignore_health_metrics_access"],
         },
     },
     "formatters": {
@@ -188,6 +206,7 @@ LOGGING = {
         },
         "verbose": {
             "format": "[%(asctime)s] [%(levelname)s] %(name)s: %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
         },
     },
     "root": {
@@ -196,6 +215,18 @@ LOGGING = {
             "loki"
         ],
         "level": LOG_LEVEL,
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["loki", "console"],
+            "level": LOG_LEVEL,
+            "propagate": False,
+        },
+        "uvicorn.access": {
+            "handlers": ["loki", "uvicorn_access"],
+            "level": LOG_LEVEL,
+            "propagate": False,
+        },
     },
 }
 

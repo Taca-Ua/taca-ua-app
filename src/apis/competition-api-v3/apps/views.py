@@ -10,5 +10,4 @@ class HealthView(APIView):
     schema = None  # Exclude from API schema
 
     def get(self, request):
-        logger.info("Health check endpoint called.")
         return Response({"status": "ok"})
