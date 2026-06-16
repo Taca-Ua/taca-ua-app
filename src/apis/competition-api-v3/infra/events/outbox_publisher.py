@@ -17,7 +17,7 @@ def publish_pending_events(rabbitmq_client: RabbitMQClient):
         events = (
             OutboxEvent.objects.select_for_update(skip_locked=True)
             .filter(published=False)
-            .order_by("id")[:BATCH_SIZE]
+            .order_by("created_at")[:BATCH_SIZE]
         )
 
         events = list(events)
