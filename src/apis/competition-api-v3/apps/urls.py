@@ -1,10 +1,11 @@
-from apps.views import HealthView
 from django.urls import include, path
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .admins.api.views import urlpatterns as admins_urlpatterns
 from .athletes.api.views import urlpatterns as athletes_urlpatterns
@@ -19,6 +20,14 @@ from .seasons.api.views import urlpatterns as seasons_urlpatterns
 from .staff.api.views import urlpatterns as staff_urlpatterns
 from .teams.api.views import urlpatterns as teams_urlpatterns
 from .tournaments.api.views import urlpatterns as tournaments_urlpatterns
+
+
+class HealthView(APIView):
+    schema = None  # Exclude from API schema
+
+    def get(self, request):
+        return Response({"status": "ok"})
+
 
 urlpatterns = [
     path("admins/", include(admins_urlpatterns)),
