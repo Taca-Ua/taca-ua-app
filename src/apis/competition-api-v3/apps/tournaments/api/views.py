@@ -1,3 +1,4 @@
+from apps.seasons.selectors import get_current_season
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework.decorators import api_view
@@ -56,10 +57,14 @@ class TournamentListCreateView(RoleRequiredMixin, APIView):
         serializer = TournamentListQuerySerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
+        season_id = serializer.validated_data.get("season_id")
+        if season_id is None:
+            season_id = get_current_season().id
+
         tournaments = get_tournaments_table(
             status=serializer.validated_data.get("status"),
             modality_id=serializer.validated_data.get("modality_id"),
-            season_id=serializer.validated_data.get("season_id"),
+            season_id=season_id,
         )
 
         serializer = TournamentListSerializer(tournaments, many=True)

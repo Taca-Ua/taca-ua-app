@@ -827,7 +827,9 @@ def handle_tournament_standings_updated(event: TournamentLeagueStandingsUpdatedV
             logger.warning("tournament_not_found", tournament_id=str(tournament_id))
             return
 
-        tournament.standings_metadata = event.data.standings
+        tournament.standings_metadata = [
+            entry.to_dict() for entry in event.data.standings
+        ]
         db.flush()
 
         rebuild_tournament_projection(db, tournament_id)

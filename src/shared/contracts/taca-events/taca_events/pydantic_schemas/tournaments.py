@@ -70,6 +70,20 @@ class TournamentLeagueStandingsUpdatedData(BaseModel):
         losses: int
         points_for: int
         points_against: int
+        position: Optional[int] = None
+
+        def to_dict(self) -> dict:
+            return {
+                "competitor_id": str(self.competitor_id),
+                "points": self.points,
+                "played": self.played,
+                "wins": self.wins,
+                "draws": self.draws,
+                "losses": self.losses,
+                "points_for": self.points_for,
+                "points_against": self.points_against,
+                "position": self.position,
+            }
 
     tournament_id: UUID
     standings: List[Entry]

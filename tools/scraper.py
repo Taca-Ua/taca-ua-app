@@ -348,8 +348,12 @@ def step3():
                     "local": local,
                     "team1": team1,
                     "team2": team2,
-                    "team1_score": int(float(team1_score)) if team1_score else None,
-                    "team2_score": int(float(team2_score)) if team2_score else None,
+                    "team1_score": (
+                        int(float(team1_score.split()[0])) if team1_score else None
+                    ),
+                    "team2_score": (
+                        int(float(team2_score.split()[0])) if team2_score else None
+                    ),
                 }
             )
 
@@ -418,7 +422,7 @@ def step3():
 
 
 def main():
-    succes = step1(year="24_25")
+    succes = step1(year="25_26")
     if not succes:
         print("Erro ao processar config_cursos.json")
         return

@@ -454,7 +454,7 @@ def rebuild_tournament_standings(session: Session, tournament_id: UUID) -> None:
             competitor_entity_id=competitor_entity_id,
             competitor_name=competitor_name,
             position=standing.get("position"),
-            statistics_metadata=standing.get("format_meta"),
+            statistics_metadata=standing,
         )
 
         # UPSERT (merge = deterministic projection rebuild)

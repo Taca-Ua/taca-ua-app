@@ -17,9 +17,7 @@ class LeagueFormat(BaseFormat):
     # helper methods
     def _emit_standings_updated_event(self):
         # emit event to OutboxTable
-        standings = LeagueStanding.objects.filter(
-            competitor__tournament=self.tournament
-        ).all()
+        standings = self.get_details()["standings"]
 
         emit_schema_event(
             event=TournamentLeagueStandingsUpdatedV1(
@@ -27,16 +25,17 @@ class LeagueFormat(BaseFormat):
                     tournament_id=self.tournament.id,
                     standings=[
                         TournamentLeagueStandingsUpdatedData.Entry(
-                            competitor_id=s.competitor.id,
-                            points=s.points,
-                            played=s.played,
-                            wins=s.wins,
-                            draws=s.draws,
-                            losses=s.losses,
-                            points_for=s.points_for,
-                            points_against=s.points_against,
+                            competitor_id=s["competitor_id"],
+                            points=s["format_meta"]["points"],
+                            played=s["format_meta"]["played"],
+                            wins=s["format_meta"]["wins"],
+                            draws=s["format_meta"]["draws"],
+                            losses=s["format_meta"]["losses"],
+                            points_for=s["format_meta"]["points_for"],
+                            points_against=s["format_meta"]["points_against"],
+                            position=s["position"],
                         )
-                        for s in standings.all()
+                        for s in standings
                     ],
                 )
             ),
