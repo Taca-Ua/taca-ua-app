@@ -53,14 +53,12 @@ def update_modality(
 
     if modality_type_id is not None:
         season = get_current_season()
-        season_modality, created = SeasonModality.objects.get_or_create(
+        season_modality = SeasonModality.objects.get(
             modality_id=modality_id,
             season_id=season.id,
-            defaults={"modality_type_id": modality_type_id},
         )
-        if not created:
-            season_modality.modality_type_id = modality_type_id
-            season_modality.save()
+        season_modality.modality_type_id = modality_type_id
+        season_modality.save(update_fields=["modality_type_id"])
 
     # emit event to OutboxTable
     emit_schema_event(

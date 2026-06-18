@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     "apps.staff",
     "apps.teams",
     "apps.tournaments",
+    "workers.ranking_updater",
     "infra.events",
 ]
 

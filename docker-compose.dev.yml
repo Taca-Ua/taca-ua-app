@@ -202,6 +202,33 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  competition-api-v3-rankings-recomputation-worker:
+    build:
+      context: .
+      dockerfile: src/apis/competition-api-v3/Dockerfile.dev
+    volumes:
+      - ./src/shared:/tmp
+      - ./src/apis/competition-api-v3:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOKI_LOGGING_URL=${LOKI_LOGGING_URL:-http://loki:3100/loki/api/v1/push}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+
+      - POSTGRES_DB=${POSTGRES_DB:-taca_ua}
+      - POSTGRES_USER=${POSTGRES_USER:-user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+
+    command: python manage.py rankings_recomputation_worker --settings=config.settings_worker_ranking_updater
+    depends_on:
+      competition-api-v3:
+        condition: service_healthy
+      loki:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+
   public-api:
     build:
       context: .

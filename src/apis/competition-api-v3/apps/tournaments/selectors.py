@@ -7,7 +7,12 @@ from .models import Tournament, TournamentResult
 
 
 def get_tournaments_table(
-    status=None, modality_id=None, season_id=None, admin_id: UUID = None
+    status=None,
+    modality_id=None,
+    season_id=None,
+    modality_type_id=None,
+    tournament_id=None,
+    admin_id: UUID = None,
 ) -> QuerySet[Tournament]:
 
     queryset = Tournament.objects.all()
@@ -20,6 +25,12 @@ def get_tournaments_table(
 
     if season_id is not None:
         queryset = queryset.filter(season_id=season_id)
+
+    if modality_type_id is not None:
+        queryset = queryset.filter(scoring_format_id=modality_type_id)
+
+    if tournament_id is not None:
+        queryset = queryset.filter(id=tournament_id)
 
     if admin_id is not None:
         queryset = queryset.filter(
