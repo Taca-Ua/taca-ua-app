@@ -52,8 +52,8 @@ export const modalitiesApi = {
     return apiClient.get<ModalityDetail>(`/modalities/${modalityId}/`, { season_id });
   },
 
-  async update(modalityId: string, data: ModalityUpdate): Promise<ModalityDetail> {
-    return apiClient.put<ModalityDetail>(`/modalities/${modalityId}/`, data);
+  async update(modalityId: string, data: ModalityUpdate, season_id?: number): Promise<ModalityDetail> {
+    return apiClient.put<ModalityDetail>(`/modalities/${modalityId}/`, data, { season_id });
   },
 
   async addToSeason(modalityId: string, seasonId: number, modalityTypeId: string): Promise<ModalityDetail> {
