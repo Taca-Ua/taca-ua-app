@@ -96,6 +96,15 @@ class MatchParticipant(models.Model):
             return self.competitor.team.course.nucleus.logo_url
         return None
 
+    @property
+    def participant_type(self):
+        """Returns the type of the participant (athlete or team)."""
+        if self.competitor.athlete:
+            return "athlete"
+        elif self.competitor.team:
+            return "team"
+        return None
+
 
 class MatchParticipantAthleteLineup(models.Model):
     """Represents a lineup of competitors for a match participant (e.g., team members)."""
