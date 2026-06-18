@@ -11,20 +11,20 @@ from uuid import UUID
 
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
-from taca_models import (
+
+from .cache import CACHE_TTL, CacheKeyGenerator, cached
+from .models import (
     GeneralRankingView,
     MatchDetailView,
     ModalityRankingView,
     NucleoDetailView,
-    Regulation,
+    RegulationDetailView,
     SeasonDetailView,
     StudentDetailView,
     TeamDetailView,
     TournamentDetailView,
     TournamentStandingsView,
 )
-
-from .cache import CACHE_TTL, CacheKeyGenerator, cached
 
 # ==================== Nucleo Operations ====================
 
@@ -571,7 +571,7 @@ def get_regulations(
     db: Session,
     search: Optional[str] = None,
     season_id: Optional[int] = None,
-) -> list[Regulation]:
+) -> list[RegulationDetailView]:
     """
     Get all regulations, optionally filtered by a search term.
 
@@ -582,21 +582,21 @@ def get_regulations(
     Returns:
         List of regulations ordered by creation date (newest first)
     """
-    query = db.query(Regulation)
+    query = db.query(RegulationDetailView)
 
     if season_id:
-        query = query.filter(Regulation.season_id == season_id)
+        query = query.filter(RegulationDetailView.season_id == season_id)
 
     if search:
         term = f"%{search}%"
         query = query.filter(
             or_(
-                Regulation.title.ilike(term),
-                Regulation.description.ilike(term),
+                RegulationDetailView.title.ilike(term),
+                RegulationDetailView.description.ilike(term),
             )
         )
 
-    return query.order_by(Regulation.created_at.desc()).all()
+    return query.all()
 
 
 # ==================== Modality Ranking View Operations ====================

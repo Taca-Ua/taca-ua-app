@@ -181,7 +181,6 @@ class TournamentStanding(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    id: int = Field(..., description="Standing record ID")
     tournament_id: UUID = Field(..., description="Tournament identifier")
     competitor_type: str = Field(..., description="Type of competitor (team/athlete)")
     competitor_entity_id: UUID = Field(..., description="Competitor entity ID")
@@ -230,8 +229,6 @@ class GeneralRanking(BaseModel):
     """Schema for general ranking view response."""
 
     model_config = ConfigDict(from_attributes=True)
-
-    id: int = Field(..., description="Unique identifier for the ranking entry")
 
     # Course info
     course_id: UUID = Field(..., description="Course identifier")

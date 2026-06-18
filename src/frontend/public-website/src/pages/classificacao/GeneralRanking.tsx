@@ -149,7 +149,7 @@ function GeneralRankingPage() {
                       <tbody className="bg-white divide-y divide-gray-200">
                         {rankings.map((ranking) => (
                           <tr
-                            key={ranking.id}
+                            key={ranking.course_id}
                             className={`hover:bg-gray-50 transition-colors ${
                               ranking.rank && ranking.rank <= 3 ? 'bg-yellow-50' : ''
                             }`}
@@ -191,7 +191,7 @@ function GeneralRankingPage() {
                   <div className="md:hidden divide-y divide-gray-200">
                     {rankings.map((ranking) => (
                       <div
-                        key={ranking.id}
+                        key={ranking.course_id}
                         className={`p-4 ${
                           ranking.rank && ranking.rank <= 3 ? 'bg-yellow-50' : ''
                         }`}
