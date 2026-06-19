@@ -27,16 +27,21 @@ from .models import (
 )
 
 
-@transaction.atomic
+@transaction.atomic(savepoint=False)
 def rebuild_team_projection(team_id: UUID):
-    team = get_team_by_id(team_id)
+    from apps.teams.models import Team
+
+    # delete existing projection for the team before creating a new one
+    TeamDetailView.objects.filter(team_id=team_id).delete()
+
+    try:
+        team = get_team_by_id(team_id)
+    except Team.DoesNotExist:
+        return None
 
     modality_type = team.modality.modality_type(team.season_id)
     if not modality_type:
         return None
-
-    # delete existing projection for the team before creating a new one
-    TeamDetailView.objects.filter(team_id=team.id).delete()
 
     # create a new projection for the team
     projection = TeamDetailView.objects.create(
@@ -69,12 +74,17 @@ def rebuild_team_projection(team_id: UUID):
     return projection
 
 
-@transaction.atomic
+@transaction.atomic(savepoint=False)
 def rebuild_student_projection(student_id: UUID):
-    student = get_athlete_by_id(student_id)
+    from apps.athletes.models import Athlete
 
     # delete existing projection for the student before creating a new one
-    StudentDetailView.objects.filter(student_id=student.id).delete()
+    StudentDetailView.objects.filter(student_id=student_id).delete()
+
+    try:
+        student = get_athlete_by_id(student_id)
+    except Athlete.DoesNotExist:
+        return None
 
     # create a new projection for the student
     projection = StudentDetailView.objects.create(
@@ -94,12 +104,17 @@ def rebuild_student_projection(student_id: UUID):
     return projection
 
 
-@transaction.atomic
+@transaction.atomic(savepoint=False)
 def rebuild_tournament_projection(tournament_id: UUID):
-    tournament = get_tournament_by_id(tournament_id)
+    from apps.tournaments.models import Tournament
 
     # delete existing projection for the tournament before creating a new one
-    TournamentDetailView.objects.filter(tournament_id=tournament.id).delete()
+    TournamentDetailView.objects.filter(tournament_id=tournament_id).delete()
+
+    try:
+        tournament = get_tournament_by_id(tournament_id)
+    except Tournament.DoesNotExist:
+        return None
 
     # create a new projection for the tournament
     projection = TournamentDetailView.objects.create(
@@ -119,17 +134,27 @@ def rebuild_tournament_projection(tournament_id: UUID):
     return projection
 
 
-@transaction.atomic
+@transaction.atomic(savepoint=False)
 def rebuild_match_projection(match_id: UUID):
-    match = get_match_by_id(match_id)
+    from apps.matches.models import Match
 
     # delete existing projection for the match before creating a new one
-    MatchDetailView.objects.filter(match_id=match.id).delete()
+    MatchDetailView.objects.filter(match_id=match_id).delete()
+
+    # get the match data
+    try:
+        match = get_match_by_id(match_id)
+    except Match.DoesNotExist:
+        return None
+
+    if match.scheduled_time is None:
+        # if the match does not have location or scheduled time, we cannot build the projection
+        return None
 
     # create a new projection for the match
     projection = MatchDetailView.objects.create(
         match_id=match.id,
-        location=match.location,
+        location=match.location or "TBD",
         status=match.status,
         start_time=match.scheduled_time,
         tournament_id=match.tournament.id,
@@ -161,12 +186,17 @@ def rebuild_match_projection(match_id: UUID):
     return projection
 
 
-@transaction.atomic
+@transaction.atomic(savepoint=False)
 def rebuild_tournament_standings_projection(tournament_id: UUID):
-    tournament = get_tournament_by_id(tournament_id)
+    from apps.tournaments.models import Tournament
 
     # delete existing projection for the tournament standings before creating a new one
-    TournamentStandingsView.objects.filter(tournament_id=tournament.id).delete()
+    TournamentStandingsView.objects.filter(tournament_id=tournament_id).delete()
+
+    try:
+        tournament = get_tournament_by_id(tournament_id)
+    except Tournament.DoesNotExist:
+        return None
 
     tournament_format = FormatRegistry.get_format(tournament)
     standings = tournament_format.get_details().get("standings", [])
@@ -231,7 +261,7 @@ def rebuild_tournament_standings_projection(tournament_id: UUID):
     return projection
 
 
-@transaction.atomic
+@transaction.atomic(savepoint=False)
 def rebuild_general_ranking_projection(season_id: int):
     # delete existing projection for the general ranking before creating a new one
     GeneralRankingView.objects.filter(season_id=season_id).delete()
@@ -262,13 +292,18 @@ def rebuild_general_ranking_projection(season_id: int):
     return projection
 
 
-@transaction.atomic
+@transaction.atomic(savepoint=False)
 def rebuild_modality_ranking_projection(season_id: int, modality_id: UUID):
+    from apps.modalities.models import Modality
+
     # delete existing projection for the modality ranking before creating a new one
     ModalityRankingView.objects.filter(season_id=season_id).delete()
 
     # get the modality data
-    modality = get_modality_by_id(modality_id)
+    try:
+        modality = get_modality_by_id(modality_id)
+    except Modality.DoesNotExist:
+        return None
 
     if modality.modality_type(season_id) is None:
         # if the modality type is not defined for the given season, we cannot build the ranking projection
@@ -301,12 +336,17 @@ def rebuild_modality_ranking_projection(season_id: int, modality_id: UUID):
     return projection
 
 
-@transaction.atomic
+@transaction.atomic(savepoint=False)
 def rebuild_nucleo_projection(nucleo_id: UUID):
-    nucleo = get_nucleus_by_id(nucleo_id)
+    from apps.nucleus.models import Nucleus
 
     # delete existing projection for the nucleo before creating a new one
-    NucleoDetailView.objects.filter(nucleo_id=nucleo.id).delete()
+    NucleoDetailView.objects.filter(nucleo_id=nucleo_id).delete()
+
+    try:
+        nucleo = get_nucleus_by_id(nucleo_id)
+    except Nucleus.DoesNotExist:
+        return None
 
     # create a new projection for the nucleo
     projection = NucleoDetailView.objects.create(
@@ -319,12 +359,17 @@ def rebuild_nucleo_projection(nucleo_id: UUID):
     return projection
 
 
-@transaction.atomic
+@transaction.atomic(savepoint=False)
 def rebuild_season_projection(season_id: int):
-    season = get_season_by_id(season_id)
+    from apps.seasons.models import Season
 
     # delete existing projection for the season before creating a new one
-    SeasonDetailView.objects.filter(season_id=season.id).delete()
+    SeasonDetailView.objects.filter(season_id=season_id).delete()
+
+    try:
+        season = get_season_by_id(season_id)
+    except Season.DoesNotExist:
+        return None
 
     # create a new projection for the season
     projection = SeasonDetailView.objects.create(
@@ -336,12 +381,17 @@ def rebuild_season_projection(season_id: int):
     return projection
 
 
-@transaction.atomic
+@transaction.atomic(savepoint=False)
 def rebuild_regulation_projection(regulation_id: UUID):
-    regulation = get_regulation_by_id(regulation_id)
+    from apps.regulations.models import Regulation
 
     # delete existing projection for the regulation before creating a new one
-    RegulationDetailView.objects.filter(id=regulation.id).delete()
+    RegulationDetailView.objects.filter(id=regulation_id).delete()
+
+    try:
+        regulation = get_regulation_by_id(regulation_id)
+    except Regulation.DoesNotExist:
+        return None
 
     # create a new projection for the regulation
     projection = RegulationDetailView.objects.create(

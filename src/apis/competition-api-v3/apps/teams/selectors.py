@@ -4,7 +4,13 @@ from .models import Team
 
 
 def get_teams_table(
-    season_id=None, modality_id=None, course_id=None, admin_id=None
+    season_id=None,
+    modality_id=None,
+    course_id=None,
+    admin_id=None,
+    team_id=None,
+    nucleus_id=None,
+    athlete_id=None,
 ) -> QuerySet[Team]:
     queryset = Team.objects.all()
 
@@ -19,6 +25,15 @@ def get_teams_table(
 
     if admin_id is not None:
         queryset = queryset.filter(course__nucleus__admins__id=admin_id).distinct()
+
+    if team_id is not None:
+        queryset = queryset.filter(id=team_id)
+
+    if nucleus_id is not None:
+        queryset = queryset.filter(course__nucleus_id=nucleus_id)
+
+    if athlete_id is not None:
+        queryset = queryset.filter(athletes__id=athlete_id)
 
     queryset = queryset.select_related("modality", "course__nucleus")
 

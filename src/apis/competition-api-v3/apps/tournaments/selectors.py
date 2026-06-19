@@ -12,6 +12,8 @@ def get_tournaments_table(
     season_id=None,
     modality_type_id=None,
     tournament_id=None,
+    team_id: UUID = None,
+    athlete_id: UUID = None,
     admin_id: UUID = None,
 ) -> QuerySet[Tournament]:
 
@@ -37,6 +39,12 @@ def get_tournaments_table(
             Q(competitors__athlete__course__nucleus__admins__id=admin_id)
             | Q(competitors__team__course__nucleus__admins__id=admin_id)
         ).distinct()
+
+    if team_id is not None:
+        queryset = queryset.filter(competitors__team__id=team_id).distinct()
+
+    if athlete_id is not None:
+        queryset = queryset.filter(competitors__athlete__id=athlete_id).distinct()
 
     queryset = queryset.select_related("modality", "season", "scoring_format")
 

@@ -5,8 +5,13 @@ from django.db.models.functions import JSONObject
 from .models import Modality, SeasonModality
 
 
-def get_modalities_table(season_id: int = None) -> QuerySet[Modality]:
+def get_modalities_table(
+    season_id: int = None, modality_id: int = None
+) -> QuerySet[Modality]:
     queryset = Modality.objects.all()
+
+    if modality_id:
+        queryset = queryset.filter(id=modality_id)
 
     if season_id:
         season_modality_qs = SeasonModality.objects.filter(

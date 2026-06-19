@@ -46,6 +46,7 @@ def get_participants_for_match(
 
 
 def get_matches_table(
+    match_id: UUID = None,
     status: str = None,
     modality_id: str = None,
     course_id: str = None,
@@ -54,6 +55,8 @@ def get_matches_table(
     admin_id: UUID = None,
     date_from: str = None,
     date_to: str = None,
+    athlete_id: str = None,
+    team_id: str = None,
     *,
     context_admin_id: UUID = None,
     include_lineups: bool = False,
@@ -62,6 +65,9 @@ def get_matches_table(
     queryset = Match.objects.all()
 
     # filters
+    if match_id is not None:
+        queryset = queryset.filter(id=match_id)
+
     if status is not None:
         queryset = queryset.filter(status=status)
 
@@ -91,6 +97,14 @@ def get_matches_table(
             Q(participants__competitor__athlete__course__nucleus__admins__id=admin_id)
             | Q(participants__competitor__team__course__nucleus__admins__id=admin_id)
         ).distinct()
+
+    if athlete_id is not None:
+        queryset = queryset.filter(
+            participants__competitor__athlete_id=athlete_id
+        ).distinct()
+
+    if team_id is not None:
+        queryset = queryset.filter(participants__competitor__team_id=team_id).distinct()
 
     queryset = queryset.select_related("tournament").prefetch_related(
         Prefetch(

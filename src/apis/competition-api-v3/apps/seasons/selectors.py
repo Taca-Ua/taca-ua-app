@@ -27,8 +27,12 @@ class SeasonSummaryDTO:
     members_summary: dict
 
 
-def get_seasons_table() -> QuerySet[Season]:
-    return Season.objects.all()
+def get_seasons_table(season_id: int = None) -> QuerySet[Season]:
+    queryset = Season.objects.all()
+    if season_id is not None:
+        queryset = queryset.filter(id=season_id)
+
+    return queryset
 
 
 def get_season_by_id(season_id: int) -> Season:

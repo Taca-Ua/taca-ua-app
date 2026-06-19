@@ -290,3 +290,48 @@ class LeagueFormat(BaseFormat):
 
         self._emit_standings_updated_event()
         return self.get_details()
+
+    def delete_result(self, match: Match) -> dict:
+        results_map = self._calculate_match_result(match)
+
+        if results_map is None:
+            return self.get_details()
+
+        total_points_for_match = sum(
+            participant.score
+            for participant in match.participants.all()
+            if participant.score is not None
+        )
+        for participant in match.participants.all():
+            competitor = participant.competitor
+            result = results_map.get(competitor.id)
+            if result is None:
+                raise ValueError(
+                    f"No result calculated for competitor {competitor.id} in match {match.id}"
+                )
+
+            standing = LeagueStanding.objects.get(competitor=competitor)
+
+            if result == "winner":
+                standing.points -= self.tournament.league_settings.win_points
+                standing.wins -= 1
+            elif result == "loser":
+                standing.points -= self.tournament.league_settings.loss_points
+                standing.losses -= 1
+            elif result == "draw":
+                standing.points -= self.tournament.league_settings.draw_points
+                standing.draws -= 1
+
+            standing.played -= 1
+            standing.points_for -= (
+                participant.score if participant.score is not None else 0
+            )
+            standing.points_against -= (
+                total_points_for_match - participant.score
+                if participant.score is not None
+                else 0
+            )
+            standing.save()
+
+        self._emit_standings_updated_event()
+        return self.get_details()

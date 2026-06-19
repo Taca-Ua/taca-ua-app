@@ -192,7 +192,7 @@ class NucleoDetailView(models.Model):
     nucleo_id = models.UUIDField(primary_key=True)
     name = models.CharField(max_length=255)
     abbreviation = models.CharField(max_length=255)
-    logo_url = models.CharField(max_length=255)
+    logo_url = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
         indexes = [
