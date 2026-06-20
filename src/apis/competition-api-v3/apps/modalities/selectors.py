@@ -25,7 +25,7 @@ def get_modalities_table(
                 )
             ),
             # cannot anotate the whole modality type object, so we annotate a JSON object with the relevant fields
-            modality_type=Subquery(
+            modality_type_data=Subquery(
                 season_modality_qs.annotate(
                     modality_type_json=JSONObject(
                         id="modality_type__id",

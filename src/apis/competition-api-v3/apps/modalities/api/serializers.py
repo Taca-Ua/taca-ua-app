@@ -13,7 +13,9 @@ class ModalityListSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=255)
 
     belongs_to_season = serializers.BooleanField(required=False)
-    modality_type = ModalityModalityTypeSerializer(required=False)
+    modality_type = ModalityModalityTypeSerializer(
+        required=False, source="modality_type_data"
+    )
 
 
 class ModalityDetailSerializer(ModalityListSerializer):
