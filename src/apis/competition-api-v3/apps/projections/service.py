@@ -297,7 +297,9 @@ def rebuild_modality_ranking_projection(season_id: int, modality_id: UUID):
     from apps.modalities.models import Modality
 
     # delete existing projection for the modality ranking before creating a new one
-    ModalityRankingView.objects.filter(season_id=season_id).delete()
+    ModalityRankingView.objects.filter(
+        season_id=season_id, modality_id=modality_id
+    ).delete()
 
     # get the modality data
     try:
