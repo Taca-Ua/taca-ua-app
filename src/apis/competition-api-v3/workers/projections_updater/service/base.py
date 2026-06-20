@@ -1,6 +1,6 @@
 import logging
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 
 from ..models import ProjectionUpdateRequest, ProjectionUpdateRequestTypes
 from .rebuild_functions import (
@@ -33,21 +33,40 @@ PROJECTION_TYPE_HANDLERS: dict[str, callable] = {
 
 
 @transaction.atomic
-def request_projection_update(projection_type: str, payload: dict) -> None:
+def request_projection_update(
+    projection_type: str, payload: dict, key: str = None
+) -> None:
     """Create a new ProjectionUpdateRequest instance and save it to the database."""
 
-    request = ProjectionUpdateRequest(
-        projection_type=projection_type, payload=payload, processed=False
-    )
-    request.save()
+    # if no key is provided, generate one based on the payload
+    if key is None:
+        key = "_".join(f"{k}_{v}" for k, v in payload.items())
+
+    try:
+        ProjectionUpdateRequest.objects.create(
+            projection_type=projection_type,
+            key=key,
+            payload=payload,
+            status=ProjectionUpdateRequest.Status.PENDING,
+        )
+    except IntegrityError:
+        pass
 
 
-@transaction.atomic
 def handle_pending_projection_requests() -> None:
     """Handle pending projection update requests and update the projections accordingly."""
 
     # get all pending projection update requests
-    pending_requests = ProjectionUpdateRequest.objects.filter(processed=False)
+    with transaction.atomic():
+        pending_requests = list(
+            ProjectionUpdateRequest.objects.filter(
+                status=ProjectionUpdateRequest.Status.PENDING
+            ).select_for_update(skip_locked=True)[:200]
+        )
+
+        ProjectionUpdateRequest.objects.filter(
+            id__in=[request.id for request in pending_requests]
+        ).update(status=ProjectionUpdateRequest.Status.PROCESSING)
 
     for request in pending_requests:
         try:
@@ -61,9 +80,10 @@ def handle_pending_projection_requests() -> None:
                 )
 
             # mark the request as processed
-            request.processed = True
-            request.save()
+            request.status = ProjectionUpdateRequest.Status.PROCESSED
         except Exception as e:
+            request.status = ProjectionUpdateRequest.Status.PENDING
             logger.error(
                 f"Error processing projection update request {request.id}: {e}"
             )
+        request.save()

@@ -15,10 +15,24 @@ class ProjectionUpdateRequestTypes(models.TextChoices):
 
 
 class ProjectionUpdateRequest(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        PROCESSING = "processing", "Processing"
+        PROCESSED = "processed", "Processed"
 
     projection_type = models.CharField(
         max_length=255, choices=ProjectionUpdateRequestTypes.choices
     )
     payload = models.JSONField()
+    key = models.CharField(max_length=255, null=True, blank=True)
 
-    processed = models.BooleanField(default=False)
+    status = models.CharField(max_length=20, choices=Status.choices)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["projection_type", "key"],
+                condition=models.Q(status__in=["pending", "processing"]),
+                name="unique_projection_update_request",
+            )
+        ]
