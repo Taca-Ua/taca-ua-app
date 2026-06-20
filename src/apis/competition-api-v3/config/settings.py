@@ -228,7 +228,7 @@ LOGGING = {
     },
     "loggers": {
         "django": {
-            "handlers": ["loki", "console"],
+            "handlers": ["loki"],
             "level": LOG_LEVEL,
             "propagate": False,
         },

@@ -230,13 +230,18 @@ def update_seasons_projections(season_id: str = None) -> None:
 
 
 @transaction.atomic
-def update_tournaments_projections(tournament_id: str = None) -> None:
+def update_tournaments_projections(
+    tournament_id: str = None, modality_id: str = None
+) -> None:
     """Update the projections for the tournaments based on the provided parameters."""
     args = {
         "tournament_id": tournament_id,
+        "modality_id": modality_id,
     }
 
-    tournaments = get_tournaments_table(tournament_id=tournament_id)
+    tournaments = get_tournaments_table(
+        tournament_id=tournament_id, modality_id=modality_id
+    )
 
     if tournament_id is not None and tournaments.count() == 0:
         # tournament was deleted

@@ -30,12 +30,20 @@ def handle_course_tournament_position_save(
 @receiver([post_delete, post_save], sender=Course)
 def handle_course_delete(sender, instance: Course, **kwargs):
     # Trigger the projection update for the course and nucleus
-    request_projection_update(ProjectionUpdateRequestTypes.GENERAL_RANKING, {})
-    request_projection_update(ProjectionUpdateRequestTypes.MODALITY_RANKING, {})
+    request_projection_update(
+        ProjectionUpdateRequestTypes.GENERAL_RANKING, {}, key="season_all"
+    )
+    request_projection_update(
+        ProjectionUpdateRequestTypes.MODALITY_RANKING, {}, key="season_all_modality_all"
+    )
 
 
 @receiver([post_delete, post_save], sender=Nucleus)
 def handle_nucleus_delete(sender, instance: Nucleus, **kwargs):
     # Trigger the projection update for the course and nucleus
-    request_projection_update(ProjectionUpdateRequestTypes.GENERAL_RANKING, {})
-    request_projection_update(ProjectionUpdateRequestTypes.MODALITY_RANKING, {})
+    request_projection_update(
+        ProjectionUpdateRequestTypes.GENERAL_RANKING, {}, key="season_all"
+    )
+    request_projection_update(
+        ProjectionUpdateRequestTypes.MODALITY_RANKING, {}, key="season_all_modality_all"
+    )
