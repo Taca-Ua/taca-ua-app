@@ -173,35 +173,6 @@ services:
       keycloak:
         condition: service_healthy
 
-  competition-api-v3-outbox-publisher:
-    build:
-      context: .
-      dockerfile: src/apis/competition-api-v3/Dockerfile.dev
-    volumes:
-      - ./src/shared:/tmp
-      - ./src/apis/competition-api-v3:/app
-    environment:
-      - PYTHONUNBUFFERED=1
-      - LOKI_LOGGING_URL=${LOKI_LOGGING_URL:-http://loki:3100/loki/api/v1/push}
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-
-      - POSTGRES_DB=${POSTGRES_DB:-taca_ua}
-      - POSTGRES_USER=${POSTGRES_USER:-user}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-
-      - RABBITMQ_HOST=rabbitmq
-      - RABBITMQ_PORT=5672
-      - RABBITMQ_USER=${RABBITMQ_USER:-guest}
-      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
-    command: python manage.py publish_outbox --settings=config.settings_events
-    depends_on:
-      competition-api-v3:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-
   competition-api-v3-rankings-recomputation-worker:
     build:
       context: .
@@ -221,6 +192,33 @@ services:
       - POSTGRES_PORT=5432
 
     command: python manage.py rankings_recomputation_worker --settings=config.settings_worker_ranking_updater
+    depends_on:
+      competition-api-v3:
+        condition: service_healthy
+      loki:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+
+  competition-api-v3-projections-updater-worker:
+    build:
+      context: .
+      dockerfile: src/apis/competition-api-v3/Dockerfile.dev
+    volumes:
+      - ./src/shared:/tmp
+      - ./src/apis/competition-api-v3:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOKI_LOGGING_URL=${LOKI_LOGGING_URL:-http://loki:3100/loki/api/v1/push}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+
+      - POSTGRES_DB=${POSTGRES_DB:-taca_ua}
+      - POSTGRES_USER=${POSTGRES_USER:-user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+
+    command: python manage.py projection_updater_worker --settings=config.settings_worker_projections_updater
     depends_on:
       competition-api-v3:
         condition: service_healthy
@@ -254,30 +252,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-
-  read-model-updater:
-    build:
-      context: .
-      dockerfile: src/microservices/read-model-updater/Dockerfile.dev
-    volumes:
-      - ./src/shared:/tmp
-      - ./src/microservices/read-model-updater:/app
-    environment:
-      - RABBITMQ_HOST=rabbitmq
-      - RABBITMQ_PORT=5672
-      - RABBITMQ_USER=${RABBITMQ_USER:-guest}
-      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
-      - PYTHONUNBUFFERED=1
-      - DATABASE_URL=${DATABASE_URL:-postgresql://user:password@postgres:5432/taca_ua}
-    ports:
-      - "8004:8000"
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      loki:
-        condition: service_started
-      postgres:
-        condition: service_healthy
 
 # Frontend Services
   admin-panel:
