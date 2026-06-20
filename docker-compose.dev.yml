@@ -132,11 +132,11 @@ services:
       - ./src/shared:/tmp
       - ./src/apis/competition-api-v3:/app
     environment:
-      - PYTHONUNBUFFERED=1
-      - LOKI_LOGGING_URL=${LOKI_LOGGING_URL:-http://loki:3100/loki/api/v1/push}
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - API_ENDPOINT_PREFIX=${API_ENDPOINT_PREFIX:-api/admin}
       - DEFAULT_SEASON_NAME=${DEFAULT_SEASON_NAME:-Default Season}
+
+      - LOKI_LOGGING_URL=${LOKI_LOGGING_URL:-http://loki:3100/loki/api/v1/push}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
 
       - POSTGRES_DB=${POSTGRES_DB:-taca_ua}
       - POSTGRES_USER=${POSTGRES_USER:-user}
@@ -162,8 +162,6 @@ services:
       retries: 5
       start_period: 30s
     depends_on:
-      rabbitmq:
-        condition: service_healthy
       loki:
         condition: service_started
       postgres:
@@ -181,7 +179,6 @@ services:
       - ./src/shared:/tmp
       - ./src/apis/competition-api-v3:/app
     environment:
-      - PYTHONUNBUFFERED=1
       - LOKI_LOGGING_URL=${LOKI_LOGGING_URL:-http://loki:3100/loki/api/v1/push}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
 
@@ -208,7 +205,6 @@ services:
       - ./src/shared:/tmp
       - ./src/apis/competition-api-v3:/app
     environment:
-      - PYTHONUNBUFFERED=1
       - LOKI_LOGGING_URL=${LOKI_LOGGING_URL:-http://loki:3100/loki/api/v1/push}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
 
@@ -235,10 +231,6 @@ services:
       - ./src/shared:/tmp
       - ./src/apis/public-api:/app
     environment:
-      - RABBITMQ_HOST=rabbitmq
-      - RABBITMQ_PORT=5672
-      - RABBITMQ_USER=${RABBITMQ_USER:-guest}
-      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - PYTHONUNBUFFERED=1
       - DATABASE_URL=${DATABASE_URL:-postgresql://user:password@postgres:5432/taca_ua}
       - REDIS_HOST=redis

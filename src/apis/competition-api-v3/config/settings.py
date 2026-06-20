@@ -207,10 +207,9 @@ LOGGING = {
             "formatter": "json",
             "filters": ["ignore_health_metrics", "ignore_health_metrics_access"],
         },
-        "uvicorn_access": {
+        "console_simple": {
             "class": "logging.StreamHandler",
-            "formatter": "verbose",
-            "filters": ["ignore_health_metrics_access"],
+            "filters": ["ignore_health_metrics", "ignore_health_metrics_access"],
         },
     },
     "formatters": {
@@ -219,15 +218,12 @@ LOGGING = {
             "fmt": "%(asctime)s %(levelname)s %(name)s %(message)s",
         },
         "verbose": {
-            "format": "[%(asctime)s] [%(levelname)s] %(name)s: %(message)s",
+            "format": "[%(asctime)s] [%(levelname)s] %(message)s",
             "datefmt": "%Y-%m-%d %H:%M:%S",
         },
     },
     "root": {
-        "handlers": [
-            # "console",
-            "loki"
-        ],
+        "handlers": ["console", "loki"],
         "level": LOG_LEVEL,
     },
     "loggers": {
@@ -237,7 +233,17 @@ LOGGING = {
             "propagate": False,
         },
         "uvicorn.access": {
-            "handlers": ["loki", "uvicorn_access"],
+            "handlers": ["loki", "console"],
+            "level": LOG_LEVEL,
+            "propagate": False,
+        },
+        "gunicorn.error": {
+            "handlers": ["loki", "console_simple"],
+            "level": LOG_LEVEL,
+            "propagate": False,
+        },
+        "gunicorn.access": {
+            "handlers": ["loki", "console_simple"],
             "level": LOG_LEVEL,
             "propagate": False,
         },

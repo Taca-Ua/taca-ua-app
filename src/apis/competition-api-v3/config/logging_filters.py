@@ -19,9 +19,7 @@ class IgnoreHealthMetricsAccessFilter(logging.Filter):
 
     def filter(self, record):
         try:
-            # uvicorn.access args:
-            # (client_addr, method, path, http_version, status_code)
-            path = record.args[2]
+            path = record.args["U"]
             return path not in self.EXCLUDED_PATHS
         except Exception:
             return True

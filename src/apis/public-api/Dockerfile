@@ -13,8 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # 1. PRE-STAGING: Copiar as pastas de pacotes partilhados
-COPY src/shared/contracts /tmp/contracts
-COPY src/shared/platform /tmp/platform
+COPY src/shared/platform/taca-logging /tmp/platform/taca-logging
 
 # 2. Instalar dependências do requirements
 COPY src/apis/public-api/requirements.txt .

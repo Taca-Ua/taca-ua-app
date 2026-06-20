@@ -421,8 +421,8 @@ def step3():
         dst.write(src.read())
 
 
-def main():
-    succes = step1(year="25_26")
+def main(year: str = "25_26"):
+    succes = step1(year=year)
     if not succes:
         print("Erro ao processar config_cursos.json")
         return

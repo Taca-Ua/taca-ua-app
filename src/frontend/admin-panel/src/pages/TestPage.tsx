@@ -1,7 +1,4 @@
 import { useEffect, useState } from "react";
-import Button from "../components/utils/Button";
-import { useModal } from "../contexts/ModalContext";
-import MatchesCalendarComponent from "../components/matches/MatchesCalendarComponent";
 import LineupsSection from "../components/matches/MatchLineupComponent";
 import { type MatchDetail, matchesApi } from "../api/matches";
 
