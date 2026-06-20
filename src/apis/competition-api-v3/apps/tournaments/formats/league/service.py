@@ -2,45 +2,12 @@ import uuid
 from typing import Literal
 
 from django.db.models import F
-from infra.events.utils import emit_schema_event
-from taca_events.pydantic_schemas.tournaments import (
-    TournamentLeagueStandingsUpdatedData,
-    TournamentLeagueStandingsUpdatedV1,
-)
 
 from ..base import BaseFormat, Match
 from .models import DrawRule, LeagueSettings, LeagueStanding
 
 
 class LeagueFormat(BaseFormat):
-
-    # helper methods
-    def _emit_standings_updated_event(self):
-        # emit event to OutboxTable
-        standings = self.get_details()["standings"]
-
-        emit_schema_event(
-            event=TournamentLeagueStandingsUpdatedV1(
-                data=TournamentLeagueStandingsUpdatedData(
-                    tournament_id=self.tournament.id,
-                    standings=[
-                        TournamentLeagueStandingsUpdatedData.Entry(
-                            competitor_id=s["competitor_id"],
-                            points=s["format_meta"]["points"],
-                            played=s["format_meta"]["played"],
-                            wins=s["format_meta"]["wins"],
-                            draws=s["format_meta"]["draws"],
-                            losses=s["format_meta"]["losses"],
-                            points_for=s["format_meta"]["points_for"],
-                            points_against=s["format_meta"]["points_against"],
-                            position=s["position"],
-                        )
-                        for s in standings
-                    ],
-                )
-            ),
-            aggregate_id=self.tournament.id,
-        )
 
     def _recalculate_standings_league_points(self):
         """Recalculate points for all standings based on current league settings. This should be called after any change in league settings to ensure standings are up to date."""
@@ -55,7 +22,6 @@ class LeagueFormat(BaseFormat):
             )
             standing.save()
 
-        self._emit_standings_updated_event()
         return
 
     def _calculate_match_result(
@@ -288,7 +254,6 @@ class LeagueFormat(BaseFormat):
             )
             standing.save()
 
-        self._emit_standings_updated_event()
         return self.get_details()
 
     def delete_result(self, match: Match) -> dict:
@@ -333,5 +298,4 @@ class LeagueFormat(BaseFormat):
             )
             standing.save()
 
-        self._emit_standings_updated_event()
         return self.get_details()

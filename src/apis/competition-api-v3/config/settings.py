@@ -63,7 +63,6 @@ INSTALLED_APPS = [
     "apps.projections",
     "workers.projections_updater",
     "workers.ranking_updater",
-    "infra.events",
 ]
 
 MIDDLEWARE = [

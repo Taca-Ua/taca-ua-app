@@ -6,9 +6,6 @@ from apps.modality_types.service import create_modality_type
 from apps.teams.service import create_team
 from django.db import transaction
 from django.utils import timezone
-from infra.events.utils import emit_schema_event
-from taca_events.pydantic_schemas import SeasonCreatedV1
-from taca_events.pydantic_schemas.seasons import SeasonCreatedData
 
 from .models import Season
 from .selectors import get_current_season
@@ -83,14 +80,6 @@ def create_season(name: str, admin_id: UUID) -> Season:
     # create new season
     new_season = Season.objects.create(name=name, is_current=True)
 
-    # emit event to OutboxTable
-    emit_schema_event(
-        event=SeasonCreatedV1(
-            data=SeasonCreatedData(season_id=new_season.id, name=new_season.name)
-        ),
-        aggregate_id=new_season.id,
-    )
-
     # new season will inherit modality types from previous season
     modality_types_map = _copy_modality_types_from_previous_season(
         previous_season=current_season, new_season=new_season
@@ -128,12 +117,4 @@ def create_initial_season(name: str):
     # create the initial season
     season = Season.objects.create(name=name, is_current=True)
 
-    # emit event to OutboxTable
-    emit_schema_event(
-        event=SeasonCreatedV1(
-            data=SeasonCreatedData(season_id=season.id, name=season.name)
-        ),
-        aggregate_id=season.id,
-    )
-
-    return
+    return season

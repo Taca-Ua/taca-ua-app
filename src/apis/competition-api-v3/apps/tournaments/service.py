@@ -7,24 +7,6 @@ from apps.modality_types.models import ModalityType, ModalityTypeModes
 from apps.ranking.service import submit_tournament_results
 from apps.seasons.selectors import get_current_season
 from django.db import transaction
-from infra.events.utils import emit_schema_event
-from taca_events.pydantic_schemas import (
-    TournamentCompetitorAddedV1,
-    TournamentCompetitorDeletedV1,
-    TournamentCreatedV1,
-    TournamentDeletedV1,
-    TournamentFinishedV1,
-    TournamentUpdatedV1,
-)
-from taca_events.pydantic_schemas.tournaments import (
-    RankingEntryData,
-    TournamentCompetitorAddedData,
-    TournamentCompetitorDeletedData,
-    TournamentCreatedData,
-    TournamentDeletedData,
-    TournamentFinishedData,
-    TournamentUpdatedData,
-)
 
 from .formats import FormatRegistry
 from .models import (
@@ -94,23 +76,6 @@ def create_tournament(
         )
     format_engine.create(format_data or {})
 
-    # emit event to OutboxTable
-    emit_schema_event(
-        event=TournamentCreatedV1(
-            data=TournamentCreatedData(
-                tournament_id=tournament.id,
-                modality_id=tournament.modality_id,
-                name=tournament.name,
-                start_date=tournament.start_date.isoformat(),
-                status=tournament.status,
-                scoring_format_id=tournament.scoring_format_id,
-                season_id=tournament.season_id,
-                format_type=tournament.tournament_format,
-            )
-        ),
-        aggregate_id=tournament.id,
-    )
-
     return tournament
 
 
@@ -134,37 +99,12 @@ def update_tournament(
 
     tournament.save()
 
-    # emit event to OutboxTable
-    emit_schema_event(
-        event=TournamentUpdatedV1(
-            data=TournamentUpdatedData(
-                tournament_id=tournament.id,
-                name=tournament.name,
-                start_date=(
-                    tournament.start_date.isoformat() if tournament.start_date else None
-                ),
-                status=tournament.status,
-                scoring_format_id=tournament.scoring_format_id,
-            )
-        ),
-        aggregate_id=tournament.id,
-    )
     return tournament
 
 
 @transaction.atomic
 def delete_tournament(tournament_id: UUID) -> None:
     tournament = Tournament.objects.get(id=tournament_id)
-
-    # emit event to OutboxTable
-    emit_schema_event(
-        event=TournamentDeletedV1(
-            data=TournamentDeletedData(
-                tournament_id=tournament.id,
-            )
-        ),
-        aggregate_id=tournament.id,
-    )
 
     tournament.delete()
 
@@ -180,7 +120,7 @@ def add_competitors_to_tournament(
         raise ValueError("Cannot add competitors to a finished tournament.")
 
     for competitor_id in competitor_ids:
-        tourn_competitor = TournamentCompetitor.objects.create(
+        TournamentCompetitor.objects.create(
             tournament=tournament,
             team_id=(
                 competitor_id
@@ -192,24 +132,6 @@ def add_competitors_to_tournament(
                 if tournament.competitor_type == TournamentCompetitorType.INDIVIDUAL
                 else None
             ),
-        )
-
-        # emit event to OutboxTable
-        emit_schema_event(
-            event=TournamentCompetitorAddedV1(
-                data=TournamentCompetitorAddedData(
-                    tournament_id=tournament.id,
-                    competitor_id=tourn_competitor.id,
-                    competitor_type=tournament.competitor_type,
-                    competitor_entity_id=tourn_competitor.entity_id,
-                    competitor_course_id=(
-                        tourn_competitor.entity.course_id
-                        if tourn_competitor.entity
-                        else None
-                    ),
-                )
-            ),
-            aggregate_id=tournament.id,
         )
 
     return tournament
@@ -227,19 +149,6 @@ def remove_competitors_from_tournament(
     competitors_to_remove = TournamentCompetitor.objects.filter(
         tournament=tournament, id__in=competitor_ids
     )
-
-    # emit event to OutboxTable
-    for competitor in competitors_to_remove:
-        emit_schema_event(
-            event=TournamentCompetitorDeletedV1(
-                data=TournamentCompetitorDeletedData(
-                    tournament_id=tournament.id,
-                    competitor_id=competitor.id,
-                    competitor_entity_id=competitor.entity_id,
-                )
-            ),
-            aggregate_id=tournament.id,
-        )
 
     competitors_to_remove.delete()
     return tournament
@@ -263,23 +172,6 @@ def finish_tournament(tournament_id: UUID, ranking_entries: list) -> Tournament:
 
     tournament.status = TournamentStatus.FINISHED
     tournament.save()
-
-    # emit event to OutboxTable
-    emit_schema_event(
-        event=TournamentFinishedV1(
-            data=TournamentFinishedData(
-                tournament_id=tournament.id,
-                ranking_entries=[
-                    RankingEntryData(
-                        competitor_id=result.competitor.id,
-                        position=result.position,
-                    )
-                    for result in results
-                ],
-            )
-        ),
-        aggregate_id=tournament.id,
-    )
 
     # submit tournament results to ranking service
     submit_tournament_results(tournament)

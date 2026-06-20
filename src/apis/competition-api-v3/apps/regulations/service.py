@@ -1,18 +1,7 @@
 from apps.seasons.selectors import get_current_season
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
-from infra.events.utils import emit_schema_event
 from shared.file_storage.minio_service import MinioService
-from taca_events.pydantic_schemas import (
-    RegulationCreatedV1,
-    RegulationDeletedV1,
-    RegulationUpdatedV1,
-)
-from taca_events.pydantic_schemas.regulations import (
-    RegulationCreatedData,
-    RegulationDeletedData,
-    RegulationUpdatedData,
-)
 
 from .models import Regulation
 
@@ -43,21 +32,6 @@ def create_regulation(
     regulation = Regulation.objects.create(
         file_url=file_url, title=title, description=description, season_id=season_id
     )
-
-    # emit event to OutboxTable
-    emit_schema_event(
-        event=RegulationCreatedV1(
-            data=RegulationCreatedData(
-                regulation_id=regulation.id,
-                title=regulation.title,
-                description=regulation.description,
-                file_url=regulation.file_url,
-                season_id=regulation.season.id,
-            )
-        ),
-        aggregate_id=regulation.id,
-    )
-
     return regulation
 
 
@@ -96,19 +70,6 @@ def update_regulation(
 
     regulation.save()
 
-    # emit event to OutboxTable
-    emit_schema_event(
-        event=RegulationUpdatedV1(
-            data=RegulationUpdatedData(
-                regulation_id=regulation.id,
-                title=regulation.title,
-                description=regulation.description,
-                file_url=regulation.file_url,
-            )
-        ),
-        aggregate_id=regulation.id,
-    )
-
     return regulation
 
 
@@ -124,14 +85,6 @@ def delete_regulation(regulation_id: str) -> None:
         Regulation.DoesNotExist: If the regulation with the specified ID does not exist.
     """
     regulation = Regulation.objects.get(id=regulation_id)
-
-    # emit event to OutboxTable
-    emit_schema_event(
-        event=RegulationDeletedV1(
-            data=RegulationDeletedData(regulation_id=regulation.id)
-        ),
-        aggregate_id=regulation.id,
-    )
 
     file_storage_service.delete_file(regulation.file_url)
     regulation.delete()
