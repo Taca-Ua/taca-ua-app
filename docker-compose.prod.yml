@@ -195,6 +195,27 @@ services:
       postgres:
         condition: service_healthy
 
+  competition-api-v3-matches-state-updater-worker:
+    image: ghcr.io/${OWNER_LOWER}/competition-api-v3:latest
+    restart: always
+    environment:
+      - LOKI_LOGGING_URL=${LOKI_LOGGING_URL:-http://loki:3100/loki/api/v1/push}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+
+      - POSTGRES_DB=${POSTGRES_DB:-taca_ua}
+      - POSTGRES_USER=${POSTGRES_USER:-user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+    command: python manage.py matches_state_updater_worker --settings=config.settings_worker_matches_state_updater
+    depends_on:
+      competition-api-v3:
+        condition: service_healthy
+      loki:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+
   public-api:
     image: ghcr.io/${OWNER_LOWER}/public-api:latest
     restart: always

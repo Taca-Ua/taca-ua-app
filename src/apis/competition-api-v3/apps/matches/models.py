@@ -20,6 +20,12 @@ class MatchStatus(models.TextChoices):
 class Match(models.Model):
     """Represents a match within a tournament."""
 
+    class Status(models.TextChoices):
+        SCHEDULED = "scheduled", "Scheduled"
+        IN_PROGRESS = "in_progress", "In Progress"
+        FINISHED = "finished", "Finished"
+        CANCELED = "canceled", "Canceled"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     location = models.CharField(max_length=255, blank=True, null=True)

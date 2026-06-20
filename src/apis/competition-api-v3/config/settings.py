@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     "apps.projections",
     "workers.projections_updater",
     "workers.ranking_updater",
+    "workers.matches_state_updater",
 ]
 
 MIDDLEWARE = [
