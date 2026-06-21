@@ -25,7 +25,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
       POSTGRES_DB: taca_ua
     volumes:
-      - postgres_data_monolitic:/var/lib/postgresql
+      - postgres_data:/var/lib/postgresql
     ports:
       - "${POSTGRES_EXPOSED_PORT:-5432}:5432"
     healthcheck:
@@ -279,4 +279,4 @@ services:
 
 
 volumes:
-  postgres_data_monolitic:
+  postgres_data:
