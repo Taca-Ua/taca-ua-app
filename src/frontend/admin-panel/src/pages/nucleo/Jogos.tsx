@@ -59,7 +59,7 @@ const Jogos = () => {
       scheduled: 'Agendado',
       in_progress: 'Em curso',
       finished: 'Terminado',
-      cancelled: 'Cancelado',
+      canceled: 'Cancelado',
     };
     return statusMap[status] || status;
   };
@@ -85,7 +85,7 @@ const Jogos = () => {
                 <option value="scheduled">Agendado</option>
                 <option value="in_progress">Em curso</option>
                 <option value="finished">Terminado</option>
-                <option value="cancelled">Cancelado</option>
+                <option value="canceled">Cancelado</option>
               </select>
 
               <div className="flex gap-2">

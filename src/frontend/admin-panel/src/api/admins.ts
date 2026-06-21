@@ -4,8 +4,7 @@ export interface AdminListItem {
   id: string;
   username: string;
   email: string;
-  first_name: string;
-  last_name: string;
+  name: string;
   role: string;
   enabled: boolean;
 }
@@ -27,17 +26,14 @@ export interface AdminCreate {
   username: string;
   email: string;
   password: string;
-  first_name: string;
-  last_name: string;
+  name: string;
   role: string;
   nucleos: string[]; // Array of Nucleo IDs
 }
 
 export interface AdminUpdate {
   email?: string;
-  first_name?: string;
-  last_name?: string;
-  enabled?: boolean;
+  name?: string;
   nucleos?: string[]; // Array of Nucleo IDs
 }
 
@@ -48,8 +44,8 @@ export interface AdminPasswordChange {
 
 
 export const administratorsApi = {
-  async getAll(): Promise<AdminListItem[]> {
-    return apiClient.get<AdminListItem[]>('/admins/');
+  async getAll(include_inactive: boolean): Promise<AdminListItem[]> {
+    return apiClient.get<AdminListItem[]>('/admins/', { include_inactive });
   },
 
   async create(data: AdminCreate): Promise<AdminListItem> {

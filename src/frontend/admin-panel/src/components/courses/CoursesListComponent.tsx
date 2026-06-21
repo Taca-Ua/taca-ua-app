@@ -25,7 +25,7 @@ const CourseEntry = (course: CourseListItem) => {
         </div>
       </div>
       <div className="pt-2 border-t border-gray-100">
-        <span className="text-gray-500 text-xs uppercase tracking-wider">{course.nucleo.name}</span>
+        <span className="text-gray-500 text-xs uppercase tracking-wider">{course.nucleus.name}</span>
       </div>
     </div>
   )
@@ -43,7 +43,7 @@ const CoursesListComponent = ( {
 
   const filteredCourses = courses?.filter(c =>
     (normalizeText(c.name).includes(normalizeText(searchQuery)) || normalizeText(c.abbreviation).includes(normalizeText(searchQuery))) &&
-    (nucleoFilter === '' || c.nucleo.id === nucleoFilter)
+    (nucleoFilter === '' || c.nucleus.id === nucleoFilter)
   ) || []
   const sortedCourses = filteredCourses.sort((a, b) => a.name.localeCompare(b.name)).sort((a) => a.belongs_to_season? -1 : 1)
 
@@ -71,7 +71,7 @@ const CoursesListComponent = ( {
           className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
         >
           <option value="">Todos os núcleos</option>
-          {[... new Map(courses.map(c => [c.nucleo.id, c.nucleo])).values()]
+          {[... new Map(courses.map(c => [c.nucleus.id, c.nucleus])).values()]
           .sort((a, b) => a.name.localeCompare(b.name)).map(n => (
             <option key={`select-${n.id}`} value={n.id}>{n.name}</option>
           ))}

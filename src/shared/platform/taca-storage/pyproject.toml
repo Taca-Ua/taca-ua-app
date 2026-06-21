@@ -1,6 +1,0 @@
-# Minimal pyproject.toml for taca-storage
-# Using setup.py for configuration
-
-[build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"

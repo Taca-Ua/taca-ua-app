@@ -24,7 +24,7 @@ const StaffListBanner = ({ staff, onDelete }: { staff: StaffListItem; onDelete?:
             }}
           />
         )}>
-          <p className="font-medium text-teal-700">{staffState.full_name}</p>
+          <p className="font-medium text-teal-700">{staffState.name}</p>
 
           <div className="text-sm text-gray-600 mt-0.5">
             {staffState.staff_number
@@ -83,7 +83,7 @@ const StaffListComponent = ( {
     return (
       <ul className="divide-y divide-gray-100 max-h-[640px] overflow-y-auto">
         {staffList
-          .sort((a, b) => a.full_name.localeCompare(b.full_name))
+          .sort((a, b) => a.name.localeCompare(b.name))
           .map((staff) => (
             <StaffListBanner key={staff.id} staff={staff} onDelete={() => {
               setStaffList((prev) => prev ? prev.filter((s) => s.id !== staff.id) : null);

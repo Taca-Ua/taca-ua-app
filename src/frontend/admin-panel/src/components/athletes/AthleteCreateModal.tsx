@@ -50,18 +50,17 @@ const AthleteCreateModal = ( {
         }
 
         athletesApi.create({
-            full_name: memberName,
+            name: memberName,
             course_id: String(courseId),
             student_number: trimmedStudentNumber,
             is_member: true,
         }).then((newParticipant) => {
             if (onCreate) onCreate(newParticipant);
             notify('Atleta criado com sucesso!', 'success');
+            onClose();
         }).catch((err) => {
             console.error("Failed to create athlete:", err);
             notify('Erro ao criar atleta. Tente novamente.', 'error');
-        }).finally(() => {
-            onClose();
         });
     }
 

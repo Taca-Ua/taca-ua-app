@@ -1,0 +1,97 @@
+from typing import Optional
+from uuid import UUID
+
+from django.db import transaction
+from shared.auth.keycloak_service import keycloak_service_client
+
+from .models import Admin
+
+
+@transaction.atomic
+def create_admin(
+    username: str,
+    email: str,
+    password: str,
+    name: str,
+    role: str,
+    nucleos: list[UUID] | None = None,
+):
+    """Create a new admin user in Keycloak and the local database."""
+
+    name = name.title()  # Ensure the name is properly capitalized
+
+    # Create user in Keycloak
+    keycloak_user = keycloak_service_client.create_admin(
+        username=username,
+        email=email,
+        password=password,
+        first_name=name.split()[0] if name else None,
+        last_name=" ".join(name.split()[1:]) if name else None,
+        role=role,
+    )
+
+    # Create corresponding Admin record in the local database
+    admin = Admin.objects.create(
+        id=keycloak_user.id, username=username, name=name, email=email, role=role
+    )
+
+    if nucleos:
+        admin.nucleos.set(nucleos)
+
+    return admin
+
+
+@transaction.atomic
+def update_admin(
+    user_id: UUID,
+    email: Optional[str] = None,
+    name: Optional[str] = None,
+    nucleos: Optional[list[UUID]] = None,
+):
+    """Update an existing admin user's information in Keycloak and the local database."""
+
+    name = name.title() if name else None  # Ensure the name is properly capitalized
+
+    # Update user in Keycloak
+    keycloak_service_client.update_admin(
+        user_id=str(user_id),
+        email=email,
+        first_name=name.split()[0] if name else None,
+        last_name=" ".join(name.split()[1:]) if name else None,
+    )
+
+    # Update corresponding Admin record in the local database
+    admin = Admin.objects.get(id=user_id)
+    if email is not None:
+        admin.email = email
+
+    if name is not None:
+        admin.name = name.title()
+
+    if nucleos is not None:
+        admin.nucleos.set(nucleos)
+
+    return admin
+
+
+@transaction.atomic
+def delete_admin(user_id: UUID):
+    """Delete an admin user from Keycloak and the local database."""
+    # Deactivate user in Keycloak instead of deleting to preserve audit trails
+    keycloak_service_client.update_admin(user_id=str(user_id), enabled=False)
+
+    # Delete corresponding Admin record from the local database
+    admin = Admin.objects.get(id=user_id)
+    admin.active = False
+
+    admin.nucleos.clear()  # Clear associations with nucleos
+    admin.save()
+
+
+@transaction.atomic
+def change_admin_password(user_id: UUID, new_password: str):
+    """Change an admin user's password in Keycloak."""
+
+    keycloak_service_client.change_password(
+        user_id=str(user_id), new_password=new_password
+    )

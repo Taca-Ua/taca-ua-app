@@ -25,9 +25,8 @@ export interface TournamentDetail extends TournamentListItem {
     course_name: string;
   }[];
   scoring_format: {
+    id: string;
     name: string;
-    rank: string;
-    points: number[];
   };
   season: {
     id: number;
@@ -38,7 +37,11 @@ export interface TournamentDetail extends TournamentListItem {
     competitor_id: string;
   }[];
   rounds: number[];
-  format: string;
+  format?: string;
+  rank?: {
+    name: string;
+    points: number[];
+  };
   format_data?: Record<string, any>;
 }
 
@@ -115,12 +118,12 @@ export const tournamentsApi = {
     return apiClient.post<TournamentDetail>(`/tournaments/${id}/finish/`, data);
   },
 
-  async addCompetitors(id: string, competitors: TournamentCompetitorsAddEntry[]): Promise<TournamentDetail> {
-    return apiClient.put<TournamentDetail>(`/tournaments/${id}/competitors/add/`, competitors );
+  async addCompetitors(id: string, entity_ids: string[]): Promise<TournamentDetail> {
+    return apiClient.put<TournamentDetail>(`/tournaments/${id}/add-competitors/`, {entity_ids} );
   },
 
-  async removeCompetitors(id: string, competitors_ids: TournamentCompetitorsDelete): Promise<TournamentDetail> {
-    return apiClient.put<TournamentDetail>(`/tournaments/${id}/competitors/remove/`, competitors_ids);
+  async removeCompetitors(id: string, competitor_ids: string[]): Promise<TournamentDetail> {
+    return apiClient.put<TournamentDetail>(`/tournaments/${id}/remove-competitors/`, {competitor_ids});
   },
 
   async getRounds(id: string): Promise<number[]> {
@@ -131,7 +134,11 @@ export const tournamentsApi = {
     return apiClient.get<TournamentStandingsEntry[]>(`/tournaments/${id}/standings/`);
   },
 
-  async updateFormatMeta(id: string, format_meta: Record<string, any>): Promise<TournamentDetail> {
-    return apiClient.put<TournamentDetail>(`/tournaments/${id}/format-meta/`, { format_meta });
+  async getFormatDetails(id: string): Promise<Record<string, any>> {
+    return apiClient.get<Record<string, any>>(`/tournaments/${id}/format/`);
+  },
+
+  async updateFormatMeta(id: string, format_meta: Record<string, any>): Promise<Record<string, any>> {
+    return apiClient.put<Record<string, any>>(`/tournaments/${id}/format/`, format_meta);
   }
 };

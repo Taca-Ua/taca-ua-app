@@ -1,18 +1,24 @@
 import { apiClient } from './client';
 
-// Helper types
-export interface MatchLineup {
-  participant_id: string;
-  lineup: {
-    player_id: string;
-    player_name: string;
-    player_course: string;
-    is_starter: boolean;
-    jersey_number?: number;
-  }[];
+// Response types
+export interface MatchParticipantLineup {
+    id: string;
+    name: string;
+    team_id: string;
+    lineup: {
+        player_id: string;
+        player_name: string;
+        player_course: string;
+        is_starter: boolean;
+        jersey_number?: number;
+    }[];
+    staff?: {
+        id: string;
+        staff_id: string;
+        name: string;
+    }[];
 }
 
-// Response types
 export interface MatchListItem {
   id: string;
   tournament: {
@@ -20,17 +26,17 @@ export interface MatchListItem {
     name: string;
   };
   modality: string;
-  location: string;
+  location?: string;
   start_time: string;
   status: string;
   journey?: number;
   participants: {
     id: string;
-    entity_id: string;
     name: string;
     score?: number;
     position?: number;
     logo_url?: string;
+    can_edit: boolean;
   }[];
 };
 
@@ -41,8 +47,6 @@ export interface MatchDetail extends MatchListItem {
     author_name: string;
     can_edit: boolean;
   }[];
-  lineups: MatchLineup[];
-  staff_assignments: Record<string, { id: string; name: string }[]>; // participant_id -> list of staff members
 }
 
 export interface MatchPaginatedResponse {
@@ -65,8 +69,8 @@ export interface MatchListFilter {
 
 export interface MatchCreate {
   tournament_id: string;
-  location: string;
-  start_time: string;
+  location?: string;
+  start_time?: string;
   participants: string[];
   journey?: number;
   new_journey?: boolean;
@@ -92,12 +96,10 @@ export interface CommentCreate {
 }
 
 export interface LineupAssign {
-  participant: string;
   players: string[];
 }
 
 export interface LineupUpdate {
-  participant: string;
   players: {
     player_id: string;
     is_starter: boolean;
@@ -106,6 +108,7 @@ export interface LineupUpdate {
 }
 
 export const matchesApi = {
+  // Match management
   async getAll(params?: MatchListFilter): Promise<MatchPaginatedResponse> {
     return apiClient.get<MatchPaginatedResponse>('/matches/', params );
   },
@@ -130,14 +133,25 @@ export const matchesApi = {
     return apiClient.post<MatchDetail>(`/matches/${matchId}/results/`, data);
   },
 
-  async assignLineup(matchId: string, data: LineupAssign): Promise<MatchDetail> {
-    return apiClient.post<MatchDetail>(`/matches/${matchId}/lineups/`, data);
+
+  // Lineup management
+  async getLineup(matchId: string, participantId: string): Promise<MatchParticipantLineup> {
+    return apiClient.get<MatchParticipantLineup>(`/matches/${matchId}/lineups/${participantId}/`);
   },
 
-  async updateLineup(matchId: string, data: LineupUpdate): Promise<MatchDetail> {
-    return apiClient.put<MatchDetail>(`/matches/${matchId}/lineups/`, data);
+  async assignLineup(matchId: string, participantId: string, data: LineupAssign): Promise<MatchParticipantLineup> {
+    return apiClient.post<MatchParticipantLineup>(`/matches/${matchId}/lineups/${participantId}/`, data);
   },
 
+  async updateLineup(matchId: string, participantId: string, data: LineupUpdate): Promise<MatchParticipantLineup> {
+    return apiClient.put<MatchParticipantLineup>(`/matches/${matchId}/lineups/${participantId}/`, data);
+  },
+
+  async assignStaff(matchId: string, participantId: string, staffIds: string[]): Promise<MatchParticipantLineup> {
+    return apiClient.post<MatchParticipantLineup>(`/matches/${matchId}/participants/${participantId}/staff/`, { staff_ids: staffIds });
+  },
+
+  // Comments management
   async addComment(matchId: string, data: CommentCreate): Promise<MatchDetail> {
     return apiClient.post<MatchDetail>(`/matches/${matchId}/comments/`, data);
   },
@@ -146,15 +160,13 @@ export const matchesApi = {
     return apiClient.delete(`/matches/${matchId}/comments/${commentId}/`);
   },
 
+  // Match sheets
   async getMatchSheet(matchId: string): Promise<Blob> {
-    return apiClient.getBlob(`/matches/${matchId}/match-sheet/`);
+    return apiClient.getBlob(`/matches/${matchId}/sheet/`);
   },
 
   async getMatchTeamSheet(matchId: string, participantId: string): Promise<Blob> {
-    return apiClient.getBlob(`/matches/${matchId}/team-sheet/${participantId}/`);
+    return apiClient.getBlob(`/matches/${matchId}/participants/${participantId}/sheet/`);
   },
 
-  async assignStaff(matchId: string, participantId: string, staffIds: string[]): Promise<MatchDetail> {
-    return apiClient.post<MatchDetail>(`/matches/${matchId}/participants/${participantId}/staff/`, { staff_ids: staffIds });
-  }
 };

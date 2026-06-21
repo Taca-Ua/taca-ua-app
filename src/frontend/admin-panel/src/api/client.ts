@@ -1,6 +1,6 @@
 import keycloak from '../lib/keycloak';
 
-const API_BASE_URL = '/api2/admin';
+const API_BASE_URL = '/api/admin';
 
 interface ApiError {
   error: string;
@@ -71,7 +71,25 @@ export class ApiClient {
     return response.json();
   }
 
-  async post<T>(endpoint: string, data: unknown): Promise<T> {
+  async post<T>(endpoint: string, data: unknown, params?: unknown): Promise<T> {
+
+    // Similar to get(), we need to append params as query string if they exist
+    let fullUrl = `${this.baseUrl}${endpoint}`;
+    if (params && typeof params === 'object') {
+      const filteredParams = Object.entries(params as Record<string, unknown>)
+        .filter(([, value]) => value !== undefined)
+        .reduce<Record<string, string>>((acc, [key, value]) => {
+          acc[key] = String(value);
+          return acc;
+        }, {});
+
+      const searchParams = new URLSearchParams(filteredParams);
+      const query = searchParams.toString();
+        if (query) {
+        fullUrl += `?${query}`;
+      }
+    }
+
     const isFormData = data instanceof FormData;
 
     // Precisamos do await aqui para obter os headers de autenticação
@@ -86,7 +104,7 @@ export class ApiClient {
       headers['Content-Type'] = 'application/json';
     }
 
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+    const response = await fetch(fullUrl, {
       method: 'POST',
       headers,
       body: isFormData ? (data as FormData) : JSON.stringify(data),
@@ -103,7 +121,26 @@ export class ApiClient {
     return response.json();
   }
 
-  async put<T>(endpoint: string, data: unknown): Promise<T> {
+  async put<T>(endpoint: string, data: unknown, params?: unknown): Promise<T> {
+
+    // Similar to get(), we need to append params as query string if they exist
+    let fullUrl = `${this.baseUrl}${endpoint}`;
+    if (params && typeof params === 'object') {
+      const filteredParams = Object.entries(params as Record<string, unknown>)
+      .filter(([, value]) => value !== undefined)
+      .reduce<Record<string, string>>((acc, [key, value]) => {
+        acc[key] = String(value);
+        return acc;
+      }, {});
+
+      const searchParams = new URLSearchParams(filteredParams);
+      const query = searchParams.toString();
+
+      if (query) {
+      fullUrl += `?${query}`;
+      }
+    }
+
     const isFormData = data instanceof FormData;
 
     // Precisamos do await aqui para obter os headers de autenticação
@@ -116,7 +153,7 @@ export class ApiClient {
       headers['Content-Type'] = 'application/json';
     }
 
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+    const response = await fetch(fullUrl, {
       method: 'PUT',
       headers,
       body: isFormData ? (data as FormData) : JSON.stringify(data),

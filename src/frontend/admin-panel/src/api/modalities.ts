@@ -3,7 +3,7 @@ import { apiClient } from './client';
 export interface ModalityListItem {
   id: string;
   name: string;
-  belongs_to_season: boolean;
+  belongs_to_season?: boolean;
   modality_type?: {
     id: string;
     name: string;
@@ -11,7 +11,7 @@ export interface ModalityListItem {
 };
 
 export interface ModalityDetail extends ModalityListItem {
-  relevant_season_ids: number[];  // List of season IDs where this modality is relevant (active)
+  relevant_seasons_ids: number[];  // List of season IDs where this modality is relevant (active)
   regulation?: {
     id: string;
     name: string;
@@ -52,16 +52,16 @@ export const modalitiesApi = {
     return apiClient.get<ModalityDetail>(`/modalities/${modalityId}/`, { season_id });
   },
 
-  async update(modalityId: string, data: ModalityUpdate): Promise<ModalityDetail> {
-    return apiClient.put<ModalityDetail>(`/modalities/${modalityId}/`, data);
+  async update(modalityId: string, data: ModalityUpdate, season_id?: number): Promise<ModalityDetail> {
+    return apiClient.put<ModalityDetail>(`/modalities/${modalityId}/`, data, { season_id });
+  },
+
+  async addToSeason(modalityId: string, seasonId: number, modalityTypeId: string): Promise<ModalityDetail> {
+    return apiClient.post<ModalityDetail>(`/modalities/${modalityId}/season/${seasonId}/`, { modality_type_id: modalityTypeId });
   },
 
   async removeFromSeason(modalityId: string, seasonId: number): Promise<ModalityDetail> {
-    return apiClient.put<ModalityDetail>(`/modalities/${modalityId}/remove-from-season/`, { season_id: seasonId });
-  },
-
-  async delete(modalityId: string): Promise<void> {
-    return apiClient.delete(`/modalities/${modalityId}/`);
+    return apiClient.put<ModalityDetail>(`/modalities/${modalityId}/season/${seasonId}/`, { });
   },
 
   async updateRegulation(modalityId: string, data: ModalityUpdateRegulation): Promise<ModalityDetail> {

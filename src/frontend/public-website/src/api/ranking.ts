@@ -1,7 +1,6 @@
 import { apiCall, buildQueryString } from './client';
 
 export interface GeneralRanking {
-  id: number;
   course_id: string;
   course_name: string;
   course_abbreviation: string;

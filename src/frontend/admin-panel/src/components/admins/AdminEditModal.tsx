@@ -3,7 +3,6 @@ import HelpTooltip from '../HelpTooltip';
 import { nucleosApi } from '../../api/nucleos';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { type AdminDetail, administratorsApi } from '../../api/admins';
-import DefinedStatesMenuComponent from '../utils/costum_menus/DefinedStatesMenuComponent';
 import ChooseMultipleModal from '../utils/costum_menus/ChoseMultipleModal';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../utils/Button';
@@ -29,20 +28,16 @@ const AdminEditModal = ({
 
   const [admin, setAdmin] = adminState;
 
-  const [editedFirstName, setEditedFirstName] = useState(admin.first_name);
-  const [editedLastName, setEditedLastName] = useState(admin.last_name);
+  const [editedName, setEditedName] = useState(admin.name);
   const [editedEmail, setEditedEmail] = useState(admin.email);
-  const [editedEnabled, setEditedEnabled] = useState(admin.enabled);
 
   const [allNucleos, setAllNucleos] = useState<Nucleo[]>([]);
   const [selectedNucleos, setSelectedNucleos] = useState<string[]>(admin.nucleos.map(n => n.id));
 
 
   useEffect(() => {
-    setEditedFirstName(admin.first_name);
-    setEditedLastName(admin.last_name);
+    setEditedName(admin.name);
     setEditedEmail(admin.email);
-    setEditedEnabled(admin.enabled);
     setSelectedNucleos(admin.nucleos.map(n => n.id));
     if (admin.role === 'nucleo_admin') {
       nucleosApi.getAll().then(setAllNucleos).catch(() => setAllNucleos([]));
@@ -56,20 +51,14 @@ const AdminEditModal = ({
       notify('Email é obrigatório', 'error');
       return;
     }
-    if (!editedFirstName.trim()) {
-      notify('Primeiro nome é obrigatório', 'error');
-      return;
-    }
-    if (!editedLastName.trim()) {
-      notify('Último nome é obrigatório', 'error');
+    if (!editedName.trim()) {
+      notify('Nome é obrigatório', 'error');
       return;
     }
     try {
       await administratorsApi.update(String(admin.id), {
         email: editedEmail,
-        first_name: editedFirstName,
-        last_name: editedLastName,
-        enabled: editedEnabled,
+        name: editedName,
         nucleos: admin.role === 'nucleo_admin' ? selectedNucleos : undefined,
       }).then(updatedAdmin => {
         setAdmin(updatedAdmin);
@@ -88,10 +77,8 @@ const AdminEditModal = ({
 
   const onClose = () => {
     popModal();
-    setEditedFirstName(admin.first_name);
-    setEditedLastName(admin.last_name);
+    setEditedName(admin.name);
     setEditedEmail(admin.email);
-    setEditedEnabled(admin.enabled);
     setSelectedNucleos(admin.nucleos.map(n => n.id));
   }
 
@@ -133,47 +120,17 @@ const AdminEditModal = ({
               className="w-full text-gray-700 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
             />
           </div>
-          <div>
-            <label className="block text-gray-700 font-medium mb-2">
-              Primeiro Nome <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={editedFirstName}
-              onChange={(e) => setEditedFirstName(e.target.value)}
-              placeholder="Digite o primeiro nome"
-              required
-              className="w-full text-gray-700 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
-            />
-          </div>
-          <div>
-            <label className="block text-gray-700 font-medium mb-2">
-              Último Nome <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={editedLastName}
-              onChange={(e) => setEditedLastName(e.target.value)}
-              placeholder="Digite o último nome"
-              required
-              className="w-full text-gray-700 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
-            />
-          </div>
           <div className="md:col-span-2">
             <label className="block text-gray-700 font-medium mb-2">
-              Estado{" "}
-              <HelpTooltip
-                text="Ativo: o administrador pode aceder ao sistema. Inativo: acesso bloqueado sem eliminar a conta."
-                className="ml-1"
-              />
+              Nome Completo <span className="text-red-500">*</span>
             </label>
-            <DefinedStatesMenuComponent
-              states={[
-                { value: "true", label: "Ativo" },
-                { value: "false", label: "Inativo" },
-              ]}
-              onSelect={(value) => setEditedEnabled(value === "true")}
-              initialValue={editedEnabled ? "true" : "false"}
+            <input
+              type="text"
+              value={editedName}
+              onChange={(e) => setEditedName(e.target.value)}
+              placeholder="Digite o nome completo"
+              required
+              className="w-full text-gray-700 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500"
             />
           </div>
         </div>

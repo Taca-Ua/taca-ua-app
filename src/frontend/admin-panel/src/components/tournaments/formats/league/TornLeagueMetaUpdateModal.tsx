@@ -1,37 +1,41 @@
 import { useEffect, useState } from "react";
-import { type TournamentDetail, tournamentsApi } from "../../../../api/tournaments"
+import { tournamentsApi } from "../../../../api/tournaments"
 import { useModal } from "../../../../contexts/ModalContext";
 import { useNotification } from "../../../../contexts/NotificationProvider";
 import Button from "../../../utils/Button";
 import DefinedStatesMenuComponent from "../../../utils/costum_menus/DefinedStatesMenuComponent";
+import { type LeagueFormatData } from "./TornLeagueDisplayComponent";
 
 const TornLeagueMetaUpdateModal = ({
-    tournamentState,
+    formatDataState,
+    tournamentId,
     onSave,
 } : {
-    tournamentState: [TournamentDetail, React.Dispatch<React.SetStateAction<TournamentDetail | null>>],
-    onSave?: (updatedTournament: TournamentDetail) => void
+    formatDataState: [LeagueFormatData | null, React.Dispatch<React.SetStateAction<LeagueFormatData | null>>],
+    tournamentId: string,
+    onSave?: (updatedFormatData: LeagueFormatData) => void,
 }) => {
     const { popModal } = useModal();
     const { notify } = useNotification();
 
-    const [tournament, setTournament] = tournamentState;
+    const [formatData, setFormatData] = formatDataState;
     const [loading, setLoading] = useState(false);
 
-    const [pointsWin, setPointsWin] = useState(tournament.format_data?.points_win);
-    const [pointsDraw, setPointsDraw] = useState(tournament.format_data?.points_draw);
-    const [pointsLoss, setPointsLoss] = useState(tournament.format_data?.points_loss);
-    const [tiebreaker, setTiebreaker] = useState(tournament.format_data?.points_diff_tiebreaker || "none");
+    const [pointsWin, setPointsWin] = useState(formatData?.settings.win_points);
+    const [pointsDraw, setPointsDraw] = useState(formatData?.settings.draw_points);
+    const [pointsLoss, setPointsLoss] = useState(formatData?.settings.loss_points);
+    const [tiebreaker, setTiebreaker] = useState(formatData?.settings.draw_rule || "none");
 
     useEffect(() => {
-        if (!tournament.format_data){
+        if (!formatData){
             notify("Dados de formato não encontrados para este torneio.", "error");
+            return;
         }
 
-        setPointsWin(tournament.format_data?.points_win);
-        setPointsDraw(tournament.format_data?.points_draw);
-        setPointsLoss(tournament.format_data?.points_loss);
-        setTiebreaker(tournament.format_data?.points_diff_tiebreaker || "none");
+        setPointsWin(formatData.settings.win_points);
+        setPointsDraw(formatData.settings.draw_points);
+        setPointsLoss(formatData.settings.loss_points);
+        setTiebreaker(formatData.settings.draw_rule || "none");
     }, []);
 
     const onClose = () => {
@@ -45,15 +49,15 @@ const TornLeagueMetaUpdateModal = ({
         }
 
         setLoading(true);
-        tournamentsApi.updateFormatMeta(tournament.id, {
+        tournamentsApi.updateFormatMeta(tournamentId, {
             win_points: pointsWin,
             draw_points: pointsDraw,
             loss_points: pointsLoss,
-            points_diff_tiebreaker: tiebreaker
-        }).then((updatedTournament) => {
-            setTournament(updatedTournament);
+            draw_rule: tiebreaker === "none" ? null : tiebreaker,
+        }).then((updatedFormatData) => {
+            setFormatData(updatedFormatData as LeagueFormatData);
             if (onSave) {
-                onSave(updatedTournament);
+                onSave(updatedFormatData as LeagueFormatData);
             }
             notify("Configurações de pontuação atualizadas com sucesso!", "success");
             popModal();
@@ -102,7 +106,7 @@ const TornLeagueMetaUpdateModal = ({
             states={[
               { value: "none", label: "Nenhum" },
               { value: "points_difference", label: "Diferença de Pontos" },
-              { value: "scored_points", label: "Pontos Marcados" },
+              { value: "points_scored", label: "Pontos Marcados" },
             ]}
             initialValue={tiebreaker}
             onSelect={(value) => setTiebreaker(value)}

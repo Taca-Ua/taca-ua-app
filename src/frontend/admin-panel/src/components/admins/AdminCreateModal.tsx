@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import HelpTooltip from "../HelpTooltip";
 import { useNotification } from "../../contexts/NotificationProvider";
-import { administratorsApi } from "../../api/admins";
+import { administratorsApi, type AdminListItem } from "../../api/admins";
 import { nucleosApi } from "../../api/nucleos";
 import ChooseMultipleModal from "../utils/costum_menus/ChoseMultipleModal";
 import DefinedStatesMenuComponent from "../utils/costum_menus/DefinedStatesMenuComponent";
@@ -12,16 +12,15 @@ import { useModal } from "../../contexts/ModalContext";
 const AdminCreateModal = ({
   onCreated
 } : {
-  onCreated?: (admin: any) => void;
+  onCreated?: (admin: AdminListItem) => void;
 }) => {
 	const { notify } = useNotification();
   const { isAdminGeneral } = useAuth();
   const { pushModal, popModal } = useModal();
 
 	const [memberUserName, setMemberUserName] = useState('');
-	const [memberFirstName, setMemberFirstName] = useState('');
-	const [memberLastName, setMemberLastName] = useState('');
-	const [memberPassword, setMemberPassword] = useState('');
+	const [memberName, setMemberName] = useState('');
+    const [memberPassword, setMemberPassword] = useState('');
 	const [memberRole, setMemberRole] = useState<'general_admin' | 'nucleo_admin'>('general_admin');
 	const [email, setEmail] = useState('');
 	const [confirmPassword, setConfirmPassword] = useState('');
@@ -39,12 +38,8 @@ const AdminCreateModal = ({
 			notify('Username é obrigatório', 'error');
 			return;
 		}
-		if (!memberFirstName.trim()) {
-			notify('Primeiro nome é obrigatório', 'error');
-			return;
-		}
-		if (!memberLastName.trim()) {
-			notify('Último nome é obrigatório', 'error');
+		if (!memberName.trim()) {
+			notify('Nome é obrigatório', 'error');
 			return;
 		}
 		if (!email.trim()) {
@@ -76,8 +71,7 @@ const AdminCreateModal = ({
 			const newAdmin = await administratorsApi.create({
 				username: memberUserName,
 				password: memberPassword,
-				first_name: memberFirstName,
-				last_name: memberLastName,
+				name: memberName,
 				email,
 				role: memberRole,
 				nucleos: memberRole === 'nucleo_admin' ? selectedNucleos : [],
@@ -93,8 +87,7 @@ const AdminCreateModal = ({
 	const onClose = () => {
     popModal();
 		setMemberUserName('');
-		setMemberFirstName('');
-		setMemberLastName('');
+        setMemberName('');
 		setMemberPassword('');
 		setConfirmPassword('');
 		setShowPassword(false);
@@ -155,36 +148,20 @@ const AdminCreateModal = ({
               placeholder="Digite o email (ex: admin@ua.pt)"
             />
           </div>
-          <div>
+          <div className="md:col-span-2">
             <label
-              htmlFor="memberFirstName"
+              htmlFor="memberName"
               className="block text-gray-700 font-medium mb-2"
             >
-              Primeiro Nome <span className="text-red-500">*</span>
+              Nome Completo <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
-              id="memberFirstName"
-              value={memberFirstName}
-              onChange={(e) => setMemberFirstName(e.target.value)}
+              id="memberName"
+              value={memberName}
+              onChange={(e) => setMemberName(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-              placeholder="Digite o primeiro nome"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="memberLastName"
-              className="block text-gray-700 font-medium mb-2"
-            >
-              Último Nome <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="memberLastName"
-              value={memberLastName}
-              onChange={(e) => setMemberLastName(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-              placeholder="Digite o último nome"
+              placeholder="Digite o nome completo"
             />
           </div>
           <div>

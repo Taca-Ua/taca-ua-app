@@ -75,7 +75,7 @@ function DashboardNucleo() {
           <MatchesCalendarComponent />
 
           {/* Tournaments Section */}
-          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <div className="bg-white rounded-lg shadow-md p-6 mb-8 mt-8">
             <h2 className="text-lg font-bold text-gray-800 mb-4">Torneios</h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-lg">

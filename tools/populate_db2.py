@@ -7,11 +7,11 @@ import urllib3
 
 urllib3.disable_warnings()
 
-API_URL = "http://localhost/api2/admin"
+API_URL = "http://localhost/api/admin"
 
 HEADERS = {
     "X-Dev-Auth-Token": "super-secret-dev-token",
-    # "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJyenA5bGJkSUJKU181SEVnOU9DZVlUS2pwRU1JbHlzT2dzOERyc0ZXQ0hvIn0.eyJleHAiOjE3Nzk5NjI1NzIsImlhdCI6MTc3OTk1ODk3MiwiYXV0aF90aW1lIjoxNzc5OTU4OTcyLCJqdGkiOiJvbnJ0YWM6ZDRkZWEwMGYtNmFlMC0yNGE4LTJlYTctZGJjYzg3MzEzNWQxIiwiaXNzIjoiaHR0cHM6Ly9tZWRuYXQuaWVldGEucHQ6ODk3MS9hdXRoL3JlYWxtcy90YWNhLXVhIiwic3ViIjoiMDE3ZjZhM2UtYTFlMS00ZmIzLTgyOGUtMzE3NzYzOWM1OTBmIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoiZnJvbnRlbmQtYWRtaW4iLCJzaWQiOiJmYjViNTYxZS0yZmZmLTQwMjMtOWY5ZC1hZjRjMDFmYmFiMTkiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbIi8qIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJnZW5lcmFsX2FkbWluIl19LCJzY29wZSI6Im9wZW5pZCBlbWFpbCBwcm9maWxlIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJCZXJ0cmFtIEdpbGZveWxlIiwicHJlZmVycmVkX3VzZXJuYW1lIjoiYWRtaW5fZ2VyYWwiLCJnaXZlbl9uYW1lIjoiQmVydHJhbSIsImZhbWlseV9uYW1lIjoiR2lsZm95bGUiLCJlbWFpbCI6ImFkbWluX2dlcmFsQHRhY2EtdWEucHQifQ.OCyDyxFqZRRxvJBAdCHZwYaSkazm8V515U_RF__O8Erj04OYyoI2YhKtXcPw8fttNrfU61Z5qr4rSIy7iaNx62YH7yrnF3bJzOAe7fULIdoWUMG5JAhaE0mePkGhYan6X73xvWz4iVIzLtxbKVCXKyGMcclT_jqQPVN2ewZcAZLvuuzwwFx-KpH13ESsABjWSG_RBOrGpISFhUSSJsqGRHVTFEQ4RBULTTOQ3r6uAnrb-zNXwP1NC8NiUKIpmdLqaAaYSSMeM08mJ0-L5dPGthXu9_cNzheQKMUt6H5RLEszvNoEwSQtyjerapDzPhnVaipEpwDSe4TS3EDcQC67GA",
+    # "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJUTUVvNjlnUElUaDNWUmlqUTNlelV3cHI2M3oxSUF5OHZ6UUtzZW5uc2V3In0.eyJleHAiOjE3ODE5NjIzNzEsImlhdCI6MTc4MTk1ODc3MSwiYXV0aF90aW1lIjoxNzgxOTU4NzcxLCJqdGkiOiJvbnJ0YWM6M2QwNmNiNjItYmRkNy04OGQwLTNjZjItZTExNWQ2NjNjZDQ0IiwiaXNzIjoiaHR0cHM6Ly9sb2NhbGhvc3QvYXV0aC9yZWFsbXMvdGFjYS11YSIsInN1YiI6ImE0NjIxMzRlLWE0YTQtNDY0Ny04ZDAxLWE4NDk4MzgyMjY3ZSIsInR5cCI6IkJlYXJlciIsImF6cCI6ImZyb250ZW5kLWFkbWluIiwic2lkIjoiN2RkZDdhOTMtYTA0NS00NTFhLWJmZDctMGMzMjE5Njc4NzMwIiwiYWNyIjoiMSIsImFsbG93ZWQtb3JpZ2lucyI6WyIvKiJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiZ2VuZXJhbF9hZG1pbiJdfSwic2NvcGUiOiJvcGVuaWQgZW1haWwgcHJvZmlsZSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJuYW1lIjoiQmVydHJhbSBHaWxmb3lsZSIsInByZWZlcnJlZF91c2VybmFtZSI6ImFkbWluX2dlcmFsIiwiZ2l2ZW5fbmFtZSI6IkJlcnRyYW0iLCJmYW1pbHlfbmFtZSI6IkdpbGZveWxlIiwiZW1haWwiOiJhZG1pbl9nZXJhbEB0YWNhLXVhLnB0In0.KjDVh_LO6mxwcONhXHalXS71PouFyKs3ceUwbAmzu-zA1SxU7m1VgZgBTajPZ4x_R4l_A7M1_r2fNV1Y6ehZ419DoFCmvOksF2USa3Xa-A72yZXC9wlYxOQ-85PYkHsVn4LnaDD_WYm0eANM_uodeUROgnolRaOAZz7Tz6Uu_-W83PKqAqvQk8WWY1u_hdB_f3jN-yQJcJdS918sYNiMC19_nlDTpEhzXxlCKm_ecsWu3o_FS-oJy44AybxoUFEASKetwrZCW0FtARnSp15pYspfAJmtneR24b_wsGH_D1ZesCk4WMtGSppMHyZntSoUJrfRWuDW-3Sw0y7C2Zx24w",
 }
 
 STATS = {
@@ -46,6 +46,7 @@ def populate_modalities_types(step_by_step=False, delete_existing=False) -> int:
 
     check = requests.get(f"{API_URL}/modality-types", headers=HEADERS)
     if delete_existing and check.status_code == 200:
+        print(check.content)
         for modality_type in check.json():
             del_response = requests.delete(
                 f"{API_URL}/modality-types/{modality_type['id']}/", headers=HEADERS
@@ -74,33 +75,33 @@ def populate_modalities_types(step_by_step=False, delete_existing=False) -> int:
             "mode": "modality",
             "escaloes": [
                 {
-                    "escalao": "A",
-                    "minParticipants": 41,
-                    "maxParticipants": None,
+                    "name": "A",
+                    "min_participants": 41,
+                    "max_participants": None,
                     "points": [140, 130, 120, 110, 90, 80, 70, 60, 40, 30, 20, 10],
                 },
                 {
-                    "escalao": "B",
-                    "minParticipants": 32,
-                    "maxParticipants": 40,
+                    "name": "B",
+                    "min_participants": 32,
+                    "max_participants": 40,
                     "points": [105, 98, 90, 83, 68, 60, 53, 45, 30, 23, 15, 8],
                 },
                 {
-                    "escalao": "C",
-                    "minParticipants": 19,
-                    "maxParticipants": 31,
+                    "name": "C",
+                    "min_participants": 19,
+                    "max_participants": 31,
                     "points": [92, 86, 79, 73, 60, 53, 46, 40, 27, 20, 13, 7],
                 },
                 {
-                    "escalao": "D",
-                    "minParticipants": 9,
-                    "maxParticipants": 18,
+                    "name": "D",
+                    "min_participants": 9,
+                    "max_participants": 18,
                     "points": [79, 73, 68, 62, 51, 45, 39, 34, 23, 17, 11, 6],
                 },
                 {
-                    "escalao": "E",
-                    "minParticipants": None,
-                    "maxParticipants": 8,
+                    "name": "E",
+                    "min_participants": None,
+                    "max_participants": 8,
                     "points": [59, 55, 51, 46, 38, 34, 30, 25],
                 },
             ],
@@ -113,27 +114,27 @@ def populate_modalities_types(step_by_step=False, delete_existing=False) -> int:
             "mode": "modality",
             "escaloes": [
                 {
-                    "escalao": "A",
-                    "minParticipants": 15,
-                    "maxParticipants": None,
+                    "name": "A",
+                    "min_participants": 15,
+                    "max_participants": None,
                     "points": [92, 86, 79, 73, 60, 53, 46, 40, 27, 20, 13, 7],
                 },
                 {
-                    "escalao": "B",
-                    "minParticipants": 11,
-                    "maxParticipants": 15,
+                    "name": "B",
+                    "min_participants": 11,
+                    "max_participants": 15,
                     "points": [79, 73, 68, 62, 51, 45, 39, 34, 23, 17],
                 },
                 {
-                    "escalao": "C",
-                    "minParticipants": 7,
-                    "maxParticipants": 10,
+                    "name": "C",
+                    "min_participants": 7,
+                    "max_participants": 10,
                     "points": [59, 55, 51, 46, 38, 34, 30],
                 },
                 {
-                    "escalao": "D",
-                    "minParticipants": None,
-                    "maxParticipants": 6,
+                    "name": "D",
+                    "min_participants": None,
+                    "max_participants": 6,
                     "points": [45, 41, 38, 35],
                 },
             ],
@@ -146,27 +147,27 @@ def populate_modalities_types(step_by_step=False, delete_existing=False) -> int:
             "mode": "modality",
             "escaloes": [
                 {
-                    "escalao": "A",
-                    "minParticipants": 15,
-                    "maxParticipants": None,
+                    "name": "A",
+                    "min_participants": 15,
+                    "max_participants": None,
                     "points": [49, 44, 39, 35, 28, 24, 21, 18, 15, 13, 11, 9],
                 },
                 {
-                    "escalao": "B",
-                    "minParticipants": 11,
-                    "maxParticipants": 15,
+                    "name": "B",
+                    "min_participants": 11,
+                    "max_participants": 15,
                     "points": [39, 34, 30, 27, 21, 18, 16, 14, 9, 7],
                 },
                 {
-                    "escalao": "C",
-                    "minParticipants": 6,
-                    "maxParticipants": 10,
+                    "name": "C",
+                    "min_participants": 6,
+                    "max_participants": 10,
                     "points": [31, 27, 23, 21, 16, 14],
                 },
                 {
-                    "escalao": "D",
-                    "minParticipants": None,
-                    "maxParticipants": 5,
+                    "name": "D",
+                    "min_participants": None,
+                    "max_participants": 5,
                     "points": [25, 21, 18],
                 },
             ],
@@ -179,33 +180,33 @@ def populate_modalities_types(step_by_step=False, delete_existing=False) -> int:
             "mode": "modality",
             "escaloes": [
                 {
-                    "escalao": "A",
-                    "minParticipants": 25,
-                    "maxParticipants": None,
+                    "name": "A",
+                    "min_participants": 25,
+                    "max_participants": None,
                     "points": [36, 31, 28, 24, 21, 19, 16, 14, 11, 9, 7, 5],
                 },
                 {
-                    "escalao": "B",
-                    "minParticipants": 17,
-                    "maxParticipants": 25,
+                    "name": "B",
+                    "min_participants": 17,
+                    "max_participants": 25,
                     "points": [30, 26, 21, 18, 16, 14, 12, 10, 8, 6, 4, 3],
                 },
                 {
-                    "escalao": "C",
-                    "minParticipants": 9,
-                    "maxParticipants": 16,
+                    "name": "C",
+                    "min_participants": 9,
+                    "max_participants": 16,
                     "points": [24, 21, 18, 16, 13, 11, 9, 8, 5, 4, 2],
                 },
                 {
-                    "escalao": "D",
-                    "minParticipants": 4,
-                    "maxParticipants": 8,
+                    "name": "D",
+                    "min_participants": 4,
+                    "max_participants": 8,
                     "points": [19, 16, 13, 11, 8, 6, 4, 2],
                 },
                 {
-                    "escalao": "E",
-                    "minParticipants": None,
-                    "maxParticipants": 3,
+                    "name": "E",
+                    "min_participants": None,
+                    "max_participants": 3,
                     "points": [15, 12, 9],
                 },
             ],
@@ -218,27 +219,27 @@ def populate_modalities_types(step_by_step=False, delete_existing=False) -> int:
             "mode": "modality",
             "escaloes": [
                 {
-                    "escalao": "A",
-                    "minParticipants": 10,
-                    "maxParticipants": None,
+                    "name": "A",
+                    "min_participants": 10,
+                    "max_participants": None,
                     "points": [78, 71, 63, 56, 50, 43, 35, 30, 20, 15, 10, 5],
                 },
                 {
-                    "escalao": "B",
-                    "minParticipants": 8,
-                    "maxParticipants": 10,
+                    "name": "B",
+                    "min_participants": 8,
+                    "max_participants": 10,
                     "points": [59, 53, 48, 43, 38, 33, 28, 23, 15, 11],
                 },
                 {
-                    "escalao": "C",
-                    "minParticipants": 5,
-                    "maxParticipants": 7,
+                    "name": "C",
+                    "min_participants": 5,
+                    "max_participants": 7,
                     "points": [39, 37, 34, 31, 25, 23, 20],
                 },
                 {
-                    "escalao": "D",
-                    "minParticipants": None,
-                    "maxParticipants": 4,
+                    "name": "D",
+                    "min_participants": None,
+                    "max_participants": 4,
                     "points": [30, 27, 25, 23],
                 },
             ],
@@ -250,9 +251,9 @@ def populate_modalities_types(step_by_step=False, delete_existing=False) -> int:
             "mode": "points",
             "escaloes": [
                 {
-                    "escalao": "-",
-                    "minParticipants": None,
-                    "maxParticipants": None,
+                    "name": "-",
+                    "min_participants": None,
+                    "max_participants": None,
                     "points": [30, 26, 23, 19, 14, 12, 10, 9],
                 }
             ],
@@ -704,12 +705,11 @@ def populate_tournaments():
             return None
 
         payload = {
-            "competitor_type": "team",
-            "entity_id": team_id,
+            "entity_ids": [team_id],
         }
         response = requests.put(
-            f"{API_URL}/tournaments/{tournament_id}/competitors/add/",
-            json=[payload],
+            f"{API_URL}/tournaments/{tournament_id}/add-competitors/",
+            json=payload,
             headers=HEADERS,
         )
 
@@ -764,7 +764,7 @@ def populate_tournaments():
                         match["location"],
                     ]
                 ): match["id"]
-                for match in existing_matches_response.json()
+                for match in existing_matches_response.json()["matches"]
             }
         else:
             print(
@@ -777,7 +777,9 @@ def populate_tournaments():
             # create match
             print("\t\t", flush=True, end="")  # Add indentation for match creation logs
             if match.day == "":
-                iso_time = "2026-01-01T00:00:00+00:00"  # Default to midnight if no day is provided
+                iso_time = (
+                    "2026-01-01T00:00:00Z"  # Default to midnight if no day is provided
+                )
             else:
                 hour_formatted = match.hour.lower().split("h")[0].zfill(2)
                 minute_formatted = (
@@ -788,7 +790,7 @@ def populate_tournaments():
                 iso_time = (
                     f"{match.day.split()[0]}T"
                     + f"{hour_formatted}:{minute_formatted}"
-                    + ":00+00:00"
+                    + ":00Z"
                 )
             local = match.local if match.local else "TBD"
 
@@ -857,7 +859,7 @@ def populate_tournaments():
                         match["location"],
                     ]
                 ): match
-                for match in matches_response.json()
+                for match in matches_response.json()["matches"]
             }
         else:
             print(
@@ -879,11 +881,11 @@ def populate_tournaments():
                 continue
 
             if match.day == "":
-                iso_time = "2026-01-01T00:00:00+00:00"  # Default to midnight if no day is provided
-            else:
                 iso_time = (
-                    f"{match.day.split()[0]}T{match.hour.replace('h', ':')}:00+00:00"
+                    "2026-01-01T00:00:00Z"  # Default to midnight if no day is provided
                 )
+            else:
+                iso_time = f"{match.day.split()[0]}T{match.hour.replace('h', ':')}:00Z"
             local = match.local if match.local else "TBD"
 
             if (
@@ -1149,7 +1151,7 @@ def main():
 
     print("Extracting information from the source...")
     try:
-        information_stealer()
+        information_stealer("24_25")
     except Exception as e:
         print(f"Error occurred while extracting information: {e}")
         return
@@ -1190,10 +1192,10 @@ def main():
     print("Populating tournaments...")
     populate_tournaments()
 
-    print()
-    input("Press Enter to continue to populate athletes...")
-    print("Populating athletes...")
-    populate_athletes()
+    # print()
+    # input("Press Enter to continue to populate athletes...")
+    # print("Populating athletes...")
+    # populate_athletes()
 
     print("\nPopulation completed. Summary of operations:")
     for category, stats in STATS.items():

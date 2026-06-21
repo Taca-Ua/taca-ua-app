@@ -5,6 +5,7 @@ This module provides database session management for read-only access
 to the public_read schema containing materialized views.
 """
 
+import logging
 import os
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Generator
@@ -12,9 +13,8 @@ from typing import AsyncGenerator, Generator
 from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import Session, sessionmaker
-from taca_logging import get_logger
 
-logger = get_logger("public-api.database")
+logger = logging.getLogger(__name__)
 
 # Database connection settings from environment variables
 DATABASE_URL = os.getenv(
@@ -74,13 +74,12 @@ def check_db_connection() -> bool:
         db = SessionLocal()
         db.execute("SELECT 1")
         db.close()
-        logger.info("database_connection_check", status="success")
+        logger.info("database_connection_check", extra={"status": "success"})
         return True
     except Exception as e:
         logger.error(
             "database_connection_check",
-            status="failed",
-            error=str(e),
+            extra={"status": "failed", "error": str(e)},
         )
         return False
 
@@ -97,17 +96,16 @@ def check_redis_connection() -> bool:
 
         client = get_redis_client()
         if client is None:
-            logger.warning("redis_connection_check", status="disabled")
+            logger.warning("redis_connection_check", extra={"status": "disabled"})
             return True  # Caching is optional
 
         client.ping()
-        logger.info("redis_connection_check", status="success")
+        logger.info("redis_connection_check", extra={"status": "success"})
         return True
     except Exception as e:
         logger.error(
             "redis_connection_check",
-            status="failed",
-            error=str(e),
+            extra={"status": "failed", "error": str(e)},
         )
         return False
 

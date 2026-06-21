@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useModal } from "../../contexts/ModalContext";
-import { matchesApi, type MatchDetail, type MatchLineup } from "../../api/matches";
+import { matchesApi, type MatchParticipantLineup } from "../../api/matches";
 import ChooseMultipleModal from "../utils/costum_menus/ChoseMultipleModal";
 import { athletesApi } from "../../api/athletes";
 import { staffApi } from "../../api/staff";
@@ -14,28 +14,35 @@ type PlayerDraft = {
 };
 
 const MatchTeamLineupModal = ({
-    matchState,
-    lineup,
+    matchId,
+    participantId,
 }: {
-    matchState: [MatchDetail, React.Dispatch<React.SetStateAction<MatchDetail | null>>];
-    lineup: MatchLineup;
+    matchId: string;
+    participantId: string;
 }) => {
     const { popModal, pushModal } = useModal();
     const { notify } = useNotification();
 
-    const [match, setMatch] = matchState;
-
-    const [staffAssignments, setStaffAssignments] = useState<{ id: string; name: string }[]>(match.staff_assignments[lineup.participant_id] || []);
+    const [participantLineup, setParticipantLineup] = useState<MatchParticipantLineup | null>(null);
 
     const [isEditMode, setIsEditMode] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [drafts, setDrafts] = useState<PlayerDraft[]>([]);
 
+    useEffect(() => {
+        matchesApi.getLineup(matchId, participantId).then((lineup) => {
+            setParticipantLineup(lineup);
+        }).catch((err) => {
+            console.error("Error fetching lineup details:", err);
+            notify("Não foi possível carregar os detalhes da convocatória. Tente novamente.", "error");
+        });
+    }, [participantId]);
+
     const onClose = () => popModal();
 
     const handleDownloadTeamSheet = async (participantId: string) => {
         try {
-            const blob = await matchesApi.getMatchTeamSheet(match.id, participantId);
+            const blob = await matchesApi.getMatchTeamSheet(matchId, participantId);
             const url = window.URL.createObjectURL(blob);
             window.open(url, "_blank");
             setTimeout(() => window.URL.revokeObjectURL(url), 10000);
@@ -51,8 +58,10 @@ const MatchTeamLineupModal = ({
     };
 
     const enterEditMode = () => {
+        if (!participantLineup) return;
+
         setDrafts(
-            lineup.lineup.map((p) => ({
+            participantLineup.lineup.map((p) => ({
                 player_id: p.player_id,
                 jersey_number: p.jersey_number?.toString() ?? "",
                 is_starter: p.is_starter,
@@ -81,17 +90,15 @@ const MatchTeamLineupModal = ({
     const saveAll = async () => {
         setIsSaving(true);
 
-        await matchesApi.updateLineup(match.id, {
-            participant: lineup.participant_id,
+        await matchesApi.updateLineup(matchId, participantId, {
             players: drafts.map((d) => ({
                 player_id: d.player_id,
                 is_starter: d.is_starter,
                 jersey_number: d.jersey_number ? parseInt(d.jersey_number) : null,
             })),
-        }).then((updatedMatch) => {
+        }).then((updatedLineup) => {
             notify("Convocatória actualizada com sucesso", "success")
-            setMatch(updatedMatch);
-            lineup.lineup = updatedMatch.lineups.find(l => l.participant_id === lineup.participant_id)?.lineup || [];
+            setParticipantLineup(updatedLineup);
             setIsEditMode(false);
             setDrafts([]);
         }).catch((err) => {
@@ -102,14 +109,23 @@ const MatchTeamLineupModal = ({
         });
     };
 
+    if (!participantLineup) {
+        return (
+            <div className="bg-white rounded-xl p-8 w-full max-w-md md:min-w-[700px] shadow-lg">
+                <div className="flex items-center justify-center h-48">
+                    <p className="text-gray-600">Carregando detalhes da convocatória...</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
       <div className="bg-white rounded-xl p-8 w-full max-w-md md:min-w-[700px] shadow-lg">
         {/* Header */}
         <div className="flex items-start justify-between gap-4 mb-6">
           <h2 className="text-2xl font-bold text-gray-900">
             Convocatórias de{" "}
-            {match.participants.find((p) => p.id === lineup.participant_id)
-              ?.name || lineup.participant_id}
+            {participantLineup.name || "participante"}
           </h2>
 
           {!isEditMode ? (
@@ -152,28 +168,26 @@ const MatchTeamLineupModal = ({
                   <ChooseMultipleModal
                     allElementsLoader={() =>
                       athletesApi.getAll({
-                        team_id: match.participants.find((p) => p.id === lineup.participant_id)?.entity_id,
+                        team_id: participantLineup.team_id,
                       }).then((res) =>
                         res.map((athlete) => ({
                           id: athlete.id,
-                          title: athlete.full_name,
+                          title: athlete.name,
                           subTitle: `Curso: ${athlete.course.abbreviation}`,
                         })),
                       )
                     }
-                    initialChosenElementsIds={lineup.lineup.map(
+                    initialChosenElementsIds={participantLineup.lineup.map(
                       (player) => player.player_id,
                     )}
                     onSave={(selectedIds) => {
                       matchesApi
-                        .assignLineup(match.id, {
-                          participant: lineup.participant_id,
+                        .assignLineup(matchId, participantLineup.id, {
                           players: selectedIds.map((player_id) => player_id.id),
                         })
-                        .then((updatedMatch) =>{
-                          setMatch(updatedMatch);
-                          lineup.lineup = updatedMatch.lineups.find(l => l.participant_id === lineup.participant_id)?.lineup || [];
-                          notify(
+                        .then((updatedLineup) =>{
+                            setParticipantLineup(updatedLineup);
+                            notify(
                             "Convocatória actualizada com sucesso",
                             "success",
                           )
@@ -204,21 +218,22 @@ const MatchTeamLineupModal = ({
                       staffApi.getAll().then((res) =>
                         res.map((staff) => ({
                           id: staff.id,
-                          title: staff.full_name,
+                          title: staff.name,
                         })),
                       )
                     }
-                    initialChosenElementsIds={staffAssignments.map((s) => s.id)}
+                    initialChosenElementsIds={participantLineup.staff?.map((s) => s.staff_id) || []}
                     onSave={(selectedIds) => {
                       matchesApi
-                        .assignStaff(match.id,
-                          lineup.participant_id,
+                        .assignStaff(matchId,
+                          participantLineup.id,
                           selectedIds.map((staff) => staff.id),
                         )
-                        .then((updatedMatch) =>{
-                          setMatch(updatedMatch);
-                          setStaffAssignments(updatedMatch.staff_assignments[lineup.participant_id] || []);
-                          notify(
+                        .then((updatedStaffAssignments) =>{
+                            setParticipantLineup((prev) =>
+                              prev ? { ...prev, staff: updatedStaffAssignments.staff } : prev
+                            );
+                            notify(
                             "Staff actualizado com sucesso",
                             "success",
                           )
@@ -242,25 +257,25 @@ const MatchTeamLineupModal = ({
 
           </div>
             <Button
-              onClick={() => handleDownloadTeamSheet(lineup.participant_id)}
-              type="info"
-              padding="w-full px-4 py-3 flex items-center justify-center"
-              flexible={true}
+                onClick={() => handleDownloadTeamSheet(participantLineup.id)}
+                type="info"
+                padding="w-full px-4 py-3 flex items-center justify-center"
+                flexible={true}
             >
-              <svg
+                <svg
                 className="w-5 h-5 mr-2"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
-              >
+                >
                 <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
-              </svg>
-              Baixar Ficha de Jogo
+                </svg>
+                Baixar Ficha de Jogo
             </Button>
           </div>
         )}
@@ -282,7 +297,7 @@ const MatchTeamLineupModal = ({
 
         {/* Player list */}
         <ul className="divide-y divide-gray-100">
-          {lineup.lineup.map((player) => {
+          {participantLineup.lineup.map((player) => {
             const draft = drafts.find((d) => d.player_id === player.player_id);
 
             return (
@@ -401,7 +416,7 @@ const MatchTeamLineupModal = ({
         <div className="mt-6">
           <h3 className="text-sm font-semibold text-gray-900 mb-2">Staff associado</h3>
           <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200">
-            {staffAssignments.map((staff) => (
+            {participantLineup.staff?.map((staff) => (
               <li key={staff.id} className="flex items-center justify-between gap-4 p-3">
                 <div className="flex items-center gap-4">
                   <div className="flex-1 min-w-0">
@@ -412,7 +427,7 @@ const MatchTeamLineupModal = ({
                 </div>
               </li>
             ))}
-            {staffAssignments.length === 0 && (
+            {participantLineup.staff?.length === 0 && (
               <li className="text-center text-sm text-gray-400 p-3">
                 Nenhum staff associado a esta equipa.
               </li>

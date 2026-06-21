@@ -21,12 +21,12 @@ const AthleteEditModal = ( {
     const { popModal } = useModal();
     const { isAdminGeneral } = useAuth();
 
-    const [editedName, setEditedName] = useState(athlete.full_name);
+    const [editedName, setEditedName] = useState(athlete.name);
     const [editedIsMember, setEditedIsMember] = useState(athlete.is_member);
     const [editedCourseId, setEditedCourseId] = useState<string | null>(athlete.course.id);
 
     useEffect(() => {
-        setEditedName(athlete.full_name);
+        setEditedName(athlete.name);
         setEditedIsMember(athlete.is_member);
         setEditedCourseId(athlete.course.id);
     }, [athlete]);
@@ -42,7 +42,7 @@ const AthleteEditModal = ( {
       }
 
       athletesApi.update(athlete.id, {
-          full_name: editedName,
+          name: editedName,
           is_member: editedIsMember,
           course_id: editedCourseId || undefined,
       }).then((updated) => {

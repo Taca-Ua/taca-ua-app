@@ -63,7 +63,7 @@ const TornLeagueMetaInput = ({ data } : { data: Record<string, unknown> }) => {
                     states={[
                         { value: "none", label: "Nenhum" },
                         { value: "points_difference", label: "Diferença de Pontos" },
-                        { value: "scored_points", label: "Pontos Marcados" },
+                        { value: "points_scored", label: "Pontos Marcados" },
                     ]}
                     initialValue={tiebreaker}
                     onSelect={(value) => setTiebreaker(value)}

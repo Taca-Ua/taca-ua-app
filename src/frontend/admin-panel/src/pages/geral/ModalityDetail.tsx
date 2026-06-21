@@ -156,7 +156,7 @@ function ModalidadeDetail() {
 
   return (
     <>
-      <SeasonSelector relevantSeasonIds={modality.relevant_season_ids} />
+      <SeasonSelector relevantSeasonIds={modality.relevant_seasons_ids} />
       <div className="flex-1 p-8 max-w-5xl mx-auto">
         <div className="mb-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-800">Detalhes da Modalidade</h1>

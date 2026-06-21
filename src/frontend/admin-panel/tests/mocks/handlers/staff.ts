@@ -3,8 +3,8 @@ import { http, HttpResponse } from 'msw'
 const API_BASE = '/api2/admin'
 
 const initialStaff = [
-  { id: 'staff-1', full_name: 'Diana Duarte', staff_number: 'S100', contact: 'diana@example.com' },
-  { id: 'staff-2', full_name: 'Eduardo Esteves', staff_number: 'S101', contact: 'eduardo@example.com' },
+  { id: 'staff-1', name: 'Diana Duarte', staff_number: 'S100', contact: 'diana@example.com' },
+  { id: 'staff-2', name: 'Eduardo Esteves', staff_number: 'S101', contact: 'eduardo@example.com' },
 ]
 
 let staff = structuredClone(initialStaff)
@@ -35,7 +35,7 @@ export const staffHandlers = [
     const payload = await request.json()
     const created = {
       id: `staff-${staff.length + 1}`,
-      full_name: payload.full_name ?? 'Novo Staff',
+      name: payload.name ?? 'Novo Staff',
       staff_number: payload.staff_number ?? `S${100 + staff.length}`,
       contact: payload.contact ?? '',
     }
@@ -50,7 +50,7 @@ export const staffHandlers = [
     const payload = await request.json()
     const updated = {
       ...target,
-      full_name: typeof payload.full_name === 'string' ? payload.full_name : target.full_name,
+      name: typeof payload.name === 'string' ? payload.name : target.name,
       staff_number: typeof payload.staff_number === 'string' ? payload.staff_number : target.staff_number,
       contact: typeof payload.contact === 'string' ? payload.contact : target.contact,
     }

@@ -54,11 +54,6 @@ export const seasonsApi = {
   },
 
   async getSeasonSummary(seasonId?: number): Promise<SeasonSummary> {
-    let params = {};
-    if (seasonId) {
-      params = { ...params, season_id: seasonId };
-    }
-
-    return apiClient.get<SeasonSummary>(`/seasons/summary/`, params );
+    return apiClient.get<SeasonSummary>(`/seasons/${seasonId}/summary/`);
   },
 };
