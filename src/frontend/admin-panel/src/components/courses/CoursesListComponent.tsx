@@ -11,7 +11,7 @@ const CourseEntry = (course: CourseListItem) => {
       onClick={() => navigate(`/cursos/${course.id}`)}
       className={"cursor-pointer bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 p-6 flex flex-col gap-4" + (course.belongs_to_season ? "" : " opacity-50")}
     >
-      <div className="flex items-center justify-between text-center gap-3">
+      <div className="flex items-center justify-evenly text-center gap-3">
         {course.logo_url ? (
           <LazyImage src={course.logo_url} alt={course.name} className="h-24 object-cover" />
         ) : (
@@ -41,11 +41,17 @@ const CoursesListComponent = ( {
   const [ searchQuery, setSearchQuery ] = useState('')
   const [ nucleoFilter, setNucleoFilter ] = useState('')
 
-  const filteredCourses = courses?.filter(c =>
-    (normalizeText(c.name).includes(normalizeText(searchQuery)) || normalizeText(c.abbreviation).includes(normalizeText(searchQuery))) &&
-    (nucleoFilter === '' || c.nucleus.id === nucleoFilter)
-  ) || []
-  const sortedCourses = filteredCourses.sort((a, b) => a.name.localeCompare(b.name)).sort((a) => a.belongs_to_season? -1 : 1)
+  const filteredCourses =
+    courses?.filter(
+      (c) =>
+        (normalizeText(c.name).includes(normalizeText(searchQuery)) ||
+          normalizeText(c.abbreviation).includes(normalizeText(searchQuery)) ||
+          normalizeText(c.nucleus.name).includes(normalizeText(searchQuery))) &&
+        (nucleoFilter === "" || c.nucleus.id === nucleoFilter),
+    ) || [];
+  const sortedCourses = filteredCourses
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .sort((a) => (a.belongs_to_season ? -1 : 1));
 
   if (courses === null) {
     return (
