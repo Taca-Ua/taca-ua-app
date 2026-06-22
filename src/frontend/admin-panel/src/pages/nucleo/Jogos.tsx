@@ -12,7 +12,7 @@ const Jogos = () => {
   const [tournamentMap, setTournamentMap] = useState<Record<string, TournamentListItem>>({});
   const [loading, setLoading] = useState(true);
   const { notify } = useNotification();
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('calendar');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalMatches, setTotalMatches] = useState(0);
