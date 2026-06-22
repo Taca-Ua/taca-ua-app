@@ -58,8 +58,14 @@ const ChoseOneModal = ( {
         return (
           <div
             key={element.id}
+            tabIndex={0}
             onClick={() => handleSelect(element)}
-            className={`flex items-center justify-between px-4 py-3 rounded-md cursor-pointer transition-colors bg-gray-50 hover:bg-gray-200 ${chosenElement === element.id ? "bg-teal-50 border-teal-300 border" : ""}`}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                handleSelect(element);
+              }
+            }}
+            className={`flex items-center justify-between px-4 py-3 rounded-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-inset focus:ring-teal-500 transition-colors bg-gray-50 hover:bg-gray-200 ${chosenElement === element.id ? "bg-teal-50 border-teal-300 border" : ""}`}
           >
             <div className="flex items-center gap-3">
               <div

@@ -23,25 +23,31 @@ const ChoseOneInput = ( {
 
     const [element, setElement] = elementState || useState<GenericElement | null>(initialElement || null);
 
-    return (
-      <div>
-        <div
-          onClick={() =>
-            pushModal(
-              <ChoseOneModal
+    const handleClick = () => {
+        pushModal(
+            <ChoseOneModal
                 allElementsLoader={allElementsLoader}
                 onSelect={(element) => {
-                  onSelect(element);
-                  setElement(element);
+                    onSelect(element);
+                    setElement(element);
                 }}
                 initialSelectedId={element ? element.id : initialElement?.id || undefined}
-              />,
-            )
+            />,
+        );
+    }
+
+    return (
+      <div
+        onClick={handleClick}
+        className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700 cursor-pointer"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            handleClick();
           }
-          className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700 cursor-pointer"
-        >
-          {element ? element.title : "Selecionar Elemento"}
-        </div>
+        }}
+      >
+        {element ? element.title : "Selecionar Elemento"}
       </div>
     );
 }
