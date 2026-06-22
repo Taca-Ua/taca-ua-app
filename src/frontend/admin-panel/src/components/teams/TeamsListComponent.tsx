@@ -27,11 +27,13 @@ const TeamsListElement = ({ team }: { team: TeamListItem }) => {
 const TeamsListComponent = ({
   teamsState,
   modalityId,
-  nucleusId
+  nucleusId,
+  courseId
 }: {
   teamsState?: [TeamListItem[] | null, React.Dispatch<React.SetStateAction<TeamListItem[] | null>>];
   modalityId?: string;
   nucleusId?: string;
+  courseId?: string;
 }) => {
   const { loadedSeason } = useSeason();
 
@@ -48,7 +50,8 @@ const TeamsListComponent = ({
     teamsApi.getAll({
       season_id: loadedSeason?.id,
       modality_id: modalityId,
-      nucleus_id: nucleusId
+      nucleus_id: nucleusId,
+      course_id: courseId
     })
       .then((data) => {
         setTeams(data);
@@ -143,12 +146,13 @@ const TeamsListComponent = ({
             </select>
           </div>)}
 
-          <div>
-            <label
-              htmlFor="courseFilter"
-              className="block text-gray-700 font-medium mb-2"
-            >
-              Curso
+          {!courseId && (
+            <div>
+              <label
+                htmlFor="courseFilter"
+                className="block text-gray-700 font-medium mb-2"
+              >
+                Curso
             </label>
             <select
               id="courseFilter"
@@ -163,7 +167,7 @@ const TeamsListComponent = ({
                 </option>
               )).sort((a, b) => a.props.children.localeCompare(b.props.children))}
             </select>
-          </div>
+          </div>)}
         </div>
 
         <div className="space-y-3">

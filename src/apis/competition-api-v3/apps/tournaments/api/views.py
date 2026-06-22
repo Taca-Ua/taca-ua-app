@@ -64,6 +64,7 @@ class TournamentListCreateView(RoleRequiredMixin, APIView):
         tournaments = get_tournaments_table(
             status=serializer.validated_data.get("status"),
             modality_id=serializer.validated_data.get("modality_id"),
+            course_id=serializer.validated_data.get("course_id"),
             season_id=season_id,
         )
 
