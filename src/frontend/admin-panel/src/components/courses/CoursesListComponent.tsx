@@ -1,15 +1,19 @@
-import { useState } from "react"
-import { type CourseListItem } from "../../api/courses"
+import { useEffect, useState } from "react"
+import { type CourseListItem, coursesApi } from "../../api/courses"
 import { useNavigate } from "react-router"
 import { normalizeText } from "../utils/utils"
 import LazyImage from "../utils/LazyImage"
+import { useNotification } from "../../contexts/NotificationProvider"
 
 const CourseEntry = (course: CourseListItem) => {
   const navigate = useNavigate();
+
+  const elementIsDisabled = (course.belongs_to_season === undefined)? false : !course.belongs_to_season;
+
   return (
     <div
       onClick={() => navigate(`/cursos/${course.id}`)}
-      className={"cursor-pointer bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 p-6 flex flex-col gap-4" + (course.belongs_to_season ? "" : " opacity-50")}
+      className={"cursor-pointer bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 p-6 flex flex-col gap-4" + (elementIsDisabled ? " opacity-50" : "")}
     >
       <div className="flex items-center justify-evenly text-center gap-3">
         {course.logo_url ? (
@@ -32,14 +36,35 @@ const CourseEntry = (course: CourseListItem) => {
 };
 
 const CoursesListComponent = ( {
+  nucleoId,
   coursesState,
 } : {
-  coursesState: [CourseListItem[], React.Dispatch<React.SetStateAction<CourseListItem[] | null>>]
+  nucleoId?: string,
+  coursesState?: [CourseListItem[] | null, React.Dispatch<React.SetStateAction<CourseListItem[] | null>>]
 } ) => {
-  const [ courses, ] = coursesState
+  const { notify } = useNotification();
+  const [loading, setLoading] = useState(true);
+
+  const [ courses, setCourses ] = coursesState || useState<CourseListItem[] | null>(null)
 
   const [ searchQuery, setSearchQuery ] = useState('')
   const [ nucleoFilter, setNucleoFilter ] = useState('')
+
+  useEffect(() => {
+    // If courses are already loaded, do not fetch again
+    if (courses !== null && courses.length > 0) {
+      return;
+    }
+
+    setLoading(true)
+    coursesApi.getAll(undefined, nucleoId).then(resp => {
+      setCourses(resp)
+    }).catch(() => {
+      notify('Erro ao carregar cursos', 'error')
+    }).finally(() => {
+      setLoading(false)
+    })
+  }, [])
 
   const filteredCourses =
     courses?.filter(
@@ -53,10 +78,26 @@ const CoursesListComponent = ( {
     .sort((a, b) => a.name.localeCompare(b.name))
     .sort((a) => (a.belongs_to_season ? -1 : 1));
 
-  if (courses === null) {
+  if (loading) {
     return (
       <div className="bg-white rounded-lg shadow-md p-6">
         <p className="text-gray-500 text-center py-8">Carregando cursos...</p>
+      </div>
+    )
+  }
+
+  if (!courses) {
+    return (
+      <div className="bg-red-50 rounded-lg shadow-md p-6">
+        <p className="text-gray-500 text-center py-8">Erro ao carregar cursos.</p>
+      </div>
+    )
+  }
+
+  if (courses.length === 0) {
+    return (
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <p className="text-gray-500 text-center py-8">Nenhum curso disponível.</p>
       </div>
     )
   }

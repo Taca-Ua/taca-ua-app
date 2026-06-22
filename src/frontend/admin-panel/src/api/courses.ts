@@ -30,8 +30,8 @@ export interface CourseUpdate {
 }
 
 export const coursesApi = {
-  async getAll(seasonId?: number): Promise<CourseListItem[]> {
-    return apiClient.get<CourseListItem[]>('/courses/', { season_id: seasonId });
+  async getAll(seasonId?: number, nucleoId?: string): Promise<CourseListItem[]> {
+    return apiClient.get<CourseListItem[]>('/courses/', { season_id: seasonId, nucleo_id: nucleoId });
   },
 
   async create(data: CourseCreate): Promise<CourseListItem> {

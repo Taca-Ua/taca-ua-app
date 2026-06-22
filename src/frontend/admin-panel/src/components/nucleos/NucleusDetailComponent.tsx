@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useNotification } from "../../contexts/NotificationProvider";
 import { type NucleoDetail, nucleosApi } from "../../api/nucleos";
-import HelpTooltip from "../HelpTooltip";
 import NucleusEditModal from "./NucleusEditModal";
 import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
@@ -61,11 +60,10 @@ const NucleusDetailComponent = ( { nucleusId } : { nucleusId: string }) => {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
+    <div className="bg-white rounded-lg shadow-md p-6 space-x-4 space-y-4 flex flex-col md:flex-row">
       <div>
-        <label className="block text-teal-500 font-medium mb-2">Logo</label>
         { logoUrl ? (
-          <div className="w-24 h-24 rounded-full flex items-center justify-center overflow-hidden border-2 border-teal-500">
+          <div className="w-24 h-24 flex items-center justify-center overflow-hidden">
             <LazyImage src={logoUrl} alt={`${nucleus?.name} logo`} className="w-full h-full object-cover" />
           </div>
         ) : (
@@ -79,52 +77,16 @@ const NucleusDetailComponent = ( { nucleusId } : { nucleusId: string }) => {
         )}
       </div>
 
-      <div>
-        <label className="block text-teal-500 font-medium mb-2">
-          Abreviatura{" "}
-          <HelpTooltip
-            text="Sigla ou código curto do núcleo, ex: NEECT, NEEEC. Utilizado como identificador visual no sistema."
-            className="ml-1"
-          />
-        </label>
-        <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
-          {nucleus.abbreviation}
-        </div>
+      <div className="flex flex-col gap-1 flex-grow">
+        <h1 className="text-2xl font-bold text-gray-800">
+          <span className="text-teal-500 font-medium text-lg">Nome:</span> {nucleus.name}
+        </h1>
+        <h2 className="text-lg font-semibold text-gray-700 mb-1">
+          <span className="text-teal-500 font-medium text-lg">Abreviação:</span> {nucleus.abbreviation}
+        </h2>
       </div>
 
-      <div>
-        <label className="block text-teal-500 font-medium mb-2">Nome</label>
-        <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
-          {nucleus.name}
-        </div>
-      </div>
-
-      {nucleus.courses.length > 0 && (
-        <div>
-          <label className="block text-teal-500 font-medium mb-2">
-            Cursos Associados
-          </label>
-          <div className="bg-gray-100 px-4 py-3 rounded-md">
-            <div className="flex flex-wrap gap-2">
-              {[...nucleus.courses]
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .map((course) => (
-                  <span
-                    key={course.id}
-                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800 font-medium"
-                  >
-                    {course.name}
-                    <span className="ml-1 text-blue-600">
-                      ({course.abbreviation})
-                    </span>
-                  </span>
-                ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="flex gap-4 pt-4">
+      <div className="flex flex-row gap-2 flex-grow md:flex-col">
         <Button
           onClick={() =>
             pushModal(<NucleusEditModal nucleusState={[nucleus, setNucleus]} />)
