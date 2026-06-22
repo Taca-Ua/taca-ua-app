@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { administratorsApi, type AdminListItem } from '../../api/admins';
 import { useNotification } from '../../contexts/NotificationProvider';
 import AdminCreateModal from '../../components/admins/AdminCreateModal';
@@ -10,7 +10,6 @@ import { useModal } from '../../contexts/ModalContext';
 
 
 function Administradores() {
-  const navigate = useNavigate();
   const { notify } = useNotification();
   const { isAdminGeneral } = useAuth();
   const { pushModal } = useModal();
@@ -49,20 +48,19 @@ function Administradores() {
 
 
   const renderAdminRow = (admin: AdminListItem) => (
-    <button
+    <Link
       key={admin.id}
-        type="button"
-        onClick={() => navigate(`/administradores/${admin.id}`)}
+        to={`/administradores/${admin.id}`}
         className={admin.enabled ?
-            "w-full text-left bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500" :
-            "w-full text-left bg-gray-100 p-4 rounded-md opacity-50"
+            "block w-full text-left bg-gray-100 p-4 rounded-md hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500" :
+            "block w-full text-left bg-gray-100 p-4 rounded-md opacity-50"
         }
       >
         <div className="flex justify-between items-center">
           <span className="text-gray-800 font-medium">{admin.name}</span>
           <span className="text-gray-600 text-sm">{admin.username} - {admin.email}</span>
         </div>
-      </button>
+      </Link>
   );
 
   if (loading) {

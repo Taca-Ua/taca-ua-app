@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { matchesApi, type MatchListItem } from '../../api/matches';
 import { tournamentsApi, type TournamentListItem } from '../../api/tournaments';
 import { useNotification } from '../../contexts/NotificationProvider';
@@ -7,7 +7,6 @@ import { btn } from '../../styles/buttonStyles';
 import MatchesCalendarComponent from '../../components/matches/MatchesCalendarComponent';
 
 const Jogos = () => {
-  const navigate = useNavigate();
   const [matches, setMatches] = useState<MatchListItem[]>([]);
   const [tournamentMap, setTournamentMap] = useState<Record<string, TournamentListItem>>({});
   const [loading, setLoading] = useState(true);
@@ -129,11 +128,10 @@ const Jogos = () => {
                         const { date, time } = formatDateTime(match.start_time);
                         const tournament = tournamentMap[match.tournament.id];
                         return (
-                          <button
+                          <Link
                             key={match.id}
-                            type="button"
-                            onClick={() => navigate(`/jogos/${match.id}`)}
-                            className="w-full text-left px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
+                            to={`/jogos/${match.id}`}
+                            className="block w-full text-left px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
                           >
                             <div className="flex justify-between items-start mb-2">
                               <span className="text-gray-800 font-bold text-lg">
@@ -170,7 +168,7 @@ const Jogos = () => {
                                 <span className="font-medium">Local:</span> {match.location}
                               </span>
                             </div>
-                          </button>
+                          </Link>
                         );
                       })
                     ) : (

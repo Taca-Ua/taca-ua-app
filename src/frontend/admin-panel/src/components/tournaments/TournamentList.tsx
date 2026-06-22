@@ -5,7 +5,7 @@ import {
   TOURNAMENT_STATUS_LABELS,
   TOURNAMENT_STATUS_ORDER,
 } from "../../constants/tournaments";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useNotification } from "../../contexts/NotificationProvider";
 import { useSeason } from "../../contexts/SeasonContext";
 
@@ -16,12 +16,10 @@ const TournamentListItemComponent = ({
   tournament: TournamentListItem;
   displayModality?: boolean;
 }) => {
-  const navigate = useNavigate();
 
   return (
-    <button
-      type="button"
-      onClick={() => navigate(`/torneios/${tournament.id}`)}
+    <Link
+      to={`/torneios/${tournament.id}`}
       className="w-full text-left px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-teal-500"
     >
       <div className="flex flex-col">
@@ -50,7 +48,7 @@ const TournamentListItemComponent = ({
           {TOURNAMENT_STATUS_LABELS[tournament.status] || tournament.status}
         </span>
       </div>
-    </button>
+    </Link>
   );
 };
 

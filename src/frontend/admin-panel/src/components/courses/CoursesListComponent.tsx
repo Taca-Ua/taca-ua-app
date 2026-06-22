@@ -1,19 +1,18 @@
 import { useEffect, useState } from "react"
 import { type CourseListItem, coursesApi } from "../../api/courses"
-import { useNavigate } from "react-router"
+import { Link } from "react-router"
 import { normalizeText } from "../utils/utils"
 import LazyImage from "../utils/LazyImage"
 import { useNotification } from "../../contexts/NotificationProvider"
 import { useSeason } from "../../contexts/SeasonContext"
 
 const CourseEntry = (course: CourseListItem) => {
-  const navigate = useNavigate();
 
   const elementIsDisabled = (course.belongs_to_season === undefined)? false : !course.belongs_to_season;
 
   return (
-    <div
-      onClick={() => navigate(`/cursos/${course.id}`)}
+    <Link
+      to={`/cursos/${course.id}`}
       className={"cursor-pointer bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 p-6 flex flex-col gap-4" + (elementIsDisabled ? " opacity-50" : "")}
     >
       <div className="flex items-center justify-evenly text-center gap-3">
@@ -32,7 +31,7 @@ const CourseEntry = (course: CourseListItem) => {
       <div className="pt-2 border-t border-gray-100">
         <span className="text-gray-500 text-xs uppercase tracking-wider">{course.nucleus.name}</span>
       </div>
-    </div>
+    </Link>
   )
 };
 
