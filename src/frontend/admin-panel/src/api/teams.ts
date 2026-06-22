@@ -12,6 +12,7 @@ export interface TeamListItem {
     name: string;
     abbreviation: string;
   };
+  logo_url?: string | null;
 }
 
 export interface TeamDetail extends TeamListItem {
@@ -24,7 +25,6 @@ export interface TeamDetail extends TeamListItem {
     id: number;
     name: string;
   };
-  logo_url?: string | null;
 }
 
 export interface TeamCreate {

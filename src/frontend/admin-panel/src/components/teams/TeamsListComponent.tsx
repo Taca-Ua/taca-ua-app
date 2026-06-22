@@ -1,26 +1,31 @@
 import { useEffect, useState } from "react";
 import { type TeamListItem, teamsApi } from "../../api/teams";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useSeason } from "../../contexts/SeasonContext";
+import LazyImage from "../utils/LazyImage";
 
 const TeamsListElement = ({ team }: { team: TeamListItem }) => {
-  const navigate = useNavigate();
   return (
-    <button
+    <Link
       key={team.id}
-      onClick={() => navigate(`/equipas/${team.id}`)}
-      className="w-full text-left px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
+      to={`/equipas/${team.id}`}
+      className="cursor-pointer bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 p-6 flex flex-col gap-4"
     >
-      <div className="flex justify-between items-center">
+      <div className="flex justify-start items-center gap-3">
+        {team.logo_url ? (
+          <LazyImage src={team.logo_url} alt={team.name} className="h-24 object-cover" />
+        ) : (
+          <div className="w-24 h-24 rounded-full bg-teal-50 flex items-center justify-center border-2 border-teal-500">
+            <span className="text-teal-600 font-bold text-sm">{team.name.charAt(0)}</span>
+          </div>
+        )}
         <span className="text-gray-800 font-medium">{team.name}</span>
-        <div className="flex gap-4 text-sm">
-          <span className="text-teal-600 font-medium">
-            {team.modality.name}
-          </span>
-          <span className="text-gray-500">{team.course.name}</span>
-        </div>
       </div>
-    </button>
+      <div className="pt-2 border-t border-gray-100 flex items-center justify-start gap-4">
+        <span className="text-teal-600 text-sm tracking-wider">{team.modality.name}</span>
+        <span className="text-gray-500 text-xs tracking-wider">{team.course.name}</span>
+      </div>
+    </Link>
   );
 };
 
@@ -170,7 +175,7 @@ const TeamsListComponent = ({
           </div>)}
         </div>
 
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTeams.length > 0 ? (
             filteredTeams.map((team) => (
               <TeamsListElement key={team.id} team={team} />
