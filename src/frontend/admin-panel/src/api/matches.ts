@@ -61,6 +61,7 @@ export interface MatchListFilter {
   modality_id?: string;
   course_id?: string;
   nucleus_id?: string;
+  team_id?: string;
   date_from?: string; // ISO date string
   date_to?: string;   // ISO date string
 

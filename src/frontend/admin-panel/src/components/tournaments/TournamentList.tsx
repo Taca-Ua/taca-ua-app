@@ -57,11 +57,13 @@ const TournamentListItemComponent = ({
 const TournamentListComponent = ({
   tournamentsState,
   courseId,
-  modalityId
+  modalityId,
+  teamId
 }: {
   tournamentsState?: [TournamentListItem[] | null, React.Dispatch<React.SetStateAction<TournamentListItem[] | null>>];
   courseId?: string;
   modalityId?: string;
+  teamId?: string;
 }) => {
   const { loadedSeason } = useSeason();
   const { notify } = useNotification();
@@ -82,6 +84,7 @@ const TournamentListComponent = ({
       season_id: loadedSeason?.id,
       course_id: courseId,
       modality_id: modalityId,
+      team_id: teamId,
     })
       .then(setTournaments)
       .catch((error) => {
@@ -90,7 +93,7 @@ const TournamentListComponent = ({
       })
       .finally(() => setLoading(false));
 
-  }, [loadedSeason?.id, courseId, modalityId]);
+  }, [loadedSeason?.id, courseId, modalityId, teamId]);
 
   if (loading) {
     return (

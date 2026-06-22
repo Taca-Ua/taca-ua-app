@@ -65,6 +65,7 @@ class TournamentListCreateView(RoleRequiredMixin, APIView):
             status=serializer.validated_data.get("status"),
             modality_id=serializer.validated_data.get("modality_id"),
             course_id=serializer.validated_data.get("course_id"),
+            team_id=serializer.validated_data.get("team_id"),
             season_id=season_id,
         )
 

@@ -6,10 +6,12 @@ const MatchesCalendarComponent = ({
   courseId,
   modalityId,
   nucleusId,
+  teamId,
 } : {
   courseId?: string;
   modalityId?: string;
   nucleusId?: string;
+  teamId?: string;
 }) => {
 
     const navigate = useNavigate();
@@ -30,6 +32,7 @@ const MatchesCalendarComponent = ({
             course_id: courseId,
             modality_id: modalityId,
             nucleus_id: nucleusId,
+            team_id: teamId,
         }).then((data) => {
             setMatches(data.matches);
         }).catch((err) => {
@@ -37,7 +40,7 @@ const MatchesCalendarComponent = ({
         }).finally(() => {
             setLoading(false);
         });
-    }, [currentMonth]);
+    }, [currentMonth, courseId, modalityId, nucleusId, teamId]);
 
     const getStatusDotColor = (status: string) => {
         switch (status) {

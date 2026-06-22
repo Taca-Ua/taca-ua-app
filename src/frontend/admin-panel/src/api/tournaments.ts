@@ -58,6 +58,7 @@ export interface TournamentListParams {
   modality_id?: string;
   season_id?: number;
   course_id?: string;
+  team_id?: string;
 };
 
 export interface TournamentCreate {
