@@ -4,6 +4,7 @@ import { useNavigate } from "react-router"
 import { normalizeText } from "../utils/utils"
 import LazyImage from "../utils/LazyImage"
 import { useNotification } from "../../contexts/NotificationProvider"
+import { useSeason } from "../../contexts/SeasonContext"
 
 const CourseEntry = (course: CourseListItem) => {
   const navigate = useNavigate();
@@ -43,9 +44,10 @@ const CoursesListComponent = ( {
   coursesState?: [CourseListItem[] | null, React.Dispatch<React.SetStateAction<CourseListItem[] | null>>]
 } ) => {
   const { notify } = useNotification();
-  const [loading, setLoading] = useState(true);
+  const { loadedSeason } = useSeason();
 
   const [ courses, setCourses ] = coursesState || useState<CourseListItem[] | null>(null)
+  const [loading, setLoading] = useState(true);
 
   const [ searchQuery, setSearchQuery ] = useState('')
   const [ nucleoFilter, setNucleoFilter ] = useState('')
@@ -57,7 +59,7 @@ const CoursesListComponent = ( {
     }
 
     setLoading(true)
-    coursesApi.getAll(undefined, nucleoId).then(resp => {
+    coursesApi.getAll(loadedSeason?.id, nucleoId).then(resp => {
       setCourses(resp)
     }).catch(() => {
       notify('Erro ao carregar cursos', 'error')

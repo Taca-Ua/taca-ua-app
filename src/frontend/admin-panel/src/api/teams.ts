@@ -43,6 +43,7 @@ export interface TeamListParams {
   season_id?: number;
   modality_id?: string;
   course_id?: string;
+  nucleus_id?: string;
 }
 
 export const teamsApi = {

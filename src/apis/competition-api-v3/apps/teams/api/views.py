@@ -48,6 +48,7 @@ class TeamListCreateView(RoleRequiredMixin, APIView):
             season_id=serializer.validated_data.get("season_id"),
             modality_id=serializer.validated_data.get("modality_id"),
             course_id=serializer.validated_data.get("course_id"),
+            nucleus_id=serializer.validated_data.get("nucleus_id"),
         )
 
         serialized = TeamListSerializer(teams, many=True)

@@ -11,7 +11,7 @@ import TeamsListComponent from '../../components/teams/TeamsListComponent';
 import TabSystem from '../../components/TabSystem';
 import ModalityInfoComponent from '../../components/modalities/ModalityInfoComponent';
 import { useNotification } from '../../contexts/NotificationProvider';
-import { teamsApi, type TeamListItem } from '../../api/teams';
+import { type TeamListItem } from '../../api/teams';
 import { useSeason } from '../../contexts/SeasonContext';
 import SeasonSelector from '../../components/seasons/SeasonSelector';
 import MatchesCalendarComponent from '../../components/matches/MatchesCalendarComponent';
@@ -90,41 +90,6 @@ const TournamentsTab = ({
   );
 };
 
-const TeamsTab = ({
-  modality,
-  teamsState
-}: {
-  modality: ModalityDetail;
-  teamsState?: [TeamListItem[] | null, React.Dispatch<React.SetStateAction<TeamListItem[] | null>>]
-}) => {
-  const [teams, setTeams] = teamsState || useState<TeamListItem[] | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const { loadedSeason } = useSeason();
-
-  useEffect(() => {
-    setIsLoading(true);
-    teamsApi.getAll({ modality_id: modality.id, season_id: loadedSeason?.id })
-      .then((data) => setTeams(data))
-      .catch((error) => {
-        console.error('Erro ao carregar equipas:', error);
-        setTeams(null);
-      })
-      .finally(() => setIsLoading(false));
-  }, [modality.id, loadedSeason?.id]);
-
-  if (isLoading) {
-    return <div className="text-gray-500">Carregando equipas...</div>;
-  }
-
-  if (!teams) {
-    return <div className="text-red-500">Erro ao carregar equipas.</div>;
-  }
-
-  return (
-    <TeamsListComponent teams={teams} showModality={false} />
-  );
-}
-
 function ModalidadeDetail() {
   const modalityId = useParams<{ id: string }>().id;
   if (!modalityId) {
@@ -177,7 +142,7 @@ function ModalidadeDetail() {
           <TabSystem
             elements={[
               { id: 'tournaments', label: 'Torneios', content: <TournamentsTab modality={modality} tournamentsState={[tournaments, setTournaments]} /> },
-              { id: 'teams', label: 'Equipas', content: <TeamsTab modality={modality} teamsState={[teams, setTeams]} /> },
+              { id: 'teams', label: 'Equipas', content: <TeamsListComponent modalityId={modality.id} teamsState={[teams, setTeams]} /> },
               { id: 'matches', label: 'Jogos', content: <MatchesCalendarComponent modalityId={modality.id} /> },
             ]}
           />

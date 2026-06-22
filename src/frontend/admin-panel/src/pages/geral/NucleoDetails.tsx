@@ -5,6 +5,7 @@ import TabSystem from '../../components/TabSystem';
 import CoursesListComponent from '../../components/courses/CoursesListComponent';
 import TeamsListComponent from '../../components/teams/TeamsListComponent';
 import MatchesCalendarComponent from '../../components/matches/MatchesCalendarComponent';
+import SeasonSelector from '../../components/seasons/SeasonSelector';
 
 const NucleoDetails = () => {
   const navigate = useNavigate();
@@ -15,6 +16,8 @@ const NucleoDetails = () => {
   }
 
   return (
+    <>
+      <SeasonSelector />
       <div className="flex-1 p-8">
         <div className="max-w-4xl mx-auto mb-8">
           <div className="mb-8 flex justify-between items-center">
@@ -42,8 +45,7 @@ const NucleoDetails = () => {
             {
               id: 'teams',
               label: 'Equipas',
-              content: <div className="p-4">Conteúdo das equipas do núcleo (a ser implementado)</div>
-              // content: <TeamsListComponent />
+              content: <TeamsListComponent nucleusId={nucleusId} />
             },
             {
               id: 'matches',
@@ -53,6 +55,7 @@ const NucleoDetails = () => {
           ]}
         />
       </div>
+    </>
   );
 };
 
