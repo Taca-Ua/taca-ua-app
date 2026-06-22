@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { matchesApi, type MatchListItem } from "../../api/matches"
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useNotification } from "../../contexts/NotificationProvider";
 import Button from "../utils/Button";
 import { useAuth } from "../../hooks/useAuth";
@@ -8,7 +8,6 @@ import { normalizeText } from "../utils/utils";
 
 
 const MatchesListItemComponent = ( { match, onDeleted } : { match: MatchListItem; onDeleted: () => void } ) => {
-    const navigate = useNavigate();
     const { notify } = useNotification();
     const { isAdminGeneral } = useAuth();
 
@@ -61,10 +60,9 @@ const MatchesListItemComponent = ( { match, onDeleted } : { match: MatchListItem
     };
 
     return (
-      <button
-        type="button"
-        onClick={() => navigate(`/jogos/${match.id}`)}
-        className="w-full text-left p-4 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
+      <Link
+        to={`/jogos/${match.id}`}
+        className="block p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
       >
         <div className="flex justify-between items-start mb-2">
           <div className="flex-1">
@@ -113,7 +111,7 @@ const MatchesListItemComponent = ( { match, onDeleted } : { match: MatchListItem
             </Button>
           </div>
         </div>
-      </button>
+      </Link>
     );
 }
 

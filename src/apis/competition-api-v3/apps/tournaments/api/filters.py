@@ -9,3 +9,5 @@ class TournamentListQuerySerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=TournamentStatus.choices, required=False)
     modality_id = serializers.UUIDField(required=False)
     season_id = serializers.IntegerField(required=False)
+    course_id = serializers.UUIDField(required=False)
+    team_id = serializers.UUIDField(required=False)

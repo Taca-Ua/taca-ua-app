@@ -1,5 +1,5 @@
 import { type AthleteListItem, athletesApi } from "../../api/athletes";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNotification } from "../../contexts/NotificationProvider";
 import AthleteInfoModal from "./AthleteInfoModal";
 import { useModal } from "../../contexts/ModalContext";
@@ -95,13 +95,32 @@ const AthletesListBanner = ({
 
 const AthletesListComponent = ( {
     athletesState,
+    courseId
 } : {
-    athletesState: [AthleteListItem[] | null, React.Dispatch<React.SetStateAction<AthleteListItem[] | null>>]
+    athletesState?: [AthleteListItem[] | null, React.Dispatch<React.SetStateAction<AthleteListItem[] | null>>]
+    courseId?: string
 } ) => {
 
-    const [athletes, setAthletes] = athletesState;
+    const [athletes, setAthletes] = athletesState || useState<AthleteListItem[] | null>(null);
+    const [loading, setLoading] = useState(false);
 
-    if (athletes === null) {
+    useEffect(() => {
+      if (athletes !== null && athletes.length !== 0) return;
+
+      setLoading(true);
+      athletesApi.getAll({
+        course_id: courseId,
+      })
+        .then(setAthletes)
+        .catch((error) => {
+          console.error("Erro ao carregar atletas:", error);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }, [courseId]);
+
+    if (loading) {
         return (
           <div className="text-center py-12">
             <svg
@@ -129,7 +148,7 @@ const AthletesListComponent = ( {
         );
     }
 
-    if (athletes.length === 0) {
+    if (athletes === null || athletes.length === 0) {
         return (
           <div className="text-center py-12 text-gray-500">
             Nenhum participante corresponde aos filtros.

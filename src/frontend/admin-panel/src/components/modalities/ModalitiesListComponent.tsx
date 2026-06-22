@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { type ModalityListItem } from "../../api/modalities";
 
 
@@ -30,11 +30,9 @@ const ModalitiesListComponent = ({
   }
 
   const ModalityEntry = (mod: ModalityListItem) => {
-    const navigate = useNavigate();
     return (
-      <button
-        type="button"
-        onClick={() => navigate(`/modalidades/${mod.id}`)}
+      <Link
+        to={`/modalidades/${mod.id}`}
         className="w-full text-left px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-teal-500"
       >
         <span className="text-gray-800 font-medium">{mod.name}</span>
@@ -43,7 +41,7 @@ const ModalitiesListComponent = ({
             {mod.modality_type.name}
           </span>
         )}
-      </button>
+      </Link>
     );
   };
 

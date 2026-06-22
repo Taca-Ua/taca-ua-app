@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useSeason } from '../../contexts/SeasonContext';
 import Button from '../../components/utils/Button';
@@ -10,7 +10,6 @@ import SeasonSelector from '../../components/seasons/SeasonSelector';
 import { useNotification } from '../../contexts/NotificationProvider';
 
 function DashboardGeral() {
-  const navigate = useNavigate();
   // username is used in the welcome greeting below
   const { username } = useAuth();
   const { loadedSeason } = useSeason();
@@ -71,35 +70,32 @@ function DashboardGeral() {
 
               {/* Main Stats Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <button
-                  type="button"
-                  onClick={() => navigate('/modalidades')}
+                <Link
+                  to="/modalidades"
                   className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <h2 className="text-sm font-semibold text-teal-600 uppercase tracking-wide mb-3">Modalidades</h2>
                   <p className="text-4xl font-bold text-gray-800 mb-1">{seasonStatistics?.active_modalities_count ?? 0}</p>
                   <p className="text-xs text-gray-500">Ativas nesta época</p>
-                </button>
+                </Link>
 
-                <button
-                  type="button"
-                  onClick={() => navigate('/cursos')}
+                <Link
+                  to="/cursos"
                   className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left w-full focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
                   <h2 className="text-sm font-semibold text-purple-600 uppercase tracking-wide mb-3">Cursos</h2>
                   <p className="text-4xl font-bold text-gray-800 mb-1">{seasonStatistics?.active_courses_count ?? 0}</p>
                   <p className="text-xs text-gray-500">Ativos nesta época</p>
-                </button>
+                </Link>
 
-                <button
-                  type="button"
-                  onClick={() => navigate('/equipas')}
+                <Link
+                  to="/equipas"
                   className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <h2 className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">Equipas</h2>
                   <p className="text-4xl font-bold text-gray-800 mb-1">{seasonStatistics?.teams_count ?? 0}</p>
                   <p className="text-xs text-gray-500">Total registadas</p>
-                </button>
+                </Link>
               </div>
 
               {/* Tournaments Section */}
@@ -118,16 +114,15 @@ function DashboardGeral() {
                     <p className="text-sm text-blue-700 font-semibold">Agendados</p>
                     <p className="text-3xl font-bold text-blue-900 mt-2">{seasonStatistics?.tournaments_summary.scheduled ?? 0}</p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/torneios')}
+                  <Link
+                    to="/torneios"
                     className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg hover:shadow-md transition-shadow text-left focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
                     <p className="text-sm text-purple-700 font-semibold">Total</p>
                     <p className="text-3xl font-bold text-purple-900 mt-2">
                       {(seasonStatistics?.tournaments_summary.ongoing ?? 0) + (seasonStatistics?.tournaments_summary.finished ?? 0) + (seasonStatistics?.tournaments_summary.scheduled ?? 0)}
                     </p>
-                  </button>
+                  </Link>
                 </div>
               </div>
 

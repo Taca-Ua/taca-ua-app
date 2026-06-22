@@ -50,6 +50,7 @@ def get_matches_table(
     status: str = None,
     modality_id: str = None,
     course_id: str = None,
+    nucleus_id: str = None,
     tournament_id: str = None,
     season_id: str = None,
     admin_id: UUID = None,
@@ -90,6 +91,12 @@ def get_matches_table(
         queryset = queryset.filter(
             Q(participants__competitor__athlete__course_id=course_id)
             | Q(participants__competitor__team__course_id=course_id)
+        ).distinct()
+
+    if nucleus_id is not None:
+        queryset = queryset.filter(
+            Q(participants__competitor__athlete__course__nucleus_id=nucleus_id)
+            | Q(participants__competitor__team__course__nucleus_id=nucleus_id)
         ).distinct()
 
     if admin_id is not None:

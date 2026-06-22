@@ -15,7 +15,7 @@ from ..service import add_course_to_season as service_add_course_to_season
 from ..service import create_course, delete_course
 from ..service import remove_course_from_season as service_remove_course_from_season
 from ..service import update_course
-from .filters import CourseSeasonParamSerializer
+from .filters import CourseListQueryParamsSerializer, CourseSeasonParamSerializer
 from .serializers import (
     CourseCreateSerializer,
     CourseDetailSerializer,
@@ -29,7 +29,7 @@ from .serializers import (
         summary="List Courses",
         description="Retrieve a list of courses.",
         tags=["Course Manegement"],
-        parameters=[CourseSeasonParamSerializer],
+        parameters=[CourseSeasonParamSerializer, CourseListQueryParamsSerializer],
         responses={200: CourseListSerializer(many=True)},
     ),
     post=extend_schema(
@@ -43,11 +43,15 @@ from .serializers import (
 )
 class CourseListCreateView(RoleRequiredMixin, APIView):
     def get(self, request):
-        serializer = CourseSeasonParamSerializer(data=request.query_params)
-        serializer.is_valid(raise_exception=True)
+        season_serializer = CourseSeasonParamSerializer(data=request.query_params)
+        season_serializer.is_valid(raise_exception=True)
+
+        list_serializer = CourseListQueryParamsSerializer(data=request.query_params)
+        list_serializer.is_valid(raise_exception=True)
 
         courses = get_courses_table(
-            context_season_id=serializer.validated_data.get("season_id")
+            nucleo_id=list_serializer.validated_data.get("nucleo_id"),
+            context_season_id=season_serializer.validated_data.get("season_id"),
         )
 
         serializer = CourseListSerializer(
