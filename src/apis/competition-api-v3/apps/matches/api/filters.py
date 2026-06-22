@@ -9,6 +9,7 @@ class MatchListFilterSerializer(serializers.Serializer):
     tournament_id = serializers.UUIDField(required=False)
     modality_id = serializers.UUIDField(required=False)
     course_id = serializers.UUIDField(required=False)
+    nucleus_id = serializers.UUIDField(required=False)
     date_from = serializers.DateField(required=False)
     date_to = serializers.DateField(required=False)
     status = serializers.ChoiceField(choices=MatchStatus.values, required=False)

@@ -5,9 +5,11 @@ import { matchesApi, type MatchListItem } from "../../api/matches";
 const MatchesCalendarComponent = ({
   courseId,
   modalityId,
+  nucleusId,
 } : {
   courseId?: string;
   modalityId?: string;
+  nucleusId?: string;
 }) => {
 
     const navigate = useNavigate();
@@ -27,6 +29,7 @@ const MatchesCalendarComponent = ({
             date_to: new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).toISOString().split("T")[0],
             course_id: courseId,
             modality_id: modalityId,
+            nucleus_id: nucleusId,
         }).then((data) => {
             setMatches(data.matches);
         }).catch((err) => {

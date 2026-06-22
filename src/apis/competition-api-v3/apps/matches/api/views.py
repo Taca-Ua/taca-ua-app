@@ -70,6 +70,7 @@ class MatchListCreateView(RoleRequiredMixin, APIView):
             modality_id=serializer.validated_data.get("modality_id"),
             course_id=serializer.validated_data.get("course_id"),
             tournament_id=serializer.validated_data.get("tournament_id"),
+            nucleus_id=serializer.validated_data.get("nucleus_id"),
             date_from=serializer.validated_data.get("date_from"),
             date_to=serializer.validated_data.get("date_to"),
         )

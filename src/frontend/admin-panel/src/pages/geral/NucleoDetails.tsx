@@ -3,6 +3,8 @@ import NucleusDetailComponent from '../../components/nucleos/NucleusDetailCompon
 import Button from '../../components/utils/Button';
 import TabSystem from '../../components/TabSystem';
 import CoursesListComponent from '../../components/courses/CoursesListComponent';
+import TeamsListComponent from '../../components/teams/TeamsListComponent';
+import MatchesCalendarComponent from '../../components/matches/MatchesCalendarComponent';
 
 const NucleoDetails = () => {
   const navigate = useNavigate();
@@ -41,11 +43,12 @@ const NucleoDetails = () => {
               id: 'teams',
               label: 'Equipas',
               content: <div className="p-4">Conteúdo das equipas do núcleo (a ser implementado)</div>
+              // content: <TeamsListComponent />
             },
             {
               id: 'matches',
               label: 'Jogos',
-              content: <div className="p-4">Conteúdo dos jogos do núcleo (a ser implementado)</div>
+              content: <MatchesCalendarComponent nucleusId={nucleusId} />
             }
           ]}
         />
