@@ -23,7 +23,8 @@ class AthleteListSerializer(serializers.Serializer):
 class AthleteDetailSerializer(AthleteListSerializer):
     """Serializer for student detail"""
 
-    pass
+    course_proof_file_url = serializers.CharField()
+    payment_proof_file_url = serializers.CharField()
 
 
 # Request serializers for athletes module

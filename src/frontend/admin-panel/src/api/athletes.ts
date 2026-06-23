@@ -14,7 +14,10 @@ export interface AthleteListItem {
     is_member: boolean;
 };
 
-export interface AthleteDetail extends AthleteListItem {};
+export interface AthleteDetail extends AthleteListItem {
+    course_proof_file_url?: string;
+    payment_proof_file_url?: string;
+};
 
 
 export interface AthleteListParams {
