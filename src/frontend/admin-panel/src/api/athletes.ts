@@ -27,6 +27,8 @@ export interface AthleteCreate {
     course_id: string;
     student_number: string;
     is_member?: boolean;
+    course_proof?: File;
+    payment_proof?: File;
 }
 
 export interface AthleteUpdate {
