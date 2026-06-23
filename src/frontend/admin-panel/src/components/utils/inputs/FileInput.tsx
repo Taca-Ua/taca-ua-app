@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNotification } from "../../../contexts/NotificationProvider";
 
 const formatFileSize = (size: number) => {
@@ -9,8 +9,12 @@ const formatFileSize = (size: number) => {
 
 const FileInput = ({
   fileState,
+  file_url,
+  onFileChange,
 } : {
   fileState: [File | null, React.Dispatch<React.SetStateAction<File | null>>];
+  file_url?: string;
+  onFileChange?: (file: File | null) => void;
 }) => {
     const { notify } = useNotification();
 
@@ -18,6 +22,23 @@ const FileInput = ({
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [ isDragOver, setIsDragOver ] = useState(false);
     const dragCounterRef = useRef(0);
+
+    useEffect(() => {
+        if (file_url) {
+            // If a file URL is provided, we can fetch the file and set it as the current file.
+            fetch(file_url)
+                .then(response => response.blob())
+                .then(blob => {
+                    const fileName = file_url.split('/').pop() || 'downloaded_file.pdf';
+                    const file = new File([blob], fileName, { type: blob.type });
+                    setFile(file);
+                })
+                .catch(err => {
+                    console.error("Failed to fetch file from URL:", err);
+                    notify("Erro ao carregar o ficheiro. Tente novamente.", "error");
+                });
+        }
+    }, [file_url, setFile, notify]);
 
     const applyFile = (incoming: File | null) => {
         if (!incoming) return;
@@ -30,6 +51,7 @@ const FileInput = ({
             return;
         }
         setFile(incoming);
+        if (onFileChange) onFileChange(incoming);
     };
 
     return (
@@ -69,6 +91,7 @@ const FileInput = ({
               onClick={() => {
                 setFile(null);
                 if (fileInputRef.current) fileInputRef.current.value = "";
+                if (onFileChange) onFileChange(null);
               }}
               className="flex-shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
               title="Remover ficheiro"

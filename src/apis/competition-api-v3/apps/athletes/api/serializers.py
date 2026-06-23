@@ -47,6 +47,24 @@ class AthleteUpdateSerializer(serializers.Serializer):
     student_number = serializers.CharField(required=False)
     is_member = serializers.BooleanField(required=False)
 
+    course_proof = serializers.FileField(required=False, allow_null=True)
+    course_proof_deleted = serializers.BooleanField(required=False, default=False)
+
+    payment_proof = serializers.FileField(required=False, allow_null=True)
+    payment_proof_deleted = serializers.BooleanField(required=False, default=False)
+
+    def validate(self, attrs):
+        # Ensure that if a file is provided, the corresponding deleted flag is not set to True
+        if attrs.get("course_proof") and attrs.get("course_proof_deleted"):
+            raise serializers.ValidationError(
+                "Cannot provide a course proof file and mark it as deleted at the same time."
+            )
+        if attrs.get("payment_proof") and attrs.get("payment_proof_deleted"):
+            raise serializers.ValidationError(
+                "Cannot provide a payment proof file and mark it as deleted at the same time."
+            )
+        return attrs
+
 
 class AthleteMembershipSyncSerializer(serializers.Serializer):
     """Lista de NMECs a marcar como sócios (após reset a todos no âmbito)."""

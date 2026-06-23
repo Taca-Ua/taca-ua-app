@@ -55,6 +55,10 @@ def update_athlete(
     student_number: str = None,
     course_id: str = None,
     is_member: bool = None,
+    course_proof_file: UploadedFile = None,
+    course_proof_deleted: bool = False,
+    payment_proof_file: UploadedFile = None,
+    payment_proof_deleted: bool = False,
 ) -> Athlete:
     athlete = Athlete.objects.get(id=athlete_id)
 
@@ -67,6 +71,41 @@ def update_athlete(
         athlete.course = course
     if is_member is not None:
         athlete.is_member = is_member
+
+    # Handle course proof file
+    if course_proof_deleted:
+        if athlete.course_proof_file_url:
+            course_file_storage.delete_file(athlete.course_proof_file_url)
+            athlete.course_proof_file_url = None
+    elif course_proof_file:
+        # If a new course proof file is provided, delete the old one and upload the new one
+        if athlete.course_proof_file_url:
+            course_file_storage.update_file(
+                athlete.course_proof_file_url,
+                course_proof_file,
+            )
+        else:
+            athlete.course_proof_file_url = course_file_storage.upload_file(
+                course_proof_file
+            )
+
+    # Handle payment proof file
+    if payment_proof_deleted:
+        if athlete.payment_proof_file_url:
+            print("Deleting payment proof file:", athlete.payment_proof_file_url)
+            payment_file_storage.delete_file(athlete.payment_proof_file_url)
+            athlete.payment_proof_file_url = None
+    elif payment_proof_file:
+        # If a new payment proof file is provided, delete the old one and upload the new one
+        if athlete.payment_proof_file_url:
+            payment_file_storage.update_file(
+                athlete.payment_proof_file_url,
+                payment_proof_file,
+            )
+        else:
+            athlete.payment_proof_file_url = payment_file_storage.upload_file(
+                payment_proof_file
+            )
 
     athlete.save()
 
