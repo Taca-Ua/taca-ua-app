@@ -357,6 +357,30 @@ const JogoDetails = () => {
     }
   };
 
+  const handleActivateMatch = () => {
+    if (!match) return;
+
+    matchesApi.update(match.id, { status: 'in_progress' }).then((updatedMatch) => {
+      setMatch(updatedMatch);
+      notify('O jogo foi ativado com sucesso.', 'success');
+    }).catch(err => {
+      console.error('Error activating match:', err);
+      notify(err instanceof Error ? err.message : 'Não foi possível ativar o jogo. Tente novamente.', 'error');
+    });
+  }
+
+  const handleFinishMatch = () => {
+    if (!match) return;
+
+    matchesApi.update(match.id, { status: 'finished' }).then((updatedMatch) => {
+      setMatch(updatedMatch);
+      notify('O jogo foi terminado com sucesso.', 'success');
+    }).catch(err => {
+      console.error('Error finishing match:', err);
+      notify(err instanceof Error ? err.message : 'Não foi possível terminar o jogo. Tente novamente.', 'error');
+    });
+  }
+
   if (loading) {
     return (
       <div className="flex-1 flex justify-center items-center py-12">
@@ -422,6 +446,24 @@ const JogoDetails = () => {
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h3 className="text-xl font-bold text-gray-800 mb-4">Ações</h3>
                 <div className="space-y-3">
+                  <>
+                    <Button
+                      onClick={handleActivateMatch}
+                      type='primary'
+                      padding='w-full px-4 py-3 flex items-center justify-center'
+                      active={match.status == 'scheduled'}
+                    >
+                      Mudar estado para "Em Curso"
+                    </Button>
+                    <Button
+                      onClick={handleFinishMatch}
+                      type='primary'
+                      padding='w-full px-4 py-3 flex items-center justify-center'
+                      active={match.status == 'in_progress'}
+                    >
+                      Mudar estado para "Terminado"
+                    </Button>
+                  </>
                   <Button
                     onClick={handleDownloadSheet}
                     type='info'

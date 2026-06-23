@@ -43,7 +43,10 @@ class AthleteListCreateAPIView(RoleRequiredMixin, APIView):
         serializer = AthleteListRequestSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
-        athletes = get_athletes_table().all()
+        athletes = get_athletes_table(
+            course_id=serializer.validated_data.get("course_id"),
+            team_id=serializer.validated_data.get("team_id"),
+        ).all()
 
         serializer = AthleteListSerializer(athletes, many=True)
         return Response(serializer.data, status=200)
