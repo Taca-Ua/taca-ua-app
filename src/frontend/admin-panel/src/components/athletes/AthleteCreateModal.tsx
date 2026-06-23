@@ -6,6 +6,7 @@ import ChoseOneInput from "../utils/inputs/ChoseOneInput"
 import Button from "../utils/Button"
 import { useNotification } from "../../contexts/NotificationProvider"
 import { useModal } from "../../contexts/ModalContext"
+import FileInput from "../utils/inputs/FileInput"
 
 const AthleteCreateModal = ( {
     onCreate
@@ -18,12 +19,16 @@ const AthleteCreateModal = ( {
     const [memberName, setMemberName] = useState("")
     const [studentNumber, setStudentNumber] = useState("")
     const [courseId, setCourseId] = useState("")
+    const [comprovativoCurso, setComprovativoCurso] = useState<File | null>(null)
+    const [paymentProof, setPaymentProof] = useState<File | null>(null)
 
     const onClose = () => {
         popModal();
         setMemberName("");
         setCourseId("");
         setStudentNumber("");
+        setComprovativoCurso(null);
+        setPaymentProof(null);
     }
 
     const handleAddMember = () => {
@@ -54,6 +59,8 @@ const AthleteCreateModal = ( {
             course_id: String(courseId),
             student_number: trimmedStudentNumber,
             is_member: true,
+            course_proof: comprovativoCurso? comprovativoCurso : undefined,
+            payment_proof: paymentProof? paymentProof : undefined,
         }).then((newParticipant) => {
             if (onCreate) onCreate(newParticipant);
             notify('Atleta criado com sucesso!', 'success');
@@ -138,6 +145,26 @@ const AthleteCreateModal = ( {
                   setCourseId(element ? element.id : "");
                 }}
               />
+            </div>
+
+            <div>
+              <label
+                htmlFor="comprovativoCurso"
+                className="block text-gray-700 font-medium mb-2"
+              >
+                Comprovativo de Curso (opcional)
+              </label>
+              <FileInput fileState={[comprovativoCurso, setComprovativoCurso]} />
+            </div>
+
+            <div>
+              <label
+                htmlFor="paymentProof"
+                className="block text-gray-700 font-medium mb-2"
+              >
+                Comprovativo de Pagamento (opcional)
+              </label>
+              <FileInput fileState={[paymentProof, setPaymentProof]} />
             </div>
           </div>
 
