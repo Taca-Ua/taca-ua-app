@@ -48,7 +48,20 @@ export const athletesApi = {
   },
 
   async create(data: AthleteCreate): Promise<AthleteListItem> {
-    return apiClient.post<AthleteListItem>('/athletes/', data);
+    const formData = new FormData();
+    formData.append('name', data.name);
+    formData.append('course_id', data.course_id);
+    formData.append('student_number', data.student_number);
+    if (data.is_member !== undefined) {
+      formData.append('is_member', String(data.is_member));
+    }
+    if (data.course_proof) {
+      formData.append('course_proof', data.course_proof);
+    }
+    if (data.payment_proof) {
+      formData.append('payment_proof', data.payment_proof);
+    }
+    return apiClient.post<AthleteListItem>('/athletes/', formData);
   },
 
   async syncMembership(data: AthleteMembershipSync): Promise<void> {

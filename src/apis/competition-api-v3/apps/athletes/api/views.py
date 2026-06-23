@@ -59,6 +59,8 @@ class AthleteListCreateAPIView(RoleRequiredMixin, APIView):
             name=serializer.validated_data["name"],
             student_number=serializer.validated_data["student_number"],
             course_id=serializer.validated_data["course_id"],
+            course_proof_file=serializer.validated_data.get("course_proof"),
+            payment_proof_file=serializer.validated_data.get("payment_proof"),
         )
 
         serializer = AthleteDetailSerializer(get_athlete_by_id(athlete.id))

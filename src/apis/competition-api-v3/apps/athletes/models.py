@@ -21,6 +21,9 @@ class Athlete(models.Model):
         Course, on_delete=models.CASCADE, related_name="athletes"
     )
 
+    course_proof_file_url = models.CharField(max_length=255, null=True, blank=True)
+    payment_proof_file_url = models.CharField(max_length=255, null=True, blank=True)
+
     if TYPE_CHECKING:
         teams: RelatedManager[Team]
         match_lineups: RelatedManager["MatchParticipantAthleteLineup"]

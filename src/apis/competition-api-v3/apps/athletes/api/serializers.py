@@ -34,6 +34,8 @@ class AthleteCreateSerializer(serializers.Serializer):
     course_id = serializers.UUIDField(required=True)
     student_number = serializers.CharField(required=True)
     is_member = serializers.BooleanField(required=False, default=False)
+    course_proof = serializers.FileField(required=False, allow_null=True)
+    payment_proof = serializers.FileField(required=False, allow_null=True)
 
 
 class AthleteUpdateSerializer(serializers.Serializer):

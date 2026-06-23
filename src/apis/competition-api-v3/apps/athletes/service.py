@@ -1,13 +1,48 @@
 from apps.courses.models import Course
+from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
+from shared.file_storage.minio_service import MinioService
 
 from .models import Athlete
 
+course_file_storage = MinioService("courses-proofs")
+payment_file_storage = MinioService("payment-proofs")
+
 
 @transaction.atomic
-def create_athlete(name: str, student_number: str, course_id: str) -> Athlete:
+def create_athlete(
+    name: str,
+    student_number: str,
+    course_id: str,
+    course_proof_file: UploadedFile = None,
+    payment_proof_file: UploadedFile = None,
+) -> Athlete:
+
+    if course_proof_file:
+        # save the course proof file to Minio
+        course_proof_file_path = course_file_storage.upload_file(course_proof_file)
+
+    if payment_proof_file:
+        # save the payment proof file to Minio
+        try:
+            payment_proof_file_path = payment_file_storage.upload_file(
+                payment_proof_file
+            )
+        except Exception as e:
+            # if there's an error while uploading the payment proof file, delete the course proof file if it was uploaded
+            if course_proof_file:
+                course_file_storage.delete_file(course_proof_file_path)
+            raise e
+
+    # create the athlete instance
     athlete = Athlete.objects.create(
-        name=name, student_number=student_number, course_id=course_id
+        name=name,
+        student_number=student_number,
+        course_id=course_id,
+        course_proof_file_url=course_proof_file_path if course_proof_file else None,
+        payment_proof_file_url=payment_proof_file_path if payment_proof_file else None,
+        is_member=payment_proof_file
+        is not None,  # Set is_member to True if payment proof file is provided
     )
 
     return athlete
