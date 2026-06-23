@@ -284,7 +284,7 @@ class MatchLineupsView(RoleRequiredMixin, APIView):
         )
 
         participant = get_match_participant_by_id(
-            match_id=match_id, participant_id=participant_id, admin_id=admin_id
+            match_id=match_id, participant_id=participant_id, context_admin_id=admin_id
         )
 
         serializer = MatchParticipantLineupSerializer(participant)
