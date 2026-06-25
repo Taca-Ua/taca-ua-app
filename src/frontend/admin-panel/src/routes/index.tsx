@@ -22,6 +22,7 @@ import Torneios from '../pages/geral/Tournaments';
 import TorneioDetails from '../pages/geral/TorneioDetails';
 import JogoDetails from '../pages/geral/JogoDetails';
 import SociosGeral from '../pages/geral/Socios';
+import PublicWebsiteConfig from '../pages/geral/PublicWebsiteConfig';
 
 // Nucleo admin pages
 import Equipas from '../pages/nucleo/Teams';
@@ -74,6 +75,7 @@ export const router = createBrowserRouter([
       // Geral Admin Routes
       { path: '/administradores',     element: <ProtectedRoute> <Administradores /></ProtectedRoute> },
       { path: '/administradores/:id', element: <ProtectedRoute> <AdminDetailPage /></ProtectedRoute> },
+      { path: '/public-website-config', element: <ProtectedRoute> <PublicWebsiteConfig /></ProtectedRoute> },
       { path: '/modalidades',         element: <ProtectedRoute> <Modalities /></ProtectedRoute> },
       { path: '/modalidades/:id',     element: <ProtectedRoute> <ModalityDetails /></ProtectedRoute> },
       { path: '/nucleos',             element: <ProtectedRoute> <NucleoListPage /></ProtectedRoute> },

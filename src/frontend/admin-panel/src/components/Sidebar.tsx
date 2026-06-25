@@ -14,7 +14,9 @@ export default function Sidebar() {
 
   const navItems = [
     // system management
-    [{ to: "/administradores", label: "Administradores", short: "Adm" },],
+    [{ to: "/administradores", label: "Administradores", short: "Adm" },
+      { to: "/public-website-config", label: "Configuração do Site Público", short: "CSP" },
+    ],
 
     // modalities management
     [{ to: "/formatos-prova", label: "Formatos de Prova", short: "FP" },

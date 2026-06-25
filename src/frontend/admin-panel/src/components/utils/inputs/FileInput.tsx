@@ -11,10 +11,12 @@ const FileInput = ({
   fileState,
   file_url,
   onFileChange,
+  fileType = "pdf"
 } : {
   fileState: [File | null, React.Dispatch<React.SetStateAction<File | null>>];
   file_url?: string;
   onFileChange?: (file: File | null) => void;
+  fileType?: "pdf" | "image";
 }) => {
     const { notify } = useNotification();
 
@@ -42,8 +44,12 @@ const FileInput = ({
 
     const applyFile = (incoming: File | null) => {
         if (!incoming) return;
-        if (incoming.type !== 'application/pdf') {
+        if (fileType === "pdf" && incoming.type !== 'application/pdf') {
             notify('Apenas ficheiros PDF são permitidos.', 'error');
+            return;
+        }
+        if (fileType === "image" && !incoming.type.startsWith('image/')) {
+            notify('Apenas ficheiros de imagem são permitidos.', 'error');
             return;
         }
         if (incoming.size > 10 * 1024 * 1024) {
@@ -160,13 +166,13 @@ const FileInput = ({
                 >
                 {isDragOver
                     ? "Solte o ficheiro aqui"
-                    : "Clique ou arraste um ficheiro PDF"}
+                    : "Clique ou arraste um ficheiro"}
                 </span>
-                <span className="text-xs text-gray-400 mt-1">PDF até 10 MB</span>
+                <span className="text-xs text-gray-400 mt-1">Ficheiros até 10 MB</span>
                 <input
                 ref={fileInputRef}
                 type="file"
-                accept="application/pdf"
+                accept={fileType === "pdf" ? "application/pdf" : fileType === "image" ? "image/*" : ""}
                 className="sr-only"
                 onChange={(e) => applyFile(e.target.files?.[0] ?? null)}
                 required
