@@ -711,3 +711,29 @@ def list_seasons(
         items=seasons,
         total=total,
     )
+
+
+# ==================== Home Page Config Endpoints ====================
+
+
+@router.get(
+    "/home-page-config",
+    response_model=schemas.HomePageConfig,
+    summary="Get home page configuration",
+    description="Get the current configuration for the public website's home page",
+)
+def get_home_page_config(
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve the current configuration for the public website's home page.
+
+    - **db**: Database session
+    """
+    home_page_config = crud.get_home_page_config(db=db)
+    if not home_page_config:
+        logger.warning("home_page_config_not_found")
+        raise HTTPException(status_code=404, detail="Home page configuration not found")
+
+    logger.info("home_page_config_retrieved")
+    return home_page_config
