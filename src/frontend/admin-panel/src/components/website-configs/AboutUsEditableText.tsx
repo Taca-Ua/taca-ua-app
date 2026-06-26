@@ -1,9 +1,11 @@
 import { useRef } from "react";
 
 const AboutUsEditableText = ({
-  aboutUsTextLinesState
+  aboutUsTextLinesState,
+  onAboutUsTextChange
 } : {
   aboutUsTextLinesState: [string[], React.Dispatch<React.SetStateAction<string[]>>]
+  onAboutUsTextChange?: (newText: string[]) => void
 }) => {
     const [aboutUsTextLines, setAboutUsTextLines] = aboutUsTextLinesState;
     const textAreaRef = useRef<HTMLDivElement>(null);
@@ -21,10 +23,10 @@ const AboutUsEditableText = ({
     }
 
     const saveAboutUsTextLine = (index: number, newText: string) => {
-        setAboutUsTextLines(prev => {
-            const updated = [...prev];
-            updated[index] = newText;
-            return updated;
+        setAboutUsTextLines((prevLines) => {
+            const updatedLines = [...prevLines];
+            updatedLines[index] = newText;
+            return updatedLines;
         });
     }
 
@@ -32,6 +34,15 @@ const AboutUsEditableText = ({
       <div
         className="text-xl md:text-2xl text-gray-700 leading-relaxed space-y-8"
         ref={textAreaRef}
+        onBlur={(e) => {
+          const nextFocusedElement = e.relatedTarget as HTMLElement | null;
+
+          if (nextFocusedElement && textAreaRef.current?.contains(nextFocusedElement)) {
+            return; // Focus is still within the text area, do not trigger onBlur
+          }
+
+          onAboutUsTextChange?.(aboutUsTextLines);
+        }}
       >
         {aboutUsTextLines.map((line, index) => (
           <p
@@ -55,6 +66,9 @@ const AboutUsEditableText = ({
                       nextLine.focus();
                     }
                   }, 0);
+                } else {
+                  // Save changes for the current line
+                  saveAboutUsTextLine(index, e.currentTarget.textContent || "");
                 }
               }
               if (e.key === "Backspace" && e.currentTarget.textContent === "") {

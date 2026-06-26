@@ -3,14 +3,15 @@ import AboutUsEditableText from "../../components/website-configs/AboutUsEditabl
 import AddSponsorModal from "../../components/website-configs/AddSponsorModal";
 import HeroImageInputModal from "../../components/website-configs/HeroImageInputModal";
 import { useModal } from "../../contexts/ModalContext";
+import { plataformConfigsApi, type PlataformHomepageConfig } from "../../api/plataform_configs";
+import { useNotification } from "../../contexts/NotificationProvider";
 
 const PublicWebsiteConfig = () => {
     const { pushModal } = useModal();
+    const { notify } = useNotification();
 
     const [title, setTitle] = useState("TAÇA UA");
-    const [heroBackgroundImage, setHeroBackgroundImage] = useState(
-        "/images/ab204667-c021-499c-b1f9-db300bfd877c.webp"
-    );
+    const [heroBackgroundImage, setHeroBackgroundImage] = useState("/hero_image_placeholder.jpg");
     const [subtitle, setSubtitle] = useState("Glicínias Plaza");
     const [welcomeText, setWelcomeText] = useState("Bem-vindo ao portal do desporto universitário");
     const [aboutUsTextLines, setAboutUsTextLines] = useState([
@@ -41,8 +42,55 @@ const PublicWebsiteConfig = () => {
     ]);
 
     useEffect(() => {
-        console.log("Title updated:", title);
-    }, [title]);
+        plataformConfigsApi.getPublicHomepageConfig()
+          .then((config: PlataformHomepageConfig) => {
+            setTitle(config.title);
+            setSubtitle(config.subtitle);
+            setWelcomeText(config.welcome_message);
+            setAboutUsTextLines(config.about_us.split('\n'));
+            setHeroBackgroundImage(config.hero_image_url);
+          }).catch((error) => {
+            console.error("Error fetching public homepage config:", error);
+            notify("Erro ao carregar a configuração da página inicial pública.", "error");
+          });
+    }, []);
+
+    const handleUpdate = ({
+        title,
+        subtitle,
+        welcome_message,
+        about_us,
+        hero_image
+    } : {
+        title?: string,
+        subtitle?: string,
+        welcome_message?: string,
+        about_us?: string[],
+        hero_image?: File | null
+    }) => {
+        if (!title && !subtitle && !welcome_message && !about_us && !hero_image) {
+            return;
+        }
+
+        plataformConfigsApi.updatePublicHomepageConfig({
+            title,
+            subtitle,
+            welcome_message,
+            about_us: about_us?.join('\n'),
+            hero_image: hero_image || undefined,
+        }).then((updatedConfig: PlataformHomepageConfig) => {
+            setTitle(updatedConfig.title);
+            setSubtitle(updatedConfig.subtitle);
+            setWelcomeText(updatedConfig.welcome_message);
+            setAboutUsTextLines(updatedConfig.about_us.split('\n'));
+            setHeroBackgroundImage(updatedConfig.hero_image_url);
+            notify("Configuração da página inicial pública atualizada com sucesso.", "success");
+        }).catch((error) => {
+            console.error("Error updating public homepage config:", error);
+            notify("Erro ao atualizar a configuração da página inicial pública.", "error");
+        });
+    }
+
 
     return (
       <div className="grid place-items-center space-y-8 p-8">
@@ -61,6 +109,7 @@ const PublicWebsiteConfig = () => {
                 minHeight: "calc(100vh - 4rem)",
                 backgroundImage: `url(${heroBackgroundImage})`,
               }}
+              key={heroBackgroundImage}
             >
               <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 
@@ -69,7 +118,7 @@ const PublicWebsiteConfig = () => {
                   contentEditable
                   suppressContentEditableWarning
                   className="text-5xl md:text-6xl font-bold mb-4 border border-white/50 rounded-lg p-2"
-                  onBlur={(e) => setTitle(e.currentTarget.textContent || "")}
+                  onBlur={(e) => handleUpdate({ title: (e.currentTarget.textContent !== title)? e.currentTarget.textContent || "" : undefined })}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
@@ -83,7 +132,7 @@ const PublicWebsiteConfig = () => {
                   contentEditable
                   suppressContentEditableWarning
                   className="text-2xl md:text-3xl font-semibold mb-6 border border-white/50 rounded-lg p-2"
-                  onBlur={(e) => setSubtitle(e.currentTarget.textContent || "")}
+                  onBlur={(e) => handleUpdate({ subtitle: (e.currentTarget.textContent !== subtitle)? e.currentTarget.textContent || "" : undefined })}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
@@ -98,7 +147,7 @@ const PublicWebsiteConfig = () => {
                   suppressContentEditableWarning
                   className="text-xl md:text-2xl border border-white/50 rounded-lg p-2"
                   onBlur={(e) =>
-                    setWelcomeText(e.currentTarget.textContent || "")
+                    handleUpdate({ welcome_message: (e.currentTarget.textContent !== welcomeText)? e.currentTarget.textContent || "" : undefined })
                   }
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
@@ -116,11 +165,9 @@ const PublicWebsiteConfig = () => {
                 className="absolute top-4 right-4 bg-white rounded-full p-2 shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
                 onClick={() =>
                   pushModal(
-                    <HeroImageInputModal
-                      onImageSelected={(imageUrl) =>
-                        setHeroBackgroundImage(imageUrl)
-                      }
-                    />,
+                    <HeroImageInputModal onImageSelected={(img) => {
+                      handleUpdate({ hero_image: img });
+                    }} />,
                   )
                 }
               >
@@ -151,6 +198,7 @@ const PublicWebsiteConfig = () => {
                     aboutUsTextLines,
                     setAboutUsTextLines,
                   ]}
+                  onAboutUsTextChange={(updatedLines) => handleUpdate({ about_us: updatedLines })}
                 />
               </div>
             </section>

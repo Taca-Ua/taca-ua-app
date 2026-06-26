@@ -6,7 +6,7 @@ import FileInput from "../utils/inputs/FileInput";
 const HeroImageInputModal = ({
     onImageSelected
 }: {
-    onImageSelected: (imageUrl: string) => void
+    onImageSelected: (imageFile: File | null) => void
 }) => {
     const { popModal } = useModal();
 
@@ -14,8 +14,7 @@ const HeroImageInputModal = ({
 
     const onSubmit = () => {
         if (imageFile) {
-            const imageUrl = URL.createObjectURL(imageFile);
-            onImageSelected(imageUrl);
+            onImageSelected(imageFile);
         }
         popModal();
     }

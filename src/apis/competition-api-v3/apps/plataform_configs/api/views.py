@@ -54,7 +54,13 @@ class PublicHomepageConfigView(RoleRequiredMixin, APIView):
         serializer = PublicHomepageConfigUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        update_home_page_config(serializer.validated_data)
+        update_home_page_config(
+            title=serializer.validated_data.get("title"),
+            subtitle=serializer.validated_data.get("subtitle"),
+            welcome_message=serializer.validated_data.get("welcome_message"),
+            about_us=serializer.validated_data.get("about_us"),
+            hero_image=serializer.validated_data.get("hero_image"),
+        )
 
         serializer = PublicHomepageConfigSerializer(get_home_page_config())
         return Response(serializer.data, status=status.HTTP_200_OK)

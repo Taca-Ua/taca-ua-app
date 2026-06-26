@@ -1,6 +1,11 @@
+from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
+from shared.file_storage.minio_service import MinioService
 
 from .models import PublicWebsiteHomePage
+
+# init the MinioService for handling file storage related to regulations
+file_storage_service = MinioService("public-website-homepage")
 
 
 @transaction.atomic
@@ -20,13 +25,17 @@ def create_initial_config():
             subtitle="Your gateway to innovation",
             welcome_message="We are thrilled to have you here! Explore our platform and discover the endless possibilities.",
             about_us="Our platform is dedicated to fostering innovation and collaboration. Join us on this exciting journey!",
-            hero_image_url="https://example.com/default-hero-image.jpg",
+            hero_image_url="",
         )
 
 
 @transaction.atomic
 def update_home_page_config(
-    title: str, subtitle: str, welcome_message: str, about_us: str, hero_image_url: str
+    title: str = None,
+    subtitle: str = None,
+    welcome_message: str = None,
+    about_us: str = None,
+    hero_image: UploadedFile = None,
 ):
     """
     Update the home page configuration for the public website.
@@ -41,14 +50,25 @@ def update_home_page_config(
     """
 
     # Retrieve the existing home page configuration or create a new one if it doesn't exist
-    home_page_config = PublicWebsiteHomePage.objects.get(bucket=1)
+    home_page_config = PublicWebsiteHomePage.objects.get(_bucket=1)
 
     # Update the fields with the provided values
-    home_page_config.title = title
-    home_page_config.subtitle = subtitle
-    home_page_config.welcome_message = welcome_message
-    home_page_config.about_us = about_us
-    home_page_config.hero_image_url = hero_image_url
+    if title is not None:
+        home_page_config.title = title
+    if subtitle is not None:
+        home_page_config.subtitle = subtitle
+    if welcome_message is not None:
+        home_page_config.welcome_message = welcome_message
+    if about_us is not None:
+        home_page_config.about_us = about_us
+    if hero_image is not None:
+        if home_page_config.hero_image_url:
+            # Delete the existing hero image from Minio if it exists
+            file_storage_service.delete_file(home_page_config.hero_image_url)
+        hero_image_url = file_storage_service.upload_file(
+            hero_image, f"hero_image_{hero_image.name}"
+        )
+        home_page_config.hero_image_url = hero_image_url
 
     # Save the updated configuration to the database
     home_page_config.save()
