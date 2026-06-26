@@ -3,7 +3,7 @@ import AboutUsEditableText from "../../components/website-configs/AboutUsEditabl
 import AddSponsorModal from "../../components/website-configs/AddSponsorModal";
 import HeroImageInputModal from "../../components/website-configs/HeroImageInputModal";
 import { useModal } from "../../contexts/ModalContext";
-import { plataformConfigsApi, type PlataformHomepageConfig } from "../../api/plataform_configs";
+import { plataformConfigsApi, type PlataformHomepageConfig, type Sponsor } from "../../api/plataform_configs";
 import { useNotification } from "../../contexts/NotificationProvider";
 
 const PublicWebsiteConfig = () => {
@@ -18,26 +18,30 @@ const PublicWebsiteConfig = () => {
         "A Taça UA - Glicínias Plaza é hoje um dos símbolos mais fortes do espírito académico aveirense. Ano após ano, mobiliza milhares de estudantes em torno da competição, da rivalidade saudável entre cursos e da paixão pelo desporto universitário. Com mais de duas décadas de história, esta iniciativa afirma-se continuamente como um espaço de crescimento, convívio e identidade, onde cada modalidade reforça o sentimento de pertença e união da comunidade.",
         "Para além disso, a Taça UA destaca-se pela sua diversidade desportiva, englobando até 8 modalidades coletivas recorrentes, bem como até 16 modalidades pontuais, que incluem formatos coletivos, de pares e individuais, permitindo a participação alargada de estudantes, durante o ano inteiro, com diferentes interesses e aptidões."
     ]);
-    const [sponsors, setSponsors] = useState([
+    const [sponsors, setSponsors] = useState<Sponsor[]>([
         {
+            id: 1,
             name: "Glicínias Plaza",
-            logo: "/181_glicinias_plaza_1.png",
-            link: "https://www.glicinias.pt/",
+            logo_url: "/181_glicinias_plaza_1.png",
+            website_url: "https://www.glicinias.pt/",
         },
         {
+            id: 2,
             name: "Câmara Municipal de Aveiro",
-            logo: "/cmaveiro.png",
-            link: "https://www.cm-aveiro.pt/",
+            logo_url: "/cmaveiro.png",
+            website_url: "https://www.cm-aveiro.pt/",
         },
         {
+            id: 3,
             name: "Universidade de Aveiro",
-            logo: "/ua.png",
-            link: "https://www.ua.pt/",
+            logo_url: "/ua.png",
+            website_url: "https://www.ua.pt/",
         },
         {
+            id: 4,
             name: "IPDJ",
-            logo: "/ipdj.png",
-            link: "https://ipdj.gov.pt/",
+            logo_url: "/ipdj.png",
+            website_url: "https://ipdj.gov.pt/",
         },
     ]);
 
@@ -49,6 +53,7 @@ const PublicWebsiteConfig = () => {
             setWelcomeText(config.welcome_message);
             setAboutUsTextLines(config.about_us.split('\n'));
             setHeroBackgroundImage(config.hero_image_url);
+            setSponsors(config.sponsors);
           }).catch((error) => {
             console.error("Error fetching public homepage config:", error);
             notify("Erro ao carregar a configuração da página inicial pública.", "error");
@@ -91,6 +96,15 @@ const PublicWebsiteConfig = () => {
         });
     }
 
+    const handleRemoveSponsor = (sponsorId: number) => {
+        plataformConfigsApi.removeSponsor(sponsorId)
+            .then(() => {
+                setSponsors((prev) => prev.filter((sponsor) => sponsor.id !== sponsorId));
+                notify("Patrocinador removido com sucesso.", "success");
+            }).catch(() => {
+              notify("Erro ao remover o patrocinador.", "error");
+            })
+    }
 
     return (
       <div className="grid place-items-center space-y-8 p-8">
@@ -239,14 +253,14 @@ const PublicWebsiteConfig = () => {
                   {sponsors.map((sponsor, index) => (
                     <div key={index} className="relative w-full">
                       <a
-                        href={sponsor.link}
+                        href={sponsor.website_url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="w-full"
                       >
                         <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
                           <img
-                            src={sponsor.logo}
+                            src={sponsor.logo_url}
                             alt={sponsor.name}
                             className="max-h-full max-w-full object-contain"
                           />
@@ -254,12 +268,7 @@ const PublicWebsiteConfig = () => {
                         {/* Remove button in top-right corner of sponsor card */}
                       </a>
                       <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setSponsors((prev) =>
-                            prev.filter((_, i) => i !== index),
-                          );
-                        }}
+                        onClick={() => handleRemoveSponsor(sponsor.id)}
                         className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors w-6 h-6 flex items-center justify-center text-sm"
                       >
                         X

@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from django.db import models
 
 
@@ -18,6 +20,9 @@ class PublicWebsiteHomePage(models.Model):
         help_text="URL of the hero image for the home page"
     )
 
+    if TYPE_CHECKING:
+        sponsors: models.QuerySet["Sponsor"]
+
     class Meta:
         unique_together = (
             "_bucket",
@@ -25,3 +30,25 @@ class PublicWebsiteHomePage(models.Model):
 
     def __str__(self):
         return f"PublicWebsiteHomePage (Bucket: {self._bucket})"
+
+
+class Sponsor(models.Model):
+    """
+    Model representing a sponsor for the public website.
+    """
+
+    conf = models.ForeignKey(
+        PublicWebsiteHomePage, on_delete=models.CASCADE, related_name="sponsors"
+    )
+    name = models.CharField(max_length=255, help_text="Name of the sponsor")
+    logo_url = models.URLField(help_text="URL of the sponsor's logo")
+    website_url = models.URLField(help_text="URL of the sponsor's website")
+
+    class Meta:
+        unique_together = (
+            "conf",
+            "name",
+        )
+
+    def __str__(self):
+        return f"Sponsor: {self.name} (Home Page: {self.conf.title})"

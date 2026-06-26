@@ -8,4 +8,8 @@ def get_home_page_config():
     Returns:
         PublicWebsiteHomePage: The home page configuration instance.
     """
-    return PublicWebsiteHomePage.objects.get(_bucket=1)
+    queryset = PublicWebsiteHomePage.objects.all()
+
+    queryset = queryset.prefetch_related("sponsors")
+
+    return queryset.get(_bucket=1)

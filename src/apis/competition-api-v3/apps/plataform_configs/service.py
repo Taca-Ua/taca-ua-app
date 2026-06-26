@@ -72,3 +72,46 @@ def update_home_page_config(
 
     # Save the updated configuration to the database
     home_page_config.save()
+
+
+@transaction.atomic
+def create_sponsor(name: str, website_url: str, logo: UploadedFile):
+    """
+    Create a new sponsor for the public homepage configuration.
+
+    Args:
+        name (str): The name of the sponsor.
+        website_url (str): The website URL of the sponsor.
+        logo (UploadedFile): The logo file of the sponsor.
+    """
+
+    home_page_config = PublicWebsiteHomePage.objects.get(_bucket=1)
+
+    # upload the sponsor logo to Minio and get the URL
+    logo_url = file_storage_service.upload_file(logo, f"sponsor_logo_{logo.name}")
+
+    new_sponsor = home_page_config.sponsors.create(
+        name=name, logo_url=logo_url, website_url=website_url
+    )
+
+    return new_sponsor
+
+
+@transaction.atomic
+def remove_sponsor(sponsor_id: int):
+    """
+    Remove a sponsor from the public homepage configuration.
+
+    Args:
+        sponsor_id (int): The ID of the sponsor to be removed.
+    """
+
+    home_page_config = PublicWebsiteHomePage.objects.get(_bucket=1)
+
+    sponsor = home_page_config.sponsors.filter(id=sponsor_id).get()
+
+    # delete image from minio
+    if sponsor.logo_url:
+        file_storage_service.delete_file(sponsor.logo_url)
+
+    sponsor.delete()

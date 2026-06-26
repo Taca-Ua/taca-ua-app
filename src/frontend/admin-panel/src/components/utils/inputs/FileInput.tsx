@@ -65,22 +65,31 @@ const FileInput = ({
         {file ? (
           <div className="flex items-center justify-evenly gap-4 p-4 bg-teal-50 border border-teal-200 rounded-xl">
             {/* PDF badge */}
-            <div className="flex-shrink-0 w-12 h-12 bg-red-100 border border-red-200 rounded-lg flex flex-col items-center justify-center gap-0.5 shadow-sm">
-              <svg
-                className="w-5 h-5 text-red-600"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <span className="text-xs font-bold text-red-600 leading-none">
-                PDF
-              </span>
-            </div>
+
+            {fileType === "pdf" && (
+              <div className="flex-shrink-0 w-12 h-12 bg-red-100 border border-red-200 rounded-lg flex flex-col items-center justify-center gap-0.5 shadow-sm">
+                <svg
+                  className="w-5 h-5 text-red-600"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span className="text-xs font-bold text-red-600 leading-none">
+                  PDF
+                </span>
+              </div>
+            )}
+
+            {fileType === "image" && (
+              <div className="flex-shrink-0 w-12 h-12 bg-teal-100 border border-teal-200 rounded-lg flex flex-col items-center justify-center gap-0.5 shadow-sm">
+                <img src={URL.createObjectURL(file)} alt="Preview" className="w-10 h-10 object-cover rounded" />
+              </div>
+            )}
 
             {/* File metadata */}
             <div className="flex-1 min-w-0">

@@ -3,12 +3,7 @@ import FileInput from "../utils/inputs/FileInput";
 import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
 import { useNotification } from "../../contexts/NotificationProvider";
-
-interface Sponsor {
-    name: string;
-    logo: string;
-    link: string;
-}
+import { type Sponsor, plataformConfigsApi } from "../../api/plataform_configs";
 
 const AddSponsorModal = ({
     onCreate
@@ -27,10 +22,19 @@ const AddSponsorModal = ({
             notify("Por favor, preencha todos os campos.", "error");
             return;
         }
-        if (onCreate) {
-            onCreate({ name, logo: logo ? URL.createObjectURL(logo) : "", link });
-        }
-        onClose();
+
+        plataformConfigsApi.addSponsor({
+            name,
+            logo: logo,
+            website_url: link
+        }).then((newSponsor) => {
+            notify("Patrocinador adicionado com sucesso!", "success");
+            onCreate?.(newSponsor);
+            onClose();
+        }).catch((error) => {
+            console.error("Erro ao adicionar patrocinador:", error);
+            notify("Erro ao adicionar patrocinador. Por favor, tente novamente.", "error");
+        });
     };
 
     const onClose = () => {
