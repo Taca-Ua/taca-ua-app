@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from .cache import CACHE_TTL, CacheKeyGenerator, cached
 from .models import (
     GeneralRankingView,
+    HomePageConfigView,
     MatchDetailView,
     ModalityRankingView,
     NucleoDetailView,
@@ -700,3 +701,30 @@ def get_seasons(db: Session) -> Tuple[list[SeasonDetailView], int]:
     total = query.count()
 
     return query.all(), total
+
+
+# ==================== Home Page Config View Operations ====================
+
+
+@cached(
+    cache_key="",
+    ttl=CACHE_TTL["home_page_config"],
+    key_builder=lambda db: "home_page_config",
+)
+def get_home_page_config(db: Session) -> Optional[dict]:
+    """Get the home page configuration.
+
+    Returns:
+        Home page configuration as a dictionary or None if not set
+    """
+    config = db.query(HomePageConfigView).first()
+    if config:
+        return {
+            "title": config.title,
+            "subtitle": config.subtitle,
+            "welcome_message": config.welcome_message,
+            "about_us": config.about_us,
+            "hero_image_url": config.hero_image_url,
+            "sponsors": config.sponsors,
+        }
+    return None

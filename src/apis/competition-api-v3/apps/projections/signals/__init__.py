@@ -1,5 +1,6 @@
 from . import (
     athletes,
+    home_page_config,
     matches,
     nucleus,
     ranking,
@@ -18,4 +19,5 @@ __all__ = [
     "teams",
     "tournaments",
     "regulations",
+    "home_page_config",
 ]

@@ -194,3 +194,17 @@ class RegulationDetailView(Base):
     description = Column(String)
     file_url = Column(String(255))
     season_id = Column(Integer)
+
+
+class HomePageConfigView(Base):
+    """Materialized view: Home page configuration details."""
+
+    __tablename__ = "projections_homepageconfigview"
+
+    _bucket = Column(Integer, primary_key=True)
+    title = Column(String(255))
+    subtitle = Column(String(255))
+    welcome_message = Column(String(255))
+    about_us = Column(String)
+    hero_image_url = Column(String(255))
+    sponsors = Column(JSON)  # List of sponsors with details

@@ -38,6 +38,7 @@ CACHE_TTL = {
     "nucleo_list": 7200,  # 2 hours
     "regulation": 7200,  # 2 hours
     "season": 7200,  # 2 hours
+    "home_page_config": 3600,  # 1 hour
 }
 
 # Redis client instance

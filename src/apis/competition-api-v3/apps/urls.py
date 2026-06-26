@@ -14,6 +14,7 @@ from .matches.api.views import urlpatterns as matches_urlpatterns
 from .modalities.api.views import urlpatterns as modalities_urlpatterns
 from .modality_types.api.views import urlpatterns as modality_types_urlpatterns
 from .nucleus.api.views import urlpatterns as nucleus_urlpatterns
+from .plataform_configs.api.views import urlpatterns as plataform_configs_urlpatterns
 from .ranking.api.views import urlpatterns as ranking_urlpatterns
 from .regulations.api.views import urlpatterns as regulations_urlpatterns
 from .seasons.api.views import urlpatterns as seasons_urlpatterns
@@ -35,6 +36,7 @@ urlpatterns = [
     path("courses/", include(courses_urlpatterns)),
     path("modalities/", include(modalities_urlpatterns)),
     path("nucleos/", include(nucleus_urlpatterns)),
+    path("plataform-configs/", include(plataform_configs_urlpatterns)),
     path("ranking/", include(ranking_urlpatterns)),
     path("modality-types/", include(modality_types_urlpatterns)),
     path("regulations/", include(regulations_urlpatterns)),

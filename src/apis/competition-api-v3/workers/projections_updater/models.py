@@ -12,6 +12,7 @@ class ProjectionUpdateRequestTypes(models.TextChoices):
     NUCLEO = "nucleo", "Nucleo"
     SEASON = "season", "Season"
     REGULATION = "regulation", "Regulation"
+    HOME_PAGE_CONFIG = "home_page_config", "Home Page Config"
 
 
 class ProjectionUpdateRequest(models.Model):

@@ -22,4 +22,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/apis/competition-api-v3 .
 
 # run server
-CMD ["sh" , "-c", "python manage.py migrate && python manage.py bootstrap_season && gunicorn --bind 0.0.0.0:8000 --access-logfile - --error-logfile - config.wsgi:application"]
+CMD ["sh" , "-c", "\
+    python manage.py migrate \
+    && python manage.py bootstrap_season \
+    && python manage.py bootstrap_public_homepage_config \
+    && gunicorn --bind 0.0.0.0:8000 --access-logfile - --error-logfile - config.wsgi:application"]

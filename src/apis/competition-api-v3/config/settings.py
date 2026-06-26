@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     "apps.teams",
     "apps.tournaments",
     "apps.projections",
+    "apps.plataform_configs",
     "workers.projections_updater",
     "workers.ranking_updater",
     "workers.matches_state_updater",

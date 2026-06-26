@@ -221,3 +221,23 @@ class RegulationDetailView(models.Model):
     description = models.TextField()
     file_url = models.CharField(max_length=255)
     season_id = models.IntegerField()
+
+
+class HomePageConfigView(models.Model):
+    """Materialized view: Home page configuration with sponsors."""
+
+    _bucket = models.IntegerField(
+        primary_key=True, default=1
+    )  # Single row, using a constant bucket value
+    title = models.CharField(max_length=255)
+    subtitle = models.CharField(max_length=255)
+    welcome_message = models.CharField(max_length=255)
+    about_us = models.TextField()
+    hero_image_url = models.URLField()
+
+    sponsors = models.JSONField()  # List of sponsors with details
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["_bucket"]),
+        ]

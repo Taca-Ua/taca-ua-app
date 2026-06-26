@@ -6,6 +6,7 @@ from apps.modalities.selectors import get_modalities_table
 from apps.nucleus.selectors import get_nucleus_table
 from apps.projections.service import (
     rebuild_general_ranking_projection,
+    rebuild_home_page_config_projection,
     rebuild_match_projection,
     rebuild_modality_ranking_projection,
     rebuild_nucleo_projection,
@@ -314,3 +315,10 @@ def update_regulations_projections(regulation_id: str = None) -> None:
         c += 1
 
     logger.info(f"Updated projections for [{c}] regulations.", extra=args)
+
+
+@transaction.atomic
+def update_home_page_config_projections() -> None:
+    """Update the projections for the home page config."""
+    rebuild_home_page_config_projection()
+    logger.info("Updated projections for home page config.")

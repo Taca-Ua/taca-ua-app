@@ -65,9 +65,14 @@ class MinioService:
 
     # -------------------------------------------------------------------------
 
-    def upload_file(self, file: InMemoryUploadedFile | TemporaryUploadedFile) -> str:
+    def upload_file(
+        self,
+        file: InMemoryUploadedFile | TemporaryUploadedFile,
+        object_name: str = None,
+    ) -> str:
         """Upload a file from request.FILES and return its public URL."""
-        object_name = f"{uuid.uuid4()}_{file.name}"
+        if object_name is None:
+            object_name = f"{uuid.uuid4()}_{file.name}"
         stream, size, content_type = self._read_django_file(file)
 
         self.client.put_object(

@@ -8,13 +8,15 @@ import LazyImage from "./utils/LazyImage";
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isChangingSeason, setIsChangingSeason] = useState(false);
-  const { logout, username } = useAuth();
+  const { logout, username, roles } = useAuth();
   const { clearModals } = useModal();
   const { availableSeasons, loadedSeason, selectSeason } = useSeason();
 
   const navItems = [
     // system management
-    [{ to: "/administradores", label: "Administradores", short: "Adm" },],
+    [{ to: "/administradores", label: "Administradores", short: "Adm" },
+      { to: "/public-website-config", label: "Configuração do Site Público", short: "CSP", requiredRole: "general_admin" },
+    ],
 
     // modalities management
     [{ to: "/formatos-prova", label: "Formatos de Prova", short: "FP" },
@@ -109,7 +111,9 @@ export default function Sidebar() {
             {/* Season Selector */}
             {availableSeasons.length > 0 && (
               <div className="border-b border-gray-200 px-3 py-3">
-                <label className={`text-xs font-semibold text-gray-600 block mb-2 ${!isOpen && "sr-only"}`}>
+                <label
+                  className={`text-xs font-semibold text-gray-600 block mb-2 ${!isOpen && "sr-only"}`}
+                >
                   Época
                 </label>
                 <select
@@ -119,47 +123,54 @@ export default function Sidebar() {
                   className="w-full px-2 py-2 text-sm border border-gray-300 rounded text-gray-700 hover:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-400 disabled:opacity-50 disabled:cursor-not-allowed"
                   title={!isOpen ? `${loadedSeason?.name}` : undefined}
                 >
-                  {availableSeasons.sort((a, b) => b.id - a.id).map((season) => (
-                    <option key={season.id} value={season.id}>
-                      {season.name}
-                    </option>
-                  ))}
+                  {availableSeasons
+                    .sort((a, b) => b.id - a.id)
+                    .map((season) => (
+                      <option key={season.id} value={season.id}>
+                        {season.name}
+                      </option>
+                    ))}
                 </select>
               </div>
             )}
 
             <div className="overflow-y-auto flex-1 min-h-0">
-            {
-              // Render nav items in groups with separators
-              navItems.map((group, index) => (
-                <div key={index}>
-                  <nav className="flex-1 py-2">
-                    {group.map((item) => (
-                      <Link
-                        key={item.to}
-                        to={item.to}
-                        onClick={handlePageChange}
-                        className="flex items-center h-11 px-3 text-gray-700 hover:text-teal-600 hover:bg-teal-50 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-teal-400"
-                        title={!isOpen ? item.label : undefined}
-                      >
-                        {isOpen ? (
-                          <span className="font-medium truncate">
-                            {item.label}
-                          </span>
-                        ) : (
-                          <span className="text-xs font-bold w-full text-center">
-                            {item.short}
-                          </span>
-                        )}
-                      </Link>
-                    ))}
-                  </nav>
-                  {index < navItems.length - 1 && (
-                    <div className="border-t border-gray-200" />
-                  )}
-                </div>
-              ))
-            }
+              {
+                // Render nav items in groups with separators
+                navItems.map((group, index) => (
+                  <div key={index}>
+                    <nav className="flex-1 py-2">
+                      {group.map((item) => (
+                        <>
+                          {item.requiredRole &&
+                          !roles?.includes(item.requiredRole) ? null : (
+                            <Link
+                              key={item.to}
+                              to={item.to}
+                              onClick={handlePageChange}
+                              className="flex items-center h-11 px-3 text-gray-700 hover:text-teal-600 hover:bg-teal-50 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-teal-400"
+                              title={!isOpen ? item.label : undefined}
+                            >
+                              {isOpen ? (
+                                <span className="font-medium truncate">
+                                  {item.label}
+                                </span>
+                              ) : (
+                                <span className="text-xs font-bold w-full text-center">
+                                  {item.short}
+                                </span>
+                              )}
+                            </Link>
+                          )}
+                        </>
+                      ))}
+                    </nav>
+                    {index < navItems.length - 1 && (
+                      <div className="border-t border-gray-200" />
+                    )}
+                  </div>
+                ))
+              }
             </div>
           </div>
           <div className="border-t border-gray-200 py-2 flex-shrink-0">
@@ -234,7 +245,6 @@ export default function Sidebar() {
           </div>
         </div>
       </aside>
-
     </>
   );
 }

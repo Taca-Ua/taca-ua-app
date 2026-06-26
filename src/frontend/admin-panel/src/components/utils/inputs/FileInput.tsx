@@ -11,10 +11,12 @@ const FileInput = ({
   fileState,
   file_url,
   onFileChange,
+  fileType = "pdf"
 } : {
   fileState: [File | null, React.Dispatch<React.SetStateAction<File | null>>];
   file_url?: string;
   onFileChange?: (file: File | null) => void;
+  fileType?: "pdf" | "image";
 }) => {
     const { notify } = useNotification();
 
@@ -42,8 +44,12 @@ const FileInput = ({
 
     const applyFile = (incoming: File | null) => {
         if (!incoming) return;
-        if (incoming.type !== 'application/pdf') {
+        if (fileType === "pdf" && incoming.type !== 'application/pdf') {
             notify('Apenas ficheiros PDF são permitidos.', 'error');
+            return;
+        }
+        if (fileType === "image" && !incoming.type.startsWith('image/')) {
+            notify('Apenas ficheiros de imagem são permitidos.', 'error');
             return;
         }
         if (incoming.size > 10 * 1024 * 1024) {
@@ -59,22 +65,31 @@ const FileInput = ({
         {file ? (
           <div className="flex items-center justify-evenly gap-4 p-4 bg-teal-50 border border-teal-200 rounded-xl">
             {/* PDF badge */}
-            <div className="flex-shrink-0 w-12 h-12 bg-red-100 border border-red-200 rounded-lg flex flex-col items-center justify-center gap-0.5 shadow-sm">
-              <svg
-                className="w-5 h-5 text-red-600"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <span className="text-xs font-bold text-red-600 leading-none">
-                PDF
-              </span>
-            </div>
+
+            {fileType === "pdf" && (
+              <div className="flex-shrink-0 w-12 h-12 bg-red-100 border border-red-200 rounded-lg flex flex-col items-center justify-center gap-0.5 shadow-sm">
+                <svg
+                  className="w-5 h-5 text-red-600"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span className="text-xs font-bold text-red-600 leading-none">
+                  PDF
+                </span>
+              </div>
+            )}
+
+            {fileType === "image" && (
+              <div className="flex-shrink-0 w-12 h-12 bg-teal-100 border border-teal-200 rounded-lg flex flex-col items-center justify-center gap-0.5 shadow-sm">
+                <img src={URL.createObjectURL(file)} alt="Preview" className="w-10 h-10 object-cover rounded" />
+              </div>
+            )}
 
             {/* File metadata */}
             <div className="flex-1 min-w-0">
@@ -160,13 +175,13 @@ const FileInput = ({
                 >
                 {isDragOver
                     ? "Solte o ficheiro aqui"
-                    : "Clique ou arraste um ficheiro PDF"}
+                    : "Clique ou arraste um ficheiro"}
                 </span>
-                <span className="text-xs text-gray-400 mt-1">PDF até 10 MB</span>
+                <span className="text-xs text-gray-400 mt-1">Ficheiros até 10 MB</span>
                 <input
                 ref={fileInputRef}
                 type="file"
-                accept="application/pdf"
+                accept={fileType === "pdf" ? "application/pdf" : fileType === "image" ? "image/*" : ""}
                 className="sr-only"
                 onChange={(e) => applyFile(e.target.files?.[0] ?? null)}
                 required
