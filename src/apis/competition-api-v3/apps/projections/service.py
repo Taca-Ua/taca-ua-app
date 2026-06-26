@@ -15,6 +15,7 @@ from django.db import transaction
 
 from .models import (
     GeneralRankingView,
+    HomePageConfigView,
     MatchDetailView,
     ModalityRankingView,
     NucleoDetailView,
@@ -402,6 +403,40 @@ def rebuild_regulation_projection(regulation_id: UUID):
         description=regulation.description,
         file_url=regulation.file_url,
         season_id=regulation.season_id,
+    )
+
+    return projection
+
+
+@transaction.atomic(savepoint=False)
+def rebuild_home_page_config_projection():
+    from apps.plataform_configs.models import PublicWebsiteHomePage, Sponsor
+
+    # delete existing projection for the home page config before creating a new one
+    HomePageConfigView.objects.all().delete()
+
+    try:
+        home_page_config = PublicWebsiteHomePage.objects.get()
+    except PublicWebsiteHomePage.DoesNotExist:
+        return None
+
+    sponsors = Sponsor.objects.all()
+
+    # create a new projection for the home page config
+    projection = HomePageConfigView.objects.create(
+        title=home_page_config.title,
+        subtitle=home_page_config.subtitle,
+        welcome_message=home_page_config.welcome_message,
+        about_us=home_page_config.about_us,
+        hero_image_url=home_page_config.hero_image_url,
+        sponsors=[
+            {
+                "name": sponsor.name,
+                "logo_url": sponsor.logo_url,
+                "website_url": sponsor.website_url,
+            }
+            for sponsor in sponsors
+        ],
     )
 
     return projection
