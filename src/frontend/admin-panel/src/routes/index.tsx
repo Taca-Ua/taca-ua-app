@@ -75,7 +75,7 @@ export const router = createBrowserRouter([
       // Geral Admin Routes
       { path: '/administradores',     element: <ProtectedRoute> <Administradores /></ProtectedRoute> },
       { path: '/administradores/:id', element: <ProtectedRoute> <AdminDetailPage /></ProtectedRoute> },
-      { path: '/public-website-config', element: <ProtectedRoute> <PublicWebsiteConfig /></ProtectedRoute> },
+      { path: '/public-website-config', element: <ProtectedRoute requiredRole='geral'> <PublicWebsiteConfig /></ProtectedRoute> },
       { path: '/modalidades',         element: <ProtectedRoute> <Modalities /></ProtectedRoute> },
       { path: '/modalidades/:id',     element: <ProtectedRoute> <ModalityDetails /></ProtectedRoute> },
       { path: '/nucleos',             element: <ProtectedRoute> <NucleoListPage /></ProtectedRoute> },
