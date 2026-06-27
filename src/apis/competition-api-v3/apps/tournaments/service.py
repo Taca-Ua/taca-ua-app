@@ -195,6 +195,21 @@ def finish_tournament(tournament_id: UUID, ranking_entries: list) -> Tournament:
     tournament.status = TournamentStatus.FINISHED
     tournament.save()
 
+    # fill qualification slots
+    for slot in tournament.qualification_sources.all():
+        add_competitors_to_tournament(
+            tournament_id=slot.tournament_target.id,
+            competitor_ids=[
+                result.competitor.entity_id
+                for result in TournamentResult.objects.filter(
+                    competitor__tournament=slot.tournament_source,
+                    position__gte=slot.starting_position,
+                    position__lte=slot.ending_position,
+                )
+            ],
+        )
+        slot.delete()
+
     # submit tournament results to ranking service
     submit_tournament_results(tournament)
 
