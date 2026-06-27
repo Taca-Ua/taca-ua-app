@@ -193,9 +193,12 @@ const TournamentCreateModal = ({
               }}
               initialElement={{ id: 'free', title: 'Livre' }}
             />
+            <div className="mt-2">
+              <GeneralFormatMetaInput format={chosenTournamentFormat?.id || 'free'} data={formatMetaData} />
+            </div>
           </div>
-          <GeneralFormatMetaInput format={chosenTournamentFormat?.id || 'free'} data={formatMetaData} />
 
+          {/* Action Buttons */}
           <div className="flex justify-end space-x-2">
             <Button
               onClick={onClose}
