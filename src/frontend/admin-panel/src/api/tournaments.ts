@@ -70,6 +70,12 @@ export interface TournamentCreate {
 
   format?: string;
   format_data?: Record<string, any>;
+
+  competitor_rules?: {
+    tournament_id: string;
+    starting_position: number;
+    ending_position: number;
+  }[];
 };
 
 export interface TournamentUpdate {
