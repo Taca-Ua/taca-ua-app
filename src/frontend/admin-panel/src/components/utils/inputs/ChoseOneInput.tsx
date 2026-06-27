@@ -1,12 +1,8 @@
 import { useState } from "react";
 import ChoseOneModal from "../costum_menus/ChoseOneModal";
+import { type GenericElement } from "../costum_menus/ChoseOneModal";
 import { useModal } from "../../../contexts/ModalContext";
 
-interface GenericElement {
-    id: string;
-    title: string;
-    subTitle?: string;
-}
 
 const ChoseOneInput = ( {
     allElementsLoader,

@@ -2,6 +2,13 @@ import { useEffect, useState, useRef } from "react";
 import Button from "../Button";
 import { useModal } from "../../../contexts/ModalContext";
 
+export interface GenericElement {
+    id: string;
+    title: string;
+    subTitle?: string;
+    object?: any;
+}
+
 const ChoseOneModal = ( {
     allElementsLoader,
     onSelect,
@@ -9,8 +16,8 @@ const ChoseOneModal = ( {
     initialSelectedId,
     hideClearButton = false
 } : {
-    allElementsLoader: () => Promise<{id: string, title: string, subTitle?: string}[]>,
-    onSelect: (element: {id: string, title: string, subTitle?: string} | null) => void,
+    allElementsLoader: () => Promise<GenericElement[]>,
+    onSelect: (element: GenericElement | null) => void,
     title?: string
     initialSelectedId?: string
     hideClearButton?: boolean
@@ -18,7 +25,7 @@ const ChoseOneModal = ( {
     const { popModal } = useModal();
     const searchInputRef = useRef<HTMLInputElement>(null);
 
-    const [allElements, setAllElements] = useState<{id: string, title: string, subTitle?: string}[]>([]);
+    const [allElements, setAllElements] = useState<GenericElement[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [chosenElement, setChosenElement] = useState<string>("");
 

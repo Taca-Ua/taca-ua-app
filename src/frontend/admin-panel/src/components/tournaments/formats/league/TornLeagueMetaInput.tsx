@@ -29,47 +29,57 @@ const TornLeagueMetaInput = ({ data } : { data: Record<string, unknown> }) => {
     }, [winPoints, drawPoints, lossPoints, tiebreaker]);
 
     return (
-        <div className="space-y-4">
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Pontos por Vitória</label>
-                <input
-                    type="number"
-                    value={winPoints}
-                    onChange={(e) => setWinPoints(parseInt(e.target.value))}
-                    className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-                />
-            </div>
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Pontos por Empate</label>
-                <input
-                    type="number"
-                    value={drawPoints}
-                    onChange={(e) => setDrawPoints(parseInt(e.target.value))}
-                    className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-                />
-            </div>
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Pontos por Derrota</label>
-                <input
-                    type="number"
-                    value={lossPoints}
-                    onChange={(e) => setLossPoints(parseInt(e.target.value))}
-                    className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-                />
-            </div>
-            <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Critério de Desempate por Diferença de Pontos</label>
-                <DefinedStatesMenuComponent
-                    states={[
-                        { value: "none", label: "Nenhum" },
-                        { value: "points_difference", label: "Diferença de Pontos" },
-                        { value: "points_scored", label: "Pontos Marcados" },
-                    ]}
-                    initialValue={tiebreaker}
-                    onSelect={(value) => setTiebreaker(value)}
-                />
-            </div>
+      <>
+        <div className="flex gap-4 justify-between">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Pontos por Vitória
+            </label>
+            <input
+              type="number"
+              value={winPoints}
+              onChange={(e) => setWinPoints(parseInt(e.target.value))}
+              className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Pontos por Empate
+            </label>
+            <input
+              type="number"
+              value={drawPoints}
+              onChange={(e) => setDrawPoints(parseInt(e.target.value))}
+              className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Pontos por Derrota
+            </label>
+            <input
+              type="number"
+              value={lossPoints}
+              onChange={(e) => setLossPoints(parseInt(e.target.value))}
+              className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+            />
+          </div>
         </div>
+        <div className="space-y-2 mt-4">
+          <label className="block text-sm font-medium text-gray-700">
+            Critério de Desempate por Diferença de Pontos
+          </label>
+          <DefinedStatesMenuComponent
+            states={[
+              { value: "none", label: "Nenhum" },
+              { value: "points_difference", label: "Diferença de Pontos" },
+              { value: "points_scored", label: "Pontos Marcados" },
+            ]}
+            initialValue={tiebreaker}
+            onSelect={(value) => setTiebreaker(value)}
+          />
+        </div>
+      </>
     );
 }
 

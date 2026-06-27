@@ -43,6 +43,12 @@ export interface TournamentDetail extends TournamentListItem {
     points: number[];
   };
   format_data?: Record<string, any>;
+
+  qualification_slots?: {
+    tournament: TournamentListItem;
+    starting_position: number;
+    ending_position: number;
+  }[];
 }
 
 export interface TournamentStandingsEntry {
@@ -70,6 +76,12 @@ export interface TournamentCreate {
 
   format?: string;
   format_data?: Record<string, any>;
+
+  competitor_rules?: {
+    tournament_id: string;
+    starting_position: number;
+    ending_position: number;
+  }[];
 };
 
 export interface TournamentUpdate {

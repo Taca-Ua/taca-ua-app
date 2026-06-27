@@ -67,6 +67,11 @@ class TournamentListSerializer(serializers.Serializer):
 class TournamentDetailSerializer(TournamentListSerializer):
     """Serializer for tournament details"""
 
+    class QualificationSlotSerializer(serializers.Serializer):
+        tournament = TournamentListSerializer(source="tournament_source")
+        starting_position = serializers.IntegerField()
+        ending_position = serializers.IntegerField()
+
     competitor_type = serializers.ChoiceField(choices=TournamentCompetitorType.choices)
     competitors = TournamentCompetitorSerializer(many=True)
     scoring_format = ScoringFormatSummarySerializer()
@@ -75,6 +80,10 @@ class TournamentDetailSerializer(TournamentListSerializer):
     rank = TournamentRankSummarySerializer(required=False)
     format = serializers.CharField(required=False, source="tournament_format")
     format_data = serializers.DictField(required=False, allow_null=True)
+
+    qualification_slots = QualificationSlotSerializer(
+        many=True, source="qualification_targets", required=False
+    )
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
@@ -89,6 +98,11 @@ class TournamentDetailSerializer(TournamentListSerializer):
 class TournamentCreateSerializer(serializers.Serializer):
     """Serializer for creating a tournament"""
 
+    class CompetitorRuleSerializer(serializers.Serializer):
+        tournament_id = serializers.UUIDField(required=True)
+        starting_position = serializers.IntegerField(required=True)
+        ending_position = serializers.IntegerField(required=True)
+
     name = serializers.CharField(required=True)
     modality_id = serializers.UUIDField(required=True)
     start_date = serializers.DateTimeField(required=False, allow_null=True)
@@ -97,6 +111,10 @@ class TournamentCreateSerializer(serializers.Serializer):
 
     format = serializers.CharField(required=False, default="free")
     format_data = serializers.DictField(required=False, default={})
+
+    competitor_rules = serializers.ListField(
+        child=CompetitorRuleSerializer(), required=False, default=[]
+    )
 
 
 class TournamentUpdateSerializer(serializers.Serializer):

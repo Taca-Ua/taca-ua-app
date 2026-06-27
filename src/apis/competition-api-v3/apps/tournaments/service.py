@@ -10,6 +10,7 @@ from django.db import transaction
 
 from .formats import FormatRegistry
 from .models import (
+    QualificationSlot,
     Tournament,
     TournamentCompetitor,
     TournamentCompetitorType,
@@ -27,6 +28,7 @@ def create_tournament(
     scoring_format_id: UUID = None,
     format: str = None,
     format_data: dict = None,
+    competitor_rules: list[dict] = None,
 ) -> Tournament:
 
     # if season_id is not provided, use the current season
@@ -67,6 +69,26 @@ def create_tournament(
         season_id=season_id,
         tournament_format=format,
     )
+
+    # add qualifying slots for competitors if provided
+    if competitor_rules:
+        for rule in competitor_rules:
+            tournament_source = Tournament.objects.get(id=rule["tournament_id"])
+            if tournament_source.season_id != season_id:
+                raise ValueError(
+                    "Competitor rules must be from tournaments in the same season."
+                )
+            if tournament == tournament_source:
+                raise ValueError(
+                    "Cannot add competitor rules from the same tournament."
+                )
+
+            QualificationSlot.objects.create(
+                tournament_target=tournament,
+                tournament_source=tournament_source,
+                starting_position=rule["starting_position"],
+                ending_position=rule["ending_position"],
+            )
 
     # initialize the tournament format engine
     format_engine = FormatRegistry.get_format(tournament)
@@ -172,6 +194,21 @@ def finish_tournament(tournament_id: UUID, ranking_entries: list) -> Tournament:
 
     tournament.status = TournamentStatus.FINISHED
     tournament.save()
+
+    # fill qualification slots
+    for slot in tournament.qualification_sources.all():
+        add_competitors_to_tournament(
+            tournament_id=slot.tournament_target.id,
+            competitor_ids=[
+                result.competitor.entity_id
+                for result in TournamentResult.objects.filter(
+                    competitor__tournament=slot.tournament_source,
+                    position__gte=slot.starting_position,
+                    position__lte=slot.ending_position,
+                )
+            ],
+        )
+        slot.delete()
 
     # submit tournament results to ranking service
     submit_tournament_results(tournament)
