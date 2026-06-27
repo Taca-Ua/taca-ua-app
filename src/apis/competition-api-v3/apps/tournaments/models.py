@@ -83,6 +83,8 @@ class Tournament(models.Model):
         competitors: RelatedManager[TournamentCompetitor]
         matches: RelatedManager[Match]
         league_settings: LeagueSettings
+        qualification_targets: RelatedManager["QualificationSlot"]
+        qualification_sources: RelatedManager["QualificationSlot"]
 
 
 class TournamentCompetitor(models.Model):
@@ -143,6 +145,21 @@ class TournamentCompetitor(models.Model):
 
     class Meta:
         unique_together = ("tournament", "team", "athlete")
+
+
+class QualificationSlot(models.Model):
+    tournament_target = models.ForeignKey(
+        Tournament, on_delete=models.CASCADE, related_name="qualification_targets"
+    )
+    tournament_source = models.ForeignKey(
+        Tournament, on_delete=models.CASCADE, related_name="qualification_sources"
+    )
+    starting_position = models.PositiveIntegerField()
+    ending_position = models.PositiveIntegerField()
+
+    if TYPE_CHECKING:
+        tournament_target_id: uuid.UUID
+        tournament_source_id: uuid.UUID
 
 
 class TournamentResult(models.Model):

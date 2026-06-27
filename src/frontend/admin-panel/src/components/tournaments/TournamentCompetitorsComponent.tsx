@@ -7,6 +7,7 @@ import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
 import { useAuth } from "../../hooks/useAuth";
 import { useNotification } from "../../contexts/NotificationProvider";
+import { Link } from "react-router-dom";
 
 const TournamentCompetitorsComponent = ({
   tournamentState,
@@ -131,6 +132,30 @@ const TournamentCompetitorsComponent = ({
     }
   };
 
+  const generateQualificationSlotsBanners = () => {
+    let slots = [];
+
+    for (const slot of tournament.qualification_slots || []) {
+      for (let pos = slot.starting_position; pos <= slot.ending_position; pos++) {
+        slots.push(
+          <Link
+            key={`${slot.tournament.id}-${pos}`}
+            className="flex justify-between items-center p-4 rounded-md bg-blue-100 hover:bg-blue-200 border-2 border-blue-400"
+            to={`/torneios/${slot.tournament.id}`}
+          >
+            <div>
+              <p className="font-medium text-gray-800">
+                {`Posição ${pos} - Qualifica de: ${slot.tournament.name}`}
+              </p>
+            </div>
+          </Link>
+        );
+      }
+    }
+
+    return slots;
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6 max-h-full overflow-y-auto">
       <div className="flex justify-between items-center mb-4">
@@ -157,6 +182,17 @@ const TournamentCompetitorsComponent = ({
       </div>
 
       <div className="space-y-2 max-h-96 overflow-y-auto">
+        {tournament.qualification_slots && tournament.qualification_slots.length > 0 && (
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">
+              Vagas de Qualificação
+            </h3>
+            <div className="space-y-2">
+              {generateQualificationSlotsBanners()}
+            </div>
+          </div>
+        )}
+
         {tournament.competitors.length > 0 ? (
           getSortedCompetitors().map((competitor) => {
             const position = getCompetitorPosition(competitor.id);
@@ -181,14 +217,6 @@ const TournamentCompetitorsComponent = ({
                   {position}
                 </span>
               )}
-              {/* <button
-                    onClick={() =>
-                      handleRemoveCompetitor(competitor, name || "Desconhecido")
-                    }
-                    className={`px-3 py-1 ${btn.dangerLight} rounded-md text-sm transition-colors`}
-                  >
-                    Remover
-                  </button> */}
             </div>
             );
           })

@@ -85,6 +85,7 @@ class TournamentListCreateView(RoleRequiredMixin, APIView):
             scoring_format_id=serializer.validated_data.get("scoring_format_id"),
             format=serializer.validated_data.get("format"),
             format_data=serializer.validated_data.get("format_data"),
+            competitor_rules=serializer.validated_data.get("competitor_rules", []),
         )
 
         serializer = TournamentListSerializer(get_tournament_by_id(tournament.id))
@@ -112,6 +113,9 @@ class TournamentListCreateView(RoleRequiredMixin, APIView):
 class TournamentDetailView(APIView):
     def get(self, request, tournament_id):
         tournament = get_tournament_by_id(tournament_id)
+
+        print(tournament.qualification_targets.all(), flush=True)
+        print(tournament.qualification_sources.all(), flush=True)
 
         serializer = TournamentDetailSerializer(tournament)
         return Response(serializer.data)

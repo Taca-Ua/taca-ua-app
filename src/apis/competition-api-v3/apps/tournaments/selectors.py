@@ -64,6 +64,7 @@ def get_tournament_by_id(tournament_id: UUID) -> Tournament:
     tournament_qs = tournament_qs.prefetch_related(
         "competitors__athlete__course",
         "competitors__team__course",
+        "qualification_sources__tournament_target__modality",
     )
     return tournament_qs.get()
 
