@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from typing import List
 from uuid import UUID
@@ -17,6 +18,8 @@ from .models import (
     TournamentResult,
     TournamentStatus,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @transaction.atomic
@@ -142,6 +145,24 @@ def add_competitors_to_tournament(
         raise ValueError("Cannot add competitors to a finished tournament.")
 
     for competitor_id in competitor_ids:
+        if TournamentCompetitor.objects.filter(
+            tournament=tournament,
+            team_id=(
+                competitor_id
+                if tournament.competitor_type == TournamentCompetitorType.TEAM
+                else None
+            ),
+            athlete_id=(
+                competitor_id
+                if tournament.competitor_type == TournamentCompetitorType.INDIVIDUAL
+                else None
+            ),
+        ).exists():
+            logger.warning(
+                f"Competitor with id {competitor_id} already exists in tournament {tournament_id}. Skipping."
+            )
+            continue  # skip if competitor already exists in the tournament
+
         TournamentCompetitor.objects.create(
             tournament=tournament,
             team_id=(
