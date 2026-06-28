@@ -114,9 +114,6 @@ class TournamentDetailView(APIView):
     def get(self, request, tournament_id):
         tournament = get_tournament_by_id(tournament_id)
 
-        print(tournament.qualification_targets.all(), flush=True)
-        print(tournament.qualification_sources.all(), flush=True)
-
         serializer = TournamentDetailSerializer(tournament)
         return Response(serializer.data)
 
