@@ -86,12 +86,27 @@ def create_tournament(
                     "Cannot add competitor rules from the same tournament."
                 )
 
-            QualificationSlot.objects.create(
-                tournament_target=tournament,
-                tournament_source=tournament_source,
-                starting_position=rule["starting_position"],
-                ending_position=rule["ending_position"],
-            )
+            if tournament_source.status == TournamentStatus.FINISHED:
+                # if the source tournament is finished, add competitors directly to the new tournament
+                add_competitors_to_tournament(
+                    tournament_id=tournament.id,
+                    competitor_ids=[
+                        result.competitor.entity_id
+                        for result in TournamentResult.objects.filter(
+                            competitor__tournament=tournament_source,
+                            position__gte=rule["starting_position"],
+                            position__lte=rule["ending_position"],
+                        )
+                    ],
+                )
+            else:
+                # if the source tournament is not finished, create a qualification slot for future competitors
+                QualificationSlot.objects.create(
+                    tournament_target=tournament,
+                    tournament_source=tournament_source,
+                    starting_position=rule["starting_position"],
+                    ending_position=rule["ending_position"],
+                )
 
     # initialize the tournament format engine
     format_engine = FormatRegistry.get_format(tournament)
