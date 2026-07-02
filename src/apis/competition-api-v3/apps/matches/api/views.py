@@ -104,8 +104,6 @@ class MatchListCreateView(RoleRequiredMixin, APIView):
             location=serializer.validated_data.get("location"),
             start_time=serializer.validated_data.get("start_time"),
             participants=serializer.validated_data["participants"],
-            journey=serializer.validated_data.get("journey"),
-            new_journey=serializer.validated_data.get("new_journey", False),
         )
 
         serializer = MatchListSerializer(get_match_by_id(match.id))
