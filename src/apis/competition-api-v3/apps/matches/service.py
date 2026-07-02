@@ -4,7 +4,7 @@ from uuid import UUID
 from apps.tournaments.service import tournament_format_match_result
 from django.db import transaction
 
-from .models import Match, MatchParticipant, MatchStatus
+from .models import Match, MatchParticipant
 
 
 @transaction.atomic
@@ -13,8 +13,6 @@ def create_match(
     participants: list[dict],
     location: str = None,
     start_time: datetime.datetime = None,
-    journey=None,
-    new_journey=False,
 ) -> Match:
 
     # Create the match
@@ -22,7 +20,6 @@ def create_match(
         tournament_id=tournament_id,
         location=location,
         scheduled_time=start_time,
-        journey=journey,
     )
 
     # Create match participants
@@ -81,7 +78,7 @@ def publish_match_results(match_id: UUID, participant_results: list[dict]) -> Ma
             # participant.winner =
         participant.save()
 
-    match.status = MatchStatus.FINISHED
+    match.status = Match.Status.FINISHED
     match.save()
 
     # call tournament engine to handle match result

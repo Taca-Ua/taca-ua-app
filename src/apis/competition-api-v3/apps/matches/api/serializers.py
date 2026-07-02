@@ -53,7 +53,6 @@ class MatchListSerializer(serializers.Serializer):
     location = serializers.CharField()
     start_time = serializers.DateTimeField(source="scheduled_time")
     status = serializers.CharField()
-    journey = serializers.IntegerField(required=False, allow_null=True)
     participants = ParticipantsListSerializer(many=True)
 
 
@@ -70,13 +69,6 @@ class MatchDetailSerializer(MatchListSerializer):
         created_at = serializers.DateTimeField(source="timestamp")
 
     comments = CommentListSerializer(many=True, required=False, allow_null=True)
-    # lineups = LineupDetailSerializer(many=True, required=False)
-    # staff_assignments = serializers.DictField(
-    #     child=serializers.ListField(child=StaffSummarySerializer()),
-    #     required=False,
-    #     allow_null=True,
-    #     help_text="Dictionary mapping participant IDs to lists of assigned staff IDs",
-    # )
 
 
 class MatchPaginatedListSerializer(serializers.Serializer):
@@ -99,8 +91,6 @@ class MatchCreateSerializer(serializers.Serializer):
         allow_empty=False,
         help_text="List of tournament participants IDs participating in the match",
     )
-    journey = serializers.IntegerField(required=False, allow_null=True)
-    new_journey = serializers.BooleanField(required=False, default=False)
 
     def validate_participants(self, value):
         if value and len(value) < 2:
@@ -108,18 +98,6 @@ class MatchCreateSerializer(serializers.Serializer):
                 "A match must have at least 2 participants."
             )
         return value
-
-    def validate(self, data):
-        if data.get("new_journey") and data.get("journey") is not None:
-            raise serializers.ValidationError(
-                "Cannot specify a journey number when creating a new journey. The system will assign the correct journey number automatically."
-            )
-
-        if not data.get("new_journey") and data.get("journey") is None:
-            raise serializers.ValidationError(
-                "Must specify a journey number when not creating a new journey."
-            )
-        return data
 
 
 class MatchUpdateSerializer(serializers.Serializer):

@@ -140,10 +140,6 @@ export const tournamentsApi = {
     return apiClient.put<TournamentDetail>(`/tournaments/${id}/remove-competitors/`, {competitor_ids});
   },
 
-  async getRounds(id: string): Promise<number[]> {
-    return apiClient.get<number[]>(`/tournaments/${id}/rounds/`);
-  },
-
   async getStandings(id: string): Promise<TournamentStandingsEntry[]> {
     return apiClient.get<TournamentStandingsEntry[]>(`/tournaments/${id}/standings/`);
   },

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from ..models import MatchStatus
+from ..models import Match
 
 
 class MatchListFilterSerializer(serializers.Serializer):
@@ -13,7 +13,7 @@ class MatchListFilterSerializer(serializers.Serializer):
     team_id = serializers.UUIDField(required=False)
     date_from = serializers.DateField(required=False)
     date_to = serializers.DateField(required=False)
-    status = serializers.ChoiceField(choices=MatchStatus.values, required=False)
+    status = serializers.ChoiceField(choices=Match.Status.values, required=False)
 
     page = serializers.IntegerField(required=False)
     limit = serializers.IntegerField(required=False)

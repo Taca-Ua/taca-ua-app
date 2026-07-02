@@ -10,13 +10,6 @@ if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
 
 
-class MatchStatus(models.TextChoices):
-    SCHEDULED = "scheduled", "Scheduled"
-    IN_PROGRESS = "in_progress", "In Progress"
-    FINISHED = "finished", "Finished"
-    CANCELED = "canceled", "Canceled"
-
-
 class Match(models.Model):
     """Represents a match within a tournament."""
 
@@ -31,9 +24,8 @@ class Match(models.Model):
     location = models.CharField(max_length=255, blank=True, null=True)
     scheduled_time = models.DateTimeField(blank=True, null=True)
     status = models.CharField(
-        max_length=20, choices=MatchStatus.choices, default=MatchStatus.SCHEDULED
+        max_length=20, choices=Status.choices, default=Status.SCHEDULED
     )
-    journey = models.CharField(max_length=255, blank=True, null=True)
 
     tournament = models.ForeignKey(
         Tournament, on_delete=models.CASCADE, related_name="matches"

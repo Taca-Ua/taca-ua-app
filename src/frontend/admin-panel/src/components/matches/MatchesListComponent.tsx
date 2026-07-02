@@ -173,7 +173,6 @@ const MatchesListComponent = ( {
 } ) => {
     const [matches, setMatches] = matchesState ? matchesState : useState<MatchListItem[]>([]);
     const [loading, setLoading] = useState<boolean>( true );
-    const [expandedJourneys, setExpandedJourneys] = useState<Set<string>>(new Set());
 
     const [matchStatusFilter, setMatchStatusFilter] = useState<string>( 'all' );
     const [query, setQuery] = useState<string>( '' );
@@ -206,33 +205,6 @@ const MatchesListComponent = ( {
         return participantNames.includes( searchQuery ) || location.includes( searchQuery );
     } );
 
-    const matchesByJourney: { [key: string]: MatchListItem[] } = {};
-    filteredMatches.forEach( match => {
-        const journeyKey = match.journey !== undefined && match.journey !== null ? `Jornada ${match.journey}` : 'Sem Jornada';
-        if ( !matchesByJourney[ journeyKey ] ) {
-            matchesByJourney[ journeyKey ] = [];
-        }
-        matchesByJourney[ journeyKey ].push( match );
-    } );
-
-    const handleExpandAll = () => {
-        const allJourneys = Object.keys(matchesByJourney);
-        setExpandedJourneys(new Set(allJourneys));
-    };
-
-    const handleCollapseAll = () => {
-        setExpandedJourneys(new Set());
-    };
-
-    const toggleJourneyExpanded = (journeyKey: string, expanded: boolean) => {
-        const newExpanded = new Set(expandedJourneys);
-        if (expanded) {
-            newExpanded.add(journeyKey);
-        } else {
-            newExpanded.delete(journeyKey);
-        }
-        setExpandedJourneys(newExpanded);
-    };
 
     if ( loading ) {
         return <div>Loading matches...</div>;
@@ -245,18 +217,6 @@ const MatchesListComponent = ( {
             Jogos ({filteredMatches.length})
           </h2>
           <div className="flex items-center gap-3">
-          <Button
-            onClick={handleExpandAll}
-            padding='px-4 py-2'
-          >
-            Expandir Todos
-          </Button>
-          <Button
-            onClick={handleCollapseAll}
-            padding='px-4 py-2'
-          >
-            Colapsar Todos
-          </Button>
           <div className="flex items-center gap-3">
             <select
               value={matchStatusFilter}
@@ -285,31 +245,15 @@ const MatchesListComponent = ( {
 
         <div className="space-y-3">
           {filteredMatches.length > 0 ? (
-            Object.entries(matchesByJourney)
-              .sort((a, b) => {
-                const aKey = a[0];
-                const bKey = b[0];
-
-                // "Sem Jornada" goes last
-                if (aKey === 'Sem Jornada') return 1;
-                if (bKey === 'Sem Jornada') return -1;
-
-                // Extract numbers from "Jornada X" and sort numerically
-                const aNum = parseInt(aKey.match(/\d+/)?.[0] || '0');
-                const bNum = parseInt(bKey.match(/\d+/)?.[0] || '0');
-
-                return aNum - bNum;
-              })
-              .map(([journey, matches]) => (
-              <MatchesListJourneyComponent
-                key={journey}
-                journeyNumber={journey}
-                matches={matches}
-                expanded={expandedJourneys.has(journey)}
-                onExpandedChange={(expanded) => toggleJourneyExpanded(journey, expanded)}
-                onMatchDeleted={(matchId) => setMatches((prev) => prev.filter((m) => m.id !== matchId))}
-              />
-            ))
+            <div className="flex flex-col gap-3">
+              {filteredMatches.map((match) => (
+                <MatchesListItemComponent
+                  key={match.id}
+                  match={match}
+                  onDeleted={() => setMatches((prev) => prev.filter((m) => m.id !== match.id))}
+                />
+              ))}
+            </div>
           ) : (
             <p className="text-gray-500 text-center py-8">
               Nenhum jogo encontrado.
