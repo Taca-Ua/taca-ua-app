@@ -820,7 +820,6 @@ def populate_tournaments():
                     tournament_teams.get(match.team1),
                     tournament_teams.get(match.team2),
                 ],
-                "journey": match.jornada if match.jornada else None,
             }
             response = requests.post(
                 f"{API_URL}/matches/", json=payload, headers=HEADERS
