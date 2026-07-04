@@ -1,16 +1,14 @@
 services:
 # Infrastructure Services
   nginx:
-    image: ghcr.io/${OWNER_LOWER}/nginx:latest
+    image: nginx:1.31.2-alpine
     restart: always
     ports:
       - "${EXPOSED_HTTP_PORT:-80}:80"
       - "${EXPOSED_HTTPS_PORT:-443}:443"
     volumes:
       - ./src/configs/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./certs:/etc/nginx/certs
-    environment:
-      - DOMAIN=${DOMAIN:-localhost}
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - competition-api-v3
       - public-api
