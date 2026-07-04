@@ -114,8 +114,10 @@ services:
       - ./src/shared:/tmp
       - ./src/apis/competition-api-v3:/app
     environment:
+      - DOMAIN=${DOMAIN:-localhost}
       - API_ENDPOINT_PREFIX=${API_ENDPOINT_PREFIX:-api/admin}
       - DEFAULT_SEASON_NAME=${DEFAULT_SEASON_NAME:-Default Season}
+      - DEBUG=true
 
       - LOKI_LOGGING_URL=${LOKI_LOGGING_URL:-http://loki:3100/loki/api/v1/push}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
@@ -163,6 +165,7 @@ services:
     environment:
       - LOKI_LOGGING_URL=${LOKI_LOGGING_URL:-http://loki:3100/loki/api/v1/push}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DEBUG=true
 
       - POSTGRES_DB=${POSTGRES_DB:-taca_ua}
       - POSTGRES_USER=${POSTGRES_USER:-user}
@@ -189,6 +192,7 @@ services:
     environment:
       - LOKI_LOGGING_URL=${LOKI_LOGGING_URL:-http://loki:3100/loki/api/v1/push}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DEBUG=true
 
       - POSTGRES_DB=${POSTGRES_DB:-taca_ua}
       - POSTGRES_USER=${POSTGRES_USER:-user}
@@ -215,6 +219,7 @@ services:
     environment:
       - LOKI_LOGGING_URL=${LOKI_LOGGING_URL:-http://loki:3100/loki/api/v1/push}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DEBUG=true
 
       - POSTGRES_DB=${POSTGRES_DB:-taca_ua}
       - POSTGRES_USER=${POSTGRES_USER:-user}

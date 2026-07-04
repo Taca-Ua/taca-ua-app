@@ -26,11 +26,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-n1*yt*h^!p*&*btek$ns=*8h+2y+mk*&*owcjd=z2t4jlv3!$h"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "true").lower() == "true"
+
+DOMAIN = os.getenv("DOMAIN", "localhost")
 
 ALLOWED_HOSTS = [
     "competition-api-v3",
-    "localhost",
+    "localhost",  # for health check
+    DOMAIN,
 ]
 
 
@@ -273,7 +276,7 @@ KEYCLOAK_ADMIN_VERIFY_SSL = (
     os.getenv("KEYCLOAK_ADMIN_VERIFY_SSL", "false").lower() == "true"
 )
 KEYCLOAK_ISSUER_URL = os.getenv(
-    "KEYCLOAK_ISSUER_URL", f"http://localhost:8080/auth/realms/{KEYCLOAK_REALM}"
+    "KEYCLOAK_ISSUER_URL", f"http://{DOMAIN}:8080/auth/realms/{KEYCLOAK_REALM}"
 )
 KEYCLOAK_VALIDATE_ISSUER = (
     os.getenv("KEYCLOAK_VALIDATE_ISSUER", "false").lower() == "true"
@@ -282,15 +285,6 @@ KEYCLOAK_JWKS_URI = (
     f"{KEYCLOAK_ADMIN_SERVER_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/certs"
 )
 
-
-# RabbitMQ settings
-RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
-RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", "5672"))
-
-RABBITMQ_USER = os.getenv("RABBITMQ_USER", "guest")
-RABBITMQ_PASSWORD = os.getenv("RABBITMQ_PASSWORD", "guest")
-
-RABBITMQ_EXCHANGE = os.getenv("RABBITMQ_EXCHANGE", "events")
 
 # System settings
 API_ENDPOINT_PREFIX = (
