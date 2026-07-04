@@ -1,3 +1,4 @@
+from apps.matches.models import Match
 from django.db import models
 
 from ...models import Tournament, TournamentCompetitor
@@ -44,3 +45,11 @@ class LeagueStanding(models.Model):
     points_against = models.PositiveIntegerField(default=0)
 
     league_points = models.PositiveIntegerField(default=0)
+
+
+class LeagueMatch(models.Model):
+    """Represents a match in a league tournament."""
+
+    match = models.OneToOneField(Match, on_delete=models.CASCADE, primary_key=True)
+
+    round_number = models.PositiveIntegerField()

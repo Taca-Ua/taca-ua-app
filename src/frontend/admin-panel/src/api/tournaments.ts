@@ -150,5 +150,13 @@ export const tournamentsApi = {
 
   async updateFormatMeta(id: string, format_meta: Record<string, any>): Promise<Record<string, any>> {
     return apiClient.put<Record<string, any>>(`/tournaments/${id}/format/`, format_meta);
-  }
+  },
+
+  async getMatchesSuggestions(id: string, configuration: Record<string, any>): Promise<Record<string, any>[]> {
+    return apiClient.get<Record<string, any>[]>(`/tournaments/${id}/matches-suggestions/`, configuration);
+  },
+
+  async generateMatches(id: string, configuration: Record<string, any>): Promise<Record<string, any>[]> {
+    return apiClient.post<Record<string, any>[]>(`/tournaments/${id}/generate-matches/`, configuration);
+  },
 };

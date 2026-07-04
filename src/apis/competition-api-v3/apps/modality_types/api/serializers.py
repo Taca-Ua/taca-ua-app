@@ -31,11 +31,13 @@ class ModalityTypeDetailSerializer(ModalityTypeListSerializer):
 # Request serializers
 class ModalityTypeCreateSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=255)
-    description = serializers.CharField(allow_blank=True, allow_null=True)
+    description = serializers.CharField(
+        allow_blank=True, allow_null=True, required=False
+    )
     escaloes = ModalityTypeEscalaoSerializer(many=True)
     mode = serializers.ChoiceField(choices=ModalityTypeModes.choices)
     tournament_competitor_type = serializers.ChoiceField(
-        choices=TournamentCompetitorType.choices, required=False
+        choices=TournamentCompetitorType.choices, required=False, allow_null=True
     )
 
     def validate(self, data):

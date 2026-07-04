@@ -1,10 +1,55 @@
 import uuid
-from typing import Literal
+from dataclasses import dataclass
+from typing import List, Literal
 
+from apps.matches.models import Match
+from apps.matches.service import create_match
 from django.db.models import F
 
-from ..base import BaseFormat, Match
-from .models import DrawRule, LeagueSettings, LeagueStanding
+from ..base import BaseFormat
+from .models import DrawRule, LeagueMatch, LeagueSettings, LeagueStanding
+from .utils import RoundRobinScheduler
+
+
+@dataclass
+class LeagueMatchGenerationConfiguration:
+    """Configuration for generating matches in a league format."""
+
+    players_per_match: int = (
+        2  # Default to 2 players per match for a standard league format
+    )
+    number_of_faceoffs: int = 1  # Default to a single round-robin format
+
+    def __post_init__(self):
+        if isinstance(self.players_per_match, str) and self.players_per_match.isdigit():
+            self.players_per_match = int(self.players_per_match)
+        if (
+            isinstance(self.number_of_faceoffs, str)
+            and self.number_of_faceoffs.isdigit()
+        ):
+            self.number_of_faceoffs = int(self.number_of_faceoffs)
+
+        if self.players_per_match < 2:
+            raise ValueError("Players per match must be at least 2.")
+        if self.number_of_faceoffs < 1:
+            raise ValueError("Number of faceoffs must be at least 1.")
+
+
+@dataclass
+class LeagueSuggestedMatch:
+    competitors: List[uuid.UUID]
+    round_number: int
+    location: str = None
+    start_time: str = None
+
+    def __post_init__(self):
+        if len(self.competitors) < 2:
+            raise ValueError("At least two competitors are required for a match.")
+
+        if len(set(self.competitors)) != len(self.competitors):
+            raise ValueError(
+                "Must be distinct competitors in a match. Duplicate competitor IDs found."
+            )
 
 
 class LeagueFormat(BaseFormat):
@@ -299,3 +344,43 @@ class LeagueFormat(BaseFormat):
             standing.save()
 
         return self.get_details()
+
+    def suggest_matches(self, configuration: dict) -> List[dict]:
+        config = LeagueMatchGenerationConfiguration(**configuration)
+
+        scheduler = RoundRobinScheduler(
+            participants=list(self.tournament.competitors.values_list("id", flat=True)),
+            match_size=config.players_per_match,
+            num_faceoffs=config.number_of_faceoffs,
+        )
+        rounds = scheduler.generate(show_bye_matches=False)
+
+        sugestion: List[LeagueSuggestedMatch] = []
+        for idx, r in enumerate(rounds):
+            for match in r:
+                sugestion.append(
+                    LeagueSuggestedMatch(
+                        competitors=list(match),
+                        round_number=idx + 1,
+                    )
+                )
+
+        return [match.__dict__ for match in sugestion]
+
+    def generate_matches(self, matches_data: list[dict]) -> None:
+        sugested_matches = [
+            LeagueSuggestedMatch(**match_data) for match_data in matches_data
+        ]
+
+        for suggested_match in sugested_matches:
+            match = create_match(
+                tournament=self.tournament,
+                competitors=suggested_match.competitors,
+                location=suggested_match.location,
+                start_time=suggested_match.start_time,
+            )
+
+            LeagueMatch.objects.create(
+                match=match,
+                round_number=suggested_match.round_number,
+            )

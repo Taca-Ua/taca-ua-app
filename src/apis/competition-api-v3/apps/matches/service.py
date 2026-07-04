@@ -1,7 +1,6 @@
 import datetime
 from uuid import UUID
 
-from apps.tournaments.service import tournament_format_match_result
 from django.db import transaction
 
 from .models import Match, MatchParticipant
@@ -10,7 +9,7 @@ from .models import Match, MatchParticipant
 @transaction.atomic
 def create_match(
     tournament_id: UUID,
-    participants: list[dict],
+    participants: list[UUID],
     location: str = None,
     start_time: datetime.datetime = None,
 ) -> Match:
@@ -64,6 +63,8 @@ def delete_match(match_id: UUID) -> None:
 
 @transaction.atomic
 def publish_match_results(match_id: UUID, participant_results: list[dict]) -> Match:
+    from apps.tournaments.service import tournament_format_match_result
+
     match = Match.objects.get(id=match_id)
 
     participant_results_dict = {

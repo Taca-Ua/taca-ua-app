@@ -12,6 +12,7 @@ import { useModal } from '../../contexts/ModalContext';
 import { useAuth } from '../../hooks/useAuth';
 import { navigateBack } from '../../utils';
 import TornLeagueDisplayComponent from '../../components/tournaments/formats/league/TornLeagueDisplayComponent';
+import GeneralFormatMatchesSuggestionsModal from '../../components/tournaments/formats/GeneralFormatMatchesSuggestionsModal';
 
 // Main component
 const TorneioDetails = () => {
@@ -94,20 +95,32 @@ const TorneioDetails = () => {
 
           {/* Matches Section */}
           <div className="bg-white rounded-lg shadow-md p-6 mt-6 flex flex-col gap-6">
-            <Button
-              onClick={() => pushModal(
-                <MatchCreateModal
-                  tournament={tournament}
-                  onCreated={(newMatch) => {
-                    setMatches((prev) => [...prev, newMatch]);
-                  }}
-                />
-              )}
-              active={isAdminGeneral && tournament.competitors.length >= 2}
-              flexible={true}
-            >
-              + Criar Jogo
-            </Button>
+            {tournament.format === 'free'? (
+              <Button
+                onClick={() => pushModal(
+                  <MatchCreateModal
+                    tournament={tournament}
+                    onCreated={(newMatch) => {
+                      setMatches((prev) => [...prev, newMatch]);
+                    }}
+                  />
+                )}
+                active={isAdminGeneral && tournament.competitors.length >= 2}
+                flexible={true}
+              >
+                + Criar Jogo
+              </Button>
+            ) : (
+              <Button
+                onClick={() => pushModal(
+                  <GeneralFormatMatchesSuggestionsModal format={tournament.format} tournamentId={tournament.id} />
+                )}
+                active={isAdminGeneral}
+                flexible={true}
+              >
+                + Gerar Jogos
+              </Button>
+            )}
             <MatchesListComponent tournamentId={tournament.id} matchesState={[matches, setMatches]} />
           </div>
         </div>

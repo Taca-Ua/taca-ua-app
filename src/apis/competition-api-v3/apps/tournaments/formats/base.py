@@ -24,3 +24,11 @@ class BaseFormat(ABC):
     @abstractmethod
     def record_result(self, match: Match) -> dict:
         pass
+
+    @abstractmethod
+    def suggest_matches(self, configuration: dict) -> list:
+        pass
+
+    @abstractmethod
+    def generate_matches(self, matches) -> list:
+        pass
