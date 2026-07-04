@@ -230,20 +230,6 @@ class TournamentFormatDetailView(RoleRequiredMixin, APIView):
         return Response(format_details, status=200)
 
 
-@extend_schema(
-    summary="Retrieve tournament available matches rounds",
-    description="Get the available rounds for matches in a specific tournament.",
-    responses={200: DictField},
-)
-@api_view(["GET"])
-@require_roles(RolesEnum.GENERAL_ADMIN)
-def get_tournament_available_rounds(request, tournament_id):
-    tournament = get_tournament_by_id(tournament_id)
-    available_rounds = tournament.available_rounds
-
-    return Response(available_rounds, status=200)
-
-
 urlpatterns = [
     path("", TournamentListCreateView.as_view(), name="tournament-list-create"),
     path(
@@ -270,10 +256,5 @@ urlpatterns = [
         "<uuid:tournament_id>/format/",
         TournamentFormatDetailView.as_view(),
         name="tournament-format-detail",
-    ),
-    path(
-        "<uuid:tournament_id>/rounds/",
-        get_tournament_available_rounds,
-        name="tournament-available-rounds",
     ),
 ]

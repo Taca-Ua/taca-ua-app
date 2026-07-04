@@ -25,11 +25,6 @@ def create_match(
         journey=journey,
     )
 
-    if new_journey:
-        journies = match.tournament.available_rounds
-        match.journey = max(journies) + 1 if journies else 1
-        match.save()
-
     # Create match participants
     for competitor_id in participants:
         MatchParticipant.objects.create(

@@ -41,8 +41,7 @@ const Button = ( {
     return (
       <>
         <button
-          onClick={(e) => {
-            e.preventDefault();
+          onClick={() => {
             if (confirmation) {
               pushModal(
                 <ConfirmModal
