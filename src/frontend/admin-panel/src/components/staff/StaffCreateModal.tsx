@@ -34,8 +34,8 @@ const StaffCreateModal = ( {
             return;
         }
 
-        const staffData: { full_name: string; contact?: string; staff_number?: string } = {
-          full_name: memberName,
+        const staffData: { name: string; contact?: string; staff_number?: string } = {
+          name: memberName,
         };
 
         if (identifierType === 'contact') {

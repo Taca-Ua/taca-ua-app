@@ -2,10 +2,10 @@ import { http, HttpResponse } from 'msw'
 
 const API_BASE = '/api2/admin'
 
-const athleteLookup: Record<string, { id: string; full_name: string; student_number: string }> = {
-  'ath-1': { id: 'ath-1', full_name: 'Alice Almeida', student_number: '12345' },
-  'ath-2': { id: 'ath-2', full_name: 'Bruno Barbosa', student_number: '67890' },
-  'ath-3': { id: 'ath-3', full_name: 'Carla Costa', student_number: '13579' },
+const athleteLookup: Record<string, { id: string; name: string; student_number: string }> = {
+  'ath-1': { id: 'ath-1', name: 'Alice Almeida', student_number: '12345' },
+  'ath-2': { id: 'ath-2', name: 'Bruno Barbosa', student_number: '67890' },
+  'ath-3': { id: 'ath-3', name: 'Carla Costa', student_number: '13579' },
 }
 
 const initialTeams = [

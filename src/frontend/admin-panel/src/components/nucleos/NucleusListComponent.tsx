@@ -1,15 +1,46 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { nucleosApi, type NucleoListItem } from "../../api/nucleos";
 import LazyImage from "../utils/LazyImage";
+
+const NucleusEntry = ({ nucleus }: { nucleus: NucleoListItem }) => {
+    return (
+      <Link
+        to={`/nucleos/${nucleus.id}`}
+        className="cursor-pointer bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 p-6 flex flex-col gap-4"
+      >
+        <div className="flex items-center justify-evenly text-center gap-3">
+          {nucleus.logo_url ? (
+            <LazyImage
+              src={nucleus.logo_url}
+              alt={nucleus.name}
+              className="h-24 object-cover"
+            />
+          ) : (
+            <div className="w-24 h-24 rounded-full bg-teal-50 flex items-center justify-center border-2 border-teal-500">
+              <span className="text-teal-600 font-bold text-sm">
+                {nucleus.abbreviation}
+              </span>
+            </div>
+          )}
+          <div>
+            <span className="text-teal-600 font-bold text-lg block">
+              {nucleus.abbreviation}
+            </span>
+            <span className="text-gray-800 font-medium text-sm block">
+              {nucleus.name}
+            </span>
+          </div>
+        </div>
+      </Link>
+    );
+}
 
 const ListNucleosComponent = ({
     nucleosState,
 }: {
     nucleosState?: [NucleoListItem[], React.Dispatch<React.SetStateAction<NucleoListItem[]>>];
 }) => {
-
-    const navigate = useNavigate();
 
     const [nucleos, setNucleos] = nucleosState ? nucleosState : useState<NucleoListItem[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
@@ -37,32 +68,11 @@ const ListNucleosComponent = ({
                 />
             </div>
 
-            {filteredNucleos.sort((a, b) => a.name.localeCompare(b.name)).map((n) => (
-                <button
-                    key={n.id}
-                    type="button"
-                    onClick={() => navigate(`/nucleos/${n.id}`)}
-                    className="w-full text-left px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                <div className="flex items-center gap-4">
-
-                    {n.logo_url ? (
-                        <div className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden border-2 border-teal-500 flex-shrink-0">
-                            <LazyImage src={n.logo_url} alt={n.abbreviation} className="w-full h-full object-cover" />
-                        </div>
-                    ) : (
-                        <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-teal-500 flex-shrink-0">
-                            <span className="text-teal-600 font-bold text-sm">{n.abbreviation}</span>
-                        </div>
-                    )}
-                    <div className="flex items-center gap-3">
-                        <span className="text-teal-600 font-bold text-lg">{n.abbreviation}</span>
-                        <span className="text-gray-400">|</span>
-                        <span className="text-gray-800 font-medium">{n.name}</span>
-                    </div>
-                </div>
-                </button>
-            ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredNucleos.sort((a, b) => a.name.localeCompare(b.name)).map((n) => (
+                    <NucleusEntry key={n.id} nucleus={n} />
+                ))}
+            </div>
         </div>
     );
 };

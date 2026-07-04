@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { matchesApi, type MatchListItem } from "../../api/matches";
 
 const MatchesCalendarComponent = ({
   courseId,
   modalityId,
+  nucleusId,
+  teamId,
 } : {
   courseId?: string;
   modalityId?: string;
+  nucleusId?: string;
+  teamId?: string;
 }) => {
-
-    const navigate = useNavigate();
 
     const [matches, setMatches] = useState<MatchListItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -27,6 +29,8 @@ const MatchesCalendarComponent = ({
             date_to: new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).toISOString().split("T")[0],
             course_id: courseId,
             modality_id: modalityId,
+            nucleus_id: nucleusId,
+            team_id: teamId,
         }).then((data) => {
             setMatches(data.matches);
         }).catch((err) => {
@@ -34,7 +38,7 @@ const MatchesCalendarComponent = ({
         }).finally(() => {
             setLoading(false);
         });
-    }, [currentMonth]);
+    }, [currentMonth, courseId, modalityId, nucleusId, teamId]);
 
     const getStatusDotColor = (status: string) => {
         switch (status) {
@@ -291,11 +295,10 @@ const MatchesCalendarComponent = ({
                     {paginated.map((match) => {
                       const { time } = formatDateTime(match.start_time);
                       return (
-                        <button
+                        <Link
                           key={match.id}
-                          type="button"
-                          onClick={() => navigate(`/jogos/${match.id}`)}
-                          className="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-teal-50 transition-colors border border-transparent hover:border-teal-200"
+                          to={`/jogos/${match.id}`}
+                          className="block p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
                         >
                           <div className="flex justify-between items-start mb-1">
                             <span className="font-semibold text-sm text-gray-800">
@@ -328,7 +331,7 @@ const MatchesCalendarComponent = ({
                           <p className="text-xs text-gray-500 mt-0.5">
                             {match.location}
                           </p>
-                        </button>
+                        </Link>
                       );
                     })}
                   </div>

@@ -1,11 +1,13 @@
-import { useState } from "react";
-import { type TournamentListItem } from "../../api/tournaments";
+import { useEffect, useState } from "react";
+import { type TournamentListItem, tournamentsApi } from "../../api/tournaments";
 import {
   TOURNAMENT_STATUS_COLORS,
   TOURNAMENT_STATUS_LABELS,
   TOURNAMENT_STATUS_ORDER,
 } from "../../constants/tournaments";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useNotification } from "../../contexts/NotificationProvider";
+import { useSeason } from "../../contexts/SeasonContext";
 
 const TournamentListItemComponent = ({
   tournament,
@@ -14,12 +16,10 @@ const TournamentListItemComponent = ({
   tournament: TournamentListItem;
   displayModality?: boolean;
 }) => {
-  const navigate = useNavigate();
 
   return (
-    <button
-      type="button"
-      onClick={() => navigate(`/torneios/${tournament.id}`)}
+    <Link
+      to={`/torneios/${tournament.id}`}
       className="w-full text-left px-6 py-4 bg-gray-100 rounded-md hover:bg-gray-200 flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-teal-500"
     >
       <div className="flex flex-col">
@@ -48,27 +48,60 @@ const TournamentListItemComponent = ({
           {TOURNAMENT_STATUS_LABELS[tournament.status] || tournament.status}
         </span>
       </div>
-    </button>
+    </Link>
   );
 };
 
-const TournamentList = ({
-  tournaments,
-  displayModality = true,
-  showModalityFilter = true,
-  showStatusFilter = true,
+const TournamentListComponent = ({
+  tournamentsState,
+  courseId,
+  modalityId,
+  teamId
 }: {
-  tournaments: TournamentListItem[];
-  displayModality?: boolean;
-  showModalityFilter?: boolean;
-  showStatusFilter?: boolean;
+  tournamentsState?: [TournamentListItem[] | null, React.Dispatch<React.SetStateAction<TournamentListItem[] | null>>];
+  courseId?: string;
+  modalityId?: string;
+  teamId?: string;
 }) => {
+  const { loadedSeason } = useSeason();
+  const { notify } = useNotification();
+
+  const [tournaments, setTournaments] = tournamentsState || useState<TournamentListItem[] | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [modalityFilter, setModalityFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  if (tournaments.length === 0) {
+
+  useEffect(() => {
+    if (tournaments !== null && tournaments.length > 0) return;
+
+    setLoading(true);
+    tournamentsApi.getAll({
+      season_id: loadedSeason?.id,
+      course_id: courseId,
+      modality_id: modalityId,
+      team_id: teamId,
+    })
+      .then(setTournaments)
+      .catch((error) => {
+        console.error("Erro ao carregar torneios:", error);
+        notify("Erro ao carregar torneios.", "error");
+      })
+      .finally(() => setLoading(false));
+
+  }, [loadedSeason?.id, courseId, modalityId, teamId]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-gray-500">Carregando torneios...</p>
+      </div>
+    );
+  }
+
+  if (tournaments == null || tournaments.length === 0) {
     return <p className="text-gray-500 text-center py-8">Nenhum torneio encontrado. Crie um novo torneio para começar!</p>;
   }
 
@@ -93,7 +126,7 @@ const TournamentList = ({
       (TOURNAMENT_STATUS_ORDER[b.status] ?? 999);
     if (statusComparison !== 0) return statusComparison;
 
-    if (displayModality) {
+    if (modalityId) {
       const modalityComparison = a.modality.name.localeCompare(b.modality.name);
       if (modalityComparison !== 0) return modalityComparison;
     }
@@ -113,7 +146,7 @@ const TournamentList = ({
           className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
         />
 
-        {showModalityFilter && (
+        {!modalityId && (
           <select
             value={modalityFilter}
             onChange={(e) => setModalityFilter(e.target.value)}
@@ -128,18 +161,16 @@ const TournamentList = ({
           </select>
         )}
 
-        {showStatusFilter && (
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
-          >
-            <option value="">Todos os estados</option>
-            <option value="draft">Rascunho</option>
-            <option value="active">Ativo</option>
-            <option value="finished">Finalizado</option>
-          </select>
-        )}
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+        >
+          <option value="">Todos os estados</option>
+          <option value="draft">Rascunho</option>
+          <option value="active">Ativo</option>
+          <option value="finished">Finalizado</option>
+        </select>
       </div>
 
       {/* Tournament List */}
@@ -148,7 +179,7 @@ const TournamentList = ({
           <TournamentListItemComponent
             key={tournament.id}
             tournament={tournament}
-            displayModality={displayModality}
+            displayModality={!modalityId}
           />
         )) : (
           <p className="text-gray-500 text-center py-8">
@@ -160,4 +191,4 @@ const TournamentList = ({
   );
 };
 
-export default TournamentList;
+export default TournamentListComponent;

@@ -84,7 +84,7 @@ function UnassignedColumn({
   competitorsById: Record<string, { id: string; name: string; course_name: string }>;
 }) {
   return (
-    <div className="w-72 grid flex flex-col min-h-0">
+    <div className="w-72 flex flex-col min-h-0">
       {/* <h3 className="font-semibold mb-2 text-gray-800">Competidores por atribuir</h3> */}
       <Droppable droppableId="unassigned" direction="vertical">
         {(provided, snapshot) => (
@@ -131,7 +131,7 @@ const TournamentFinishModal = ({
   const { notify } = useNotification();
   const { popModal } = useModal();
 
-  const numPositions = tournament.scoring_format.points.length;
+  const numPositions = tournament.rank?.points.length || 0;
 
   // State: position assignments and unassigned competitors
   const [standings, setStandings] = useState<{ [id: string]: number }>({});
@@ -242,16 +242,23 @@ const TournamentFinishModal = ({
       setStandings({});
       setUnassigned(tournament.competitors.map((c) => c.id));
     } else {
-      tournamentsApi.getStandings(tournament.id).then((result) => {
+      tournamentsApi.getFormatDetails(tournament.id).then((result) => {
         const newStandings: { [id: string]: number } = {};
 
+        if (Object.keys(result).length === 0) {
+          // No standings available, start with all competitors unassigned
+          setStandings({});
+          setUnassigned(tournament.competitors.map((c) => c.id));
+          return;
+        }
+
         let all_positions: number[] = [];
-        for (const entry of result) {
+        for (const entry of result.standings) {
           if (!all_positions.includes(entry.position))
             all_positions.push(entry.position);
         }
 
-        for (const entry of result) {
+        for (const entry of result.standings) {
           newStandings[entry.competitor_id] = all_positions.indexOf(entry.position) + 1;
         }
         setStandings(newStandings);

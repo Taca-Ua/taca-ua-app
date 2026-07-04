@@ -2,7 +2,7 @@ import { apiClient } from './client';
 
 export interface StaffListItem {
   id: string;
-  full_name: string;
+  name: string;
   staff_number?: string;
   contact?: string;
 }
@@ -12,13 +12,13 @@ export interface StaffDetail extends StaffListItem {
 }
 
 export interface StaffCreate {
-  full_name: string;
+  name: string;
   staff_number?: string;
   contact?: string;
 }
 
 export interface StaffUpdate {
-  full_name?: string;
+  name?: string;
   staff_number?: string;
   contact?: string;
 }

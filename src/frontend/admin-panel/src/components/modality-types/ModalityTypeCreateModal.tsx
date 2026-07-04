@@ -26,8 +26,8 @@ const ModalityTypeCreateModal = ( {
     const [formatDescription, setFormatDescription] = useState('');
     const [modalityTypeMode, setModalityTypeMode] = useState<'modality' | 'points' | null>(null);
     const [tournamentCompetitorType, setTournamentCompetitorType] = useState<'individual' | 'team' | null>(null);
-    const [escaloes, setEscaloes] = useState<{ escalao: string; minParticipants: number | null; maxParticipants: number | null; points: string }[]>([
-        { escalao: 'A', minParticipants: null, maxParticipants: null, points: '' },
+    const [escaloes, setEscaloes] = useState<{ name: string; min_participants: number | null; max_participants: number | null; points: string }[]>([
+        { name: 'A', min_participants: null, max_participants: null, points: '' },
     ]);
 
     const onClose = () => {
@@ -36,7 +36,7 @@ const ModalityTypeCreateModal = ( {
         setFormatDescription('');
         setModalityTypeMode(null);
         setTournamentCompetitorType(null);
-        setEscaloes([{ escalao: 'A', minParticipants: null, maxParticipants: null, points: '' }]);
+        setEscaloes([{ name: 'A', min_participants: null, max_participants: null, points: '' }]);
     };
 
     const handleCreateFormat = async () => {
@@ -62,7 +62,7 @@ const ModalityTypeCreateModal = ( {
 
         // Validate escaloes
         for (const esc of escaloes) {
-            if (!esc.escalao.trim()) {
+            if (!esc.name.trim()) {
             notify('Todos os escalões devem ter um nome.', 'error');
             return;
             }
@@ -101,7 +101,7 @@ const ModalityTypeCreateModal = ( {
         const nextLetter = letters[escaloes.length] || '';
         setEscaloes([
         ...escaloes,
-        { escalao: nextLetter, minParticipants: null, maxParticipants: null, points: '' }
+        { name: nextLetter, min_participants: null, max_participants: null, points: '' }
         ]);
     };
 
@@ -197,7 +197,7 @@ const ModalityTypeCreateModal = ( {
                     {escaloes.map((esc, index) => (
                       <div key={index} className="border border-gray-300 rounded-md p-4 bg-gray-50">
                         <div className="flex justify-between items-start mb-3">
-                          <h3 className="font-medium text-lg">Escalão {esc.escalao}</h3>
+                          <h3 className="font-medium text-lg">Escalão {esc.name}</h3>
                           {escaloes.length > 1 && (
                             <button
                               onClick={() => handleRemoveEscalao(index)}
@@ -217,8 +217,8 @@ const ModalityTypeCreateModal = ( {
                               type="text"
                               className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
                               placeholder="A, B, C..."
-                              value={esc.escalao}
-                              onChange={e => handleEscalaoChange(index, 'escalao', e.target.value)}
+                              value={esc.name}
+                              onChange={e => handleEscalaoChange(index, 'name', e.target.value)}
                             />
                           </div>
 
@@ -228,8 +228,8 @@ const ModalityTypeCreateModal = ( {
                               type="number"
                               className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
                               placeholder="Ex: 32"
-                              value={esc.minParticipants ?? ''}
-                              onChange={e => handleEscalaoChange(index, 'minParticipants', e.target.value ? parseInt(e.target.value) : null)}
+                              value={esc.min_participants ?? ''}
+                              onChange={e => handleEscalaoChange(index, 'min_participants', e.target.value ? parseInt(e.target.value) : null)}
                             />
                           </div>
 
@@ -239,8 +239,8 @@ const ModalityTypeCreateModal = ( {
                               type="number"
                               className="border px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
                               placeholder="Ex: 40"
-                              value={esc.maxParticipants ?? ''}
-                              onChange={e => handleEscalaoChange(index, 'maxParticipants', e.target.value ? parseInt(e.target.value) : null)}
+                              value={esc.max_participants ?? ''}
+                              onChange={e => handleEscalaoChange(index, 'max_participants', e.target.value ? parseInt(e.target.value) : null)}
                             />
                           </div>
                         </div>

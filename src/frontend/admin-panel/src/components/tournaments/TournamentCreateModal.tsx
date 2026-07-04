@@ -9,6 +9,7 @@ import ChoseOneInput from '../utils/inputs/ChoseOneInput';
 import { useSeason } from '../../contexts/SeasonContext';
 import { modalityTypesApi } from '../../api/modality-types';
 import GeneralFormatMetaInput from './formats/GeneralFormatMetaInput'
+import TournamentCreateCompetitorRuleModal, { type CompetitorRule } from './TournamentCreateCompetitorRuleModal';
 
 
 const TournamentCreateModal = ({
@@ -21,7 +22,7 @@ const TournamentCreateModal = ({
   starterName?: string;  // Optional prop to pre-fill the tournament name
 }) => {
   const { notify } = useNotification();
-  const { popModal } = useModal();
+  const { popModal, pushModal } = useModal();
   const { loadedSeason } = useSeason();
 
   const [loading, setLoading] = useState(false);
@@ -31,6 +32,7 @@ const TournamentCreateModal = ({
   const [chosenScoringFormat, setChosenScoringFormat] = useState<{ id: string, title: string } | null>(null);
   const [chosenTournamentFormat, setChosenTournamentFormat] = useState<{ id: string, title: string } | null>(null);
   const formatMetaData = {};
+  const [competitorRules, setCompetitorRules] = useState<CompetitorRule[]>([]);
 
   const [modalityOptions, setModalityOptions] = useState<ModalityListItem[]>([]);
 
@@ -90,6 +92,12 @@ const TournamentCreateModal = ({
 
         format: chosenTournamentFormat ? chosenTournamentFormat.id : undefined,
         format_data: formatMetaData,
+
+        competitor_rules: competitorRules.map(rule => ({
+          tournament_id: rule.targetTournament.id,
+          starting_position: rule.startingPosition,
+          ending_position: rule.endingPosition,
+        })),
       };
       console.log('Creating tournament with data:', newTournament);
       const createdTournament = await tournamentsApi.create(newTournament);
@@ -193,9 +201,50 @@ const TournamentCreateModal = ({
               }}
               initialElement={{ id: 'free', title: 'Livre' }}
             />
+            <div className="mt-2">
+              <GeneralFormatMetaInput format={chosenTournamentFormat?.id || 'free'} data={formatMetaData} />
+            </div>
           </div>
-          <GeneralFormatMetaInput format={chosenTournamentFormat?.id || 'free'} data={formatMetaData} />
 
+          {/* Predetermined Competitors */}
+          {chosenModalityId && (
+          <div className="mb-4 flex flex-col">
+            <div>
+              <label className="font-medium">
+                Regras de Qualificação
+              </label>
+              <HelpTooltip
+                text="Permite pré-determinar os competidores que irão participar no torneio."
+                className="ml-1"
+              />
+            </div>
+            <div className="mt-2"/>
+            <Button
+              onClick={() => pushModal(<TournamentCreateCompetitorRuleModal modalityId={chosenModalityId} onSave={(rule) => setCompetitorRules([...competitorRules, rule])} />)}
+              flexible={true}
+            >
+              + Adicionar Regra
+            </Button>
+            {competitorRules.length > 0 && (
+              <ul className="mt-2 list-disc list-inside space-y-1">
+                {competitorRules.map((rule, index) => (
+                  <li key={index} className="flex justify-between items-center">
+                    <span>{rule.targetTournament.name}</span>
+                    <span className="text-gray-500 text-sm">{rule.startingPosition} - {rule.endingPosition}</span>
+                    <Button
+                      onClick={() => setCompetitorRules(competitorRules.filter((_, i) => i !== index))}
+                      type="danger"
+                    >
+                      Remover
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          )}
+
+          {/* Action Buttons */}
           <div className="flex justify-end space-x-2">
             <Button
               onClick={onClose}

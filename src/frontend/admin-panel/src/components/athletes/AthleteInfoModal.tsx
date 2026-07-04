@@ -5,6 +5,39 @@ import AthleteEditModal from "./AthleteEditModal";
 import { useModal } from "../../contexts/ModalContext";
 import { useEffect, useState } from "react";
 
+
+const showFileButton = (fileUrl: string | undefined, label: string) => {
+    if (!fileUrl) {
+        return <span className="text-gray-500">Não fornecido</span>;
+    }
+
+    return (
+      <a
+        href={fileUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-2"
+      >
+        <div className="flex items-center gap-2 bg-blue-500 p-2 rounded-lg text-white hover:bg-blue-600 transition-colors">
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+            />
+          </svg>
+          {label}
+        </div>
+      </a>
+    );
+}
+
 const AthleteInfoModal = ( {
     athleteId,
     onEditSave,
@@ -73,7 +106,7 @@ const AthleteInfoModal = ( {
                 Participante
               </span>
               <h2 className="text-2xl font-bold text-gray-800">
-                {athlete.full_name}
+                {athlete.name}
               </h2>
             </div>
 
@@ -109,6 +142,22 @@ const AthleteInfoModal = ( {
               </label>
               <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
                 {athlete.course.name}
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center mb-2">
+              <div>
+                <label className="block text-teal-500 font-medium mb-2">
+                  Prova de Curso
+                </label>
+                {showFileButton(athlete.course_proof_file_url, "Ver Prova de Curso")}
+              </div>
+
+              <div>
+                <label className="block text-teal-500 font-medium mb-2">
+                  Prova de Pagamento
+                </label>
+                {showFileButton(athlete.payment_proof_file_url, "Ver Prova de Pagamento")}
               </div>
             </div>
           </div>

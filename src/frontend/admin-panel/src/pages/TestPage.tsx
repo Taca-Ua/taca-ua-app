@@ -1,37 +1,27 @@
-import { useEffect } from "react";
-import Button from "../components/utils/Button";
-import { useModal } from "../contexts/ModalContext";
-import MatchesCalendarComponent from "../components/matches/MatchesCalendarComponent";
-
-const Example = () => {
-  const { popModal, pushModal } = useModal();
-
-  useEffect(() => {
-    console.log("Mounting example modal");
-  }, []);
-
-  return (
-    <div className="bg-white p-6 rounded-xl shadow-xl">
-      <Button
-        onClick={() =>
-          pushModal(<Example />)
-        }
-      >
-        Open Modal
-      </Button>
-      <Button onClick={popModal} type="secondary">
-        Close Modal
-      </Button>
-    </div>
-  );
-};
+import { useEffect, useState } from "react";
+import LineupsSection from "../components/matches/MatchLineupComponent";
+import { type MatchDetail, matchesApi } from "../api/matches";
 
 const TestPage = () => {
-  return (
-    <div className="w-2/3">
-      <MatchesCalendarComponent />
-    </div>
-  );
+
+    const [match, setMatch] = useState<MatchDetail | null>(null);
+
+    useEffect(() => {
+        matchesApi.getById('3ca142ed-9a65-40e9-8def-0adce8a5d9a4').then(setMatch).catch(console.error);
+    }, []);
+
+    if (match === null) {
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <p className="text-gray-600">Carregando dados do jogo...</p>
+            </div>
+        );
+    }
+    return (
+        <div className="w-2/3">
+            <LineupsSection match={match} />
+        </div>
+    );
 };
 
 export default TestPage;

@@ -53,20 +53,36 @@ const TeamInfoComponent = ({
   const handleUpdatePlayers = async (players: GenericElement[]) => {
     if (!team) return;
     const playersToAdd = players.filter(
-      (p) => !team?.players.some((tp) => tp.id === p.id),
+      (p) => !team?.athletes.some((tp) => tp.id === p.id),
     );
     const playersToRemove =
-      team?.players.filter((tp) => !players.some((p) => p.id === tp.id)) || [];
+      team?.athletes.filter((tp) => !players.some((p) => p.id === tp.id)) || [];
 
-    try {
-      const updatedTeam = await teamsApi.update(team.id, {
-        players_add: playersToAdd.map((p) => p.id),
-        players_remove: playersToRemove.map((p) => p.id),
-      });
-      setTeam(updatedTeam);
-    } catch (error) {
-      console.error("Error updating team players:", error);
+    if (playersToAdd.length === 0 && playersToRemove.length === 0) {
+      notify("Nenhuma alteração nos membros da equipa.", "info");
+      return;
     }
+
+    let updatedTeam = null;
+    if (playersToAdd.length > 0) {
+      try {
+        updatedTeam = await teamsApi.addAthletes(team.id, playersToAdd.map((p) => p.id));
+      } catch (error) {
+        console.error("Error adding players to team:", error);
+        notify("Erro ao adicionar jogadores à equipa.", "error");
+      }
+    }
+
+    if (playersToRemove.length > 0) {
+      try {
+        updatedTeam = await teamsApi.removeAthletes(team.id, playersToRemove.map((p) => p.id));
+      } catch (error) {
+        console.error("Error removing players from team:", error);
+        notify("Erro ao remover jogadores da equipa.", "error");
+      }
+    }
+
+    if (updatedTeam) setTeam(updatedTeam);
   };
 
   if (!team) {
@@ -160,7 +176,7 @@ const TeamInfoComponent = ({
             Número de Jogadores
           </label>
           <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
-            {team.players.length}
+            {team.athletes.length}
           </div>
         </div>
 
@@ -202,10 +218,10 @@ const TeamInfoComponent = ({
                 <ChooseMultipleModal
                   allElementsLoader={() => Promise.resolve(avaiblePlayers.map((player) => ({
                     id: player.id,
-                    title: player.full_name,
+                    title: player.name,
                     subTitle: `NMEC: ${player.student_number}`,
                   })))}
-                  initialChosenElementsIds={team.players.map((ele) => ele.id)}
+                  initialChosenElementsIds={team.athletes.map((ele) => ele.id)}
                   onSave={(chosenElements) => handleUpdatePlayers(chosenElements)}
                   title="Selecionar Membros da Equipa"
                 />
@@ -218,8 +234,8 @@ const TeamInfoComponent = ({
         </div>
 
         <div className="space-y-3 max-h-[600px] overflow-y-auto">
-          {team.players.length > 0 ? (
-            team.players.map((member) => (
+          {team.athletes.length > 0 ? (
+            team.athletes.map((member) => (
             <div
                 key={member.id}
                 className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
@@ -227,11 +243,11 @@ const TeamInfoComponent = ({
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
                     <span className="text-teal-700 font-medium">
-                      {member.full_name.charAt(0).toUpperCase()}
+                      {member.name.charAt(0).toUpperCase()}
                     </span>
                   </div>
                   <div>
-                    <p className="text-gray-800 font-medium">{member.full_name}</p>
+                    <p className="text-gray-800 font-medium">{member.name}</p>
                   </div>
                   <div className="ml-4 px-2 py-1 bg-gray-200 rounded text-sm text-gray-600">
                     NMEC: {member.student_number}

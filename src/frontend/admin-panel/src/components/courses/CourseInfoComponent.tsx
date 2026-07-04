@@ -102,7 +102,7 @@ const CourseInfoComponent = ( {
               />
             </label>
             <div className="w-full px-4 py-3 bg-gray-100 rounded-md text-gray-800">
-              {course.nucleo.name}
+              {course.nucleus.name}
             </div>
           </div>
         </div>

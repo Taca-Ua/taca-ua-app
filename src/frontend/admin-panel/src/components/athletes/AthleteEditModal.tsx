@@ -8,6 +8,7 @@ import { useModal } from "../../contexts/ModalContext";
 import { useAuth } from "../../hooks/useAuth";
 import ChoseOneInput from "../utils/inputs/ChoseOneInput";
 import { coursesApi } from "../../api/courses";
+import FileInput from "../utils/inputs/FileInput";
 
 const AthleteEditModal = ( {
     athleteState,
@@ -21,14 +22,22 @@ const AthleteEditModal = ( {
     const { popModal } = useModal();
     const { isAdminGeneral } = useAuth();
 
-    const [editedName, setEditedName] = useState(athlete.full_name);
+    const [editedName, setEditedName] = useState(athlete.name);
     const [editedIsMember, setEditedIsMember] = useState(athlete.is_member);
     const [editedCourseId, setEditedCourseId] = useState<string | null>(athlete.course.id);
 
+
+    const [editedPaymentProofFile, setEditedPaymentProofFile] = useState<File | null>(null);
+    const [editedPaymentProofFileWasChanged, setEditedPaymentProofFileWasChanged] = useState(false);
+    const [editedCourseProofFile, setEditedCourseProofFile] = useState<File | null>(null);
+    const [editedCourseProofFileWasChanged, setEditedCourseProofFileWasChanged] = useState(false);
+
     useEffect(() => {
-        setEditedName(athlete.full_name);
+        setEditedName(athlete.name);
         setEditedIsMember(athlete.is_member);
         setEditedCourseId(athlete.course.id);
+        setEditedPaymentProofFile(null);
+        setEditedCourseProofFile(null);
     }, [athlete]);
 
     const onClose = () => {
@@ -41,10 +50,14 @@ const AthleteEditModal = ( {
           return;
       }
 
+      console.log(editedCourseProofFileWasChanged, editedPaymentProofFileWasChanged);
+
       athletesApi.update(athlete.id, {
-          full_name: editedName,
+          name: editedName,
           is_member: editedIsMember,
           course_id: editedCourseId || undefined,
+          course_proof: editedCourseProofFileWasChanged ? editedCourseProofFile : undefined,
+          payment_proof: editedPaymentProofFileWasChanged ? editedPaymentProofFile : undefined,
       }).then((updated) => {
           notify("Atleta atualizado com sucesso.", "success");
           setAthlete(updated);
@@ -80,46 +93,69 @@ const AthleteEditModal = ( {
               />
             </div>
 
-              <>
-                <div>
-                  <label className="block text-gray-700 font-medium mb-2">
-                    Número de Estudante
-                  </label>
-                  <div className="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-600">
-                    {athlete.student_number}
-                  </div>
-                </div>
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">
+                Número de Estudante
+              </label>
+              <div className="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-600">
+                {athlete.student_number}
+              </div>
+            </div>
 
-                {isAdminGeneral && (<div>
-                  <label className="block text-gray-700 font-medium mb-2">
-                    Tipo{" "}
-                    <HelpTooltip
-                      text="Membro: paga quota e tem acesso a todos os benefícios do núcleo. Não-Membro: pode participar mas com acesso limitado."
-                      className="ml-1"
-                    />
-                  </label>
-                  <DefinedStatesMenuComponent
-                    states={[
-                      { label: "Sócio", value: "member" },
-                      { label: "Não Sócio", value: "non_member" },
-                    ]}
-                    onSelect={(value) => setEditedIsMember(value === "member")}
-                    initialValue={editedIsMember ? "member" : "non_member"}
-                  />
-                </div>)}
+            {isAdminGeneral && (<div>
+              <label className="block text-gray-700 font-medium mb-2">
+                Tipo{" "}
+                <HelpTooltip
+                  text="Membro: paga quota e tem acesso a todos os benefícios do núcleo. Não-Membro: pode participar mas com acesso limitado."
+                  className="ml-1"
+                />
+              </label>
+              <DefinedStatesMenuComponent
+                states={[
+                  { label: "Sócio", value: "member" },
+                  { label: "Não Sócio", value: "non_member" },
+                ]}
+                onSelect={(value) => setEditedIsMember(value === "member")}
+                initialValue={editedIsMember ? "member" : "non_member"}
+              />
+            </div>)}
 
-                <div>
-                  <label className="block text-gray-700 font-medium mb-2">
-                    Curso
-                  </label>
-                  <ChoseOneInput
-                    allElementsLoader={() => coursesApi.getAll().then(res => res.map(c => ({ id: c.id, title: c.name })))}
-                    onSelect={(ele) => setEditedCourseId(ele? ele.id : null)}
-                    initialElement={{ id: athlete.course.id, title: athlete.course.name }}
-                  />
-                </div>
-              </>
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">
+                Curso
+              </label>
+              <ChoseOneInput
+                allElementsLoader={() => coursesApi.getAll().then(res => res.map(c => ({ id: c.id, title: c.name })))}
+                onSelect={(ele) => setEditedCourseId(ele? ele.id : null)}
+                initialElement={{ id: athlete.course.id, title: athlete.course.name }}
+              />
+            </div>
 
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">
+                Prova de Curso
+              </label>
+              <div>
+                <FileInput
+                  fileState={[editedCourseProofFile, setEditedCourseProofFile]}
+                  file_url={athlete.course_proof_file_url}
+                  onFileChange={() => setEditedCourseProofFileWasChanged(true)}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">
+                Prova de Pagamento
+              </label>
+              <div>
+                <FileInput
+                  fileState={[editedPaymentProofFile, setEditedPaymentProofFile]}
+                  file_url={athlete.payment_proof_file_url}
+                  onFileChange={() => setEditedPaymentProofFileWasChanged(true)}
+                />
+              </div>
+            </div>
           </div>
 
           <div className="flex gap-4 mt-6">

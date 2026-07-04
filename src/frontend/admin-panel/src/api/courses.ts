@@ -4,17 +4,17 @@ export interface CourseListItem {
   id: string;
   name: string;
   abbreviation: string;
-  nucleo: {
+  nucleus: {
     id: string;
     name: string;
     abbreviation: string;
   };
-  belongs_to_season: boolean;
+  belongs_to_season?: boolean;
   logo_url: string | null;
 }
 
 export interface CourseDetail extends CourseListItem {
-  relevant_season_ids: number[]; // Seasons where this course is relevant (e.g., has active modalities)
+  relevant_season_ids: number[]; // Seasons where this course is relevant (e.g., has active courses)
 };
 
 export interface CourseCreate {
@@ -30,8 +30,8 @@ export interface CourseUpdate {
 }
 
 export const coursesApi = {
-  async getAll(seasonId?: number): Promise<CourseListItem[]> {
-    return apiClient.get<CourseListItem[]>('/courses/', { season_id: seasonId });
+  async getAll(seasonId?: number, nucleoId?: string): Promise<CourseListItem[]> {
+    return apiClient.get<CourseListItem[]>('/courses/', { season_id: seasonId, nucleo_id: nucleoId });
   },
 
   async create(data: CourseCreate): Promise<CourseListItem> {
@@ -42,16 +42,16 @@ export const coursesApi = {
     return apiClient.get<CourseDetail>(`/courses/${courseId}/`, { season_id: seasonId });
   },
 
-  async update(courseId: string, data: CourseUpdate): Promise<CourseDetail> {
-    return apiClient.put<CourseDetail>(`/courses/${courseId}/`, data);
+  async update(courseId: string, data: CourseUpdate, seasonId?: number): Promise<CourseDetail> {
+    return apiClient.put<CourseDetail>(`/courses/${courseId}/`, data, { season_id: seasonId });
   },
 
   async addToSeason(courseId: string, seasonId: number): Promise<CourseDetail> {
-    return apiClient.post<CourseDetail>(`/courses/${courseId}/add_to_season/`, { season_id: seasonId });
+    return apiClient.put<CourseDetail>(`/courses/${courseId}/add_to_season/${seasonId}/`, {}, { season_id: seasonId });
   },
 
   async removeFromSeason(courseId: string, seasonId: number): Promise<CourseDetail> {
-    return apiClient.post<CourseDetail>(`/courses/${courseId}/remove_from_season/`, { season_id: seasonId });
+    return apiClient.put<CourseDetail>(`/courses/${courseId}/remove_from_season/${seasonId}/`, {}, { season_id: seasonId });
   },
 
   async delete(courseId: string): Promise<void> {

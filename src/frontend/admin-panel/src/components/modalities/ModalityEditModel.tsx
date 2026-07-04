@@ -37,7 +37,7 @@ const ModalityEditModal = ( {
       name: editedName,
       modality_type_id: editedType,
       season_id: modalityData.belongs_to_season ? loadedSeason?.id : undefined,
-    }).then((updatedModality) => {
+    }, loadedSeason?.id).then((updatedModality) => {
       setModalityData(updatedModality);
       onClose();
       if (onSave) onSave(updatedModality);

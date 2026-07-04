@@ -1,29 +1,16 @@
-import { useEffect, useState } from 'react';
-import { tournamentsApi, type TournamentListItem } from '../../api/tournaments';
+import { useState } from 'react';
+import { type TournamentListItem } from '../../api/tournaments';
 import TournamentCreateModal from '../../components/tournaments/TournamentCreateModal';
 import TournamentList from '../../components/tournaments/TournamentList';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../../components/utils/Button';
 import { useModal } from '../../contexts/ModalContext';
-import { useSeason } from '../../contexts/SeasonContext';
 import SeasonSelector from '../../components/seasons/SeasonSelector';
 
 const Torneios = () => {
   const { isAdminGeneral } = useAuth();
-  const [tournaments, setTournaments] = useState<TournamentListItem[]>([]);
+  const [tournaments, setTournaments] = useState<TournamentListItem[] | null>(null);
   const { pushModal } = useModal();
-  const { loadedSeason } = useSeason();
-
-  useEffect(() => {
-    tournamentsApi.getAll({
-      season_id: loadedSeason?.id
-    })
-      .then((data) => setTournaments(data))
-      .catch((error) => {
-        console.error('Erro ao carregar torneios:', error);
-        setTournaments([]);
-      });
-  }, [loadedSeason?.id]);
 
   return (
     <>
@@ -34,7 +21,7 @@ const Torneios = () => {
           <Button
             onClick={() => pushModal(
               <TournamentCreateModal
-                onCreate={(newTournament) => setTournaments([...tournaments, newTournament])}
+                onCreate={(newTournament) => setTournaments(prev => prev ? [...prev, newTournament] : [newTournament])}
               />
             )}
             type='primary'
@@ -47,7 +34,7 @@ const Torneios = () => {
 
         <div className="bg-white shadow-md rounded-lg p-6 mt-6">
           <TournamentList
-            tournaments={tournaments}
+            tournamentsState={[tournaments, setTournaments]}
           />
         </div>
       </div>

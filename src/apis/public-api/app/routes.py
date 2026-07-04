@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 from uuid import UUID
 
@@ -6,7 +7,8 @@ from sqlalchemy.orm import Session
 
 from . import crud, schemas
 from .database import get_db
-from .logger import logger
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -51,14 +53,16 @@ def list_teams(
 
     logger.info(
         "teams_listed",
-        total=total,
-        page=page,
-        page_size=page_size,
-        filters={
-            "course_id": str(course_id) if course_id else None,
-            "nucleo_id": str(nucleo_id) if nucleo_id else None,
-            "modality_id": str(modality_id) if modality_id else None,
-            "season_id": str(season_id) if season_id else None,
+        extra={
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "filters": {
+                "course_id": str(course_id) if course_id else None,
+                "nucleo_id": str(nucleo_id) if nucleo_id else None,
+                "modality_id": str(modality_id) if modality_id else None,
+                "season_id": str(season_id) if season_id else None,
+            },
         },
     )
 
@@ -87,10 +91,10 @@ def get_team(
     """
     team = crud.get_team_by_id(db=db, team_id=team_id)
     if not team:
-        logger.warning("team_not_found", team_id=str(team_id))
+        logger.warning("team_not_found", extra={"team_id": str(team_id)})
         raise HTTPException(status_code=404, detail="Team not found")
 
-    logger.info("team_retrieved", team_id=str(team_id))
+    logger.info("team_retrieved", extra={"team_id": str(team_id)})
     return team
 
 
@@ -135,14 +139,16 @@ def list_students(
 
     logger.info(
         "students_listed",
-        total=total,
-        page=page,
-        page_size=page_size,
-        filters={
-            "course_id": str(course_id) if course_id else None,
-            "nucleo_id": str(nucleo_id) if nucleo_id else None,
-            "is_member": is_member,
-            "search": search,
+        extra={
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "filters": {
+                "course_id": str(course_id) if course_id else None,
+                "nucleo_id": str(nucleo_id) if nucleo_id else None,
+                "is_member": is_member,
+                "search": search,
+            },
         },
     )
 
@@ -171,10 +177,10 @@ def get_student(
     """
     student = crud.get_student_by_id(db=db, student_id=student_id)
     if not student:
-        logger.warning("student_not_found", student_id=str(student_id))
+        logger.warning("student_not_found", extra={"student_id": str(student_id)})
         raise HTTPException(status_code=404, detail="Student not found")
 
-    logger.info("student_retrieved", student_id=str(student_id))
+    logger.info("student_retrieved", extra={"student_id": str(student_id)})
     return student
 
 
@@ -195,10 +201,10 @@ def get_student_by_number(
     """
     student = crud.get_student_by_number(db=db, student_number=student_number)
     if not student:
-        logger.warning("student_not_found", student_number=student_number)
+        logger.warning("student_not_found", extra={"student_number": student_number})
         raise HTTPException(status_code=404, detail="Student not found")
 
-    logger.info("student_retrieved", student_number=student_number)
+    logger.info("student_retrieved", extra={"student_number": student_number})
     return student
 
 
@@ -240,13 +246,15 @@ def list_tournaments(
 
     logger.info(
         "tournaments_listed",
-        total=total,
-        page=page,
-        page_size=page_size,
-        filters={
-            "modality_id": str(modality_id) if modality_id else None,
-            "status": status,
-            "season_id": str(season_id) if season_id else None,
+        extra={
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "filters": {
+                "modality_id": str(modality_id) if modality_id else None,
+                "status": status,
+                "season_id": str(season_id) if season_id else None,
+            },
         },
     )
 
@@ -275,10 +283,12 @@ def get_tournament(
     """
     tournament = crud.get_tournament_by_id(db=db, tournament_id=tournament_id)
     if not tournament:
-        logger.warning("tournament_not_found", tournament_id=str(tournament_id))
+        logger.warning(
+            "tournament_not_found", extra={"tournament_id": str(tournament_id)}
+        )
         raise HTTPException(status_code=404, detail="Tournament not found")
 
-    logger.info("tournament_retrieved", tournament_id=str(tournament_id))
+    logger.info("tournament_retrieved", extra={"tournament_id": str(tournament_id)})
     return tournament
 
 
@@ -306,7 +316,9 @@ def get_tournament_standings(
     # First check if tournament exists
     tournament = crud.get_tournament_by_id(db=db, tournament_id=tournament_id)
     if not tournament:
-        logger.warning("tournament_not_found", tournament_id=str(tournament_id))
+        logger.warning(
+            "tournament_not_found", extra={"tournament_id": str(tournament_id)}
+        )
         raise HTTPException(status_code=404, detail="Tournament not found")
 
     skip = (page - 1) * page_size
@@ -319,10 +331,12 @@ def get_tournament_standings(
 
     logger.info(
         "tournament_standings_retrieved",
-        tournament_id=str(tournament_id),
-        total=total,
-        page=page,
-        page_size=page_size,
+        extra={
+            "tournament_id": str(tournament_id),
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+        },
     )
 
     return schemas.TournamentStandingsList(
@@ -370,13 +384,15 @@ def list_matches(
 
     logger.info(
         "matches_listed",
-        total=total,
-        page=page,
-        page_size=page_size,
-        filters={
-            "tournament_id": str(tournament_id) if tournament_id else None,
-            "status": status,
-            "date": date,
+        extra={
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "filters": {
+                "tournament_id": str(tournament_id) if tournament_id else None,
+                "status": status,
+                "date": date,
+            },
         },
     )
 
@@ -407,10 +423,10 @@ def get_match(
     """
     match = crud.get_match_by_id(db=db, match_id=match_id)
     if not match:
-        logger.warning("match_not_found", match_id=str(match_id))
+        logger.warning("match_not_found", extra={"match_id": str(match_id)})
         raise HTTPException(status_code=404, detail="Match not found")
 
-    logger.info("match_retrieved", match_id=str(match_id))
+    logger.info("match_retrieved", extra={"match_id": str(match_id)})
     return match
 
 
@@ -442,8 +458,10 @@ def get_competitor_standings(
 
     logger.info(
         "competitor_standings_retrieved",
-        competitor_id=str(competitor_id),
-        count=len(standings),
+        extra={
+            "competitor_id": str(competitor_id),
+            "count": len(standings),
+        },
     )
 
     return standings
@@ -479,8 +497,10 @@ def get_general_ranking(
 
     logger.info(
         "general_ranking_retrieved",
-        total=total,
-        filters={"nucleo_id": str(nucleo_id) if nucleo_id else None},
+        extra={
+            "total": total,
+            "filters": {"nucleo_id": str(nucleo_id) if nucleo_id else None},
+        },
     )
 
     return schemas.GeneralRankingList(
@@ -506,10 +526,10 @@ def get_course_ranking(
     """
     ranking = crud.get_course_ranking(db=db, course_id=course_id)
     if not ranking:
-        logger.warning("course_ranking_not_found", course_id=str(course_id))
+        logger.warning("course_ranking_not_found", extra={"course_id": str(course_id)})
         raise HTTPException(status_code=404, detail="Course ranking not found")
 
-    logger.info("course_ranking_retrieved", course_id=str(course_id))
+    logger.info("course_ranking_retrieved", extra={"course_id": str(course_id)})
     return ranking
 
 
@@ -529,7 +549,9 @@ def list_nucleos(
 ):
     skip = (page - 1) * page_size
     nucleos, total = crud.get_nucleos(db=db, skip=skip, limit=page_size)
-    logger.info("nucleos_listed", total=total, page=page)
+    logger.info(
+        "nucleos_listed", extra={"total": total, "page": page, "page_size": page_size}
+    )
     return schemas.NucleoList(
         items=nucleos, total=total, page=page, page_size=page_size
     )
@@ -548,7 +570,7 @@ def get_nucleo(
     nucleo = crud.get_nucleo_by_id(db=db, nucleo_id=nucleo_id)
     if not nucleo:
         raise HTTPException(status_code=404, detail="Nucleo not found")
-    logger.info("nucleo_retrieved", nucleo_id=str(nucleo_id))
+    logger.info("nucleo_retrieved", extra={"nucleo_id": str(nucleo_id)})
     return nucleo
 
 
@@ -573,7 +595,7 @@ def list_regulations(
     - **season_id**: Optional filter by season ID
     """
     regulations = crud.get_regulations(db=db, search=search, season_id=season_id)
-    logger.info("regulations_listed", total=len(regulations))
+    logger.info("regulations_listed", extra={"total": len(regulations)})
     return regulations
 
 
@@ -615,11 +637,13 @@ def get_modality_ranking(
 
     logger.info(
         "modality_ranking_retrieved",
-        total=total,
-        filters={
-            "season_id": str(season_id),
-            "modality_id": str(modality_id) if modality_id else None,
-            "nucleo_id": str(nucleo_id) if nucleo_id else None,
+        extra={
+            "total": total,
+            "filters": {
+                "season_id": str(season_id),
+                "modality_id": str(modality_id) if modality_id else None,
+                "nucleo_id": str(nucleo_id) if nucleo_id else None,
+            },
         },
     )
 
@@ -646,8 +670,10 @@ def get_course_modality_rankings(
 
     logger.info(
         "course_modality_rankings_retrieved",
-        course_id=str(course_id),
-        count=len(rankings),
+        extra={
+            "course_id": str(course_id),
+            "count": len(rankings),
+        },
     )
 
     return rankings
@@ -676,10 +702,38 @@ def list_seasons(
 
     logger.info(
         "seasons_listed",
-        total=total,
-        filters={},
+        extra={
+            "total": total,
+            "filters": {},
+        },
     )
     return schemas.SeasonDetailList(
         items=seasons,
         total=total,
     )
+
+
+# ==================== Home Page Config Endpoints ====================
+
+
+@router.get(
+    "/home-page-config",
+    response_model=schemas.HomePageConfig,
+    summary="Get home page configuration",
+    description="Get the current configuration for the public website's home page",
+)
+def get_home_page_config(
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve the current configuration for the public website's home page.
+
+    - **db**: Database session
+    """
+    home_page_config = crud.get_home_page_config(db=db)
+    if not home_page_config:
+        logger.warning("home_page_config_not_found")
+        raise HTTPException(status_code=404, detail="Home page configuration not found")
+
+    logger.info("home_page_config_retrieved")
+    return home_page_config

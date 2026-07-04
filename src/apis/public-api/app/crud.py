@@ -11,20 +11,21 @@ from uuid import UUID
 
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
-from taca_models import (
+
+from .cache import CACHE_TTL, CacheKeyGenerator, cached
+from .models import (
     GeneralRankingView,
+    HomePageConfigView,
     MatchDetailView,
     ModalityRankingView,
     NucleoDetailView,
-    Regulation,
+    RegulationDetailView,
     SeasonDetailView,
     StudentDetailView,
     TeamDetailView,
     TournamentDetailView,
     TournamentStandingsView,
 )
-
-from .cache import CACHE_TTL, CacheKeyGenerator, cached
 
 # ==================== Nucleo Operations ====================
 
@@ -369,7 +370,10 @@ def get_matches(
     Returns:
         Tuple of (list of matches, total count)
     """
-    query = db.query(MatchDetailView)
+    query = db.query(MatchDetailView).filter(
+        MatchDetailView.status != "draft",
+        MatchDetailView.start_time != None,  # noqa: E711
+    )
 
     # Apply filters
     if tournament_id:
@@ -568,7 +572,7 @@ def get_regulations(
     db: Session,
     search: Optional[str] = None,
     season_id: Optional[int] = None,
-) -> list[Regulation]:
+) -> list[RegulationDetailView]:
     """
     Get all regulations, optionally filtered by a search term.
 
@@ -579,21 +583,21 @@ def get_regulations(
     Returns:
         List of regulations ordered by creation date (newest first)
     """
-    query = db.query(Regulation)
+    query = db.query(RegulationDetailView)
 
     if season_id:
-        query = query.filter(Regulation.season_id == season_id)
+        query = query.filter(RegulationDetailView.season_id == season_id)
 
     if search:
         term = f"%{search}%"
         query = query.filter(
             or_(
-                Regulation.title.ilike(term),
-                Regulation.description.ilike(term),
+                RegulationDetailView.title.ilike(term),
+                RegulationDetailView.description.ilike(term),
             )
         )
 
-    return query.order_by(Regulation.created_at.desc()).all()
+    return query.all()
 
 
 # ==================== Modality Ranking View Operations ====================
@@ -697,3 +701,30 @@ def get_seasons(db: Session) -> Tuple[list[SeasonDetailView], int]:
     total = query.count()
 
     return query.all(), total
+
+
+# ==================== Home Page Config View Operations ====================
+
+
+@cached(
+    cache_key="",
+    ttl=CACHE_TTL["home_page_config"],
+    key_builder=lambda db: "home_page_config",
+)
+def get_home_page_config(db: Session) -> Optional[dict]:
+    """Get the home page configuration.
+
+    Returns:
+        Home page configuration as a dictionary or None if not set
+    """
+    config = db.query(HomePageConfigView).first()
+    if config:
+        return {
+            "title": config.title,
+            "subtitle": config.subtitle,
+            "welcome_message": config.welcome_message,
+            "about_us": config.about_us,
+            "hero_image_url": config.hero_image_url,
+            "sponsors": config.sponsors,
+        }
+    return None

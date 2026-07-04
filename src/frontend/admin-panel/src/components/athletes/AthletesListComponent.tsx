@@ -1,5 +1,5 @@
 import { type AthleteListItem, athletesApi } from "../../api/athletes";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNotification } from "../../contexts/NotificationProvider";
 import AthleteInfoModal from "./AthleteInfoModal";
 import { useModal } from "../../contexts/ModalContext";
@@ -26,7 +26,7 @@ const AthletesListBanner = ({
             is_member: !athlete.is_member,
         }).then(updated => {
             setAthlete(prev => prev ? { ...prev, is_member: updated.is_member } : prev);
-            notify(`Sócio ${updated.is_member ? "ativado" : "desativado"} para ${updated.full_name}.`);
+            notify(`Sócio ${updated.is_member ? "ativado" : "desativado"} para ${updated.name}.`);
         }).catch(err => {
             console.error("Failed to update athlete:", err);
             notify("Erro ao atualizar sócio. Tente novamente.");
@@ -52,7 +52,7 @@ const AthletesListBanner = ({
             />
           )}
         >
-          <p className="font-medium text-teal-700">{athlete.full_name}</p>
+          <p className="font-medium text-teal-700">{athlete.name}</p>
 
           <div className="text-sm text-gray-600 mt-0.5">
             NMEC {athlete.student_number}
@@ -95,13 +95,32 @@ const AthletesListBanner = ({
 
 const AthletesListComponent = ( {
     athletesState,
+    courseId
 } : {
-    athletesState: [AthleteListItem[] | null, React.Dispatch<React.SetStateAction<AthleteListItem[] | null>>]
+    athletesState?: [AthleteListItem[] | null, React.Dispatch<React.SetStateAction<AthleteListItem[] | null>>]
+    courseId?: string
 } ) => {
 
-    const [athletes, setAthletes] = athletesState;
+    const [athletes, setAthletes] = athletesState || useState<AthleteListItem[] | null>(null);
+    const [loading, setLoading] = useState(false);
 
-    if (athletes === null) {
+    useEffect(() => {
+      if (athletes !== null && athletes.length !== 0) return;
+
+      setLoading(true);
+      athletesApi.getAll({
+        course_id: courseId,
+      })
+        .then(setAthletes)
+        .catch((error) => {
+          console.error("Erro ao carregar atletas:", error);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }, [courseId]);
+
+    if (loading) {
         return (
           <div className="text-center py-12">
             <svg
@@ -129,7 +148,7 @@ const AthletesListComponent = ( {
         );
     }
 
-    if (athletes.length === 0) {
+    if (athletes === null || athletes.length === 0) {
         return (
           <div className="text-center py-12 text-gray-500">
             Nenhum participante corresponde aos filtros.
@@ -140,7 +159,7 @@ const AthletesListComponent = ( {
     return (
       <ul className="divide-y divide-gray-100 max-h-[640px] overflow-y-auto">
         {athletes
-          .sort((a, b) => a.full_name.localeCompare(b.full_name))
+          .sort((a, b) => a.name.localeCompare(b.name))
           .map((athlete) => (
             <AthletesListBanner
               key={athlete.id}

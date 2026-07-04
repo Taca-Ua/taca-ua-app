@@ -20,7 +20,7 @@ const MatchInfoComponent = ( {
     };
 
     const [isEditingInfo, setIsEditingInfo] = useState(false);
-    const [editedLocation, setEditedLocation] = useState<string>(match.location);
+    const [editedLocation, setEditedLocation] = useState<string | null>(match.location!);
     const [editedStartTime, setEditedStartTime] = useState<string>(toLocalDatetimeInput(match.start_time));
     const [editedStatus, setEditedStatus] = useState<string>(match.status);
     const [saving, setSaving] = useState(false);
@@ -57,7 +57,7 @@ const MatchInfoComponent = ( {
     };
 
     const onCancel = () => {
-        setEditedLocation(match.location);
+        setEditedLocation(match.location!);
         setEditedStartTime(toLocalDatetimeInput(match.start_time));
         setEditedStatus(match.status);
         setIsEditingInfo(false);
@@ -66,21 +66,11 @@ const MatchInfoComponent = ( {
     const onSave = async () => {
         if (!match) return;
 
-        if (!editedLocation.trim()) {
-            notify('O local é obrigatório', 'error');
-            return;
-        }
-
-        if (!editedStartTime.trim()) {
-            notify('A data e hora são obrigatórias', 'error');
-            return;
-        }
-
         setSaving(true);
         try {
             const updatedMatch = await matchesApi.update(match.id, {
-                location: editedLocation,
-                start_time: new Date(editedStartTime).toISOString(),
+                location: editedLocation? editedLocation.trim() : undefined,
+                start_time: editedStartTime? new Date(editedStartTime).toISOString() : undefined,
                 status: editedStatus,
             });
             // Update local state with new match details
@@ -88,6 +78,7 @@ const MatchInfoComponent = ( {
             if (onMatchUpdated) onMatchUpdated(updatedMatch);
         } catch (error) {
             console.error("Failed to update match:", error);
+            notify("Erro ao atualizar o jogo. Por favor, tente novamente.", "error");
         } finally {
             setSaving(false);
         }
@@ -129,7 +120,7 @@ const MatchInfoComponent = ( {
             <input
               type="text"
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-              value={editedLocation}
+              value={editedLocation || ""}
               onChange={(e) => setEditedLocation(e.target.value)}
               placeholder="Ex: Campo Municipal"
               required

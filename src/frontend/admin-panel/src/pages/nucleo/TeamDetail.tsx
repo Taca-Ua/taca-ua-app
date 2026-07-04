@@ -5,6 +5,9 @@ import { navigateBack } from '../../utils';
 import { teamsApi, type TeamDetail } from '../../api/teams';
 import { useEffect, useState } from 'react';
 import { useNotification } from '../../contexts/NotificationProvider';
+import TabSystem from '../../components/TabSystem';
+import MatchesCalendarComponent from '../../components/matches/MatchesCalendarComponent';
+import TournamentListComponent from '../../components/tournaments/TournamentList';
 
 
 const TeamDetailPage = () => {
@@ -29,7 +32,7 @@ const TeamDetailPage = () => {
   };
 
   return (
-      <div className="flex-1 p-8">
+      <div className="flex-1 p-8 space-y-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8 flex justify-between items-center">
             <h1 className="text-3xl font-bold text-gray-800">Detalhes da Equipa</h1>
@@ -48,6 +51,13 @@ const TeamDetailPage = () => {
             teamState={[team, setTeam]}
           />
         </div>
+
+        <TabSystem
+          elements={[
+            { id: 'tournaments', label: 'Torneios', content: <TournamentListComponent teamId={teamId} /> },
+            { id: 'matches', label: 'Jogos', content: <MatchesCalendarComponent teamId={teamId} /> },
+          ]}
+        />
       </div>
   );
 };

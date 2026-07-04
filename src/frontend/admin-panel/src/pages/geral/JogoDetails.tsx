@@ -130,51 +130,33 @@ const MatchHeader = ({ match }: { match: MatchDetail }) => {
 // Lineups Section Component
 const LineupsSection = ({ matchState }: { matchState: [MatchDetail, React.Dispatch<React.SetStateAction<MatchDetail | null>>] }) => {
   const { pushModal } = useModal();
-  const [match, setMatch] = matchState;
+  const [match,] = matchState;
 
   const getParticipantName = (participant_id: string) => {
     const participant = match.participants.find(p => p.id === participant_id);
     return participant ? participant.name : 'Participante';
   };
 
-  if (match.lineups === null || match.lineups === undefined) {
-    return (
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">Convocatórias</h3>
-        <p className="text-gray-600">Dados de convocatória não disponíveis.</p>
-      </div>
-    );
-  }
-
-  if (match.lineups?.length === 0) {
-    return (
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">Convocatórias</h3>
-        <p className="text-gray-600">Nenhuma convocatória definida.</p>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <h3 className="text-xl font-bold text-gray-800 mb-4">Convocatórias</h3>
 
       <div className="space-y-6">
-          {match.lineups.map((participant) => {
+          {match.participants.map((participant) => {
 
             return (
-              <div key={participant.participant_id} className="border-l-4 border-teal-500 pl-4">
+              <div key={participant.id} className="border-l-4 border-teal-500 pl-4">
                 <div className="flex justify-between items-center mb-3">
                   <h4 className="font-semibold text-lg text-gray-800">
-                    {getParticipantName(participant.participant_id)}
+                    {getParticipantName(participant.id)}
                   </h4>
                   <Button
                     onClick={() => {pushModal(
-                      <MatchTeamLineupModal matchState={[match, setMatch]} lineup={participant} />
+                      <MatchTeamLineupModal matchId={match.id} participantId={participant.id} />
                     )}}
                     type='info'
                     padding='px-10 py-2'
-                    active={participant.lineup != null}
+                    active={participant.can_edit}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -375,6 +357,30 @@ const JogoDetails = () => {
     }
   };
 
+  const handleActivateMatch = () => {
+    if (!match) return;
+
+    matchesApi.update(match.id, { status: 'in_progress' }).then((updatedMatch) => {
+      setMatch(updatedMatch);
+      notify('O jogo foi ativado com sucesso.', 'success');
+    }).catch(err => {
+      console.error('Error activating match:', err);
+      notify(err instanceof Error ? err.message : 'Não foi possível ativar o jogo. Tente novamente.', 'error');
+    });
+  }
+
+  const handleFinishMatch = () => {
+    if (!match) return;
+
+    matchesApi.update(match.id, { status: 'finished' }).then((updatedMatch) => {
+      setMatch(updatedMatch);
+      notify('O jogo foi terminado com sucesso.', 'success');
+    }).catch(err => {
+      console.error('Error finishing match:', err);
+      notify(err instanceof Error ? err.message : 'Não foi possível terminar o jogo. Tente novamente.', 'error');
+    });
+  }
+
   if (loading) {
     return (
       <div className="flex-1 flex justify-center items-center py-12">
@@ -440,6 +446,24 @@ const JogoDetails = () => {
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h3 className="text-xl font-bold text-gray-800 mb-4">Ações</h3>
                 <div className="space-y-3">
+                  <>
+                    <Button
+                      onClick={handleActivateMatch}
+                      type='primary'
+                      padding='w-full px-4 py-3 flex items-center justify-center'
+                      active={match.status == 'scheduled'}
+                    >
+                      Mudar estado para "Em Curso"
+                    </Button>
+                    <Button
+                      onClick={handleFinishMatch}
+                      type='primary'
+                      padding='w-full px-4 py-3 flex items-center justify-center'
+                      active={match.status == 'in_progress'}
+                    >
+                      Mudar estado para "Terminado"
+                    </Button>
+                  </>
                   <Button
                     onClick={handleDownloadSheet}
                     type='info'

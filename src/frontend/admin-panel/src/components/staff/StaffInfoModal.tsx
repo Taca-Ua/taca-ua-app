@@ -69,7 +69,7 @@ const StaffInfoModal = ( {
                 Staff
               </span>
               <h2 className="text-2xl font-bold text-gray-800">
-                {staff.full_name}
+                {staff.name}
               </h2>
             </div>
 

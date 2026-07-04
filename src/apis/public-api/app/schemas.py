@@ -181,7 +181,6 @@ class TournamentStanding(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    id: int = Field(..., description="Standing record ID")
     tournament_id: UUID = Field(..., description="Tournament identifier")
     competitor_type: str = Field(..., description="Type of competitor (team/athlete)")
     competitor_entity_id: UUID = Field(..., description="Competitor entity ID")
@@ -230,8 +229,6 @@ class GeneralRanking(BaseModel):
     """Schema for general ranking view response."""
 
     model_config = ConfigDict(from_attributes=True)
-
-    id: int = Field(..., description="Unique identifier for the ranking entry")
 
     # Course info
     course_id: UUID = Field(..., description="Course identifier")
@@ -357,3 +354,33 @@ class SeasonDetailList(BaseModel):
 
     items: list[SeasonDetail] = Field(..., description="List of season details")
     total: int = Field(..., ge=0, description="Total number of seasons")
+
+
+# ==================== HomePageConfig Schemas ====================
+
+
+class HomePageSponsor(BaseModel):
+    """Schema for a sponsor on the home page."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    name: str = Field(..., description="Name of the sponsor")
+    logo_url: Optional[str] = Field(None, description="URL to the sponsor's logo")
+    website_url: Optional[str] = Field(None, description="URL to the sponsor's website")
+
+
+class HomePageConfig(BaseModel):
+    """Schema for home page configuration."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    title: str = Field(..., description="Title of the home page")
+    subtitle: str = Field(..., description="Subtitle of the home page")
+    welcome_message: str = Field(..., description="Welcome message for visitors")
+    about_us: str = Field(..., description="About us section content")
+    hero_image_url: Optional[str] = Field(
+        None, description="URL to the hero image on the home page"
+    )
+    sponsors: list[HomePageSponsor] = Field(
+        ..., description="List of sponsors to display on the home page"
+    )

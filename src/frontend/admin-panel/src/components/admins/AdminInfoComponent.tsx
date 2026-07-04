@@ -46,7 +46,7 @@ const AdminInfoComponent = ( {
           <div>
             <label className="block text-teal-500 font-medium mb-2">Nome</label>
             <div className="bg-gray-100 px-4 py-3 rounded-md text-gray-800">
-              {admin.first_name} {admin.last_name}
+              {admin.name}
             </div>
           </div>
           <div>
@@ -177,7 +177,7 @@ const AdminInfoComponent = ( {
           <Button
             onClick={handleDelete}
             type="danger"
-            active={isAdminGeneral}
+            active={isAdminGeneral && admin.enabled}
             confirmation={{
               title: "Confirmar Eliminação",
               message: `Tem a certeza que deseja eliminar o administrador "${admin.username}"? Esta ação não pode ser desfeita.`,

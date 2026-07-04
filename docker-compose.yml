@@ -12,7 +12,7 @@ services:
     environment:
       - DOMAIN=${DOMAIN:-localhost}
     depends_on:
-      - competition-api-v2
+      - competition-api-v3
       - public-api
       - admin-panel
       - public-website
@@ -20,29 +20,14 @@ services:
       - minio
       - grafana
 
-  rabbitmq:
-    image: rabbitmq:3.12-management-alpine
-    user: "root"
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
-      RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE:-secret_cookie_change_me}
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
-      interval: 10s
-      timeout: 10s
-      retries: 10
-
   postgres:
-    image: postgres:15-alpine
+    image: postgres:18-alpine
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
       POSTGRES_DB: taca_ua
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-user}", "-d", "taca_ua"]
       interval: 10s
@@ -51,14 +36,14 @@ services:
       start_period: 30s
 
   redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
 
   minio:
     image: minio/minio
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       MINIO_BROWSER_REDIRECT_URL: https://${DOMAIN:-localhost}/system/minio/
     ports:
       - "9001:9001" # Console
@@ -97,7 +82,6 @@ services:
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--web.route-prefix=/system/prometheus/'
 
   loki:
     image: grafana/loki:2.8.2
@@ -122,38 +106,122 @@ services:
       - loki
 
 # APIs
-  competition-api-v2:
+  competition-api-v3:
     build:
       context: .
-      dockerfile: ./src/apis/competition-api-v2/Dockerfile
+      dockerfile: ./src/apis/competition-api-v3/Dockerfile
     environment:
       - DOMAIN=${DOMAIN:-localhost}
-      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/auth
+      - API_ENDPOINT_PREFIX=${API_ENDPOINT_PREFIX:-api/admin}
+      - DEFAULT_SEASON_NAME=${DEFAULT_SEASON_NAME:-Default Season}
+
+      - LOKI_LOGGING_URL=${LOKI_LOGGING_URL:-http://loki:3100/loki/api/v1/push}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+
+      - POSTGRES_DB=${POSTGRES_DB:-taca_ua}
+      - POSTGRES_USER=${POSTGRES_USER:-user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+
+      - MINIO_SERVICE_URL=minio:9000
+      - MINIO_USER=${MINIO_ROOT_USER}
+      - MINIO_PASSWORD=${MINIO_ROOT_PASSWORD}
+
+      - KEYCLOAK_ADMIN_SERVER_URL=http://keycloak:8080/auth
       - KEYCLOAK_REALM=${KEYCLOAK_REALM:-taca-ua}
-      - KEYCLOAK_ISSUER=https://${DOMAIN:-localhost}/auth/realms/${KEYCLOAK_REALM:-taca-ua}
-      - MINIO_USER=${MINIO_ROOT_USER:-minioadmin}
-      - MINIO_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
-      - DEV_AUTH_BYPASS_ENABLED=${DEV_AUTH_BYPASS_ENABLED:-false}
-      - DEV_AUTH_BYPASS_ROLES=${DEV_AUTH_BYPASS_ROLES:-general_admin}
-      - DEV_AUTH_BYPASS_TOKEN=${DEV_AUTH_BYPASS_TOKEN:-}
+      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-admin-api}
+
       - DEV_MODE=false
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/${API_ENDPOINT_PREFIX:-api/admin}/health/ || exit 1"]
+      interval: 10s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
     depends_on:
       loki:
         condition: service_started
+      postgres:
+        condition: service_healthy
       minio:
         condition: service_started
       keycloak:
         condition: service_started
+
+  competition-api-v3-rankings-recomputation-worker:
+    build:
+      context: .
+      dockerfile: src/apis/competition-api-v3/Dockerfile
+    environment:
+      - LOKI_LOGGING_URL=${LOKI_LOGGING_URL:-http://loki:3100/loki/api/v1/push}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+
+      - POSTGRES_DB=${POSTGRES_DB:-taca_ua}
+      - POSTGRES_USER=${POSTGRES_USER:-user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+    command: python manage.py rankings_recomputation_worker --settings=config.settings_worker_ranking_updater
+    depends_on:
+      competition-api-v3:
+        condition: service_healthy
+      loki:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+
+  competition-api-v3-projections-updater-worker:
+    build:
+      context: .
+      dockerfile: src/apis/competition-api-v3/Dockerfile
+    environment:
+      - LOKI_LOGGING_URL=${LOKI_LOGGING_URL:-http://loki:3100/loki/api/v1/push}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+
+      - POSTGRES_DB=${POSTGRES_DB:-taca_ua}
+      - POSTGRES_USER=${POSTGRES_USER:-user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+    command: python manage.py projection_updater_worker --settings=config.settings_worker_projections_updater
+    depends_on:
+      competition-api-v3:
+        condition: service_healthy
+      loki:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+
+  competition-api-v3-matches-state-updater-worker:
+    build:
+      context: .
+      dockerfile: src/apis/competition-api-v3/Dockerfile
+    environment:
+      - LOKI_LOGGING_URL=${LOKI_LOGGING_URL:-http://loki:3100/loki/api/v1/push}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+
+      - POSTGRES_DB=${POSTGRES_DB:-taca_ua}
+      - POSTGRES_USER=${POSTGRES_USER:-user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+
+    command: python manage.py matches_state_updater_worker --settings=config.settings_worker_matches_state_updater
+    depends_on:
+      competition-api-v3:
+        condition: service_healthy
+      loki:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+
 
   public-api:
     build:
       context: .
       dockerfile: ./src/apis/public-api/Dockerfile
     environment:
-      - RABBITMQ_HOST=rabbitmq
-      - RABBITMQ_PORT=5672
-      - RABBITMQ_USER=${RABBITMQ_USER:-guest}
-      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -166,103 +234,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-
-# Microservices
-  matches-service:
-    build:
-      context: .
-      dockerfile: ./src/microservices/matches-service/Dockerfile
-    environment:
-      - RABBITMQ_HOST=rabbitmq
-      - RABBITMQ_PORT=5672
-      - RABBITMQ_USER=${RABBITMQ_USER:-guest}
-      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
-      - PYTHONUNBUFFERED=1
-      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua}
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      loki:
-        condition: service_started
-      postgres:
-        condition: service_healthy
-
-  modalities-service:
-    build:
-      context: .
-      dockerfile: ./src/microservices/modalities-service/Dockerfile
-    environment:
-      - RABBITMQ_HOST=rabbitmq
-      - RABBITMQ_PORT=5672
-      - RABBITMQ_USER=${RABBITMQ_USER:-guest}
-      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
-      - PYTHONUNBUFFERED=1
-      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua}
-      - DEFAULT_SEASON_NAME=${DEFAULT_SEASON_NAME:-Default Season}
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      loki:
-        condition: service_started
-      postgres:
-        condition: service_healthy
-
-  ranking-service:
-    build:
-      context: .
-      dockerfile: ./src/microservices/ranking-service/Dockerfile
-    environment:
-      - RABBITMQ_HOST=rabbitmq
-      - RABBITMQ_PORT=5672
-      - RABBITMQ_USER=${RABBITMQ_USER:-guest}
-      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
-      - PYTHONUNBUFFERED=1
-      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua}
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      loki:
-        condition: service_started
-      postgres:
-        condition: service_healthy
-
-  read-model-updater:
-    build:
-      context: .
-      dockerfile: ./src/microservices/read-model-updater/Dockerfile
-    environment:
-      - RABBITMQ_HOST=rabbitmq
-      - RABBITMQ_PORT=5672
-      - RABBITMQ_USER=${RABBITMQ_USER:-guest}
-      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
-      - PYTHONUNBUFFERED=1
-      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua}
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      loki:
-        condition: service_started
-      postgres:
-        condition: service_healthy
-
-  tournaments-service:
-    build:
-      context: .
-      dockerfile: ./src/microservices/tournaments-service/Dockerfile
-    environment:
-      - RABBITMQ_HOST=rabbitmq
-      - RABBITMQ_PORT=5672
-      - RABBITMQ_USER=${RABBITMQ_USER:-guest}
-      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
-      - PYTHONUNBUFFERED=1
-      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/taca_ua}
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      loki:
-        condition: service_started
-      postgres:
-        condition: service_healthy
 
 # Frontend Services
   admin-panel:
@@ -283,7 +254,6 @@ services:
 volumes:
   postgres_data:
   minio_data:
-  rabbitmq_data:
   prometheus_data:
   loki_data:
   grafana_data:

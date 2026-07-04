@@ -1,7 +1,25 @@
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { useEffect, useState } from 'react';
+import { homepageConfigApi, type HomepageConfig } from '../api/homepageConfig';
 
 function Home() {
+
+  const [homepageConfig, setHomepageConfig] = useState<HomepageConfig | null>(null);
+
+  useEffect(() => {
+    const fetchHomepageConfig = async () => {
+      try {
+        const config = await homepageConfigApi.getHomepageConfig();
+        setHomepageConfig(config);
+      } catch (error) {
+        console.error('Error fetching homepage config:', error);
+      }
+    };
+
+    fetchHomepageConfig();
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -10,33 +28,29 @@ function Home() {
         className="relative flex items-center justify-center bg-cover bg-center"
         style={{
           minHeight: 'calc(100vh - 4rem)',
-          backgroundImage: 'url(/images/ab204667-c021-499c-b1f9-db300bfd877c.webp)',
+          backgroundImage: `url(${homepageConfig?.hero_image_url || ''})`,
         }}
       >
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
 
         <div className="relative z-10 text-center text-white px-4">
-          <h1 className="text-5xl md:text-6xl font-bold mb-4">TAÇA UA</h1>
-          <h2 className="text-2xl md:text-3xl font-semibold mb-6">Glicínias Plaza</h2>
-          <p className="text-xl md:text-2xl">Bem-vindo ao portal do desporto universitário</p>
+          <h1 className="text-5xl md:text-6xl font-bold mb-4">{homepageConfig?.title}</h1>
+          <h2 className="text-2xl md:text-3xl font-semibold mb-6">{homepageConfig?.subtitle}</h2>
+          <p className="text-xl md:text-2xl">{homepageConfig?.welcome_message}</p>
         </div>
       </div>
 
-      {/* Sobre Nós Section (STILL WAITING FOR THE TEXT)*/}
       <section className="py-16 px-4 md:px-8 lg:px-16 bg-white">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-4xl md:text-5xl font-bold text-center mb-12 text-gray-800">
             Sobre Nós
           </h2>
           <div className="text-xl md:text-2xl text-gray-700 leading-relaxed space-y-8">
-            <p>
-              A Taça UA - Glicínias Plaza é hoje um dos símbolos mais fortes do espírito académico aveirense.
-              Ano após ano, mobiliza milhares de estudantes em torno da competição, da rivalidade saudável entre cursos e da paixão pelo desporto universitário.
-              Com mais de duas décadas de história, esta iniciativa afirma-se continuamente como um espaço de crescimento, convívio e identidade, onde cada modalidade reforça o sentimento de pertença e união da comunidade.
-            </p>
-            <p>
-              Para além disso, a Taça UA destaca-se pela sua diversidade desportiva, englobando até 8 modalidades coletivas recorrentes, bem como até 16 modalidades pontuais, que incluem formatos coletivos, de pares e individuais, permitindo a participação alargada de estudantes, durante o ano inteiro, com diferentes interesses e aptidões.
-            </p>
+            {
+              homepageConfig?.about_us.split('\n').map((paragraph, index) => (
+                <p key={index}>{paragraph}</p>
+              ))
+            }
           </div>
         </div>
       </section>
@@ -74,33 +88,15 @@ function Home() {
             Patrocinadores
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center justify-items-center">
-            {/* Glicínias Plaza */}
-            <a href="https://www.glicinias.pt/" target="_blank" rel="noopener noreferrer" className="w-full">
-              <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
-                <img src="/181_glicinias_plaza_1.png" alt="Glicínias Plaza" className="max-h-full max-w-full object-contain" />
-              </div>
-            </a>
-
-            {/* Câmara Municipal de Aveiro */}
-            <a href="https://www.cm-aveiro.pt/" target="_blank" rel="noopener noreferrer" className="w-full">
-              <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
-                <img src="/cmaveiro.png" alt="Câmara Municipal de Aveiro" className="max-h-full max-w-full object-contain" />
-              </div>
-            </a>
-
-            {/* Universidade de Aveiro */}
-            <a href="https://www.ua.pt/" target="_blank" rel="noopener noreferrer" className="w-full">
-              <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
-                <img src="/ua.png" alt="Universidade de Aveiro" className="max-h-full max-w-full object-contain" />
-              </div>
-            </a>
-
-            {/* IPDJ */}
-            <a href="https://ipdj.gov.pt/" target="_blank" rel="noopener noreferrer" className="w-full">
-              <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
-                <img src="/ipdj.png" alt="IPDJ" className="max-h-full max-w-full object-contain" />
-              </div>
-            </a>
+            {
+              homepageConfig?.sponsors.map((sponsor, index) => (
+                <a key={index} href={sponsor.website_url} target="_blank" rel="noopener noreferrer" className="w-full">
+                  <div className="bg-white rounded-lg p-6 w-full h-32 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
+                    <img src={sponsor.logo_url} alt={sponsor.name} className="max-h-full max-w-full object-contain" />
+                  </div>
+                </a>
+              ))
+            }
           </div>
         </div>
       </section>

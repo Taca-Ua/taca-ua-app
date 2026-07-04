@@ -6,15 +6,15 @@ frequently accessed data in Redis with configurable TTLs.
 """
 
 import json
+import logging
 import os
 from functools import wraps
 from typing import Any, Callable, Optional
 from uuid import UUID
 
 import redis
-from taca_logging import get_logger
 
-logger = get_logger("public-api.cache")
+logger = logging.getLogger(__name__)
 
 # Cache configuration
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
@@ -38,6 +38,7 @@ CACHE_TTL = {
     "nucleo_list": 7200,  # 2 hours
     "regulation": 7200,  # 2 hours
     "season": 7200,  # 2 hours
+    "home_page_config": 3600,  # 1 hour
 }
 
 # Redis client instance
@@ -75,13 +76,13 @@ def get_redis_client() -> Optional[redis.Redis]:
             )
             # Test connection
             _redis_client.ping()
-            logger.info("redis_connected", host=REDIS_HOST, port=REDIS_PORT)
+            logger.info(
+                "redis_connected", extra={"host": REDIS_HOST, "port": REDIS_PORT}
+            )
         except Exception as e:
             logger.error(
                 "redis_connection_failed",
-                error=str(e),
-                host=REDIS_HOST,
-                port=REDIS_PORT,
+                extra={"error": str(e), "host": REDIS_HOST, "port": REDIS_PORT},
             )
             _redis_client = None
 
@@ -96,7 +97,7 @@ def clear_redis_cache():
             client.flushdb()
             logger.info("redis_cache_cleared")
         except Exception as e:
-            logger.error("redis_clear_failed", error=str(e))
+            logger.error("redis_clear_failed", extra={"error": str(e)})
 
 
 def json_serializer(obj: Any) -> Any:
@@ -128,8 +129,7 @@ def json_serializer(obj: Any) -> Any:
         except Exception as e:
             logger.warning(
                 "sqlalchemy_serialization_failed",
-                error=str(e),
-                object_type=type(obj).__name__,
+                extra={"error": str(e), "object_type": type(obj).__name__},
             )
 
     # For other objects with __dict__, convert to dict excluding private attributes
@@ -301,8 +301,7 @@ def cached(
                 if cached_value is not None:
                     logger.debug(
                         "cache_hit",
-                        key=final_key,
-                        function=func.__name__,
+                        extra={"key": final_key, "function": func.__name__},
                     )
                     return json.loads(cached_value)
 
@@ -319,15 +318,12 @@ def cached(
                     client.setex(final_key, ttl, serialized)
                     logger.debug(
                         "cache_set",
-                        key=final_key,
-                        ttl=ttl,
-                        function=func.__name__,
+                        extra={"key": final_key, "ttl": ttl, "function": func.__name__},
                     )
                 except Exception as e:
                     logger.warning(
                         "cache_serialization_failed",
-                        function=func.__name__,
-                        error=str(e),
+                        extra={"function": func.__name__, "error": str(e)},
                     )
 
                 return result
@@ -335,8 +331,7 @@ def cached(
             except Exception as e:
                 logger.warning(
                     "cache_operation_failed",
-                    function=func.__name__,
-                    error=str(e),
+                    extra={"function": func.__name__, "error": str(e)},
                 )
                 # On error, bypass cache and call function directly
                 return func(*args, **kwargs)
@@ -363,14 +358,12 @@ def invalidate_cache(pattern: str = "*") -> None:
             client.delete(*keys)
             logger.info(
                 "cache_invalidated",
-                pattern=pattern,
-                keys_deleted=len(keys),
+                extra={"pattern": pattern, "keys_deleted": len(keys)},
             )
     except Exception as e:
         logger.error(
             "cache_invalidation_failed",
-            pattern=pattern,
-            error=str(e),
+            extra={"pattern": pattern, "error": str(e)},
         )
 
 
