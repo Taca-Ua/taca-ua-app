@@ -32,6 +32,7 @@ DOMAIN = os.getenv("DOMAIN", "localhost")
 
 ALLOWED_HOSTS = [
     "competition-api-v3",
+    "localhost",  # for health check
     DOMAIN,
 ]
 
