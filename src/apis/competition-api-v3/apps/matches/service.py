@@ -2,6 +2,7 @@ import datetime
 from uuid import UUID
 
 from django.db import transaction
+from rest_framework.exceptions import ValidationError
 
 from .models import Match, MatchParticipant
 
@@ -13,6 +14,15 @@ def create_match(
     location: str = None,
     start_time: datetime.datetime = None,
 ) -> Match:
+    from apps.tournaments.models import TournamentStatus
+    from apps.tournaments.selectors import get_tournament_by_id
+
+    tournament = get_tournament_by_id(tournament_id)
+
+    if tournament.status != TournamentStatus.ACTIVE:
+        raise ValidationError(
+            "Cannot create match for a tournament that is not active."
+        )
 
     # Create the match
     match = Match.objects.create(

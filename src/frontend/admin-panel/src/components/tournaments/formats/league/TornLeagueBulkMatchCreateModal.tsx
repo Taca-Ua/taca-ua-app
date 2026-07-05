@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { tournamentsApi, type TournamentDetail } from "../../../../api/tournaments";
 import { type ApiError } from "../../../../api/client";
 import Button from "../../../utils/Button";
@@ -75,12 +75,12 @@ const RoundDisplay = ({
 
 const TornLeagueBulkMatchCreateModal = ({
     suggestedMatches,
-    tournamentId,
+    tournament,
     onClose,
     onMatchesCreated,
 } : {
     suggestedMatches: LeagueSuggestedMatch[];
-    tournamentId: string;
+    tournament: TournamentDetail;
     onClose?: () => void;
     onMatchesCreated?: () => void;
 }) => {
@@ -88,22 +88,12 @@ const TornLeagueBulkMatchCreateModal = ({
     const { notify } = useNotification();
 
     const [matchesSuggestions,] = useState<LeagueSuggestedMatch[]>(suggestedMatches);
-    const [competitorsMap, setCompetitorsMap] = useState<Record<string, Competitor>>({});
-
-    useEffect(() => {
-        // Fetch tournament details to get competitors so we can map the id to the name
-        tournamentsApi.getById(tournamentId)
-            .then((response) => {
-                const competitorsMap = response.competitors.reduce((acc, competitor) => {
-                    acc[competitor.id] = competitor;
-                    return acc;
-                }, {} as Record<string, Competitor>);
-                setCompetitorsMap(competitorsMap);
-            })
-            .catch((error) => {
-                console.error("Error fetching tournament details:", error);
-            });
-    }, [tournamentId]);
+    const competitorsMap = useMemo(() => {
+        return tournament.competitors.reduce((acc, competitor) => {
+            acc[competitor.id] = competitor;
+            return acc;
+        }, {} as Record<string, Competitor>);
+    }, [tournament.competitors]);
 
     const handleClose = () => {
         popModal();
@@ -111,7 +101,7 @@ const TornLeagueBulkMatchCreateModal = ({
     }
 
     const handleCreateMatches = () => {
-        tournamentsApi.generateMatches(tournamentId, matchesSuggestions)
+        tournamentsApi.generateMatches(tournament.id, matchesSuggestions)
             .then(() => {
                 handleClose();
                 if (onMatchesCreated) onMatchesCreated();
@@ -149,6 +139,7 @@ const TornLeagueBulkMatchCreateModal = ({
                     onClick={handleCreateMatches}
                     type="primary"
                     flexible={true}
+                    disabled={tournament.competitors.length < 2 || matchesSuggestions.length === 0 || tournament.status !== "active"}
                 >
                     Criar Jogos
                 </Button>

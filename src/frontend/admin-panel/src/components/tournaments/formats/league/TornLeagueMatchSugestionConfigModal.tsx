@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { tournamentsApi, type TournamentMatchSuggestion } from "../../../../api/tournaments";
+import { tournamentsApi, type TournamentDetail, type TournamentMatchSuggestion } from "../../../../api/tournaments";
 import Button from "../../../utils/Button";
 import { useModal } from "../../../../contexts/ModalContext";
 import TornLeagueBulkMatchCreateModal from "./TornLeagueBulkMatchCreateModal";
@@ -11,10 +11,10 @@ export interface LeagueSuggestedMatch extends TournamentMatchSuggestion{
 }
 
 const TornLeagueMatchSugestionConfigModal = ({
-    tournamentId,
+    tournament,
     onMatchesCreated
 }: {
-    tournamentId: string,
+    tournament: TournamentDetail,
     onMatchesCreated?: () => void
 }) => {
     const { popModal, pushModal } = useModal();
@@ -23,7 +23,7 @@ const TornLeagueMatchSugestionConfigModal = ({
     const [numberOfFaceoffs, setNumberOfFaceoffs] = useState(1);
 
     const handleRequestMatchSuggestions = () => {
-        tournamentsApi.getMatchesSuggestions(tournamentId, {
+        tournamentsApi.getMatchesSuggestions(tournament.id, {
             players_per_match: playersPerMatch,
             number_of_faceoffs: numberOfFaceoffs,
         })
@@ -32,7 +32,7 @@ const TornLeagueMatchSugestionConfigModal = ({
             console.log("Match Suggestions:", response);
             pushModal(<TornLeagueBulkMatchCreateModal
                 suggestedMatches={response as LeagueSuggestedMatch[]}
-                tournamentId={tournamentId}
+                tournament={tournament}
                 onMatchesCreated={() => {
                     handleClose(); // Close myself when matches are created
                     onMatchesCreated && onMatchesCreated();

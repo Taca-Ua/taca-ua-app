@@ -120,7 +120,7 @@ const TornLeagueMatchesDisplay = ({
             onClick={() =>
               pushModal(
                 <TornLeagueMatchSugestionConfigModal
-                  tournamentId={tournament.id}
+                  tournament={tournament}
                   onMatchesCreated={handleMatchesRefresh}
                 />,
               )
