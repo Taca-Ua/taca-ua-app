@@ -2,13 +2,13 @@ services:
 # Infrastructure Services
   nginx:
     build:
-      context: ./src/configs/nginx
+      context: ./src/configs/nginx/dev
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./src/configs/nginx/nginx.http.conf:/etc/nginx/conf.d/default.conf
-      - ./src/configs/nginx/certs:/etc/nginx/certs
+      - ./src/configs/nginx/dev/nginx.http.conf:/etc/nginx/conf.d/default.conf
+      - ./src/configs/nginx/dev/certs:/etc/nginx/certs
     depends_on:
       - competition-api-v3
       - public-api
@@ -227,7 +227,7 @@ services:
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
 
-    command: python manage.py matches_state_updater --settings=config.settings_worker_matches_state_updater
+    command: python manage.py matches_state_updater_worker --settings=config.settings_worker_matches_state_updater
     depends_on:
       competition-api-v3:
         condition: service_healthy

@@ -260,6 +260,15 @@ const MatchesListComponent = ( {
             </p>
           )}
         </div>
+
+        {/* Just for the compiler to let pass */}
+        {false && (
+          <MatchesListJourneyComponent
+            matches={filteredMatches}
+            journeyNumber="Jornada 1"
+            onMatchDeleted={(matchId) => setMatches((prev) => prev.filter((m) => m.id !== matchId))}
+          />
+        )}
       </div>
     );
 }
