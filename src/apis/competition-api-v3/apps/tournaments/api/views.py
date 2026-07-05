@@ -1,5 +1,3 @@
-from typing import List
-
 from apps.seasons.selectors import get_current_season
 from django.urls import path
 from drf_spectacular.utils import extend_schema, extend_schema_view
@@ -36,6 +34,7 @@ from .serializers import (
     TournamentDetailSerializer,
     TournamentFinishSerializer,
     TournamentListSerializer,
+    TournamentMatcheSugestionSerializer,
     TournamentRemoveCompetitorsSerializer,
     TournamentUpdateSerializer,
 )
@@ -238,13 +237,13 @@ class TournamentFormatDetailView(RoleRequiredMixin, APIView):
         summary="Retrieve tournament matches suggestions",
         description="Get suggested matches for a tournament based on its format and configuration.",
         request=DictField,
-        responses={200: List[DictField]},
+        responses={200: TournamentMatcheSugestionSerializer(many=True)},
     ),
     post=extend_schema(
         summary="Generate tournament matches",
         description="Generate matches for a tournament based on its format and configuration.",
-        request=DictField,
-        responses={200: List[DictField]},
+        request=TournamentMatcheSugestionSerializer(many=True),
+        responses={204: None},
     ),
 )
 class TournamentMatchesSuggestionsView(RoleRequiredMixin, APIView):
@@ -252,7 +251,9 @@ class TournamentMatchesSuggestionsView(RoleRequiredMixin, APIView):
     def get(self, request, tournament_id):
         configuration = request.query_params.dict()
         suggestions = get_tournament_matches_suggestions(tournament_id, configuration)
-        return Response(suggestions, status=200)
+
+        serializer = TournamentMatcheSugestionSerializer(suggestions, many=True)
+        return Response(serializer.data, status=200)
 
     @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def post(self, request, tournament_id):

@@ -6,7 +6,7 @@ from apps.matches.models import Match
 from apps.matches.service import create_match
 from django.db.models import F
 
-from ..base import BaseFormat
+from ..base import BaseFormat, MatchSuggestion
 from .models import DrawRule, LeagueMatch, LeagueSettings, LeagueStanding
 from .utils import RoundRobinScheduler
 
@@ -36,20 +36,20 @@ class LeagueMatchGenerationConfiguration:
 
 
 @dataclass
-class LeagueSuggestedMatch:
-    competitors: List[uuid.UUID]
-    round_number: int
-    location: str = None
-    start_time: str = None
+class LeagueSuggestedMatch(MatchSuggestion):
+    format_specific_data: dict = None
 
     def __post_init__(self):
-        if len(self.competitors) < 2:
+        if len(self.competitors_ids) < 2:
             raise ValueError("At least two competitors are required for a match.")
 
-        if len(set(self.competitors)) != len(self.competitors):
+        if len(set(self.competitors_ids)) != len(self.competitors_ids):
             raise ValueError(
                 "Must be distinct competitors in a match. Duplicate competitor IDs found."
             )
+
+        if "round_number" not in self.format_specific_data:
+            raise ValueError("Round number must be specified in format_specific_data.")
 
 
 class LeagueFormat(BaseFormat):
@@ -345,7 +345,7 @@ class LeagueFormat(BaseFormat):
 
         return self.get_details()
 
-    def suggest_matches(self, configuration: dict) -> List[dict]:
+    def suggest_matches(self, configuration: dict) -> List[LeagueSuggestedMatch]:
         config = LeagueMatchGenerationConfiguration(**configuration)
 
         scheduler = RoundRobinScheduler(
@@ -360,12 +360,12 @@ class LeagueFormat(BaseFormat):
             for match in r:
                 sugestion.append(
                     LeagueSuggestedMatch(
-                        competitors=list(match),
-                        round_number=idx + 1,
+                        competitors_ids=list(match),
+                        format_specific_data={"round_number": idx + 1},
                     )
                 )
 
-        return [match.__dict__ for match in sugestion]
+        return sugestion
 
     def generate_matches(self, matches_data: list[dict]) -> None:
         sugested_matches = [

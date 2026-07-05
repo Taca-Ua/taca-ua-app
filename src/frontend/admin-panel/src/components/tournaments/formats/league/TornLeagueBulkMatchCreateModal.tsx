@@ -2,14 +2,9 @@ import { useEffect, useState } from "react";
 import { tournamentsApi, type TournamentDetail } from "../../../../api/tournaments";
 import Button from "../../../utils/Button";
 import { useModal } from "../../../../contexts/ModalContext";
-
-interface LeagueSuggestedMatch {
-    competitors: string[];
-    round_number: number;
-}
+import {type LeagueSuggestedMatch} from "./TornLeagueMatchSugestionConfigModal";
 
 type Competitor = TournamentDetail["competitors"][0];
-
 
 const MatchRow = ({
     match,
@@ -25,13 +20,13 @@ const MatchRow = ({
     return (
         <div className="grid grid-cols-3 gap-4 items-center">
             <div className="col-span-1">
-                <span className="font-semibold">{renderCompetitorName(match.competitors[0])}</span>
+                <span className="font-semibold">{renderCompetitorName(match.competitors_ids[0])}</span>
             </div>
             <div className="col-span-1 text-center">
                 <span className="font-semibold">vs</span>
             </div>
             <div className="col-span-1">
-                <span className="font-semibold">{renderCompetitorName(match.competitors[1])}</span>
+                <span className="font-semibold">{renderCompetitorName(match.competitors_ids[1])}</span>
             </div>
         </div>
     );
@@ -49,7 +44,7 @@ const RoundDisplay = ({
 }) => {
     const [collapsed, setCollapsed] = useState(false);
 
-    const filteredMatches = matches.filter(match => match.round_number === roundNumber);
+    const filteredMatches = matches.filter(match => match.format_specific_data.round_number === roundNumber);
 
     return (
         <div className="border rounded p-4 mb-4">
@@ -112,7 +107,7 @@ const TornLeagueBulkMatchCreateModal = ({
             <h2 className="text-2xl font-bold mb-6">Jogos Sugeridos</h2>
 
             <div className="space-y-4">
-                {Array.from(new Set(matchesSuggestions.map(match => match.round_number))).map(roundNumber => (
+                {Array.from(new Set(matchesSuggestions.map(match => match.format_specific_data.round_number))).map(roundNumber => (
                     <RoundDisplay
                         key={roundNumber}
                         roundNumber={roundNumber}

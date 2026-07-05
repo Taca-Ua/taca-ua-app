@@ -1,14 +1,13 @@
 import { useState } from "react";
-import { tournamentsApi } from "../../../../api/tournaments";
+import { tournamentsApi, type TournamentMatchSuggestion } from "../../../../api/tournaments";
 import Button from "../../../utils/Button";
 import { useModal } from "../../../../contexts/ModalContext";
 import TornLeagueBulkMatchCreateModal from "./TornLeagueBulkMatchCreateModal";
 
-interface LeagueSuggestedMatch {
-    competitors: string[];
-    round_number: number;
-    location?: string;
-    time?: string;
+export interface LeagueSuggestedMatch extends TournamentMatchSuggestion{
+    format_specific_data: {
+        round_number: number;
+    };
 }
 
 const TornLeagueMatchSugestionConfigModal = ({

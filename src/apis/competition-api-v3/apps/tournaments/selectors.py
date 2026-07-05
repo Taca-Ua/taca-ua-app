@@ -2,7 +2,7 @@ from uuid import UUID
 
 from django.db.models import Q, QuerySet
 
-from .formats import FormatRegistry
+from .formats import FormatRegistry, MatchSuggestion
 from .models import Tournament, TournamentResult
 
 
@@ -90,7 +90,7 @@ def get_tournament_results(tournament_id: UUID) -> QuerySet[TournamentResult]:
 
 def get_tournament_matches_suggestions(
     tournament_id: UUID, configuration: dict
-) -> list:
+) -> MatchSuggestion:
     tournament = get_tournament_by_id(tournament_id)
 
     format_engine = FormatRegistry.get_format(tournament)

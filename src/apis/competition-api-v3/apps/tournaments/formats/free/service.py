@@ -19,8 +19,8 @@ class FreeFormat(BaseFormat):
         # Free format does not have specific result recording logic, so we just return an empty details
         return {}
 
-    def suggest_matches(self, configuration: dict) -> list:
+    def suggest_matches(self, *args, **kwargs):
         raise ValueError("Free format does not support match suggestions.")
 
-    def generate_matches(self, matches: list) -> None:
+    def generate_matches(self, *args, **kwargs):
         raise ValueError("Free format does not support match generation.")

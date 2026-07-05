@@ -1,7 +1,7 @@
 from apps.choices import TournamentFormat
 
 from ..models import Tournament
-from .base import BaseFormat
+from .base import BaseFormat, MatchSuggestion
 from .free.service import FreeFormat
 from .league.service import LeagueFormat
 
@@ -25,3 +25,6 @@ class FormatRegistry:
             )
 
         return engine_class(tournament)
+
+
+__all__ = ["FormatRegistry", "MatchSuggestion"]
