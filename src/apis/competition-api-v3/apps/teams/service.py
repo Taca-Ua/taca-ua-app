@@ -2,6 +2,7 @@ from uuid import UUID
 
 from apps.seasons.selectors import get_current_season
 from django.db import transaction
+from rest_framework.exceptions import ValidationError
 
 from .models import Team
 
@@ -14,7 +15,7 @@ def create_team(
     if season_id is None:
         season = get_current_season()
         if season is None:
-            raise ValueError("No active season found. Please specify a season_id.")
+            raise ValidationError("No active season found. Please specify a season_id.")
         season_id = season.id
 
     team = Team.objects.create(

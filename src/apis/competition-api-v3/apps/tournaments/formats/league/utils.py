@@ -4,6 +4,8 @@ import itertools
 import random
 from typing import Hashable, List, Optional, Sequence, Tuple
 
+from rest_framework.exceptions import ValidationError
+
 Match = Tuple[Hashable, ...]
 Round = List[Match]
 
@@ -28,11 +30,11 @@ class RoundRobinScheduler:
         seed         : optional RNG seed for reproducibility
         """
         if match_size < 2:
-            raise ValueError("match_size must be at least 2")
+            raise ValidationError("match_size must be at least 2")
         if len(participants) < match_size:
-            raise ValueError("Not enough participants for the given match size")
+            raise ValidationError("Not enough participants for the given match size")
         if num_faceoffs < 1:
-            raise ValueError("num_faceoffs must be at least 1")
+            raise ValidationError("num_faceoffs must be at least 1")
 
         self.participants = list(participants)
         self.match_size = match_size

@@ -5,6 +5,7 @@ from typing import Dict, List, Literal
 from apps.matches.models import Match
 from apps.matches.service import create_match
 from django.db.models import F
+from rest_framework.exceptions import ValidationError
 
 from ..base import BaseFormat, MatchSuggestion
 from .models import DrawRule, LeagueMatch, LeagueSettings, LeagueStanding
@@ -30,9 +31,9 @@ class LeagueMatchGenerationConfiguration:
             self.number_of_faceoffs = int(self.number_of_faceoffs)
 
         if self.players_per_match < 2:
-            raise ValueError("Players per match must be at least 2.")
+            raise ValidationError("Players per match must be at least 2.")
         if self.number_of_faceoffs < 1:
-            raise ValueError("Number of faceoffs must be at least 1.")
+            raise ValidationError("Number of faceoffs must be at least 1.")
 
 
 @dataclass
@@ -47,15 +48,17 @@ class LeagueSuggestedMatch(MatchSuggestion):
 
     def __post_init__(self):
         if len(self.competitors_ids) < 2:
-            raise ValueError("At least two competitors are required for a match.")
+            raise ValidationError("At least two competitors are required for a match.")
 
         if len(set(self.competitors_ids)) != len(self.competitors_ids):
-            raise ValueError(
+            raise ValidationError(
                 "Must be distinct competitors in a match. Duplicate competitor IDs found."
             )
 
         if "round_number" not in self.format_specific_data:
-            raise ValueError("Round number must be specified in format_specific_data.")
+            raise ValidationError(
+                "Round number must be specified in format_specific_data."
+            )
 
 
 class LeagueFormat(BaseFormat):
@@ -137,7 +140,7 @@ class LeagueFormat(BaseFormat):
                     if comp_id not in winners:
                         participant_results_map[comp_id] = "loser"
         else:
-            raise ValueError(
+            raise ValidationError(
                 "All participants must have either scores or positions to determine the match outcome."
             )
 
@@ -155,7 +158,7 @@ class LeagueFormat(BaseFormat):
 
             for competitor_id in match_data.competitors_ids:
                 if competitor_id in round_competitor_map[round_number]:
-                    raise ValueError(
+                    raise ValidationError(
                         f"Competitor {competitor_id} appears in more than one match in round {round_number}."
                     )
                 round_competitor_map[round_number].add(competitor_id)
@@ -169,7 +172,7 @@ class LeagueFormat(BaseFormat):
             matchups[matchup_key] += 1
 
         if len(set(matchups.values())) > 1:
-            raise ValueError(
+            raise ValidationError(
                 "All matchups must have the same number of faceoffs. Found varying counts."
             )
 
@@ -188,7 +191,7 @@ class LeagueFormat(BaseFormat):
     def update(self, format_data: dict):
         settings = LeagueSettings.objects.get(tournament=self.tournament)
         if not settings:
-            raise ValueError("League settings not found for this tournament.")
+            raise ValidationError("League settings not found for this tournament.")
 
         settings.win_points = format_data.get("win_points", settings.win_points)
         settings.draw_points = format_data.get("draw_points", settings.draw_points)
@@ -201,7 +204,7 @@ class LeagueFormat(BaseFormat):
         ):
             settings.draw_rule = format_data.get("draw_rule", settings.draw_rule)
         else:
-            raise ValueError(
+            raise ValidationError(
                 f"Invalid draw rule: {format_data['draw_rule']}. Must be one of {DrawRule.values} or None."
             )
 
@@ -213,7 +216,7 @@ class LeagueFormat(BaseFormat):
     def get_details(self) -> dict:
         settings = LeagueSettings.objects.get(tournament=self.tournament)
         if not settings:
-            raise ValueError("League settings not found for this tournament.")
+            raise ValidationError("League settings not found for this tournament.")
 
         # get current standings
         standings = LeagueStanding.objects.filter(
@@ -305,7 +308,7 @@ class LeagueFormat(BaseFormat):
             competitor = participant.competitor
             result = results_map.get(competitor.id)
             if result is None:
-                raise ValueError(
+                raise ValidationError(
                     f"No result calculated for competitor {competitor.id} in match {match.id}"
                 )
 
@@ -352,7 +355,7 @@ class LeagueFormat(BaseFormat):
             competitor = participant.competitor
             result = results_map.get(competitor.id)
             if result is None:
-                raise ValueError(
+                raise ValidationError(
                     f"No result calculated for competitor {competitor.id} in match {match.id}"
                 )
 

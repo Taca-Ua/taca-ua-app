@@ -3,6 +3,7 @@ import logging
 from apps.tournaments.models import Tournament
 from apps.tournaments.selectors import get_tournament_results
 from django.db import transaction
+from rest_framework.exceptions import ValidationError
 
 from .models import CourseTournamentPosition
 
@@ -31,7 +32,7 @@ def submit_tournament_results(
         escalao = tournament.rank
 
         if not escalao:
-            raise ValueError(
+            raise ValidationError(
                 f"Tournament {tournament.id} does not have an associated rank."
             )
 
