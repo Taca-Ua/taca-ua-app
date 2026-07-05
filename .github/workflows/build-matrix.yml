@@ -28,8 +28,11 @@ jobs:
       matrix:
         include:
           # Infrastructure
+          - service: nginx-dev
+            context: ./src/configs/nginx/dev
+
           - service: nginx
-            context: ./src/configs/nginx
+            context: ./src/configs/nginx/prod
 
           # APIs
           - service: competition-api-v3
@@ -69,7 +72,7 @@ jobs:
         with:
           context: ${{ matrix.context || '.' }}
           file: ${{ matrix.dockerfile }}
-          push: ${{ inputs.push }}
+          push: ${{ inputs.push && matrix.service != 'nginx-dev' }}
           tags: |
             ${{ env.REGISTRY }}/${{ env.OWNER_LOWER }}/${{ matrix.service }}:latest
             ${{ env.REGISTRY }}/${{ env.OWNER_LOWER }}/${{ matrix.service }}:${{ github.sha }}
