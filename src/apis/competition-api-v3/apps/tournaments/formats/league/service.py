@@ -1,6 +1,6 @@
 import uuid
 from dataclasses import dataclass
-from typing import List, Literal
+from typing import Dict, List, Literal
 
 from apps.matches.models import Match
 from apps.matches.service import create_match
@@ -142,6 +142,36 @@ class LeagueFormat(BaseFormat):
             )
 
         return participant_results_map
+
+    def _check_matches_configuration(
+        self, matches_configuration: list[MatchSuggestion]
+    ):
+        # check that a competitor does not appear in more than one match in the same round
+        round_competitor_map: Dict[int, set[uuid.UUID]] = {}
+        for match_data in matches_configuration:
+            round_number = match_data.format_specific_data.get("round_number", 1)
+            if round_number not in round_competitor_map:
+                round_competitor_map[round_number] = set()
+
+            for competitor_id in match_data.competitors_ids:
+                if competitor_id in round_competitor_map[round_number]:
+                    raise ValueError(
+                        f"Competitor {competitor_id} appears in more than one match in round {round_number}."
+                    )
+                round_competitor_map[round_number].add(competitor_id)
+
+        # check that all matchups have the same number of faceoffs
+        matchups: Dict[tuple[uuid.UUID, ...], int] = {}
+        for match_data in matches_configuration:
+            matchup_key = tuple(sorted(match_data.competitors_ids))
+            if matchup_key not in matchups:
+                matchups[matchup_key] = 0
+            matchups[matchup_key] += 1
+
+        if len(set(matchups.values())) > 1:
+            raise ValueError(
+                "All matchups must have the same number of faceoffs. Found varying counts."
+            )
 
     # public methods
     def create(self, format_data: dict):
@@ -371,12 +401,18 @@ class LeagueFormat(BaseFormat):
                     )
                 )
 
+        # Check the generated matches configuration for validity (should go off, but just in case)
+        self._check_matches_configuration(sugestion)
         return sugestion
 
-    def generate_matches(self, matches_data: list[MatchSuggestion]) -> None:
+    def generate_matches(self, matches_configuration: list[MatchSuggestion]) -> None:
         sugested_matches = [
-            LeagueSuggestedMatch(**match_data.__dict__) for match_data in matches_data
+            LeagueSuggestedMatch(**match_data.__dict__)
+            for match_data in matches_configuration
         ]
+
+        # validate the matches configuration before creating matches
+        self._check_matches_configuration(sugested_matches)
 
         for suggested_match in sugested_matches:
             match = create_match(
