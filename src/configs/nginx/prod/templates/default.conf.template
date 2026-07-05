@@ -36,13 +36,16 @@ map $http_host $x_forwarded_host {
 
 
 server {
-    listen 443 ssl;
-    server_name _;
+    listen 443 ssl http2;
+    server_name ${DOMAIN};
 
     client_max_body_size 10M;
 
-    ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1d;
 
     # Security headers
     add_header X-Frame-Options "SAMEORIGIN" always;
@@ -156,8 +159,14 @@ server {
 
 server {
     listen 80;
-    server_name _;
+    server_name ${DOMAIN};
 
-    # Redireciona todo o tráfego HTTP para HTTPS
-    return 301 https://$host$request_uri;
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+
 }
