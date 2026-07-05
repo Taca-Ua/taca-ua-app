@@ -121,6 +121,7 @@ def get_matches_table(
             ),
         )
     )
+    queryset = queryset.select_related("league_match")
 
     return queryset
 

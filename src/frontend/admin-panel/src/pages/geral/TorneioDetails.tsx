@@ -2,29 +2,24 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useNotification } from '../../contexts/NotificationProvider';
 import { tournamentsApi, type TournamentDetail } from '../../api/tournaments';
-import { type MatchListItem } from '../../api/matches';
 import TournamentInfoComponent from '../../components/tournaments/TournamentInfoComponent';
 import TournamentCompetitorsComponent from '../../components/tournaments/TournamentCompetitorsComponent';
-import MatchesListComponent from '../../components/matches/MatchesListComponent';
-import MatchCreateModal from '../../components/matches/MatchCreateModal';
 import Button from '../../components/utils/Button';
-import { useModal } from '../../contexts/ModalContext';
 import { useAuth } from '../../hooks/useAuth';
 import { navigateBack } from '../../utils';
 import TornLeagueDisplayComponent from '../../components/tournaments/formats/league/TornLeagueDisplayComponent';
-import GeneralFormatMatchesSuggestionsModal from '../../components/tournaments/formats/GeneralFormatMatchesSuggestionsModal';
+import GeneralFormatMatchesDisplay from '../../components/tournaments/formats/GeneralFormatMatchesDisplay';
+
 
 // Main component
 const TorneioDetails = () => {
   const tournamentId = useParams<{ id: string }>().id;
   const navigate = useNavigate();
-  const { pushModal } = useModal();
   const { isAdminGeneral } = useAuth();
 
   const [tournament, setTournament] = useState<TournamentDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const { notify } = useNotification();
-  const [matches, setMatches] = useState<MatchListItem[]>([]);
 
   // Determine where to navigate back to
   const handleBack = () => {
@@ -95,33 +90,7 @@ const TorneioDetails = () => {
 
           {/* Matches Section */}
           <div className="bg-white rounded-lg shadow-md p-6 mt-6 flex flex-col gap-6">
-            {tournament.format === 'free'? (
-              <Button
-                onClick={() => pushModal(
-                  <MatchCreateModal
-                    tournament={tournament}
-                    onCreated={(newMatch) => {
-                      setMatches((prev) => [...prev, newMatch]);
-                    }}
-                  />
-                )}
-                active={isAdminGeneral && tournament.competitors.length >= 2}
-                flexible={true}
-              >
-                + Criar Jogo
-              </Button>
-            ) : (
-              <Button
-                onClick={() => pushModal(
-                  <GeneralFormatMatchesSuggestionsModal format={tournament.format} tournamentId={tournament.id} />
-                )}
-                active={isAdminGeneral}
-                flexible={true}
-              >
-                + Gerar Jogos
-              </Button>
-            )}
-            <MatchesListComponent tournamentId={tournament.id} matchesState={[matches, setMatches]} />
+            <GeneralFormatMatchesDisplay tournament={tournament} />
           </div>
         </div>
       </div>

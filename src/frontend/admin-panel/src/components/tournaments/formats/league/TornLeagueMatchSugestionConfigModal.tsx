@@ -12,8 +12,10 @@ export interface LeagueSuggestedMatch extends TournamentMatchSuggestion{
 
 const TornLeagueMatchSugestionConfigModal = ({
     tournamentId,
+    onMatchesCreated
 }: {
     tournamentId: string,
+    onMatchesCreated?: () => void
 }) => {
     const { popModal, pushModal } = useModal();
 
@@ -33,6 +35,7 @@ const TornLeagueMatchSugestionConfigModal = ({
                 tournamentId={tournamentId}
                 onMatchesCreated={() => {
                     handleClose(); // Close myself when matches are created
+                    onMatchesCreated && onMatchesCreated();
                 }}
             />);
         })

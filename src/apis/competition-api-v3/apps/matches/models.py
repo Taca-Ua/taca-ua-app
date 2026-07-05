@@ -7,6 +7,7 @@ from apps.tournaments.models import Tournament, TournamentCompetitor
 from django.db import models
 
 if TYPE_CHECKING:
+    from apps.tournaments.formats.league.models import LeagueMatch
     from django.db.models.manager import RelatedManager
 
 
@@ -31,9 +32,17 @@ class Match(models.Model):
         Tournament, on_delete=models.CASCADE, related_name="matches"
     )
 
+    @property
+    def format_specific_data(self) -> dict:
+        """Returns format-specific data for the participant, if any."""
+        if hasattr(self, "league_match") and self.league_match is not None:
+            return self.league_match.to_dict()
+        return {}
+
     if TYPE_CHECKING:
         participants: RelatedManager["MatchParticipant"]
         comments: RelatedManager["MatchComment"]
+        league_match: RelatedManager["LeagueMatch"]
 
 
 class MatchParticipant(models.Model):

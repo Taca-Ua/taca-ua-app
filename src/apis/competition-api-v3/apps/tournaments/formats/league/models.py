@@ -50,6 +50,14 @@ class LeagueStanding(models.Model):
 class LeagueMatch(models.Model):
     """Represents a match in a league tournament."""
 
-    match = models.OneToOneField(Match, on_delete=models.CASCADE, primary_key=True)
+    match = models.OneToOneField(
+        Match, on_delete=models.CASCADE, primary_key=True, related_name="league_match"
+    )
 
     round_number = models.PositiveIntegerField()
+
+    def to_dict(self) -> dict:
+        """Returns a dictionary representation of the league match."""
+        return {
+            "round_number": self.round_number,
+        }

@@ -37,6 +37,10 @@ export interface MatchListItem {
     logo_url?: string;
     can_edit: boolean;
   }[];
+
+  format_specific_data?: {
+    [key: string]: any;
+  };
 };
 
 export interface MatchDetail extends MatchListItem {
