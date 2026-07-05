@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { tournamentsApi, type TournamentDetail } from "../../../../api/tournaments";
+import { type ApiError } from "../../../../api/client";
 import Button from "../../../utils/Button";
 import { useModal } from "../../../../contexts/ModalContext";
 import {type LeagueSuggestedMatch} from "./TornLeagueMatchSugestionConfigModal";
+import { useNotification } from "../../../../contexts/NotificationProvider";
 
 type Competitor = TournamentDetail["competitors"][0];
 
@@ -83,6 +85,7 @@ const TornLeagueBulkMatchCreateModal = ({
     onMatchesCreated?: () => void;
 }) => {
     const { popModal } = useModal();
+    const { notify } = useNotification();
 
     const [matchesSuggestions,] = useState<LeagueSuggestedMatch[]>(suggestedMatches);
     const [competitorsMap, setCompetitorsMap] = useState<Record<string, Competitor>>({});
@@ -113,8 +116,9 @@ const TornLeagueBulkMatchCreateModal = ({
                 handleClose();
                 if (onMatchesCreated) onMatchesCreated();
             })
-            .catch((error) => {
+            .catch((error: ApiError) => {
                 console.error("Error creating matches:", error);
+                notify(error.body as string, "error");
             });
     }
 

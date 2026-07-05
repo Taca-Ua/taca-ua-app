@@ -126,6 +126,7 @@ const TornLeagueMatchesDisplay = ({
               )
             }
             active={isAdminGeneral && tournament.competitors.length >= 2}
+            disabled={matches.length > 0}
             flexible={true}
           >
             + Gerar Jogos

@@ -8,6 +8,7 @@ from apps.modality_types.models import ModalityType, ModalityTypeModes
 from apps.ranking.service import submit_tournament_results
 from apps.seasons.selectors import get_current_season
 from django.db import transaction
+from rest_framework.exceptions import ValidationError
 
 from .formats import FormatRegistry, MatchSuggestion
 from .models import (
@@ -54,13 +55,13 @@ def create_tournament(
 
         # validate that the provided scoring format is in the same season as the tournament
         if scoring_format.season.id != season_id:
-            raise ValueError(
+            raise ValidationError(
                 "Scoring format must be in the same season as the tournament."
             )
 
         # validate that the provided scoring format is of points type
         if scoring_format.mode != ModalityTypeModes.POINTS:
-            raise ValueError("Scoring format must be of points type.")
+            raise ValidationError("Scoring format must be of points type.")
 
     # create the tournament
     tournament = Tournament.objects.create(
@@ -78,11 +79,11 @@ def create_tournament(
         for rule in competitor_rules:
             tournament_source = Tournament.objects.get(id=rule["tournament_id"])
             if tournament_source.season_id != season_id:
-                raise ValueError(
+                raise ValidationError(
                     "Competitor rules must be from tournaments in the same season."
                 )
             if tournament == tournament_source:
-                raise ValueError(
+                raise ValidationError(
                     "Cannot add competitor rules from the same tournament."
                 )
 
@@ -111,7 +112,7 @@ def create_tournament(
     # initialize the tournament format engine
     format_engine = FormatRegistry.get_format(tournament)
     if format_engine is None:
-        raise ValueError(
+        raise ValidationError(
             f"Unsupported tournament format: {tournament.tournament_format}"
         )
     format_engine.create(format_data or {})
@@ -127,6 +128,33 @@ def update_tournament(
     status: TournamentStatus = None,
 ) -> Tournament:
     tournament = Tournament.objects.get(id=tournament_id)
+
+    def checks():
+        if status is not None and status not in TournamentStatus.values:
+            raise ValidationError(f"Invalid tournament status: {status}")
+
+        if (
+            tournament.status == TournamentStatus.DRAFT
+            and status != TournamentStatus.ACTIVE
+        ):
+            raise ValidationError(
+                "Tournament can only be updated from DRAFT to ACTIVE status."
+            )
+
+        if (
+            tournament.status == TournamentStatus.ACTIVE
+            and status != TournamentStatus.FINISHED
+        ):
+            raise ValidationError(
+                "Tournament can only be updated from ACTIVE to FINISHED status."
+            )
+
+        if tournament.status == TournamentStatus.FINISHED:
+            raise ValidationError(
+                "Cannot update a tournament that is already FINISHED."
+            )
+
+    checks()
 
     if name is not None:
         tournament.name = name
@@ -156,8 +184,8 @@ def add_competitors_to_tournament(
 
     tournament = Tournament.objects.get(id=tournament_id)
 
-    if tournament.status == TournamentStatus.FINISHED:
-        raise ValueError("Cannot add competitors to a finished tournament.")
+    if tournament.status != TournamentStatus.DRAFT:
+        raise ValidationError("Cannot add competitors to a non-draft tournament.")
 
     for competitor_id in competitor_ids:
         if TournamentCompetitor.objects.filter(
@@ -201,8 +229,8 @@ def remove_competitors_from_tournament(
 ) -> Tournament:
     tournament = Tournament.objects.get(id=tournament_id)
 
-    if tournament.status == TournamentStatus.FINISHED:
-        raise ValueError("Cannot remove competitors from a finished tournament.")
+    if tournament.status != TournamentStatus.DRAFT:
+        raise ValidationError("Cannot remove competitors from a non-draft tournament.")
 
     competitors_to_remove = TournamentCompetitor.objects.filter(
         tournament=tournament, id__in=competitor_ids
@@ -256,12 +284,12 @@ def finish_tournament(tournament_id: UUID, ranking_entries: list) -> Tournament:
 def update_tournament_format(tournament_id: UUID, format_data: dict) -> dict:
     tournament = Tournament.objects.get(id=tournament_id)
     if tournament is None:
-        raise ValueError(f"Tournament with id {tournament_id} does not exist.")
+        raise ValidationError(f"Tournament with id {tournament_id} does not exist.")
 
     # re-initialize the tournament format engine with the new format and data
     format_engine = FormatRegistry.get_format(tournament)
     if format_engine is None:
-        raise ValueError(
+        raise ValidationError(
             f"Unsupported tournament format: {tournament.tournament_format}"
         )
 
@@ -275,7 +303,7 @@ def tournament_format_match_result(match: Match) -> None:
 
     format_engine = FormatRegistry.get_format(match.tournament)
     if format_engine is None:
-        raise ValueError(
+        raise ValidationError(
             f"Unsupported tournament format: {match.tournament.tournament_format}"
         )
 
@@ -288,11 +316,21 @@ def tournament_format_generate_matches(
 ) -> None:
     tournament = Tournament.objects.get(id=tournament_id)
     if tournament is None:
-        raise ValueError(f"Tournament with id {tournament_id} does not exist.")
+        raise ValidationError(f"Tournament with id {tournament_id} does not exist.")
+
+    if tournament.status != TournamentStatus.ACTIVE:
+        raise ValidationError(
+            f"Cannot generate matches for a tournament that is not ACTIVE. Current status: {tournament.status}"
+        )
+
+    if tournament.matches.exists():
+        raise ValidationError(
+            "Cannot generate matches for a tournament that already has matches."
+        )
 
     format_engine = FormatRegistry.get_format(tournament)
     if format_engine is None:
-        raise ValueError(
+        raise ValidationError(
             f"Unsupported tournament format: {tournament.tournament_format}"
         )
 

@@ -2,9 +2,16 @@ import keycloak from '../lib/keycloak';
 
 const API_BASE_URL = '/api/admin';
 
-interface ApiError {
-  error: string;
-  details?: unknown;
+export class ApiError extends Error {
+  public status: number;
+  public body?: unknown;
+
+  constructor(message: string, status: number, body?: unknown) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.body = body;
+  }
 }
 
 export class ApiClient {
@@ -62,10 +69,8 @@ export class ApiClient {
     });
 
     if (!response.ok) {
-      const error: ApiError = await response.json().catch(() => ({
-        error: 'Network error',
-      }));
-      throw new Error(error.error || 'API request failed');
+      const body = await response.json().catch(() => ({}));
+      throw new ApiError(body.detail || body.error || 'API request failed', response.status, body);
     }
 
     return response.json();
@@ -111,11 +116,8 @@ export class ApiClient {
     });
 
     if (!response.ok) {
-      const error: ApiError = await response.json().catch(() => ({
-        error: 'Network error',
-      }));
-      const new_error = new Error(error.error || 'API request failed');
-      throw new_error;
+      const body = await response.json().catch(() => ({}));
+      throw new ApiError(body.detail || body.error || 'API request failed', response.status, body);
     }
 
     return response.json();
@@ -160,10 +162,8 @@ export class ApiClient {
     });
 
     if (!response.ok) {
-      const error: ApiError = await response.json().catch(() => ({
-        error: 'Network error',
-      }));
-      throw new Error(error.error || 'API request failed');
+      const body = await response.json().catch(() => ({}));
+      throw new ApiError(body.detail || body.error || 'API request failed', response.status, body);
     }
 
     return response.json();
@@ -179,10 +179,8 @@ export class ApiClient {
     });
 
     if (!response.ok) {
-      const error: ApiError = await response.json().catch(() => ({
-        error: 'Network error',
-      }));
-      throw new Error(error.error || 'API request failed');
+      const body = await response.json().catch(() => ({}));
+      throw new ApiError(body.detail || body.error || 'API request failed', response.status, body);
     }
   }
 
@@ -195,10 +193,8 @@ export class ApiClient {
     });
 
     if (!response.ok) {
-      const error: ApiError = await response.json().catch(() => ({
-        error: 'Network error',
-      }));
-      throw new Error(error.error || 'API request failed');
+      const body = await response.json().catch(() => ({}));
+      throw new ApiError(body.detail || body.error || 'API request failed', response.status, body);
     }
 
     return response.blob();
