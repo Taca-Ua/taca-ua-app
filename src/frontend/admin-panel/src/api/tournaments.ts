@@ -161,7 +161,7 @@ export const tournamentsApi = {
     return apiClient.get<TournamentMatchSuggestion[]>(`/tournaments/${id}/matches-suggestions/`, configuration);
   },
 
-  async generateMatches(id: string, configuration: Record<string, any>): Promise<Record<string, any>[]> {
-    return apiClient.post<Record<string, any>[]>(`/tournaments/${id}/generate-matches/`, configuration);
+  async generateMatches(id: string, configuration: Record<string, any>): Promise<Record<string, any>> {
+    return apiClient.post<Record<string, any>>(`/tournaments/${id}/matches-suggestions/`, configuration);
   },
 };

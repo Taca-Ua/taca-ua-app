@@ -9,7 +9,7 @@ from apps.ranking.service import submit_tournament_results
 from apps.seasons.selectors import get_current_season
 from django.db import transaction
 
-from .formats import FormatRegistry
+from .formats import FormatRegistry, MatchSuggestion
 from .models import (
     QualificationSlot,
     Tournament,
@@ -280,3 +280,28 @@ def tournament_format_match_result(match: Match) -> None:
         )
 
     format_engine.record_result(match)
+
+
+@transaction.atomic
+def tournament_format_generate_matches(
+    tournament_id: UUID, configuration: list[dict]
+) -> None:
+    tournament = Tournament.objects.get(id=tournament_id)
+    if tournament is None:
+        raise ValueError(f"Tournament with id {tournament_id} does not exist.")
+
+    format_engine = FormatRegistry.get_format(tournament)
+    if format_engine is None:
+        raise ValueError(
+            f"Unsupported tournament format: {tournament.tournament_format}"
+        )
+
+    format_engine.generate_matches(
+        [
+            MatchSuggestion(
+                competitors_ids=match["competitors_ids"],
+                format_specific_data=match.get("format_specific_data", {}),
+            )
+            for match in configuration
+        ]
+    )

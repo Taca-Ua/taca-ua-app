@@ -73,10 +73,14 @@ const RoundDisplay = ({
 
 const TornLeagueBulkMatchCreateModal = ({
     suggestedMatches,
-    tournamentId
+    tournamentId,
+    onClose,
+    onMatchesCreated,
 } : {
     suggestedMatches: LeagueSuggestedMatch[];
     tournamentId: string;
+    onClose?: () => void;
+    onMatchesCreated?: () => void;
 }) => {
     const { popModal } = useModal();
 
@@ -100,6 +104,18 @@ const TornLeagueBulkMatchCreateModal = ({
 
     const handleClose = () => {
         popModal();
+        if (onClose) onClose();
+    }
+
+    const handleCreateMatches = () => {
+        tournamentsApi.generateMatches(tournamentId, matchesSuggestions)
+            .then(() => {
+                handleClose();
+                if (onMatchesCreated) onMatchesCreated();
+            })
+            .catch((error) => {
+                console.error("Error creating matches:", error);
+            });
     }
 
     return (
@@ -126,7 +142,7 @@ const TornLeagueBulkMatchCreateModal = ({
                     Cancelar
                 </Button>
                 <Button
-                    onClick={() => {}}
+                    onClick={handleCreateMatches}
                     type="primary"
                     flexible={true}
                 >

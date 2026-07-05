@@ -31,6 +31,9 @@ const TornLeagueMatchSugestionConfigModal = ({
             pushModal(<TornLeagueBulkMatchCreateModal
                 suggestedMatches={response as LeagueSuggestedMatch[]}
                 tournamentId={tournamentId}
+                onMatchesCreated={() => {
+                    handleClose(); // Close myself when matches are created
+                }}
             />);
         })
         .catch((error) => {

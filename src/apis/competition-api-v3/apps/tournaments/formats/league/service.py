@@ -39,6 +39,12 @@ class LeagueMatchGenerationConfiguration:
 class LeagueSuggestedMatch(MatchSuggestion):
     format_specific_data: dict = None
 
+    @property
+    def round_number(self) -> int:
+        if self.format_specific_data and "round_number" in self.format_specific_data:
+            return self.format_specific_data["round_number"]
+        return 1  # Default to round 1 if not specified
+
     def __post_init__(self):
         if len(self.competitors_ids) < 2:
             raise ValueError("At least two competitors are required for a match.")
@@ -367,20 +373,17 @@ class LeagueFormat(BaseFormat):
 
         return sugestion
 
-    def generate_matches(self, matches_data: list[dict]) -> None:
+    def generate_matches(self, matches_data: list[MatchSuggestion]) -> None:
         sugested_matches = [
-            LeagueSuggestedMatch(**match_data) for match_data in matches_data
+            LeagueSuggestedMatch(**match_data.__dict__) for match_data in matches_data
         ]
 
         for suggested_match in sugested_matches:
             match = create_match(
-                tournament=self.tournament,
-                competitors=suggested_match.competitors,
-                location=suggested_match.location,
-                start_time=suggested_match.start_time,
+                tournament_id=self.tournament.id,
+                participants=suggested_match.competitors_ids,
             )
 
             LeagueMatch.objects.create(
-                match=match,
-                round_number=suggested_match.round_number,
+                match=match, round_number=suggested_match.round_number
             )

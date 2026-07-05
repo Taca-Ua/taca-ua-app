@@ -24,6 +24,7 @@ from ..service import (
     delete_tournament,
     finish_tournament,
     remove_competitors_from_tournament,
+    tournament_format_generate_matches,
     update_tournament,
     update_tournament_format,
 )
@@ -243,7 +244,7 @@ class TournamentFormatDetailView(RoleRequiredMixin, APIView):
         summary="Generate tournament matches",
         description="Generate matches for a tournament based on its format and configuration.",
         request=TournamentMatcheSugestionSerializer(many=True),
-        responses={204: None},
+        responses={200: {"message": "Matches generated successfully."}},
     ),
 )
 class TournamentMatchesSuggestionsView(RoleRequiredMixin, APIView):
@@ -257,7 +258,15 @@ class TournamentMatchesSuggestionsView(RoleRequiredMixin, APIView):
 
     @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
     def post(self, request, tournament_id):
-        raise NotImplementedError("Match generation is not implemented yet.")
+        serializer = TournamentMatcheSugestionSerializer(data=request.data, many=True)
+        serializer.is_valid(raise_exception=True)
+
+        tournament_format_generate_matches(
+            tournament_id=tournament_id,
+            configuration=serializer.validated_data,
+        )
+
+        return Response({"message": "Matches generated successfully."}, status=200)
 
 
 urlpatterns = [
