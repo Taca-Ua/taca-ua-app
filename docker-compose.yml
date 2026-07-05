@@ -2,13 +2,13 @@ services:
 # Infrastructure Services
   nginx:
     build:
-      context: ./src/configs/nginx
+      context: ./src/configs/nginx/dev
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./src/configs/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./src/configs/nginx/certs:/etc/nginx/certs
+      - ./src/configs/nginx/dev/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./src/configs/nginx/dev/certs:/etc/nginx/certs
     environment:
       - DOMAIN=${DOMAIN:-localhost}
     depends_on:
