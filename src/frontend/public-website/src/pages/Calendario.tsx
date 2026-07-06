@@ -183,6 +183,11 @@ function Calendario() {
     return participantNames.join(' vs ');
   };
 
+  const getParticipantName = (participant_id : string) => {
+    const participant = matches.flatMap(m => m.participants || []).find(p => p.participant_id === participant_id);
+    return participant ? (participant.participant_name || 'Participante') : 'Participante';
+  };
+
   const filteredMatches = viewMode === 'list'
     ? matches.filter((m) =>
         getMatchTitle(m)?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -323,14 +328,15 @@ function Calendario() {
                             <div className="border-t pt-4">
                               <p className="text-sm font-semibold text-gray-700 mb-2">Participantes:</p>
                               <div className="flex flex-wrap gap-2">
-                                {match.participants.map((participant, idx) => (
+                                {match.participants.map((participant, idx) => {
+                                  return (
                                   <span
                                     key={idx}
                                     className="px-3 py-1 bg-gray-100 rounded-full text-sm"
                                   >
-                                    {participant.name || participant.team_name || 'Participante'}
+                                    {participant.participant_name || 'Participante1'}
                                   </span>
-                                ))}
+                                )})}
                               </div>
                             </div>
                           )}
@@ -341,7 +347,7 @@ function Calendario() {
                               <div className="space-y-1">
                                 {match.results.map((result, idx) => (
                                   <div key={idx} className="flex justify-between text-sm">
-                                    <span>{result.name || result.team_name || 'Participante'}</span>
+                                    <span>{getParticipantName(result.participant_id)}</span>
                                     <span className="font-semibold">
                                       {result.score !== undefined ? result.score : result.position}
                                     </span>
