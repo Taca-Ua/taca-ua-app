@@ -1,8 +1,16 @@
+import uuid
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
 from apps.matches.models import Match
 
 from ..models import Tournament
+
+
+@dataclass
+class MatchSuggestion:
+    competitors_ids: list[uuid.UUID]
+    format_specific_data: dict
 
 
 class BaseFormat(ABC):
@@ -23,4 +31,12 @@ class BaseFormat(ABC):
 
     @abstractmethod
     def record_result(self, match: Match) -> dict:
+        pass
+
+    @abstractmethod
+    def suggest_matches(self, configuration: dict) -> list[MatchSuggestion]:
+        pass
+
+    @abstractmethod
+    def generate_matches(self, matches_configuration: list[MatchSuggestion]) -> None:
         pass

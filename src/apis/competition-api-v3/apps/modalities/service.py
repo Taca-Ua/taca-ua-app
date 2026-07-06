@@ -4,6 +4,7 @@ from uuid import UUID
 from apps.modality_types.models import ModalityType
 from apps.seasons.selectors import get_current_season
 from django.db import transaction
+from rest_framework.exceptions import ValidationError
 
 from .models import Modality, SeasonModality
 
@@ -54,14 +55,14 @@ def add_modality_to_season(
     # check if the modality exists
     modality = Modality.objects.filter(id=modality_id).first()
     if not modality:
-        raise ValueError("Modality not found")
+        raise ValidationError("Modality not found")
 
     # check if the modality type exists for the given season
     modality_type = ModalityType.objects.filter(
         id=modality_type_id, season__id=season_id
     ).first()
     if not modality_type:
-        raise ValueError("Modality type not found for the given season")
+        raise ValidationError("Modality type not found for the given season")
 
     # create the association between modality and season with the specified modality type
     SeasonModality.objects.create(
@@ -80,7 +81,7 @@ def remove_modality_from_season(modality_id: UUID, season_id: int) -> Modality:
     ).first()
 
     if not modality:
-        raise ValueError("Modality not found for the given season")
+        raise ValidationError("Modality not found for the given season")
 
     SeasonModality.objects.filter(modality_id=modality_id, season_id=season_id).delete()
 

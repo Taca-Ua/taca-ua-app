@@ -2,6 +2,7 @@ from uuid import UUID
 
 from apps.admins.models import Admin
 from django.db.models import Exists, OuterRef, Prefetch, Q, QuerySet
+from rest_framework.exceptions import ValidationError
 
 from .models import Match, MatchParticipant
 
@@ -121,6 +122,7 @@ def get_matches_table(
             ),
         )
     )
+    queryset = queryset.select_related("league_match")
 
     return queryset
 
@@ -149,6 +151,6 @@ def get_match_participant_by_id(
             id=context_admin_id
         ).exists()
     ):
-        raise ValueError("Admin does not have access to this participant")
+        raise ValidationError("Admin does not have access to this participant")
 
     return participant

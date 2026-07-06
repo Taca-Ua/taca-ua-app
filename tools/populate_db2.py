@@ -746,56 +746,13 @@ def populate_tournaments():
             )
             tournament_teams = {}
 
-        # get existing matches for the tournament to avoid duplicates
-        existing_matches_response = requests.get(
-            f"{API_URL}/matches/?tournament_id={tournament_id}", headers=HEADERS
-        )
-        if existing_matches_response.status_code == 200:
-            existing_matches = {
-                tuple(
-                    [
-                        *sorted(
-                            [
-                                match["participants"][0]["name"],
-                                match["participants"][1]["name"],
-                            ]
-                        ),
-                        match["start_time"],
-                        match["location"],
-                    ]
-                ): match["id"]
-                for match in existing_matches_response.json()["matches"]
-            }
-        else:
-            print(
-                f"Failed to fetch existing matches for tournament ID {tournament_id}, Status Code: {existing_matches_response.status_code}, Response: {existing_matches_response.text}"
-            )
-            existing_matches = {}
-
+        # build the matches conf payload
+        matches_payload = []
         atleast_one_match = False
         for match in matches:
-            # create match
-            print("\t\t", flush=True, end="")  # Add indentation for match creation logs
-            if match.day == "":
-                iso_time = (
-                    "2026-01-01T00:00:00Z"  # Default to midnight if no day is provided
-                )
-            else:
-                hour_formatted = match.hour.lower().split("h")[0].zfill(2)
-                minute_formatted = (
-                    match.hour.lower().split("h")[1].zfill(2)
-                    if "h" in match.hour.lower()
-                    else "00"
-                )
-                iso_time = (
-                    f"{match.day.split()[0]}T"
-                    + f"{hour_formatted}:{minute_formatted}"
-                    + ":00Z"
-                )
-            local = match.local if match.local else "TBD"
-
-            if (match.team1 not in tournament_teams) or (
-                match.team2 not in tournament_teams
+            if (
+                match.team1 not in tournament_teams
+                or match.team2 not in tournament_teams
             ):
                 print(
                     f"One or both teams for the match between {match.team1} and {match.team2} are not registered in tournament ID {tournament_id}. Skipping match creation."
@@ -803,41 +760,141 @@ def populate_tournaments():
                 STATS["matches"]["skipped"] = STATS["matches"]["skipped"] + 1
                 continue
 
-            if (
-                tuple([*sorted([match.team1, match.team2]), iso_time, local])
-                in existing_matches
-            ):
-                print("Match already exists. Skipping match creation.")
-                atleast_one_match = True
-                STATS["matches"]["skipped"] = STATS["matches"]["skipped"] + 1
-                continue
+            matches_payload.append(
+                {
+                    "competitors_ids": [
+                        tournament_teams[match.team1],
+                        tournament_teams[match.team2],
+                    ],
+                    "format_specific_data": {
+                        "round_number": match.jornada,
+                    },
+                }
+            )
+            atleast_one_match = True
 
-            payload = {
-                "tournament_id": tournament_id,
-                "location": local,
-                "start_time": iso_time,
-                "participants": [
-                    tournament_teams.get(match.team1),
-                    tournament_teams.get(match.team2),
-                ],
-            }
-            response = requests.post(
-                f"{API_URL}/matches/", json=payload, headers=HEADERS
+        if not atleast_one_match:
+            print(
+                f"No valid matches to create for tournament ID {tournament_id}. Skipping match creation."
+            )
+            return False
+
+        # update tournament to active
+        response = requests.put(
+            f"{API_URL}/tournaments/{tournament_id}/",
+            json={"status": "active"},
+            headers=HEADERS,
+        )
+        if response.status_code == 200 or response.status_code == 400:
+            print(f"Tournament ID {tournament_id} status updated to active.")
+        else:
+            print(
+                f"Failed to update tournament ID {tournament_id} status to active, Status Code: {response.status_code}, Response: {response.text}"
+            )
+            STATS["tournaments"]["failed"] = STATS["tournaments"]["failed"] + 1
+            return False
+
+        response = requests.post(
+            f"{API_URL}/tournaments/{tournament_id}/matches-suggestions/",
+            json=matches_payload,
+            headers=HEADERS,
+        )
+
+        if response.status_code == 200:
+            print(f"Created matches for tournament ID {tournament_id}")
+            STATS["matches"]["created"] = STATS["matches"]["created"] + len(
+                matches_payload
+            )
+        else:
+            print(
+                f"Failed to create matches for tournament ID {tournament_id}, Status Code: {response.status_code}, Response: {response.text}"
+            )
+            STATS["matches"]["failed"] = STATS["matches"]["failed"] + len(
+                matches_payload
             )
 
-            if response.status_code == 201:
-                response_data = response.json()
+        return atleast_one_match
+
+    def _update_matches_with_additional_info(
+        tournament_id: str, matches: List[Match]
+    ) -> None:
+        # get matches for the tournament to map match IDs and validate match existence before updating additional info
+        matches_response = requests.get(
+            f"{API_URL}/matches/?tournament_id={tournament_id}", headers=HEADERS
+        )
+        if matches_response.status_code == 200:
+            tournament_matches = {
+                tuple(
+                    [
+                        *sorted(
+                            [
+                                match["participants"][0]["name"],
+                                match["participants"][1]["name"],
+                            ]
+                        )
+                    ]
+                ): match
+                for match in matches_response.json()["matches"]
+            }
+        else:
+            print(
+                f"Failed to fetch matches for tournament ID {tournament_id}, Status Code: {matches_response.status_code}, Response: {matches_response.text}"
+            )
+            tournament_matches = {}
+
+        for match in matches:
+            print("\t\t", flush=True, end="")  # Add indentation for match update logs
+            if tuple([*sorted([match.team1, match.team2])]) not in tournament_matches:
                 print(
-                    f"Created match between {response_data['participants'][0]['name']} and team {response_data['participants'][1]['name']}"
+                    f"Match between {match.team1} and {match.team2} not found in tournament ID {tournament_id}. Skipping additional info update."
                 )
-                atleast_one_match = True
-                STATS["matches"]["created"] = STATS["matches"]["created"] + 1
+                STATS["matches_additional_info"]["skipped"] = (
+                    STATS["matches_additional_info"]["skipped"] + 1
+                )
+                continue
+
+            tournament_match = tournament_matches.get(
+                tuple([*sorted([match.team1, match.team2])])
+            )
+
+            payload = {
+                "start_time": (
+                    f"{match.day.split()[0]}T{match.hour.replace('h', ':')}:00Z"
+                    if match.day and match.hour
+                    else None
+                ),
+                "location": match.local if match.local else None,
+            }
+
+            if not payload["start_time"] and not payload["location"]:
+                print(
+                    f"No additional info provided for match between {match.team1} and {match.team2}. Skipping additional info update."
+                )
+                continue
+
+            if (
+                tournament_match.get("start_time") == payload["start_time"]
+                and tournament_match.get("location") == payload["location"]
+            ):
+                print(
+                    f"Match between {match.team1} and {match.team2} already has the same additional info. Skipping additional info update."
+                )
+                continue
+
+            response = requests.put(
+                f"{API_URL}/matches/{tournament_match['id']}/",
+                json=payload,
+                headers=HEADERS,
+            )
+
+            if response.status_code == 200:
+                print(
+                    f"Updated additional info for match between {match.team1} and {match.team2}"
+                )
             else:
                 print(
-                    f"Failed to create match for tournament ID {tournament_id}, Status Code: {response.status_code}, Response: {response.text}"
+                    f"Failed to update additional info for match between {match.team1} and {match.team2}, Status Code: {response.status_code}, Response: {response.text}"
                 )
-                STATS["matches"]["failed"] = STATS["matches"]["failed"] + 1
-        return atleast_one_match
 
     def _insert_matches_results(tournament_id: str, matches: List[Match]) -> None:
         # get matches for the tournament to map match IDs and validate match existence before inserting results
@@ -853,9 +910,7 @@ def populate_tournaments():
                                 match["participants"][0]["name"],
                                 match["participants"][1]["name"],
                             ]
-                        ),
-                        match["start_time"],
-                        match["location"],
+                        )
                     ]
                 ): match
                 for match in matches_response.json()["matches"]
@@ -879,18 +934,7 @@ def populate_tournaments():
                 )
                 continue
 
-            if match.day == "":
-                iso_time = (
-                    "2026-01-01T00:00:00Z"  # Default to midnight if no day is provided
-                )
-            else:
-                iso_time = f"{match.day.split()[0]}T{match.hour.replace('h', ':')}:00Z"
-            local = match.local if match.local else "TBD"
-
-            if (
-                tuple([*sorted([match.team1, match.team2]), iso_time, local])
-                not in tournament_matches
-            ):
+            if tuple([*sorted([match.team1, match.team2])]) not in tournament_matches:
                 print(
                     f"Match between {match.team1} and {match.team2} not found in tournament ID {tournament_id}. Skipping result insertion."
                 )
@@ -900,10 +944,16 @@ def populate_tournaments():
                 continue
 
             tournament_match = tournament_matches.get(
-                tuple([*sorted([match.team1, match.team2]), iso_time, local])
+                tuple([*sorted([match.team1, match.team2])])
             )
 
-            if tournament_match.get("status") == "finished":
+            already_resulted = any(
+                participant.get("score") is not None
+                or participant.get("position") is not None
+                for participant in tournament_match.get("participants", [])
+            )
+
+            if already_resulted:
                 print(
                     f"Match between {match.team1} and {match.team2} already has results. Skipping result insertion."
                 )
@@ -1014,6 +1064,7 @@ def populate_tournaments():
         atleast_one_match = _create_matches_for_tournament(
             tournament_id, tournament.matches
         )
+        _update_matches_with_additional_info(tournament_id, tournament.matches)
 
         # insert matches results
         _insert_matches_results(tournament_id, tournament.matches)
@@ -1150,7 +1201,7 @@ def main():
 
     print("Extracting information from the source...")
     try:
-        information_stealer("24_25")
+        information_stealer("25_26")
     except Exception as e:
         print(f"Error occurred while extracting information: {e}")
         return

@@ -15,6 +15,7 @@ from shared.auth.utils import RolesEnum
 from ..selectors import (
     get_tournament_by_id,
     get_tournament_format_details,
+    get_tournament_matches_suggestions,
     get_tournaments_table,
 )
 from ..service import (
@@ -23,6 +24,7 @@ from ..service import (
     delete_tournament,
     finish_tournament,
     remove_competitors_from_tournament,
+    tournament_format_generate_matches,
     update_tournament,
     update_tournament_format,
 )
@@ -33,6 +35,7 @@ from .serializers import (
     TournamentDetailSerializer,
     TournamentFinishSerializer,
     TournamentListSerializer,
+    TournamentMatcheSugestionSerializer,
     TournamentRemoveCompetitorsSerializer,
     TournamentUpdateSerializer,
 )
@@ -230,6 +233,42 @@ class TournamentFormatDetailView(RoleRequiredMixin, APIView):
         return Response(format_details, status=200)
 
 
+@extend_schema_view(
+    get=extend_schema(
+        summary="Retrieve tournament matches suggestions",
+        description="Get suggested matches for a tournament based on its format and configuration.",
+        request=DictField,
+        responses={200: TournamentMatcheSugestionSerializer(many=True)},
+    ),
+    post=extend_schema(
+        summary="Generate tournament matches",
+        description="Generate matches for a tournament based on its format and configuration.",
+        request=TournamentMatcheSugestionSerializer(many=True),
+        responses={200: {"message": "Matches generated successfully."}},
+    ),
+)
+class TournamentMatchesSuggestionsView(RoleRequiredMixin, APIView):
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
+    def get(self, request, tournament_id):
+        configuration = request.query_params.dict()
+        suggestions = get_tournament_matches_suggestions(tournament_id, configuration)
+
+        serializer = TournamentMatcheSugestionSerializer(suggestions, many=True)
+        return Response(serializer.data, status=200)
+
+    @require_roles_class_method(RolesEnum.GENERAL_ADMIN)
+    def post(self, request, tournament_id):
+        serializer = TournamentMatcheSugestionSerializer(data=request.data, many=True)
+        serializer.is_valid(raise_exception=True)
+
+        tournament_format_generate_matches(
+            tournament_id=tournament_id,
+            configuration=serializer.validated_data,
+        )
+
+        return Response({"message": "Matches generated successfully."}, status=200)
+
+
 urlpatterns = [
     path("", TournamentListCreateView.as_view(), name="tournament-list-create"),
     path(
@@ -256,5 +295,10 @@ urlpatterns = [
         "<uuid:tournament_id>/format/",
         TournamentFormatDetailView.as_view(),
         name="tournament-format-detail",
+    ),
+    path(
+        "<uuid:tournament_id>/matches-suggestions/",
+        TournamentMatchesSuggestionsView.as_view(),
+        name="tournament-matches-suggestions",
     ),
 ]

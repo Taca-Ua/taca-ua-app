@@ -7,7 +7,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { normalizeText } from "../utils/utils";
 
 
-const MatchesListItemComponent = ( { match, onDeleted } : { match: MatchListItem; onDeleted: () => void } ) => {
+export const MatchesListItemComponent = ( { match, onDeleted } : { match: MatchListItem; onDeleted: () => void } ) => {
     const { notify } = useNotification();
     const { isAdminGeneral } = useAuth();
 
@@ -115,55 +115,6 @@ const MatchesListItemComponent = ( { match, onDeleted } : { match: MatchListItem
     );
 }
 
-const MatchesListJourneyComponent = ( {
-  matches,
-  journeyNumber,
-  initialExpanded,
-  onMatchDeleted,
-  expanded: externalExpanded,
-  onExpandedChange
-} : {
-  matches: MatchListItem[],
-  journeyNumber: string | number,
-  initialExpanded?: boolean
-  onMatchDeleted?: (matchId: string) => void
-  expanded?: boolean
-  onExpandedChange?: (expanded: boolean) => void
-} ) => {
-    const [expanded, setExpanded] = useState<boolean>( initialExpanded || false );
-    const isExpanded = externalExpanded !== undefined ? externalExpanded : expanded;
-
-    const handleToggle = () => {
-      const newState = !isExpanded;
-      if (externalExpanded === undefined) {
-        setExpanded(newState);
-      }
-      onExpandedChange?.(newState);
-    };
-
-    return (
-        <div>
-            <div
-                className="flex justify-between items-center cursor-pointer bg-gray-200 px-4 py-2 rounded-md"
-                onClick={() => handleToggle()}
-            >
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold text-gray-700">{journeyNumber}</h3>
-                <p className="text-sm text-gray-500">{matches.length} jogo{matches.length !== 1 ? 's' : ''}</p>
-              </div>
-                <span className="text-gray-500">{isExpanded ? 'Ocultar' : 'Mostrar'}</span>
-            </div>
-            {isExpanded && (
-                <div className="mt-3 space-y-3">
-                    {matches.map(match => (
-                        <MatchesListItemComponent key={match.id} match={match} onDeleted={() => onMatchDeleted && onMatchDeleted(match.id)} />
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-}
-
 const MatchesListComponent = ( {
     matchesState,
     tournamentId
@@ -261,14 +212,6 @@ const MatchesListComponent = ( {
           )}
         </div>
 
-        {/* Just for the compiler to let pass */}
-        {false && (
-          <MatchesListJourneyComponent
-            matches={filteredMatches}
-            journeyNumber="Jornada 1"
-            onMatchDeleted={(matchId) => setMatches((prev) => prev.filter((m) => m.id !== matchId))}
-          />
-        )}
       </div>
     );
 }

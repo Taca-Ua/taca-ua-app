@@ -390,7 +390,7 @@ class DocumentGenerationService:
         """Generate a PDF report for a match and a specific participant (team or athlete)
 
         Raises:
-            ValueError: If participant is not found in match or if no lineups are found for the participant
+            ValidationError: If participant is not found in match or if no lineups are found for the participant
         """
 
         buffer = BytesIO()

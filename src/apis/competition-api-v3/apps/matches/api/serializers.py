@@ -55,6 +55,8 @@ class MatchListSerializer(serializers.Serializer):
     status = serializers.CharField()
     participants = ParticipantsListSerializer(many=True)
 
+    format_specific_data = serializers.DictField(required=False, allow_null=True)
+
 
 class MatchDetailSerializer(MatchListSerializer):
     """Serializer for detailed match view"""

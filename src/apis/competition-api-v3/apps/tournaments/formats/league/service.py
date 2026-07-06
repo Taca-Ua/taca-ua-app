@@ -1,10 +1,81 @@
 import uuid
-from typing import Literal
+from dataclasses import dataclass
+from typing import Dict, List, Literal
 
+from apps.matches.models import Match
+from apps.matches.service import create_match
 from django.db.models import F
+from rest_framework.exceptions import ValidationError
 
-from ..base import BaseFormat, Match
-from .models import DrawRule, LeagueSettings, LeagueStanding
+from ..base import BaseFormat, MatchSuggestion
+from .models import DrawRule, LeagueMatch, LeagueSettings, LeagueStanding
+from .utils import RoundRobinScheduler
+
+
+@dataclass
+class LeagueMatchGenerationConfiguration:
+    """Configuration for generating matches in a league format."""
+
+    players_per_match: int = (
+        2  # Default to 2 players per match for a standard league format
+    )
+    number_of_faceoffs: int = 1  # Default to a single round-robin format
+
+    def __post_init__(self):
+        if isinstance(self.players_per_match, str) and self.players_per_match.isdigit():
+            self.players_per_match = int(self.players_per_match)
+        if (
+            isinstance(self.number_of_faceoffs, str)
+            and self.number_of_faceoffs.isdigit()
+        ):
+            self.number_of_faceoffs = int(self.number_of_faceoffs)
+
+        if self.players_per_match < 2:
+            raise ValidationError("Players per match must be at least 2.")
+        if self.number_of_faceoffs < 1:
+            raise ValidationError("Number of faceoffs must be at least 1.")
+
+
+@dataclass
+class LeagueSuggestedMatch(MatchSuggestion):
+    format_specific_data: dict = None
+
+    @property
+    def round_number(self) -> int:
+        if (
+            self.format_specific_data
+            and "round_number" in self.format_specific_data
+            and isinstance(self.format_specific_data["round_number"], int)
+        ):
+            return self.format_specific_data["round_number"]
+        return 0  # Default to round 0 if not specified
+
+    def __post_init__(self):
+        if len(self.competitors_ids) < 2:
+            raise ValidationError("At least two competitors are required for a match.")
+
+        if len(set(self.competitors_ids)) != len(self.competitors_ids):
+            raise ValidationError(
+                "Must be distinct competitors in a match. Duplicate competitor IDs found."
+            )
+
+        if "round_number" not in self.format_specific_data:
+            raise ValidationError(
+                "Round number must be specified in format_specific_data."
+            )
+
+        if not isinstance(self.format_specific_data["round_number"], int):
+            if (
+                isinstance(self.format_specific_data["round_number"], str)
+                and self.format_specific_data["round_number"].isdigit()
+            ):
+                self.format_specific_data["round_number"] = int(
+                    self.format_specific_data["round_number"]
+                )
+            else:
+                raise ValidationError(
+                    "Round number must be an integer in format_specific_data."
+                )
 
 
 class LeagueFormat(BaseFormat):
@@ -86,11 +157,41 @@ class LeagueFormat(BaseFormat):
                     if comp_id not in winners:
                         participant_results_map[comp_id] = "loser"
         else:
-            raise ValueError(
+            raise ValidationError(
                 "All participants must have either scores or positions to determine the match outcome."
             )
 
         return participant_results_map
+
+    def _check_matches_configuration(
+        self, matches_configuration: list[MatchSuggestion]
+    ):
+        # check that a competitor does not appear in more than one match in the same round
+        round_competitor_map: Dict[int, set[uuid.UUID]] = {}
+        for match_data in matches_configuration:
+            round_number = match_data.format_specific_data.get("round_number", 1)
+            if round_number not in round_competitor_map:
+                round_competitor_map[round_number] = set()
+
+            for competitor_id in match_data.competitors_ids:
+                if competitor_id in round_competitor_map[round_number]:
+                    raise ValidationError(
+                        f"Competitor {competitor_id} appears in more than one match in round {round_number}."
+                    )
+                round_competitor_map[round_number].add(competitor_id)
+
+        # check that all matchups have the same number of faceoffs
+        matchups: Dict[tuple[uuid.UUID, ...], int] = {}
+        for match_data in matches_configuration:
+            matchup_key = tuple(sorted(match_data.competitors_ids))
+            if matchup_key not in matchups:
+                matchups[matchup_key] = 0
+            matchups[matchup_key] += 1
+
+        if len(set(matchups.values())) > 1:
+            raise ValidationError(
+                "All matchups must have the same number of faceoffs. Found varying counts."
+            )
 
     # public methods
     def create(self, format_data: dict):
@@ -107,7 +208,7 @@ class LeagueFormat(BaseFormat):
     def update(self, format_data: dict):
         settings = LeagueSettings.objects.get(tournament=self.tournament)
         if not settings:
-            raise ValueError("League settings not found for this tournament.")
+            raise ValidationError("League settings not found for this tournament.")
 
         settings.win_points = format_data.get("win_points", settings.win_points)
         settings.draw_points = format_data.get("draw_points", settings.draw_points)
@@ -120,7 +221,7 @@ class LeagueFormat(BaseFormat):
         ):
             settings.draw_rule = format_data.get("draw_rule", settings.draw_rule)
         else:
-            raise ValueError(
+            raise ValidationError(
                 f"Invalid draw rule: {format_data['draw_rule']}. Must be one of {DrawRule.values} or None."
             )
 
@@ -132,7 +233,7 @@ class LeagueFormat(BaseFormat):
     def get_details(self) -> dict:
         settings = LeagueSettings.objects.get(tournament=self.tournament)
         if not settings:
-            raise ValueError("League settings not found for this tournament.")
+            raise ValidationError("League settings not found for this tournament.")
 
         # get current standings
         standings = LeagueStanding.objects.filter(
@@ -224,7 +325,7 @@ class LeagueFormat(BaseFormat):
             competitor = participant.competitor
             result = results_map.get(competitor.id)
             if result is None:
-                raise ValueError(
+                raise ValidationError(
                     f"No result calculated for competitor {competitor.id} in match {match.id}"
                 )
 
@@ -271,7 +372,7 @@ class LeagueFormat(BaseFormat):
             competitor = participant.competitor
             result = results_map.get(competitor.id)
             if result is None:
-                raise ValueError(
+                raise ValidationError(
                     f"No result calculated for competitor {competitor.id} in match {match.id}"
                 )
 
@@ -299,3 +400,46 @@ class LeagueFormat(BaseFormat):
             standing.save()
 
         return self.get_details()
+
+    def suggest_matches(self, configuration: dict) -> List[LeagueSuggestedMatch]:
+        config = LeagueMatchGenerationConfiguration(**configuration)
+
+        scheduler = RoundRobinScheduler(
+            participants=list(self.tournament.competitors.values_list("id", flat=True)),
+            match_size=config.players_per_match,
+            num_faceoffs=config.number_of_faceoffs,
+        )
+        rounds = scheduler.generate(show_bye_matches=False)
+
+        sugestion: List[LeagueSuggestedMatch] = []
+        for idx, r in enumerate(rounds):
+            for match in r:
+                sugestion.append(
+                    LeagueSuggestedMatch(
+                        competitors_ids=list(match),
+                        format_specific_data={"round_number": idx + 1},
+                    )
+                )
+
+        # Check the generated matches configuration for validity (should go off, but just in case)
+        self._check_matches_configuration(sugestion)
+        return sugestion
+
+    def generate_matches(self, matches_configuration: list[MatchSuggestion]) -> None:
+        sugested_matches = [
+            LeagueSuggestedMatch(**match_data.__dict__)
+            for match_data in matches_configuration
+        ]
+
+        # validate the matches configuration before creating matches
+        self._check_matches_configuration(sugested_matches)
+
+        for suggested_match in sugested_matches:
+            match = create_match(
+                tournament_id=self.tournament.id,
+                participants=suggested_match.competitors_ids,
+            )
+
+            LeagueMatch.objects.create(
+                match=match, round_number=suggested_match.round_number
+            )

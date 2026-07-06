@@ -94,6 +94,15 @@ class TournamentDetailSerializer(TournamentListSerializer):
         return representation
 
 
+class TournamentMatcheSugestionSerializer(serializers.Serializer):
+    """Serializer for tournament matches sugestion"""
+
+    competitors_ids = serializers.ListField(
+        child=serializers.UUIDField(), required=True
+    )
+    format_specific_data = serializers.DictField(required=False, default={})
+
+
 # Request serializers
 class TournamentCreateSerializer(serializers.Serializer):
     """Serializer for creating a tournament"""
