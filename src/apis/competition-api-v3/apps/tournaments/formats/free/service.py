@@ -1,3 +1,5 @@
+from rest_framework.exceptions import ValidationError
+
 from ..base import BaseFormat
 
 
@@ -18,3 +20,9 @@ class FreeFormat(BaseFormat):
     def record_result(self, match) -> dict:
         # Free format does not have specific result recording logic, so we just return an empty details
         return {}
+
+    def suggest_matches(self, *args, **kwargs):
+        raise ValidationError("Free format does not support match suggestions.")
+
+    def generate_matches(self, *args, **kwargs):
+        raise ValidationError("Free format does not support match generation.")

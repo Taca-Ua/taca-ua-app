@@ -73,16 +73,6 @@ class Tournament(models.Model):
             for result in current_results
         ]
 
-    @property
-    def available_rounds(self):
-        journeis_chars = self.matches.values("journey").distinct()
-        journies = [
-            int(journey["journey"])
-            for journey in journeis_chars
-            if journey["journey"] is not None and journey["journey"].isdigit()
-        ]
-        return sorted(journies) if journies else []
-
     if TYPE_CHECKING:
         # basic fields
         modality_id: uuid.UUID

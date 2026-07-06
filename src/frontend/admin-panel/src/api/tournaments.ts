@@ -58,6 +58,11 @@ export interface TournamentStandingsEntry {
   format_meta: Record<string, any>;
 }
 
+export interface TournamentMatchSuggestion {
+  competitors_ids: string[];
+  format_specific_data: Record<string, any>;
+}
+
 // Input interfaces
 export interface TournamentListParams {
   status?: tournamentStatusChoices;
@@ -140,10 +145,6 @@ export const tournamentsApi = {
     return apiClient.put<TournamentDetail>(`/tournaments/${id}/remove-competitors/`, {competitor_ids});
   },
 
-  async getRounds(id: string): Promise<number[]> {
-    return apiClient.get<number[]>(`/tournaments/${id}/rounds/`);
-  },
-
   async getStandings(id: string): Promise<TournamentStandingsEntry[]> {
     return apiClient.get<TournamentStandingsEntry[]>(`/tournaments/${id}/standings/`);
   },
@@ -154,5 +155,13 @@ export const tournamentsApi = {
 
   async updateFormatMeta(id: string, format_meta: Record<string, any>): Promise<Record<string, any>> {
     return apiClient.put<Record<string, any>>(`/tournaments/${id}/format/`, format_meta);
-  }
+  },
+
+  async getMatchesSuggestions(id: string, configuration: Record<string, any>): Promise<TournamentMatchSuggestion[]> {
+    return apiClient.get<TournamentMatchSuggestion[]>(`/tournaments/${id}/matches-suggestions/`, configuration);
+  },
+
+  async generateMatches(id: string, configuration: Record<string, any>): Promise<Record<string, any>> {
+    return apiClient.post<Record<string, any>>(`/tournaments/${id}/matches-suggestions/`, configuration);
+  },
 };

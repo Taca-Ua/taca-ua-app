@@ -29,7 +29,6 @@ export interface MatchListItem {
   location?: string;
   start_time: string;
   status: string;
-  journey?: number;
   participants: {
     id: string;
     name: string;
@@ -38,6 +37,10 @@ export interface MatchListItem {
     logo_url?: string;
     can_edit: boolean;
   }[];
+
+  format_specific_data?: {
+    [key: string]: any;
+  };
 };
 
 export interface MatchDetail extends MatchListItem {
@@ -74,8 +77,6 @@ export interface MatchCreate {
   location?: string;
   start_time?: string;
   participants: string[];
-  journey?: number;
-  new_journey?: boolean;
 }
 
 export interface MatchUpdate {

@@ -3,6 +3,7 @@ from uuid import UUID
 
 from apps.seasons.selectors import get_current_season
 from django.db import transaction
+from rest_framework.exceptions import ValidationError
 
 from .models import ModalityType
 
@@ -33,7 +34,7 @@ def create_modality_type(
     if season_id is None:
         current_season = get_current_season()
         if current_season is None:
-            raise ValueError(
+            raise ValidationError(
                 "No current season found. A season must be active to create a modality type."
             )
         season_id = current_season.id
@@ -81,7 +82,9 @@ def update_modality_type(
     """
     modality_type = ModalityType.objects.get(id=modality_type_id)
     if not modality_type:
-        raise ValueError(f"Modality type with ID {modality_type_id} does not exist.")
+        raise ValidationError(
+            f"Modality type with ID {modality_type_id} does not exist."
+        )
 
     if name is not None:
         modality_type.name = name

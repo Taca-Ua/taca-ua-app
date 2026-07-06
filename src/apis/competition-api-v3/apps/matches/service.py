@@ -1,34 +1,35 @@
 import datetime
 from uuid import UUID
 
-from apps.tournaments.service import tournament_format_match_result
 from django.db import transaction
+from rest_framework.exceptions import ValidationError
 
-from .models import Match, MatchParticipant, MatchStatus
+from .models import Match, MatchParticipant
 
 
 @transaction.atomic
 def create_match(
     tournament_id: UUID,
-    participants: list[dict],
+    participants: list[UUID],
     location: str = None,
     start_time: datetime.datetime = None,
-    journey=None,
-    new_journey=False,
 ) -> Match:
+    from apps.tournaments.models import TournamentStatus
+    from apps.tournaments.selectors import get_tournament_by_id
+
+    tournament = get_tournament_by_id(tournament_id)
+
+    if tournament.status != TournamentStatus.ACTIVE:
+        raise ValidationError(
+            "Cannot create match for a tournament that is not active."
+        )
 
     # Create the match
     match = Match.objects.create(
         tournament_id=tournament_id,
         location=location,
         scheduled_time=start_time,
-        journey=journey,
     )
-
-    if new_journey:
-        journies = match.tournament.available_rounds
-        match.journey = max(journies) + 1 if journies else 1
-        match.save()
 
     # Create match participants
     for competitor_id in participants:
@@ -72,6 +73,8 @@ def delete_match(match_id: UUID) -> None:
 
 @transaction.atomic
 def publish_match_results(match_id: UUID, participant_results: list[dict]) -> Match:
+    from apps.tournaments.service import tournament_format_match_result
+
     match = Match.objects.get(id=match_id)
 
     participant_results_dict = {
@@ -86,7 +89,7 @@ def publish_match_results(match_id: UUID, participant_results: list[dict]) -> Ma
             # participant.winner =
         participant.save()
 
-    match.status = MatchStatus.FINISHED
+    match.status = Match.Status.FINISHED
     match.save()
 
     # call tournament engine to handle match result

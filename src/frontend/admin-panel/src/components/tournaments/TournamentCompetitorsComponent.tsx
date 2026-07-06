@@ -8,6 +8,7 @@ import { useModal } from "../../contexts/ModalContext";
 import { useAuth } from "../../hooks/useAuth";
 import { useNotification } from "../../contexts/NotificationProvider";
 import { Link } from "react-router-dom";
+import type { ApiError } from "../../api/client";
 
 const TournamentCompetitorsComponent = ({
   tournamentState,
@@ -76,9 +77,9 @@ const TournamentCompetitorsComponent = ({
         await tournamentsApi.addCompetitors(tournament.id, addedCompetitors.map((c) => c.id))
         .then((updated) => {
           updatedTournament = updated;
-        }).catch((error) => {
+        }).catch((error: ApiError) => {
           console.error("Error adding competitors:", error);
-          notify("Ocorreu um erro ao adicionar competidores. Tente novamente.", "error");
+          notify(error.body as string, "error");
         });
       }
 
@@ -87,9 +88,9 @@ const TournamentCompetitorsComponent = ({
         await tournamentsApi.removeCompetitors(tournament.id, removedCompetitors.map((c) => c.id))
         .then((updated) => {
           updatedTournament = updated;
-        }).catch((error) => {
+        }).catch((error: ApiError) => {
           console.error("Error removing competitors:", error);
-          notify("Ocorreu um erro ao remover competidores. Tente novamente.", "error");
+          notify(error.body as string, "error");
         });
       }
 

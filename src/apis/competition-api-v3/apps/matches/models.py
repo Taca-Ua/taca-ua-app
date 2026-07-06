@@ -7,14 +7,8 @@ from apps.tournaments.models import Tournament, TournamentCompetitor
 from django.db import models
 
 if TYPE_CHECKING:
+    from apps.tournaments.formats.league.models import LeagueMatch
     from django.db.models.manager import RelatedManager
-
-
-class MatchStatus(models.TextChoices):
-    SCHEDULED = "scheduled", "Scheduled"
-    IN_PROGRESS = "in_progress", "In Progress"
-    FINISHED = "finished", "Finished"
-    CANCELED = "canceled", "Canceled"
 
 
 class Match(models.Model):
@@ -31,17 +25,24 @@ class Match(models.Model):
     location = models.CharField(max_length=255, blank=True, null=True)
     scheduled_time = models.DateTimeField(blank=True, null=True)
     status = models.CharField(
-        max_length=20, choices=MatchStatus.choices, default=MatchStatus.SCHEDULED
+        max_length=20, choices=Status.choices, default=Status.SCHEDULED
     )
-    journey = models.CharField(max_length=255, blank=True, null=True)
 
     tournament = models.ForeignKey(
         Tournament, on_delete=models.CASCADE, related_name="matches"
     )
 
+    @property
+    def format_specific_data(self) -> dict:
+        """Returns format-specific data for the participant, if any."""
+        if hasattr(self, "league_match") and self.league_match is not None:
+            return self.league_match.to_dict()
+        return {}
+
     if TYPE_CHECKING:
         participants: RelatedManager["MatchParticipant"]
         comments: RelatedManager["MatchComment"]
+        league_match: RelatedManager["LeagueMatch"]
 
 
 class MatchParticipant(models.Model):

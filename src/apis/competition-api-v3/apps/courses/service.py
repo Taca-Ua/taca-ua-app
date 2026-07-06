@@ -4,6 +4,7 @@ from apps.nucleus.models import Nucleus
 from apps.seasons.models import Season
 from apps.seasons.selectors import get_current_season
 from django.db import transaction
+from rest_framework.exceptions import ValidationError
 
 from .models import Course
 
@@ -13,13 +14,13 @@ def create_course(name, abbreviation, nucleo_id) -> Course:
 
     season = get_current_season()
     if not season:
-        raise ValueError(
+        raise ValidationError(
             "No active season found. Cannot create course without an active season."
         )
 
     nucleus = Nucleus.objects.get(id=nucleo_id)
     if not nucleus:
-        raise ValueError(
+        raise ValidationError(
             f"Nucleus with id {nucleo_id} not found. Cannot create course without a valid nucleus."
         )
 
@@ -38,7 +39,7 @@ def create_course(name, abbreviation, nucleo_id) -> Course:
 def update_course(course_id, name=None, abbreviation=None, nucleo_id=None) -> Course:
     course = Course.objects.get(id=course_id)
     if not course:
-        raise ValueError(
+        raise ValidationError(
             f"Course with id {course_id} not found. Cannot update non-existent course."
         )
 
@@ -54,7 +55,7 @@ def update_course(course_id, name=None, abbreviation=None, nucleo_id=None) -> Co
         nucleus = Nucleus.objects.get(id=nucleo_id)
 
         if not nucleus:
-            raise ValueError(
+            raise ValidationError(
                 f"Nucleus with id {nucleo_id} not found. Cannot update course with invalid nucleus."
             )
 
@@ -69,7 +70,7 @@ def update_course(course_id, name=None, abbreviation=None, nucleo_id=None) -> Co
 def delete_course(course_id) -> None:
     course = Course.objects.get(id=course_id)
     if not course:
-        raise ValueError(
+        raise ValidationError(
             f"Course with id {course_id} not found. Cannot delete non-existent course."
         )
 
@@ -80,13 +81,13 @@ def delete_course(course_id) -> None:
 def add_course_to_season(course_id: UUID, season_id: int) -> Course:
     season = Season.objects.get(id=season_id)
     if not season:
-        raise ValueError(
+        raise ValidationError(
             f"Season with id {season_id} not found. Cannot add course to non-existent season."
         )
 
     course = Course.objects.get(id=course_id)
     if not course:
-        raise ValueError(
+        raise ValidationError(
             f"Course with id {course_id} not found. Cannot add non-existent course to season."
         )
 
@@ -100,13 +101,13 @@ def add_course_to_season(course_id: UUID, season_id: int) -> Course:
 def remove_course_from_season(course_id, season_id) -> Course:
     season = Season.objects.get(id=season_id)
     if not season:
-        raise ValueError(
+        raise ValidationError(
             f"Season with id {season_id} not found. Cannot remove course from non-existent season."
         )
 
     course = Course.objects.get(id=course_id)
     if not course:
-        raise ValueError(
+        raise ValidationError(
             f"Course with id {course_id} not found. Cannot remove non-existent course from season."
         )
 

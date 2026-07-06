@@ -3,7 +3,7 @@ from uuid import UUID
 
 from apps.athletes.selectors import get_athletes_table
 from apps.courses.selectors import get_courses_table
-from apps.matches.models import MatchStatus
+from apps.matches.models import Match
 from apps.matches.selectors import get_matches_table
 from apps.staff.selectors import get_staff_table
 from apps.teams.selectors import get_teams_table
@@ -75,9 +75,9 @@ def get_season_summary_by_id(season_id: int, admin_id: UUID) -> SeasonSummaryDTO
     matches_summary = get_matches_table(
         season_id=season_id, admin_id=admin_id
     ).aggregate(
-        finished=Count("id", filter=Q(status=MatchStatus.FINISHED), distinct=True),
-        ongoing=Count("id", filter=Q(status=MatchStatus.IN_PROGRESS), distinct=True),
-        scheduled=Count("id", filter=Q(status=MatchStatus.SCHEDULED), distinct=True),
+        finished=Count("id", filter=Q(status=Match.Status.FINISHED), distinct=True),
+        ongoing=Count("id", filter=Q(status=Match.Status.IN_PROGRESS), distinct=True),
+        scheduled=Count("id", filter=Q(status=Match.Status.SCHEDULED), distinct=True),
     )
 
     members_summary = {

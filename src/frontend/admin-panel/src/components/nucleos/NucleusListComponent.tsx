@@ -9,7 +9,7 @@ const NucleusEntry = ({ nucleus }: { nucleus: NucleoListItem }) => {
         to={`/nucleos/${nucleus.id}`}
         className="cursor-pointer bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 p-6 flex flex-col gap-4"
       >
-        <div className="flex items-center justify-evenly text-center gap-3">
+        <div className="flex items-center justify-center text-center gap-10">
           {nucleus.logo_url ? (
             <LazyImage
               src={nucleus.logo_url}

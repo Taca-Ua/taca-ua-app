@@ -1,4 +1,5 @@
 from django.db import transaction
+from rest_framework.exceptions import ValidationError
 from shared.file_storage.minio_service import MinioService
 
 from .models import Nucleus
@@ -27,7 +28,7 @@ def update_nucleo(
 
     nucleo = Nucleus.objects.get(id=nucleo_id)
     if nucleo is None:
-        raise ValueError("Nucleo not found")
+        raise ValidationError("Nucleo not found")
 
     if name:
         nucleo.name = name
@@ -55,7 +56,7 @@ def delete_nucleo(nucleo_id: str) -> None:
 
     nucleo = Nucleus.objects.get(id=nucleo_id)
     if nucleo is None:
-        raise ValueError("Nucleo not found")
+        raise ValidationError("Nucleo not found")
 
     logo_url = nucleo.logo_url
     nucleo.delete()

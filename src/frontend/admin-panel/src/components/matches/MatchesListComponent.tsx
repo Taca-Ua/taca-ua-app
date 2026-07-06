@@ -7,7 +7,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { normalizeText } from "../utils/utils";
 
 
-const MatchesListItemComponent = ( { match, onDeleted } : { match: MatchListItem; onDeleted: () => void } ) => {
+export const MatchesListItemComponent = ( { match, onDeleted } : { match: MatchListItem; onDeleted: () => void } ) => {
     const { notify } = useNotification();
     const { isAdminGeneral } = useAuth();
 
@@ -115,55 +115,6 @@ const MatchesListItemComponent = ( { match, onDeleted } : { match: MatchListItem
     );
 }
 
-const MatchesListJourneyComponent = ( {
-  matches,
-  journeyNumber,
-  initialExpanded,
-  onMatchDeleted,
-  expanded: externalExpanded,
-  onExpandedChange
-} : {
-  matches: MatchListItem[],
-  journeyNumber: string | number,
-  initialExpanded?: boolean
-  onMatchDeleted?: (matchId: string) => void
-  expanded?: boolean
-  onExpandedChange?: (expanded: boolean) => void
-} ) => {
-    const [expanded, setExpanded] = useState<boolean>( initialExpanded || false );
-    const isExpanded = externalExpanded !== undefined ? externalExpanded : expanded;
-
-    const handleToggle = () => {
-      const newState = !isExpanded;
-      if (externalExpanded === undefined) {
-        setExpanded(newState);
-      }
-      onExpandedChange?.(newState);
-    };
-
-    return (
-        <div>
-            <div
-                className="flex justify-between items-center cursor-pointer bg-gray-200 px-4 py-2 rounded-md"
-                onClick={() => handleToggle()}
-            >
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold text-gray-700">{journeyNumber}</h3>
-                <p className="text-sm text-gray-500">{matches.length} jogo{matches.length !== 1 ? 's' : ''}</p>
-              </div>
-                <span className="text-gray-500">{isExpanded ? 'Ocultar' : 'Mostrar'}</span>
-            </div>
-            {isExpanded && (
-                <div className="mt-3 space-y-3">
-                    {matches.map(match => (
-                        <MatchesListItemComponent key={match.id} match={match} onDeleted={() => onMatchDeleted && onMatchDeleted(match.id)} />
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-}
-
 const MatchesListComponent = ( {
     matchesState,
     tournamentId
@@ -173,7 +124,6 @@ const MatchesListComponent = ( {
 } ) => {
     const [matches, setMatches] = matchesState ? matchesState : useState<MatchListItem[]>([]);
     const [loading, setLoading] = useState<boolean>( true );
-    const [expandedJourneys, setExpandedJourneys] = useState<Set<string>>(new Set());
 
     const [matchStatusFilter, setMatchStatusFilter] = useState<string>( 'all' );
     const [query, setQuery] = useState<string>( '' );
@@ -206,33 +156,6 @@ const MatchesListComponent = ( {
         return participantNames.includes( searchQuery ) || location.includes( searchQuery );
     } );
 
-    const matchesByJourney: { [key: string]: MatchListItem[] } = {};
-    filteredMatches.forEach( match => {
-        const journeyKey = match.journey !== undefined && match.journey !== null ? `Jornada ${match.journey}` : 'Sem Jornada';
-        if ( !matchesByJourney[ journeyKey ] ) {
-            matchesByJourney[ journeyKey ] = [];
-        }
-        matchesByJourney[ journeyKey ].push( match );
-    } );
-
-    const handleExpandAll = () => {
-        const allJourneys = Object.keys(matchesByJourney);
-        setExpandedJourneys(new Set(allJourneys));
-    };
-
-    const handleCollapseAll = () => {
-        setExpandedJourneys(new Set());
-    };
-
-    const toggleJourneyExpanded = (journeyKey: string, expanded: boolean) => {
-        const newExpanded = new Set(expandedJourneys);
-        if (expanded) {
-            newExpanded.add(journeyKey);
-        } else {
-            newExpanded.delete(journeyKey);
-        }
-        setExpandedJourneys(newExpanded);
-    };
 
     if ( loading ) {
         return <div>Loading matches...</div>;
@@ -245,18 +168,6 @@ const MatchesListComponent = ( {
             Jogos ({filteredMatches.length})
           </h2>
           <div className="flex items-center gap-3">
-          <Button
-            onClick={handleExpandAll}
-            padding='px-4 py-2'
-          >
-            Expandir Todos
-          </Button>
-          <Button
-            onClick={handleCollapseAll}
-            padding='px-4 py-2'
-          >
-            Colapsar Todos
-          </Button>
           <div className="flex items-center gap-3">
             <select
               value={matchStatusFilter}
@@ -285,37 +196,22 @@ const MatchesListComponent = ( {
 
         <div className="space-y-3">
           {filteredMatches.length > 0 ? (
-            Object.entries(matchesByJourney)
-              .sort((a, b) => {
-                const aKey = a[0];
-                const bKey = b[0];
-
-                // "Sem Jornada" goes last
-                if (aKey === 'Sem Jornada') return 1;
-                if (bKey === 'Sem Jornada') return -1;
-
-                // Extract numbers from "Jornada X" and sort numerically
-                const aNum = parseInt(aKey.match(/\d+/)?.[0] || '0');
-                const bNum = parseInt(bKey.match(/\d+/)?.[0] || '0');
-
-                return aNum - bNum;
-              })
-              .map(([journey, matches]) => (
-              <MatchesListJourneyComponent
-                key={journey}
-                journeyNumber={journey}
-                matches={matches}
-                expanded={expandedJourneys.has(journey)}
-                onExpandedChange={(expanded) => toggleJourneyExpanded(journey, expanded)}
-                onMatchDeleted={(matchId) => setMatches((prev) => prev.filter((m) => m.id !== matchId))}
-              />
-            ))
+            <div className="flex flex-col gap-3">
+              {filteredMatches.map((match) => (
+                <MatchesListItemComponent
+                  key={match.id}
+                  match={match}
+                  onDeleted={() => setMatches((prev) => prev.filter((m) => m.id !== match.id))}
+                />
+              ))}
+            </div>
           ) : (
             <p className="text-gray-500 text-center py-8">
               Nenhum jogo encontrado.
             </p>
           )}
         </div>
+
       </div>
     );
 }
