@@ -42,9 +42,13 @@ class LeagueSuggestedMatch(MatchSuggestion):
 
     @property
     def round_number(self) -> int:
-        if self.format_specific_data and "round_number" in self.format_specific_data:
+        if (
+            self.format_specific_data
+            and "round_number" in self.format_specific_data
+            and isinstance(self.format_specific_data["round_number"], int)
+        ):
             return self.format_specific_data["round_number"]
-        return 1  # Default to round 1 if not specified
+        return 0  # Default to round 0 if not specified
 
     def __post_init__(self):
         if len(self.competitors_ids) < 2:
@@ -59,6 +63,19 @@ class LeagueSuggestedMatch(MatchSuggestion):
             raise ValidationError(
                 "Round number must be specified in format_specific_data."
             )
+
+        if not isinstance(self.format_specific_data["round_number"], int):
+            if (
+                isinstance(self.format_specific_data["round_number"], str)
+                and self.format_specific_data["round_number"].isdigit()
+            ):
+                self.format_specific_data["round_number"] = int(
+                    self.format_specific_data["round_number"]
+                )
+            else:
+                raise ValidationError(
+                    "Round number must be an integer in format_specific_data."
+                )
 
 
 class LeagueFormat(BaseFormat):
