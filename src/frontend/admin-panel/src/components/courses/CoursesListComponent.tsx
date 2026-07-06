@@ -52,11 +52,6 @@ const CoursesListComponent = ( {
   const [ nucleoFilter, setNucleoFilter ] = useState('')
 
   useEffect(() => {
-    // If courses are already loaded, do not fetch again
-    if (courses !== null && courses.length > 0) {
-      return;
-    }
-
     setLoading(true)
     coursesApi.getAll(loadedSeason?.id, nucleoId).then(resp => {
       setCourses(resp)
@@ -65,7 +60,7 @@ const CoursesListComponent = ( {
     }).finally(() => {
       setLoading(false)
     })
-  }, [])
+  }, [loadedSeason?.id, nucleoId])
 
   const filteredCourses =
     courses?.filter(
