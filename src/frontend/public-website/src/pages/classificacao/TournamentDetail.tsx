@@ -15,6 +15,17 @@ const StandingsTableEntry = ({ standing }: { standing: TournamentStanding }) => 
     differential: number;
   };
 
+  const participantLink = (p: Record<string, any>) => {
+    if (!p) return '#';
+
+    switch (p.competitor_type) {
+      case 'team':
+        return `/equipas/${p.competitor_entity_id}`;
+      default:
+        return '#';
+    }
+  }
+
   return (
     <tr className="hover:bg-gray-50">
       <td className="px-6 py-4">
@@ -24,11 +35,7 @@ const StandingsTableEntry = ({ standing }: { standing: TournamentStanding }) => 
       </td>
       <td className="px-6 py-4">
         <Link
-          to={
-            standing.competitor_type === 'team'
-              ? `/equipas/${standing.competitor_entity_id}`
-              : `/estudantes/${standing.competitor_entity_id}`
-          }
+          to={participantLink(standing)}
           className="text-teal-600 hover:text-teal-700 font-medium"
         >
           {standing.competitor_name}

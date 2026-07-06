@@ -40,11 +40,11 @@ function Footer() {
                   Núcleos
                 </Link>
               </li>
-              <li>
+              {/* <li>
                 <Link to="/estudantes" className="text-gray-300 hover:text-teal-400 transition-colors">
                   Estudantes
                 </Link>
-              </li>
+              </li> */}
               <li>
                 <Link to="/calendario" className="text-gray-300 hover:text-teal-400 transition-colors">
                   Calendário

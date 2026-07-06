@@ -4,6 +4,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useModal } from "../contexts/ModalContext";
 import { useSeason } from "../contexts/SeasonContext";
 import LazyImage from "./utils/LazyImage";
+import packageJson from "../../package.json";
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -242,6 +243,13 @@ export default function Sidebar() {
                 </button>
               </div>
             )}
+          </div>
+          <div className="border-t border-gray-200 py-2 flex-shrink-0">
+            <div className="flex items-center justify-center gap-2 px-3">
+              <span className="text-xs text-gray-500">
+                v{packageJson.version}
+              </span>
+            </div>
           </div>
         </div>
       </aside>
