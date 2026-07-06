@@ -49,8 +49,6 @@ const TeamsListComponent = ({
   const [filterCourse, setFilterCourse] = useState("");
 
   useEffect(() => {
-    if (teams !== null && teams.length > 0) return;
-
     setLoading(true);
     teamsApi.getAll({
       season_id: loadedSeason?.id,

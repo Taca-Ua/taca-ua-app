@@ -75,8 +75,6 @@ const TournamentListComponent = ({
 
 
   useEffect(() => {
-    if (tournaments !== null && tournaments.length > 0) return;
-
     setLoading(true);
     tournamentsApi.getAll({
       season_id: loadedSeason?.id,
