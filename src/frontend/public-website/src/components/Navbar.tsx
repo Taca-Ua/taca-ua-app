@@ -102,13 +102,13 @@ function Navbar() {
                     >
                       Equipas
                     </Link>
-                    <Link
+                    {/* <Link
                       to="/estudantes"
                       className="block px-4 py-2 text-gray-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
                       onClick={() => setIsParticipantesOpen(false)}
                     >
                       Estudantes
-                    </Link>
+                    </Link> */}
                   </div>
                 )}
               </div>
@@ -197,13 +197,13 @@ function Navbar() {
                   >
                     Equipas
                   </Link>
-                  <Link
+                  {/* <Link
                     to="/estudantes"
                     className="block pl-5 py-3 text-base text-gray-600 hover:text-teal-600 transition-colors rounded hover:bg-teal-50"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Estudantes
-                  </Link>
+                  </Link> */}
                 </div>
 
                 <Link

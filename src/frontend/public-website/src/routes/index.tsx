@@ -11,7 +11,6 @@ import Tournaments from '../pages/classificacao/Tournaments';
 import TournamentDetailPage from '../pages/classificacao/TournamentDetail';
 import GeneralRankingPage from '../pages/classificacao/GeneralRanking';
 import ModalityRankingPage from '../pages/classificacao/ModalityRanking';
-import Students from '../pages/Students';
 import Teams from '../pages/Teams';
 
 export const router = createBrowserRouter([
@@ -43,10 +42,11 @@ export const router = createBrowserRouter([
     path: '/ranking/modalidade',
     element: <ModalityRankingPage />
   },
-  {
-    path: '/estudantes',
-    element: <Students />
-  },
+  // Make page not accessible for now at request of the client
+  // {
+  //   path: '/estudantes',
+  //   element: <Students />
+  // },
   {
     path: '/equipas',
     element: <Teams />

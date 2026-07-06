@@ -77,10 +77,16 @@ function MatchDetailPage() {
     return match.participants.map((p) => p.participant_name || 'Participante').join(' vs ');
   };
 
-  const participantLink = (p: Record<string, any>) =>
-    p.participant_type === 'team'
-      ? `/equipas/${p.competitor_entity_id}`
-      : `/estudantes/${p.competitor_entity_id}`;
+  const participantLink = (p: Record<string, any>) => {
+    if (!p) return '#';
+
+    switch (p.participant_type) {
+      case 'team':
+        return `/equipas/${p.competitor_entity_id}`;
+      default:
+        return '#';
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
