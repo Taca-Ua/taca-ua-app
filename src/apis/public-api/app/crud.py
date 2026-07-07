@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from .cache import CACHE_TTL, CacheKeyGenerator, cached
 from .models import (
+    CourseDetailView,
     GeneralRankingView,
     HomePageConfigView,
     MatchDetailView,
@@ -728,3 +729,27 @@ def get_home_page_config(db: Session) -> Optional[dict]:
             "sponsors": config.sponsors,
         }
     return None
+
+
+# ==================== Course Detail View Operations ====================
+
+
+@cached(
+    cache_key="",
+    ttl=CACHE_TTL["course"],
+    key_builder=lambda db, course_id, skip, limit: f"course:list:{skip}:{limit}",
+)
+def get_courses(
+    db: Session,
+    skip: int = None,
+    limit: int = None,
+) -> Tuple[list[CourseDetailView], int]:
+    """Get list of all courses with pagination.
+
+    Returns:
+        List of course details ordered by name
+    """
+    query = db.query(CourseDetailView).order_by(CourseDetailView.name.asc())
+    total = query.count()
+
+    return query.offset(skip).limit(limit).all(), total

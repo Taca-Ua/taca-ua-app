@@ -39,6 +39,7 @@ CACHE_TTL = {
     "regulation": 7200,  # 2 hours
     "season": 7200,  # 2 hours
     "home_page_config": 3600,  # 1 hour
+    "course": 300,  # 5 minutes
 }
 
 # Redis client instance

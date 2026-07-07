@@ -208,3 +208,18 @@ class HomePageConfigView(Base):
     about_us = Column(String)
     hero_image_url = Column(String(255))
     sponsors = Column(JSON)  # List of sponsors with details
+
+
+class CourseDetailView(Base):
+    """Materialized view: Course details with aggregated statistics."""
+
+    __tablename__ = "projections_coursedetailview"
+
+    course_id = Column(UUID, primary_key=True)
+    name = Column(String(255))
+    abbreviation = Column(String(255))
+
+    nucleo_id = Column(UUID)
+    nucleo_name = Column(String(255))
+    nucleo_abbreviation = Column(String(255))
+    nucleo_logo_url = Column(String(255))
