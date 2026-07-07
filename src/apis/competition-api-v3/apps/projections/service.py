@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from apps.athletes.selectors import get_athlete_by_id
+from apps.courses.selectors import get_course_by_id
 from apps.matches.selectors import get_match_by_id
 from apps.modalities.selectors import get_modality_by_id
 from apps.nucleus.selectors import get_nucleus_by_id
@@ -14,6 +15,7 @@ from apps.tournaments.selectors import get_tournament_by_id, get_tournament_resu
 from django.db import transaction
 
 from .models import (
+    CourseDetailView,
     GeneralRankingView,
     HomePageConfigView,
     MatchDetailView,
@@ -437,6 +439,32 @@ def rebuild_home_page_config_projection():
             }
             for sponsor in sponsors
         ],
+    )
+
+    return projection
+
+
+@transaction.atomic(savepoint=False)
+def rebuild_course_projection(course_id: UUID):
+    from apps.courses.models import Course
+
+    # delete existing projection for the course before creating a new one
+    CourseDetailView.objects.filter(course_id=course_id).delete()
+
+    try:
+        course = get_course_by_id(course_id)
+    except Course.DoesNotExist:
+        return None
+
+    # create a new projection for the course
+    projection = CourseDetailView.objects.create(
+        course_id=course.id,
+        name=course.name,
+        abbreviation=course.abbreviation,
+        nucleo_id=course.nucleus.id,
+        nucleo_name=course.nucleus.name,
+        nucleo_abbreviation=course.nucleus.abbreviation,
+        nucleo_logo_url=course.nucleus.logo_url,
     )
 
     return projection

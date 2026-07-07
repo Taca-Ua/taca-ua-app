@@ -241,3 +241,21 @@ class HomePageConfigView(models.Model):
         indexes = [
             models.Index(fields=["_bucket"]),
         ]
+
+
+class CourseDetailView(models.Model):
+    """Materialized view: Course details with aggregated statistics."""
+
+    course_id = models.UUIDField(primary_key=True)
+    name = models.CharField(max_length=255)
+    abbreviation = models.CharField(max_length=255)
+
+    nucleo_id = models.UUIDField()
+    nucleo_name = models.CharField(max_length=255)
+    nucleo_abbreviation = models.CharField(max_length=255)
+    nucleo_logo_url = models.CharField(max_length=255)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["course_id"]),
+        ]
