@@ -81,6 +81,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_prometheus.middleware.PrometheusAfterMiddleware",
+    "shared.logging.middleware.RequestLoggingMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -249,6 +250,11 @@ LOGGING = {
         },
         "gunicorn.access": {
             "handlers": ["loki", "console_simple"],
+            "level": LOG_LEVEL,
+            "propagate": False,
+        },
+        "request_logger": {
+            "handlers": ["loki"],
             "level": LOG_LEVEL,
             "propagate": False,
         },
