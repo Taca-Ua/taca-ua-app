@@ -86,7 +86,7 @@ jobs:
       - name: Update running containers (zero-downtime deployment)
         run: |
           cd ${{ env.DEPLOY_PATH }}
-          docker compose up -d
+          docker compose up -d --build --remove-orphans
           echo "✅ Containers updated with zero downtime"
 
       - name: Wait for services to be healthy
@@ -105,13 +105,6 @@ jobs:
           echo ""
           echo "Recent logs:"
           docker compose logs --tail=20
-
-      - name: Hard restart reverse proxy
-        run: |
-          cd ${{ env.DEPLOY_PATH }}
-          docker compose down nginx
-          docker compose up -d nginx
-          echo "✅ Reverse proxy restarted"
 
       - name: Cleanup old images (optional)
         run: |

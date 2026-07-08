@@ -30,25 +30,31 @@ jobs:
           # Infrastructure
           - service: nginx-dev
             context: ./src/configs/nginx/dev
+            publish: false
 
           - service: nginx
             context: ./src/configs/nginx/prod
+            publish: false
 
           # APIs
           - service: competition-api-v3
             dockerfile: ./src/apis/competition-api-v3/Dockerfile
+            publish: true
 
           - service: public-api
             dockerfile: ./src/apis/public-api/Dockerfile
+            publish: true
 
           # Frontend
           - service: admin-panel
             context: src/frontend/admin-panel
             dockerfile: src/frontend/admin-panel/Dockerfile
+            publish: true
 
           - service: public-website
             context: src/frontend/public-website
             dockerfile: src/frontend/public-website/Dockerfile
+            publish: true
 
     steps:
       - name: Checkout code
@@ -72,9 +78,9 @@ jobs:
         with:
           context: ${{ matrix.context || '.' }}
           file: ${{ matrix.dockerfile }}
-          push: ${{ inputs.push && matrix.service != 'nginx-dev' }}
+          push: ${{ inputs.push && matrix.publish }}
           tags: |
             ${{ env.REGISTRY }}/${{ env.OWNER_LOWER }}/${{ matrix.service }}:latest
             ${{ env.REGISTRY }}/${{ env.OWNER_LOWER }}/${{ matrix.service }}:${{ github.sha }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER_LOWER }}/${{ matrix.service }}:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER_LOWER }}/${{ matrix.service }}:buildcache,mode=max
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
