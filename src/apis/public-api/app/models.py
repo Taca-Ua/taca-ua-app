@@ -6,7 +6,7 @@ These SQLAlchemy models should reflect the Django models defined in the projecti
 """
 
 from sqlalchemy import JSON, Boolean, Column, Date, DateTime, Integer, String
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -101,6 +101,13 @@ class MatchDetailView(Base):
 
     participant_count = Column(Integer)
     comment_count = Column(Integer)
+
+    nucleos_ids = Column(
+        ARRAY(UUID), default=list
+    )  # List of nucleo IDs involved in the match
+    courses_ids = Column(
+        ARRAY(UUID), default=list
+    )  # List of course IDs involved in the match
 
 
 class TournamentStandingsView(Base):

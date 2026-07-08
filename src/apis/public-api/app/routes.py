@@ -362,6 +362,8 @@ def list_matches(
     tournament_id: Optional[UUID] = Query(None, description="Filter by tournament ID"),
     status: Optional[str] = Query(None, description="Filter by match status"),
     date: Optional[str] = Query(None, description="Filter by scheduled date (YYYY-MM)"),
+    nucleo_id: Optional[UUID] = Query(None, description="Filter by nucleo ID"),
+    course_id: Optional[UUID] = Query(None, description="Filter by course ID"),
     db: Session = Depends(get_db),
 ):
     """
@@ -380,7 +382,22 @@ def list_matches(
         tournament_id=tournament_id,
         status=status,
         date=date,
+        nucleo_id=nucleo_id,
+        course_id=course_id,
     )
+
+    if nucleo_id and course_id:
+        logger.warning(
+            "invalid_filter_combination",
+            extra={
+                "nucleo_id": str(nucleo_id),
+                "course_id": str(course_id),
+            },
+        )
+        raise HTTPException(
+            status_code=400,
+            detail="Filtering by both nucleo and course is not allowed. Please choose one.",
+        )
 
     logger.info(
         "matches_listed",
@@ -392,6 +409,8 @@ def list_matches(
                 "tournament_id": str(tournament_id) if tournament_id else None,
                 "status": status,
                 "date": date,
+                "nucleo_id": str(nucleo_id) if nucleo_id else None,
+                "course_id": str(course_id) if course_id else None,
             },
         },
     )

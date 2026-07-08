@@ -357,6 +357,8 @@ def get_matches(
     tournament_id: Optional[UUID] = None,
     status: Optional[str] = None,
     date: Optional[str] = None,
+    course_id: Optional[UUID] = None,
+    nucleo_id: Optional[UUID] = None,
 ) -> tuple[list[MatchDetailView], int]:
     """
     Get list of matches with pagination and optional filters.
@@ -368,6 +370,8 @@ def get_matches(
         tournament_id: Filter by tournament ID
         status: Filter by match status
         date: Filter by scheduled date (YYYY-MM)
+        course_id: Filter by course ID
+        nucleo_id: Filter by nucleo ID
     Returns:
         Tuple of (list of matches, total count)
     """
@@ -391,6 +395,10 @@ def get_matches(
         except ValueError:
             # Invalid date format, ignore the filter
             pass
+    if course_id:
+        query = query.filter(MatchDetailView.courses_ids.any(str(course_id)))
+    if nucleo_id:
+        query = query.filter(MatchDetailView.nucleos_ids.any(str(nucleo_id)))
 
     # Get total count
     total = query.count()
