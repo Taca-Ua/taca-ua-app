@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from .cache import CACHE_TTL, CacheKeyGenerator, cached
 from .models import (
+    CourseDetailView,
     GeneralRankingView,
     HomePageConfigView,
     MatchDetailView,
@@ -356,6 +357,8 @@ def get_matches(
     tournament_id: Optional[UUID] = None,
     status: Optional[str] = None,
     date: Optional[str] = None,
+    course_id: Optional[UUID] = None,
+    nucleo_id: Optional[UUID] = None,
 ) -> tuple[list[MatchDetailView], int]:
     """
     Get list of matches with pagination and optional filters.
@@ -367,6 +370,8 @@ def get_matches(
         tournament_id: Filter by tournament ID
         status: Filter by match status
         date: Filter by scheduled date (YYYY-MM)
+        course_id: Filter by course ID
+        nucleo_id: Filter by nucleo ID
     Returns:
         Tuple of (list of matches, total count)
     """
@@ -390,6 +395,10 @@ def get_matches(
         except ValueError:
             # Invalid date format, ignore the filter
             pass
+    if course_id:
+        query = query.filter(MatchDetailView.courses_ids.any(str(course_id)))
+    if nucleo_id:
+        query = query.filter(MatchDetailView.nucleos_ids.any(str(nucleo_id)))
 
     # Get total count
     total = query.count()
@@ -728,3 +737,27 @@ def get_home_page_config(db: Session) -> Optional[dict]:
             "sponsors": config.sponsors,
         }
     return None
+
+
+# ==================== Course Detail View Operations ====================
+
+
+@cached(
+    cache_key="",
+    ttl=CACHE_TTL["course"],
+    key_builder=lambda db, course_id, skip, limit: f"course:list:{skip}:{limit}",
+)
+def get_courses(
+    db: Session,
+    skip: int = None,
+    limit: int = None,
+) -> Tuple[list[CourseDetailView], int]:
+    """Get list of all courses with pagination.
+
+    Returns:
+        List of course details ordered by name
+    """
+    query = db.query(CourseDetailView).order_by(CourseDetailView.name.asc())
+    total = query.count()
+
+    return query.offset(skip).limit(limit).all(), total

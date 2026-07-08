@@ -13,6 +13,7 @@ class ProjectionUpdateRequestTypes(models.TextChoices):
     SEASON = "season", "Season"
     REGULATION = "regulation", "Regulation"
     HOME_PAGE_CONFIG = "home_page_config", "Home Page Config"
+    COURSE = "course", "Course"
 
 
 class ProjectionUpdateRequest(models.Model):

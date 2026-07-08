@@ -362,6 +362,8 @@ def list_matches(
     tournament_id: Optional[UUID] = Query(None, description="Filter by tournament ID"),
     status: Optional[str] = Query(None, description="Filter by match status"),
     date: Optional[str] = Query(None, description="Filter by scheduled date (YYYY-MM)"),
+    nucleo_id: Optional[UUID] = Query(None, description="Filter by nucleo ID"),
+    course_id: Optional[UUID] = Query(None, description="Filter by course ID"),
     db: Session = Depends(get_db),
 ):
     """
@@ -380,7 +382,22 @@ def list_matches(
         tournament_id=tournament_id,
         status=status,
         date=date,
+        nucleo_id=nucleo_id,
+        course_id=course_id,
     )
+
+    if nucleo_id and course_id:
+        logger.warning(
+            "invalid_filter_combination",
+            extra={
+                "nucleo_id": str(nucleo_id),
+                "course_id": str(course_id),
+            },
+        )
+        raise HTTPException(
+            status_code=400,
+            detail="Filtering by both nucleo and course is not allowed. Please choose one.",
+        )
 
     logger.info(
         "matches_listed",
@@ -392,6 +409,8 @@ def list_matches(
                 "tournament_id": str(tournament_id) if tournament_id else None,
                 "status": status,
                 "date": date,
+                "nucleo_id": str(nucleo_id) if nucleo_id else None,
+                "course_id": str(course_id) if course_id else None,
             },
         },
     )
@@ -737,3 +756,76 @@ def get_home_page_config(
 
     logger.info("home_page_config_retrieved")
     return home_page_config
+
+
+# ==================== Course Endpoints ====================
+
+
+@router.get(
+    "/courses",
+    response_model=schemas.CourseDetailList,
+    summary="List all courses",
+    description="Get a paginated list of courses with optional filters",
+)
+def list_courses(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(50, ge=1, le=100, description="Items per page"),
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve a list of courses with pagination and optional filters.
+
+    - **page**: Page number (starts at 1)
+    - **page_size**: Number of items per page (max 100)
+    """
+    skip = (page - 1) * page_size
+    courses, total = crud.get_courses(
+        db=db,
+        skip=skip,
+        limit=page_size,
+    )
+
+    logger.info(
+        "courses_listed",
+        extra={
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+        },
+    )
+
+    return schemas.CourseDetailList(
+        items=courses,
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+
+@router.get(
+    "/courses/menu",
+    response_model=schemas.CourseSimpleList,
+    summary="Get course menu",
+    description="Get a list of courses for the public website menu",
+)
+def get_course_menu(
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve a list of courses for the public website menu.
+
+    - **db**: Database session
+    """
+    courses, total = crud.get_courses(db=db)
+
+    logger.info(
+        "course_menu_retrieved",
+        extra={
+            "total": total,
+        },
+    )
+
+    return schemas.CourseSimpleList(
+        items=courses,
+        total=total,
+    )

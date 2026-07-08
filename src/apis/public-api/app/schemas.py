@@ -384,3 +384,42 @@ class HomePageConfig(BaseModel):
     sponsors: list[HomePageSponsor] = Field(
         ..., description="List of sponsors to display on the home page"
     )
+
+
+# ==================== Course Schemas ====================
+
+
+class CourseSimple(BaseModel):
+    """Schema for a simple course representation."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    course_id: UUID = Field(..., description="Unique identifier for the course")
+    name: str = Field(..., description="Full name of the course")
+    abbreviation: str = Field(..., description="Short abbreviation of the course")
+
+
+class CourseDetail(CourseSimple):
+    """Schema for course detail view response."""
+
+    # Nucleo info
+    nucleo_id: UUID = Field(..., description="Nucleo identifier")
+    nucleo_name: str = Field(..., description="Full name of the nucleo")
+    nucleo_abbreviation: str = Field(..., description="Nucleo abbreviation")
+    nucleo_logo_url: Optional[str] = Field(None, description="Nucleo logo URL")
+
+
+class CourseDetailList(BaseModel):
+    """Schema for paginated list of course details."""
+
+    items: list[CourseDetail] = Field(..., description="List of course details")
+    total: int = Field(..., ge=0, description="Total number of courses")
+    page: int = Field(..., ge=1, description="Current page number")
+    page_size: int = Field(..., ge=1, description="Number of items per page")
+
+
+class CourseSimpleList(BaseModel):
+    """Schema for list of courses menu items."""
+
+    items: list[CourseSimple] = Field(..., description="List of course menu items")
+    total: int = Field(..., ge=0, description="Total number of courses")

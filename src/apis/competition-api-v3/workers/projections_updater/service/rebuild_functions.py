@@ -5,6 +5,7 @@ from apps.matches.selectors import get_matches_table
 from apps.modalities.selectors import get_modalities_table
 from apps.nucleus.selectors import get_nucleus_table
 from apps.projections.service import (
+    rebuild_course_projection,
     rebuild_general_ranking_projection,
     rebuild_home_page_config_projection,
     rebuild_match_projection,
@@ -322,3 +323,32 @@ def update_home_page_config_projections() -> None:
     """Update the projections for the home page config."""
     rebuild_home_page_config_projection()
     logger.info("Updated projections for home page config.")
+
+
+@transaction.atomic
+def update_courses_projections(course_id: str = None, nucleus_id: str = None) -> None:
+    """Update the projections for the courses based on the provided parameters."""
+    from apps.courses.selectors import get_courses_table
+
+    args = {
+        "course_id": course_id,
+        "nucleus_id": nucleus_id,
+    }
+
+    courses = get_courses_table(course_id=course_id, nucleo_id=nucleus_id)
+
+    if course_id is not None and courses.count() == 0:
+        # course was deleted
+        rebuild_course_projection(course_id=course_id)
+        logger.info(
+            f"Updated projections for course_id={course_id} (course deleted).",
+            extra=args,
+        )
+        return
+
+    c = 0
+    for course in courses:
+        rebuild_course_projection(course_id=course.id)
+        c += 1
+
+    logger.info(f"Updated projections for [{c}] courses.", extra=args)

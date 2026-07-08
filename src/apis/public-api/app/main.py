@@ -61,7 +61,7 @@ app = FastAPI(
 app.add_middleware(StructlogMiddleware)
 
 # Include API routes
-app.include_router(router)
+app.include_router(router, prefix="/api/public")
 
 # Prometheus metrics endpoint
 Instrumentator().instrument(app).expose(app)
