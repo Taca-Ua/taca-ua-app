@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { matchesApi, type MatchDetail } from '../api';
+import { nucleosApi } from '../api/nucleos';
+import { coursesApi } from '../api/courses';
 
 function Calendario() {
   const today = new Date();
@@ -22,7 +24,15 @@ function Calendario() {
   const [dayPage, setDayPage] = useState(1);
   const [listTotalPages, setListTotalPages] = useState(1);
 
+  const [selectedNucleo, setSelectedNucleo] = useState<string | undefined>(undefined);
+  const [nucleoOptions, setNucleoOptions] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedCourse, setSelectedCourse] = useState<string | undefined>(undefined);
+  const [courseOptions, setCourseOptions] = useState<Array<{ id: string; name: string }>>([]);
+
   useEffect(() => {
+    let selectedNucleoId = selectedNucleo === "" ? undefined : selectedNucleo;
+    let selectedCourseId = selectedCourse === "" ? undefined : selectedCourse;
+
     const fetchMatches = async () => {
       try {
         // setLoading(true);
@@ -32,6 +42,8 @@ function Calendario() {
           const response = await matchesApi.getAll({
             page,
             page_size: pageSize,
+            nucleo_id: selectedNucleoId,
+            course_id: selectedCourseId,
           });
           setMatches(response.items);
           setListTotalPages(Math.max(1, Math.ceil(response.total / pageSize)));
@@ -45,6 +57,8 @@ function Calendario() {
             page: 1,
             page_size: PAGE_SIZE,
             date: date, // Filter by current month for calendar view
+            nucleo_id: selectedNucleoId,
+            course_id: selectedCourseId,
           });
 
           const totalPages = Math.ceil(first.total / PAGE_SIZE);
@@ -56,7 +70,9 @@ function Calendario() {
                 matchesApi.getAll({
                   page: i + 2,
                   page_size: PAGE_SIZE,
-                  date: date
+                  date: date,
+                  nucleo_id: selectedNucleoId,
+                  course_id: selectedCourseId,
                 })
               )
             );
@@ -72,12 +88,22 @@ function Calendario() {
     };
 
     fetchMatches();
-  }, [viewMode, currentMonth, currentYear, pageSize, page]);
+  }, [viewMode, currentMonth, currentYear, pageSize, page, selectedNucleo, selectedCourse]);
 
   useEffect(() => {
     // Reset to first page when view mode changes
     setPage(1);
   }, [viewMode]);
+
+  useEffect(() => {
+    nucleosApi.getAll().then((data) => {
+      setNucleoOptions(data.items.map(n => ({ id: n.nucleo_id, name: n.name })));
+    });
+
+    coursesApi.getAll().then((data) => {
+      setCourseOptions(data.items.map(c => ({ id: c.course_id, name: c.name })));
+    });
+  }, []);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -258,6 +284,34 @@ function Calendario() {
                 <option value={50}>50 por página</option>
               </select>
             )}
+
+            {/* Nucleo Filter */}
+            <select
+              value={selectedNucleo}
+              onChange={(e) => { setSelectedNucleo(e.target.value || undefined); setPage(1); setSelectedCourse(""); }}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            >
+              <option value="">Todos os Núcleos</option>
+              {nucleoOptions.map((nucleo) => (
+                <option key={nucleo.id} value={nucleo.id}>
+                  {nucleo.name}
+                </option>
+              ))}
+            </select>
+
+            {/* Course Filter */}
+            <select
+              value={selectedCourse}
+              onChange={(e) => { setSelectedCourse(e.target.value || undefined); setPage(1); setSelectedNucleo(""); }}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            >
+              <option value="">Todos os Cursos</option>
+              {courseOptions.map((course) => (
+                <option key={course.id} value={course.id}>
+                  {course.name}
+                </option>
+              ))}
+            </select>
 
           </div>
 
