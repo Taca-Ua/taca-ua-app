@@ -6,7 +6,7 @@ These SQLAlchemy models should reflect the Django models defined in the projecti
 """
 
 from sqlalchemy import JSON, Boolean, Column, Date, DateTime, Integer, String
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -101,6 +101,13 @@ class MatchDetailView(Base):
 
     participant_count = Column(Integer)
     comment_count = Column(Integer)
+
+    nucleos_ids = Column(
+        ARRAY(UUID), default=list
+    )  # List of nucleo IDs involved in the match
+    courses_ids = Column(
+        ARRAY(UUID), default=list
+    )  # List of course IDs involved in the match
 
 
 class TournamentStandingsView(Base):
@@ -208,3 +215,18 @@ class HomePageConfigView(Base):
     about_us = Column(String)
     hero_image_url = Column(String(255))
     sponsors = Column(JSON)  # List of sponsors with details
+
+
+class CourseDetailView(Base):
+    """Materialized view: Course details with aggregated statistics."""
+
+    __tablename__ = "projections_coursedetailview"
+
+    course_id = Column(UUID, primary_key=True)
+    name = Column(String(255))
+    abbreviation = Column(String(255))
+
+    nucleo_id = Column(UUID)
+    nucleo_name = Column(String(255))
+    nucleo_abbreviation = Column(String(255))
+    nucleo_logo_url = Column(String(255))

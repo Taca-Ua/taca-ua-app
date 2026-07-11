@@ -9,7 +9,6 @@ export interface LeagueFormatData {
         win_points: number;
         draw_points: number;
         loss_points: number;
-        draw_rule: string | null;
         current_round?: number | null;
     },
     standings: {

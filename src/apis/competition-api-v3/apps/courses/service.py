@@ -2,11 +2,12 @@ from uuid import UUID
 
 from apps.nucleus.models import Nucleus
 from apps.seasons.models import Season
-from apps.seasons.selectors import get_current_season
+from apps.seasons.selectors import get_current_season, get_season_by_id
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
 from .models import Course
+from .selectors import get_course_by_id
 
 
 @transaction.atomic
@@ -79,16 +80,13 @@ def delete_course(course_id) -> None:
 
 @transaction.atomic
 def add_course_to_season(course_id: UUID, season_id: int) -> Course:
-    season = Season.objects.get(id=season_id)
-    if not season:
-        raise ValidationError(
-            f"Season with id {season_id} not found. Cannot add course to non-existent season."
-        )
+    season = get_season_by_id(season_id)
 
-    course = Course.objects.get(id=course_id)
-    if not course:
+    course = get_course_by_id(course_id)
+
+    if not course.nucleus.check_belongs_to_season(season):
         raise ValidationError(
-            f"Course with id {course_id} not found. Cannot add non-existent course to season."
+            "Nucleus of this course does not belong to the specified season. Cannot add course to season."
         )
 
     course.seasons.add(season)

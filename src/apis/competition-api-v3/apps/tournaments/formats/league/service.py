@@ -8,7 +8,7 @@ from django.db.models import F
 from rest_framework.exceptions import ValidationError
 
 from ..base import BaseFormat, MatchSuggestion
-from .models import DrawRule, LeagueMatch, LeagueSettings, LeagueStanding
+from .models import LeagueMatch, LeagueSettings, LeagueStanding
 from .utils import RoundRobinScheduler
 
 
@@ -200,7 +200,6 @@ class LeagueFormat(BaseFormat):
             win_points=format_data.get("win_points", 3),
             draw_points=format_data.get("draw_points", 1),
             loss_points=format_data.get("loss_points", 0),
-            draw_rule=format_data.get("draw_rule"),
         )
 
         return self.get_details()
@@ -213,17 +212,6 @@ class LeagueFormat(BaseFormat):
         settings.win_points = format_data.get("win_points", settings.win_points)
         settings.draw_points = format_data.get("draw_points", settings.draw_points)
         settings.loss_points = format_data.get("loss_points", settings.loss_points)
-
-        if (
-            "draw_rule" in format_data
-            and (format_data["draw_rule"] in DrawRule.values)
-            or format_data["draw_rule"] is None
-        ):
-            settings.draw_rule = format_data.get("draw_rule", settings.draw_rule)
-        else:
-            raise ValidationError(
-                f"Invalid draw rule: {format_data['draw_rule']}. Must be one of {DrawRule.values} or None."
-            )
 
         settings.save()
 
@@ -240,47 +228,24 @@ class LeagueFormat(BaseFormat):
             competitor__tournament=self.tournament
         )
 
-        # apply draw rule if specified
-        if settings.draw_rule == DrawRule.POINTS_DIFFERENCE:
-            standings = standings.annotate(
-                points_difference=F("points_for") - F("points_against")
-            ).order_by("-points", "-points_difference")
-        elif settings.draw_rule == DrawRule.POINTS_SCORED:
-            standings = standings.order_by("-points", "-points_for")
-        else:
-            standings = standings.order_by("-points")
+        # apply draw rules
+        standings = standings.annotate(
+            points_difference=F("points_for") - F("points_against")
+        ).order_by("-points", "-points_difference", "-points_for")
 
         # Calculate position
         standing_list = []
         current_position = 1
-        last_points = None
-        last_scored_conceded_diff = None
-        last_scored = None
+        last_key = None
         for i, s in enumerate(standings.all(), start=1):
-            if last_points is not None and (s.points < last_points):
+            key = (s.points, s.points_for - s.points_against, s.points_for)
+            if last_key is None:
+                last_key = key
+
+            if last_key is not None and key != last_key:
                 current_position = (
-                    i  # update position if points are lower than previous competitor
+                    i  # update position if any of the tiebreaker criteria change
                 )
-            elif last_points is not None and s.points == last_points:
-
-                # If points are the same, check tiebreaker policy
-                if settings.draw_rule == DrawRule.POINTS_DIFFERENCE:
-                    scored_conceded_diff = s.points_for - s.points_against
-                    if (
-                        last_scored_conceded_diff is not None
-                        and scored_conceded_diff < last_scored_conceded_diff
-                    ):
-                        current_position = i  # update position if points difference is lower than previous competitor
-
-                elif settings.draw_rule == DrawRule.POINTS_SCORED:
-                    if last_scored is not None and s.points_for < last_scored:
-                        current_position = i  # update position if scored points is lower than previous competitor
-                else:
-                    pass  # no tiebreaker, competitors with same points share the same position
-
-            last_points = s.points
-            last_scored_conceded_diff = s.points_for - s.points_against
-            last_scored = s.points_for
 
             standing_list.append(
                 {
@@ -304,7 +269,6 @@ class LeagueFormat(BaseFormat):
                 "win_points": settings.win_points,
                 "draw_points": settings.draw_points,
                 "loss_points": settings.loss_points,
-                "draw_rule": settings.draw_rule,
             },
             "standings": standing_list,
         }

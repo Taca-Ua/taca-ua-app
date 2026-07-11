@@ -14,10 +14,15 @@ class NucleosListSerializer(serializers.Serializer):
     name = serializers.CharField()
     abbreviation = serializers.CharField()
     logo_url = serializers.URLField(required=False)
+    belongs_to_season = serializers.BooleanField(required=False)
 
 
 class NucleosDetailSerializer(NucleosListSerializer):
     courses = _NucleoCourseSummary(many=True)
+
+    relevant_season_ids = serializers.ListField(
+        child=serializers.IntegerField(), required=False
+    )
 
 
 # Request serializers

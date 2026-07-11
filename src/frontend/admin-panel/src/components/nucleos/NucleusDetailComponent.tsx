@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useNotification } from "../../contexts/NotificationProvider";
 import { type NucleoDetail, nucleosApi } from "../../api/nucleos";
 import NucleusEditModal from "./NucleusEditModal";
@@ -7,18 +6,26 @@ import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
 import { useAuth } from "../../hooks/useAuth";
 import LazyImage from "../utils/LazyImage";
+import { useSeason } from "../../contexts/SeasonContext";
+import type { ApiError } from "../../api/client";
 
-const NucleusDetailComponent = ( { nucleusId } : { nucleusId: string }) => {
+const NucleusDetailComponent = ( {
+  nucleusId,
+  nucleusState
+} : {
+  nucleusId: string,
+  nucleusState?: [NucleoDetail | null, React.Dispatch<React.SetStateAction<NucleoDetail | null>>]
+}) => {
   const { notify } = useNotification();
-  const navigate = useNavigate();
   const { isAdminGeneral } = useAuth();
+  const { loadedSeason } = useSeason();
 
-  const [nucleus, setNucleus] = useState<NucleoDetail | null>(null);
+  const [nucleus, setNucleus] = nucleusState || useState<NucleoDetail | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const { pushModal } = useModal();
 
   useEffect(() => {
-    nucleosApi.getById(nucleusId)
+    nucleosApi.getById(nucleusId, loadedSeason?.id)
       .then(nucleusData => {
         setNucleus(nucleusData);
 
@@ -30,7 +37,7 @@ const NucleusDetailComponent = ( { nucleusId } : { nucleusId: string }) => {
         console.error("Error fetching nucleus details:", error);
         notify("Não foi possível carregar os detalhes do núcleo.", "error");
       });
-  }, [nucleusId]);
+  }, [nucleusId, loadedSeason?.id]);
 
   // Update logoUrl when nucleus.logo_url changes (e.g., after editing)
   useEffect(() => {
@@ -41,15 +48,40 @@ const NucleusDetailComponent = ( { nucleusId } : { nucleusId: string }) => {
     }
   }, [nucleus?.logo_url]);
 
-  const handleDelete = async () => {
-    try {
-      await nucleosApi.delete(String(nucleusId));
-      navigate('/nucleos');
-    } catch (err) {
-      console.error('Failed to delete course:', err);
-      notify('Não foi possível eliminar o núcleo. Poderá ter cursos ou membros associados.', 'error');
+  const handleAddToSeason = () => {
+    if (!nucleus) return;
+    if (!loadedSeason) {
+      notify('Não foi possível adicionar o núcleo à época. Nenhuma época carregada.', 'error');
+      return;
     }
-  };
+
+    nucleosApi.addToSeason(nucleus.id, loadedSeason.id)
+      .then(updatedNucleus => {
+        setNucleus(updatedNucleus);
+        notify(`Núcleo "${updatedNucleus.name}" adicionado à época com sucesso.`, 'success');
+      })
+      .catch((err: ApiError) => {
+        console.error('Failed to add nucleus to season:', err);
+        notify('Não foi possível adicionar o núcleo à época.\n'+ err.message, 'error');
+      });
+  }
+
+  const handleRemoveFromSeason = () => {
+    if (!nucleus) return;
+    if (!loadedSeason) {
+      notify('Não foi possível remover o núcleo da época. Nenhuma época carregada.', 'error');
+      return;
+    }
+    nucleosApi.removeFromSeason(nucleus.id, loadedSeason.id)
+      .then(updatedNucleus => {
+        setNucleus(updatedNucleus);
+        notify(`Núcleo "${updatedNucleus.name}" removido da época com sucesso.`, 'success');
+      })
+      .catch((err: ApiError) => {
+        console.error('Failed to remove nucleus from season:', err);
+        notify('Não foi possível remover o núcleo da época.\n'+ err.message, 'error');
+      });
+  }
 
   if (!nucleus) {
     return (
@@ -97,19 +129,26 @@ const NucleusDetailComponent = ( { nucleusId } : { nucleusId: string }) => {
         >
           Editar
         </Button>
-        <Button
-          onClick={handleDelete}
-          type="danger"
-          confirmation={{
-            title: "Eliminar núcleo",
-            message: `Tem certeza que deseja eliminar "${nucleus.name}"?`,
-            confirmLabel: "Eliminar",
-          }}
-          flexible={true}
-          active={isAdminGeneral}
-        >
-          Eliminar
-        </Button>
+        { (nucleus.belongs_to_season !== undefined) && (
+          <div className="flex">
+            <Button
+              onClick={handleAddToSeason}
+              type="primary"
+              flexible={true}
+              active={isAdminGeneral && loadedSeason !== null && !nucleus.belongs_to_season}
+            >
+              + Adicionar à época
+            </Button>
+            <Button
+              onClick={handleRemoveFromSeason}
+              type="danger"
+              flexible={true}
+              active={isAdminGeneral && loadedSeason !== null && nucleus.belongs_to_season}
+            >
+              - Remover da época
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

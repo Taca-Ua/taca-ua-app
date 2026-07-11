@@ -8,6 +8,7 @@ import DefinedStatesMenuComponent from "../utils/costum_menus/DefinedStatesMenuC
 import { useAuth } from "../../hooks/useAuth";
 import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
+import { ApiError } from "../../api/client";
 
 const AdminCreateModal = ({
   onCreated
@@ -67,21 +68,25 @@ const AdminCreateModal = ({
 			return;
 		}
 
-		try {
-			const newAdmin = await administratorsApi.create({
-				username: memberUserName,
-				password: memberPassword,
-				name: memberName,
-				email,
-				role: memberRole,
-				nucleos: memberRole === 'nucleo_admin' ? selectedNucleos : [],
-			});
-			if (onCreated) onCreated(newAdmin);
-			onClose();
+    administratorsApi.create({
+      username: memberUserName,
+      password: memberPassword,
+      name: memberName,
+      email,
+      role: memberRole,
+      nucleos: memberRole === 'nucleo_admin' ? selectedNucleos : [],
+    }).then((newAdmin) => {
+      if (onCreated) onCreated(newAdmin);
+      onClose();
       notify('Administrador criado com sucesso!', 'success');
-		} catch (err) {
-			notify('Não foi possível criar o administrador. Erro interno.', 'error');
-		}
+    }).catch((err) => {
+      if (err instanceof ApiError) {
+        notify(`Não foi possível criar o administrador. ${err.message}`, 'error');
+      } else {
+        notify('Não foi possível criar o administrador. Erro interno.', 'error');
+      }
+      console.error('Error creating admin:', err);
+    });
 	};
 
 	const onClose = () => {

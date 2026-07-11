@@ -4,10 +4,13 @@ import { nucleosApi, type NucleoListItem } from "../../api/nucleos";
 import LazyImage from "../utils/LazyImage";
 
 const NucleusEntry = ({ nucleus }: { nucleus: NucleoListItem }) => {
+
+    const elementIsDisabled = (nucleus.belongs_to_season === undefined)? false : !nucleus.belongs_to_season;
+
     return (
       <Link
         to={`/nucleos/${nucleus.id}`}
-        className="cursor-pointer bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 p-6 flex flex-col gap-4"
+        className={"cursor-pointer bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 p-6 flex flex-col gap-4" + (elementIsDisabled ? " opacity-50" : "")}
       >
         <div className="flex items-center justify-center text-center gap-10">
           {nucleus.logo_url ? (

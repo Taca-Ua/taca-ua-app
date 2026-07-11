@@ -49,6 +49,8 @@ class AdminCreateSerializer(serializers.Serializer):
     email = serializers.EmailField(
         required=True,
         help_text="Email address for the admin",
+        allow_blank=False,
+        allow_null=False,
     )
     password = serializers.CharField(
         required=True,

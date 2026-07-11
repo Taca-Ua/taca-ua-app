@@ -1,3 +1,5 @@
+from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.indexes import GinIndex
 from django.db import models
 
 
@@ -104,12 +106,22 @@ class MatchDetailView(models.Model):
     participant_count = models.IntegerField()
     comment_count = models.IntegerField()
 
+    # filtering fields for efficient querying
+    nucleos_ids = ArrayField(
+        models.UUIDField(), blank=True, default=list
+    )  # List of nucleo IDs involved in the match
+    courses_ids = ArrayField(
+        models.UUIDField(), blank=True, default=list
+    )  # List of course IDs involved in the match
+
     class Meta:
         indexes = [
             models.Index(fields=["status"]),
             models.Index(fields=["start_time"]),
             models.Index(fields=["tournament_id"]),
             models.Index(fields=["modality_id"]),
+            GinIndex(fields=["nucleos_ids"]),  # GIN index for array field
+            GinIndex(fields=["courses_ids"]),  # GIN index for array field
         ]
 
 
@@ -240,4 +252,22 @@ class HomePageConfigView(models.Model):
     class Meta:
         indexes = [
             models.Index(fields=["_bucket"]),
+        ]
+
+
+class CourseDetailView(models.Model):
+    """Materialized view: Course details with aggregated statistics."""
+
+    course_id = models.UUIDField(primary_key=True)
+    name = models.CharField(max_length=255)
+    abbreviation = models.CharField(max_length=255)
+
+    nucleo_id = models.UUIDField()
+    nucleo_name = models.CharField(max_length=255)
+    nucleo_abbreviation = models.CharField(max_length=255)
+    nucleo_logo_url = models.CharField(max_length=255)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["course_id"]),
         ]

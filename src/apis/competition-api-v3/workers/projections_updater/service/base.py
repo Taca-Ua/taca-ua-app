@@ -5,6 +5,7 @@ from django.db import IntegrityError, transaction
 from ..models import ProjectionUpdateRequest, ProjectionUpdateRequestTypes
 from .rebuild_functions import (
     update_athletes_projections,
+    update_courses_projections,
     update_general_rankings_projections,
     update_home_page_config_projections,
     update_matches_projections,
@@ -31,6 +32,7 @@ PROJECTION_TYPE_HANDLERS: dict[str, callable] = {
     ProjectionUpdateRequestTypes.TOURNAMENT_STANDING: update_tournament_standings_projections,
     ProjectionUpdateRequestTypes.REGULATION: update_regulations_projections,
     ProjectionUpdateRequestTypes.HOME_PAGE_CONFIG: update_home_page_config_projections,
+    ProjectionUpdateRequestTypes.COURSE: update_courses_projections,
 }
 
 

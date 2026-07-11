@@ -16,7 +16,7 @@ const CourseCreateModal = ({
 }) => {
   const { popModal, pushModal } = useModal();
   const { isAdminGeneral } = useAuth();
-  const { loadedSeasonIsTheCurrentSeason, activeSeason } = useSeason();
+  const { loadedSeasonIsTheCurrentSeason, activeSeason, loadedSeason } = useSeason();
   const { notify } = useNotification();
 
   const [newCourseName, setNewCourseName] = useState("");
@@ -118,7 +118,7 @@ const CourseCreateModal = ({
             <div
               onClick={() => pushModal(
                 <ChoseOneModal
-                  allElementsLoader={() => nucleosApi.getAll().then(data => data.map((nucleo) => ({
+                  allElementsLoader={() => nucleosApi.getAll(loadedSeason?.id).then(data => data.map((nucleo) => ({
                     id: nucleo.id,
                     title: nucleo.abbreviation,
                     subTitle: nucleo.name,

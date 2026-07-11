@@ -11,5 +11,6 @@ reportlab==4.5.1
 python_keycloak==7.1.1
 PyJWT==2.13.0
 pika==1.4.1
+filetype==1.2.0
 
 gunicorn==26.0.0

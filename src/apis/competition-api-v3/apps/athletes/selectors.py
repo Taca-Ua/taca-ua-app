@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from django.db.models import QuerySet
+from django.db.models import Q, QuerySet
 
 from .models import Athlete
 
@@ -11,6 +11,7 @@ def get_athletes_table(
     athlete_id: UUID = None,
     nucleus_id: UUID = None,
     team_id: UUID = None,
+    has_docs: bool = None,
 ) -> QuerySet[Athlete]:
     queryset = Athlete.objects.all()
 
@@ -28,6 +29,12 @@ def get_athletes_table(
 
     if nucleus_id:
         queryset = queryset.filter(course__nucleus_id=nucleus_id)
+
+    if has_docs is not None and has_docs:
+        queryset = queryset.filter(
+            Q(course_proof_file_url__isnull=False)
+            | Q(payment_proof_file_url__isnull=False)
+        )
 
     queryset = queryset.select_related("course")
     return queryset

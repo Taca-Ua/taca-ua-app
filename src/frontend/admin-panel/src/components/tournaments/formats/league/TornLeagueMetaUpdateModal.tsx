@@ -3,7 +3,6 @@ import { tournamentsApi } from "../../../../api/tournaments"
 import { useModal } from "../../../../contexts/ModalContext";
 import { useNotification } from "../../../../contexts/NotificationProvider";
 import Button from "../../../utils/Button";
-import DefinedStatesMenuComponent from "../../../utils/costum_menus/DefinedStatesMenuComponent";
 import { type LeagueFormatData } from "./TornLeagueDisplayComponent";
 
 const TornLeagueMetaUpdateModal = ({
@@ -24,7 +23,6 @@ const TornLeagueMetaUpdateModal = ({
     const [pointsWin, setPointsWin] = useState(formatData?.settings.win_points);
     const [pointsDraw, setPointsDraw] = useState(formatData?.settings.draw_points);
     const [pointsLoss, setPointsLoss] = useState(formatData?.settings.loss_points);
-    const [tiebreaker, setTiebreaker] = useState(formatData?.settings.draw_rule || "none");
 
     useEffect(() => {
         if (!formatData){
@@ -35,7 +33,6 @@ const TornLeagueMetaUpdateModal = ({
         setPointsWin(formatData.settings.win_points);
         setPointsDraw(formatData.settings.draw_points);
         setPointsLoss(formatData.settings.loss_points);
-        setTiebreaker(formatData.settings.draw_rule || "none");
     }, []);
 
     const onClose = () => {
@@ -53,7 +50,6 @@ const TornLeagueMetaUpdateModal = ({
             win_points: pointsWin,
             draw_points: pointsDraw,
             loss_points: pointsLoss,
-            draw_rule: tiebreaker === "none" ? null : tiebreaker,
         }).then((updatedFormatData) => {
             setFormatData(updatedFormatData as LeagueFormatData);
             if (onSave) {
@@ -96,20 +92,6 @@ const TornLeagueMetaUpdateModal = ({
             value={pointsLoss}
             onChange={(e) => setPointsLoss(parseInt(e.target.value))}
             className="w-full px-3 py-2 border rounded"
-          />
-        </div>
-        <div className="space-y-2 my-4">
-          <label className="block text-sm font-medium text-gray-700">
-            Critério de Desempate por Diferença de Pontos
-          </label>
-          <DefinedStatesMenuComponent
-            states={[
-              { value: "none", label: "Nenhum" },
-              { value: "points_difference", label: "Diferença de Pontos" },
-              { value: "points_scored", label: "Pontos Marcados" },
-            ]}
-            initialValue={tiebreaker}
-            onSelect={(value) => setTiebreaker(value)}
           />
         </div>
         <div className="flex justify-end space-x-4 mt-6">

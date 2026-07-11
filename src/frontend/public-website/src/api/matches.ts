@@ -28,6 +28,8 @@ export interface MatchListParams {
   tournament_id?: string;
   status?: string;
   date?: string;  // New date filter in YYYY-MM format
+  nucleo_id?: string;
+  course_id?: string;
 }
 
 export const matchesApi = {
@@ -38,6 +40,8 @@ export const matchesApi = {
       tournament_id: params?.tournament_id,
       status: params?.status,
       date: params?.date, // Add date filter
+      nucleo_id: params?.nucleo_id,
+      course_id: params?.course_id,
     };
     const queryString = buildQueryString(queryParams);
     return apiCall<MatchDetailList>(`/matches${queryString}`);
