@@ -32,5 +32,8 @@ class Nucleus(models.Model):
             GinIndex(fields=["admins_ids"]),
         ]
 
+    def check_belongs_to_season(self, season: Season) -> bool:
+        return self.seasons.filter(id=season.id).exists()
+
     def __str__(self):
         return f"<Nucleus {self.name} ({self.abbreviation})>"
