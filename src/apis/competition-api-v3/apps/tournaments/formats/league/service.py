@@ -240,47 +240,24 @@ class LeagueFormat(BaseFormat):
             competitor__tournament=self.tournament
         )
 
-        # apply draw rule if specified
-        if settings.draw_rule == DrawRule.POINTS_DIFFERENCE:
-            standings = standings.annotate(
-                points_difference=F("points_for") - F("points_against")
-            ).order_by("-points", "-points_difference")
-        elif settings.draw_rule == DrawRule.POINTS_SCORED:
-            standings = standings.order_by("-points", "-points_for")
-        else:
-            standings = standings.order_by("-points")
+        # apply draw rules
+        standings = standings.annotate(
+            points_difference=F("points_for") - F("points_against")
+        ).order_by("-points", "-points_difference", "-points_for")
 
         # Calculate position
         standing_list = []
         current_position = 1
-        last_points = None
-        last_scored_conceded_diff = None
-        last_scored = None
+        last_key = None
         for i, s in enumerate(standings.all(), start=1):
-            if last_points is not None and (s.points < last_points):
+            key = (s.points, s.points_for - s.points_against, s.points_for)
+            if last_key is None:
+                last_key = key
+
+            if last_key is not None and key != last_key:
                 current_position = (
-                    i  # update position if points are lower than previous competitor
+                    i  # update position if any of the tiebreaker criteria change
                 )
-            elif last_points is not None and s.points == last_points:
-
-                # If points are the same, check tiebreaker policy
-                if settings.draw_rule == DrawRule.POINTS_DIFFERENCE:
-                    scored_conceded_diff = s.points_for - s.points_against
-                    if (
-                        last_scored_conceded_diff is not None
-                        and scored_conceded_diff < last_scored_conceded_diff
-                    ):
-                        current_position = i  # update position if points difference is lower than previous competitor
-
-                elif settings.draw_rule == DrawRule.POINTS_SCORED:
-                    if last_scored is not None and s.points_for < last_scored:
-                        current_position = i  # update position if scored points is lower than previous competitor
-                else:
-                    pass  # no tiebreaker, competitors with same points share the same position
-
-            last_points = s.points
-            last_scored_conceded_diff = s.points_for - s.points_against
-            last_scored = s.points_for
 
             standing_list.append(
                 {
