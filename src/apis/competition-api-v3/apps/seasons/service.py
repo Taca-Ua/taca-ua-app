@@ -1,5 +1,7 @@
 from uuid import UUID
 
+from apps.athletes.selectors import get_athletes_table
+from apps.athletes.service import update_athlete
 from apps.courses.service import add_course_to_season
 from apps.modalities.service import add_modality_to_season
 from apps.modality_types.service import create_modality_type
@@ -67,6 +69,19 @@ def _copy_teams_from_previous_season(previous_season: Season, new_season: Season
         )
 
 
+def _delete_athletes_docs_from_previous_season(previous_season: Season):
+    athletes = get_athletes_table(has_docs=True)
+
+    for athlete in athletes:
+        update_athlete(
+            athlete_id=athlete.id,
+            course_proof_file=None,
+            course_proof_deleted=True,
+            payment_proof_file=None,
+            payment_proof_deleted=True,
+        )
+
+
 @transaction.atomic
 def create_season(name: str, admin_id: UUID) -> Season:
 
@@ -101,6 +116,9 @@ def create_season(name: str, admin_id: UUID) -> Season:
     _copy_teams_from_previous_season(
         previous_season=current_season, new_season=new_season
     )
+
+    # delete athletes docs from previous season
+    _delete_athletes_docs_from_previous_season(previous_season=current_season)
 
     return new_season
 

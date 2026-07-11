@@ -1,3 +1,4 @@
+from apps.utils import ExtensionSensitiveFileField
 from rest_framework import serializers
 
 
@@ -14,6 +15,7 @@ class RegulationListSerializer(serializers.Serializer):
 
 class RegulationDetailSerializer(RegulationListSerializer):
     """Serializer for retrieving a single regulation"""
+
     pass
 
 
@@ -21,7 +23,7 @@ class RegulationDetailSerializer(RegulationListSerializer):
 class RegulationCreateSerializer(serializers.Serializer):
     """Serializer for uploading a regulation"""
 
-    file = serializers.FileField(required=True)
+    file = ExtensionSensitiveFileField(required=True, allowed_extensions=[".pdf"])
     title = serializers.CharField(required=True)
     description = serializers.CharField(required=False, allow_blank=True)
     season_id = serializers.IntegerField(required=False)
@@ -30,6 +32,6 @@ class RegulationCreateSerializer(serializers.Serializer):
 class RegulationUpdateSerializer(serializers.Serializer):
     """Serializer for updating regulation metadata"""
 
-    file = serializers.FileField(required=False)
+    file = ExtensionSensitiveFileField(required=False, allowed_extensions=[".pdf"])
     title = serializers.CharField(required=False)
     description = serializers.CharField(required=False, allow_blank=True)

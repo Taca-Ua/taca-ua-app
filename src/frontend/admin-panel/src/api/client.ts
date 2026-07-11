@@ -117,7 +117,29 @@ export class ApiClient {
 
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
-      throw new ApiError(body.detail || body.error || 'API request failed', response.status, body);
+
+      if (!body) {
+        throw new ApiError('API request failed', response.status);
+      }
+      if (body instanceof Array) {
+        throw new ApiError(body[0] || 'API request failed', response.status, body);
+      } else if (typeof body === 'object') {
+        let message = '';
+        // iterate over the keys of the body object and concatenate the messages
+        for (const key in body) {
+          if (body.hasOwnProperty(key)) {
+            const value = body[key];
+            if (Array.isArray(value)) {
+              message += `${key}: ${value.join(', ')}\n`;
+            } else {
+              message += `${key}: ${value}\n`;
+            }
+          }
+        }
+        throw new ApiError(message || 'API request failed', response.status, body);
+      } else {
+        throw new ApiError('API request failed', response.status, body);
+      }
     }
 
     return response.json();

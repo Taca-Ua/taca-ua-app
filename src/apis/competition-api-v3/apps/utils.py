@@ -1,3 +1,9 @@
+import os
+
+import filetype
+from rest_framework import serializers
+
+
 def count_queries(func):
     """Decorator to count the number of database queries executed during a function call."""
 
@@ -44,3 +50,58 @@ def count_queries_context(show_sql: bool = True):
                     print(query["sql"])
 
     return QueryCounter()
+
+
+class ExtensionSensitiveFileField(serializers.FileField):
+    """
+    A custom FileField that allows for case-insensitive file extension validation.
+    """
+
+    ALLOWED_EXTENSIONS = {
+        ".pdf": "application/pdf",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".gif": "image/gif",
+    }
+
+    def __init__(self, *args, **kwargs):
+        self.allowed_extensions = kwargs.pop("allowed_extensions", None)
+
+        if any(
+            ext not in self.ALLOWED_EXTENSIONS for ext in self.allowed_extensions or []
+        ):
+            raise ValueError(
+                f"Allowed extensions must be one of {list(self.ALLOWED_EXTENSIONS.keys())}"
+            )
+
+        super().__init__(*args, **kwargs)
+
+    def to_internal_value(self, data):
+        print(f"Validating file: {data.name}")
+
+        # Call the parent method to handle the file upload
+        file = super().to_internal_value(data)
+
+        # Validate the file extension if allowed_extensions is provided
+        if not self.allowed_extensions:
+            return file
+
+        extension = os.path.splitext(file.name)[1].lower()
+        if extension not in self.allowed_extensions:
+            raise serializers.ValidationError(f"Invalid file extension '{extension}'.")
+
+        kind = filetype.guess(data.read(1024))
+        data.seek(0)  # Reset the file pointer to the beginning after reading
+
+        if kind is None:
+            raise serializers.ValidationError(
+                f"Could not determine the file type for extension '{extension}'."
+            )
+
+        if kind.mime != self.ALLOWED_EXTENSIONS[extension]:
+            raise serializers.ValidationError(
+                f"Invalid file type '{kind.mime}' for extension '{extension}'."
+            )
+
+        return file

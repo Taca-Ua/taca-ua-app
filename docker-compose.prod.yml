@@ -135,6 +135,8 @@ services:
       - KEYCLOAK_ADMIN_SERVER_URL=http://keycloak:8080/auth
       - KEYCLOAK_REALM=${KEYCLOAK_REALM:-taca-ua}
       - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-admin-api}
+      - KEYCLOAK_ADMIN_USERNAME=${KEYCLOAK_ADMIN}
+      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
 
       - DEV_MODE=false
     healthcheck:
