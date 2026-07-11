@@ -4,7 +4,8 @@ export interface NucleoListItem {
   id: string;
   name: string;
   abbreviation: string;
-  logo_url: string;
+  logo_url?: string;
+  belongs_to_season?: boolean;
 }
 
 export interface NucleoDetail extends NucleoListItem {
@@ -13,6 +14,8 @@ export interface NucleoDetail extends NucleoListItem {
     name: string;
     abbreviation: string;
   }[];
+
+  relevant_season_ids: number[];
 };
 
 export interface NucleoCreate {
@@ -28,25 +31,25 @@ export interface NucleoUpdate {
 }
 
 export const nucleosApi = {
-  async getAll(): Promise<NucleoListItem[]> {
-	return apiClient.get<NucleoListItem[]>('/nucleos/');
+  async getAll(seasonId?: number): Promise<NucleoListItem[]> {
+	return apiClient.get<NucleoListItem[]>('/nucleos/', { season_id: seasonId });
   },
 
-  async getById(nucleoId: string): Promise<NucleoDetail> {
-	return apiClient.get<NucleoDetail>(`/nucleos/${nucleoId}/`);
+  async getById(nucleoId: string, seasonId?: number): Promise<NucleoDetail> {
+	return apiClient.get<NucleoDetail>(`/nucleos/${nucleoId}/`, { season_id: seasonId });
   },
 
-  async create(data: NucleoCreate): Promise<NucleoDetail> {
+  async create(data: NucleoCreate, seasonId?: number): Promise<NucleoDetail> {
     const formData = new FormData();
     formData.append('name', data.name);
     formData.append('abbreviation', data.abbreviation);
     if (data.image) {
       formData.append('image', data.image);
     }
-	return apiClient.post<NucleoDetail>('/nucleos/', formData);
+	return apiClient.post<NucleoDetail>('/nucleos/', formData, { season_id: seasonId });
   },
 
-  async update(nucleoId: string, data: NucleoUpdate): Promise<NucleoDetail> {
+  async update(nucleoId: string, data: NucleoUpdate, seasonId?: number): Promise<NucleoDetail> {
     const formData = new FormData();
     if (data.name !== undefined) {
       formData.append('name', data.name);
@@ -57,10 +60,14 @@ export const nucleosApi = {
     if (data.image) {
       formData.append('image', data.image);
     }
-	return apiClient.put<NucleoDetail>(`/nucleos/${nucleoId}/`, formData);
+	return apiClient.put<NucleoDetail>(`/nucleos/${nucleoId}/`, formData, { season_id: seasonId });
   },
 
-  async delete(nucleoId: string): Promise<void> {
-	return apiClient.delete(`/nucleos/${nucleoId}/`);
+  async addToSeason(nucleoId: string, seasonId: number): Promise<NucleoDetail> {
+    return apiClient.put<NucleoDetail>(`/nucleos/${nucleoId}/add_to_season/${seasonId}/`, {}, { season_id: seasonId });
   },
+
+  async removeFromSeason(nucleoId: string, seasonId: number): Promise<NucleoDetail> {
+    return apiClient.put<NucleoDetail>(`/nucleos/${nucleoId}/remove_from_season/${seasonId}/`, {}, { season_id: seasonId });
+  }
 };

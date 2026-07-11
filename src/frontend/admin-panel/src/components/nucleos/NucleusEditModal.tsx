@@ -5,6 +5,7 @@ import Button from "../utils/Button";
 import { useNotification } from "../../contexts/NotificationProvider";
 import { useModal } from "../../contexts/ModalContext";
 import { useAuth } from "../../hooks/useAuth";
+import { useSeason } from "../../contexts/SeasonContext";
 
 const NucleusEditModal = ( {
   nucleusState,
@@ -18,6 +19,7 @@ const NucleusEditModal = ( {
   const { notify } = useNotification();
   const { popModal } = useModal();
   const { isAdminGeneral } = useAuth();
+  const { loadedSeason } = useSeason();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [editedAbbreviation, setEditedAbbreviation] = useState('');
@@ -79,7 +81,7 @@ const NucleusEditModal = ( {
       abbreviation: editedAbbreviation,
       name: editedName,
       image: logoFile || undefined,
-    }).then((updatedNucleus) => {
+    }, loadedSeason?.id).then((updatedNucleus) => {
       // Add cache-busting query parameter to logo URL to force refresh
       if (updatedNucleus.logo_url) {
         updatedNucleus.logo_url = `${updatedNucleus.logo_url}?t=${Date.now()}`;

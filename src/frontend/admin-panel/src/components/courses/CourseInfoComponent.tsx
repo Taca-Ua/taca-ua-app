@@ -7,6 +7,7 @@ import { useModal } from "../../contexts/ModalContext";
 import { useSeason } from "../../contexts/SeasonContext";
 import { useNotification } from "../../contexts/NotificationProvider";
 import LazyImage from "../utils/LazyImage";
+import type { ApiError } from "../../api/client";
 
 const CourseInfoComponent = ( {
   courseState,
@@ -25,8 +26,8 @@ const CourseInfoComponent = ( {
     coursesApi.removeFromSeason(course.id, loadedSeason.id)
       .then((updatedCourse) => {
         setCourse(updatedCourse);
-      }).catch((error) => {
-        notify("Erro ao remover curso da temporada.", "error");
+      }).catch((error: ApiError) => {
+        notify(error.message || "Erro ao remover curso da temporada.", "error");
         console.error("Erro ao remover curso da temporada:", error);
       });
   };
@@ -36,8 +37,8 @@ const CourseInfoComponent = ( {
     coursesApi.addToSeason(course.id, loadedSeason.id)
       .then((updatedCourse) => {
         setCourse(updatedCourse);
-      }).catch((error) => {
-        notify("Erro ao adicionar curso à temporada.", "error");
+      }).catch((error: ApiError) => {
+        notify(error.message || "Erro ao adicionar curso à temporada.", "error");
         console.error("Erro ao adicionar curso à temporada:", error);
       });
   };

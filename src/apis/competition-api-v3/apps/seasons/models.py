@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from apps.courses.models import Course
     from apps.modalities.models import SeasonModality
     from apps.modality_types.models import ModalityType
+    from apps.nucleus.models import Nucleus
     from apps.regulations.models import Regulation
     from apps.teams.models import Team
     from apps.tournaments.models import Tournament
@@ -31,6 +32,7 @@ class Season(models.Model):
         regulations: RelatedManager[Regulation]
         teams: RelatedManager[Team]
         tournaments: RelatedManager[Tournament]
+        nuclei: RelatedManager[Nucleus]
 
     def __str__(self):
         return self.name

@@ -40,6 +40,33 @@ export class ApiClient {
     return keycloak.token ? { Authorization: `Bearer ${keycloak.token}` } : {};
   }
 
+  private async throwApiError(response: Response): Promise<never> {
+    const body = await response.json().catch(() => ({}));
+
+    if (!body) {
+      throw new ApiError('API request failed', response.status);
+    }
+    if (body instanceof Array) {
+      throw new ApiError(body[0] || 'API request failed', response.status, body);
+    } else if (typeof body === 'object') {
+      let message = '';
+      // iterate over the keys of the body object and concatenate the messages
+      for (const key in body) {
+        if (body.hasOwnProperty(key)) {
+          const value = body[key];
+          if (Array.isArray(value)) {
+            message += `${key}: ${value.join(', ')}\n`;
+          } else {
+            message += `${key}: ${value}\n`;
+          }
+        }
+      }
+      throw new ApiError(message || 'API request failed', response.status, body);
+    } else {
+      throw new ApiError('API request failed', response.status, body);
+    }
+  }
+
   async get<T>(endpoint: string, params?: unknown): Promise<T> {
     let fullUrl = `${this.baseUrl}${endpoint}`;
 
@@ -116,30 +143,7 @@ export class ApiClient {
     });
 
     if (!response.ok) {
-      const body = await response.json().catch(() => ({}));
-
-      if (!body) {
-        throw new ApiError('API request failed', response.status);
-      }
-      if (body instanceof Array) {
-        throw new ApiError(body[0] || 'API request failed', response.status, body);
-      } else if (typeof body === 'object') {
-        let message = '';
-        // iterate over the keys of the body object and concatenate the messages
-        for (const key in body) {
-          if (body.hasOwnProperty(key)) {
-            const value = body[key];
-            if (Array.isArray(value)) {
-              message += `${key}: ${value.join(', ')}\n`;
-            } else {
-              message += `${key}: ${value}\n`;
-            }
-          }
-        }
-        throw new ApiError(message || 'API request failed', response.status, body);
-      } else {
-        throw new ApiError('API request failed', response.status, body);
-      }
+      await this.throwApiError(response);
     }
 
     return response.json();
@@ -184,8 +188,7 @@ export class ApiClient {
     });
 
     if (!response.ok) {
-      const body = await response.json().catch(() => ({}));
-      throw new ApiError(body.detail || body.error || 'API request failed', response.status, body);
+      await this.throwApiError(response);
     }
 
     return response.json();
@@ -201,8 +204,7 @@ export class ApiClient {
     });
 
     if (!response.ok) {
-      const body = await response.json().catch(() => ({}));
-      throw new ApiError(body.detail || body.error || 'API request failed', response.status, body);
+      await this.throwApiError(response);
     }
   }
 
