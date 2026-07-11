@@ -6,6 +6,8 @@ import CoursesListComponent from '../../components/courses/CoursesListComponent'
 import TeamsListComponent from '../../components/teams/TeamsListComponent';
 import MatchesCalendarComponent from '../../components/matches/MatchesCalendarComponent';
 import SeasonSelector from '../../components/seasons/SeasonSelector';
+import { useState } from 'react';
+import type { NucleoDetail } from '../../api/nucleos';
 
 const NucleoDetails = () => {
   const navigate = useNavigate();
@@ -15,9 +17,11 @@ const NucleoDetails = () => {
     return null;
   }
 
+  const [nucleusState, setNucleusState] = useState<NucleoDetail | null>(null);
+
   return (
     <>
-      <SeasonSelector />
+      <SeasonSelector relevantSeasonIds={nucleusState?.relevant_season_ids || []} />
       <div className="flex-1 p-8">
         <div className="max-w-4xl mx-auto mb-8">
           <div className="mb-8 flex justify-between items-center">
@@ -32,7 +36,7 @@ const NucleoDetails = () => {
           </div>
 
           {/* Nucleus Detail Component */}
-          <NucleusDetailComponent nucleusId={nucleusId} />
+          <NucleusDetailComponent nucleusId={nucleusId} nucleusState={[nucleusState, setNucleusState]} />
         </div>
 
         <TabSystem

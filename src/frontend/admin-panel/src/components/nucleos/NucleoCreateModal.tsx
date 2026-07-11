@@ -4,6 +4,7 @@ import HelpTooltip from "../HelpTooltip";
 import Button from "../utils/Button";
 import { useModal } from "../../contexts/ModalContext";
 import { useAuth } from "../../hooks/useAuth";
+import { useSeason } from "../../contexts/SeasonContext";
 
 const NucleoCreateModal = ({
   onCreate,
@@ -12,6 +13,7 @@ const NucleoCreateModal = ({
 }) => {
   const { popModal } = useModal();
   const { isAdminGeneral } = useAuth();
+  const { loadedSeason } = useSeason();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [newNucleusAbbreviation, setNewNucleusAbbreviation] = useState("");
@@ -53,7 +55,7 @@ const NucleoCreateModal = ({
         name: newNucleusName,
         abbreviation: newNucleusAbbreviation,
         image: logoFile || undefined,
-      });
+      }, loadedSeason?.id);
       if (onCreate) onCreate(newNucleus);
 
       onClose();

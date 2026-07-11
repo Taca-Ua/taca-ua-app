@@ -1,6 +1,7 @@
 import uuid
 from typing import TYPE_CHECKING
 
+from apps.seasons.models import Season
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.indexes import GinIndex
 from django.db import models
@@ -19,6 +20,8 @@ class Nucleus(models.Model):
     logo_url = models.URLField(blank=True, null=True)
 
     admins_ids = ArrayField(models.UUIDField(), default=list, blank=True)  # deprecated
+
+    seasons = models.ManyToManyField(Season, related_name="nuclei")
 
     if TYPE_CHECKING:
         courses: RelatedManager["Course"]
