@@ -1,3 +1,4 @@
+from apps.utils import ExtensionSensitiveFileField
 from rest_framework import serializers
 
 
@@ -36,7 +37,11 @@ class PublicHomepageConfigUpdateSerializer(serializers.Serializer):
     subtitle = serializers.CharField(max_length=255, required=False)
     welcome_message = serializers.CharField(max_length=255, required=False)
     about_us = serializers.CharField(required=False)
-    hero_image = serializers.FileField(required=False)
+    hero_image = ExtensionSensitiveFileField(
+        required=False,
+        allow_null=True,
+        allowed_extensions=[".jpg", ".jpeg", ".png", ".gif"],
+    )
 
 
 class SponsorCreateSerializer(serializers.Serializer):
@@ -45,5 +50,7 @@ class SponsorCreateSerializer(serializers.Serializer):
     """
 
     name = serializers.CharField(max_length=255)
-    logo = serializers.FileField()
+    logo = ExtensionSensitiveFileField(
+        required=False, allow_null=True, allowed_extensions=[".jpg", ".jpeg", ".png"]
+    )
     website_url = serializers.URLField()

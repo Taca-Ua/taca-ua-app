@@ -1,3 +1,4 @@
+from apps.utils import ExtensionSensitiveFileField
 from rest_framework import serializers
 
 
@@ -35,8 +36,12 @@ class AthleteCreateSerializer(serializers.Serializer):
     course_id = serializers.UUIDField(required=True)
     student_number = serializers.CharField(required=True)
     is_member = serializers.BooleanField(required=False, default=False)
-    course_proof = serializers.FileField(required=False, allow_null=True)
-    payment_proof = serializers.FileField(required=False, allow_null=True)
+    course_proof = ExtensionSensitiveFileField(
+        required=False, allow_null=True, allowed_extensions=[".pdf"]
+    )
+    payment_proof = ExtensionSensitiveFileField(
+        required=False, allow_null=True, allowed_extensions=[".pdf"]
+    )
 
 
 class AthleteUpdateSerializer(serializers.Serializer):
@@ -47,10 +52,14 @@ class AthleteUpdateSerializer(serializers.Serializer):
     student_number = serializers.CharField(required=False)
     is_member = serializers.BooleanField(required=False)
 
-    course_proof = serializers.FileField(required=False, allow_null=True)
+    course_proof = ExtensionSensitiveFileField(
+        required=False, allow_null=True, allowed_extensions=[".pdf"]
+    )
     course_proof_deleted = serializers.BooleanField(required=False, default=False)
 
-    payment_proof = serializers.FileField(required=False, allow_null=True)
+    payment_proof = ExtensionSensitiveFileField(
+        required=False, allow_null=True, allowed_extensions=[".pdf"]
+    )
     payment_proof_deleted = serializers.BooleanField(required=False, default=False)
 
     def validate(self, attrs):
