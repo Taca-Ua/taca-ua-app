@@ -46,7 +46,6 @@ class RequestLoggingMiddleware:
         response_data = json.dumps(response.data) if hasattr(response, "data") else None
         if response.status_code // 100 == 2 and response_data is not None:
             if len(response_data) > self.RESPONSE_SIZE_LIMIT:
-                print("Capping response data for logging due to size limit.")
                 response_data = response_data[: self.RESPONSE_SIZE_LIMIT] + "..."
 
         logger_func(
