@@ -14,6 +14,12 @@ class RequestLoggingMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
+    def _serialize_value(self, value):
+        if isinstance(value, (str, int, float, bool)) or value is None:
+            return value
+
+        return str(value)  # Fallback to string representation for other types
+
     def __call__(self, request):
         start = time.time()
 
@@ -43,7 +49,11 @@ class RequestLoggingMiddleware:
         elif response.status_code >= 400:
             logger_func = logger.warning
 
-        response_data = json.dumps(response.data) if hasattr(response, "data") else None
+        response_data = (
+            json.dumps(response.data, default=self._serialize_value)
+            if hasattr(response, "data")
+            else None
+        )
         if response.status_code // 100 == 2 and response_data is not None:
             if len(response_data) > self.RESPONSE_SIZE_LIMIT:
                 response_data = response_data[: self.RESPONSE_SIZE_LIMIT] + "..."
