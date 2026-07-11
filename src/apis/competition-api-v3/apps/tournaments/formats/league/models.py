@@ -4,11 +4,6 @@ from django.db import models
 from ...models import Tournament, TournamentCompetitor
 
 
-class DrawRule(models.TextChoices):
-    POINTS_DIFFERENCE = "points_difference", "Points Difference"
-    POINTS_SCORED = "points_scored", "Points Scored"
-
-
 class LeagueSettings(models.Model):
     """Settings specific to league format tournaments."""
 
@@ -22,10 +17,6 @@ class LeagueSettings(models.Model):
     win_points = models.PositiveIntegerField(default=3)
     draw_points = models.PositiveIntegerField(default=1)
     loss_points = models.PositiveIntegerField(default=0)
-
-    draw_rule = models.CharField(
-        max_length=255, choices=DrawRule.choices, blank=True, null=True
-    )
 
 
 class LeagueStanding(models.Model):

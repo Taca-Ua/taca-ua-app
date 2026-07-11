@@ -8,7 +8,7 @@ from django.db.models import F
 from rest_framework.exceptions import ValidationError
 
 from ..base import BaseFormat, MatchSuggestion
-from .models import DrawRule, LeagueMatch, LeagueSettings, LeagueStanding
+from .models import LeagueMatch, LeagueSettings, LeagueStanding
 from .utils import RoundRobinScheduler
 
 
@@ -200,7 +200,6 @@ class LeagueFormat(BaseFormat):
             win_points=format_data.get("win_points", 3),
             draw_points=format_data.get("draw_points", 1),
             loss_points=format_data.get("loss_points", 0),
-            draw_rule=format_data.get("draw_rule"),
         )
 
         return self.get_details()
@@ -213,17 +212,6 @@ class LeagueFormat(BaseFormat):
         settings.win_points = format_data.get("win_points", settings.win_points)
         settings.draw_points = format_data.get("draw_points", settings.draw_points)
         settings.loss_points = format_data.get("loss_points", settings.loss_points)
-
-        if (
-            "draw_rule" in format_data
-            and (format_data["draw_rule"] in DrawRule.values)
-            or format_data["draw_rule"] is None
-        ):
-            settings.draw_rule = format_data.get("draw_rule", settings.draw_rule)
-        else:
-            raise ValidationError(
-                f"Invalid draw rule: {format_data['draw_rule']}. Must be one of {DrawRule.values} or None."
-            )
 
         settings.save()
 
@@ -281,7 +269,6 @@ class LeagueFormat(BaseFormat):
                 "win_points": settings.win_points,
                 "draw_points": settings.draw_points,
                 "loss_points": settings.loss_points,
-                "draw_rule": settings.draw_rule,
             },
             "standings": standing_list,
         }
