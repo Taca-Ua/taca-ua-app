@@ -63,10 +63,6 @@ export const nucleosApi = {
 	return apiClient.put<NucleoDetail>(`/nucleos/${nucleoId}/`, formData, { season_id: seasonId });
   },
 
-  async delete(nucleoId: string): Promise<void> {
-	return apiClient.delete(`/nucleos/${nucleoId}/`);
-  },
-
   async addToSeason(nucleoId: string, seasonId: number): Promise<NucleoDetail> {
     return apiClient.put<NucleoDetail>(`/nucleos/${nucleoId}/add_to_season/${seasonId}/`, {}, { season_id: seasonId });
   },
