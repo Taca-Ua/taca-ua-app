@@ -2,9 +2,10 @@ from typing import Optional
 from uuid import UUID
 
 from django.db import transaction
+from rest_framework.exceptions import ValidationError
 from shared.auth.keycloak_service import keycloak_service_client
 
-from .models import Admin
+from .models import Admin, AdminRole
 
 
 @transaction.atomic
@@ -19,6 +20,12 @@ def create_admin(
     """Create a new admin user in Keycloak and the local database."""
 
     name = name.title()  # Ensure the name is properly capitalized
+
+    if role == AdminRole.NUCLEO_ADMIN:
+        if email.strip().split("@")[1] not in ["ua.pt", "aauav.pt"]:
+            raise ValidationError(
+                "Nucleo Admins must have an email address from the ua.pt or aauav.pt domain."
+            )
 
     # Create user in Keycloak
     keycloak_user = keycloak_service_client.create_admin(

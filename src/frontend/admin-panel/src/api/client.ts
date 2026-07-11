@@ -117,7 +117,7 @@ export class ApiClient {
 
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
-      throw new ApiError(body.detail || body.error || 'API request failed', response.status, body);
+      throw new ApiError(body.detail || body.error || body || 'API request failed', response.status, body);
     }
 
     return response.json();
