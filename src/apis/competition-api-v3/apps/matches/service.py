@@ -99,18 +99,18 @@ def publish_match_results(match_id: UUID, participant_results: list[dict]) -> Ma
 
 
 @transaction.atomic
-def match_add_comment(match_id: UUID, comment_text: str, admin_id: UUID) -> Match:
+def match_add_occurrence(match_id: UUID, occurrence_text: str, admin_id: UUID) -> Match:
     match = Match.objects.get(id=match_id)
-    match.comments.create(content=comment_text, author_id=admin_id)
+    match.occurrences.create(content=occurrence_text, author_id=admin_id)
 
     return match
 
 
 @transaction.atomic
-def match_delete_comment(match_id: UUID, comment_id: UUID) -> Match:
+def match_delete_occurrence(match_id: UUID, occurrence_id: UUID) -> Match:
     match = Match.objects.get(id=match_id)
 
-    match.comments.filter(id=comment_id).delete()
+    match.occurrences.filter(id=occurrence_id).delete()
     return match
 
 

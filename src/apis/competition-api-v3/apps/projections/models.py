@@ -106,7 +106,7 @@ class MatchDetailView(models.Model):
     results = models.JSONField()  # Match results details
 
     participant_count = models.IntegerField()
-    comment_count = models.IntegerField()
+    occurrence_count = models.IntegerField()
 
     # filtering fields for efficient querying
     nucleos_ids = ArrayField(

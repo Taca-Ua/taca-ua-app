@@ -164,7 +164,9 @@ class MatchDetail(BaseModel):
     participant_count: int = Field(
         ..., ge=0, description="Number of participants in the match"
     )
-    comment_count: int = Field(..., ge=0, description="Number of comments on the match")
+    occurrence_count: int = Field(
+        ..., ge=0, description="Number of occurrences in the match"
+    )
 
 
 class MatchDetailList(BaseModel):

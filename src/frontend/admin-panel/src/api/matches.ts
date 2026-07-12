@@ -44,7 +44,7 @@ export interface MatchListItem {
 };
 
 export interface MatchDetail extends MatchListItem {
-  comments: {
+  occurrences: {
     id: string;
     message: string;
     author_name: string;
@@ -94,7 +94,7 @@ export interface MatchPublishResults {
   status?: 'in_progress' | 'finished';
 }
 
-export interface CommentCreate {
+export interface OccurrenceCreate {
   message: string;
 }
 
@@ -154,13 +154,13 @@ export const matchesApi = {
     return apiClient.post<MatchParticipantLineup>(`/matches/${matchId}/participants/${participantId}/staff/`, { staff_ids: staffIds });
   },
 
-  // Comments management
-  async addComment(matchId: string, data: CommentCreate): Promise<MatchDetail> {
-    return apiClient.post<MatchDetail>(`/matches/${matchId}/comments/`, data);
+  // Occurrences management
+  async addOccurrence(matchId: string, data: OccurrenceCreate): Promise<MatchDetail> {
+    return apiClient.post<MatchDetail>(`/matches/${matchId}/occurrences/`, data);
   },
 
-  async deleteComment(matchId: string, commentId: string): Promise<void> {
-    return apiClient.delete(`/matches/${matchId}/comments/${commentId}/`);
+  async deleteOccurrence(matchId: string, occurrenceId: string): Promise<void> {
+    return apiClient.delete(`/matches/${matchId}/occurrences/${occurrenceId}/`);
   },
 
   // Match sheets

@@ -61,8 +61,8 @@ class MatchListSerializer(serializers.Serializer):
 class MatchDetailSerializer(MatchListSerializer):
     """Serializer for detailed match view"""
 
-    class CommentListSerializer(serializers.Serializer):
-        """Serializer for listing comments on a match"""
+    class OccurrenceListSerializer(serializers.Serializer):
+        """Serializer for listing occurrences on a match"""
 
         id = serializers.UUIDField()
         message = serializers.CharField(source="content")
@@ -70,7 +70,7 @@ class MatchDetailSerializer(MatchListSerializer):
         can_edit = serializers.BooleanField(default=True)
         created_at = serializers.DateTimeField(source="timestamp")
 
-    comments = CommentListSerializer(many=True, required=False, allow_null=True)
+    occurrences = OccurrenceListSerializer(many=True, required=False, allow_null=True)
 
 
 class MatchPaginatedListSerializer(serializers.Serializer):
@@ -154,8 +154,8 @@ class MatchPublishResultsSerializer(serializers.Serializer):
         return value
 
 
-class CommentCreateSerializer(serializers.Serializer):
-    """Serializer for creating a comment"""
+class OccurrenceCreateSerializer(serializers.Serializer):
+    """Serializer for creating a occurrence"""
 
     message = serializers.CharField(required=True, max_length=1000)
 
