@@ -191,7 +191,7 @@ const CommentsSection = ({ match }: { match: MatchDetail }) => {
       setComments([ ...updatedMatch.comments ]);
     } catch (err) {
       console.error('Error adding comment:', err);
-      notify('Não foi possível adicionar o comentário. Tente novamente.', 'error');
+      notify('Não foi possível adicionar a ocorrência. Tente novamente.', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -201,13 +201,13 @@ const CommentsSection = ({ match }: { match: MatchDetail }) => {
       setComments(prev => prev.filter(c => c.id !== commentId));
     }).catch(err => {
       console.error('Error deleting comment:', err);
-      notify('Não foi possível eliminar o comentário. Tente novamente.', 'error');
+      notify('Não foi possível eliminar a ocorrência. Tente novamente.', 'error');
     });
   };
 
   const renderCommentListArea = () => {
     if (comments.length === 0) {
-      return <p className="text-gray-600 text-center py-4">Nenhum comentário ainda.</p>;
+      return <p className="text-gray-600 text-center py-4">Nenhuma ocorrência ainda.</p>;
     }
 
     return (
@@ -234,8 +234,8 @@ const CommentsSection = ({ match }: { match: MatchDetail }) => {
                 type="danger"
                 active={comment.can_edit}
                 confirmation={{
-                  title: "Eliminar comentário",
-                  message: "Tem a certeza que deseja eliminar este comentário?",
+                  title: "Eliminar ocorrência",
+                  message: "Tem a certeza que deseja eliminar esta ocorrência?",
                   confirmLabel: "Eliminar",
                 }}
                 padding="px-2 py-2"
@@ -267,14 +267,14 @@ const CommentsSection = ({ match }: { match: MatchDetail }) => {
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">Comentários</h3>
+        <h3 className="text-xl font-bold text-gray-800 mb-4">Ocorrências</h3>
         <div className='flex gap-4 mb-4'>
           <Button
             onClick={handleAddComment}
             type='primary'
             disabled={submitting || !newComment.trim()}
           >
-            {submitting ? 'A Adicionar...' : 'Adicionar Comentário'}
+            {submitting ? 'A Adicionar...' : 'Adicionar Ocorrência'}
           </Button>
         </div>
       </div>
@@ -284,7 +284,7 @@ const CommentsSection = ({ match }: { match: MatchDetail }) => {
         <textarea
           className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
           rows={3}
-          placeholder="Adicionar um comentário..."
+          placeholder="Adicionar uma ocorrência..."
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
         ></textarea>
