@@ -49,6 +49,7 @@ export interface MatchDetail extends MatchListItem {
     message: string;
     author_name: string;
     can_edit: boolean;
+    created_at: string;
   }[];
 }
 

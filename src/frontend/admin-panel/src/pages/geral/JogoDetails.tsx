@@ -205,6 +205,17 @@ const OccurrencesSection = ({ match }: { match: MatchDetail }) => {
     });
   };
 
+  const formatDateTime = (dateTimeStr: string) => {
+    const date = new Date(dateTimeStr);
+    return date.toLocaleString('pt-PT', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
   const renderOccurrenceListArea = () => {
     if (occurrences.length === 0) {
       return <p className="text-gray-600 text-center py-4">Nenhuma ocorrência ainda.</p>;
@@ -223,9 +234,9 @@ const OccurrencesSection = ({ match }: { match: MatchDetail }) => {
                   <p className="font-semibold text-sm text-gray-800">
                     {occurrence.author_name}
                   </p>
-                  {/* <p className="text-xs text-gray-500">
-                    {formatOccurrenceDate(occurrence.created_at)}
-                  </p> */}
+                  <p className="text-xs text-gray-500">
+                    {formatDateTime(occurrence.created_at)}
+                  </p>
                 </div>
               </div>
               <div />
