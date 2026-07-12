@@ -9,6 +9,12 @@ import ChoseOneInput from '../utils/inputs/ChoseOneInput';
 import { useSeason } from '../../contexts/SeasonContext';
 import { regulationsApi } from '../../api/regulations';
 
+const definedPointUnitOptions = [
+  { id: "points", title: "Ponto" },
+  { id: "gol", title: "Golo" },
+  { id: "set", title: "Set" },
+];
+
 const ModalityEditModal = ( {
   modalityState,
   onSave,
@@ -26,6 +32,13 @@ const ModalityEditModal = ( {
   const [editedType, setEditedType] = useState(modalityData.modality_type?.id);
   const [editedRegulation, setEditedRegulation] = useState<string| null>(null);
 
+  const [selectedPointUnit, setSelectedPointUnit] = useState(
+    definedPointUnitOptions.some(option => option.id === modalityData.point_unit)
+      ? modalityData.point_unit
+      : "other"
+  );
+  const [editedPointUnit, setEditedPointUnit] = useState(modalityData.point_unit);
+
   const onClose = () => {
     setEditedName(modalityData.name);
     setEditedType(modalityData.modality_type?.id);
@@ -34,9 +47,10 @@ const ModalityEditModal = ( {
 
   const handleSave = () => {
     modalitiesApi.update(modalityData.id, {
-      name: editedName,
-      modality_type_id: editedType,
-      season_id: modalityData.belongs_to_season ? loadedSeason?.id : undefined,
+      name: editedName !== modalityData.name ? editedName : undefined,
+      modality_type_id: editedType !== modalityData.modality_type?.id ? editedType : undefined,
+      season_id: (editedType !== modalityData.modality_type?.id && modalityData.belongs_to_season) ? loadedSeason?.id : undefined,
+      point_unit: selectedPointUnit === "other" ? editedPointUnit : selectedPointUnit,
     }, loadedSeason?.id).then((updatedModality) => {
       setModalityData(updatedModality);
       onClose();
@@ -122,6 +136,40 @@ const ModalityEditModal = ( {
               initialElement={modalityData.regulation ? { id: modalityData.regulation.id, title: modalityData.regulation.name, subTitle: modalityData.regulation.link } : undefined}
             />
           </div>)}
+
+          <div>
+            <label className="block text-gray-700 font-medium mb-2">
+              Unidade de Pontuação <HelpTooltip text="Define a unidade de pontuação da modalidade, ou seja, o que é considerado um ponto. Ex: Golo, Set, Ponto." className="ml-1" />
+            </label>
+              <select
+                value={selectedPointUnit || ""}
+                onChange={(e) => {
+                  setSelectedPointUnit(e.target.value)
+                  if (e.target.value === "other") {
+                    setEditedPointUnit("");
+                  } else {
+                    setEditedPointUnit(e.target.value);
+                  }
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+              >
+                <option value="">Selecione uma unidade</option>
+                <option value="point">Ponto</option>
+                <option value="gol">Golo</option>
+                <option value="set">Set</option>
+                <option value="other">Outro</option>
+            </select>
+            {selectedPointUnit === "other" && (
+              <input
+                type="text"
+                value={editedPointUnit}
+                onChange={(e) => setEditedPointUnit(e.target.value)}
+                placeholder="Digite a unidade de pontuação"
+                className="w-full mt-2 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+              />
+            )}
+          </div>
+
         </div>
 
         <div className="flex gap-4 mt-6">

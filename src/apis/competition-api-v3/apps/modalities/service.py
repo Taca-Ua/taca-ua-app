@@ -1,8 +1,8 @@
 from typing import Optional
 from uuid import UUID
 
-from apps.modality_types.models import ModalityType
-from apps.seasons.selectors import get_current_season
+from apps.modality_types.selectors import get_modality_type_by_id
+from apps.seasons.selectors import get_current_season, get_season_by_id
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
@@ -26,7 +26,12 @@ def update_modality(
     modality_id: UUID,
     name: Optional[str] = None,
     modality_type_id: Optional[UUID] = None,
+    season_id: Optional[int] = None,
+    point_unit: Optional[str] = None,
 ) -> Modality:
+
+    if modality_type_id is not None and season_id is None:
+        raise ValidationError("Season ID must be provided when updating modality type.")
 
     modality = Modality.objects.get(id=modality_id)
 
@@ -35,13 +40,29 @@ def update_modality(
         modality.save()
 
     if modality_type_id is not None:
-        season = get_current_season()
+        season = get_season_by_id(season_id)
+
+        if not modality.modality_seasons.filter(season_id=season.id).exists():
+            raise ValidationError(
+                "Modality is not associated with the specified season."
+            )
+
+        modality_type = get_modality_type_by_id(modality_type_id)
+        if modality_type.season != season:
+            raise ValidationError(
+                "The specified modality type does not belong to the given season."
+            )
+
         season_modality = SeasonModality.objects.get(
             modality_id=modality_id,
             season_id=season.id,
         )
         season_modality.modality_type_id = modality_type_id
         season_modality.save(update_fields=["modality_type_id"])
+
+    if point_unit is not None:
+        modality.point_unit = point_unit
+        modality.save(update_fields=["point_unit"])
 
     return modality
 
@@ -58,10 +79,8 @@ def add_modality_to_season(
         raise ValidationError("Modality not found")
 
     # check if the modality type exists for the given season
-    modality_type = ModalityType.objects.filter(
-        id=modality_type_id, season__id=season_id
-    ).first()
-    if not modality_type:
+    modality_type = get_modality_type_by_id(modality_type_id)
+    if modality_type.season.id != season_id:
         raise ValidationError("Modality type not found for the given season")
 
     # create the association between modality and season with the specified modality type

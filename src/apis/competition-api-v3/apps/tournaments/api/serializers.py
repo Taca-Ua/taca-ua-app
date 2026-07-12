@@ -9,6 +9,7 @@ class ModalitySummarySerializer(serializers.Serializer):
 
     id = serializers.UUIDField()
     name = serializers.CharField()
+    point_unit = serializers.CharField()
 
 
 class ScoringFormatSummarySerializer(serializers.Serializer):

@@ -340,7 +340,7 @@ function TournamentDetailPage() {
                                   <div key={idx} className="flex justify-between items-center text-sm">
                                     <span>{name}</span>
                                     {hasScore ? (
-                                      <span className="font-semibold">{result.score} pts</span>
+                                      <span className="font-semibold">{result.score} {tournament.modality_point_unit || "pt"}{result.score > 1 ? 's' : ''}</span>
                                     ) : result.position !== undefined && result.position !== null ? (
                                       <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold">
                                         {result.position}º lugar

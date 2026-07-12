@@ -81,8 +81,8 @@ const TornLeagueDisplayComponent = ({
                         <th className="border-b px-4 py-2">Vitórias</th>
                         <th className="border-b px-4 py-2">Empates</th>
                         <th className="border-b px-4 py-2">Derrotas</th>
-                        <th className="border-b px-4 py-2">PM</th>
-                        <th className="border-b px-4 py-2">PS</th>
+                        <th className="border-b px-4 py-2">{tournament.modality.point_unit.charAt(0).toUpperCase()}M</th>
+                        <th className="border-b px-4 py-2">{tournament.modality.point_unit.charAt(0).toUpperCase()}S</th>
                         <th className="border-b px-4 py-2">Diff</th>
                     </tr>
                 </thead>

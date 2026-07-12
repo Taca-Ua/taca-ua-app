@@ -122,6 +122,8 @@ class ModalityDetailView(RoleRequiredMixin, APIView):
             modality_id=modality_id,
             name=req_serializer.validated_data.get("name"),
             modality_type_id=req_serializer.validated_data.get("modality_type_id"),
+            season_id=req_serializer.validated_data.get("season_id"),
+            point_unit=req_serializer.validated_data.get("point_unit"),
         )
 
         # Render the updated modality and return the response

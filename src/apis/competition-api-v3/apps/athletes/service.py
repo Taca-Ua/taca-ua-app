@@ -92,7 +92,6 @@ def update_athlete(
     # Handle payment proof file
     if payment_proof_deleted:
         if athlete.payment_proof_file_url:
-            print("Deleting payment proof file:", athlete.payment_proof_file_url)
             payment_file_storage.delete_file(athlete.payment_proof_file_url)
             athlete.payment_proof_file_url = None
     elif payment_proof_file:

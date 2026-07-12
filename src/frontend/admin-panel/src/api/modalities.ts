@@ -17,6 +17,7 @@ export interface ModalityDetail extends ModalityListItem {
     name: string;
     link: string;
   };  // Optional regulation information, can be null if no regulation is associated
+  point_unit: string;
 };
 
 export interface ModalityCreate {
@@ -27,7 +28,8 @@ export interface ModalityCreate {
 export interface ModalityUpdate {
   name?: string;
   modality_type_id?: string;
-  season_id?: number | null;
+  season_id?: number;
+  point_unit?: string;
 }
 
 export interface ModalityTypeListParameters {

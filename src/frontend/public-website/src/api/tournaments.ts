@@ -7,6 +7,7 @@ export interface TournamentDetail {
   status: string;
   modality_id: string;
   modality_name: string | null;
+  modality_point_unit: string | null;
   modality_type_id: string;
   modality_type_name: string;
   competitor_count: number;

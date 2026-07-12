@@ -73,6 +73,8 @@ class TournamentDetailView(Base):
 
     modality_id = Column(UUID)
     modality_name = Column(String(255))
+    modality_point_unit = Column(String(255))
+
     modality_type_id = Column(UUID)
     modality_type_name = Column(String(255))
 
