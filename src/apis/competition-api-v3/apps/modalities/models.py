@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 class Modality(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
+    point_unit = models.CharField(max_length=255, default="point")
 
     if TYPE_CHECKING:
         modality_seasons: RelatedManager[SeasonModality]
@@ -45,6 +46,11 @@ class SeasonModality(models.Model):
     modality_type = models.ForeignKey(
         ModalityType, on_delete=models.CASCADE, related_name="season_modalities"
     )
+
+    if TYPE_CHECKING:
+        season_id: int
+        modality_id: uuid.UUID
+        modality_type_id: uuid.UUID
 
     class Meta:
         unique_together = ("season", "modality", "modality_type")

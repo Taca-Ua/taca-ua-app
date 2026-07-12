@@ -2,7 +2,7 @@ from typing import Optional
 from uuid import UUID
 
 from apps.modality_types.models import ModalityType
-from apps.seasons.selectors import get_current_season
+from apps.seasons.selectors import get_current_season, get_season_by_id
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
@@ -26,7 +26,12 @@ def update_modality(
     modality_id: UUID,
     name: Optional[str] = None,
     modality_type_id: Optional[UUID] = None,
+    season_id: Optional[int] = None,
+    point_unit: Optional[str] = None,
 ) -> Modality:
+
+    if modality_type_id is not None and season_id is None:
+        raise ValidationError("Season ID must be provided when updating modality type.")
 
     modality = Modality.objects.get(id=modality_id)
 
@@ -35,13 +40,17 @@ def update_modality(
         modality.save()
 
     if modality_type_id is not None:
-        season = get_current_season()
+        season = get_season_by_id(season_id)
         season_modality = SeasonModality.objects.get(
             modality_id=modality_id,
             season_id=season.id,
         )
         season_modality.modality_type_id = modality_type_id
         season_modality.save(update_fields=["modality_type_id"])
+
+    if point_unit is not None:
+        modality.point_unit = point_unit
+        modality.save(update_fields=["point_unit"])
 
     return modality
 

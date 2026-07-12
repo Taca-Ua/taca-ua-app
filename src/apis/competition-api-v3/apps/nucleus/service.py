@@ -88,8 +88,6 @@ def remove_nucleus_from_season(nucleus_id: str, season_id: str) -> Nucleus:
     if not nucleus.seasons.filter(id=season.id).exists():
         raise ValidationError(f"Nucleus is not associated with season {season_id}")
 
-    print(nucleus.courses.filter(seasons__id=season.id).query)
-
     if nucleus.courses.filter(seasons__id=season.id).exists():
         raise ValidationError(
             f"Nucleus has courses associated with season {season_id}. Cannot remove."
