@@ -78,6 +78,7 @@ def update_admin(
     if nucleos is not None:
         admin.nucleos.set(nucleos)
 
+    admin.save()
     return admin
 
 

@@ -1,6 +1,7 @@
 import datetime
 from uuid import UUID
 
+from apps.admins.selectors import get_admin_by_id
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
@@ -101,7 +102,18 @@ def publish_match_results(match_id: UUID, participant_results: list[dict]) -> Ma
 @transaction.atomic
 def match_add_occurrence(match_id: UUID, occurrence_text: str, admin_id: UUID) -> Match:
     match = Match.objects.get(id=match_id)
-    match.occurrences.create(content=occurrence_text, author_id=admin_id)
+
+    # get admin user to set as author of the occurrence
+    try:
+        author = get_admin_by_id(admin_id)
+    except Exception:
+        author = None
+
+    match.occurrences.create(
+        content=occurrence_text,
+        author_id=admin_id,
+        author=author.name if author else "Unknown Admin",
+    )
 
     return match
 
