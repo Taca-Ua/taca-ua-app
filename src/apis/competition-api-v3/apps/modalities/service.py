@@ -1,7 +1,7 @@
 from typing import Optional
 from uuid import UUID
 
-from apps.modality_types.models import ModalityType
+from apps.modality_types.selectors import get_modality_type_by_id
 from apps.seasons.selectors import get_current_season, get_season_by_id
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
@@ -41,6 +41,18 @@ def update_modality(
 
     if modality_type_id is not None:
         season = get_season_by_id(season_id)
+
+        if not modality.modality_seasons.filter(season_id=season.id).exists():
+            raise ValidationError(
+                "Modality is not associated with the specified season."
+            )
+
+        modality_type = get_modality_type_by_id(modality_type_id)
+        if modality_type.season != season:
+            raise ValidationError(
+                "The specified modality type does not belong to the given season."
+            )
+
         season_modality = SeasonModality.objects.get(
             modality_id=modality_id,
             season_id=season.id,
@@ -67,10 +79,8 @@ def add_modality_to_season(
         raise ValidationError("Modality not found")
 
     # check if the modality type exists for the given season
-    modality_type = ModalityType.objects.filter(
-        id=modality_type_id, season__id=season_id
-    ).first()
-    if not modality_type:
+    modality_type = get_modality_type_by_id(modality_type_id)
+    if modality_type.season.id != season_id:
         raise ValidationError("Modality type not found for the given season")
 
     # create the association between modality and season with the specified modality type
