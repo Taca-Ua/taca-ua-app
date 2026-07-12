@@ -48,9 +48,15 @@ class DocumentGenerationService:
             leading=fontSize * 1.3,
         )
 
-    def _P(self, text, style):
+    def _P(self, text, style, footer: str = None):
         """Create a Paragraph with given style"""
-        return Paragraph(str(text), style)
+
+        footer_codded = ""
+        if footer:
+            footer_codded = f'<br/><font size="7" color="{colors.HexColor("#7F8C8D")}">{footer}</font>'
+
+        p = Paragraph(str(text) + footer_codded, style)
+        return p
 
     def _base_ts(self):
         """Common TableStyle commands"""
@@ -344,23 +350,37 @@ class DocumentGenerationService:
         )
         story.append(notes_tbl)
 
-        # Comments/Observations body
-        comments = match.comments.all() or []
-        if comments:
+        # occurrences/Observations body
+        occurrences = match.occurrences.all() or []
+        if occurrences:
             notes_body = []
-            for comment in comments:
-                comment_text = (
-                    comment.content if hasattr(comment, "content") else str(comment)
+            for occurrence in occurrences:
+                occurrence_text = (
+                    occurrence.content
+                    if hasattr(occurrence, "content")
+                    else str(occurrence)
                 )
-                notes_body.append([self._P(comment_text, style_normal)])
+                notes_body.append(
+                    [
+                        self._P(
+                            occurrence_text,
+                            style_normal,
+                            footer=(
+                                occurrence.timestamp.strftime("%d/%m/%Y %H:%M")
+                                if hasattr(occurrence, "timestamp")
+                                else None
+                            ),
+                        )
+                    ]
+                )
         else:
-            # Empty space for notes if no comments
+            # Empty space for notes if no occurrences
             notes_body = [[""]]
 
         notes_body_tbl = Table(
             notes_body,
             colWidths=[TABLE_W],
-            rowHeights=None if comments else [10 * mm],
+            rowHeights=None if occurrences else [10 * mm],
         )
         notes_body_tbl.setStyle(TableStyle(self._base_ts()))
         story.append(notes_body_tbl)

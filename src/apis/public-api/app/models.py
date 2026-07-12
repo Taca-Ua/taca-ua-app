@@ -102,7 +102,7 @@ class MatchDetailView(Base):
     results = Column(JSON)  # Match results details
 
     participant_count = Column(Integer)
-    comment_count = Column(Integer)
+    occurrence_count = Column(Integer)
 
     nucleos_ids = Column(
         ARRAY(UUID), default=list

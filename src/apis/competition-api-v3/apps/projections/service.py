@@ -184,7 +184,7 @@ def rebuild_match_projection(match_id: UUID):
             for participant in match.participants.all()
         ],
         participant_count=match.participants.count(),
-        comment_count=match.comments.count(),
+        occurrence_count=match.occurrences.count(),
         nucleos_ids=list(
             set(
                 participant.competitor.entity.course.nucleus.id

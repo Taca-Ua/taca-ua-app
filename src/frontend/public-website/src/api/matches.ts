@@ -12,7 +12,7 @@ export interface MatchDetail {
   participants: Array<Record<string, any>>;
   results: Array<Record<string, any>> | null;
   participant_count: number;
-  comment_count: number;
+  occurrence_count: number;
 }
 
 export interface MatchDetailList {

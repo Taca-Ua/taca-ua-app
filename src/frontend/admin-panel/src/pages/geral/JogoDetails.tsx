@@ -4,7 +4,7 @@ import { useNotification } from '../../contexts/NotificationProvider';
 import {
   matchesApi,
   type MatchDetail,
-  type CommentCreate
+  type OccurrenceCreate
 } from '../../api/matches';
 import MatchInfoComponent from '../../components/matches/MatchInfoComponent';
 import MatchResultsComponent from '../../components/matches/MatchesResultsComponent';
@@ -172,70 +172,81 @@ const LineupsSection = ({ matchState }: { matchState: [MatchDetail, React.Dispat
   );
 };
 
-// Comments Section Component
-const CommentsSection = ({ match }: { match: MatchDetail }) => {
-  const [comments, setComments] = useState<typeof match.comments[0][]>([... (match.comments || [])]);
+// Occurrences Section Component
+const OccurrencesSection = ({ match }: { match: MatchDetail }) => {
+  const [occurrences, setOccurrences] = useState<typeof match.occurrences[0][]>([... (match.occurrences || [])]);
   const { notify } = useNotification();
-  const [newComment, setNewComment] = useState('');
+  const [newOccurrence, setNewOccurrence] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  // const comments = match.comments || [];
+  // const occurrences = match.occurrences || [];
 
-  const handleAddComment = async () => {
-    if (!newComment.trim()) return;
+  const handleAddOccurrence = async () => {
+    if (!newOccurrence.trim()) return;
 
     try {
       setSubmitting(true);
-      const commentData: CommentCreate = { message: newComment.trim() };
-      let updatedMatch = await matchesApi.addComment(match.id, commentData);
-      setNewComment('');
-      setComments([ ...updatedMatch.comments ]);
+      const occurrenceData: OccurrenceCreate = { message: newOccurrence.trim() };
+      let updatedMatch = await matchesApi.addOccurrence(match.id, occurrenceData);
+      setNewOccurrence('');
+      setOccurrences([ ...updatedMatch.occurrences ]);
     } catch (err) {
-      console.error('Error adding comment:', err);
-      notify('Não foi possível adicionar o comentário. Tente novamente.', 'error');
+      console.error('Error adding occurrence:', err);
+      notify('Não foi possível adicionar a ocorrência. Tente novamente.', 'error');
     } finally {
       setSubmitting(false);
     }
   };
-  const handleDeleteComment = async (commentId: string) => {
-    matchesApi.deleteComment(match.id, commentId).then(() => {
-      setComments(prev => prev.filter(c => c.id !== commentId));
+  const handleDeleteOccurrence = async (occurrenceId: string) => {
+    matchesApi.deleteOccurrence(match.id, occurrenceId).then(() => {
+      setOccurrences(prev => prev.filter(c => c.id !== occurrenceId));
     }).catch(err => {
-      console.error('Error deleting comment:', err);
-      notify('Não foi possível eliminar o comentário. Tente novamente.', 'error');
+      console.error('Error deleting occurrence:', err);
+      notify('Não foi possível eliminar a ocorrência. Tente novamente.', 'error');
     });
   };
 
-  const renderCommentListArea = () => {
-    if (comments.length === 0) {
-      return <p className="text-gray-600 text-center py-4">Nenhum comentário ainda.</p>;
+  const formatDateTime = (dateTimeStr: string) => {
+    const date = new Date(dateTimeStr);
+    return date.toLocaleString('pt-PT', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const renderOccurrenceListArea = () => {
+    if (occurrences.length === 0) {
+      return <p className="text-gray-600 text-center py-4">Nenhuma ocorrência ainda.</p>;
     }
 
     return (
       <div className="space-y-4">
-        {comments.map((comment) => (
-          <div key={comment.id} className="p-4 bg-gray-50 rounded-lg">
+        {occurrences.map((occurrence) => (
+          <div key={occurrence.id} className="p-4 bg-gray-50 rounded-lg">
             <div className="flex justify-between items-start mb-2">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-teal-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
-                  {comment.author_name.charAt(0).toUpperCase()}
+                  {occurrence.author_name.charAt(0).toUpperCase()}
                 </div>
                 <div>
                   <p className="font-semibold text-sm text-gray-800">
-                    {comment.author_name}
+                    {occurrence.author_name}
                   </p>
-                  {/* <p className="text-xs text-gray-500">
-                    {formatCommentDate(comment.created_at)}
-                  </p> */}
+                  <p className="text-xs text-gray-500">
+                    {formatDateTime(occurrence.created_at)}
+                  </p>
                 </div>
               </div>
               <div />
               <Button
-                onClick={() => handleDeleteComment(comment.id)}
+                onClick={() => handleDeleteOccurrence(occurrence.id)}
                 type="danger"
-                active={comment.can_edit}
+                active={occurrence.can_edit}
                 confirmation={{
-                  title: "Eliminar comentário",
-                  message: "Tem a certeza que deseja eliminar este comentário?",
+                  title: "Eliminar ocorrência",
+                  message: "Tem a certeza que deseja eliminar esta ocorrência?",
                   confirmLabel: "Eliminar",
                 }}
                 padding="px-2 py-2"
@@ -256,7 +267,7 @@ const CommentsSection = ({ match }: { match: MatchDetail }) => {
               </Button>
             </div>
             <p className="text-gray-700 whitespace-pre-wrap">
-              {comment.message}
+              {occurrence.message}
             </p>
           </div>
         ))}
@@ -267,31 +278,31 @@ const CommentsSection = ({ match }: { match: MatchDetail }) => {
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">Comentários</h3>
+        <h3 className="text-xl font-bold text-gray-800 mb-4">Ocorrências</h3>
         <div className='flex gap-4 mb-4'>
           <Button
-            onClick={handleAddComment}
+            onClick={handleAddOccurrence}
             type='primary'
-            disabled={submitting || !newComment.trim()}
+            disabled={submitting || !newOccurrence.trim()}
           >
-            {submitting ? 'A Adicionar...' : 'Adicionar Comentário'}
+            {submitting ? 'A Adicionar...' : 'Adicionar Ocorrência'}
           </Button>
         </div>
       </div>
 
-      {/* Comment Input */}
+      {/* Occurrence Input */}
       <div className="mb-6">
         <textarea
           className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
           rows={3}
-          placeholder="Adicionar um comentário..."
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
+          placeholder="Adicionar uma ocorrência..."
+          value={newOccurrence}
+          onChange={(e) => setNewOccurrence(e.target.value)}
         ></textarea>
       </div>
 
-      {/* Comments List */}
-      {renderCommentListArea()}
+      {/* Occurrences List */}
+      {renderOccurrenceListArea()}
     </div>
   );
 };
@@ -500,7 +511,7 @@ const JogoDetails = () => {
           <div className="lg:col-span-2 space-y-6">
             <MatchResultsComponent matchState={[match, setMatch]} />
             <LineupsSection matchState={[match, setMatch]} />
-            <CommentsSection match={match} />
+            <OccurrencesSection match={match} />
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 from apps.athletes.models import Athlete
-from apps.matches.models import Match
+from apps.matches.models import Match, MatchOccurrence
 from apps.modalities.models import Modality
 from apps.teams.models import Team
 from apps.tournaments.models import Tournament
@@ -25,6 +25,22 @@ def match_post_delete(sender, instance: Match, **kwargs):
     """When a match is deleted, request a projection update for that match."""
     request_projection_update(
         ProjectionUpdateRequestTypes.MATCH, {"match_id": str(instance.id)}
+    )
+
+
+@receiver(post_save, sender=MatchOccurrence)
+def match_occurrence_post_save(sender, instance: MatchOccurrence, **kwargs):
+    """When a match occurrence is created or updated, request a projection update for that match."""
+    request_projection_update(
+        ProjectionUpdateRequestTypes.MATCH, {"match_id": str(instance.match.id)}
+    )
+
+
+@receiver(post_delete, sender=MatchOccurrence)
+def match_occurrence_post_delete(sender, instance: MatchOccurrence, **kwargs):
+    """When a match occurrence is deleted, request a projection update for that match."""
+    request_projection_update(
+        ProjectionUpdateRequestTypes.MATCH, {"match_id": str(instance.match.id)}
     )
 
 

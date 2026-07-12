@@ -18,8 +18,8 @@ from ..service import (
     assign_staff_to_lineup,
     create_match,
     delete_match,
-    match_add_comment,
-    match_delete_comment,
+    match_add_occurrence,
+    match_delete_occurrence,
     publish_match_results,
     update_lineup,
     update_match,
@@ -30,7 +30,6 @@ from .pdf_generators import (
     document_generation_service,
 )
 from .serializers import (
-    CommentCreateSerializer,
     LineupAssignSerializer,
     LineupAssignStaffSerializer,
     LineupUpdateSerializer,
@@ -41,6 +40,7 @@ from .serializers import (
     MatchParticipantLineupSerializer,
     MatchPublishResultsSerializer,
     MatchUpdateSerializer,
+    OccurrenceCreateSerializer,
 )
 
 
@@ -113,7 +113,7 @@ class MatchListCreateView(RoleRequiredMixin, APIView):
 @extend_schema_view(
     get=extend_schema(
         summary="Retrieve match details",
-        description="Get detailed information about a specific match, including participants and comments.",
+        description="Get detailed information about a specific match, including participants and occurrences.",
         tags=["Match Management"],
     ),
     put=extend_schema(
@@ -199,27 +199,27 @@ def publish_match_results_view(request, match_id):
     return Response(serializer.data)
 
 
-# ============= Comment Management Views =============
+# ============= occurrence Management Views =============
 
 
 @extend_schema(
-    request=CommentCreateSerializer,
+    request=OccurrenceCreateSerializer,
     responses=MatchDetailSerializer,
-    description="Add a comment to a match",
+    description="Add a occurrence to a match",
     tags=["Match Management"],
 )
 @api_view(["POST"])
 @require_auth
-def add_comment(request, match_id):
-    """Add comment to match"""
-    serializer = CommentCreateSerializer(data=request.data)
+def add_occurrence(request, match_id):
+    """Add occurrence to match"""
+    serializer = OccurrenceCreateSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
 
     user = get_user(request)
 
-    match = match_add_comment(
+    match = match_add_occurrence(
         match_id=match_id,
-        comment_text=serializer.validated_data["message"],
+        occurrence_text=serializer.validated_data["message"],
         admin_id=user.user_id,
     )
 
@@ -235,16 +235,16 @@ def add_comment(request, match_id):
 
 @extend_schema(
     responses={204: None},
-    description="Delete a comment from a match",
+    description="Delete a occurrence from a match",
     tags=["Match Management"],
 )
 @api_view(["DELETE"])
 @require_auth
-def delete_comment(request, match_id, comment_id):
-    """Delete a comment"""
-    match_delete_comment(
+def delete_occurrence(request, match_id, occurrence_id):
+    """Delete a occurrence"""
+    match_delete_occurrence(
         match_id=match_id,
-        comment_id=comment_id,
+        occurrence_id=occurrence_id,
     )
     return Response(status=204)
 
@@ -411,9 +411,9 @@ urlpatterns = [
         name="match-publish-results",
     ),
     path(
-        "<uuid:match_id>/comments/",
-        add_comment,
-        name="match-add-comment",
+        "<uuid:match_id>/occurrences/",
+        add_occurrence,
+        name="match-add-occurrence",
     ),
     path(
         "<uuid:match_id>/sheet/",
@@ -421,9 +421,9 @@ urlpatterns = [
         name="match-sheet",
     ),
     path(
-        "<uuid:match_id>/comments/<uuid:comment_id>/",
-        delete_comment,
-        name="match-delete-comment",
+        "<uuid:match_id>/occurrences/<uuid:occurrence_id>/",
+        delete_occurrence,
+        name="match-delete-occurrence",
     ),
     path(
         "<uuid:match_id>/lineups/<uuid:participant_id>/",

@@ -41,7 +41,7 @@ class Match(models.Model):
 
     if TYPE_CHECKING:
         participants: RelatedManager["MatchParticipant"]
-        comments: RelatedManager["MatchComment"]
+        occurrences: RelatedManager["MatchOccurrence"]
         league_match: RelatedManager["LeagueMatch"]
 
 
@@ -166,12 +166,14 @@ class MatchParticipantStaffAssignment(models.Model):
         unique_together = ("match_participant", "staff")
 
 
-class MatchComment(models.Model):
-    """Represents a comment made on a match."""
+class MatchOccurrence(models.Model):
+    """Represents an occurrence or event related to a match."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name="comments")
+    match = models.ForeignKey(
+        Match, on_delete=models.CASCADE, related_name="occurrences"
+    )
 
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
