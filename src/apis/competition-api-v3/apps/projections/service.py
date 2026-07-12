@@ -128,6 +128,7 @@ def rebuild_tournament_projection(tournament_id: UUID):
         status=tournament.status,
         modality_id=tournament.modality_id,
         modality_name=tournament.modality.name,
+        modality_point_unit=tournament.modality.point_unit,
         modality_type_id=tournament.modality.modality_type(tournament.season_id).id,
         modality_type_name=tournament.modality.modality_type(tournament.season_id).name,
         competitor_count=tournament.competitors.count(),

@@ -107,6 +107,9 @@ class TournamentDetail(BaseModel):
     # Modality info
     modality_id: UUID = Field(..., description="Modality identifier")
     modality_name: Optional[str] = Field(None, description="Modality name")
+    modality_point_unit: Optional[str] = Field(
+        None, description="Unit of points for the modality (e.g., 'pt', 'score', 'gol')"
+    )
     modality_type_id: UUID = Field(..., description="Modality type identifier")
     modality_type_name: str = Field(..., description="Type of modality")
 

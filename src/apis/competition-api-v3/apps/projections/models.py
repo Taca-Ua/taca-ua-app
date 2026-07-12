@@ -72,6 +72,8 @@ class TournamentDetailView(models.Model):
 
     modality_id = models.UUIDField()
     modality_name = models.CharField(max_length=255)
+    modality_point_unit = models.CharField(max_length=255)
+
     modality_type_id = models.UUIDField()
     modality_type_name = models.CharField(max_length=255)
 
