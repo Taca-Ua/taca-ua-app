@@ -48,9 +48,15 @@ class DocumentGenerationService:
             leading=fontSize * 1.3,
         )
 
-    def _P(self, text, style):
+    def _P(self, text, style, footer: str = None):
         """Create a Paragraph with given style"""
-        return Paragraph(str(text), style)
+
+        footer_codded = ""
+        if footer:
+            footer_codded = f'<br/><font size="7" color="{colors.HexColor("#7F8C8D")}">{footer}</font>'
+
+        p = Paragraph(str(text) + footer_codded, style)
+        return p
 
     def _base_ts(self):
         """Common TableStyle commands"""
@@ -354,7 +360,19 @@ class DocumentGenerationService:
                     if hasattr(occurrence, "content")
                     else str(occurrence)
                 )
-                notes_body.append([self._P(occurrence_text, style_normal)])
+                notes_body.append(
+                    [
+                        self._P(
+                            occurrence_text,
+                            style_normal,
+                            footer=(
+                                occurrence.timestamp.strftime("%d/%m/%Y %H:%M")
+                                if hasattr(occurrence, "timestamp")
+                                else None
+                            ),
+                        )
+                    ]
+                )
         else:
             # Empty space for notes if no occurrences
             notes_body = [[""]]
