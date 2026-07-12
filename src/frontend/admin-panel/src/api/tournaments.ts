@@ -12,6 +12,7 @@ export interface TournamentListItem {
   modality: {
     id: string;
     name: string;
+    point_unit: string;
   };
   start_date?: string;
 }
