@@ -28,7 +28,11 @@ def create_nucleo(name: str, abbreviation: str, image: bytes = None) -> Nucleus:
 
 @transaction.atomic
 def update_nucleo(
-    nucleo_id: str, name: str = None, abbreviation: str = None, image: bytes = None
+    nucleo_id: str,
+    name: str = None,
+    abbreviation: str = None,
+    image: bytes = None,
+    entity_type: str = None,
 ) -> Nucleus:
     """Updates a nucleo's details and its associated logo if a new image is provided."""
 
@@ -48,6 +52,11 @@ def update_nucleo(
             # there is no existing image, so we upload a new one
             image_url = file_storage_service.upload_file(image)
             nucleo.logo_url = image_url
+
+    if entity_type:
+        if entity_type not in Nucleus.NucleusEntityType.values:
+            raise ValidationError(f"Invalid entity type: {entity_type}")
+        nucleo.entity_type = entity_type
 
     nucleo.save()
 

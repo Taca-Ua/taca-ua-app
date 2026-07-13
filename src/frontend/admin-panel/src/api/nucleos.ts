@@ -6,6 +6,7 @@ export interface NucleoListItem {
   abbreviation: string;
   logo_url?: string;
   belongs_to_season?: boolean;
+  entity_type: 'nucleus' | 'external';
 }
 
 export interface NucleoDetail extends NucleoListItem {
@@ -28,6 +29,7 @@ export interface NucleoUpdate {
   name?: string;
   abbreviation?: string;
   image?: File;
+  entity_type?: 'nucleus' | 'external';
 }
 
 export const nucleosApi = {
@@ -59,6 +61,9 @@ export const nucleosApi = {
     }
     if (data.image) {
       formData.append('image', data.image);
+    }
+    if (data.entity_type !== undefined) {
+      formData.append('entity_type', data.entity_type);
     }
 	return apiClient.put<NucleoDetail>(`/nucleos/${nucleoId}/`, formData, { season_id: seasonId });
   },

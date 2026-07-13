@@ -116,6 +116,9 @@ const NucleusDetailComponent = ( {
         <h2 className="text-lg font-semibold text-gray-700 mb-1">
           <span className="text-teal-500 font-medium text-lg">Abreviação:</span> {nucleus.abbreviation}
         </h2>
+        <h2 className="text-lg font-semibold text-gray-700">
+          <span className="text-teal-500 font-medium text-lg">Tipo de Entidade:</span> {nucleus.entity_type === 'nucleus' ? 'Núcleo' : 'Externo'}
+        </h2>
       </div>
 
       <div className="flex flex-row gap-2 flex-grow md:flex-col">
