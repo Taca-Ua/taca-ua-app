@@ -9,6 +9,7 @@ function Nucleos() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'nucleus' | 'external'>('nucleus');
 
   useEffect(() => {
     const fetch = async () => {
@@ -28,8 +29,9 @@ function Nucleos() {
   }, []);
 
   const filtered = nucleos.filter((n) =>
-    n.name.toLowerCase().includes(search.toLowerCase()) ||
-    n.abbreviation.toLowerCase().includes(search.toLowerCase())
+    n.entity_type == activeTab &&
+    (n.name.toLowerCase().includes(search.toLowerCase()) ||
+     n.abbreviation.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
@@ -69,6 +71,31 @@ function Nucleos() {
             </div>
           ) : (
             <>
+              {/* Tabs */}
+              <div className="mb-6 border-b border-gray-200">
+                <div className="flex gap-8">
+                  <button
+                    onClick={() => setActiveTab('nucleus')}
+                    className={`pb-4 px-1 font-semibold border-b-2 transition-colors ${
+                      activeTab === 'nucleus'
+                        ? 'border-teal-600 text-teal-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Núcleos
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('external')}
+                    className={`pb-4 px-1 font-semibold border-b-2 transition-colors ${
+                      activeTab === 'external'
+                        ? 'border-teal-600 text-teal-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Externos
+                  </button>
+                </div>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filtered.length === 0 ? (
                   <div className="col-span-full bg-white rounded-lg shadow p-8 text-center">
