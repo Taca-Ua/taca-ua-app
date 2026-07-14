@@ -6,6 +6,7 @@ import { useNotification } from "../../contexts/NotificationProvider";
 import { useModal } from "../../contexts/ModalContext";
 import { useAuth } from "../../hooks/useAuth";
 import { useSeason } from "../../contexts/SeasonContext";
+import DefinedStatesMenuComponent from "../utils/costum_menus/DefinedStatesMenuComponent";
 
 const NucleusEditModal = ( {
   nucleusState,
@@ -22,14 +23,16 @@ const NucleusEditModal = ( {
   const { loadedSeason } = useSeason();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [editedAbbreviation, setEditedAbbreviation] = useState('');
-  const [editedName, setEditedName] = useState('');
+  const [editedAbbreviation, setEditedAbbreviation] = useState(nucleus.abbreviation);
+  const [editedName, setEditedName] = useState(nucleus.name);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [entityType, setEntityType] = useState<'nucleus' | 'external' | null>(nucleus.entity_type || null);
 
   useEffect(() => {
     setEditedAbbreviation(nucleus.abbreviation);
     setEditedName(nucleus.name);
+    setEntityType(nucleus.entity_type || null);
     if (nucleus.logo_url) {
       setLogoPreview(nucleus.logo_url);
     }
@@ -39,6 +42,7 @@ const NucleusEditModal = ( {
   const onClose = () => {
     setEditedAbbreviation(nucleus.abbreviation);
     setEditedName(nucleus.name);
+    setEntityType(nucleus.entity_type || null);
     setLogoFile(null);
     setLogoPreview(nucleus.logo_url || null);
     if (fileInputRef.current) {
@@ -78,9 +82,10 @@ const NucleusEditModal = ( {
     }
 
     nucleosApi.update(nucleus.id, {
-      abbreviation: editedAbbreviation,
-      name: editedName,
+      abbreviation: editedAbbreviation !== nucleus.abbreviation ? editedAbbreviation : undefined,
+      name: editedName !== nucleus.name ? editedName : undefined,
       image: logoFile || undefined,
+      entity_type: (entityType !== null && entityType !== nucleus.entity_type) ? entityType : undefined,
     }, loadedSeason?.id).then((updatedNucleus) => {
       // Add cache-busting query parameter to logo URL to force refresh
       if (updatedNucleus.logo_url) {
@@ -133,6 +138,23 @@ const NucleusEditModal = ( {
               placeholder="Digite o nome completo"
               required
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-700 font-medium mb-2">
+              Tipo de Entidade <HelpTooltip
+                text="Define se o núcleo é interno ou externo à instituição."
+                className="ml-1"
+              />
+            </label>
+            <DefinedStatesMenuComponent
+              states={[
+                {value: "nucleus", label: "Núcleo"},
+                {value: "external", label: "Externo"},
+              ]}
+              onSelect={(value) => setEntityType(value as 'nucleus' | 'external')}
+              initialValue={entityType || undefined}
             />
           </div>
 

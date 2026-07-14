@@ -45,6 +45,8 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       MINIO_BROWSER_REDIRECT_URL: https://${DOMAIN:-localhost}/system/minio/
+    volumes:
+      - minio_data:/data
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -287,3 +289,4 @@ services:
 
 volumes:
   postgres_data:
+  minio_data:

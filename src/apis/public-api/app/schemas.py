@@ -327,6 +327,9 @@ class NucleoPublic(BaseModel):
     nucleo_id: UUID = Field(..., description="Unique identifier for the nucleo")
     name: str = Field(..., description="Full name of the nucleo")
     abbreviation: str = Field(..., description="Short abbreviation")
+    entity_type: str = Field(
+        ..., description="Type of entity (e.g., 'nucleo', 'department')"
+    )
     logo_url: Optional[str] = Field(None, description="Logo image URL")
 
 

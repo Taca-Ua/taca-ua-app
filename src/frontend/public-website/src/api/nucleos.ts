@@ -5,6 +5,7 @@ export interface NucleoPublic {
   name: string;
   abbreviation: string;
   logo_url?: string;
+  entity_type: string;
 }
 
 export interface NucleoList {

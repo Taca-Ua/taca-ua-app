@@ -124,6 +124,7 @@ class NucleoDetailView(RoleRequiredMixin, APIView):
             name=serializer.validated_data.get("name"),
             abbreviation=serializer.validated_data.get("abbreviation"),
             image=serializer.validated_data.get("image"),
+            entity_type=serializer.validated_data.get("entity_type"),
         )
 
         serializer = NucleosDetailSerializer(

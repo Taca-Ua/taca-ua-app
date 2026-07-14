@@ -8,6 +8,7 @@ import { useAuth } from "../../hooks/useAuth";
 import LazyImage from "../utils/LazyImage";
 import { useSeason } from "../../contexts/SeasonContext";
 import type { ApiError } from "../../api/client";
+import ConfirmModal from "../ConfirmModal";
 
 const NucleusDetailComponent = ( {
   nucleusId,
@@ -22,7 +23,7 @@ const NucleusDetailComponent = ( {
 
   const [nucleus, setNucleus] = nucleusState || useState<NucleoDetail | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const { pushModal } = useModal();
+  const { pushModal, popModal } = useModal();
 
   useEffect(() => {
     nucleosApi.getById(nucleusId, loadedSeason?.id)
@@ -116,6 +117,9 @@ const NucleusDetailComponent = ( {
         <h2 className="text-lg font-semibold text-gray-700 mb-1">
           <span className="text-teal-500 font-medium text-lg">Abreviação:</span> {nucleus.abbreviation}
         </h2>
+        <h2 className="text-lg font-semibold text-gray-700">
+          <span className="text-teal-500 font-medium text-lg">Tipo de Entidade:</span> {nucleus.entity_type === 'nucleus' ? 'Núcleo' : 'Externo'}
+        </h2>
       </div>
 
       <div className="flex flex-row gap-2 flex-grow md:flex-col">
@@ -137,15 +141,25 @@ const NucleusDetailComponent = ( {
               flexible={true}
               active={isAdminGeneral && loadedSeason !== null && !nucleus.belongs_to_season}
             >
-              + Adicionar à época
+              Adicionar à época
             </Button>
             <Button
-              onClick={handleRemoveFromSeason}
+              onClick={() => pushModal(
+                <ConfirmModal
+                  title="Confirmar Remoção"
+                  message={`Tem a certeza que deseja remover o núcleo "${nucleus.name}" da época? Esta ação não pode ser desfeita.`}
+                  confirmLabel="Remover"
+                  cancelLabel="Cancelar"
+                  variant="danger"
+                  onConfirm={handleRemoveFromSeason}
+                  onCancel={() => popModal()}
+                />
+              )}
               type="danger"
               flexible={true}
               active={isAdminGeneral && loadedSeason !== null && nucleus.belongs_to_season}
             >
-              - Remover da época
+              Remover da época
             </Button>
           </div>
         )}
