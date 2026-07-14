@@ -10,7 +10,11 @@ const NucleusEntry = ({ nucleus }: { nucleus: NucleoListItem }) => {
     return (
       <Link
         to={`/nucleos/${nucleus.id}`}
-        className={"cursor-pointer bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 p-6 flex flex-col gap-4" + (elementIsDisabled ? " opacity-50" : "")}
+        className={
+          "cursor-pointer bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 p-6 flex flex-col gap-4"
+          + (elementIsDisabled ? " opacity-50" : "")
+          + (nucleus.entity_type === "external" ? " border-dashed border-gray-400" : "")
+        }
       >
         <div className="flex items-center justify-center text-center gap-10">
           {nucleus.logo_url ? (
