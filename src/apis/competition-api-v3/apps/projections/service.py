@@ -372,6 +372,7 @@ def rebuild_nucleo_projection(nucleo_id: UUID):
         name=nucleo.name,
         abbreviation=nucleo.abbreviation,
         logo_url=nucleo.logo_url,
+        entity_type=nucleo.entity_type,
     )
 
     return projection

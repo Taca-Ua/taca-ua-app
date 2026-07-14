@@ -7,8 +7,8 @@ import urllib3
 
 urllib3.disable_warnings()
 
-# API_URL = "http://localhost/api/admin"
-API_URL = "https://tacaua.aauav.pt/api/admin"
+API_URL = "http://localhost/api/admin"
+# API_URL = "https://tacaua.aauav.pt/api/admin"
 
 HEADERS = {
     "X-Dev-Auth-Token": "super-secret-dev-token",
@@ -1202,7 +1202,7 @@ def main():
 
     print("Extracting information from the source...")
     try:
-        information_stealer("25_26")
+        information_stealer("24_25")
     except Exception as e:
         print(f"Error occurred while extracting information: {e}")
         return

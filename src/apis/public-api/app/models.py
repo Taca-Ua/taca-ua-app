@@ -181,6 +181,7 @@ class NucleoDetailView(Base):
     name = Column(String(255))
     abbreviation = Column(String(255))
     logo_url = Column(String(255))
+    entity_type = Column(String(255))
 
 
 class SeasonDetailView(Base):
