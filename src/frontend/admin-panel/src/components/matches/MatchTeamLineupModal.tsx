@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useModal } from "../../contexts/ModalContext";
 import { matchesApi, type MatchParticipantLineup } from "../../api/matches";
 import ChooseMultipleModal from "../utils/costum_menus/ChoseMultipleModal";
-import { athletesApi } from "../../api/athletes";
+import { athletesApi, type AthleteListItem, type AthleteStats } from "../../api/athletes";
 import { staffApi } from "../../api/staff";
 import Button from "../utils/Button";
 import { useNotification } from "../../contexts/NotificationProvider";
@@ -112,16 +112,17 @@ const MatchTeamLineupModal = ({
     const athletesChoiceLoader = () => {
       if (!participantLineup) return Promise.resolve([]);
 
-      const athletesPromise = athletesApi.getAll({ team_id: participantLineup.team_id }).catch((err) => {
+      const athletesPromise: Promise<AthleteListItem[]> = athletesApi.getAll({ team_id: participantLineup.team_id }).catch((err) => {
         console.error("Error fetching athletes:", err);
         notify("Não foi possível carregar os atletas. Tente novamente.", "error");
-        return [];
+        return [] as AthleteListItem[];
       });
 
-      const statsPromise = athletesApi.getAthleteStats(participantLineup.team_id).catch((err) => {
+      const statsPromise: Promise<AthleteStats[]> = athletesApi.getAthleteStats(participantLineup.team_id)
+      .catch((err) => {
         console.error("Error fetching athlete stats:", err);
         notify("Não foi possível carregar as estatísticas dos atletas. Sem participação disponível.", "error");
-        return [];
+        return [] as AthleteStats[];
       });
 
       return Promise.all([
