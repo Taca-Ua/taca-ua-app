@@ -59,6 +59,7 @@ def get_matches_table(
     date_to: str = None,
     athlete_id: str = None,
     team_id: str = None,
+    tournament_scoring_type: str = None,
     *,
     context_admin_id: UUID = None,
     include_lineups: bool = False,
@@ -113,6 +114,11 @@ def get_matches_table(
 
     if team_id is not None:
         queryset = queryset.filter(participants__competitor__team_id=team_id).distinct()
+
+    if tournament_scoring_type is not None:
+        queryset = queryset.filter(
+            tournament__scoring_format__mode=tournament_scoring_type
+        ).distinct()
 
     queryset = queryset.select_related("tournament").prefetch_related(
         Prefetch(

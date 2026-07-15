@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useModal } from "../../contexts/ModalContext";
 import { matchesApi, type MatchParticipantLineup } from "../../api/matches";
 import ChooseMultipleModal from "../utils/costum_menus/ChoseMultipleModal";
-import { athletesApi } from "../../api/athletes";
+import { athletesApi, type AthleteListItem, type AthleteStats } from "../../api/athletes";
 import { staffApi } from "../../api/staff";
 import Button from "../utils/Button";
 import { useNotification } from "../../contexts/NotificationProvider";
@@ -109,6 +109,38 @@ const MatchTeamLineupModal = ({
         });
     };
 
+    const athletesChoiceLoader = () => {
+      if (!participantLineup) return Promise.resolve([]);
+
+      const athletesPromise: Promise<AthleteListItem[]> = athletesApi.getAll({ team_id: participantLineup.team_id }).catch((err) => {
+        console.error("Error fetching athletes:", err);
+        notify("Não foi possível carregar os atletas. Tente novamente.", "error");
+        return [] as AthleteListItem[];
+      });
+
+      const statsPromise: Promise<AthleteStats[]> = athletesApi.getAthleteStats(participantLineup.team_id)
+      .catch((err) => {
+        console.error("Error fetching athlete stats:", err);
+        notify("Não foi possível carregar as estatísticas dos atletas. Sem participação disponível.", "error");
+        return [] as AthleteStats[];
+      });
+
+      return Promise.all([
+        statsPromise,
+        athletesPromise
+      ])
+        .then(([stats, athletes]) => {
+          const statsMap = new Map(stats.map((stat) => [stat.id, stat.participation_percentage]));
+
+          return athletes.map((athlete) => ({
+            id: athlete.id,
+            title: athlete.name,
+            subTitle: `Curso: ${athlete.course.name} | Nº Estudante: ${athlete.student_number}`,
+            percentage: statsMap.size > 0 ? statsMap.get(athlete.id) ?? 0 : undefined,
+          }));
+        });
+    };
+
     if (!participantLineup) {
         return (
             <div className="bg-white rounded-xl p-8 w-full max-w-md md:min-w-[700px] shadow-lg">
@@ -166,17 +198,7 @@ const MatchTeamLineupModal = ({
               onClick={() => {
                 pushModal(
                   <ChooseMultipleModal
-                    allElementsLoader={() =>
-                      athletesApi.getAll({
-                        team_id: participantLineup.team_id,
-                      }).then((res) =>
-                        res.map((athlete) => ({
-                          id: athlete.id,
-                          title: athlete.name,
-                          subTitle: `Curso: ${athlete.course.abbreviation}`,
-                        })),
-                      )
-                    }
+                    allElementsLoader={athletesChoiceLoader}
                     initialChosenElementsIds={participantLineup.lineup.map(
                       (player) => player.player_id,
                     )}

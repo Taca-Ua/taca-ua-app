@@ -6,6 +6,7 @@ export interface GenericElement {
     id: string;
     title: string;
     subTitle?: string;
+    percentage?: number;
 }
 
 const EditSummary = ({
@@ -83,6 +84,7 @@ const ChooseMultipleModal = ({
     const [searchQuery, setSearchQuery] = useState("");
     const [isMobileSummaryOpen, setIsMobileSummaryOpen] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const [orderByPercentage, setOrderByPercentage] = useState<"asc" | "desc" | null>(null);
 
     useEffect(() => {
         allElementsLoader().then(setAllElements);
@@ -102,7 +104,16 @@ const ChooseMultipleModal = ({
       if (filterType === 'all') return true;
       if (filterType === 'selected') return chosenElements.includes(element.id);
       if (filterType === 'not_selected') return !chosenElements.includes(element.id);
+
       return true;
+    }).sort((a, b) => {
+      if (orderByPercentage === 'asc') {
+        return (a.percentage ?? 0) - (b.percentage ?? 0);
+      }
+      if (orderByPercentage === 'desc') {
+        return (b.percentage ?? 0) - (a.percentage ?? 0);
+      }
+      return 0;
     });
 
     const { newlySelected, newlyDeselected } = useMemo(() => {
@@ -208,7 +219,23 @@ const ChooseMultipleModal = ({
                     Não selecionados
                   </button>
                 </div>
+                <div className="flex gap-1 mt-2 sm:mt-0">
+                </div>
               </div>
+
+              {allElements.some((el) => el.percentage !== undefined) && (
+                <div className="mb-4">
+                    <select
+                      value={orderByPercentage || ''}
+                      onChange={(e) => setOrderByPercentage(e.target.value as 'asc' | 'desc' | null)}
+                      className="px-3 py-1 rounded-md text-sm font-medium border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    >
+                      <option value="">Ordenar por %</option>
+                      <option value="asc">Ordenar % Asc</option>
+                      <option value="desc">Ordenar % Desc</option>
+                    </select>
+                </div>
+              )}
 
               <div className="flex-1 overflow-y-auto space-y-2 mb-3 max-h-96 lg:max-h-none">
                 {filteredElements.length === 0 ? (
@@ -220,6 +247,7 @@ const ChooseMultipleModal = ({
                 ) : (
                   filteredElements.map((element: GenericElement) => {
                     const isSelected = chosenElements.includes(element.id);
+                    console.log(element.subTitle);
                     return (
                       <div
                         key={element.id}
@@ -240,6 +268,11 @@ const ChooseMultipleModal = ({
                         }`}
                       >
                         <div className="flex items-center gap-3">
+                          {element.percentage !== undefined && (
+                            <div className="flex items-center justify-center flex-shrink-0 text-blue-600 font-bold">
+                              {element.percentage}%
+                            </div>
+                          )}
                           <div
                             className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0 ${
                               isSelected

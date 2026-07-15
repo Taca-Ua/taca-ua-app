@@ -28,6 +28,14 @@ class AthleteDetailSerializer(AthleteListSerializer):
     payment_proof_file_url = serializers.CharField()
 
 
+class AthleteStatsSerializer(serializers.Serializer):
+    """Serializer for athlete stats"""
+
+    id = serializers.UUIDField()
+    name = serializers.CharField()
+    participation_percentage = serializers.FloatField()
+
+
 # Request serializers for athletes module
 class AthleteCreateSerializer(serializers.Serializer):
     """Serializer for creating a student"""
