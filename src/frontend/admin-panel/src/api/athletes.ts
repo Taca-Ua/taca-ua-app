@@ -19,6 +19,12 @@ export interface AthleteDetail extends AthleteListItem {
     payment_proof_file_url?: string;
 };
 
+export interface AthleteStats {
+    id: string;
+    name: string;
+    participation_percentage: number;
+}
+
 
 export interface AthleteListParams {
     course_id?: string;
@@ -118,8 +124,12 @@ export const athletesApi = {
       set_as_socio: number;
       unmatched_numbers: string[];
     }> {
-      return apiClient.post('/students/sync-membership/', {
-        student_numbers: studentNumbers,
-      });
-    },
+    return apiClient.post('/students/sync-membership/', {
+      student_numbers: studentNumbers,
+    });
+  },
+
+  async getAthleteStats(teamId: string): Promise<AthleteStats[]> {
+    return apiClient.get<AthleteStats[]>(`/athletes/stats/team/${teamId}/`);
+  }
 };
