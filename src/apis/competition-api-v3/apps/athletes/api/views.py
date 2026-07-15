@@ -5,7 +5,11 @@ from rest_framework.views import APIView
 from shared.auth.decorators import RoleRequiredMixin, require_roles_class_method
 from shared.auth.utils import RolesEnum
 
-from ..selectors import get_athlete_by_id, get_athletes_table
+from ..selectors import (
+    get_athlete_by_id,
+    get_athletes_stats_for_team,
+    get_athletes_table,
+)
 from ..service import (
     create_athlete,
     delete_athlete,
@@ -18,6 +22,7 @@ from .serializers import (
     AthleteDetailSerializer,
     AthleteListSerializer,
     AthleteMembershipSyncSerializer,
+    AthleteStatsSerializer,
     AthleteUpdateSerializer,
 )
 
@@ -142,6 +147,23 @@ class AthleteMembershipSyncAPIView(RoleRequiredMixin, APIView):
         return Response(status=200)
 
 
+@extend_schema_view(
+    get=extend_schema(
+        summary="Get athlete statistics",
+        description="Retrieve statistics for athletes in a specific team.",
+        tags=["Athletes Management"],
+        responses={200: AthleteStatsSerializer},
+    )
+)
+class AthleteStatsAPIView(RoleRequiredMixin, APIView):
+
+    def get(self, request, team_id):
+        athletes = get_athletes_stats_for_team(team_id=team_id)
+
+        serializer = AthleteStatsSerializer(athletes, many=True)
+        return Response(serializer.data, status=200)
+
+
 urlpatterns = [
     path("", AthleteListCreateAPIView.as_view(), name="athlete-list-create"),
     path(
@@ -153,5 +175,10 @@ urlpatterns = [
         "membership-sync/",
         AthleteMembershipSyncAPIView.as_view(),
         name="athlete-membership-sync",
+    ),
+    path(
+        "stats/team/<uuid:team_id>/",
+        AthleteStatsAPIView.as_view(),
+        name="athlete-stats",
     ),
 ]
