@@ -31,7 +31,9 @@ export default function Sidebar() {
           { to: "/membros", label: "Membros", short: "Mem" },],
 
     // tournaments management
-    [{ to: "/torneios", label: "Torneios", short: "Tor" },
+    [
+      { to: "/ranking", label: "Ranking", short: "Ran" },
+      { to: "/torneios", label: "Torneios", short: "Tor" },
     { to: "/jogos", label: "Jogos", short: "Jog" },],
   ];
 

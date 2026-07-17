@@ -24,3 +24,29 @@ class CourseTournamentPosition(models.Model):
         modality_id: UUID
         course_id: UUID
         tournament_id: UUID
+
+
+class RankingAmmendment(models.Model):
+    season = models.ForeignKey(
+        Season, on_delete=models.CASCADE, related_name="ranking_ammendments"
+    )
+    course = models.ForeignKey(
+        Course, on_delete=models.CASCADE, related_name="ranking_ammendments"
+    )
+    modality = models.ForeignKey(
+        Modality,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="ranking_ammendments",
+    )
+
+    points = models.IntegerField()
+    reason = models.TextField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    if TYPE_CHECKING:
+        season_id: int
+        course_id: UUID
+        modality_id: UUID | None
