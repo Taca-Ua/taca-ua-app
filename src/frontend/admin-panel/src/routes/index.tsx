@@ -23,6 +23,7 @@ import TorneioDetails from '../pages/geral/TorneioDetails';
 import JogoDetails from '../pages/geral/JogoDetails';
 import SociosGeral from '../pages/geral/Socios';
 import PublicWebsiteConfig from '../pages/geral/PublicWebsiteConfig';
+import RankingPage from '../pages/geral/RankingPage';
 
 // Nucleo admin pages
 import Equipas from '../pages/nucleo/Teams';
@@ -88,6 +89,7 @@ export const router = createBrowserRouter([
       { path: '/torneios/:id',        element: <ProtectedRoute> <TorneioDetails /></ProtectedRoute> },
       { path: '/jogos/:id',           element: <ProtectedRoute> <JogoDetails /></ProtectedRoute> },
       { path: '/membros',             element: <ProtectedRoute> <SociosGeral /></ProtectedRoute> },
+      { path: '/ranking',             element: <ProtectedRoute> <RankingPage /></ProtectedRoute> },
 
       // Nucleo Admin Routes
       { path: '/equipas',            element: <ProtectedRoute> <Equipas /></ProtectedRoute> },

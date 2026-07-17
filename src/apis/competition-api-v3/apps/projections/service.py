@@ -5,7 +5,7 @@ from apps.courses.selectors import get_course_by_id
 from apps.matches.selectors import get_match_by_id
 from apps.modalities.selectors import get_modality_by_id
 from apps.nucleus.selectors import get_nucleus_by_id
-from apps.ranking.selectors import get_general_ranking, get_modality_ranking
+from apps.ranking.selectors import get_ranking_table
 from apps.regulations.selectors import get_regulation_by_id
 from apps.seasons.selectors import get_season_by_id
 from apps.teams.selectors import get_team_by_id
@@ -283,23 +283,23 @@ def rebuild_general_ranking_projection(season_id: int):
     GeneralRankingView.objects.filter(season_id=season_id).delete()
 
     # get the general ranking data
-    general_ranking = get_general_ranking(season_id)
+    general_ranking = get_ranking_table(season_id)
 
     # create a new projection for the general ranking
     entries = []
-    for idx, entry in enumerate(general_ranking, start=1):
+    for idx, entry in enumerate(general_ranking.all(), start=1):
         entries.append(
             GeneralRankingView(
                 season_id=season_id,
-                course_id=entry.course.id,
-                course_name=entry.course.name,
-                course_abbreviation=entry.course.abbreviation,
-                nucleo_id=entry.course.nucleus.id,
-                nucleo_name=entry.course.nucleus.name,
-                nucleo_abbreviation=entry.course.nucleus.abbreviation,
+                course_id=entry.id,
+                course_name=entry.name,
+                course_abbreviation=entry.abbreviation,
+                nucleo_id=entry.nucleus.id,
+                nucleo_name=entry.nucleus.name,
+                nucleo_abbreviation=entry.nucleus.abbreviation,
                 points=entry.points,
                 rank=idx,
-                tournaments_participated=entry.tournaments_participated,
+                tournaments_participated=entry.tournament_count,
             )
         )
 
@@ -328,7 +328,7 @@ def rebuild_modality_ranking_projection(season_id: int, modality_id: UUID):
         return None
 
     # get the modality ranking data
-    modality_ranking = get_modality_ranking(season_id, modality_id)
+    modality_ranking = get_ranking_table(season_id=season_id, modality_id=modality_id)
 
     # create a new projection for the modality ranking
     entries = []
@@ -338,12 +338,12 @@ def rebuild_modality_ranking_projection(season_id: int, modality_id: UUID):
                 season_id=season_id,
                 modality_id=modality.id,
                 modality_name=modality.name,
-                course_id=entry.course.id,
-                course_name=entry.course.name,
-                course_abbreviation=entry.course.abbreviation,
-                nucleo_id=entry.course.nucleus.id,
-                nucleo_name=entry.course.nucleus.name,
-                nucleo_abbreviation=entry.course.nucleus.abbreviation,
+                course_id=entry.id,
+                course_name=entry.name,
+                course_abbreviation=entry.abbreviation,
+                nucleo_id=entry.nucleus.id,
+                nucleo_name=entry.nucleus.name,
+                nucleo_abbreviation=entry.nucleus.abbreviation,
                 points=entry.points,
                 rank=idx,
             )

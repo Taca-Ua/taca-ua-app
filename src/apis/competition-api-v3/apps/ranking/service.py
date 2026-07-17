@@ -16,9 +16,7 @@ COURSE_MAX_AWARDS = (
 
 
 @transaction.atomic
-def submit_tournament_results(
-    tournament: Tournament, *, emit_computed_event: bool = True
-):
+def submit_tournament_results(tournament: Tournament):
 
     results = get_tournament_results(tournament.id)
 
@@ -100,4 +98,25 @@ def recompute_rankings(
     ).distinct()
     relevant_tournaments = Tournament.objects.filter(id__in=relevant_tournaments_ids)
     for tournament in relevant_tournaments:
-        submit_tournament_results(tournament, emit_computed_event=False)
+        submit_tournament_results(tournament)
+
+
+@transaction.atomic
+def create_ammendment(
+    season_id: int,
+    course_id: str,
+    modality_id: str | None,
+    points: int,
+    reason: str | None = None,
+):
+    """Creates a ranking ammendment for a specific season, course, and modality."""
+    from .models import RankingAmmendment
+
+    ammendment = RankingAmmendment.objects.create(
+        season_id=season_id,
+        course_id=course_id,
+        modality_id=modality_id,
+        points=points,
+        reason=reason or "",
+    )
+    return ammendment

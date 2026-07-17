@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 
-class RankingSeasonFilterSerializer(serializers.Serializer):
-    season_id = serializers.IntegerField(
-        required=True, help_text="ID of the season to retrieve the ranking for"
+class ModalityFilterSerializer(serializers.Serializer):
+    modality_id = serializers.UUIDField(
+        required=False, help_text="ID of the modality to retrieve the ranking for"
     )

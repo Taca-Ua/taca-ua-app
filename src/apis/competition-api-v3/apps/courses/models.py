@@ -7,6 +7,7 @@ from django.db import models
 
 if TYPE_CHECKING:
     from apps.athletes.models import Athlete
+    from apps.ranking.models import RankingAmmendment
     from django.db.models.manager import RelatedManager
 
 
@@ -23,6 +24,8 @@ class Course(models.Model):
 
     if TYPE_CHECKING:
         athletes: RelatedManager["Athlete"]
+        ranking_ammendments: RelatedManager["RankingAmmendment"]
+        nucleus: Nucleus
 
     @property
     def logo_url(self) -> str | None:
